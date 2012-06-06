@@ -90,7 +90,7 @@ static void manageTx(HttpTx *tx, int flags)
 /*
     Add key/value to the header hash. If already present, update the value
 */
-static void addHeader(HttpConn *conn, cchar *key, cchar *value)
+static void addHdr(HttpConn *conn, cchar *key, cchar *value)
 {
     mprAssert(key && *key);
     mprAssert(value);
@@ -125,7 +125,7 @@ void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     va_end(vargs);
 
     if (!mprLookupKey(conn->tx->headers, key)) {
-        addHeader(conn, key, value);
+        addHdr(conn, key, value);
     }
 }
 
@@ -139,7 +139,7 @@ void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
     mprAssert(value);
 
     if (!mprLookupKey(conn->tx->headers, key)) {
-        addHeader(conn, key, sclone(value));
+        addHdr(conn, key, sclone(value));
     }
 }
 
@@ -169,10 +169,10 @@ void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
         if (scasematch(key, "Set-Cookie")) {
             mprAddDuplicateKey(conn->tx->headers, key, value);
         } else {
-            addHeader(conn, key, sfmt("%s, %s", oldValue, value));
+            addHdr(conn, key, sfmt("%s, %s", oldValue, value));
         }
     } else {
-        addHeader(conn, key, value);
+        addHdr(conn, key, value);
     }
 }
 
@@ -193,10 +193,10 @@ void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
         if (scasematch(key, "Set-Cookie")) {
             mprAddDuplicateKey(conn->tx->headers, key, sclone(value));
         } else {
-            addHeader(conn, key, sfmt("%s, %s", oldValue, value));
+            addHdr(conn, key, sfmt("%s, %s", oldValue, value));
         }
     } else {
-        addHeader(conn, key, sclone(value));
+        addHdr(conn, key, sclone(value));
     }
 }
 
@@ -215,18 +215,16 @@ void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
     va_end(vargs);
-    addHeader(conn, key, value);
+    addHdr(conn, key, value);
 }
 
-
-//  MOB - sort file
 
 void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
     mprAssert(key && *key);
     mprAssert(value);
 
-    addHeader(conn, key, sclone(value));
+    addHdr(conn, key, sclone(value));
 }
 
 
@@ -247,11 +245,12 @@ void httpFinalize(HttpConn *conn)
     }
     conn->responded = 1;
     conn->finalized = 1;
+
     if (conn->state >= HTTP_STATE_CONNECTED && conn->writeq && conn->sock) {
-        httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SERVICE_NOW);
+        httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
         httpServiceQueues(conn);
-        if (conn->state == HTTP_STATE_RUNNING && conn->connectorComplete && !conn->advancing) {
-            httpProcess(conn, NULL);
+        if (conn->state >= HTTP_STATE_READY /* MOB && conn->connectorComplete */ && !conn->inHttpProcess) {
+            httpPump(conn, NULL);
         }
         conn->refinalize = 0;
     } else {
@@ -379,7 +378,7 @@ void httpOmitBody(HttpConn *conn)
         mprError("Can't set response body if headers have already been created");
         /* Connectors will detect this also and disconnect */
     } else {
-        httpDiscardTransmitData(conn);
+        httpDiscardData(conn, HTTP_QUEUE_TX);
     }
 }
 
@@ -422,7 +421,8 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
                 /*
                     Absolute URL. If hostName has a port specifier, it overrides prev->port.
                  */
-                uri = httpFormatUri(prev->scheme, rx->hostHeader, port, target->path, target->reference, target->query, 1);
+                uri = httpFormatUri(prev->scheme, rx->hostHeader, port, target->path, target->reference, target->query, 
+                    HTTP_COMPLETE_URI);
             } else {
                 /*
                     Relative file redirection to a file in the same directory as the previous request.
@@ -433,7 +433,8 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
                     *cp = '\0';
                 }
                 path = sjoin(dir, "/", target->path, NULL);
-                uri = httpFormatUri(prev->scheme, rx->hostHeader, port, path, target->reference, target->query, 1);
+                uri = httpFormatUri(prev->scheme, rx->hostHeader, port, path, target->reference, target->query, 
+                    HTTP_COMPLETE_URI);
             }
             targetUri = uri;
         }
@@ -714,8 +715,9 @@ void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
         mprPutStringToBuf(buf, "\r\n");
     }
     if (tx->altBody) {
+        /* Error responses are emitted here */
         mprPutStringToBuf(buf, tx->altBody);
-        httpDiscardData(tx->queue[HTTP_QUEUE_TX]->nextQ, 0);
+        httpDiscardQueueData(tx->queue[HTTP_QUEUE_TX]->nextQ, 0);
     }
     tx->headerSize = mprGetBufLength(buf);
     tx->flags |= HTTP_TX_HEADERS_CREATED;
@@ -737,8 +739,8 @@ bool httpFileExists(HttpConn *conn)
 /*
     @copy   default
 
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire

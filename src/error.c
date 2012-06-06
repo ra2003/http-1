@@ -57,29 +57,32 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     if (conn == 0) {
         return;
     }
-    if (flags & HTTP_ABORT) {
-        conn->connError = 1;
+    status = flags & HTTP_CODE_MASK;
+    if (status == 0) {
+        status = HTTP_CODE_INTERNAL_SERVER_ERROR;
     }
     if (flags & (HTTP_ABORT | HTTP_CLOSE)) {
         conn->keepAliveCount = -1;
     }
+    if (flags & HTTP_ABORT) {
+        conn->connError = 1;
+    }
     if (flags & HTTP_ABORT || (tx && tx->flags & HTTP_TX_HEADERS_CREATED)) {
         /* 
             If headers have been sent, must let the other side of the failure - abort is the only way.
-            Disconnect will cause a readable (EOF) event
+            Disconnect will cause a readable (EOF) event. Call formatErrorv for client-side code to set errorMsg.
          */
         httpDisconnect(conn);
+        formatErrorv(conn, status, fmt, args);
+        conn->error = 1;
+        return;
     }
     if (conn->error) {
         return;
     }
+    conn->error = 1;
     if (rx) {
         rx->eof = 1;
-    }
-    conn->error = 1;
-    status = flags & HTTP_CODE_MASK;
-    if (status == 0) {
-        status = HTTP_CODE_INTERNAL_SERVER_ERROR;
     }
     formatErrorv(conn, status, fmt, args);
 
@@ -160,8 +163,8 @@ void httpMemoryError(HttpConn *conn)
 /*
     @copy   default
 
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire

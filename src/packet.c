@@ -153,14 +153,13 @@ HttpPacket *httpGetPacket(HttpQueue *q)
                 mprAssert(q->first == 0);
             }
         }
-        if (q->flags & HTTP_QUEUE_FULL && q->count < q->low) {
+        if (q->count < q->low) {
             /*
                 This queue was full and now is below the low water mark. Back-enable the previous queue.
              */
-            q->flags &= ~HTTP_QUEUE_FULL;
             prev = httpFindPreviousQueue(q);
-            if (prev && prev->flags & HTTP_QUEUE_DISABLED) {
-                httpEnableQueue(prev);
+            if (prev && prev->flags & HTTP_QUEUE_SUSPENDED) {
+                httpResumeQueue(prev);
             }
         }
         return packet;
@@ -202,7 +201,7 @@ void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
         q->count += httpGetPacketLength(packet);
     }
     mprAssert(httpVerifyQueue(q));
-    if (serviceQ && !(q->flags & HTTP_QUEUE_DISABLED))  {
+    if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
         httpScheduleQueue(q);
     }
 }
@@ -268,7 +267,7 @@ void httpPutPacket(HttpQueue *q, HttpPacket *packet)
 
 
 /*  
-    Pass to the next queue
+    Pass to the next stage in the pipeline
  */
 void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
 {
@@ -326,7 +325,7 @@ void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
         q->first = packet;
         q->last = packet;
     }
-    if (serviceQ && !(q->flags & HTTP_QUEUE_DISABLED))  {
+    if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
         httpScheduleQueue(q);
     }
 }
@@ -389,6 +388,20 @@ HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
             mprAssert(offset < httpGetPacketLength(orig));
             return 0;
         }
+        /*
+            OPT - A large packet will often be resized by splitting into chunks that the
+            downstream queues will accept. This causes many allocations that are a small delta less than the large
+            packet 
+            Better:
+                - If offset is < size/2
+                    - Allocate packet size == offset
+                    - Set orig->content =   
+                    - packet->content = orig->content
+                        httpAdjustPacketStart(packet, offset) 
+                    - orig->content = Packet(size == offset)
+                        copy from packet
+                Adjust the content->start
+         */
         count = httpGetPacketLength(orig) - offset;
         size = max(count, HTTP_BUFSIZE);
         size = HTTP_PACKET_ALIGN(size);
@@ -399,7 +412,7 @@ HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
         if (mprPutBlockToBuf(packet->content, mprGetBufEnd(orig->content), (ssize) count) != count) {
             return 0;
         }
-#if BLD_DEBUG
+#if BIT_DEBUG
         mprAddNullToBuf(orig->content);
 #endif
     }
@@ -411,8 +424,8 @@ HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 /*
     @copy   default
     
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire 

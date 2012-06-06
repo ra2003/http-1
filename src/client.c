@@ -10,7 +10,7 @@
 
 /*********************************** Code *************************************/
 
-static HttpConn *openConnection(HttpConn *conn, cchar *url)
+static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
 {
     Http        *http;
     HttpUri     *uri;
@@ -21,10 +21,11 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url)
     mprAssert(conn);
 
     http = conn->http;
-    uri = httpCreateUri(url, 0);
+    uri = httpCreateUri(url, HTTP_COMPLETE_URI);
+    conn->tx->parsedUri = uri;
 
     if (uri->secure) {
-#if BLD_FEATURE_SSL
+#if BIT_FEATURE_SSL
         if (!http->sslLoaded) {
             if (!mprLoadSsl(0)) {
                 mprError("Can't load SSL provider");
@@ -61,8 +62,12 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url)
         httpError(conn, HTTP_CODE_COMMS_ERROR, "Can't create socket for %s", url);
         return 0;
     }
-    rc = mprConnectSocket(sp, ip, port, 0);
-    if (rc < 0) {
+#if BIT_FEATURE_SSL
+    if (uri->secure && ssl) {
+        mprSetSocketSslConfig(sp, ssl);
+    }
+#endif
+    if ((rc = mprConnectSocket(sp, ip, port, 0)) < 0) {
         httpError(conn, HTTP_CODE_COMMS_ERROR, "Can't open socket on %s:%d", ip, port);
         return 0;
     }
@@ -70,7 +75,7 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url)
     conn->ip = sclone(ip);
     conn->port = port;
     conn->secure = uri->secure;
-    conn->keepAliveCount = (conn->limits->keepAliveCount) ? conn->limits->keepAliveCount : -1;
+    conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : -1;
 
     if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
         mprLog(level, "### Outgoing connection from %s:%d to %s:%d", 
@@ -148,11 +153,10 @@ static int setClientHeaders(HttpConn *conn)
         conn->sentCredentials = 1;
     }
     if (conn->port != 80) {
-        httpSetHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
+        httpAddHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
     } else {
-        httpSetHeaderString(conn, "Host", conn->ip);
+        httpAddHeaderString(conn, "Host", conn->ip);
     }
-
     if (strcmp(conn->protocol, "HTTP/1.1") == 0) {
         /* If zero, we ask the client to close one request early. This helps with client led closes */
         if (conn->keepAliveCount > 0) {
@@ -170,7 +174,7 @@ static int setClientHeaders(HttpConn *conn)
 }
 
 
-int httpConnect(HttpConn *conn, cchar *method, cchar *url)
+int httpConnect(HttpConn *conn, cchar *method, cchar *url, struct MprSsl *ssl)
 {
     mprAssert(conn);
     mprAssert(method && *method);
@@ -189,19 +193,16 @@ int httpConnect(HttpConn *conn, cchar *method, cchar *url)
     mprAssert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
     conn->sentCredentials = 0;
-
     conn->tx->method = supper(method);
-    conn->tx->parsedUri = httpCreateUri(url, 0);
 
-#if BLD_DEBUG
+#if BIT_DEBUG
     conn->startTime = conn->http->now;
     conn->startTicks = mprGetTicks();
 #endif
-    if (openConnection(conn, url) == 0) {
+    if (openConnection(conn, url, ssl) == 0) {
         return MPR_ERR_CANT_OPEN;
     }
     httpCreateTxPipeline(conn, conn->http->clientRoute);
-
     if (setClientHeaders(conn) < 0) {
         return MPR_ERR_CANT_INITIALIZE;
     }
@@ -327,8 +328,8 @@ ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *formData)
 /*
     @copy   default
 
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire

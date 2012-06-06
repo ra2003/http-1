@@ -1,8 +1,9 @@
 /*
     passHandler.c -- Pass through handler
 
-    This handler simply relays all content onto a connector. It is used to when there is no handler defined 
-    and to convey errors when the actual handler fails.
+    This handler simply relays all content to a network connector. It is used to when there is no handler defined 
+    and to convey errors when the actual handler fails. It is configured as the "passHandler" and "errorHandler".
+    The pipeline will also select this handler if any routing errors occur. 
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
@@ -12,7 +13,10 @@
 #include    "http.h"
 
 /*********************************** Code *************************************/
-
+/*
+    Handle Trace and Options requests. Handlers can do this themselves if they desire, but typically
+    all Trace/Options requests come here.
+ */
 void httpHandleOptionsTrace(HttpConn *conn)
 {
     HttpRx      *rx;
@@ -23,12 +27,14 @@ void httpHandleOptionsTrace(HttpConn *conn)
     rx = conn->rx;
 
     if (rx->flags & HTTP_TRACE) {
+        /* The trace method is disabled by default unless 'TraceMethod on' is specified */
         if (!conn->limits->enableTraceMethod) {
             tx->status = HTTP_CODE_NOT_ACCEPTABLE;
             httpFormatResponseBody(conn, "Trace Request Denied", "The TRACE method is disabled on this server.");
         } else {
             httpFormatResponse(conn, "%s %s %s\r\n", rx->method, rx->uri, conn->protocol);
         }
+        /* This finalizes output and indicates the request is now complete */
         httpFinalize(conn);
 
     } else if (rx->flags & HTTP_OPTIONS) {
@@ -55,15 +61,17 @@ static void openPass(HttpQueue *q)
 }
 
 
-static void processPass(HttpQueue *q)
+static void readyPass(HttpQueue *q)
 {
+#if UNUSED
     HttpConn    *conn;
 
     conn = q->conn;
     if (!conn->finalized) {
         httpError(conn, HTTP_CODE_NOT_FOUND, "Can't serve request: %s", conn->rx->uri);
     }
-    httpFinalize(conn);
+#endif
+    httpFinalize(q->conn);
 }
 
 
@@ -76,16 +84,16 @@ int httpOpenPassHandler(Http *http)
     }
     http->passHandler = stage;
     stage->open = openPass;
-    stage->process = processPass;
+    stage->ready = readyPass;
 
     /*
-        PassHandler has an alias as the ErrorHandler too
+        PassHandler is an alias as the ErrorHandler too
      */
     if ((stage = httpCreateHandler(http, "errorHandler", HTTP_STAGE_ALL, NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     stage->open = openPass;
-    stage->process = processPass;
+    stage->ready = readyPass;
     return 0;
 }
 
@@ -93,8 +101,8 @@ int httpOpenPassHandler(Http *http)
 /*
     @copy   default
 
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire

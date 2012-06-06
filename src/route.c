@@ -81,8 +81,12 @@ HttpRoute *httpCreateRoute(HttpHost *host)
     route->targetRule = sclone("run");
     route->autoDelete = 1;
     route->workers = -1;
-    route->limits = mprMemdup(((Http*) MPR->httpService)->serverLimits, sizeof(HttpLimits));
+
+    if (MPR->httpService) {
+        route->limits = mprMemdup(((Http*) MPR->httpService)->serverLimits, sizeof(HttpLimits));
+    }
     route->mimeTypes = MPR->mimeTypes;
+    route->mutex = mprCreateLock();
     httpInitTrace(route->trace);
 
     if ((route->mimeTypes = mprCreateMimeTypes("mime.types")) == 0) {
@@ -217,6 +221,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->log);
         mprMark(route->logFormat);
         mprMark(route->logPath);
+        mprMark(route->mutex);
 
     } else if (flags & MPR_MANAGE_FREE) {
         if (route->patternCompiled && (route->flags & HTTP_ROUTE_FREE_PATTERN)) {
@@ -285,16 +290,19 @@ HttpRoute *httpCreateAliasRoute(HttpRoute *parent, cchar *pattern, cchar *path, 
 
 int httpStartRoute(HttpRoute *route)
 {
-#if !BLD_FEATURE_ROMFS
-    if (route->logPath && (!route->parent || route->logPath != route->parent->logPath)) {
-        if (route->logBackup > 0) {
-            httpBackupRouteLog(route);
-        }
-        mprAssert(!route->log);
-        route->log = mprOpenFile(route->logPath, O_CREAT | O_APPEND | O_WRONLY | O_TEXT, 0664);
-        if (route->log == 0) {
-            mprError("Can't open log file %s", route->logPath);
-            return MPR_ERR_CANT_OPEN;
+#if !BIT_FEATURE_ROMFS
+    if (!(route->flags & HTTP_ROUTE_STARTED)) {
+        route->flags |= HTTP_ROUTE_STARTED;
+        if (route->logPath && (!route->parent || route->logPath != route->parent->logPath)) {
+            if (route->logBackup > 0) {
+                httpBackupRouteLog(route);
+            }
+            mprAssert(!route->log);
+            route->log = mprOpenFile(route->logPath, O_CREAT | O_APPEND | O_WRONLY | O_TEXT, 0664);
+            if (route->log == 0) {
+                mprError("Can't open log file %s", route->logPath);
+                return MPR_ERR_CANT_OPEN;
+            }
         }
     }
 #endif
@@ -349,17 +357,24 @@ void httpRouteRequest(HttpConn *conn)
         httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Can't find suitable route for request");
         return;
     }
+    if (rx->traceLevel >= 0) {
+        mprLog(4, "Select route \"%s\" target \"%s\"", route->name, route->targetRule);
+    }
     rx->route = route;
     conn->limits = route->limits;
 
     conn->trace[0] = route->trace[0];
     conn->trace[1] = route->trace[1];
 
+    if (rewrites >= HTTP_MAX_REWRITE) {
+        httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
+    }
     if (conn->finalized) {
+        /* 
+            Must be no data in queues as handlers and pipeline are not yet started. Only errors and redirects 
+            using tx->altBody 
+         */ 
         tx->handler = conn->http->passHandler;
-        if (rewrites >= HTTP_MAX_REWRITE) {
-            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
-        }
     }
     if (rx->traceLevel >= 0) {
         mprLog(rx->traceLevel, "Select handler: \"%s\" for \"%s\"", tx->handler->name, rx->uri);
@@ -526,14 +541,11 @@ static int testRoute(HttpConn *conn, HttpRoute *route)
         httpError(conn, -1, "Can't find route target rule \"%s\"", route->targetRule);
         return HTTP_ROUTE_REJECT;
     }
-    if (rx->traceLevel >= 0) {
-        mprLog(4, "Select route \"%s\" target \"%s\"", route->name, route->targetRule);
-    }
     if ((rc = (*proc)(conn, route, 0)) != HTTP_ROUTE_OK) {
         return rc;
     }
-    if (!conn->finalized && tx->handler->check) {
-        rc = tx->handler->check(conn, route);
+    if (!conn->finalized && tx->handler->match) {
+        rc = tx->handler->match(conn, route, HTTP_QUEUE_TX);
     }
     return rc;
 }
@@ -688,11 +700,11 @@ int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, int dir
             word = stok(0, " \t\r\n", &tok);
         }
     }
-    if (direction & HTTP_STAGE_RX && filter->incomingData) {
+    if (direction & HTTP_STAGE_RX && filter->incoming) {
         GRADUATE_LIST(route, inputStages);
         mprAddItem(route->inputStages, filter);
     }
-    if (direction & HTTP_STAGE_TX && filter->outgoingData) {
+    if (direction & HTTP_STAGE_TX && filter->outgoing) {
         GRADUATE_LIST(route, outputStages);
         if (smatch(name, "cacheFilter") && 
                 (pos = mprGetListLength(route->outputStages) - 1) >= 0 &&
@@ -1400,7 +1412,7 @@ static char *finalizeReplacement(HttpRoute *route, cchar *str)
                     if (braced) {
                         for (ep = tok; *ep && *ep != '}'; ep++) ;
                     } else {
-                        for (ep = tok; *ep && isdigit((int) *ep); ep++) ;
+                        for (ep = tok; *ep && isdigit((uchar) *ep); ep++) ;
                     }
                     token = snclone(tok, ep - tok);
                     if (schr(token, ':')) {
@@ -1553,7 +1565,7 @@ void httpFinalizeRoute(HttpRoute *route)
         mprAddItem(route->indicies,  sclone("index.html"));
     }
     httpAddRoute(route->host, route);
-#if BLD_FEATURE_SSL
+#if BIT_FEATURE_SSL
     mprConfigureSsl(route->ssl);
 #endif
 }
@@ -1561,8 +1573,7 @@ void httpFinalizeRoute(HttpRoute *route)
 
 /********************************* Path and URI Expansion *****************************/
 /*
-    MOB - some description here
-    what does this return. Does it return an absolute URI?
+    What does this return. Does it return an absolute URI?
     MOB - rename httpUri() and move to uri.c
  */
 char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
@@ -1655,7 +1666,7 @@ char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
             target = "/";
         }
     }
-    //  MOB OPT
+    //  OPT
     uri = httpCreateUri(target, 0);
     uri = httpResolveUri(httpCreateUri(rx->uri, 0), 1, &uri, 0);
     httpNormalizeUri(uri);
@@ -1727,6 +1738,7 @@ char *httpTemplate(HttpConn *conn, cchar *tplate, MprHash *options)
 }
 
 
+//  MOB - rename SetRouteVar
 void httpSetRoutePathVar(HttpRoute *route, cchar *key, cchar *value)
 {
     mprAssert(route);
@@ -2002,7 +2014,7 @@ static int cmdUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
     command = expandTokens(conn, op->details);
     cmd = mprCreateCmd(conn->dispatcher);
-    if ((status = mprRunCmd(cmd, command, &out, &err, -1, 0)) != 0) {
+    if ((status = mprRunCmd(cmd, command, NULL, &out, &err, -1, 0)) != 0) {
         /* Don't call httpError, just set errorMsg which can be retrieved via: ${request:error} */
         conn->errorMsg = sfmt("Command failed: %s\nStatus: %d\n%s\n%s", command, status, out, err);
         mprError("%s", conn->errorMsg);
@@ -2386,10 +2398,14 @@ static void definePathVars(HttpRoute *route)
 {
     mprAssert(route);
 
-    mprAddKey(route->pathTokens, "PRODUCT", sclone(BLD_PRODUCT));
-    mprAddKey(route->pathTokens, "OS", sclone(BLD_OS));
-    mprAddKey(route->pathTokens, "VERSION", sclone(BLD_VERSION));
-    mprAddKey(route->pathTokens, "LIBDIR", mprNormalizePath(sfmt("%s/../%s", mprGetAppDir(), BLD_LIB_NAME))); 
+    mprAddKey(route->pathTokens, "PRODUCT", sclone(BIT_PRODUCT));
+    mprAddKey(route->pathTokens, "OS", sclone(BIT_OS));
+    mprAddKey(route->pathTokens, "VERSION", sclone(BIT_VERSION));
+#if UNUSED
+    mprAddKey(route->pathTokens, "LIBDIR", mprJoinPath(mprGetPathParent(mprGetAppDir()), mprGetPathBase(BIT_LIB_NAME)));
+#else
+    mprAddKey(route->pathTokens, "LIBDIR", mprGetAppDir());
+#endif
     if (route->host) {
         defineHostVars(route);
     }
@@ -2465,8 +2481,7 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
 
         } else if (smatch(key, "request")) {
             value = stok(value, "=", &defaultValue);
-            //  MOB - implement default value below for those that can be null
-            //  MOB - OPT with switch on first char
+            //  OPT with switch on first char
             if (smatch(value, "clientAddress")) {
                 mprPutStringToBuf(buf, conn->ip);
 
@@ -2599,9 +2614,9 @@ static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, i
                 break;
             default:
                 /* Insert the nth submatch */
-                if (isdigit((int) *cp)) {
+                if (isdigit((uchar) *cp)) {
                     submatch = (int) wtoi(cp);
-                    while (isdigit((int) *++cp))
+                    while (isdigit((uchar) *++cp))
                         ;
                     cp--;
                     if (submatch < matchCount) {
@@ -2693,11 +2708,11 @@ bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list args)
     end = &tok[slen(line)];
 
     for (f = fmt; *f && tok < end; f++) {
-        for (; isspace((int) *tok); tok++) ;
+        for (; isspace((uchar) *tok); tok++) ;
         if (*tok == '\0' || *tok == '#') {
             break;
         }
-        if (isspace((int) *f)) {
+        if (isspace((uchar) *f)) {
             continue;
         }
         if (*f == '%' || *f == '?') {
@@ -2719,7 +2734,7 @@ bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list args)
                         }
                     }
                 } else {
-                    for (etok = tok; *etok && !isspace((int) *etok); etok++) ;
+                    for (etok = tok; *etok && !isspace((uchar) *etok); etok++) ;
                 }
                 *etok++ = '\0';
             }
@@ -2779,7 +2794,7 @@ bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list args)
         /*
             Extra unparsed text
          */
-        for (; tok < end && isspace((int) *tok); tok++) ;
+        for (; tok < end && isspace((uchar) *tok); tok++) ;
         if (*tok) {
             mprError("Extra unparsed text: \"%s\"", tok);
             return 0;
@@ -2933,10 +2948,13 @@ void httpSetOption(MprHash *options, cchar *field, cchar *value)
 }
 
 
-HttpLimits *httpGraduateLimits(HttpRoute *route)
+HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
 {
     if (route->parent && route->limits == route->parent->limits) {
-        route->limits = mprMemdup(((Http*) MPR->httpService)->serverLimits, sizeof(HttpLimits));
+        if (limits == 0) {
+            limits = ((Http*) MPR->httpService)->serverLimits;
+        }
+        route->limits = mprMemdup(limits, sizeof(HttpLimits));
     }
     return route->limits;
 }
@@ -2944,8 +2962,8 @@ HttpLimits *httpGraduateLimits(HttpRoute *route)
 /*
     @copy   default
     
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire 

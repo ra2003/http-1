@@ -107,7 +107,7 @@ HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents, cchar 
             return 0;
         }
     }
-    if ((host = httpCreateHost()) == 0) {
+    if ((host = httpCreateHost(home)) == 0) {
         return 0;
     }
     if ((route = httpCreateRoute(host)) == 0) {
@@ -116,7 +116,6 @@ HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents, cchar 
     httpSetHostDefaultRoute(host, route);
     httpSetHostIpAddr(host, ip, port);
     httpAddHostToEndpoint(endpoint, host);
-    httpSetHostHome(host, home);
     httpSetRouteDir(route, documents);
     httpFinalizeRoute(route);
     return endpoint;
@@ -187,7 +186,11 @@ int httpStartEndpoint(HttpEndpoint *endpoint)
     }
     proto = mprIsSocketSecure(endpoint->sock) ? "HTTPS" : "HTTP ";
     ip = *endpoint->ip ? endpoint->ip : "*";
-    mprLog(1, "Started %s service on \"%s:%d\"", proto, ip, endpoint->port);
+    if (mprIsSocketV6(endpoint->sock)) {
+        mprLog(2, "Started %s service on \"[%s]:%d\"", proto, ip, endpoint->port);
+    } else {
+        mprLog(2, "Started %s service on \"%s:%d\"", proto, ip, endpoint->port);
+    }
     return 0;
 }
 
@@ -212,9 +215,13 @@ void httpStopEndpoint(HttpEndpoint *endpoint)
 }
 
 
+/*
+    TODO OPT
+ */
 bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn)
 {
     HttpLimits      *limits;
+    Http            *http;
     cchar           *action;
     int             count, level, dir;
 
@@ -222,17 +229,20 @@ bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn)
     dir = HTTP_TRACE_RX;
     action = "unknown";
     mprAssert(conn->endpoint == endpoint);
-    lock(endpoint->http);
+    http = endpoint->http;
+
+    lock(http);
 
     switch (event) {
     case HTTP_VALIDATE_OPEN_CONN:
         /*
-            This active client systems with unique IP addresses.
+            This measures active client systems with unique IP addresses.
          */
-        if (endpoint->clientCount >= limits->clientCount) {
-            unlock(endpoint->http);
+        if (endpoint->clientCount >= limits->clientMax) {
+            unlock(http);
+            /*  Abort connection */
             httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, 
-                "Too many concurrent clients %d/%d", endpoint->clientCount, limits->clientCount);
+                "Too many concurrent clients %d/%d", endpoint->clientCount, limits->clientMax);
             return 0;
         }
         count = (int) PTOL(mprLookupKey(endpoint->clientLoad, conn->ip));
@@ -255,32 +265,55 @@ bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn)
         break;
     
     case HTTP_VALIDATE_OPEN_REQUEST:
-        if (endpoint->requestCount >= limits->requestCount) {
-            unlock(endpoint->http);
-            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, 
-                "Too many concurrent requests %d/%d", endpoint->requestCount, limits->requestCount);
+        mprAssert(conn->rx);
+        if (endpoint->requestCount >= limits->requestMax) {
+            unlock(http);
+            httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Server overloaded");
+            mprLog(2, "Too many concurrent requests %d/%d", endpoint->requestCount, limits->requestMax);
             return 0;
         }
         endpoint->requestCount++;
+        conn->rx->flags |= HTTP_LIMITS_OPENED;
         action = "open request";
         dir = HTTP_TRACE_RX;
         break;
 
     case HTTP_VALIDATE_CLOSE_REQUEST:
-        endpoint->requestCount--;
-        mprAssert(endpoint->requestCount >= 0);
-        action = "close request";
-        dir = HTTP_TRACE_TX;
+        if (conn->rx && conn->rx->flags & HTTP_LIMITS_OPENED) {
+            /* Requests incremented only when conn->rx is assigned */
+            endpoint->requestCount--;
+            mprAssert(endpoint->requestCount >= 0);
+            action = "close request";
+            dir = HTTP_TRACE_TX;
+            conn->rx->flags &= ~HTTP_LIMITS_OPENED;
+        }
+        break;
+
+    case HTTP_VALIDATE_OPEN_PROCESS:
+        if (http->processCount >= limits->processMax) {
+            unlock(http);
+            httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Server overloaded");
+            mprLog(2, "Too many concurrent processes %d/%d", http->processCount, limits->processMax);
+            return 0;
+        }
+        http->processCount++;
+        action = "start process";
+        dir = HTTP_TRACE_RX;
+        break;
+
+    case HTTP_VALIDATE_CLOSE_PROCESS:
+        http->processCount--;
+        mprAssert(http->processCount >= 0);
         break;
     }
     if (event == HTTP_VALIDATE_CLOSE_CONN || event == HTTP_VALIDATE_CLOSE_REQUEST) {
         if ((level = httpShouldTrace(conn, dir, HTTP_TRACE_LIMITS, NULL)) >= 0) {
             LOG(4, "Validate request for %s. Active connections %d, active requests: %d/%d, active client IP %d/%d", 
-                action, mprGetListLength(endpoint->http->connections), endpoint->requestCount, limits->requestCount, 
-                endpoint->clientCount, limits->clientCount);
+                action, mprGetListLength(http->connections), endpoint->requestCount, limits->requestMax, 
+                endpoint->clientCount, limits->clientMax);
         }
     }
-    unlock(endpoint->http);
+    unlock(http);
     return 1;
 }
 
@@ -332,7 +365,6 @@ HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     conn->secure = mprIsSocketSecure(sock);
 
     if (!httpValidateLimits(endpoint, HTTP_VALIDATE_OPEN_CONN, conn)) {
-        /* Prevent validate limits from */
         conn->endpoint = 0;
         httpDestroyConn(conn);
         return 0;
@@ -396,7 +428,6 @@ int httpIsEndpointAsync(HttpEndpoint *endpoint)
 }
 
 
-//  MOB - rename. This could be a "restart"
 void httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
 {
     if (ip) {
@@ -442,7 +473,7 @@ void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier notifier)
 
 int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 {
-#if BLD_FEATURE_SSL
+#if BIT_FEATURE_SSL
     endpoint->ssl = ssl;
     return 0;
 #else
@@ -550,8 +581,8 @@ int httpConfigureNamedVirtualEndpoints(Http *http, cchar *ip, int port)
 /*
     @copy   default
     
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire 

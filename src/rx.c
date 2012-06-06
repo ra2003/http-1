@@ -23,6 +23,7 @@ static bool processCompletion(HttpConn *conn);
 static bool processContent(HttpConn *conn, HttpPacket *packet);
 static void parseMethod(HttpConn *conn);
 static bool processParsed(HttpConn *conn);
+static bool processReady(HttpConn *conn);
 static bool processRunning(HttpConn *conn);
 static void routeRequest(HttpConn *conn);
 
@@ -113,19 +114,19 @@ void httpDestroyRx(HttpRx *rx)
 
 
 /*  
+    Pump the Http engine.
     Process incoming requests and drive the state machine. This will process as many requests as possible before returning. 
     All socket I/O is non-blocking, and this routine must not block. Note: packet may be null.
  */
-void httpProcess(HttpConn *conn, HttpPacket *packet)
+void httpPump(HttpConn *conn, HttpPacket *packet)
 {
     mprAssert(conn);
 
     conn->canProceed = 1;
-    conn->advancing = 1;
+    conn->inHttpProcess = 1;
 
     while (conn->canProceed) {
         LOG(7, "httpProcess %s, state %d, error %d", conn->dispatcher->name, conn->state, conn->error);
-
         switch (conn->state) {
         case HTTP_STATE_BEGIN:
         case HTTP_STATE_CONNECTED:
@@ -140,6 +141,10 @@ void httpProcess(HttpConn *conn, HttpPacket *packet)
             conn->canProceed = processContent(conn, packet);
             break;
 
+        case HTTP_STATE_READY:
+            conn->canProceed = processReady(conn);
+            break;
+
         case HTTP_STATE_RUNNING:
             conn->canProceed = processRunning(conn);
             break;
@@ -148,9 +153,13 @@ void httpProcess(HttpConn *conn, HttpPacket *packet)
             conn->canProceed = processCompletion(conn);
             break;
         }
+        if (conn->connError || (conn->endpoint && conn->connectorComplete && conn->state >= HTTP_STATE_RUNNING)) {
+            httpSetState(conn, HTTP_STATE_COMPLETE);
+            continue;
+        }
         packet = conn->input;
     }
-    conn->advancing = 0;
+    conn->inHttpProcess = 0;
 }
 
 
@@ -171,7 +180,7 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
         httpError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Server terminating");
         return 0;
     }
-    if (conn->rx == NULL) {
+    if (!conn->rx) {
         conn->rx = httpCreateRx(conn);
         conn->tx = httpCreateTx(conn, NULL);
     }
@@ -182,28 +191,31 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
     start = mprGetBufStart(packet->content);
     if ((end = scontains(start, "\r\n\r\n", len)) == 0) {
         if (len >= conn->limits->headerSize) {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Header too big");
+            httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
+                "Header too big. Length %d vs limit %d", len, conn->limits->headerSize);
         }
         return 0;
     }
-    len = (int) (end - start);
+    len = end - start;
     mprAddNullToBuf(packet->content);
 
     if (len >= conn->limits->headerSize) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Header too big");
+        httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
+            "Header too big. Length %d vs limit %d", len, conn->limits->headerSize);
         return 0;
     }
     if (conn->endpoint) {
+        if (!httpValidateLimits(conn->endpoint, HTTP_VALIDATE_OPEN_REQUEST, conn)) {
+            return 0;
+        }
         parseRequestLine(conn, packet);
     } else {
         parseResponseLine(conn, packet);
     }
-    if (!conn->error) {
-        parseHeaders(conn, packet);
-    }
+    parseHeaders(conn, packet);
     if (conn->endpoint) {
         httpMatchHost(conn);
-        if (httpSetUri(conn, rx->uri, "") < 0) {
+        if (httpSetUri(conn, rx->uri, "") < 0 || rx->pathInfo[0] != '/') {
             httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad URL format");
         }
         if (conn->secure) {
@@ -217,9 +229,6 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
         httpCreateRxPipeline(conn, conn->http->clientRoute);
     }
     httpSetState(conn, HTTP_STATE_PARSED);
-    if (conn->endpoint && !httpValidateLimits(conn->endpoint, HTTP_VALIDATE_OPEN_REQUEST, conn)) {
-        return 0;
-    }
     return 1;
 }
 
@@ -310,7 +319,9 @@ static void parseMethod(HttpConn *conn)
     method = rx->method;
     methodFlags = 0;
 
+#if UNUSED
     rx->flags &= (HTTP_DELETE | HTTP_GET | HTTP_HEAD | HTTP_POST | HTTP_PUT | HTTP_TRACE | HTTP_UNKNOWN);
+#endif
 
     switch (method[0]) {
     case 'D':
@@ -369,24 +380,26 @@ static void parseMethod(HttpConn *conn)
 static void parseRequestLine(HttpConn *conn, HttpPacket *packet)
 {
     HttpRx      *rx;
-    char        *method, *uri, *protocol;
+    char        *uri, *protocol;
+    ssize       len;
 
     rx = conn->rx;
-#if BLD_DEBUG
+#if BIT_DEBUG
     conn->startTime = conn->http->now;
     conn->startTicks = mprGetTicks();
 #endif
     traceRequest(conn, packet);
 
-    method = getToken(conn, " ");
-    rx->originalMethod = rx->method = method = supper(method);
+    rx->originalMethod = rx->method = supper(getToken(conn, " "));
     parseMethod(conn);
 
     uri = getToken(conn, " ");
+    len = slen(uri);
     if (*uri == '\0') {
         httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty URI");
-    } else if ((int) strlen(uri) >= conn->limits->uriSize) {
-        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE, "Bad request. URI too long");
+    } else if (len >= conn->limits->uriSize) {
+        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
+            "Bad request. URI too long. Length %d vs limit %d", len, conn->limits->uriSize);
     }
     protocol = conn->protocol = supper(getToken(conn, "\r\n"));
     if (strcmp(protocol, "HTTP/1.0") == 0) {
@@ -418,7 +431,8 @@ static void parseResponseLine(HttpConn *conn, HttpPacket *packet)
     MprBuf      *content;
     cchar       *endp;
     char        *protocol, *status;
-    int         len, level, traced;
+    ssize       len;
+    int         level, traced;
 
     rx = conn->rx;
     tx = conn->tx;
@@ -444,8 +458,10 @@ static void parseResponseLine(HttpConn *conn, HttpPacket *packet)
     rx->status = atoi(status);
     rx->statusMessage = sclone(getToken(conn, "\r\n"));
 
-    if (slen(rx->statusMessage) >= conn->limits->uriSize) {
-        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE, "Bad response. Status message too long");
+    len = slen(rx->statusMessage);
+    if (len >= conn->limits->uriSize) {
+        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
+            "Bad response. Status message too long. Length %d vs limit %d", len, conn->limits->uriSize);
     }
     if (!traced && (level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_FIRST, tx->ext)) >= 0) {
         mprLog(level, "%s %d %s", protocol, rx->status, rx->statusMessage);
@@ -473,8 +489,8 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
     limits = conn->limits;
     keepAlive = (conn->http10) ? 0 : 1;
 
-    for (count = 0; content->start[0] != '\r' && !conn->connError; count++) {
-        if (count >= limits->headerCount) {
+    for (count = 0; content->start[0] != '\r' && !conn->error; count++) {
+        if (count >= limits->headerMax) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Too many headers");
             break;
         }
@@ -483,7 +499,7 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
         value = getToken(conn, "\r\n");
-        while (isspace((int) *value)) {
+        while (isspace((uchar) *value)) {
             value++;
         }
         LOG(8, "Key %s, value %s", key, value);
@@ -497,7 +513,7 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
         }
         mprAddKey(rx->headers, key, hvalue);
 
-        switch (tolower((int) key[0])) {
+        switch (tolower((uchar) key[0])) {
         case 'a':
             if (strcasecmp(key, "authorization") == 0) {
                 value = sclone(value);
@@ -562,7 +578,7 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
 
                 start = end = size = -1;
                 sp = value;
-                while (*sp && !isdigit((int) *sp)) {
+                while (*sp && !isdigit((uchar) *sp)) {
                     sp++;
                 }
                 if (*sp) {
@@ -608,7 +624,7 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
             if ((strcasecmp(key, "if-modified-since") == 0) || (strcasecmp(key, "if-unmodified-since") == 0)) {
                 MprTime     newDate = 0;
                 char        *cp;
-                bool        ifModified = (key[3] == 'm');
+                bool        ifModified = (tolower((uchar) key[3]) == 'm');
 
                 if ((cp = strchr(value, ';')) != 0) {
                     *cp = '\0';
@@ -625,7 +641,7 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
 
             } else if ((strcasecmp(key, "if-match") == 0) || (strcasecmp(key, "if-none-match") == 0)) {
                 char    *word, *tok;
-                bool    ifMatch = key[3] == 'm';
+                bool    ifMatch = (tolower((uchar) key[3]) == 'm');
 
                 if ((tok = strchr(value, ';')) != 0) {
                     *tok = '\0';
@@ -714,7 +730,7 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
         case 'x':
             if (strcasecmp(key, "x-http-method-override") == 0) {
                 httpSetMethod(conn, value);
-#if BLD_DEBUG
+#if BIT_DEBUG
             } else if (strcasecmp(key, "x-chunk-size") == 0) {
                 tx->chunkSize = atoi(value);
                 if (tx->chunkSize <= 0) {
@@ -735,12 +751,11 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
         case 'w':
             if (strcasecmp(key, "www-authenticate") == 0) {
                 conn->authType = value;
-                while (*value && !isspace((int) *value)) {
+                while (*value && !isspace((uchar) *value)) {
                     value++;
                 }
                 *value++ = '\0';
                 conn->authType = slower(conn->authType);
-                // MOB - move this into the auth filter
                 if (!parseAuthenticate(conn, value)) {
                     httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad Authentication header");
                     break;
@@ -770,7 +785,6 @@ static void parseHeaders(HttpConn *conn, HttpPacket *packet)
 
 /*  
     Parse an authentication response (client side only)
-    MOB - move this into the auth filter
  */
 static bool parseAuthenticate(HttpConn *conn, char *authDetails)
 {
@@ -782,16 +796,16 @@ static bool parseAuthenticate(HttpConn *conn, char *authDetails)
     key = (char*) authDetails;
 
     while (*key) {
-        while (*key && isspace((int) *key)) {
+        while (*key && isspace((uchar) *key)) {
             key++;
         }
         tok = key;
-        while (*tok && !isspace((int) *tok) && *tok != ',' && *tok != '=') {
+        while (*tok && !isspace((uchar) *tok) && *tok != ',' && *tok != '=') {
             tok++;
         }
         *tok++ = '\0';
 
-        while (isspace((int) *tok)) {
+        while (isspace((uchar) *tok)) {
             tok++;
         }
         seenComma = 0;
@@ -826,7 +840,7 @@ static bool parseAuthenticate(HttpConn *conn, char *authDetails)
             algorithm, domain, nonce, oqaque, realm, qop, stale
             We don't strdup any of the values as the headers are persistently saved.
          */
-        switch (tolower((int) *key)) {
+        switch (tolower((uchar) *key)) {
         case 'a':
             if (scasecmp(key, "algorithm") == 0) {
                 rx->authAlgorithm = sclone(value);
@@ -924,7 +938,7 @@ static bool processParsed(HttpConn *conn)
     }
     httpSetState(conn, HTTP_STATE_CONTENT);
     if (conn->workerEvent && conn->tx->started && rx->eof) {
-        httpSetState(conn, HTTP_STATE_RUNNING);
+        httpSetState(conn, HTTP_STATE_READY);
         return 0;
     }
     return 1;
@@ -1018,49 +1032,74 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         if (!rx->streamInput) {
             httpStartPipeline(conn);
         }
-        httpSetState(conn, HTTP_STATE_RUNNING);
+        httpSetState(conn, HTTP_STATE_READY);
         return conn->workerEvent ? 0 : 1;
     }
     httpServiceQueues(conn);
-    if (conn->connError) {
-        httpSetState(conn, HTTP_STATE_RUNNING);
-    }
     return conn->error || (conn->input ? httpGetPacketLength(conn->input) : 0);
 }
 
 
 /*
-    In the running state after all content has been received
-    Note: may be called multiple times
+    In the ready state after all content has been received
+ */
+static bool processReady(HttpConn *conn)
+{
+    httpReadyHandler(conn);
+    httpSetState(conn, HTTP_STATE_RUNNING);
+    return 1;
+}
+
+
+/*
+    Note: may be called multiple times in response to output I/O events
  */
 static bool processRunning(HttpConn *conn)
 {
-    int     canProceed;
+    HttpQueue   *q;
+    int         canProceed;
 
-    //  MOB - refactor
+    q = conn->writeq;
     canProceed = 1;
-    if (conn->connError) {
-        httpSetState(conn, HTTP_STATE_COMPLETE);
-    } else {
-        if (conn->endpoint) {
-            httpProcessPipeline(conn);
-            if (conn->connError || conn->connectorComplete) {
-                httpSetState(conn, HTTP_STATE_COMPLETE);
-            } else {
-                httpWritable(conn);
-                canProceed = httpServiceQueues(conn);
+    httpServiceQueues(conn);
+
+    if (conn->endpoint) {
+        /* Server side */
+        if (conn->finalized) {
+            if (!conn->connectorComplete) {
+                /* Wait for Tx I/O event. Do suspend incase handler not using auto-flow routines */
+                conn->writeBlocked = 1;
+                httpSuspendQueue(q);
+                httpEnableConnEvents(q->conn);
+                canProceed = 0;
+            }
+        } else if (!httpProcessHandler(conn)) {
+            /* No process callback defined */
+            canProceed = 0;
+        } else if (q->count == 0) {
+            /* Queue is empty and data may have drained above in httpServiceQueues. Yield to reclaim memory. */
+            mprYield(0);
+        } else if (q->count < q->low) {
+            if (q->flags & HTTP_QUEUE_SUSPENDED) {
+                httpResumeQueue(q);
             }
         } else {
-            httpServiceQueues(conn);
-            httpFinalize(conn);
-            httpSetState(conn, HTTP_STATE_COMPLETE);
+            conn->writeBlocked = 1;
+            httpSuspendQueue(q);
+            httpEnableConnEvents(q->conn);
+            canProceed = 0;
         }
+    } else {
+        /* Client side */
+        httpServiceQueues(conn);
+        httpFinalize(conn);
+        httpSetState(conn, HTTP_STATE_COMPLETE);
     }
     return canProceed;
 }
 
 
-#if BLD_DEBUG
+#if BIT_DEBUG
 static void measure(HttpConn *conn)
 {
     MprTime     elapsed;
@@ -1101,17 +1140,19 @@ static bool processCompletion(HttpConn *conn)
     httpDestroyPipeline(conn);
     measure(conn);
     if (conn->endpoint && rx) {
-        if (rx->route->log) {
+        if (rx->route && rx->route->log) {
             httpLogRequest(conn);
         }
+        httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_REQUEST, conn);
         rx->conn = 0;
         conn->tx->conn = 0;
         conn->rx = 0;
         conn->tx = 0;
         packet = conn->input;
         more = packet && !conn->connError && (httpGetPacketLength(packet) > 0);
-        httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_REQUEST, conn);
-        httpPrepServerConn(conn);
+        if (conn->sock) {
+            httpPrepServerConn(conn);
+        }
         return more;
     }
     return 0;
@@ -1124,8 +1165,8 @@ void httpCloseRx(HttpConn *conn)
         /* May not have consumed all read data, so can't be assured the next request will be okay */
         conn->keepAliveCount = -1;
     }
-    if (conn->state < HTTP_STATE_COMPLETE && !conn->advancing) {
-        httpProcess(conn, NULL);
+    if (conn->state < HTTP_STATE_COMPLETE && !conn->inHttpProcess) {
+        httpPump(conn, NULL);
     }
 }
 
@@ -1317,16 +1358,14 @@ int httpSetUri(HttpConn *conn, cchar *uri, cchar *query)
 static void waitHandler(HttpConn *conn, struct MprEvent *event)
 {
     httpCallEvent(conn, event->mask);
-    mprSignalDispatcher(conn->dispatcher);
 }
 
 
 /*
-    Wait for an I/O event. There are two modes:
-      - Wait for just one event (set state to zero)
-      - Wait until the given state is achieved
-    If timeout is zero, then wait forever. If set to < 0, then use default inactivity and duration timeouts. 
-    This routine will process buffered input.
+    Wait for the connection to reach a given state.
+    @param state Desired state. Set to zero if you want to wait for one I/O event.
+    @param timeout Timeout in msec. If timeout is zer, wait forever. If timeout is < 0, use default inactivity 
+        and duration timeouts.
  */
 int httpWait(HttpConn *conn, int state, MprTime timeout)
 {
@@ -1344,7 +1383,7 @@ int httpWait(HttpConn *conn, int state, MprTime timeout)
         return MPR_ERR_BAD_STATE;
     } 
     if (conn->input && httpGetPacketLength(conn->input) > 0) {
-        httpProcess(conn, conn->input);
+        httpPump(conn, conn->input);
     }
     if (conn->error) {
         return MPR_ERR_BAD_STATE;
@@ -1365,10 +1404,12 @@ int httpWait(HttpConn *conn, int state, MprTime timeout)
     if (!conn->connectorComplete) {
         eventMask |= MPR_WRITABLE;
     }
-    if (conn->waitHandler == 0) {
-        conn->waitHandler = mprCreateWaitHandler(conn->sock->fd, eventMask, conn->dispatcher, waitHandler, conn, 0);
-    } else {
-        mprWaitOn(conn->waitHandler, eventMask);
+    if (conn->state < state) {
+        if (conn->waitHandler == 0) {
+            conn->waitHandler = mprCreateWaitHandler(conn->sock->fd, eventMask, conn->dispatcher, waitHandler, conn, 0);
+        } else {
+            mprWaitOn(conn->waitHandler, eventMask);
+        }
     }
     remaining = timeout;
     do {
@@ -1396,10 +1437,9 @@ int httpWait(HttpConn *conn, int state, MprTime timeout)
 /*  
     Set the connector as write blocked and can't proceed.
  */
-void httpSetWriteBlocked(HttpConn *conn)
+void httpSocketBlocked(HttpConn *conn)
 {
-    mprLog(6, "Write Blocked");
-    conn->canProceed = 0;
+    mprLog(6, "Socket Blocked");
     conn->writeBlocked = 1;
 }
 
@@ -1613,7 +1653,7 @@ char *httpGetPathExt(cchar *path)
 
     if ((ext = strrchr(path, '.')) != 0) {
         ext = sclone(++ext);
-        for (ep = ext; *ep && isalnum((int)*ep); ep++) {
+        for (ep = ext; *ep && isalnum((uchar) *ep); ep++) {
             ;
         }
         *ep = '\0';
@@ -1722,8 +1762,8 @@ void httpTrimExtraPath(HttpConn *conn)
 /*
     @copy   default
 
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire

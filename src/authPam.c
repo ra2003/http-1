@@ -8,13 +8,8 @@
 
 #include    "http.h"
 
-#if BLD_FEATURE_AUTH_PAM && BLD_UNIX_LIKE
-
-#if MACOSX
-    #include    <pam/pam_appl.h>
-#else
-    #include    <security/pam_appl.h>
-#endif
+#if BIT_CC_PAM
+ #include    <security/pam_appl.h>
 
 /********************************* Defines ************************************/
 
@@ -31,7 +26,8 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
 
 cchar *httpGetPamPassword(HttpAuth *auth, cchar *realm, cchar *user)
 {
-    /*  Can't return the password.
+    /*  
+        Can't return the password.
      */
     return "";
 }
@@ -101,14 +97,18 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
 
 
 #else
-void __pamAuth() {}
-#endif /* BLD_FEATURE_AUTH_PAM */
+cchar *httpGetPamPassword(HttpAuth *auth, cchar *realm, cchar *user) { return 0; }
+bool httpValidatePamCredentials(HttpAuth *auth, cchar *realm, cchar *user, cchar *password, cchar *requiredPass, char **msg)
+{
+    return 0;
+}
+#endif /* BIT_CC_PAM */
 
 /*
     @copy   default
     
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire 

@@ -43,6 +43,14 @@ void httpBackupRouteLog(HttpRoute *route)
 
     mprAssert(route->logBackup);
     mprAssert(route->logSize > 100);
+
+    lock(route);
+    if (route->parent && route->parent->log == route->log) {
+        httpBackupRouteLog(route->parent);
+        route->log = route->parent->log;
+        unlock(route);
+        return;
+    }
     mprGetPathInfo(route->logPath, &info);
     if (info.valid && ((route->logFlags & MPR_LOG_ANEW) || info.size > route->logSize || route->logSize <= 0)) {
         if (route->log) {
@@ -50,7 +58,9 @@ void httpBackupRouteLog(HttpRoute *route)
             route->log = 0;
         }
         mprBackupLog(route->logPath, route->logBackup);
+        route->logFlags &= ~MPR_LOG_ANEW;
     }
+    unlock(route);
 }
 
 
@@ -75,6 +85,7 @@ void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
 {
     lock(MPR);
     if (route->logBackup > 0) {
+        //  TODO OPT - don't check this on every write
         httpBackupRouteLog(route);
         if (!route->log && !httpOpenRouteLog(route)) {
             unlock(MPR);
@@ -99,10 +110,11 @@ void httpLogRequest(HttpConn *conn)
     char        keyBuf[80], *timeText, *fmt, *cp, *qualifier, *value, c;
     int         len;
 
-    rx = conn->rx;
+    if ((rx = conn->rx) == 0) {
+        return;
+    }
     tx = conn->tx;
-    route = rx->route;
-    if (!route->log) {
+    if ((route = rx->route) == 0 || route->log == 0) {
         return;
     }
     fmt = route->logFormat;
@@ -215,8 +227,8 @@ void httpLogRequest(HttpConn *conn)
 /*
     @copy   default
     
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire 

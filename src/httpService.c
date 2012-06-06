@@ -146,6 +146,7 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->serverLimits);
         mprMark(http->clientRoute);
         mprMark(http->timer);
+        mprMark(http->timestamp);
         mprMark(http->mutex);
         mprMark(http->software);
         mprMark(http->forkData);
@@ -175,6 +176,9 @@ void httpDestroy(Http *http)
 {
     if (http->timer) {
         mprRemoveEvent(http->timer);
+    }
+    if (http->timestamp) {
+        mprRemoveEvent(http->timestamp);
     }
     MPR->httpService = NULL;
 }
@@ -255,11 +259,14 @@ void httpInitLimits(HttpLimits *limits, bool serverSide)
     memset(limits, 0, sizeof(HttpLimits));
     limits->cacheItemSize = HTTP_MAX_CACHE_ITEM;
     limits->chunkSize = HTTP_MAX_CHUNK;
-    limits->headerCount = HTTP_MAX_NUM_HEADERS;
+    limits->clientMax = HTTP_MAX_CLIENTS;
+    limits->headerMax = HTTP_MAX_NUM_HEADERS;
     limits->headerSize = HTTP_MAX_HEADERS;
+    limits->keepAliveMax = HTTP_MAX_KEEP_ALIVE;
     limits->receiveFormSize = HTTP_MAX_RECEIVE_FORM;
     limits->receiveBodySize = HTTP_MAX_RECEIVE_BODY;
-    limits->requestCount = HTTP_MAX_REQUESTS;
+    limits->processMax = HTTP_MAX_REQUESTS;
+    limits->requestMax = HTTP_MAX_REQUESTS;
     limits->stageBufferSize = HTTP_MAX_STAGE_BUFFER;
     limits->transmissionBodySize = HTTP_MAX_TX_BODY;
     limits->uploadSize = HTTP_MAX_UPLOAD;
@@ -268,10 +275,6 @@ void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->inactivityTimeout = HTTP_INACTIVITY_TIMEOUT;
     limits->requestTimeout = MAXINT;
     limits->sessionTimeout = HTTP_SESSION_TIMEOUT;
-
-    limits->clientCount = HTTP_MAX_CLIENTS;
-    limits->keepAliveCount = HTTP_MAX_KEEP_ALIVE;
-    limits->requestCount = HTTP_MAX_REQUESTS;
 
 #if FUTURE
     mprSetMaxSocketClients(endpoint, atoi(value));
@@ -412,7 +415,7 @@ static void httpTimer(Http *http, MprEvent *event)
             } else {
                 mprLog(6, "Idle connection timed out");
                 httpDisconnect(conn);
-                httpDiscardData(conn->writeq, 1);
+                httpDiscardQueueData(conn->writeq, 1);
                 httpEnableConnEvents(conn);
                 conn->lastActivity = conn->started = http->now;
             }
@@ -448,6 +451,30 @@ static void httpTimer(Http *http, MprEvent *event)
         http->timer = 0;
     }
     unlock(http);
+}
+
+
+static void timestamp()
+{
+    mprLog(0, "Time: %s", mprGetDate(NULL));
+}
+
+
+void httpSetTimestamp(MprTime period)
+{
+    Http    *http;
+
+    http = MPR->httpService;
+    if (http->timestamp) {
+        mprRemoveEvent(http->timestamp);
+    }
+    if (period < (10 * MPR_TICKS_PER_SEC)) {
+        period = (10 * MPR_TICKS_PER_SEC);
+    }
+    if (period > 0) {
+        http->timer = mprCreateTimerEvent(NULL, "httpTimestamp", period, timestamp, NULL, 
+            MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
+    }
 }
 
 
@@ -509,9 +536,7 @@ void httpAddConn(Http *http, HttpConn *conn)
     mprAddItem(http->connections, conn);
     conn->started = http->now;
     conn->seqno = http->connCount++;
-    if (http->now < (conn->started - MPR_TICKS_PER_SEC)) {
-        updateCurrentDate(http);
-    }
+    updateCurrentDate(http);
     if (http->timer == 0) {
         startTimer(http);
     }
@@ -611,7 +636,7 @@ cchar *httpGetDefaultClientHost(Http *http)
 
 int httpLoadSsl(Http *http)
 {
-#if BLD_FEATURE_SSL
+#if BIT_FEATURE_SSL
     if (!http->sslLoaded) {
         if (!mprLoadSsl(0)) {
             mprError("Can't load SSL provider");
@@ -655,23 +680,23 @@ static void updateCurrentDate(Http *http)
 {
     static MprTime  recalcExpires = 0;
 
-    lock(http);
     http->now = mprGetTime();
-    http->currentDate = httpGetDateString(NULL);
-
-    if (http->expiresDate == 0 || recalcExpires < (http->now / (60 * 1000))) {
-        http->expiresDate = mprFormatUniversalTime(HTTP_DATE_FORMAT, http->now + (86400 * 1000));
-        recalcExpires = http->now / (60 * 1000);
+    if (http->now > (http->currentTime + MPR_TICKS_PER_SEC - 1)) {
+        http->currentTime = http->now;
+        http->currentDate = httpGetDateString(NULL);
+        if (http->expiresDate == 0 || recalcExpires < (http->now / (60 * 1000))) {
+            http->expiresDate = mprFormatUniversalTime(HTTP_DATE_FORMAT, http->now + (86400 * 1000));
+            recalcExpires = http->now / (60 * 1000);
+        }
     }
-    unlock(http);
 }
 
 
 /*
     @copy   default
 
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire

@@ -52,7 +52,7 @@ HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *disp
         conn->limits = http->clientLimits;
         httpInitTrace(conn->trace);
     }
-    conn->keepAliveCount = conn->limits->keepAliveCount;
+    conn->keepAliveCount = conn->limits->keepAliveMax;
     conn->serviceq = httpCreateQueueHead(conn, "serviceq");
 
     if (dispatcher) {
@@ -77,7 +77,7 @@ void httpDestroyConn(HttpConn *conn)
         mprAssert(conn->http);
         httpRemoveConn(conn->http, conn);
         if (conn->endpoint) {
-            if (conn->state >= HTTP_STATE_PARSED) {
+            if (conn->rx) {
                 httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_REQUEST, conn);
             }
             httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_CONN, conn);
@@ -198,10 +198,9 @@ void httpConnTimeout(HttpConn *conn)
         } else if ((conn->started + limits->requestTimeout) < now) {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "Exceeded timeout %d sec", limits->requestTimeout / 1000);
         }
-        httpFinalize(conn);
     }
     httpDisconnect(conn);
-    httpDiscardData(conn->writeq, 1);
+    httpDiscardQueueData(conn->writeq, 1);
     httpEnableConnEvents(conn);
     conn->timeoutEvent = 0;
 }
@@ -316,7 +315,7 @@ void httpCallEvent(HttpConn *conn, int mask)
  */
 void httpEvent(HttpConn *conn, MprEvent *event)
 {
-    LOG(7, "httpEvent for fd %d, mask %d\n", conn->sock->fd, event->mask);
+    LOG(5, "httpEvent for fd %d, mask %d\n", conn->sock->fd, event->mask);
     conn->lastActivity = conn->http->now;
 
     if (event->mask & MPR_WRITABLE) {
@@ -325,15 +324,10 @@ void httpEvent(HttpConn *conn, MprEvent *event)
     if (event->mask & MPR_READABLE) {
         readEvent(conn);
     }
-    mprAssert(conn->sock);
-
     if (conn->endpoint) {
-        if (conn->error) {
-            httpDestroyConn(conn);
-
-        } else if (conn->keepAliveCount < 0 && conn->state <= HTTP_STATE_CONNECTED) {
+        if (conn->error || (conn->keepAliveCount < 0 && conn->state <= HTTP_STATE_CONNECTED)) {
             /*  
-                Idle connection.
+                Either an unhandled error or an Idle connection.
                 NOTE: compare keepAliveCount with "< 0" so that the client can have one more keep alive request. 
                 It should respond to the "Connection: close" and thus initiate a client-led close. This reduces 
                 TIME_WAIT states on the server. NOTE: after httpDestroyConn, conn structure and memory is still 
@@ -341,12 +335,13 @@ void httpEvent(HttpConn *conn, MprEvent *event)
              */
             httpDestroyConn(conn);
 
-        } else if (mprIsSocketEof(conn->sock)) {
-            httpDestroyConn(conn);
-
-        } else {
-            mprAssert(conn->state < HTTP_STATE_COMPLETE);
-            httpEnableConnEvents(conn);
+        } else if (conn->sock) {
+            if (mprIsSocketEof(conn->sock)) {
+                httpDestroyConn(conn);
+            } else {
+                mprAssert(conn->state < HTTP_STATE_COMPLETE);
+                httpEnableConnEvents(conn);
+            }
         }
     } else if (conn->state < HTTP_STATE_COMPLETE) {
         httpEnableConnEvents(conn);
@@ -369,7 +364,7 @@ static void readEvent(HttpConn *conn)
        
         if (nbytes > 0) {
             mprAdjustBufEnd(packet->content, nbytes);
-            httpProcess(conn, packet);
+            httpPump(conn, packet);
 
         } else if (nbytes < 0) {
             if (conn->state <= HTTP_STATE_CONNECTED) {
@@ -378,7 +373,7 @@ static void readEvent(HttpConn *conn)
                 }
                 break;
             } else if (conn->state < HTTP_STATE_COMPLETE) {
-                httpProcess(conn, packet);
+                httpPump(conn, packet);
                 if (!conn->error && conn->state < HTTP_STATE_COMPLETE && mprIsSocketEof(conn->sock)) {
                     httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
                     break;
@@ -387,7 +382,7 @@ static void readEvent(HttpConn *conn)
             break;
         }
         //  MOB - refactor these tests
-        if (nbytes == 0 || conn->state >= HTTP_STATE_RUNNING || !conn->canProceed) {
+        if (nbytes == 0 || conn->state >= HTTP_STATE_READY || !conn->canProceed) {
             break;
         }
         if (conn->readq && conn->readq->count > conn->readq->max) {
@@ -406,21 +401,19 @@ static void writeEvent(HttpConn *conn)
 
     conn->writeBlocked = 0;
     if (conn->tx) {
-        httpEnableQueue(conn->connectorq);
+        httpResumeQueue(conn->connectorq);
         httpServiceQueues(conn);
-        httpProcess(conn, NULL);
+        httpPump(conn, NULL);
     }
 }
 
 
 void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
 {
-    //  MOB -- locking should not be needed
     lock(conn->http);
     conn->oldDispatcher = conn->dispatcher;
     conn->dispatcher = dispatcher;
     conn->worker = 1;
-
     mprAssert(!conn->workerEvent);
     conn->workerEvent = event;
     unlock(conn->http);
@@ -429,16 +422,41 @@ void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
 
 void httpUsePrimary(HttpConn *conn)
 {
-    //  MOB -- locking should not be needed
     lock(conn->http);
     mprAssert(conn->worker);
     mprAssert(conn->state == HTTP_STATE_BEGIN);
     mprAssert(conn->oldDispatcher && conn->dispatcher != conn->oldDispatcher);
-
     conn->dispatcher = conn->oldDispatcher;
     conn->oldDispatcher = 0;
     conn->worker = 0;
     unlock(conn->http);
+}
+
+
+/*
+    Steal a connection with open socket from Http and disconnect it from management by Http.
+    It is the callers responsibility to call mprCloseSocket when required.
+ */
+MprSocket *httpStealConn(HttpConn *conn)
+{
+    MprSocket   *sock;
+
+    sock = conn->sock;
+    conn->sock = 0;
+
+    if (conn->waitHandler) {
+        mprRemoveWaitHandler(conn->waitHandler);
+        conn->waitHandler = 0;
+    }
+    if (conn->http) {
+        lock(conn->http);
+        httpRemoveConn(conn->http, conn);
+        httpDiscardData(conn, HTTP_QUEUE_TX);
+        httpDiscardData(conn, HTTP_QUEUE_RX);
+        httpSetState(conn, HTTP_STATE_COMPLETE);
+        unlock(conn->http);
+    }
+    return sock;
 }
 
 
@@ -466,7 +484,6 @@ void httpEnableConnEvents(HttpConn *conn)
         mprQueueEvent(conn->dispatcher, event);
 
     } else {
-        //  MOB - why locking here?
         lock(conn->http);
         if (tx) {
             /*
@@ -490,7 +507,6 @@ void httpEnableConnEvents(HttpConn *conn)
                 conn->waitHandler = mprCreateWaitHandler(conn->sock->fd, eventMask, conn->dispatcher, conn->ioCallback, 
                     conn, 0);
             } else {
-                //  MOB API for this
                 conn->waitHandler->dispatcher = conn->dispatcher;
                 mprWaitOn(conn->waitHandler, eventMask);
             }
@@ -619,7 +635,6 @@ void httpSetChunkSize(HttpConn *conn, ssize size)
 }
 
 
-//  MOB - why not define this on the host or endpoint?
 void httpSetHeadersCallback(HttpConn *conn, HttpHeadersCallback fn, void *arg)
 {
     conn->headersCallback = fn;
@@ -666,7 +681,7 @@ void httpSetRetries(HttpConn *conn, int count)
 
 
 static char *notifyState[] = {
-    "IO_EVENT", "BEGIN", "STARTED", "FIRST", "PARSED", "CONTENT", "RUNNING", "COMPLETE",
+    "IO_EVENT", "BEGIN", "STARTED", "FIRST", "PARSED", "CONTENT", "READY", "RUNNING", "COMPLETE", 
 };
 
 
@@ -719,7 +734,7 @@ HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 }
 
 
-void httpWritable(HttpConn *conn)
+void httpNotifyWritable(HttpConn *conn)
 {
     HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_WRITABLE);
 }
@@ -727,8 +742,8 @@ void httpWritable(HttpConn *conn)
 /*
     @copy   default
 
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire

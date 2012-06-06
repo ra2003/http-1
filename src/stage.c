@@ -16,6 +16,9 @@
 static void manageStage(HttpStage *stage, int flags);
 
 /*********************************** Code *************************************/
+/*
+    Invoked for all stages
+ */
 
 static void defaultOpen(HttpQueue *q)
 {
@@ -26,15 +29,18 @@ static void defaultOpen(HttpQueue *q)
 }
 
 
+/*
+    Invoked for all stages
+ */
 static void defaultClose(HttpQueue *q)
 {
 }
 
 
 /*  
-    The default put will put the packet on the service queue.
+    Put packets on the service queue.
  */
-static void outgoingData(HttpQueue *q, HttpPacket *packet)
+static void outgoing(HttpQueue *q, HttpPacket *packet)
 {
     int     enableService;
 
@@ -42,7 +48,7 @@ static void outgoingData(HttpQueue *q, HttpPacket *packet)
         Handlers service routines must only be auto-enabled if in the running state.
      */
     mprAssert(httpVerifyQueue(q));
-    enableService = !(q->stage->flags & HTTP_STAGE_HANDLER) || (q->conn->state == HTTP_STATE_RUNNING) ? 1 : 0;
+    enableService = !(q->stage->flags & HTTP_STAGE_HANDLER) || (q->conn->state >= HTTP_STATE_READY) ? 1 : 0;
     httpPutForService(q, packet, enableService);
     mprAssert(httpVerifyQueue(q));
 }
@@ -51,7 +57,7 @@ static void outgoingData(HttpQueue *q, HttpPacket *packet)
 /*  
     Default incoming data routine.  Simply transfer the data upstream to the next filter or handler.
  */
-static void incomingData(HttpQueue *q, HttpPacket *packet)
+static void incoming(HttpQueue *q, HttpPacket *packet)
 {
     mprAssert(q);
     mprAssert(packet);
@@ -116,9 +122,9 @@ HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule *module
     stage->name = sclone(name);
     stage->open = defaultOpen;
     stage->close = defaultClose;
-    stage->incomingData = incomingData;
+    stage->incoming = incoming;
     stage->incomingService = incomingService;
-    stage->outgoingData = outgoingData;
+    stage->outgoing = outgoing;
     stage->outgoingService = httpDefaultOutgoingServiceStage;
     stage->module = module;
     httpAddStage(http, stage);
@@ -171,8 +177,8 @@ HttpStage *httpCreateConnector(Http *http, cchar *name, int flags, MprModule *mo
 /*
     @copy   default
     
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire 

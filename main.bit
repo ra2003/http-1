@@ -1,0 +1,106 @@
+/*
+    product.bit -- Product Bit File for the Embedthis Http Library
+ */
+
+Bit.load({
+    blend: [
+        "${BITS}/embedthis.bit",
+        "src/deps/mpr/mpr.bit",
+        "src/deps/pcre/pcre.bit",
+        "doc/doc.bit",
+    ],
+
+    customize: [
+        /* Optionally load this if present. Feel free to create and customize */
+        'custom.bit',
+    ],
+
+    '+modules': [ ],
+
+    settings: {
+        /* Default settings overridden by build.bit */
+        product: 'http',
+        title: 'Http Library',
+        company: 'Embedthis',
+        version: '1.0.0',
+        buildNumber: 'B2',
+        manager: '',
+        sync: [ 'mpr', 'pcre' ],
+        '+required': [ 'pcre' ],
+        '+optional': [ 'doxygen', 'dsi', 'ejs', 'man', 'man2html', 'openssl', 'matrixssl', 'ssl', 'utest' ],
+        'without-all': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'ssl'],
+    },
+
+    usage: {
+        assert: 'Enable program assertions',
+    },
+
+    profiles: {
+        debug: { settings: { 
+            debug: true, 
+            assert: true,
+        }, },
+        release: { settings: { 
+            debug: false, 
+            assert: false,
+        } },
+    },
+
+    defaults: {
+        '+includes': [ 'src' ]
+    },
+
+    targets: {
+        libhttp: {
+            type: 'lib',
+            headers: [ 'src/*.h' ],
+            sources: [ 'src/*.c' ],
+            depends: [ 'libmpr', 'libpcre', 'libmprssl' ],
+            scripts: {
+                prebuild: "
+                    if (bit.settings.hasPam) {
+                        bit.target.libraries.push('pam')
+                    }
+                ",
+            },
+        },
+
+        http: {
+            type: 'exe',
+            depends: [ 'libhttp' ],
+            sources: [ 'src/utils/http.c' ],
+        },
+
+        package: {
+            depends: ['packageCombo'],
+        },
+
+        packageCombo: {
+            depends: ['build'],
+            action: "
+                let d = bit.dir.pkg.join('${settings.product}-${settings.version}')
+                safeRemove(bit.dir.pkg)
+                //  MOB - why hidden?
+                install('package/http.bit', d.join('src/deps/http/http.bit'), {hidden: true})
+                install(['doc/api/http.html', 'doc/api/httpBare.html', 'doc/api/http*.tags', 'doc/api/http.dtags'],
+                    d.join('doc/api'))
+                install('doc/man/http.1', d.join('doc/man/http.1'))
+                install(['src/http.h', 'src/utils/http.c'], d.join('src/deps/http'))
+                install('src/*.c', d.join('src/deps/http/httpLib.c'), {
+                    cat: true,
+                    filter: /^#inc.*http.*$/mg,
+                    header: '#include \"http.h\"',
+                    title: bit.settings.title + ' Library Source',
+                })
+                package(bit.dir.pkg, ['combo', 'flat'])
+            ",
+        },
+
+        api: {
+            action: "
+                apidoc('${SRC}/doc/api/http.dox', '${SRC}/src/http.h', 'Http API')
+                apiwrap('${SRC}/doc/api/http.html')
+            ",
+        },
+    },
+})

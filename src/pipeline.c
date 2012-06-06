@@ -42,6 +42,7 @@ void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         for (next = 0; (filter = mprGetNextItem(route->outputStages, &next)) != 0; ) {
             if (matchFilter(conn, filter, route, HTTP_STAGE_TX) == HTTP_ROUTE_OK) {
                 mprAddItem(tx->outputPipeline, filter);
+                mprLog(4, "Select output filter: \"%s\"", filter->name);
                 hasOutputFilters = 1;
             }
         }
@@ -57,6 +58,7 @@ void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         }
     }
     mprAddItem(tx->outputPipeline, tx->connector);
+    mprLog(4, "Select connector: \"%s\"", tx->connector->name);
 
     /*  Create the outgoing queue heads and open the queues */
     q = tx->queue[HTTP_QUEUE_TX];
@@ -65,8 +67,8 @@ void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     }
     conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
     conn->connectorq = tx->queue[HTTP_QUEUE_TX]->prevQ;
-
     pairQueues(conn);
+
     /*
         Put the header before opening the queues incase an open routine actually services and completes the request
         httpHandleOptionsTrace does this when called from openFile() in fileHandler.
@@ -113,7 +115,6 @@ void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
         q = httpCreateQueue(conn, stage, HTTP_QUEUE_RX, q);
     }
     conn->readq = tx->queue[HTTP_QUEUE_RX]->prevQ;
-
     if (!conn->endpoint) {
         pairQueues(conn);
         openQueues(conn);
@@ -171,7 +172,7 @@ void httpSetPipelineHandler(HttpConn *conn, HttpStage *handler)
 
 void httpSetSendConnector(HttpConn *conn, cchar *path)
 {
-#if !BLD_FEATURE_ROMFS
+#if !BIT_FEATURE_ROMFS
     HttpTx      *tx;
 
     tx = conn->tx;
@@ -211,6 +212,9 @@ void httpStartPipeline(HttpConn *conn)
     HttpRx      *rx;
     
     tx = conn->tx;
+
+    //  MOB - how can this ever be already true?
+    mprAssert(!tx->started);
     if (tx->started) {
         return;
     }
@@ -218,7 +222,7 @@ void httpStartPipeline(HttpConn *conn)
     rx = conn->rx;
     if (rx->needInputPipeline) {
         qhead = tx->queue[HTTP_QUEUE_RX];
-        for (q = qhead->nextQ; q->nextQ != qhead; q = nextQ) {
+        for (q = qhead->nextQ; !conn->error && q->nextQ != qhead; q = nextQ) {
             nextQ = q->nextQ;
             if (q->start && !(q->flags & HTTP_QUEUE_STARTED)) {
                 if (q->pair == 0 || !(q->pair->flags & HTTP_QUEUE_STARTED)) {
@@ -229,7 +233,7 @@ void httpStartPipeline(HttpConn *conn)
         }
     }
     qhead = tx->queue[HTTP_QUEUE_TX];
-    for (q = qhead->prevQ; q->prevQ != qhead; q = prevQ) {
+    for (q = qhead->prevQ; !conn->error && q->prevQ != qhead; q = prevQ) {
         prevQ = q->prevQ;
         if (q->start && !(q->flags & HTTP_QUEUE_STARTED)) {
             q->flags |= HTTP_QUEUE_STARTED;
@@ -238,32 +242,45 @@ void httpStartPipeline(HttpConn *conn)
     }
     /* Start the handler last */
     q = qhead->nextQ;
-    if (q->start) {
+    if (q->start && !conn->error) {
         mprAssert(!(q->flags & HTTP_QUEUE_STARTED));
         q->flags |= HTTP_QUEUE_STARTED;
         q->stage->start(q);
     }
     if (!conn->error && !conn->connectorComplete && rx->remainingContent > 0) {
         /* If no remaining content, wait till the processing stage to avoid duplicate writable events */
-        httpWritable(conn);
+        httpNotifyWritable(conn);
     }
 }
 
 
-/*
-    Note: this may be called multiple times
- */
-void httpProcessPipeline(HttpConn *conn)
+void httpReadyHandler(HttpConn *conn)
 {
     HttpQueue   *q;
     
-    if (conn->error) {
-        httpFinalize(conn);
+    q = conn->writeq;
+    if (q->stage->ready && !conn->error) {
+        q->stage->ready(q);
     }
-    q = conn->tx->queue[HTTP_QUEUE_TX]->nextQ;
-    if (q->stage->process) {
-        q->stage->process(q);
+}
+
+
+int httpProcessHandler(HttpConn *conn)
+{
+    HttpQueue   *q;
+    
+    q = conn->writeq;
+    if (!q->stage->writable) {
+       return 0;
     }
+    if (!conn->finalized) {
+        q->stage->writable(q);
+        if (q->count > 0) {
+            httpScheduleQueue(q);
+            httpServiceQueues(conn);
+        }
+    }
+    return 1;
 }
 
 
@@ -289,7 +306,7 @@ bool httpServiceQueues(HttpConn *conn)
 }
 
 
-void httpDiscardTransmitData(HttpConn *conn)
+void httpDiscardData(HttpConn *conn, int dir)
 {
     HttpTx      *tx;
     HttpQueue   *q, *qhead;
@@ -298,9 +315,9 @@ void httpDiscardTransmitData(HttpConn *conn)
     if (tx == 0) {
         return;
     }
-    qhead = tx->queue[HTTP_QUEUE_TX];
+    qhead = tx->queue[dir];
     for (q = qhead->nextQ; q != qhead; q = q->nextQ) {
-        httpDiscardData(q, 1);
+        httpDiscardQueueData(q, 1);
     }
 }
 
@@ -323,8 +340,8 @@ static bool matchFilter(HttpConn *conn, HttpStage *filter, HttpRoute *route, int
 /*
     @copy   default
 
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire

@@ -8,7 +8,6 @@
 
 #include    "http.h"
 
-#if BLD_FEATURE_AUTH_FILE
 /********************************** Forwards **********************************/
 
 static bool isUserValid(HttpAuth *auth, cchar *realm, cchar *user);
@@ -374,7 +373,7 @@ HttpAcl httpParseAcl(HttpAuth *auth, cchar *aclStr)
             aclStr += 2;
         }
         for (; isxdigit((int) *aclStr); aclStr++) {
-            c = (int) tolower((int) *aclStr);
+            c = tolower((uchar) *aclStr);
             if ('0' <= c && c <= '9') {
                 acl = (acl * 16) + c - '0';
             } else {
@@ -515,10 +514,8 @@ int httpReadGroupFile(HttpAuth *auth, char *path)
     }
     while ((buf = mprReadLine(file, MPR_BUFSIZE, NULL)) != NULL) {
         enabled = stok(buf, " :\t", &tok);
-        for (cp = enabled; isspace((int) *cp); cp++) {
-            ;
-        }
-        if (*cp == '\0' || *cp == '#') {
+        for (cp = enabled; cp && isspace((uchar) *cp); cp++) { }
+        if (cp == 0 || *cp == '\0' || *cp == '#') {
             continue;
         }
         aclSpec = stok(NULL, " :\t", &tok);
@@ -548,10 +545,8 @@ int httpReadUserFile(HttpAuth *auth, char *path)
     }
     while ((buf = mprReadLine(file, MPR_BUFSIZE, NULL)) != NULL) {
         enabled = stok(buf, " :\t", &tok);
-        for (cp = enabled; isspace((int) *cp); cp++) {
-            ;
-        }
-        if (*cp == '\0' || *cp == '#') {
+        for (cp = enabled; cp && isspace((uchar) *cp); cp++) { }
+        if (cp == 0 || *cp == '\0' || *cp == '#') {
             continue;
         }
         user = stok(NULL, ":", &tok);
@@ -633,15 +628,11 @@ int httpWriteGroupFile(HttpAuth *auth, char *path)
     return 0;
 }
 
-#else
-void __nativeAuthFile() {}
-#endif /* BLD_FEATURE_AUTH_FILE */
-
 /*
     @copy   default
     
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
     You httpy use the GPL open source license described below or you may acquire 

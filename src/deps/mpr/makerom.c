@@ -39,7 +39,6 @@ int main(int argc, char **argv)
         if (*argp != '-') {
             break;
         }
-
         if (strcmp(argp, "--prefix") == 0) {
             if (nextArg >= argc) {
                 err++;
@@ -96,7 +95,7 @@ static int binToC(MprList *files, char *romName, char *prefix)
     mprPrintf("/*\n    %s -- Compiled Files\n */\n", romName);
 
     mprPrintf("#include \"mpr.h\"\n\n");
-    mprPrintf("#if BLD_FEATURE_ROMFS\n");
+    mprPrintf("#if BIT_FEATURE_ROMFS\n");
 
     /*
         Open each input file and compile
@@ -158,15 +157,15 @@ static int binToC(MprList *files, char *romName, char *prefix)
     
     mprPrintf("    { 0, 0, 0, 0 },\n");
     mprPrintf("};\n");
-    mprPrintf("#endif /* BLD_FEATURE_ROMFS */\n");
+    mprPrintf("#endif /* BIT_FEATURE_ROMFS */\n");
     return 0;
 }
 
 /*
     @copy   default
     
-    Copyright (c) Embedthis Software LLC, 2003-2011. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2011. All Rights Reserved.
+    Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
+    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
     You may use the GPL open source license described below or you may acquire 

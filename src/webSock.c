@@ -1,5 +1,5 @@
 /*
-    sockFilter.c - Web Sockets filter.
+    webSock.c - WebSockets support.
 
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
@@ -15,16 +15,16 @@
 
 /********************************** Forwards **********************************/
 
-static int matchSock(HttpConn *conn, HttpRoute *route, int dir);
-static void openSock(HttpQueue *q);
-static void outgoingSockService(HttpQueue *q);
-static void setSockPrefix(HttpQueue *q, HttpPacket *packet);
+static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir);
+static void openWebSock(HttpQueue *q);
+static void outgoingWebSockService(HttpQueue *q);
+static void setWebSockPrefix(HttpQueue *q, HttpPacket *packet);
 
 /*********************************** Code *************************************/
 /* 
    Loadable module initialization
  */
-int httpOpenSockFilter(Http *http)
+int httpOpenWebSockFilter(Http *http)
 {
     HttpStage     *filter;
 
@@ -33,9 +33,9 @@ int httpOpenSockFilter(Http *http)
         return MPR_ERR_CANT_CREATE;
     }
     http->sockFilter = filter;
-    filter->match = matchSock; 
-    filter->open = openSock; 
-    filter->outgoingService = outgoingSockService; 
+    filter->match = matchWebSock; 
+    filter->open = openWebSock; 
+    filter->outgoingService = outgoingWebSockService; 
     return 0;
 }
 
@@ -48,7 +48,7 @@ char *sha1(char *s)
 /*
     This is called twice: once for TX and once for RX
  */
-static int matchSock(HttpConn *conn, HttpRoute *route, int dir)
+static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
 {
     HttpRx      *rx;
     char        *value;
@@ -75,7 +75,7 @@ static int matchSock(HttpConn *conn, HttpRoute *route, int dir)
 }
 
 
-static void openSock(HttpQueue *q)
+static void openWebSock(HttpQueue *q)
 {
     HttpConn    *conn;
 
@@ -86,19 +86,19 @@ static void openSock(HttpQueue *q)
 
 /*  
     Filter sock headers and leave behind pure data. This is called for socked and unsocked data.
-    Socked data format is:
-        Sock spec <CRLF>
+    WebSocked data format is:
+        WebSock spec <CRLF>
         Data <CRLF>
-        Sock spec (size == 0) <CRLF>
+        WebSock spec (size == 0) <CRLF>
         <CRLF>
-    Sock spec is: "HEX_COUNT; sock length DECIMAL_COUNT\r\n". The "; sock length DECIMAL_COUNT is optional.
+    WebSock spec is: "HEX_COUNT; sock length DECIMAL_COUNT\r\n". The "; sock length DECIMAL_COUNT is optional.
     As an optimization, use "\r\nSIZE ...\r\n" as the delimiter so that the CRLF after data does not special consideration.
     Achive this by parseHeaders reversing the input start by 2.
 
     Return number of bytes available to read.
     NOTE: may set rx->eof and return 0 bytes on EOF.
  */
-ssize httpFilterSockData(HttpQueue *q, HttpPacket *packet)
+ssize httpFilterWebSockData(HttpQueue *q, HttpPacket *packet)
 {
     HttpConn    *conn;
     HttpRx      *rx;
@@ -116,7 +116,7 @@ ssize httpFilterSockData(HttpQueue *q, HttpPacket *packet)
     switch (rx->sockState) {
     case HTTP_CHUNK_UNCHUNKED:
         nbytes = mprGetBufLength(buf);
-        if (conn->http10 && nbytes == 0 && mprIsSocketEof(conn->sock)) {
+        if (conn->http10 && nbytes == 0 && mprIsWebSocketEof(conn->sock)) {
             rx->eof = 1;
         }
         return (ssize) min(rx->remainingContent, nbytes);
@@ -187,7 +187,7 @@ ssize httpFilterSockData(HttpQueue *q, HttpPacket *packet)
 }
 
 
-static void outgoingSockService(HttpQueue *q)
+static void outgoingWebSockService(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpPacket  *packet;
@@ -235,7 +235,7 @@ static void outgoingSockService(HttpQueue *q)
                 return;
             }
             if (!(packet->flags & HTTP_PACKET_HEADER)) {
-                setSockPrefix(q, packet);
+                setWebSockPrefix(q, packet);
             }
             httpPutPacketToNext(q, packet);
         }
@@ -243,7 +243,7 @@ static void outgoingSockService(HttpQueue *q)
 }
 
 
-static void setSockPrefix(HttpQueue *q, HttpPacket *packet)
+static void setWebSockPrefix(HttpQueue *q, HttpPacket *packet)
 {
     if (packet->prefix) {
         return;
@@ -259,6 +259,30 @@ static void setSockPrefix(HttpQueue *q, HttpPacket *packet)
     }
 }
 
+//  API
+
+typedef WebSock {
+} WebSock;
+
+HttpConn *httpWebSockConnect(cchar *uri, cchar *protocols)
+{
+}
+
+#define WS_XXX 0x1
+
+typedef void (*WebSockProc)(HttpConn *conn, int type, HttpPacket *packet);
+
+void httpSetWebSockCallback(HttpConn *conn, WebSockProc proc)
+{
+}
+
+void httpWebSockClose(HttpConn *conn, int code, cchar *reason)
+{
+}
+
+ssize httpSend(HttpConn *conn, cchar *buf, ssize len)
+{
+}
 
 #endif /* BIT_WEB_SOCKETS */
 /*

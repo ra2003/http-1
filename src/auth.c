@@ -104,8 +104,12 @@ int httpCheckAuth(HttpConn *conn)
         httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
         return 0;
     }
-    conn->authenticated = httpCanUser(conn, auth->requiredAbilities);
-    return conn->authenticated;
+    if (!httpCanUser(conn, auth->requiredAbilities)) {
+        httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User does not have required capabilities.");
+        return 0;
+    }
+    conn->authenticated = 1;
+    return 1;
 }
 
 
@@ -691,21 +695,20 @@ static bool verifyUser(HttpConn *conn)
         conn->password = mprGetMD5(sfmt("%s:%s:%s", conn->username, auth->realm, conn->password));
         conn->encoded = 1;
     }
-    if (!conn->user) {
-        conn->user = mprLookupKey(auth->users, conn->username);
-    }
-    if (!conn->user) {
+    if (!conn->user && (conn->user = mprLookupKey(auth->users, conn->username)) == 0) {
         mprLog(5, "verifyUser: Unknown user \"%s\" for route %s", conn->username, rx->route->name);
         return 0;
     }
     if (rx->passDigest) {
         /* Digest authentication computes a digest using the password as one ingredient */
-        return smatch(conn->password, rx->passDigest);
-    }
-    if ((success = smatch(conn->password, conn->user->password)) != 0) {
-        mprLog(5, "User \"%s\" verified for route %s", conn->username, rx->route->name);
+        success = smatch(conn->password, rx->passDigest);
     } else {
-        mprLog(5, "Password for user \"%s\" failed to verify for route %s", conn->username, rx->route->name);
+        success = smatch(conn->password, conn->user->password);
+    }
+    if (success) {
+        mprLog(5, "User \"%s\" authenticated for route %s", conn->username, rx->route->name);
+    } else {
+        mprLog(5, "Password for user \"%s\" failed to authenticate for route %s", conn->username, rx->route->name);
     }
     return success;
 }

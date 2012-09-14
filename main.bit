@@ -60,7 +60,7 @@ Bit.load({
             depends: [ 'libmpr', 'libpcre' ],
             scripts: {
                 prebuild: "
-                    if (bit.settings.hasPam) {
+                    if (bit.settings.hasPam && bit.settings.pam) {
                         bit.target.libraries.push('pam')
                     }
                 ",

@@ -76,6 +76,9 @@ bool httpPamVerifyUser(HttpConn *conn)
             }
             mprAddNullToBuf(abilities);
             mprLog(5, "Create temp user \"%s\" with abilities: %s", conn->username, mprGetBufStart(abilities));
+            /*
+                Create a user and map groups to roles and expand to abilities
+             */
             conn->user = httpCreateUser(conn->rx->route->auth, conn->username, 0, mprGetBufStart(abilities));
         }
     }

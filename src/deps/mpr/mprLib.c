@@ -3,6 +3,8 @@
 
     This file is a catenation of all the source code. Amalgamating into a
     single file makes embedding simpler and the resulting application faster.
+
+    Prepared by: magnetar.local
  */
 
 #include "mpr.h"
@@ -17645,7 +17647,7 @@ static void defaultLogHandler(int flags, int level, cchar *msg)
         } else {
             mprSprintf(buf, sizeof(buf), "%s: Error: %s\n", prefix, msg);
         }
-#if BIT_WIN_LIKE
+#if BIT_WIN_LIKE || BIT_UNIX_LIKE
         mprWriteToOsLog(buf, flags, level);
 #endif
         mprSprintf(buf, sizeof(buf), "%s: Error: %s\n", prefix, msg);
@@ -29669,6 +29671,7 @@ int mprStartOsService()
 
 void mprStopOsService()
 {
+    closelog();
 }
 
 
@@ -29800,13 +29803,10 @@ void mprWriteToOsLog(cchar *message, int flags, int level)
 
     if (flags & MPR_FATAL_SRC) {
         sflag = LOG_ERR;
-
     } else if (flags & MPR_ASSERT_SRC) {
         sflag = LOG_WARNING;
-
     } else if (flags & MPR_ERROR_SRC) {
         sflag = LOG_ERR;
-
     } else {
         sflag = LOG_WARNING;
     }

@@ -6,6 +6,9 @@
  */
 
 /* Settings */
+#ifndef BIT__MINIMAL
+    #define BIT__MINIMAL "doxygen,dsi,man,man2html,pmaker,matrixssl,ssl"
+#endif
 #ifndef BIT_BUILD_NUMBER
     #define BIT_BUILD_NUMBER "0"
 #endif
@@ -49,7 +52,7 @@
     #define BIT_MANAGER ""
 #endif
 #ifndef BIT_MINIMAL
-    #define BIT_MINIMAL "doxygen,dsi,man,man2html,pmaker,matrixssl,ssl"
+    #define BIT_MINIMAL "doxygen,dsi,man,man2html,pmaker,matrixssl"
 #endif
 #ifndef BIT_OPTIONAL
     #define BIT_OPTIONAL "doxygen,dsi,ejs,man,man2html,openssl,matrixssl,ssl,utest"
@@ -176,7 +179,7 @@
     #define BIT_PACK_MATRIXSSL 0
 #endif
 #ifndef BIT_PACK_OPENSSL
-    #define BIT_PACK_OPENSSL 0
+    #define BIT_PACK_OPENSSL 1
 #endif
 #ifndef BIT_PACK_PCRE
     #define BIT_PACK_PCRE 1
@@ -185,7 +188,7 @@
     #define BIT_PACK_PMAKER 0
 #endif
 #ifndef BIT_PACK_SSL
-    #define BIT_PACK_SSL 0
+    #define BIT_PACK_SSL 1
 #endif
 #ifndef BIT_PACK_UTEST
     #define BIT_PACK_UTEST 1

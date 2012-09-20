@@ -513,7 +513,7 @@ void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar
     httponly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
     httpAppendHeader(conn, "Set-Cookie", 
         sjoin(name, "=", value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
-    httpAppendHeader(conn, "Cache-control", "no-cache=\"set-cookie\"");
+    httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
 }
 
 

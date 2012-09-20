@@ -396,7 +396,7 @@ static int processContentHeader(HttpQueue *q, char *line)
             up->currentFile->contentType = sclone(rest);
         }
     }
-    return 1;
+    return 0;
 }
 
 
@@ -574,7 +574,7 @@ static int processContentData(HttpQueue *q)
         httpPutPacketToNext(q, packet);
     }
     up->contentState = HTTP_UPLOAD_BOUNDARY;
-    return 1;
+    return 0;
 }
 
 

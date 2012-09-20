@@ -2648,7 +2648,7 @@ static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, i
             default:
                 /* Insert the nth submatch */
                 if (isdigit((uchar) *cp)) {
-                    submatch = (int) wtoi(cp);
+                    submatch = (int) atoi(cp);
                     while (isdigit((uchar) *++cp))
                         ;
                     cp--;

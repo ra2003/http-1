@@ -40,7 +40,7 @@ HttpStatusCode HttpStatusCodes[] = {
     { 406, "406", "Not Acceptable" },
     { 408, "408", "Request Timeout" },
     { 409, "409", "Conflict" },
-    { 410, "410", "Length Required" },
+    { 410, "410", "Gone" },
     { 411, "411", "Length Required" },
     { 412, "412", "Precondition Failed" },
     { 413, "413", "Request Entity Too Large" },

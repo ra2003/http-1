@@ -853,9 +853,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             Step over "\r\n" after headers. 
             Don't do this if chunked so chunking can parse a single chunk delimiter of "\r\nSIZE ...\r\n"
          */
-        if (httpGetPacketLength(packet) >= 2) {
-            mprAdjustBufStart(content, 2);
-        }
+        mprAdjustBufStart(content, 2);
     }
     return 1;
 }
@@ -967,7 +965,8 @@ static bool analyseContent(HttpConn *conn, HttpPacket *packet)
             httpPutPacketToNext(q, packet);
         }
     }
-    if (rx->remainingContent == 0 && !(rx->flags & HTTP_CHUNKED)) {
+    mprAssert(rx->remainingContent >= 0);
+    if (rx->remainingContent <= 0 && !(rx->flags & HTTP_CHUNKED)) {
         rx->eof = 1;
     }
     return 1;

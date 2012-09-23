@@ -57,31 +57,31 @@
 
 /* Prefixes */
 #ifndef BIT_CFG_PREFIX
-    #define BIT_CFG_PREFIX "C:/Program Files (x86)/Http Library"
+    #define BIT_CFG_PREFIX "C:/Program Files/Http Library"
 #endif
 #ifndef BIT_BIN_PREFIX
-    #define BIT_BIN_PREFIX "C:/Program Files (x86)/Http Library/bin"
+    #define BIT_BIN_PREFIX "C:/Program Files/Http Library/bin"
 #endif
 #ifndef BIT_INC_PREFIX
-    #define BIT_INC_PREFIX "C:/Program Files (x86)/Http Library/inc"
+    #define BIT_INC_PREFIX "C:/Program Files/Http Library/inc"
 #endif
 #ifndef BIT_LOG_PREFIX
-    #define BIT_LOG_PREFIX "C:/Program Files (x86)/Http Library/logs"
+    #define BIT_LOG_PREFIX "C:/Program Files/Http Library/logs"
 #endif
 #ifndef BIT_PRD_PREFIX
-    #define BIT_PRD_PREFIX "C:/Program Files (x86)/Http Library"
+    #define BIT_PRD_PREFIX "C:/Program Files/Http Library"
 #endif
 #ifndef BIT_SPL_PREFIX
-    #define BIT_SPL_PREFIX "C:/Program Files (x86)/Http Library/tmp"
+    #define BIT_SPL_PREFIX "C:/Program Files/Http Library/tmp"
 #endif
 #ifndef BIT_SRC_PREFIX
-    #define BIT_SRC_PREFIX "C:/Program Files (x86)/Http Library/src"
+    #define BIT_SRC_PREFIX "C:/Program Files/Http Library/src"
 #endif
 #ifndef BIT_VER_PREFIX
-    #define BIT_VER_PREFIX "C:/Program Files (x86)/Http Library"
+    #define BIT_VER_PREFIX "C:/Program Files/Http Library"
 #endif
 #ifndef BIT_WEB_PREFIX
-    #define BIT_WEB_PREFIX "C:/Program Files (x86)/Http Library/web"
+    #define BIT_WEB_PREFIX "C:/Program Files/Http Library/web"
 #endif
 
 /* Suffixes */
@@ -103,13 +103,13 @@
 
 /* Profile */
 #ifndef BIT_CONFIG_CMD
-    #define BIT_CONFIG_CMD "bit -d -q -platform windows-x86 -without all -profile vs -configure . -gen vs"
+    #define BIT_CONFIG_CMD "bit configure"
 #endif
 #ifndef BIT_HTTP_PRODUCT
     #define BIT_HTTP_PRODUCT 1
 #endif
 #ifndef BIT_PROFILE
-    #define BIT_PROFILE "vs"
+    #define BIT_PROFILE "debug"
 #endif
 
 /* Miscellaneous */
@@ -131,13 +131,13 @@
     #define BIT_PACK_CC 1
 #endif
 #ifndef BIT_PACK_DOXYGEN
-    #define BIT_PACK_DOXYGEN 0
+    #define BIT_PACK_DOXYGEN 1
 #endif
 #ifndef BIT_PACK_DSI
     #define BIT_PACK_DSI 0
 #endif
 #ifndef BIT_PACK_DUMPBIN
-    #define BIT_PACK_DUMPBIN 0
+    #define BIT_PACK_DUMPBIN 1
 #endif
 #ifndef BIT_PACK_EJS
     #define BIT_PACK_EJS 1
@@ -146,32 +146,32 @@
     #define BIT_PACK_LINK 1
 #endif
 #ifndef BIT_PACK_MAN
-    #define BIT_PACK_MAN 0
+    #define BIT_PACK_MAN 1
 #endif
 #ifndef BIT_PACK_MAN2HTML
-    #define BIT_PACK_MAN2HTML 0
+    #define BIT_PACK_MAN2HTML 1
 #endif
 #ifndef BIT_PACK_MATRIXSSL
-    #define BIT_PACK_MATRIXSSL 0
+    #define BIT_PACK_MATRIXSSL 1
 #endif
 #ifndef BIT_PACK_OPENSSL
-    #define BIT_PACK_OPENSSL 0
+    #define BIT_PACK_OPENSSL 1
 #endif
 #ifndef BIT_PACK_PCRE
     #define BIT_PACK_PCRE 1
-#endif
-#ifndef BIT_PACK_PMAKER
-    #define BIT_PACK_PMAKER 0
 #endif
 #ifndef BIT_PACK_RC
     #define BIT_PACK_RC 1
 #endif
 #ifndef BIT_PACK_SSL
-    #define BIT_PACK_SSL 0
+    #define BIT_PACK_SSL 1
 #endif
 #ifndef BIT_PACK_UTEST
     #define BIT_PACK_UTEST 1
 #endif
 #ifndef BIT_PACK_WINSDK
     #define BIT_PACK_WINSDK 1
+#endif
+#ifndef BIT_VISUAL_STUDIO_VERSION
+    #define BIT_VISUAL_STUDIO_VERSION "10.0"
 #endif

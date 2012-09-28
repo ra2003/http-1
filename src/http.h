@@ -535,9 +535,11 @@ typedef struct HttpUri {
     char        *uri;                   /**< Original URI (not decoded) */
 } HttpUri;
 
-#define HTTP_COMPLETE_URI       0x1     /**< Complete all missing URI fields */
-#define HTTP_COMPLETE_URI_PATH  0x2     /**< Complete missing URI path */
-#define HTTP_COMPLETE_URI_QUERY 0x4     /**< Complete missing query and reference */
+#define HTTP_COMPLETE_URI       0x1     /**< Complete all missing URI fields. Set from "http://localhost/" */
+#define HTTP_COMPLETE_URI_PATH  0x2     /**< Complete missing URI path. Set to "/" */
+
+//  MOB - UNUSED
+#define HTTP_COMPLETE_URI_QUERY 0x4     /**< Copy base query and reference if path is copied */
 
 /**
     Clone a URI
@@ -555,7 +557,7 @@ extern HttpUri *httpCloneUri(HttpUri *base, int flags);
         does not allocate or create a new URI.
     @param uri URI to complete
     @param other Other URI to supply the missing components
-    @param flags Set to HTTP_COMPLETE_URI_QUERY to add missing query and reference.
+    @param flags Set to HTTP_COMPLETE_URI_QUERY to add missing query and reference. MOB - UNUSED.
     @return The supplied URI.
     @ingroup HttpUri
   */

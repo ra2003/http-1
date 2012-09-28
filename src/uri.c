@@ -220,8 +220,10 @@ HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *pat
         }
         up->path = sclone(path);
     }
-    if (up->path == 0) {
-        up->path = sclone("/");
+    if (flags & (HTTP_COMPLETE_URI | HTTP_COMPLETE_URI_PATH)) {
+        if (up->path == 0 || *up->path == '\0') {
+            up->path = sclone("/");
+        }
     }
     if (reference) {
         up->reference = sclone(reference);
@@ -273,11 +275,11 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
         }
         up->path = sclone(path);
     }
-#if UNUSED
-    if (up->path == 0) {
-        up->path = sclone("/");
+    if (flags & (HTTP_COMPLETE_URI | HTTP_COMPLETE_URI_PATH)) {
+        if (up->path == 0 || *up->path == '\0') {
+            up->path = sclone("/");
+        }
     }
-#endif
     if (base->reference) {
         up->reference = sclone(base->reference);
     }
@@ -326,13 +328,14 @@ HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
         }
         if (!uri->path) {
             uri->path = base->path;
-        }
-        if (flags & HTTP_COMPLETE_URI_QUERY) {
-            if (!uri->query) {
-                uri->query = base->query;
-            }
-            if (!uri->reference) {
-                uri->reference = base->reference;
+            //  MOB UNUSED TEST
+            if (1 || flags & HTTP_COMPLETE_URI_QUERY) {
+                if (!uri->query) {
+                    uri->query = base->query;
+                }
+                if (!uri->reference) {
+                    uri->reference = base->reference;
+                }
             }
         }
     }

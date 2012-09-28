@@ -390,7 +390,7 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 {
     HttpTx          *tx;
     HttpRx          *rx;
-    HttpUri         *target;
+    HttpUri         *target, *base;
     HttpEndpoint    *endpoint;
     cchar           *msg;
     char            *dir, *cp;
@@ -414,8 +414,17 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         if (targetUri == 0) {
             targetUri = "/";
         }
-        target = httpCompleteUri(httpCreateUri(targetUri, 0), rx->parsedUri, 0);
-        if (!target->port && !smatch(target->scheme, rx->parsedUri->scheme)) {
+        target = httpCreateUri(targetUri, 0);
+        base = rx->parsedUri;
+#if UNUSED
+        if (!target->host) {
+            target->host = base->host;
+        }
+        if (!target->host) {
+            target->scheme = base->scheme;
+        }
+#endif
+        if (!target->port && target->scheme) {
             endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
             if (endpoint) {
                 target->port = endpoint->port;
@@ -432,6 +441,7 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             }
             target->path = sjoin(dir, "/", target->path, NULL);
         }
+        target = httpCompleteUri(target, base, 0);
         targetUri = httpUriToString(target, 0);
 
 #if UNUSED

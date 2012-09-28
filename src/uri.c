@@ -311,7 +311,31 @@ HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
         if (!uri->host) {
             uri->host = sclone("localhost");
         }
+#if 1 || MOB
+        if (!uri->path) {
+            uri->path = sclone("/");
+        }
+#endif
     } else {
+        if (!uri->host) {
+            uri->host = base->host;
+            if (!uri->port) {
+                uri->port = base->port;
+            }
+        }
+        if (!uri->scheme) {
+            uri->scheme = base->scheme;
+#if UNUSED /*ZZ*/
+            uri->port = base->port;
+#endif
+        }
+#if UNUSED
+        /*
+            Use cases:
+
+            /path        <= https
+
+         */
         if (!uri->port && smatch(uri->scheme, base->scheme)) {
             uri->port = base->port;
         }
@@ -324,8 +348,11 @@ HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
         }
         if (!uri->host) {
            uri->host = base->host;
-           uri->port = base->port;
+           if (smatch(uri->scheme, base->scheme)) {
+               uri->port = base->port;
+           }
         }
+#endif
         if (!uri->path) {
             uri->path = base->path;
             //  MOB UNUSED TEST

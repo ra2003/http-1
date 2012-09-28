@@ -30,6 +30,8 @@ static void trimPathToDirname(HttpUri *uri);
 
         NOTE: the following is not supported and requires a scheme prefix. This is because it is ambiguous with URI.
         HOST/URI
+
+    Missing fields are null or zero.
  */
 HttpUri *httpCreateUri(cchar *uri, int flags)
 {
@@ -63,7 +65,7 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
         tok = up->uri;
     }
     if (schr(tok, ':')) {
-        /* Must be a host portion */
+        /* Has port specifier */
         if (*tok == '[' && ((next = strchr(tok, ']')) != 0)) {
             /* IPv6  [::]:port/uri */
             up->host = snclone(&tok[1], (next - tok) - 1);
@@ -74,30 +76,78 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
 
         } else if ((next = spbrk(tok, ":/")) == NULL) {
             /* hostname */
-            up->host = sclone(tok);
+            if (*tok) {
+                up->host = sclone(tok);
+            }
             tok = 0;
 
         } else if (*next == ':') {
             /* hostname:port */
-            up->host = snclone(tok, next - tok);
+            if (next > tok) {
+                up->host = snclone(tok, next - tok);
+            }
             up->port = atoi(++next);
             tok = schr(next, '/');
 
         } else if (*next == '/') {
             /* hostname/uri */
-            up->host = snclone(tok, next - tok);
+            if (next > tok) {
+                up->host = snclone(tok, next - tok);
+            }
             tok = next;
         }
 
     } else if (up->scheme && *tok != '/') {
         /* hostname/uri */
         if ((next = schr(tok, '/')) != 0) {
-            up->host = snclone(tok, next - tok);
+            if (next > tok) {
+                up->host = snclone(tok, next - tok);
+            }
             tok = next;
         } else {
             /* hostname */
-            up->host = sclone(tok);
+            if (*tok) {
+                up->host = sclone(tok);
+            }
             tok = 0;
+        }
+    }
+    if (tok) {
+        if ((next = spbrk(tok, "#?")) == NULL) {
+            if (*tok) {
+                up->path = sclone(tok);
+            }
+        } else {
+            if (next > tok) {
+                up->path = snclone(tok, next - tok);
+            }
+            tok = next + 1;
+            if (*next == '#') {
+                if ((next = schr(tok, '?')) != NULL) {
+                    up->reference = snclone(tok, next - tok);
+                    up->query = sclone(++next);
+                } else {
+                    up->reference = sclone(tok);
+                }
+            } else {
+                up->query = sclone(tok);
+            }
+        }
+        if (up->path && (tok = srchr(up->path, '.')) != NULL) {
+            if (tok[1]) {
+                if ((next = srchr(up->path, '/')) != NULL) {
+                    if (next <= tok) {
+                        up->ext = sclone(++tok);
+                    }
+                } else {
+                    up->ext = sclone(++tok);
+                }
+            }
+        }
+    }
+    if (flags & (HTTP_COMPLETE_URI | HTTP_COMPLETE_URI_PATH)) {
+        if (up->path == 0 || *up->path == '\0') {
+            up->path = sclone("/");
         }
     }
     if (flags & HTTP_COMPLETE_URI) {
@@ -109,36 +159,6 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
         }
         if (!up->port) {
             up->port = 80;
-        }
-    }
-    if ((next = spbrk(tok, "#?")) == NULL) {
-        up->path = sclone(tok);
-    } else {
-        up->path = snclone(tok, next - tok);
-        tok = next + 1;
-        if (*next == '#') {
-            if ((next = schr(tok, '?')) != NULL) {
-                up->reference = snclone(tok, next - tok);
-                up->query = sclone(++next);
-            } else {
-                up->reference = sclone(tok);
-            }
-        } else {
-            up->query = sclone(tok);
-        }
-    }
-    if (up->path && (tok = srchr(up->path, '.')) != NULL) {
-        if ((next = srchr(up->path, '/')) != NULL) {
-            if (next <= tok) {
-                up->ext = sclone(++tok);
-            }
-        } else {
-            up->ext = sclone(++tok);
-        }
-    }
-    if (flags & (HTTP_COMPLETE_URI | HTTP_COMPLETE_URI_PATH)) {
-        if (up->path == 0 || *up->path == '\0') {
-            up->path = sclone("/");
         }
     }
     return up;
@@ -230,14 +250,13 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         return 0;
     }
-    path = base->path;
 
-    if (base->scheme && *base->scheme) {
+    if (base->scheme) {
         up->scheme = sclone(base->scheme);
     } else if (flags & HTTP_COMPLETE_URI) {
         up->scheme = sclone("http");
     }
-    if (base->host && *base->host) {
+    if (base->host) {
         up->host = sclone(base->host);
     } else if (flags & HTTP_COMPLETE_URI) {
         up->host = sclone("localhost");
@@ -247,22 +266,25 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
     } else if (flags & HTTP_COMPLETE_URI) {
         up->port = smatch(up->scheme, "https") ? 443 : 80;
     }
+    path = base->path;
     if (path) {
         while (path[0] == '/' && path[1] == '/') {
             path++;
         }
         up->path = sclone(path);
     }
+#if UNUSED
     if (up->path == 0) {
         up->path = sclone("/");
     }
+#endif
     if (base->reference) {
         up->reference = sclone(base->reference);
     }
     if (base->query) {
         up->query = sclone(base->query);
     }
-    if ((tok = srchr(up->path, '.')) != NULL) {
+    if (up->path && (tok = srchr(up->path, '.')) != NULL) {
         if ((cp = srchr(up->path, '/')) != NULL) {
             if (cp <= tok) {
                 up->ext = sclone(&tok[1]);
@@ -275,26 +297,44 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
 }
 
 
-HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *missing)
+/*
+    Complete the "uri" using missing parts from base
+ */
+HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
 {
-    char        *scheme, *host;
-    int         port;
-
-    scheme = (missing) ? missing->scheme : "http";
-    host = (missing) ? missing->host : "localhost";
-    port = (missing) ? missing->port : 0;
-
-    if (uri->scheme == 0) {
-        uri->scheme = sclone(scheme);
-    }
-    if (uri->port == 0 && port) {
-        /* Don't complete port if there is a host */
-        if (uri->host == 0) {
-            uri->port = port;
+    if (!base) {
+        if (!uri->scheme) {
+            uri->scheme = sclone("http");
         }
-    }
-    if (uri->host == 0) {
-        uri->host = sclone(host);
+        if (!uri->host) {
+            uri->host = sclone("localhost");
+        }
+    } else {
+        if (!uri->port && smatch(uri->scheme, base->scheme)) {
+            uri->port = base->port;
+        }
+        if (!uri->scheme) {
+            uri->scheme = base->scheme;
+            if (base->scheme && !smatch(base->scheme, "http")) {
+                /* Copy port too if the scheme is changes */
+                uri->port = base->port;
+            }
+        }
+        if (!uri->host) {
+           uri->host = base->host;
+           uri->port = base->port;
+        }
+        if (!uri->path) {
+            uri->path = base->path;
+        }
+        if (flags & HTTP_COMPLETE_URI_QUERY) {
+            if (!uri->query) {
+                uri->query = base->query;
+            }
+            if (!uri->reference) {
+                uri->reference = base->reference;
+            }
+        }
     }
     return uri;
 }

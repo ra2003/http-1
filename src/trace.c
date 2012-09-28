@@ -117,7 +117,7 @@ static void traceBuf(HttpConn *conn, int dir, int level, cchar *msg, cchar *buf,
         start += 3;
     }
     for (printable = 1, i = 0; i < len; i++) {
-        if (!isascii(start[i])) {
+        if (!isascii((uchar) start[i])) {
             printable = 0;
         }
     }

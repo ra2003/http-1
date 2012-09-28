@@ -84,6 +84,8 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->protocol);
         mprMark(host->mutex);
         mprMark(host->home);
+        mprMark(host->defaultEndpoint);
+        mprMark(host->secureEndpoint);
 
     } else if (flags & MPR_MANAGE_FREE) {
         /* The http->hosts list is static. ie. The hosts won't be marked via http->hosts */
@@ -308,6 +310,18 @@ void httpSetHostDefaultRoute(HttpHost *host, HttpRoute *route)
 void httpSetDefaultHost(HttpHost *host)
 {
     defaultHost = host;
+}
+
+
+void httpSetHostSecureEndpoint(HttpHost *host, HttpEndpoint *endpoint)
+{
+    host->secureEndpoint = endpoint;
+}
+
+
+void httpSetHostDefaultEndpoint(HttpHost *host, HttpEndpoint *endpoint)
+{
+    host->defaultEndpoint = endpoint;
 }
 
 

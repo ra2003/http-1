@@ -225,8 +225,7 @@ static void commonPrep(HttpConn *conn)
     conn->refinalize = 0;
     conn->connectorComplete = 0;
 
-    //  MOB - better if these were in HttpRx
-    conn->authenticated = 0;
+    //  MOB - better if these were in HttpTx
     conn->setCredentials = 0;
 
     if (conn->endpoint) {

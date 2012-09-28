@@ -371,6 +371,7 @@ void httpRouteRequest(HttpConn *conn)
             next = 0;
             route = 0;
             rewrites++;
+            rx->flags &= ~HTTP_AUTH_CHECKED;
 
         } else if (match == HTTP_ROUTE_OK) {
             break;
@@ -661,7 +662,7 @@ int httpAddRouteCondition(HttpRoute *route, cchar *name, cchar *details, int fla
     if ((op = createRouteOp(name, flags)) == 0) {
         return MPR_ERR_MEMORY;
     }
-    if (scaselessmatch(name, "auth")) {
+    if (scaselessmatch(name, "auth") || scaselessmatch(name, "unauthorized")) {
         /* Nothing to do. Route->auth has it all */
 
     } else if (scaselessmatch(name, "missing")) {
@@ -687,6 +688,9 @@ int httpAddRouteCondition(HttpRoute *route, cchar *name, cchar *details, int fla
         }
         op->details = finalizeReplacement(route, value);
         op->flags |= HTTP_ROUTE_FREE;
+
+    } else if (scaselessmatch(name, "secure")) {
+        op->details = finalizeReplacement(route, details);
     }
     addUniqueItem(route->conditions, op);
     return 0;
@@ -1924,19 +1928,47 @@ static int allowDenyCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 }
 
 
+/*
+    This condition is used to implement all user authentication for routes
+ */
 static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
+    HttpAuth    *auth;
+
     mprAssert(conn);
     mprAssert(route);
 
-    if (!route->auth) {
+    auth = route->auth;
+    if (!auth || !auth->type || auth->flags & HTTP_AUTO_LOGIN) {
+        /* Authentication not required */
         return HTTP_ROUTE_OK;
     }
-    if (!httpCheckAuth(conn)) {
+    if (!httpAuthenticate(conn)) {
+        if (!conn->finalized && route->auth && route->auth->type) {
+            (route->auth->type->askLogin)(conn);
+        }
         /* Request has been denied and fully handled */
         return HTTP_ROUTE_OK;
     }
+    if (!httpCanUser(conn)) {
+        httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
+    }
     return HTTP_ROUTE_OK;
+}
+
+
+/*
+    This condition is used for "Condition unauthorized"
+ */
+static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+{
+    HttpAuth    *auth;
+
+    auth = route->auth;
+    if (!auth || !auth->type || auth->flags & HTTP_AUTO_LOGIN) {
+        return HTTP_ROUTE_REJECT;
+    }
+    return httpAuthenticate(conn) ? HTTP_ROUTE_REJECT : HTTP_ROUTE_OK;
 }
 
 
@@ -1977,18 +2009,17 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     mprAssert(route);
     mprAssert(op);
 
-    tx = conn->tx;
-
     /* 
         Must have tx->filename set when expanding op->details, so map target now 
      */
+    tx = conn->tx;
     httpMapFile(conn, route);
     path = mprJoinPath(route->dir, expandTokens(conn, op->details));
     tx->ext = tx->filename = 0;
     if (mprPathExists(path, R_OK)) {
         return HTTP_ROUTE_OK;
     }
-    return 0;
+    return HTTP_ROUTE_REJECT;
 }
 
 
@@ -2009,6 +2040,15 @@ static int matchCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     return HTTP_ROUTE_REJECT;
 }
 
+
+/*
+    Test if the connection is secure
+ */
+static int secureCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+{
+    mprAssert(conn);
+    return conn->secure ? HTTP_ROUTE_OK : HTTP_ROUTE_REJECT;
+}
 
 /********************************* Updates ******************************/
 
@@ -2092,7 +2132,7 @@ static int langUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
             }
             if (pathInfo) {
                 uri = httpFormatUri(prior->scheme, prior->host, prior->port, pathInfo, prior->reference, prior->query, 0);
-                httpSetUri(conn, uri, 0);
+                httpSetUri(conn, uri);
             }
         }
     }
@@ -2115,34 +2155,15 @@ static int closeTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
 static int redirectTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
-    HttpRx      *rx;
-    HttpUri     *dest, *prior;
-    cchar       *scheme, *host, *query, *reference, *uri, *target;
-    int         port;
+    cchar       *target;
 
     mprAssert(conn);
     mprAssert(route);
     mprAssert(route->target);
 
-    rx = conn->rx;
-
-    /* Note: target may be empty */
     target = expandTokens(conn, route->target);
-    if (route->responseStatus) {
-        httpRedirect(conn, route->responseStatus, target);
-        return HTTP_ROUTE_OK;
-    }
-    //  MOB - OPT Use httpCompleteUri?
-    prior = rx->parsedUri;
-    dest = httpCreateUri(route->target, 0);
-    scheme = dest->scheme ? dest->scheme : prior->scheme;
-    host = dest->host ? dest->host : prior->host;
-    port = dest->port ? dest->port : prior->port;
-    query = dest->query ? dest->query : prior->query;
-    reference = dest->reference ? dest->reference : prior->reference;
-    uri = httpFormatUri(scheme, host, port, target, reference, query, 0);
-    httpSetUri(conn, uri, 0);
-    return HTTP_ROUTE_REROUTE;
+    httpRedirect(conn, route->responseStatus ? route->responseStatus : HTTP_CODE_MOVED_TEMPORARILY, target);
+    return HTTP_ROUTE_OK;
 }
 
 
@@ -2507,7 +2528,11 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
         } else if (smatch(key, "request")) {
             value = stok(value, "=", &defaultValue);
             //  OPT with switch on first char
-            if (smatch(value, "clientAddress")) {
+
+            if (smatch(value, "authenticated")) {
+                mprPutStringToBuf(buf, rx->authenticated ? "true" : "false");
+
+            } else if (smatch(value, "clientAddress")) {
                 mprPutStringToBuf(buf, conn->ip);
 
             } else if (smatch(value, "clientPort")) {
@@ -2681,9 +2706,11 @@ void httpDefineRouteBuiltins()
      */
     httpDefineRouteCondition("allowDeny", allowDenyCondition);
     httpDefineRouteCondition("auth", authCondition);
-    httpDefineRouteCondition("match", matchCondition);
-    httpDefineRouteCondition("exists", existsCondition);
     httpDefineRouteCondition("directory", directoryCondition);
+    httpDefineRouteCondition("exists", existsCondition);
+    httpDefineRouteCondition("match", matchCondition);
+    httpDefineRouteCondition("secure", secureCondition);
+    httpDefineRouteCondition("unauthorized", unauthorizedCondition);
 
     httpDefineRouteUpdate("param", paramUpdate);
     httpDefineRouteUpdate("cmd", cmdUpdate);

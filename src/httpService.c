@@ -161,9 +161,6 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->forkData);
         mprMark(http->context);
         mprMark(http->currentDate);
-#if UNUSED
-        mprMark(http->expiresDate);
-#endif
         mprMark(http->secret);
         mprMark(http->defaultClientHost);
         mprMark(http->protocol);

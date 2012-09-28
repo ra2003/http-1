@@ -388,14 +388,18 @@ void httpOmitBody(HttpConn *conn)
  */
 void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 {
-    HttpTx      *tx;
-    HttpRx      *rx;
-    HttpUri     *target, *prev;
-    cchar       *msg;
-    char        *path, *uri, *dir, *cp;
-    int         port;
+    HttpTx          *tx;
+    HttpRx          *rx;
+    HttpUri         *target;
+    HttpEndpoint    *endpoint;
+    cchar           *msg;
+    char            *dir, *cp;
 
     mprAssert(targetUri);
+    if (conn->finalized) {
+        /* A response has already been formulated */
+        return;
+    }
     rx = conn->rx;
     tx = conn->tx;
     tx->status = status;
@@ -410,6 +414,27 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         if (targetUri == 0) {
             targetUri = "/";
         }
+        target = httpCompleteUri(httpCreateUri(targetUri, 0), rx->parsedUri, 0);
+        if (!target->port && !smatch(target->scheme, rx->parsedUri->scheme)) {
+            endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
+            if (endpoint) {
+                target->port = endpoint->port;
+            }
+        }
+        if (target->path && target->path[0] != '/') {
+            /*
+                Relative file redirection to a file in the same directory as the previous request.
+             */
+            dir = sclone(rx->pathInfo);
+            if ((cp = strrchr(dir, '/')) != 0) {
+                /* Remove basename */
+                *cp = '\0';
+            }
+            target->path = sjoin(dir, "/", target->path, NULL);
+        }
+        targetUri = httpUriToString(target, 0);
+
+#if UNUSED
         target = httpCreateUri(targetUri, 0);
         if (!target->host) {
             target->host = rx->parsedUri->host;
@@ -447,6 +472,7 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             }
             targetUri = uri;
         }
+#endif
         httpSetHeader(conn, "Location", "%s", targetUri);
         httpFormatResponse(conn, 
             "<!DOCTYPE html>\r\n"

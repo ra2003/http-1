@@ -28,9 +28,6 @@ int httpBasicParse(HttpConn *conn)
         conn->username = sclone(decoded);
         conn->password = sclone(cp);
         conn->encoded = 0;
-#if UNUSED
-        conn->password = mprGetMD5(sfmt("%s:%s:%s", conn->username, conn->rx->route->auth->realm, cp));
-#endif
     }
     return 0;
 }

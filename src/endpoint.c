@@ -405,7 +405,7 @@ void httpMatchHost(HttpConn *conn)
         return;
     }
     if (conn->rx->traceLevel >= 0) {
-        mprLog(conn->rx->traceLevel, "Select host: \"%s\"", host->name);
+        mprLog(conn->rx->traceLevel, "Use endpoint: %s:%d", endpoint->ip, endpoint->port);
     }
     conn->host = host;
 }
@@ -527,6 +527,9 @@ void httpSetHasNamedVirtualHosts(HttpEndpoint *endpoint, bool on)
 }
 
 
+/*
+    Only used for named virtual hosts
+ */
 HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
 {
     HttpHost    *host;

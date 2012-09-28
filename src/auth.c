@@ -14,7 +14,7 @@ static void computeAbilities(HttpAuth *auth, MprHash *abilities, cchar *role);
 static void manageAuth(HttpAuth *auth, int flags);
 static void manageRole(HttpRole *role, int flags);
 static void manageUser(HttpUser *user, int flags);
-static void postLogin(HttpConn *conn);
+static void formLogin(HttpConn *conn);
 static bool verifyUser(HttpConn *conn);
 
 /*********************************** Code *************************************/
@@ -23,11 +23,11 @@ void httpInitAuth(Http *http)
 {
     httpAddAuthType(http, "basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
     httpAddAuthType(http, "digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
-    httpAddAuthType(http, "post", postLogin, NULL, NULL);
+    httpAddAuthType(http, "form", formLogin, NULL, NULL);
 
 #if BIT_HAS_PAM && BIT_PAM
     /*
-        Pam must be actively selected duringin configuration
+        Pam must be actively selected during configuration
      */
     httpAddAuthStore(http, "pam", httpPamVerifyUser);
 #endif
@@ -35,7 +35,7 @@ void httpInitAuth(Http *http)
 }
 
 
-int httpCheckAuth(HttpConn *conn)
+int httpAuthenticate(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpAuth    *auth;
@@ -45,27 +45,24 @@ int httpCheckAuth(HttpConn *conn)
     bool        cached;
 
     rx = conn->rx;
+    if (rx->flags & HTTP_AUTH_CHECKED) {
+        return rx->authenticated;
+    }
+    rx->flags |= HTTP_AUTH_CHECKED;
+
     route = rx->route;
     auth = route->auth;
-
     mprAssert(auth);
     mprLog(5, "Checking user authentication user %s on route %s", conn->username, route->name);
 
-    if ((auth->flags & HTTP_SECURE) && !conn->secure) {
-        httpError(conn, HTTP_CODE_BAD_REQUEST, "Access denied. Secure access required.");
-        return 0;
-    }
+#if UNUSED
     if (!auth->type || (auth->flags & HTTP_AUTO_LOGIN)) {
         /* Authentication not required */
         return 1;
     }
-    mprAssert(!conn->user);
-
+#endif
     cached = 0;
     if (rx->cookie && (session = httpGetSession(conn, 0)) != 0) {
-        /*
-            Retrieve authentication state from the session storage. Faster than re-authenticating.
-         */
         if ((conn->username = (char*) httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0)) != 0) {
             version = httpGetSessionVar(conn, HTTP_SESSION_AUTHVER, 0);
             if (stoi(version) == auth->version) {
@@ -84,11 +81,9 @@ int httpCheckAuth(HttpConn *conn)
             return 0;
         }
         if (!conn->username) {
-            (auth->type->askLogin)(conn);
             return 0;
         }
         if (!(auth->store->verifyUser)(conn)) {
-            (auth->type->askLogin)(conn);
             return 0;
         }
         /*
@@ -99,26 +94,21 @@ int httpCheckAuth(HttpConn *conn)
             httpSetSessionVar(conn, HTTP_SESSION_USERNAME, conn->username);
         }
     }
-    if (auth->permittedUsers && !mprLookupKey(auth->permittedUsers, conn->username)) {
-        mprLog(2, "User \"%s\" is not specified as a permitted user to access %s", conn->username, conn->rx->pathInfo);
-        httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
-        return 0;
-    }
-    if (!httpCanUser(conn, auth->requiredAbilities)) {
-        httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User does not have required capabilities.");
-        return 0;
-    }
-    conn->authenticated = 1;
+    rx->authenticated = 1;
     return 1;
 }
 
 
-bool httpCanUser(HttpConn *conn, MprHash *requiredAbilities)
+bool httpCanUser(HttpConn *conn)
 {
     HttpAuth    *auth;
     MprKey      *kp;
 
     auth = conn->rx->route->auth;
+    if (auth->permittedUsers && !mprLookupKey(auth->permittedUsers, conn->username)) {
+        mprLog(2, "User \"%s\" is not specified as a permitted user to access %s", conn->username, conn->rx->pathInfo);
+        return 0;
+    }
     if (!auth->requiredAbilities) {
         /* No abilities are required */
         return 1;
@@ -133,7 +123,7 @@ bool httpCanUser(HttpConn *conn, MprHash *requiredAbilities)
             return 0;
         }
     }
-    for (ITERATE_KEYS(requiredAbilities, kp)) {
+    for (ITERATE_KEYS(auth->requiredAbilities, kp)) {
         if (!mprLookupKey(conn->user->abilities, kp->key)) {
             mprLog(2, "User \"%s\" does not possess the required ability: \"%s\" to access %s", 
                 conn->username, kp->key, conn->rx->pathInfo);
@@ -170,7 +160,7 @@ bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
 
 bool httpIsAuthenticated(HttpConn *conn)
 {
-    return conn->authenticated;
+    return conn->rx->authenticated;
 }
 
 
@@ -341,7 +331,7 @@ void httpSetAuthOrder(HttpAuth *auth, int order)
 
 
 /*
-    Internal login service routine. Called in response to a post request.
+    Internal login service routine. Called in response to a form-based login request.
  */
 static void loginServiceProc(HttpConn *conn)
 {
@@ -358,7 +348,7 @@ static void loginServiceProc(HttpConn *conn)
                 Preserve protocol scheme from existing connection
              */
             HttpUri *where = httpCreateUri(referrer, 0);
-            httpCompleteUri(where, conn->rx->parsedUri);
+            httpCompleteUri(where, conn->rx->parsedUri, 0);
             referrer = httpUriToString(where, 0);
             httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, referrer);
         } else {
@@ -384,31 +374,58 @@ static void logoutServiceProc(HttpConn *conn)
 }
 
 
-void httpSetAuthPost(HttpRoute *parent, cchar *loginPage, cchar *loginService, cchar *logoutService, cchar *loggedIn)
+void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginService, cchar *logoutService, cchar *loggedIn)
 {
     HttpAuth    *auth;
     HttpRoute   *route;
+    bool        secure;
 
+    secure = 0;
     auth = parent->auth;
     auth->loginPage = sclone(loginPage);
     if (loggedIn) {
         auth->loggedIn = sclone(loggedIn);
     }
     /*
-        Create a route without auth for the loginPage
+        Create routes without auth for the loginPage, loginService and logoutService
      */
     if ((route = httpCreateInheritedRoute(parent)) != 0) {
+        if (sstarts(loginPage, "https:///")) {
+            loginPage = &loginPage[8];
+            secure = 1;
+        }
         httpSetRoutePattern(route, loginPage, 0);
         route->auth->type = 0;
+        if (secure) {
+            httpAddRouteCondition(route, "secure", 0, 0);
+
+        }
         httpFinalizeRoute(route);
     }
     if (loginService && *loginService) {
+        if (sstarts(loginService, "https:///")) {
+            loginService = &loginService[8];
+            secure = 1;
+        }
         route = httpCreateProcRoute(parent, loginService, loginServiceProc);
+        httpSetRouteMethods(route, "POST");
         route->auth->type = 0;
+        if (secure) {
+            httpAddRouteCondition(route, "secure", 0, 0);
+        }
     }
     if (logoutService && *logoutService) {
+        if (sstarts(logoutService, "https://")) {
+            logoutService = &logoutService[8];
+            secure = 1;
+        }
+        //  MOB - should be only POST
+        httpSetRouteMethods(route, "GET, POST");
         route = httpCreateProcRoute(parent, logoutService, logoutServiceProc);
         route->auth->type = 0;
+        if (secure) {
+            httpAddRouteCondition(route, "secure", 0, 0);
+        }
     }
 }
 
@@ -433,16 +450,6 @@ void httpSetAuthPermittedUsers(HttpAuth *auth, cchar *users)
     auth->permittedUsers = mprCreateHash(0, 0);
     for (user = stok(sclone(users), " \t,", &tok); users; users = stok(NULL, " \t,", &tok)) {
         mprAddKey(auth->permittedUsers, user, user);
-    }
-}
-
-
-void httpSetAuthSecure(HttpAuth *auth, int enable)
-{
-
-    auth->flags &= ~HTTP_SECURE;
-    if (enable) {
-        auth->flags |= HTTP_SECURE;
     }
 }
 
@@ -715,9 +722,9 @@ static bool verifyUser(HttpConn *conn)
 
 
 /*
-    Post authentication callback to ask the user to login via a web form
+    Web form-based authentication callback to ask the user to login via a web page
  */
-static void postLogin(HttpConn *conn)
+static void formLogin(HttpConn *conn)
 {
     httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, conn->rx->route->auth->loginPage);
 }

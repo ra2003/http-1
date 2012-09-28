@@ -25,6 +25,7 @@ static bool processParsed(HttpConn *conn);
 static bool processReady(HttpConn *conn);
 static bool processRunning(HttpConn *conn);
 static void routeRequest(HttpConn *conn);
+static int setParsedUri(HttpConn *conn);
 
 /*********************************** Code *************************************/
 
@@ -234,19 +235,7 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
     }
     if (conn->endpoint) {
         httpMatchHost(conn);
-        if (httpSetUri(conn, rx->uri, "") < 0 || rx->pathInfo[0] != '/') {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad URL format");
-        }
-        if (conn->secure) {
-            rx->parsedUri->scheme = sclone("https");
-        }
-        rx->parsedUri->port = conn->sock->listenSock->port;
-
-        //  MOB - refactor what conn->host is set to
-        rx->parsedUri->host = rx->hostHeader ? rx->hostHeader : conn->host->name;
-        if (!rx->parsedUri->host) {
-           rx->parsedUri->host = (conn->host->name[0] == '*') ? conn->sock->acceptIp : conn->host->name;
-        }
+        setParsedUri(conn);
 
     } else if (!(100 <= rx->status && rx->status <= 199)) {
         /* 
@@ -1289,40 +1278,55 @@ void httpSetMethod(HttpConn *conn, cchar *method)
 }
 
 
-int httpSetUri(HttpConn *conn, cchar *uri, cchar *query)
+static int setParsedUri(HttpConn *conn)
 {
     HttpRx      *rx;
-    HttpTx      *tx;
-    HttpUri     *prior;
+    char        *cp;
+    cchar       *hostname;
 
     rx = conn->rx;
-    tx = conn->tx;
-    prior = rx->parsedUri;
+    if (httpSetUri(conn, rx->uri) < 0 || rx->pathInfo[0] != '/') {
+        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad URL");
+        return MPR_ERR_BAD_ARGS;
+    }
+    /*
+        Complete the URI based on the connection state.
+        Must have a complete scheme, host, port and path.
+     */
+    rx->parsedUri->scheme = sclone(conn->secure ? "https" : "http");
+    hostname = rx->hostHeader ? rx->hostHeader : conn->host->name;
+    if (!hostname) {
+        hostname = conn->sock->acceptIp;
+    }
+    rx->parsedUri->host = sclone(hostname);
+    if ((cp = strchr(rx->parsedUri->host, ':')) != 0) {
+        *cp = '\0';
+    }
+    rx->parsedUri->port = conn->sock->listenSock->port;
+    return 0;
+}
 
+
+int httpSetUri(HttpConn *conn, cchar *uri)
+{
+    HttpRx      *rx;
+    char        *pathInfo;
+
+    rx = conn->rx;
     if ((rx->parsedUri = httpCreateUri(uri, 0)) == 0) {
         return MPR_ERR_BAD_ARGS;
     }
-    if (prior) {
-        if (rx->parsedUri->scheme == 0) {
-            rx->parsedUri->scheme = prior->scheme;
-        }
-        if (rx->parsedUri->port == 0) {
-            rx->parsedUri->port = prior->port;
-        }
+    pathInfo = httpNormalizeUriPath(mprUriDecode(rx->parsedUri->path));
+    if (pathInfo[0] != '/') {
+        return MPR_ERR_BAD_ARGS;
     }
-    if (query == 0 && prior) {
-        rx->parsedUri->query = prior->query;
-        rx->parsedUri->host = prior->host;
-    } else if (*query) {
-        rx->parsedUri->query = sclone(query);
-    }
+    rx->pathInfo = pathInfo;
+    rx->uri = rx->parsedUri->path;
+    conn->tx->ext = httpGetExt(conn);
     /*
         Start out with no scriptName and the entire URI in the pathInfo. Stages may rewrite.
      */
-    rx->uri = rx->parsedUri->path;
-    rx->pathInfo = httpNormalizeUriPath(mprUriDecode(rx->parsedUri->path));
     rx->scriptName = mprEmptyString();
-    tx->ext = httpGetExt(conn);
     return 0;
 }
 

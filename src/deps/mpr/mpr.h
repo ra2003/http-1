@@ -59,13 +59,13 @@
     MOB - change to BIT_CPU
  */
 #define MPR_CPU_UNKNOWN     0
-#define MPR_CPU_ARM         1           /* Arm */
-#define MPR_CPU_ITANIUM     2           /* Intel Itanium */
-#define MPR_CPU_X86         3           /* X86 */
-#define MPR_CPU_X64         4           /* AMD64 or EMT64 */
-#define MPR_CPU_MIPS        5           /* Mips */
-#define MPR_CPU_PPC         6           /* Power PC */
-#define MPR_CPU_SPARC       7           /* Sparc */
+#define MPR_CPU_ARM         1           /**< Arm */
+#define MPR_CPU_ITANIUM     2           /**< Intel Itanium */
+#define MPR_CPU_X86         3           /**< X86 */
+#define MPR_CPU_X64         4           /**< AMD64 or EMT64 */
+#define MPR_CPU_MIPS        5           /**< Mips */
+#define MPR_CPU_PPC         6           /**< Power PC */
+#define MPR_CPU_SPARC       7           /**< Sparc */
 
 /*
     Use compiler definitions to determine the CPU
@@ -2687,7 +2687,7 @@ extern int  mprSyncThreads(MprTime timeout);
 typedef struct MprString { void *dummy; } MprString;
 
 /**
-    Format a string into a statically allocated buffer.
+    Format a string into a static buffer.
     @description This call format a string using printf style formatting arguments. A trailing null will 
         always be appended. The call returns the size of the allocated string excluding the null.
     @param buf Pointer to the buffer.
@@ -4642,9 +4642,9 @@ extern void mprWarn(cchar *fmt, ...);
     Optimized logging calling sequence. This compiles out for release mode.
  */
 #if BIT_DEBUG
-#define LOG mprLog
+    #define LOG mprLog
 #else
-#define LOG if (0) mprLog
+    #define LOG if (0) mprLog
 #endif
 
 /*

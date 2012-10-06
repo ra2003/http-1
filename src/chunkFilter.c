@@ -45,15 +45,15 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
             If content length is defined, don't need chunking. Also disable chunking if explicitly turned off vi 
             the X_APPWEB_CHUNK_SIZE header which may set the chunk size to zero.
          */
-        if (conn->tx->length >= 0 || conn->tx->chunkSize == 0) {
+        if (conn->upgraded || conn->tx->length >= 0 || conn->tx->chunkSize == 0) {
             return HTTP_ROUTE_REJECT;
         }
         return HTTP_ROUTE_OK;
+
     } else {
-        /* 
-            Must always be ready to handle chunked response data. Clients create their incoming pipeline before it is
-            know what the response data looks like (chunked or not).
-         */
+        if (conn->upgraded) {
+            return HTTP_ROUTE_REJECT;
+        }
         return HTTP_ROUTE_OK;
     }
 }
@@ -64,7 +64,7 @@ static void openChunk(HttpQueue *q)
     HttpConn    *conn;
 
     conn = q->conn;
-    q->packetSize = min(conn->limits->chunkSize, q->max);
+    q->packetSize = min(conn->limits->stageBufferSize, q->max);
 }
 
 
@@ -87,7 +87,7 @@ ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
     HttpConn    *conn;
     HttpRx      *rx;
     MprBuf      *buf;
-    ssize       chunkSize, nbytes;
+    ssize       chunkSize;
     char        *start, *cp;
     int         bad;
 
@@ -99,11 +99,15 @@ ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
 
     switch (rx->chunkState) {
     case HTTP_CHUNK_UNCHUNKED:
+#if UNUSED
         nbytes = mprGetBufLength(buf);
         if (conn->http10 && nbytes == 0 && mprIsSocketEof(conn->sock)) {
             rx->eof = 1;
         }
         return (ssize) min(rx->remainingContent, nbytes);
+#endif
+        mprAssert(0);
+        return -1;
 
     case HTTP_CHUNK_DATA:
         mprLog(7, "chunkFilter: data %d bytes, rx->remainingContent %d", httpGetPacketLength(packet), rx->remainingContent);
@@ -157,7 +161,10 @@ ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
         rx->remainingContent = chunkSize;
         if (chunkSize == 0) {
             rx->chunkState = HTTP_CHUNK_EOF;
+#if UNUSED
+            //  MOB moved to analyseContent
             rx->eof = 1;
+#endif
         } else {
             rx->chunkState = HTTP_CHUNK_DATA;
         }
@@ -202,7 +209,7 @@ static void outgoingChunkService(HttpQueue *q)
             tx->chunkSize = -1;
         }
     }
-    if (tx->chunkSize <= 0) {
+    if (tx->chunkSize <= 0 || conn->upgraded) {
         httpDefaultOutgoingServiceStage(q);
     } else {
         for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {

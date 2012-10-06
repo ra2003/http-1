@@ -52,6 +52,14 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
         }
         tok = &up->uri[7];
 
+    } else if (sncmp(up->uri, "ws://", 5) == 0) {
+        up->scheme = sclone("ws");
+        if (flags & HTTP_COMPLETE_URI) {
+            up->port = 80;
+        }
+        tok = &up->uri[5];
+        up->wss = 1;
+
     } else if (sncmp(up->uri, "https://", 8) == 0) {
         up->scheme = sclone("https");
         up->secure = 1;
@@ -59,6 +67,15 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
             up->port = 443;
         }
         tok = &up->uri[8];
+
+    } else if (sncmp(up->uri, "wss://", 6) == 0) {
+        up->scheme = sclone("https");
+        up->secure = 1;
+        if (flags & HTTP_COMPLETE_URI) {
+            up->port = 443;
+        }
+        tok = &up->uri[6];
+        up->wss = 1;
 
     } else {
         up->scheme = 0;
@@ -193,6 +210,8 @@ HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *pat
     }
     if (scheme) {
         up->scheme = sclone(scheme);
+        up->secure = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"));
+        up->wss = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
     } else if (flags & HTTP_COMPLETE_URI) {
         up->scheme = "http";
     }
@@ -252,12 +271,13 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         return 0;
     }
-
     if (base->scheme) {
         up->scheme = sclone(base->scheme);
     } else if (flags & HTTP_COMPLETE_URI) {
         up->scheme = sclone("http");
     }
+    up->secure = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"));
+    up->wss = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
     if (base->host) {
         up->host = sclone(base->host);
     } else if (flags & HTTP_COMPLETE_URI) {
@@ -266,7 +286,7 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
     if (base->port) {
         up->port = base->port;
     } else if (flags & HTTP_COMPLETE_URI) {
-        up->port = smatch(up->scheme, "https") ? 443 : 80;
+        up->port = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"))? 443 : 80;
     }
     path = base->path;
     if (path) {
@@ -311,11 +331,9 @@ HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
         if (!uri->host) {
             uri->host = sclone("localhost");
         }
-#if 1 || MOB
         if (!uri->path) {
             uri->path = sclone("/");
         }
-#endif
     } else {
         if (!uri->host) {
             uri->host = base->host;
@@ -325,47 +343,19 @@ HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
         }
         if (!uri->scheme) {
             uri->scheme = base->scheme;
-#if UNUSED /*ZZ*/
-            uri->port = base->port;
-#endif
         }
-#if UNUSED
-        /*
-            Use cases:
-
-            /path        <= https
-
-         */
-        if (!uri->port && smatch(uri->scheme, base->scheme)) {
-            uri->port = base->port;
-        }
-        if (!uri->scheme) {
-            uri->scheme = base->scheme;
-            if (base->scheme && !smatch(base->scheme, "http")) {
-                /* Copy port too if the scheme is changes */
-                uri->port = base->port;
-            }
-        }
-        if (!uri->host) {
-           uri->host = base->host;
-           if (smatch(uri->scheme, base->scheme)) {
-               uri->port = base->port;
-           }
-        }
-#endif
         if (!uri->path) {
             uri->path = base->path;
-            //  MOB UNUSED TEST
-            if (1 || flags & HTTP_COMPLETE_URI_QUERY) {
-                if (!uri->query) {
-                    uri->query = base->query;
-                }
-                if (!uri->reference) {
-                    uri->reference = base->reference;
-                }
+            if (!uri->query) {
+                uri->query = base->query;
+            }
+            if (!uri->reference) {
+                uri->reference = base->reference;
             }
         }
     }
+    uri->secure = (smatch(uri->scheme, "https") || smatch(uri->scheme, "wss"));
+    uri->wss = (smatch(uri->scheme, "ws") || smatch(uri->scheme, "wss"));
     return uri;
 }
 
@@ -724,13 +714,13 @@ static int getPort(HttpUri *uri)
     if (uri->port) {
         return uri->port;
     }
-    return (uri->scheme && scmp(uri->scheme, "https") == 0) ? 443 : 80;
+    return (uri->scheme && (smatch(uri->scheme, "https") || smatch(uri->scheme, "wss"))) ? 443 : 80;
 }
 
 
 static int getDefaultPort(cchar *scheme)
 {
-    return (scheme && scmp(scheme, "https") == 0) ? 443 : 80;
+    return (scheme && (smatch(scheme, "https") || smatch(scheme, "wss"))) ? 443 : 80;
 }
 
 

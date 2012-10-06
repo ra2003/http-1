@@ -94,12 +94,16 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->lang);
         mprMark(rx->target);
 
-#if WSS
+#if BIT_WEB_SOCKETS
         mprMark(rx->upgrade);
-        mprMark(rx->sockKey);
-        mprMark(rx->sockProtocol);
-        mprMark(rx->sockVersion);
         mprMark(rx->origin);
+        mprMark(rx->webSockKey);
+        mprMark(rx->webSockProtocols);
+        mprMark(rx->currentPacket);
+        mprMark(rx->extensions);
+        mprMark(rx->pingEvent);
+        mprMark(rx->subProtocol);
+        mprMark(rx->closeReason);
 #endif
 
     } else if (flags & MPR_MANAGE_FREE) {
@@ -564,8 +568,9 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 } else if (scaselesscmp(value, "CLOSE") == 0) {
                     /*  Not really required, but set to 0 to be sure */
                     conn->keepAliveCount = 0;
-#if WSS
+#if BIT_WEB_SOCKETS && UNUSED && CLASHES
                 } else if (scaselesscmp(value, "upgrade") == 0) {
+                    rx->upgrade = sclone(value);
 #endif
                 }
 
@@ -739,7 +744,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             }
             break;
 
-#if WSS
+#if BIT_WEB_SOCKETS
         case 'o':
             if (strcasecmp(key, "origin") == 0) {
                 rx->origin = sclone(value);
@@ -761,17 +766,32 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             } else if (strcasecmp(key, "referer") == 0) {
                 /* NOTE: yes the header is misspelt in the spec */
                 rx->referrer = sclone(value);
+
+#if UNUSED
+            /*
+                There is a draft spec for these, but it has bad DOS security implications.
+             */
+            } else if (strcasecmp(key, "request-timeout") == 0) {
+                conn->limits->requestTimeout = stoi(value) * MPR_TICKS_PER_SEC;
+                conn->limits->inactivityTimeout = stoi(value) * MPR_TICKS_PER_SEC;
+#endif
             }
             break;
 
-#if WSS
+#if BIT_WEB_SOCKETS
         case 's':
             if (strcasecmp(key, "sec-websocket-key") == 0) {
-                rx->sockKey = sclone(value);
+                rx->webSockKey = sclone(value);
+            } else if (strcasecmp(key, "sec-websocket-extensions") == 0) {
+                if (rx->extensions) {
+                    rx->extensions = sjoin(rx->extensions, ", ", value, NULL);
+                } else {
+                    rx->extensions = sclone(value);
+                }
             } else if (strcasecmp(key, "sec-websocket-protocol") == 0) {
-                rx->sockProtocol = sclone(value);
+                rx->webSockProtocols = sclone(value);
             } else if (strcasecmp(key, "sec-websocket-version") == 0) {
-                rx->sockVersion = sclone(value);
+                rx->webSockVersion = (int) stoi(value);
             }
             break;
 #endif
@@ -806,7 +826,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
 
         case 'u':
-#if WSS
+#if BIT_WEB_SOCKETS
             if (scaselesscmp(key, "upgrade") == 0) {
                 rx->upgrade = sclone(value);
             } else
@@ -829,11 +849,13 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
     }
+#if MOVED
     /*
         Don't stream input if a form or upload. NOTE: Upload needs the Files[] collection.
      */
     rx->streamInput = !(rx->form || rx->upload);
     rx->eof = (rx->remainingContent == 0);
+#endif
     if (!keepAlive) {
         conn->keepAliveCount = 0;
     }
@@ -880,6 +902,15 @@ static bool processParsed(HttpConn *conn)
          */
         routeRequest(conn);
     }
+    /*
+        Don't stream input if a form or upload. NOTE: Upload needs the Files[] collection.
+     */
+    rx->streamInput = !(rx->form || rx->upload);
+#if MOB && MOVED
+    rx->eof = (rx->remainingContent == 0);
+#endif
+    httpServiceQueues(conn);
+
     if (rx->streamInput) {
         httpStartPipeline(conn);
     }
@@ -892,16 +923,24 @@ static bool processParsed(HttpConn *conn)
         sendContinue(conn);
         rx->flags &= ~HTTP_EXPECT_CONTINUE;
     }
-    httpSetState(conn, HTTP_STATE_CONTENT);
+#if MOB && MOVED
     if (conn->workerEvent && conn->tx->started && rx->eof) {
         httpSetState(conn, HTTP_STATE_READY);
         return 0;
+    }
+#endif
+    if (rx->remainingContent == 0) {
+        /* Go to ready state if not request body to read */
+        rx->eof = 1;
+        httpSetState(conn, HTTP_STATE_READY);
+    } else {
+        httpSetState(conn, HTTP_STATE_CONTENT);
     }
     return 1;
 }
 
 
-static bool analyseContent(HttpConn *conn, HttpPacket *packet)
+static bool processContent(HttpConn *conn, HttpPacket *packet)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -909,77 +948,79 @@ static bool analyseContent(HttpConn *conn, HttpPacket *packet)
     MprBuf      *content;
     ssize       nbytes;
 
-    rx = conn->rx;
-    if (rx->eof) {
-        return 1;
-    }
-    tx = conn->tx;
-    content = packet->content;
-    q = tx->queue[HTTP_QUEUE_RX];
-    LOG(7, "processContent: packet of %d bytes, remaining %d", mprGetBufLength(content), rx->remainingContent);
-    
-    if ((nbytes = httpFilterChunkData(q, packet)) <= 0) {
-        return rx->eof ? 1 : 0;
-    }
-    rx->remainingContent -= nbytes;
-    rx->bytesRead += nbytes;
-    if (httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, tx->ext) >= 0) {
-        httpTraceContent(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, packet, nbytes, rx->bytesRead);
-    }
-    if (rx->bytesRead >= conn->limits->receiveBodySize) {
-        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
-            "Request body of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveBodySize);
-        return 1;
-    }
-    if (rx->form && rx->length >= conn->limits->receiveFormSize) {
-        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
-            "Request form of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveFormSize);
-        return 1;
-    }
-    if (packet == rx->headerPacket && nbytes > 0) {
-        packet = httpSplitPacket(packet, 0);
-    }
-    if (httpGetPacketLength(packet) > nbytes) {
-        /*  Split excess data belonging to the next chunk or pipelined request */
-        LOG(7, "processContent: Split packet of %d at %d", httpGetPacketLength(packet), nbytes);
-        conn->input = httpSplitPacket(packet, nbytes);
-    } else {
-        conn->input = 0;
-    }
-    if (!(conn->finalized && conn->endpoint)) {
-        /* If conn->error, then finalized will also be true */
-        if (rx->form) {
-            httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-        } else {
-            httpPutPacketToNext(q, packet);
-        }
-    }
-    mprAssert(rx->remainingContent >= 0);
-    if (rx->remainingContent <= 0 && !(rx->flags & HTTP_CHUNKED)) {
-        rx->eof = 1;
-    }
-    return 1;
-}
-
-
-/*  
-    Process request body data (typically post or put content)
- */
-static bool processContent(HttpConn *conn, HttpPacket *packet)
-{
-    HttpRx      *rx;
-    HttpQueue   *q;
-
-    rx = conn->rx;
-
+    mprAssert(conn);
+    mprAssert(packet);
+    mprAssert(!conn->rx->eof);
     if (!packet) {
         return 0;
     }
-    if (!analyseContent(conn, packet)) {
-        return 0;
+    rx = conn->rx;
+    tx = conn->tx;
+    content = packet->content;
+
+    q = tx->queue[HTTP_QUEUE_RX];
+    LOG(6, "processContent: packet of %d bytes, remaining %d", mprGetBufLength(content), rx->remainingContent);
+    
+    /*
+        Determine if end of input (end-of-file)
+     */
+    if (rx->chunkState) {
+        nbytes = httpFilterChunkData(q, packet);
+        if (rx->chunkState == HTTP_CHUNK_EOF) {
+            rx->eof = 1;
+        }
+    } else {
+        nbytes = (ssize) min(rx->remainingContent, mprGetBufLength(content));
+        if (/* MOB conn->http10 && */ nbytes == 0 && mprIsSocketEof(conn->sock)) {
+            rx->eof = 1;
+        }
+    }
+    if (nbytes > 0) {
+        rx->remainingContent -= nbytes;
+        mprAssert(rx->remainingContent >= 0);
+        if (rx->remainingContent <= 0 /* MOB && !(rx->flags & HTTP_CHUNKED) */) {
+            rx->eof = 1;
+        }
+        rx->bytesRead += nbytes;
+        if (httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, tx->ext) >= 0) {
+            httpTraceContent(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, packet, nbytes, rx->bytesRead);
+        }
+        /*
+            Enforce sandbox limits
+         */
+        if (rx->bytesRead >= conn->limits->receiveBodySize) {
+            httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+                "Request body of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveBodySize);
+
+        } else if (rx->form && rx->length >= conn->limits->receiveFormSize) {
+            httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+                "Request form of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveFormSize);
+
+        } else {
+            /*
+                Send packet upstream toward the handler
+             */
+            if (packet == rx->headerPacket && nbytes > 0) {
+                packet = httpSplitPacket(packet, 0);
+            }
+            if (httpGetPacketLength(packet) > nbytes) {
+                /*  Split excess data belonging to the next chunk or pipelined request */
+                LOG(7, "processContent: Split packet of %d at %d", httpGetPacketLength(packet), nbytes);
+                conn->input = httpSplitPacket(packet, nbytes);
+            } else {
+                conn->input = 0;
+            }
+            if (!(conn->finalized && conn->endpoint)) {
+                /* If conn->error, then finalized will also be true */
+                if (rx->form) {
+                    httpPutForService(q, packet, HTTP_DELAY_SERVICE);
+                } else {
+                    httpPutPacketToNext(q, packet);
+                }
+            }
+        }
     }
     if (rx->eof) {
-        q = conn->tx->queue[HTTP_QUEUE_RX];
         if (!conn->finalized) {
             if (rx->form && conn->endpoint) {
                 /* Forms wait for all data before routing */
@@ -988,6 +1029,9 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
                     httpPutPacketToNext(q, packet);
                 }
             }
+            /*
+                Send "end" pack to signify eof to the handler
+             */
             httpPutPacketToNext(q, httpCreateEndPacket());
             if (!rx->streamInput) {
                 httpStartPipeline(conn);
@@ -1098,8 +1142,10 @@ static bool processCompletion(HttpConn *conn)
     rx = conn->rx;
     mprAssert(conn->state == HTTP_STATE_COMPLETE);
 
+    HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_CLOSED);
     httpDestroyPipeline(conn);
     measure(conn);
+
     if (conn->endpoint && rx) {
         if (rx->route && rx->route->log) {
             httpLogRequest(conn);
@@ -1111,6 +1157,9 @@ static bool processCompletion(HttpConn *conn)
         conn->tx = 0;
         packet = conn->input;
         more = packet && !conn->connError && (httpGetPacketLength(packet) > 0);
+        if (conn->keepAliveCount < 0) {
+            conn->endpoint = 0;
+        }
         if (conn->sock) {
             httpPrepServerConn(conn);
         }
@@ -1120,9 +1169,13 @@ static bool processCompletion(HttpConn *conn)
 }
 
 
+/*
+    Used by ejscript Request.close
+ */
 void httpCloseRx(HttpConn *conn)
 {
-    if (!conn->rx->eof) {
+    if (conn->rx && !conn->rx->remainingContent) {
+        //  MOB - better to use remaining?
         /* May not have consumed all read data, so can't be assured the next request will be okay */
         conn->keepAliveCount = -1;
     }

@@ -20,6 +20,7 @@ typedef struct HttpStatusCode {
 
 HttpStatusCode HttpStatusCodes[] = {
     { 100, "100", "Continue" },
+    { 101, "101", "Switching Protocols" },
     { 200, "200", "OK" },
     { 201, "201", "Created" },
     { 202, "202", "Accepted" },
@@ -118,6 +119,7 @@ Http *httpCreate()
     httpOpenRangeFilter(http);
     httpOpenChunkFilter(http);
     httpOpenUploadFilter(http);
+    httpOpenWebSockFilter(http);
     httpOpenCacheHandler(http);
     httpOpenPassHandler(http);
     httpOpenProcHandler(http);
@@ -289,6 +291,14 @@ void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->requestTimeout = MAXINT;
     limits->sessionTimeout = HTTP_SESSION_TIMEOUT;
 
+#if BIT_WEB_SOCKETS
+    limits->webSocketsMax = HTTP_MAX_WSS_SOCKETS;
+    limits->webSocketsMessageSize = HTTP_MAX_WSS_MESSAGE;
+    limits->webSocketsFrameSize  =HTTP_MAX_WSS_FRAME;
+    limits->webSocketsPacketSize = HTTP_MAX_WSS_PACKET;
+    limits->webSocketsPing = HTTP_WSS_PING_PERIOD;
+#endif
+
 #if FUTURE
     mprSetMaxSocketClients(endpoint, atoi(value));
 
@@ -406,8 +416,8 @@ static void httpTimer(Http *http, MprEvent *event)
         rx = conn->rx;
         limits = conn->limits;
         if (!conn->timeoutEvent && (
-            (conn->lastActivity + limits->inactivityTimeout) < http->now || 
-            (conn->started + limits->requestTimeout) < http->now)) {
+                (conn->lastActivity + limits->inactivityTimeout) < http->now || 
+                (conn->started + limits->requestTimeout) < http->now)) {
             if (rx) {
                 /*
                     Don't call APIs on the conn directly (thread-race). Schedule a timer on the connection's dispatcher
@@ -416,7 +426,7 @@ static void httpTimer(Http *http, MprEvent *event)
                     conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, httpConnTimeout, conn, 0);
                 }
             } else {
-                mprLog(6, "Idle connection timed out");
+                mprLog(6, "Idle connection without active request timed out");
                 httpDisconnect(conn);
                 httpDiscardQueueData(conn->writeq, 1);
                 httpEnableConnEvents(conn);

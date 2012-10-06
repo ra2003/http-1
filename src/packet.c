@@ -217,6 +217,8 @@ int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
 
     mprAssert(packet->esize == 0);
     mprAssert(p->esize == 0);
+    mprAssert(!(packet->flags & HTTP_PACKET_SOLO));
+    mprAssert(!(p->flags & HTTP_PACKET_SOLO));
 
     len = httpGetPacketLength(p);
     if (mprPutBlockToBuf(packet->content, mprGetBufStart(p->content), (ssize) len) != len) {

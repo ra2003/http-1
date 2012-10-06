@@ -53,6 +53,12 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
         httpError(conn, HTTP_CODE_COMMS_ERROR, "Can't open socket on %s:%d", ip, port);
         return 0;
     }
+    conn->sock = sp;
+    conn->ip = sclone(ip);
+    conn->port = port;
+    conn->secure = uri->secure;
+    conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : -1;
+
 #if BIT_PACK_SSL
     /* Must be done even if using keep alive for repeat SSL requests */
     if (uri->secure) {
@@ -65,12 +71,15 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
         }
     }
 #endif
-    conn->sock = sp;
-    conn->ip = sclone(ip);
-    conn->port = port;
-    conn->secure = uri->secure;
-    conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : -1;
-
+#if BIT_WEB_SOCKETS
+    if (uri->wss) {
+        //  MOB - must set errorMsg
+        if (httpWebSockUpgrade(conn) < 0) {
+            conn->errorMsg = sp->errorMsg;
+            return 0;
+        }
+    }
+#endif
     if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
         mprLog(level, "### Outgoing connection from %s:%d to %s:%d", 
             conn->ip, conn->port, conn->sock->ip, conn->sock->port);

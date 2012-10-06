@@ -348,7 +348,16 @@ ssize httpRead(HttpConn *conn, char *buf, ssize size)
     }
     mprAssert(q->count >= 0);
     mprAssert(httpVerifyQueue(q));
+    if (nbytes < size) {
+        buf[nbytes] = '\0';
+    }
     return nbytes;
+}
+
+
+ssize httpGetReadCount(HttpConn *conn)
+{
+    return conn->readq->count;
 }
 
 
@@ -359,7 +368,7 @@ bool httpIsEof(HttpConn *conn)
 
 
 /*
-    Read all the content buffered so far
+    Read data as a string
  */
 char *httpReadString(HttpConn *conn)
 {

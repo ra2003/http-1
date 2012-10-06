@@ -162,7 +162,7 @@ static MprOff buildNetVec(HttpQueue *q)
             httpWriteHeaders(conn, packet);
             q->count += httpGetPacketLength(packet);
 
-        } else if (httpGetPacketLength(packet) == 0) {
+        } else if (packet->flags & HTTP_PACKET_END) {
             q->flags |= HTTP_QUEUE_EOF;
             if (packet->prefix == NULL) {
                 break;

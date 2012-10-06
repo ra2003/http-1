@@ -187,6 +187,9 @@ void httpConnTimeout(HttpConn *conn)
 
     mprLog(6, "Inactive connection timed out");
     if (conn->state >= HTTP_STATE_PARSED) {
+        if (conn->timeoutCallback) {
+            (conn->timeoutCallback)(conn);
+        }
         if ((conn->lastActivity + limits->inactivityTimeout) < now) {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT,
                 "Exceeded inactivity timeout of %Ld sec", limits->inactivityTimeout / 1000);
@@ -250,7 +253,6 @@ void httpPrepServerConn(HttpConn *conn)
     mprAssert(conn);
     mprAssert(conn->rx == 0);
     mprAssert(conn->tx == 0);
-    mprAssert(conn->endpoint);
 
     conn->readq = 0;
     conn->writeq = 0;
@@ -737,6 +739,12 @@ HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 void httpNotifyWritable(HttpConn *conn)
 {
     HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_WRITABLE);
+}
+
+
+void httpNotifyReadable(HttpConn *conn)
+{
+    HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_READABLE);
 }
 
 /*

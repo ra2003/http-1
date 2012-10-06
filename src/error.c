@@ -23,6 +23,7 @@ void httpDisconnect(HttpConn *conn)
     conn->error = 1;
     conn->keepAliveCount = -1;
     if (conn->rx) {
+        //  MOB - what value is this? 
         conn->rx->eof = 1;
     }
 }
@@ -67,6 +68,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     if (flags & HTTP_ABORT) {
         conn->connError = 1;
         if (rx) {
+            //  MOB - what value is this?
             rx->eof = 1;
         }
     }
@@ -78,6 +80,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         httpDisconnect(conn);
         formatErrorv(conn, status, fmt, args);
         conn->error = 1;
+        HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_ERROR);
         return;
     }
     if (conn->error) {
@@ -85,6 +88,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     }
     conn->error = 1;
     formatErrorv(conn, status, fmt, args);
+    HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_ERROR);
 
     if (conn->endpoint && tx && rx) {
         if (!(tx->flags & HTTP_TX_HEADERS_CREATED)) {

@@ -4,6 +4,8 @@
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
 
+#define WSS 0
+
 /**
     @file mpr.h
     The Multithreaded Portable Runtime (MPR) is a portable runtime library for embedded applications.
@@ -7816,11 +7818,11 @@ extern char *mprEncode64Block(cchar *buf, ssize len);
 
 /**
     Get an MD5 checksum
-    @param s String to examine
+    @param str String to examine
     @returns An allocated MD5 checksum string.
     @ingroup Mpr
  */
-extern char *mprGetMD5(cchar *s);
+extern char *mprGetMD5(cchar *str);
 
 /**
     Get an MD5 checksum with optional prefix string and buffer length
@@ -7831,6 +7833,27 @@ extern char *mprGetMD5(cchar *s);
     @ingroup Mpr
  */
 extern char *mprGetMD5WithPrefix(cchar *buf, ssize len, cchar *prefix);
+
+/**
+    Get an SHA1 checksum
+    @param str String to examine
+    @returns An allocated SHA1 checksum string.
+    @ingroup Mpr
+ */
+extern char *mprGetSHA(cchar *str);
+
+/**
+    Get an SHA1 checksum with optional prefix string and buffer length
+    @param buf Buffer to checksum
+    @param len Size of the buffer
+    @param prefix String prefix to insert at the start of the result
+    @returns An allocated SHA1 checksum string.
+    @ingroup Mpr
+ */
+extern char *mprGetSHAWithPrefix(cchar *buf, ssize len, cchar *prefix);
+
+//  MOB
+extern char *mprGetSHABase64(cchar *buf);
 
 /********************************* Encoding ***********************************/
 /*  

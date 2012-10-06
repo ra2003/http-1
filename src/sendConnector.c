@@ -19,6 +19,7 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet);
 static void adjustSendVec(HttpQueue *q, MprOff written);
 static MprOff buildSendVec(HttpQueue *q);
 static void adjustPacketData(HttpQueue *q, MprOff written);
+static void sendClose(HttpQueue *q);
 
 /*********************************** Code *************************************/
 
@@ -31,7 +32,7 @@ int httpOpenSendConnector(Http *http)
         return MPR_ERR_CANT_CREATE;
     }
     stage->open = httpSendOpen;
-    stage->close = httpSendClose;
+    stage->close = sendClose;
     stage->outgoingService = httpSendOutgoingService; 
     http->sendConnector = stage;
     return 0;
@@ -69,7 +70,7 @@ void httpSendOpen(HttpQueue *q)
 }
 
 
-void httpSendClose(HttpQueue *q)
+static void sendClose(HttpQueue *q)
 {
     HttpTx  *tx;
 

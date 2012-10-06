@@ -94,7 +94,7 @@ HttpSession *httpGetSession(HttpConn *conn, int create)
     if (id || create) {
         rx->session = httpAllocSession(conn, id, conn->limits->sessionTimeout);
         if (rx->session && !id) {
-            httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, 0, conn->secure);
+            httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, 0, 0);
         }
     }
     return rx->session;

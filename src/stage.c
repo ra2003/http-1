@@ -69,12 +69,16 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
         /* This queue is the last queue in the pipeline */
         //  MOB - should this call WillAccept?
         if (httpGetPacketLength(packet) > 0) {
-            httpJoinPacketForService(q, packet, 0);
-            HTTP_NOTIFY(q->conn, 0, HTTP_NOTIFY_READABLE);
+            if (packet->flags & HTTP_PACKET_SOLO) {
+                httpPutForService(q, packet, HTTP_DELAY_SERVICE);
+            } else {
+                httpJoinPacketForService(q, packet, 0);
+            }
+            HTTP_NOTIFY(q->conn, HTTP_EVENT_IO, HTTP_NOTIFY_READABLE);
         } else {
             /* Zero length packet means eof */
             httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-            HTTP_NOTIFY(q->conn, 0, HTTP_NOTIFY_READABLE);
+            HTTP_NOTIFY(q->conn, HTTP_EVENT_IO, HTTP_NOTIFY_READABLE);
         }
     }
     mprAssert(httpVerifyQueue(q));

@@ -78,6 +78,9 @@ static void manageTx(HttpTx *tx, int flags)
         mprMark(tx->rangeBoundary);
         mprMark(tx->altBody);
         mprMark(tx->file);
+#if BIT_WEB_SOCKETS
+        mprMark(tx->webSockKey);
+#endif
 
     } else if (flags & MPR_MANAGE_FREE) {
         httpDestroyTx(tx);
@@ -416,14 +419,6 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         }
         target = httpCreateUri(targetUri, 0);
         base = rx->parsedUri;
-#if UNUSED
-        if (!target->host) {
-            target->host = base->host;
-        }
-        if (!target->host) {
-            target->scheme = base->scheme;
-        }
-#endif
         if (!target->port && target->scheme) {
             endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
             if (endpoint) {
@@ -443,46 +438,6 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         }
         target = httpCompleteUri(target, base, 0);
         targetUri = httpUriToString(target, 0);
-
-#if UNUSED
-        target = httpCreateUri(targetUri, 0);
-        if (!target->host) {
-            target->host = rx->parsedUri->host;
-        }
-        if (!target->scheme) {
-            target->scheme = rx->parsedUri->scheme;
-        }
-        if (conn->http->redirectCallback) {
-            targetUri = (conn->http->redirectCallback)(conn, &status, target);
-        } else {
-            targetUri = httpUriToString(target, 0);
-        }
-        if (strstr(targetUri, "://") == 0) {
-            prev = rx->parsedUri;
-            port = strchr(targetUri, ':') ? prev->port : conn->endpoint->port;
-            uri = 0;
-            if (target->path[0] == '/') {
-                /*
-                    Absolute URL. If hostName has a port specifier, it overrides prev->port.
-                 */
-                uri = httpFormatUri(prev->scheme, rx->hostHeader, port, target->path, target->reference, target->query, 
-                    HTTP_COMPLETE_URI);
-            } else {
-                /*
-                    Relative file redirection to a file in the same directory as the previous request.
-                 */
-                dir = sclone(rx->pathInfo);
-                if ((cp = strrchr(dir, '/')) != 0) {
-                    /* Remove basename */
-                    *cp = '\0';
-                }
-                path = sjoin(dir, "/", target->path, NULL);
-                uri = httpFormatUri(prev->scheme, rx->hostHeader, port, path, target->reference, target->query, 
-                    HTTP_COMPLETE_URI);
-            }
-            targetUri = uri;
-        }
-#endif
         httpSetHeader(conn, "Location", "%s", targetUri);
         httpFormatResponse(conn, 
             "<!DOCTYPE html>\r\n"

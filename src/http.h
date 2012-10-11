@@ -191,6 +191,7 @@ struct HttpUser;
  */
 #define HTTP_CODE_START_LOCAL_ERRORS        550
 #define HTTP_CODE_COMMS_ERROR               550     /**< The server had a communicationss error responding to the client */
+#define HTTP_CODE_BAD_HANDSHAKE             551     /**< The server handsake response is unacceptable */
 
 /*
     Flags that can be ored into the status code
@@ -554,19 +555,15 @@ typedef struct HttpUri {
     char        *reference;             /**< Reference fragment within the specified resource */
     char        *query;                 /**< Query string */
     int         port;                   /**< Port number */
-#if UNUSED
-    int         flags;                  /**< Flags */
-#endif
     int         secure;                 /**< Using https */
+    //MOB - confusing is this SSL or not? Rename webSockets
     int         wss;                    /**< Using web sockets */
+    //  MOB - rename url
     char        *uri;                   /**< Original URI (not decoded) */
 } HttpUri;
 
 #define HTTP_COMPLETE_URI       0x1     /**< Complete all missing URI fields. Set from "http://localhost/" */
 #define HTTP_COMPLETE_URI_PATH  0x2     /**< Complete missing URI path. Set to "/" */
-
-//  MOB - UNUSED
-#define HTTP_COMPLETE_URI_QUERY 0x4     /**< Copy base query and reference if path is copied */
 
 /**
     Clone a URI
@@ -584,7 +581,7 @@ extern HttpUri *httpCloneUri(HttpUri *base, int flags);
         does not allocate or create a new URI.
     @param uri URI to complete
     @param other Other URI to supply the missing components
-    @param flags Set to HTTP_COMPLETE_URI_QUERY to add missing query and reference. MOB - UNUSED.
+    @param flags Reserved.
     @return The supplied URI.
     @ingroup HttpUri
   */
@@ -1840,6 +1837,9 @@ typedef struct HttpConn {
     HttpHeadersCallback headersCallback;    /**< Callback to fill headers */
     void            *headersCallbackArg;    /**< Arg to fillHeaders */
 
+#if BIT_WEB_SOCKETS
+    char            *protocols;             /**< Supported web socket protocols (clients) */
+#endif
 #if BIT_DEBUG
     MprTime         startTime;              /**< Start time of request */
     uint64          startTicks;             /**< Start tick time of request */
@@ -1889,6 +1889,7 @@ extern void httpConnTimeout(HttpConn *conn);
  */
 extern void httpConsumeLastRequest(HttpConn *conn);
 
+//  MOB - should not require http service object
 /** 
     Create a connection object.
     @description Most interactions with the Http library are via a connection object. It is used for server-side 
@@ -2864,9 +2865,6 @@ extern void httpDefineProc(cchar *uri, HttpProc fun);
 #define HTTP_ROUTE_PUT_DELETE       0x1000      /**< Support PUT|DELETE on this route */
 #define HTTP_ROUTE_GZIP             0x2000      /**< Support gzipped content on this route */
 #define HTTP_ROUTE_STARTED          0x4000      /**< Route initialized */
-#if UNUSED
-#define HTTP_ROUTE_IGNORE_LIMIT     0x8000      /**< Continue with request on limit violation (WebSockets) */
-#endif
 
 /**
     Route Control
@@ -4569,6 +4567,10 @@ typedef struct HttpTx {
     MprFile         *file;                  /**< File to be served */
     MprPath         fileInfo;               /**< File information if there is a real file to serve */
     ssize           headerSize;             /**< Size of the header written */
+
+#if BIT_WEB_SOCKETS
+    char            *webSockKey;            /**< Sec-WebSocket-Key header */
+#endif
 } HttpTx;
 
 /** 
@@ -5389,6 +5391,7 @@ extern void httpStopHost(HttpHost *host);
 #if BIT_WEB_SOCKETS
 
 #define WEB_SOCKETS_VERSION     13
+#define WEB_SOCKETS_MAGIC       "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 /*
     httpWebSockSend message types
@@ -5421,14 +5424,16 @@ extern void httpStopHost(HttpHost *host);
 #define WS_STATUS_INTERNAL_ERROR       1011
 #define WS_STATUS_TLS_ERROR            1015
 
-extern HttpConn *httpWebSockUpgrade(HttpConn *conn);
+extern int httpWebSockUpgrade(HttpConn *conn);
 
 //  MOB - name too long
+//  MOB - doc
 extern ssize httpSend(HttpConn *conn, cchar *fmt, ...);
 extern ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len);
 extern void httpSendClose(HttpConn *conn, int status, cchar *reason);
 extern char *httpGetWebSockProtocol(HttpConn *conn);
 extern HttpWebSocketNotifier httpSetWebSocketNotifier(HttpConn *conn, HttpWebSocketNotifier fn);
+extern void httpSetWebSocketProtocols(HttpConn *conn, cchar *protocols);
 extern ssize httpGetReadCount(HttpConn *conn);
 extern char *httpGetCloseReason(HttpConn *conn);
 extern bool httpWasOrderlyClose(HttpConn *conn);

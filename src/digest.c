@@ -277,10 +277,6 @@ void httpDigestSetHeaders(HttpConn *conn)
     ha1 = mprGetMD5(a1Buf);
     fmt(a2Buf, sizeof(a2Buf), "%s:%s", tx->method, tx->parsedUri->path);
     ha2 = mprGetMD5(a2Buf);
-#if UNUSED
-    //  MOB - why incremented?
-    dp->nc++;
-#endif
     if (smatch(dp->qop, "auth")) {
         fmt(digestBuf, sizeof(digestBuf), "%s:%s:%08x:%s:%s:%s", ha1, dp->nonce, dp->nc, cnonce, dp->qop, ha2);
         digest = mprGetMD5(digestBuf);

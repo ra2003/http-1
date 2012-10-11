@@ -147,6 +147,9 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->authData);
         mprMark(conn->username);
         mprMark(conn->password);
+#if BIT_WEB_SOCKETS
+        mprMark(conn->protocols);
+#endif
 
     } else if (flags & MPR_MANAGE_FREE) {
         httpDestroyConn(conn);

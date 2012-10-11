@@ -40,20 +40,24 @@ int httpOpenChunkFilter(Http *http)
  */
 static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
 {
+    HttpTx  *tx;
+
+    tx = conn->tx;
+
+    if (conn->upgraded || (!conn->endpoint && tx->parsedUri && tx->parsedUri->wss)) {
+        /* Web sockets */
+        return HTTP_ROUTE_REJECT;
+    }
     if (dir & HTTP_STAGE_TX) {
         /* 
             If content length is defined, don't need chunking. Also disable chunking if explicitly turned off vi 
             the X_APPWEB_CHUNK_SIZE header which may set the chunk size to zero.
          */
-        if (conn->upgraded || conn->tx->length >= 0 || conn->tx->chunkSize == 0) {
+        if (tx->length >= 0 || tx->chunkSize == 0) {
             return HTTP_ROUTE_REJECT;
         }
         return HTTP_ROUTE_OK;
-
     } else {
-        if (conn->upgraded) {
-            return HTTP_ROUTE_REJECT;
-        }
         return HTTP_ROUTE_OK;
     }
 }
@@ -99,13 +103,6 @@ ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
 
     switch (rx->chunkState) {
     case HTTP_CHUNK_UNCHUNKED:
-#if UNUSED
-        nbytes = mprGetBufLength(buf);
-        if (conn->http10 && nbytes == 0 && mprIsSocketEof(conn->sock)) {
-            rx->eof = 1;
-        }
-        return (ssize) min(rx->remainingContent, nbytes);
-#endif
         mprAssert(0);
         return -1;
 
@@ -159,15 +156,7 @@ ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
         mprAdjustBufStart(buf, (cp - start + 1));
         /* Remaining content is set to the next chunk size */
         rx->remainingContent = chunkSize;
-        if (chunkSize == 0) {
-            rx->chunkState = HTTP_CHUNK_EOF;
-#if UNUSED
-            //  MOB moved to analyseContent
-            rx->eof = 1;
-#endif
-        } else {
-            rx->chunkState = HTTP_CHUNK_DATA;
-        }
+        rx->chunkState = (chunkSize == 0) ? HTTP_CHUNK_EOF : HTTP_CHUNK_DATA;
         mprLog(7, "chunkFilter: start incoming chunk of %d bytes", chunkSize);
         return min(chunkSize, mprGetBufLength(buf));
 

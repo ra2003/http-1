@@ -100,7 +100,7 @@ void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
 }
 
 
-#if UNUSED &&KEEP
+#if UNUSED && KEEP
 /*  
     Insert a queue after the previous element
  */
@@ -380,7 +380,9 @@ char *httpReadString(HttpConn *conn)
     remaining = (ssize) min(MAXSSIZE, rx->length);
 
     if (remaining > 0) {
-        content = mprAlloc(remaining + 1);
+        if ((content = mprAlloc(remaining + 1)) == 0) {
+            return 0;
+        }
         sofar = 0;
         while (remaining > 0) {
             nbytes = httpRead(conn, &content[sofar], remaining);

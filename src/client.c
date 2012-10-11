@@ -8,9 +8,13 @@
 
 #include    "http.h"
 
+/********************************* Forwards ***********************************/
+
+static void setDefaultHeaders(HttpConn *conn);
+
 /*********************************** Code *************************************/
 
-static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
+static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
 {
     Http        *http;
     HttpUri     *uri;
@@ -21,10 +25,9 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
     mprAssert(conn);
 
     http = conn->http;
-    uri = httpCreateUri(url, HTTP_COMPLETE_URI);
-    conn->tx->parsedUri = uri;
+    uri = conn->tx->parsedUri;
 
-    if (*url == '/') {
+    if (!uri->host) {
         ip = (http->proxyHost) ? http->proxyHost : http->defaultClientHost;
         port = (http->proxyHost) ? http->proxyPort : http->defaultClientPort;
     } else {
@@ -46,7 +49,7 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
         return conn;
     }
     if ((sp = mprCreateSocket()) == 0) {
-        httpError(conn, HTTP_CODE_COMMS_ERROR, "Can't create socket for %s", url);
+        httpError(conn, HTTP_CODE_COMMS_ERROR, "Can't create socket for %s", uri->uri);
         return 0;
     }
     if ((rc = mprConnectSocket(sp, ip, port, 0)) < 0) {
@@ -58,6 +61,7 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
     conn->port = port;
     conn->secure = uri->secure;
     conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : -1;
+    setDefaultHeaders(conn);
 
 #if BIT_PACK_SSL
     /* Must be done even if using keep alive for repeat SSL requests */
@@ -78,6 +82,7 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
             conn->errorMsg = sp->errorMsg;
             return 0;
         }
+        httpServiceQueues(conn);
     }
 #endif
     if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
@@ -88,10 +93,7 @@ static HttpConn *openConnection(HttpConn *conn, cchar *url, struct MprSsl *ssl)
 }
 
 
-/*  
-    Define headers and create an empty header packet that will be filled later by the pipeline.
- */
-static int setClientHeaders(HttpConn *conn)
+static void setDefaultHeaders(HttpConn *conn)
 {
     HttpAuthType    *authType;
 
@@ -109,17 +111,11 @@ static int setClientHeaders(HttpConn *conn)
     } else {
         httpAddHeaderString(conn, "Host", conn->ip);
     }
-#if UNUSED
-    if (conn->http10 && !smatch(conn->tx->method, "GET")) {
-        conn->keepAliveCount = 0;
-    }
-#endif
     if (conn->keepAliveCount > 0) {
         httpSetHeaderString(conn, "Connection", "Keep-Alive");
     } else {
         httpSetHeaderString(conn, "Connection", "close");
     }
-    return 0;
 }
 
 
@@ -143,17 +139,15 @@ int httpConnect(HttpConn *conn, cchar *method, cchar *url, struct MprSsl *ssl)
     httpSetState(conn, HTTP_STATE_CONNECTED);
     conn->setCredentials = 0;
     conn->tx->method = supper(method);
+    conn->tx->parsedUri = httpCreateUri(url, HTTP_COMPLETE_URI);
 
 #if BIT_DEBUG
     conn->startTime = conn->http->now;
     conn->startTicks = mprGetTicks();
 #endif
-    if (openConnection(conn, url, ssl) == 0) {
-        return MPR_ERR_CANT_OPEN;
-    }
     httpCreateTxPipeline(conn, conn->http->clientRoute);
-    if (setClientHeaders(conn) < 0) {
-        return MPR_ERR_CANT_INITIALIZE;
+    if (openConnection(conn, ssl) == 0) {
+        return MPR_ERR_CANT_OPEN;
     }
     return 0;
 }

@@ -78,11 +78,9 @@ static char *codetxt[16] = {
 #define GET_LEN(v)              ((v) & 0x7f)                /* Low order 7 bits of length */
 
 #define SET_FIN(v)              (((v) & 0x1) << 7)
-#define SET_MASK(v)             ((v) & 0x1)
+#define SET_MASK(v)             (((v) & 0x1) << 7)
 #define SET_CODE(v)             ((v) & 0xf)                                                       
 #define SET_LEN(len, n)         ((uchar)(((len) >> ((n) * 8)) & 0xff))
-
-#define WS_MAGIC                "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 /********************************** Forwards **********************************/
 
@@ -120,17 +118,26 @@ int httpOpenWebSockFilter(Http *http)
 
 
 /*
-    This is called twice: once for TX and once for RX
+    Match if the filter is required for this request. This is called twice: once for TX and once for RX.
  */
 static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
 {
     HttpRx      *rx;
+    HttpTx      *tx;
     char        *kind, *tok;
 
     mprAssert(conn);
     mprAssert(route);
-    rx = conn->rx;
 
+    rx = conn->rx;
+    tx = conn->tx;
+    mprAssert(rx);
+    mprAssert(tx);
+
+    if (!conn->endpoint && tx->parsedUri && tx->parsedUri->wss) {
+        /* ws:// URI. Client web sockets */
+        return HTTP_ROUTE_OK;
+    }
     /*
         Deliberately not checking Origin as it offers illusory security
      */
@@ -172,7 +179,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
             httpSetStatus(conn, HTTP_CODE_SWITCHING);
             httpSetHeader(conn, "Connection", "Upgrade");
             httpSetHeader(conn, "Upgrade", "WebSocket");
-            httpSetHeader(conn, "Sec-WebSocket-Accept", mprGetSHABase64(sjoin(rx->webSockKey, WS_MAGIC, NULL)));
+            httpSetHeader(conn, "Sec-WebSocket-Accept", mprGetSHABase64(sjoin(rx->webSockKey, WEB_SOCKETS_MAGIC, NULL)));
             httpSetHeader(conn, "Sec-WebSocket-Protocol", conn->rx->subProtocol);
             httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
             httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
@@ -213,6 +220,8 @@ static void openWebSock(HttpQueue *q)
     HttpPacket  *packet;
 
     mprAssert(q);
+    mprLog(5, "websock: Open WebSocket filter");
+
     conn = q->conn;
     q->packetSize = min(conn->limits->stageBufferSize, q->max);
     conn->rx->closeStatus = WS_STATUS_NO_STATUS;
@@ -221,6 +230,7 @@ static void openWebSock(HttpQueue *q)
 //  ZZ MOB - Check count of web sockets
     if ((packet = httpGetPacket(conn->writeq)) != 0) {
         mprAssert(packet->flags & HTTP_PACKET_HEADER);
+        //  MOB - or should this be httpPutPacketToNext
         httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
     }
     conn->responded = 0;
@@ -345,6 +355,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     rx = conn->rx;
     limits = conn->limits;
     mprAssert(packet);
+    mprLog(5, "websock: incoming data. Packet type: %d", packet->type);
 
     if (packet->flags & HTTP_PACKET_END) {
         /* EOF packet means the socket has been abortively closed */
@@ -356,9 +367,11 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
         rx->closeStatus = WS_STATUS_COMMS_ERROR;
     }
     while (1) {
+        mprLog(5, "websock: incoming state %d", rx->state);
         error = 0;
         switch (rx->state) {
         case WS_CLOSED:
+            mprLog(5, "websock: incoming closed. Finalizing");
             notifyWebSock(conn, HTTP_NOTIFY_CLOSED, rx->closeStatus);
             /* Finalize for safety. The handler/callback should have done this above */
             httpFinalize(conn);
@@ -562,6 +575,7 @@ void httpSendClose(HttpConn *conn, int status, cchar *reason)
     if (reason) {
         scopy(&msg[2], len - 2, reason);
     }
+    mprLog(5, "websock: sendClose");
     httpSendBlock(conn, WS_MSG_CLOSE, msg, len);
 }
 
@@ -577,6 +591,7 @@ static void outgoingWebSockService(HttpQueue *q)
 
     conn = q->conn;
     tx = conn->tx;
+    mprLog(5, "websock: outgoing service");
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (!(packet->flags & (HTTP_PACKET_END | HTTP_PACKET_HEADER))) {
@@ -616,6 +631,7 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
+            mprLog(5, "websock: outgoing service, data packet len %d", httpGetPacketLength(packet));
         }
         httpPutPacketToNext(q, packet);
     }
@@ -638,6 +654,12 @@ char *httpGetCloseReason(HttpConn *conn)
 bool httpWasOrderlyClose(HttpConn *conn)
 {
     return conn->rx->closeStatus != WS_STATUS_COMMS_ERROR;
+}
+
+
+void httpSetWebSocketProtocols(HttpConn *conn, cchar *protocols)
+{
+    conn->protocols = sclone(protocols);
 }
 
 
@@ -696,20 +718,28 @@ static bool validUTF8(cchar *str, ssize len)
 /*
     Upgrade a client socket to use Web Sockets
  */
-HttpConn *httpWebSockUpgrade(HttpConn *conn)
+int httpWebSockUpgrade(HttpConn *conn)
 {
+    char    num[16];
+
     mprLog(2, "websock: Upgrade socket");
     httpSetStatus(conn, HTTP_CODE_SWITCHING);
     httpSetHeader(conn, "Upgrade", "websocket");
     httpSetHeader(conn, "Connection", "Upgrade");
-    httpSetHeader(conn, "Sec-WebSocket-Key", "WHAT SHOULD THIS BE MOB");
-    httpSetHeader(conn, "Sec-WebSocket-Protocol", "chat");
+    mprGetRandomBytes(num, sizeof(num), 0);
+    conn->tx->webSockKey = mprEncode64Block(num, sizeof(num));
+    httpSetHeader(conn, "Sec-WebSocket-Key", conn->tx->webSockKey);
+    httpSetHeader(conn, "Sec-WebSocket-Protocol", conn->protocols ? conn->protocols : "chat");
     httpSetHeader(conn, "Sec-WebSocket-Version", "13");
-
+#if UNUSED
     //  MOB what does origin really mean
     httpSetHeader(conn, "Origin", conn->host->name);
-
-    //  MOB - need to check the response and match the Key with Accept
+    httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
+    httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
+#endif
+    conn->upgraded = 1;
+    conn->keepAliveCount = -1;
+    conn->rx->remainingContent = MAXINT;
     return 0;
 }
 

@@ -321,6 +321,7 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
 
 /*
     Complete the "uri" using missing parts from base
+    MOB - flags unused
  */
 HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
 {

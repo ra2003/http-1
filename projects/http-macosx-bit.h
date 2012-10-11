@@ -58,7 +58,7 @@
     #define BIT_PRODUCT "http"
 #endif
 #ifndef BIT_REQUIRED
-    #define BIT_REQUIRED "compiler,link,pcre"
+    #define BIT_REQUIRED "compiler,lib,link,pcre"
 #endif
 #ifndef BIT_SYNC
     #define BIT_SYNC "mpr,pcre"
@@ -130,7 +130,7 @@
 
 /* Profile */
 #ifndef BIT_CONFIG_CMD
-    #define BIT_CONFIG_CMD "bit -d -q -platform macosx-x64 -without all -profile xcode -configure . -gen xcode"
+    #define BIT_CONFIG_CMD "bit -d -q -platform macosx-x64 -without own -profile xcode -configure . -gen xcode"
 #endif
 #ifndef BIT_HTTP_PRODUCT
     #define BIT_HTTP_PRODUCT 1
@@ -166,6 +166,9 @@
 #ifndef BIT_PACK_EJS
     #define BIT_PACK_EJS 1
 #endif
+#ifndef BIT_PACK_LIB
+    #define BIT_PACK_LIB 1
+#endif
 #ifndef BIT_PACK_LINK
     #define BIT_PACK_LINK 1
 #endif
@@ -179,7 +182,7 @@
     #define BIT_PACK_MATRIXSSL 0
 #endif
 #ifndef BIT_PACK_OPENSSL
-    #define BIT_PACK_OPENSSL 0
+    #define BIT_PACK_OPENSSL 1
 #endif
 #ifndef BIT_PACK_PCRE
     #define BIT_PACK_PCRE 1
@@ -188,7 +191,7 @@
     #define BIT_PACK_PMAKER 0
 #endif
 #ifndef BIT_PACK_SSL
-    #define BIT_PACK_SSL 0
+    #define BIT_PACK_SSL 1
 #endif
 #ifndef BIT_PACK_UTEST
     #define BIT_PACK_UTEST 1

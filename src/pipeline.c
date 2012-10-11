@@ -259,6 +259,7 @@ void httpReadyHandler(HttpConn *conn)
 }
 
 
+//  MOB - rename. Conveys initial processing
 int httpProcessHandler(HttpConn *conn)
 {
     HttpQueue   *q;

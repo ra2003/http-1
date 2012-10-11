@@ -678,13 +678,6 @@ static void updateCurrentDate(Http *http)
     if (http->now > (http->currentTime + MPR_TICKS_PER_SEC - 1)) {
         http->currentTime = http->now;
         http->currentDate = httpGetDateString(NULL);
-#if UNUSED
-    static MprTime  recalcExpires = 0;
-        if (http->expiresDate == 0 || recalcExpires < (http->now / (60 * 1000))) {
-            http->expiresDate = mprFormatUniversalTime(HTTP_DATE_FORMAT, http->now + (86400 * 1000));
-            recalcExpires = http->now / (60 * 1000);
-        }
-#endif
     }
 }
 

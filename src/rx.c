@@ -241,7 +241,7 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
         httpMatchHost(conn);
         setParsedUri(conn);
 
-    } else if (!(100 <= rx->status && rx->status <= 199)) {
+    } else if (rx->status != HTTP_CODE_CONTINUE) {
         /* 
             Ignore Expect status responses. NOTE: Clients have already created their Tx pipeline.
          */
@@ -766,7 +766,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             } else if (strcasecmp(key, "referer") == 0) {
                 /* NOTE: yes the header is misspelt in the spec */
                 rx->referrer = sclone(value);
-
 #if UNUSED
             /*
                 There is a draft spec for these, but it has bad DOS security implications.
@@ -849,13 +848,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
     }
-#if MOVED
-    /*
-        Don't stream input if a form or upload. NOTE: Upload needs the Files[] collection.
-     */
-    rx->streamInput = !(rx->form || rx->upload);
-    rx->eof = (rx->remainingContent == 0);
-#endif
     if (!keepAlive) {
         conn->keepAliveCount = 0;
     }
@@ -906,9 +898,6 @@ static bool processParsed(HttpConn *conn)
         Don't stream input if a form or upload. NOTE: Upload needs the Files[] collection.
      */
     rx->streamInput = !(rx->form || rx->upload);
-#if MOB && MOVED
-    rx->eof = (rx->remainingContent == 0);
-#endif
     httpServiceQueues(conn);
 
     if (rx->streamInput) {
@@ -923,13 +912,7 @@ static bool processParsed(HttpConn *conn)
         sendContinue(conn);
         rx->flags &= ~HTTP_EXPECT_CONTINUE;
     }
-#if MOB && MOVED
-    if (conn->workerEvent && conn->tx->started && rx->eof) {
-        httpSetState(conn, HTTP_STATE_READY);
-        return 0;
-    }
-#endif
-    if (rx->remainingContent == 0) {
+    if (rx->remainingContent == 0 && !conn->upgraded) {
         /* Go to ready state if not request body to read */
         rx->eof = 1;
         httpSetState(conn, HTTP_STATE_READY);
@@ -971,16 +954,13 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         }
     } else {
         nbytes = (ssize) min(rx->remainingContent, mprGetBufLength(content));
-        if (/* MOB conn->http10 && */ nbytes == 0 && mprIsSocketEof(conn->sock)) {
+        if (mprIsSocketEof(conn->sock) || (!conn->upgraded && (rx->remainingContent - nbytes) <= 0)) {
             rx->eof = 1;
         }
     }
     if (nbytes > 0) {
         rx->remainingContent -= nbytes;
         mprAssert(rx->remainingContent >= 0);
-        if (rx->remainingContent <= 0 /* MOB && !(rx->flags & HTTP_CHUNKED) */) {
-            rx->eof = 1;
-        }
         rx->bytesRead += nbytes;
         if (httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, tx->ext) >= 0) {
             httpTraceContent(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, packet, nbytes, rx->bytesRead);
@@ -1097,8 +1077,12 @@ static bool processRunning(HttpConn *conn)
     } else {
         /* Client side */
         httpServiceQueues(conn);
-        httpFinalize(conn);
-        httpSetState(conn, HTTP_STATE_COMPLETE);
+        if (conn->upgraded) {
+            canProceed = 0;
+        } else {
+            httpFinalize(conn);
+            httpSetState(conn, HTTP_STATE_COMPLETE);
+        }
     }
     return canProceed;
 }

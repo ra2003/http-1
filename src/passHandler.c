@@ -64,7 +64,9 @@ static void startPass(HttpQueue *q)
 
 static void readyPass(HttpQueue *q)
 {
-    httpFinalize(q->conn);
+    if (!q->conn->upgraded) {
+        httpFinalize(q->conn);
+    }
 }
 
 

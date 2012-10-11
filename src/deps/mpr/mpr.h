@@ -1556,8 +1556,9 @@ extern void mprBreakpoint();
 
 #if BIT_ASSERT
     #define mprAssert(C)    if (C) ; else mprAssertError(MPR_LOC, #C)
+    #define assure(C)       if (C) ; else mprAssertError(MPR_LOC, #C)
 #else
-    #define mprAssert(C)    if (1) ; else
+    #define assure(C)       if (1) ; else
 #endif
 
 /*********************************** Thread Sync ******************************/

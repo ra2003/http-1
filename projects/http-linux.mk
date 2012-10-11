@@ -84,6 +84,7 @@ clean:
 	rm -rf $(CONFIG)/obj/uploadFilter.o
 	rm -rf $(CONFIG)/obj/uri.o
 	rm -rf $(CONFIG)/obj/var.o
+	rm -rf $(CONFIG)/obj/webSock.o
 	rm -rf $(CONFIG)/obj/http.o
 
 clobber: clean
@@ -111,7 +112,7 @@ $(CONFIG)/obj/mprSsl.o: \
 $(CONFIG)/bin/libmprssl.so:  \
         $(CONFIG)/bin/libmpr.so \
         $(CONFIG)/obj/mprSsl.o
-	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprSsl.o $(LIBS) -lmpr
+	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprSsl.o -lmpr $(LIBS)
 
 $(CONFIG)/obj/makerom.o: \
         src/deps/mpr/makerom.c \
@@ -121,7 +122,7 @@ $(CONFIG)/obj/makerom.o: \
 $(CONFIG)/bin/makerom:  \
         $(CONFIG)/bin/libmpr.so \
         $(CONFIG)/obj/makerom.o
-	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBS) -lmpr $(LDFLAGS)
+	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS) $(LDFLAGS)
 
 $(CONFIG)/inc/pcre.h: 
 	rm -fr $(CONFIG)/inc/pcre.h
@@ -321,6 +322,12 @@ $(CONFIG)/obj/var.o: \
         src/http.h
 	$(CC) -c -o $(CONFIG)/obj/var.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/var.c
 
+$(CONFIG)/obj/webSock.o: \
+        src/webSock.c \
+        $(CONFIG)/inc/bit.h \
+        src/http.h
+	$(CC) -c -o $(CONFIG)/obj/webSock.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/webSock.c
+
 $(CONFIG)/bin/libhttp.so:  \
         $(CONFIG)/bin/libmpr.so \
         $(CONFIG)/bin/libpcre.so \
@@ -354,8 +361,9 @@ $(CONFIG)/bin/libhttp.so:  \
         $(CONFIG)/obj/tx.o \
         $(CONFIG)/obj/uploadFilter.o \
         $(CONFIG)/obj/uri.o \
-        $(CONFIG)/obj/var.o
-	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/procHandler.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(LIBS) -lmpr -lpcre
+        $(CONFIG)/obj/var.o \
+        $(CONFIG)/obj/webSock.o
+	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/procHandler.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lpcre -lmpr $(LIBS)
 
 $(CONFIG)/obj/http.o: \
         src/http.c \
@@ -366,5 +374,5 @@ $(CONFIG)/obj/http.o: \
 $(CONFIG)/bin/http:  \
         $(CONFIG)/bin/libhttp.so \
         $(CONFIG)/obj/http.o
-	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBS) -lhttp -lmpr -lpcre $(LDFLAGS)
+	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lhttp $(LIBS) -lpcre -lmpr $(LDFLAGS)
 

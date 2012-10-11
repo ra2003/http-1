@@ -40,7 +40,7 @@
     #define BIT_PRODUCT "http"
 #endif
 #ifndef BIT_REQUIRED
-    #define BIT_REQUIRED "winsdk,compiler,link,dumpbin,rc,pcre"
+    #define BIT_REQUIRED "winsdk,compiler,lib,link,dumpbin,rc,pcre"
 #endif
 #ifndef BIT_SYNC
     #define BIT_SYNC "mpr,pcre"
@@ -98,7 +98,7 @@
     #define BIT_SHOBJ ".dll"
 #endif
 #ifndef BIT_LIB
-    #define BIT_LIB ".a"
+    #define BIT_LIB ".lib"
 #endif
 #ifndef BIT_OBJ
     #define BIT_OBJ ".obj"
@@ -144,6 +144,9 @@
 #endif
 #ifndef BIT_PACK_EJS
     #define BIT_PACK_EJS 1
+#endif
+#ifndef BIT_PACK_LIB
+    #define BIT_PACK_LIB 1
 #endif
 #ifndef BIT_PACK_LINK
     #define BIT_PACK_LINK 1

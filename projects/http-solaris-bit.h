@@ -58,7 +58,7 @@
     #define BIT_PRODUCT "http"
 #endif
 #ifndef BIT_REQUIRED
-    #define BIT_REQUIRED "compiler,link,pcre"
+    #define BIT_REQUIRED "compiler,lib,link,pcre"
 #endif
 #ifndef BIT_SYNC
     #define BIT_SYNC "mpr,pcre"
@@ -165,6 +165,9 @@
 #endif
 #ifndef BIT_PACK_EJS
     #define BIT_PACK_EJS 1
+#endif
+#ifndef BIT_PACK_LIB
+    #define BIT_PACK_LIB 1
 #endif
 #ifndef BIT_PACK_LINK
     #define BIT_PACK_LINK 1

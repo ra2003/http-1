@@ -87,6 +87,7 @@ clean:
 	-if exist $(CONFIG)\obj\uploadFilter.obj del /Q $(CONFIG)\obj\uploadFilter.obj
 	-if exist $(CONFIG)\obj\uri.obj del /Q $(CONFIG)\obj\uri.obj
 	-if exist $(CONFIG)\obj\var.obj del /Q $(CONFIG)\obj\var.obj
+	-if exist $(CONFIG)\obj\webSock.obj del /Q $(CONFIG)\obj\webSock.obj
 	-if exist $(CONFIG)\obj\http.obj del /Q $(CONFIG)\obj\http.obj
 
 $(CONFIG)\inc\mpr.h: 
@@ -111,7 +112,7 @@ $(CONFIG)\obj\mprSsl.obj: \
 $(CONFIG)\bin\libmprssl.dll:  \
         $(CONFIG)\bin\libmpr.dll \
         $(CONFIG)\obj\mprSsl.obj
-	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) -def:$(CONFIG)\bin\libmprssl.def $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj $(LIBS) libmpr.lib
+	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) -def:$(CONFIG)\bin\libmprssl.def $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj libmpr.lib $(LIBS)
 
 $(CONFIG)\obj\makerom.obj: \
         src\deps\mpr\makerom.c \
@@ -121,7 +122,7 @@ $(CONFIG)\obj\makerom.obj: \
 $(CONFIG)\bin\makerom.exe:  \
         $(CONFIG)\bin\libmpr.dll \
         $(CONFIG)\obj\makerom.obj
-	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj $(LIBS) libmpr.lib
+	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj libmpr.lib $(LIBS)
 
 $(CONFIG)\inc\pcre.h: 
 	-if exist $(CONFIG)\inc\pcre.h del /Q $(CONFIG)\inc\pcre.h
@@ -321,6 +322,12 @@ $(CONFIG)\obj\var.obj: \
         src\http.h
 	"$(CC)" -c -Fo$(CONFIG)\obj\var.obj -Fd$(CONFIG)\obj\var.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\var.c
 
+$(CONFIG)\obj\webSock.obj: \
+        src\webSock.c \
+        $(CONFIG)\inc\bit.h \
+        src\http.h
+	"$(CC)" -c -Fo$(CONFIG)\obj\webSock.obj -Fd$(CONFIG)\obj\webSock.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\webSock.c
+
 $(CONFIG)\bin\libhttp.dll:  \
         $(CONFIG)\bin\libmpr.dll \
         $(CONFIG)\bin\libpcre.dll \
@@ -354,8 +361,9 @@ $(CONFIG)\bin\libhttp.dll:  \
         $(CONFIG)\obj\tx.obj \
         $(CONFIG)\obj\uploadFilter.obj \
         $(CONFIG)\obj\uri.obj \
-        $(CONFIG)\obj\var.obj
-	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) -def:$(CONFIG)\bin\libhttp.def $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\procHandler.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(LIBS) libmpr.lib libpcre.lib
+        $(CONFIG)\obj\var.obj \
+        $(CONFIG)\obj\webSock.obj
+	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) -def:$(CONFIG)\bin\libhttp.def $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\procHandler.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(CONFIG)\obj\webSock.obj libpcre.lib libmpr.lib $(LIBS)
 
 $(CONFIG)\obj\http.obj: \
         src\http.c \
@@ -366,5 +374,5 @@ $(CONFIG)\obj\http.obj: \
 $(CONFIG)\bin\http.exe:  \
         $(CONFIG)\bin\libhttp.dll \
         $(CONFIG)\obj\http.obj
-	"$(LD)" -out:$(CONFIG)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\http.obj $(LIBS) libhttp.lib libmpr.lib libpcre.lib
+	"$(LD)" -out:$(CONFIG)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\http.obj libhttp.lib $(LIBS) libpcre.lib libmpr.lib
 

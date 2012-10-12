@@ -959,8 +959,10 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         }
     }
     if (nbytes > 0) {
-        rx->remainingContent -= nbytes;
-        mprAssert(rx->remainingContent >= 0);
+        if (!conn->upgraded) {
+            rx->remainingContent -= nbytes;
+            mprAssert(rx->remainingContent >= 0);
+        }
         rx->bytesRead += nbytes;
         if (httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, tx->ext) >= 0) {
             httpTraceContent(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, packet, nbytes, rx->bytesRead);

@@ -413,18 +413,28 @@ void httpMatchHost(HttpConn *conn)
 
 void *httpGetEndpointContext(HttpEndpoint *endpoint)
 {
-    return endpoint->context;
+    assure(endpoint);
+    if (endpoint) {
+        return endpoint->context;
+    }
+    return 0;
 }
 
 
 int httpIsEndpointAsync(HttpEndpoint *endpoint) 
 {
-    return endpoint->async;
+    assure(endpoint);
+    if (endpoint) {
+        return endpoint->async;
+    }
+    return 0;
 }
 
 
 void httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
 {
+    assure(endpoint);
+
     if (ip) {
         endpoint->ip = sclone(ip);
     }

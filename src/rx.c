@@ -1143,9 +1143,12 @@ static bool processCompletion(HttpConn *conn)
         conn->tx = 0;
         packet = conn->input;
         more = packet && !conn->connError && (httpGetPacketLength(packet) > 0);
+#if UNUSED
+        //  MOB -cant do as PrepServerConn below calls setupConnTrace
         if (conn->keepAliveCount < 0) {
             conn->endpoint = 0;
         }
+#endif
         if (conn->sock) {
             httpPrepServerConn(conn);
         }

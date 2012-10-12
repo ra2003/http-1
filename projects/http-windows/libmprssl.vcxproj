@@ -3,7 +3,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(IncDir);..\..\src;..\..\..\packages-windows-x86\openssl\openssl-1.0.1b\inc32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IncDir);..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -111,8 +111,8 @@
 
   <ItemDefinitionGroup>
   <Link>
-    <AdditionalDependencies>libmpr.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    <AdditionalLibraryDirectories>$(OutDir);$(Cfg)\bin;..\packages-windows-x86\openssl\openssl-1.0.1b\out32dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    <AdditionalDependencies>libmpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    <AdditionalLibraryDirectories>$(OutDir);$(Cfg)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
   </Link>
   </ItemDefinitionGroup>
 

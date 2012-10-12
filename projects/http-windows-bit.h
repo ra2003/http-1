@@ -106,7 +106,7 @@
 
 /* Profile */
 #ifndef BIT_CONFIG_CMD
-    #define BIT_CONFIG_CMD "bit -d -q -platform windows-x86 -without own -profile vs -configure . -gen vs"
+    #define BIT_CONFIG_CMD "bit -d -q -platform windows-x86 -without all -profile vs -configure . -gen vs"
 #endif
 #ifndef BIT_HTTP_PRODUCT
     #define BIT_HTTP_PRODUCT 1
@@ -161,7 +161,7 @@
     #define BIT_PACK_MATRIXSSL 0
 #endif
 #ifndef BIT_PACK_OPENSSL
-    #define BIT_PACK_OPENSSL 1
+    #define BIT_PACK_OPENSSL 0
 #endif
 #ifndef BIT_PACK_PCRE
     #define BIT_PACK_PCRE 1
@@ -173,7 +173,7 @@
     #define BIT_PACK_RC 1
 #endif
 #ifndef BIT_PACK_SSL
-    #define BIT_PACK_SSL 1
+    #define BIT_PACK_SSL 0
 #endif
 #ifndef BIT_PACK_UTEST
     #define BIT_PACK_UTEST 1

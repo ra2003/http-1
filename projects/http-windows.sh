@@ -34,9 +34,9 @@ cp -r src/deps/mpr/mpr.h ${CONFIG}/inc/mpr.h
 
 "${LD}" -dll -out:${CONFIG}\bin\libmpr.dll -entry:_DllMainCRTStartup@12 -def:${CONFIG}\bin\libmpr.def ${LDFLAGS} ${LIBPATHS} ${CONFIG}\obj\mprLib.obj ${LIBS}
 
-"${CC}" -c -Fo${CONFIG}\obj\mprSsl.obj -Fd${CONFIG}\obj\mprSsl.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}\inc -Isrc -I../packages-windows-x86/openssl/openssl-1.0.1b/inc32 src/deps/mpr/mprSsl.c
+"${CC}" -c -Fo${CONFIG}\obj\mprSsl.obj -Fd${CONFIG}\obj\mprSsl.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}\inc -Isrc src/deps/mpr/mprSsl.c
 
-"${LD}" -dll -out:${CONFIG}\bin\libmprssl.dll -entry:_DllMainCRTStartup@12 -def:${CONFIG}\bin\libmprssl.def ${LDFLAGS} ${LIBPATHS} -libpath:../packages-windows-x86/openssl/openssl-1.0.1b/out32dll ${CONFIG}\obj\mprSsl.obj libmpr.lib ${LIBS} libeay32.lib ssleay32.lib
+"${LD}" -dll -out:${CONFIG}\bin\libmprssl.dll -entry:_DllMainCRTStartup@12 -def:${CONFIG}\bin\libmprssl.def ${LDFLAGS} ${LIBPATHS} ${CONFIG}\obj\mprSsl.obj libmpr.lib ${LIBS}
 
 "${CC}" -c -Fo${CONFIG}\obj\makerom.obj -Fd${CONFIG}\obj\makerom.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}\inc -Isrc src/deps/mpr/makerom.c
 

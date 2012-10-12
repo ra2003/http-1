@@ -109,12 +109,12 @@ $(CONFIG)\obj\mprSsl.obj: \
         src\deps\mpr\mprSsl.c \
         $(CONFIG)\inc\bit.h \
         $(CONFIG)\inc\mpr.h
-	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc -I..\packages-windows-x86\openssl\openssl-1.0.1b\inc32 src\deps\mpr\mprSsl.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\deps\mpr\mprSsl.c
 
 $(CONFIG)\bin\libmprssl.dll:  \
         $(CONFIG)\bin\libmpr.dll \
         $(CONFIG)\obj\mprSsl.obj
-	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) -def:$(CONFIG)\bin\libmprssl.def $(LDFLAGS) $(LIBPATHS) -libpath:..\packages-windows-x86\openssl\openssl-1.0.1b\out32dll $(CONFIG)\obj\mprSsl.obj libmpr.lib $(LIBS) libeay32.lib ssleay32.lib
+	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) -def:$(CONFIG)\bin\libmprssl.def $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj libmpr.lib $(LIBS)
 
 $(CONFIG)\obj\makerom.obj: \
         src\deps\mpr\makerom.c \

@@ -575,7 +575,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     if (conn->endpoint) {
         httpAddHeaderString(conn, "Server", conn->http->software);
         if (--conn->keepAliveCount > 0) {
-            httpAddHeaderString(conn, "Connection", "keep-alive");
+            httpAddHeaderString(conn, "Connection", "Keep-Alive");
             httpAddHeader(conn, "Keep-Alive", "timeout=%Ld, max=%d", conn->limits->inactivityTimeout / 1000,
                 conn->keepAliveCount);
         } else {

@@ -370,6 +370,9 @@ HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
         mprLog(level, "### Incoming connection from %s:%d to %s:%d %s", 
             conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure ? "(secure)" : "");
+        if (endpoint->ssl) {
+            mprLog(level, "Upgrade to TLS");
+        }
     }
     e.mask = MPR_READABLE;
     e.timestamp = conn->http->now;

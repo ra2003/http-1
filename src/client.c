@@ -72,6 +72,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
             conn->errorMsg = sp->errorMsg;
             return 0;
         }
+        mprLog(4, "Http: upgrade socket to TLS");
     }
 #endif
 #if BIT_WEB_SOCKETS

@@ -43,6 +43,7 @@ static int matchRange(HttpConn *conn, HttpRoute *route, int dir)
 {
     mprAssert(conn->rx);
 
+    httpSetHeader(conn, "Accept-Ranges", "bytes");
     if ((dir & HTTP_STAGE_TX) && conn->tx->outputRanges) {
         return HTTP_ROUTE_OK;
     }

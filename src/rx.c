@@ -94,7 +94,7 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->lang);
         mprMark(rx->target);
 
-#if BIT_WEB_SOCKETS
+        //  MOB SORT
         mprMark(rx->upgrade);
         mprMark(rx->origin);
         mprMark(rx->webSockKey);
@@ -104,7 +104,6 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->pingEvent);
         mprMark(rx->subProtocol);
         mprMark(rx->closeReason);
-#endif
 
     } else if (flags & MPR_MANAGE_FREE) {
         if (rx->conn) {
@@ -163,7 +162,7 @@ void httpPump(HttpConn *conn, HttpPacket *packet)
             conn->canProceed = processCompletion(conn);
             break;
         }
-        if (conn->connError || (conn->endpoint && conn->connectorComplete && conn->state >= HTTP_STATE_RUNNING)) {
+        if (conn->connError || (conn->endpoint && conn->tx->connectorComplete && conn->state >= HTTP_STATE_RUNNING)) {
             httpSetState(conn, HTTP_STATE_COMPLETE);
             continue;
         }
@@ -568,7 +567,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 } else if (scaselesscmp(value, "CLOSE") == 0) {
                     /*  Not really required, but set to 0 to be sure */
                     conn->keepAliveCount = 0;
-#if BIT_WEB_SOCKETS && UNUSED && CLASHES
+#if UNUSED && CLASHES
                 } else if (scaselesscmp(value, "upgrade") == 0) {
                     rx->upgrade = sclone(value);
 #endif
@@ -744,13 +743,11 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             }
             break;
 
-#if BIT_WEB_SOCKETS
         case 'o':
             if (strcasecmp(key, "origin") == 0) {
                 rx->origin = sclone(value);
             }
             break;
-#endif
 
         case 'p':
             if (strcasecmp(key, "pragma") == 0) {
@@ -777,7 +774,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             }
             break;
 
-#if BIT_WEB_SOCKETS
         case 's':
             if (strcasecmp(key, "sec-websocket-key") == 0) {
                 rx->webSockKey = sclone(value);
@@ -793,7 +789,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 rx->webSockVersion = (int) stoi(value);
             }
             break;
-#endif
+
         case 't':
             if (strcasecmp(key, "transfer-encoding") == 0) {
                 if (scaselesscmp(value, "chunked") == 0) {
@@ -825,12 +821,9 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
 
         case 'u':
-#if BIT_WEB_SOCKETS
             if (scaselesscmp(key, "upgrade") == 0) {
                 rx->upgrade = sclone(value);
-            } else
-#endif
-            if (strcasecmp(key, "user-agent") == 0) {
+            } else if (strcasecmp(key, "user-agent") == 0) {
                 rx->userAgent = sclone(value);
             }
             break;
@@ -911,6 +904,9 @@ static bool processParsed(HttpConn *conn)
     if ((rx->flags & HTTP_EXPECT_CONTINUE) && !conn->error && !conn->tx->bytesWritten) {
         sendContinue(conn);
         rx->flags &= ~HTTP_EXPECT_CONTINUE;
+    }
+    if (!conn->endpoint && conn->upgraded && !httpVerifyWebSocketsHandshake(conn)) {
+        return 1;
     }
     if (rx->remainingContent == 0 && !conn->upgraded && !rx->form) {
         /* 
@@ -995,7 +991,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
             } else {
                 conn->input = 0;
             }
-            if (!(conn->finalized && conn->endpoint)) {
+            if (!(tx->finalized && conn->endpoint)) {
                 /* If conn->error, then finalized will also be true */
                 if (rx->form) {
                     httpPutForService(q, packet, HTTP_DELAY_SERVICE);
@@ -1006,7 +1002,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         }
     }
     if (rx->eof) {
-        if (!conn->finalized) {
+        if (!tx->finalized) {
             if (rx->form && conn->endpoint) {
                 /* Forms wait for all data before routing */
                 routeRequest(conn);
@@ -1061,23 +1057,25 @@ static bool processReady(HttpConn *conn)
 static bool processRunning(HttpConn *conn)
 {
     HttpQueue   *q;
+    HttpTx      *tx;
     int         canProceed;
 
     q = conn->writeq;
+    tx = conn->tx;
     canProceed = 1;
     httpServiceQueues(conn);
 
     if (conn->endpoint) {
         /* Server side */
-        if (conn->finalized) {
-            if (!conn->connectorComplete) {
+        if (tx->finalized) {
+            if (!tx->connectorComplete) {
                 /* Wait for Tx I/O event. Do suspend incase handler not using auto-flow routines */
                 conn->writeBlocked = 1;
                 httpSuspendQueue(q);
                 httpEnableConnEvents(q->conn);
                 canProceed = 0;
             }
-        } else if (!httpProcessHandler(conn)) {
+        } else if (!httpPumpHandler(conn)) {
             /* No process callback defined */
             canProceed = 0;
         } else if (q->count == 0) {
@@ -1144,11 +1142,8 @@ static bool processCompletion(HttpConn *conn)
 
     rx = conn->rx;
     mprAssert(conn->state == HTTP_STATE_COMPLETE);
-
-    HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_CLOSED);
     httpDestroyPipeline(conn);
     measure(conn);
-
     if (conn->endpoint && rx) {
         if (rx->route && rx->route->log) {
             httpLogRequest(conn);
@@ -1160,13 +1155,7 @@ static bool processCompletion(HttpConn *conn)
         conn->tx = 0;
         packet = conn->input;
         more = packet && !conn->connError && (httpGetPacketLength(packet) > 0);
-#if UNUSED
-        //  MOB -cant do as PrepServerConn below calls setupConnTrace
-        if (conn->keepAliveCount < 0) {
-            conn->endpoint = 0;
-        }
-#endif
-        if (conn->sock) {
+        if (conn->sock && conn->keepAliveCount >= 0) {
             httpPrepServerConn(conn);
         }
         return more;
@@ -1181,7 +1170,6 @@ static bool processCompletion(HttpConn *conn)
 void httpCloseRx(HttpConn *conn)
 {
     if (conn->rx && !conn->rx->remainingContent) {
-        //  MOB - better to use remaining?
         /* May not have consumed all read data, so can't be assured the next request will be okay */
         conn->keepAliveCount = -1;
     }
@@ -1437,7 +1425,7 @@ int httpWait(HttpConn *conn, int state, MprTime timeout)
     conn->async = 1;
 
     eventMask = MPR_READABLE;
-    if (!conn->connectorComplete) {
+    if (!conn->tx->connectorComplete) {
         eventMask |= MPR_WRITABLE;
     }
     if (conn->state < state) {
@@ -1723,7 +1711,7 @@ char *httpGetExt(HttpConn *conn)
 }
 
 
-//  MOB - can this just use the default
+//  MOB - can this just use the default compare
 static int compareLang(char **s1, char **s2)
 {
     return scmp(*s1, *s2);

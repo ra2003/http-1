@@ -8,7 +8,6 @@
 
 #include    "http.h"
 
-#if BIT_WEB_SOCKETS
 /********************************** Locals ************************************/
 /*
     Input states
@@ -79,7 +78,7 @@ static char *codetxt[16] = {
 
 #define SET_FIN(v)              (((v) & 0x1) << 7)
 #define SET_MASK(v)             (((v) & 0x1) << 7)
-#define SET_CODE(v)             ((v) & 0xf)                                                       
+#define SET_CODE(v)             ((v) & 0xf)
 #define SET_LEN(len, n)         ((uchar)(((len) >> ((n) * 8)) & 0xff))
 
 /********************************** Forwards **********************************/
@@ -89,7 +88,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet);
 static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir);
 static void openWebSock(HttpQueue *q);
 static void outgoingWebSockService(HttpQueue *q);
-static void notifyWebSock(HttpConn *conn, int event, int status);
+static void readyWebSock(HttpQueue *q);
 static bool validUTF8(cchar *str, ssize len);
 static void webSockPing(HttpConn *conn);
 
@@ -110,6 +109,7 @@ int httpOpenWebSockFilter(Http *http)
     http->webSocketFilter = filter;
     filter->match = matchWebSock; 
     filter->open = openWebSock; 
+    filter->ready = readyWebSock; 
     filter->close = closeWebSock; 
     filter->outgoingService = outgoingWebSockService; 
     filter->incoming = incomingWebSockData; 
@@ -134,7 +134,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
     mprAssert(rx);
     mprAssert(tx);
 
-    if (!conn->endpoint && tx->parsedUri && tx->parsedUri->wss) {
+    if (!conn->endpoint && tx->parsedUri && tx->parsedUri->webSockets) {
         /* ws:// URI. Client web sockets */
         return HTTP_ROUTE_OK;
     }
@@ -150,16 +150,11 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
                 httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad Sec-WebSocket-Key");
                 return HTTP_ROUTE_REJECT;
             }
-            if (rx->webSockVersion < WEB_SOCKETS_VERSION) {
-                httpSetHeader(conn, "Sec-WebSocket-Version", "%d", WEB_SOCKETS_VERSION);
+            if (rx->webSockVersion < WS_VERSION) {
+                httpSetHeader(conn, "Sec-WebSocket-Version", "%d", WS_VERSION);
                 httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Unsupported Sec-WebSocket-Version");
                 return HTTP_ROUTE_REJECT;
             }
-#if FUTURE && MOB
-            if (route->callback) {
-                return (route->callback)(conn);
-            }
-#endif
             /* Just select the first protocol */
             if (route->webSocketsProtocol) {
                 for (kind = stok(sclone(rx->webSockProtocols), " \t,", &tok); kind; kind = stok(NULL, " \t,", &tok)) {
@@ -179,7 +174,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
             httpSetStatus(conn, HTTP_CODE_SWITCHING);
             httpSetHeader(conn, "Connection", "Upgrade");
             httpSetHeader(conn, "Upgrade", "WebSocket");
-            httpSetHeader(conn, "Sec-WebSocket-Accept", mprGetSHABase64(sjoin(rx->webSockKey, WEB_SOCKETS_MAGIC, NULL)));
+            httpSetHeader(conn, "Sec-WebSocket-Accept", mprGetSHABase64(sjoin(rx->webSockKey, WS_MAGIC, NULL)));
             httpSetHeader(conn, "Sec-WebSocket-Protocol", conn->rx->subProtocol);
             httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
             httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
@@ -221,21 +216,17 @@ static void openWebSock(HttpQueue *q)
 
     mprAssert(q);
     mprLog(5, "websock: Open WebSocket filter");
-
     conn = q->conn;
     q->packetSize = min(conn->limits->stageBufferSize, q->max);
     conn->rx->closeStatus = WS_STATUS_NO_STATUS;
     conn->timeoutCallback = webSockTimeout;
 
-//  ZZ MOB - Check count of web sockets
     if ((packet = httpGetPacket(conn->writeq)) != 0) {
         mprAssert(packet->flags & HTTP_PACKET_HEADER);
-        //  MOB - or should this be httpPutPacketToNext
         httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
     }
-    conn->responded = 0;
+    conn->tx->responded = 0;
 }
-
 
 static void closeWebSock(HttpQueue *q)
 {
@@ -245,6 +236,14 @@ static void closeWebSock(HttpQueue *q)
     if (rx && rx->pingEvent) {
         mprRemoveEvent(rx->pingEvent);
         rx->pingEvent = 0;
+    }
+}
+
+
+static void readyWebSock(HttpQueue *q)
+{
+    if (q->conn->endpoint) {
+        HTTP_NOTIFY(q->conn, HTTP_EVENT_APP_OPEN, 0);
     }
 }
 
@@ -260,14 +259,13 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
     rx = conn->rx;
     content = packet->content;
     mprAssert(content);
-    mprLog(2, "websock: Process packet \"%s\", data length %d", codetxt[rx->opcode & 0xf], mprGetBufLength(content));
+    mprLog(4, "websock: Process packet \"%s\", data length %d", codetxt[rx->opcode & 0xf], mprGetBufLength(content));
 
     switch (rx->opcode) {
     case OP_BINARY:
     case OP_TEXT:
         if (rx->maskOffset >= 0) {
             if (rx->opcode == OP_TEXT) {
-                //  MOB - validate UTF8?
                 for (cp = content->start; cp < content->end; cp++) {
                     *cp = *cp ^ rx->dataMask[rx->maskOffset++ & 0x3];
                 }
@@ -285,7 +283,7 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
         }
         packet->type = (rx->opcode == OP_TEXT) ? WS_MSG_TEXT : WS_MSG_BINARY;
         if (rx->opcode == OP_TEXT) {
-            mprLog(2, "websock: Text packet \"%s\"", content->start);
+            mprLog(5, "websock: Text packet \"%s\"", content->start);
         }
         if (rx->finalFrame) {
             /* Preserve packet boundaries */
@@ -293,7 +291,6 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
             httpPutPacketToNext(q, packet);
             httpServiceQueues(q->conn);
             rx->currentPacket = 0;
-            notifyWebSock(conn, HTTP_NOTIFY_READABLE, packet->type);
         }
         rx->state = WS_BEGIN;
         return 0;
@@ -304,15 +301,19 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
             rx->closeStatus = ((uchar) cp[0]) << 8 | (uchar) cp[1];
             if (httpGetPacketLength(packet) >= 4) {
                 mprAddNullToBuf(content);
+                if (rx->maskOffset >= 0) {
+                    for (cp = &content->start[2]; cp < content->end; cp++) {
+                        *cp = *cp ^ rx->dataMask[rx->maskOffset++ & 0x3];
+                    }
+                }
                 rx->closeReason = sclone(&content->start[2]);
             }
         }
-        mprLog(2, "websock: close status %d, reason %s, already closing %d", rx->closeStatus, rx->closeReason, rx->closing);
+        mprLog(5, "websock: close status %d, reason %s, already closing %d", rx->closeStatus, rx->closeReason, rx->closing);
         if (rx->closing) {
             httpDisconnect(conn);
         } else {
             /* Acknowledge the close. Echo the received status */
-            //  MOB - echo close doesn't seem to work on Chrome
             httpSendClose(conn, WS_STATUS_OK, NULL);
             rx->eof = 1;
         }
@@ -355,13 +356,10 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     rx = conn->rx;
     limits = conn->limits;
     mprAssert(packet);
-    mprLog(5, "websock: incoming data. Packet type: %d", packet->type);
+    mprLog(4, "websock: incoming data. Packet type: %d", packet->type);
 
     if (packet->flags & HTTP_PACKET_END) {
         /* EOF packet means the socket has been abortively closed */
-#if UNUSED
-        httpSendClose(conn, WS_STATUS_OK, NULL);
-#endif
         rx->closing = 1;
         rx->state = WS_CLOSED;
         rx->closeStatus = WS_STATUS_COMMS_ERROR;
@@ -372,7 +370,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
         switch (rx->state) {
         case WS_CLOSED:
             mprLog(5, "websock: incoming closed. Finalizing");
-            notifyWebSock(conn, HTTP_NOTIFY_CLOSED, rx->closeStatus);
+            HTTP_NOTIFY(conn, HTTP_EVENT_APP_CLOSE, rx->closeStatus);
             /* Finalize for safety. The handler/callback should have done this above */
             httpFinalize(conn);
             return;
@@ -429,14 +427,14 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             mprAssert(packet->content);
             mprAdjustBufStart(packet->content, fp - packet->content->start);
             rx->state = WS_MSG;
-            mprLog(2, "websock: Begin new packet \"%s\", fin %d, mask %d, length %d", codetxt[rx->opcode & 0xf],
+            mprLog(5, "websock: Begin new packet \"%s\", fin %d, mask %d, length %d", codetxt[rx->opcode & 0xf],
                 rx->finalFrame, mask, len);
             break;
 
-#if UNUSED && KEEP
+#if UNUSED && KEEP && FUTURE
         case WS_EXT_DATA:
             mprAssert(packet);
-            mprLog(2, "websock: EXT DATA - RESERVED");
+            mprLog(5, "websock: EXT DATA - RESERVED");
             rx->state = WS_MSG;
             break;
 #endif
@@ -457,7 +455,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
 
             } else {
                 if (rx->currentPacket) {
-                    mprLog(2, "websock: Joining data packet %d/%d", httpGetPacketLength(rx->currentPacket),
+                    mprLog(6, "websock: Joining data packet %d/%d", httpGetPacketLength(rx->currentPacket),
                         httpGetPacketLength(packet));
                     if (rx->currentPacket->type != packet->type) {
                         mprError("WebSocket has frames of different types: %d and %d", 
@@ -480,7 +478,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             if (httpGetPacketLength(packet) > rx->frameLength) {
                 if ((tail = httpSplitPacket(packet, rx->frameLength)) != 0) {
                     httpPutBackPacket(q, tail);
-                    mprLog(2, "websock: Split data packet, %d/%d", rx->frameLength, httpGetPacketLength(tail));
+                    mprLog(6, "websock: Split data packet, %d/%d", rx->frameLength, httpGetPacketLength(tail));
                 }
             }
             /*
@@ -492,18 +490,20 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 len = httpGetPacketLength(packet);
                 if ((rx->finalFrame && len == rx->frameLength) || len >= limits->webSocketsPacketSize) {
                     if (len >= limits->webSocketsPacketSize) {
-                        mprLog(4, "websock: Message packet size exceeds limit %d/%d", len, limits->webSocketsPacketSize); 
+                        mprError("websock: Message packet size exceeds limit %d/%d", len, limits->webSocketsPacketSize); 
+                        error = WS_STATUS_MESSAGE_TOO_LARGE;
+                    } else {
+                        error = processPacket(q, packet);
                     }
-                    error = processPacket(q, packet);
                 }
             }
             packet = tail;
         }
         if (error) {
-            mprLog(0, "websock: WebSockets error Status %d", error);
+            mprError("websock: WebSockets error Status %d", error);
             httpSendClose(conn, error, NULL);
             rx->state = WS_CLOSED;
-            notifyWebSock(conn, HTTP_NOTIFY_ERROR, error);
+            HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, error);
         }
     }
 }
@@ -511,6 +511,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
 
 /*
     Send a text message. Caller must submit valid UTF8.
+    Returns the number of data message bytes written. Should equal the length.
  */
 ssize httpSend(HttpConn *conn, cchar *fmt, ...)
 {
@@ -524,11 +525,14 @@ ssize httpSend(HttpConn *conn, cchar *fmt, ...)
 }
 
 
+/*
+    Returns the number of data message bytes written. Should equal the length.
+ */
 ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len)
 {
     HttpPacket  *packet;
 
-    mprLog(2, "websock: Send message \"%s\", len %d", codetxt[type & 0xf], len);
+    mprLog(5, "websock: Send message \"%s\", len %d", codetxt[type & 0xf], len);
     if ((packet = httpCreateDataPacket(len)) == 0) {
         return MPR_ERR_MEMORY;
     }
@@ -547,6 +551,9 @@ ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len)
 }
 
 
+/*
+    The reason string is optional
+ */
 void httpSendClose(HttpConn *conn, int status, cchar *reason)
 {
     HttpPacket  *packet;
@@ -566,6 +573,10 @@ void httpSendClose(HttpConn *conn, int status, cchar *reason)
         return;
     }
     packet->type = WS_MSG_CLOSE;
+    if (slen(reason) >= 124) {
+        reason = "Web sockets close reason message was too big";
+        mprError(reason);
+    }
     len = 2 + (reason ? (slen(reason) + 1) : 0);
     if ((msg = mprAlloc(len)) == 0) {
         return;
@@ -589,7 +600,7 @@ static void outgoingWebSockService(HttpQueue *q)
     int         i, mask, code;
 
     conn = q->conn;
-    mprLog(5, "websock: outgoing service");
+    mprLog(6, "websock: outgoing service");
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (!(packet->flags & (HTTP_PACKET_END | HTTP_PACKET_HEADER))) {
@@ -629,27 +640,26 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            mprLog(5, "websock: outgoing service, data packet len %d", httpGetPacketLength(packet));
+            mprLog(6, "websock: outgoing service, data packet len %d", httpGetPacketLength(packet));
         }
         httpPutPacketToNext(q, packet);
     }
 }
 
 
-//  MOB - naming
-char *httpGetWebSockProtocol(HttpConn *conn)
+char *httpGetWebSocketProtocol(HttpConn *conn)
 {
     return conn->rx->subProtocol;
 }
 
 
-char *httpGetCloseReason(HttpConn *conn)
+char *httpGetWebSocketCloseReason(HttpConn *conn)
 {
     return conn->rx->closeReason;
 }
 
 
-bool httpWasOrderlyClose(HttpConn *conn)
+bool httpWebSocketOrderlyClosed(HttpConn *conn)
 {
     return conn->rx->closeStatus != WS_STATUS_COMMS_ERROR;
 }
@@ -658,24 +668,6 @@ bool httpWasOrderlyClose(HttpConn *conn)
 void httpSetWebSocketProtocols(HttpConn *conn, cchar *protocols)
 {
     conn->protocols = sclone(protocols);
-}
-
-
-HttpWebSocketNotifier httpSetWebSocketNotifier(HttpConn *conn, HttpWebSocketNotifier notifier)
-{
-    HttpWebSocketNotifier prior;
-
-    prior = conn->webSocketNotifier;
-    conn->webSocketNotifier = notifier;
-    return prior;
-}
-
-
-static void notifyWebSock(HttpConn *conn, int event, int status)
-{
-    if (conn->webSocketNotifier) {
-        (conn->webSocketNotifier)(conn, event, status);
-    }
 }
 
 
@@ -718,11 +710,11 @@ static bool validUTF8(cchar *str, ssize len)
 /*
     Upgrade a client socket to use Web Sockets
  */
-int httpWebSockUpgrade(HttpConn *conn)
+int httpUpgradeWebSocket(HttpConn *conn)
 {
     char    num[16];
 
-    mprLog(2, "websock: Upgrade socket");
+    mprLog(5, "websock: Upgrade socket");
     httpSetStatus(conn, HTTP_CODE_SWITCHING);
     httpSetHeader(conn, "Upgrade", "websocket");
     httpSetHeader(conn, "Connection", "Upgrade");
@@ -731,12 +723,9 @@ int httpWebSockUpgrade(HttpConn *conn)
     httpSetHeader(conn, "Sec-WebSocket-Key", conn->tx->webSockKey);
     httpSetHeader(conn, "Sec-WebSocket-Protocol", conn->protocols ? conn->protocols : "chat");
     httpSetHeader(conn, "Sec-WebSocket-Version", "13");
-#if UNUSED
-    //  MOB what does origin really mean
-    httpSetHeader(conn, "Origin", conn->host->name);
     httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
     httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
-#endif
+
     conn->upgraded = 1;
     conn->keepAliveCount = -1;
     conn->rx->remainingContent = MAXINT;
@@ -744,7 +733,37 @@ int httpWebSockUpgrade(HttpConn *conn)
 }
 
 
-#endif /* BIT_WEB_SOCKETS */
+bool httpVerifyWebSocketsHandshake(HttpConn *conn)
+{
+    HttpRx          *rx;
+    HttpTx          *tx;
+    cchar           *key, *expected;
+
+    rx = conn->rx;
+    tx = conn->tx;
+
+    if (rx->status != HTTP_CODE_SWITCHING) {
+        httpError(conn, HTTP_CODE_BAD_HANDSHAKE, "Bad WebSocket handshake status %d", rx->status);
+        return 0;
+    }
+    if (!smatch(httpGetHeader(conn, "Connection"), "Upgrade")) {
+        httpError(conn, HTTP_CODE_BAD_HANDSHAKE, "Bad WebSocket Connection header");
+        return 0;
+    }
+    if (!smatch(httpGetHeader(conn, "Upgrade"), "WebSocket")) {
+        httpError(conn, HTTP_CODE_BAD_HANDSHAKE, "Bad WebSocket Upgrade header");
+        return 0;
+    }
+    expected = mprGetSHABase64(sjoin(tx->webSockKey, WS_MAGIC, NULL));
+    key = httpGetHeader(conn, "Sec-WebSocket-Accept");
+    if (!smatch(key, expected)) {
+        httpError(conn, HTTP_CODE_BAD_HANDSHAKE, "Bad WebSocket handshake key\n%s\n%s", key, expected);
+        return 0;
+    }
+    mprLog(4, "WebSockets handsake verified");
+    return 1;
+}
+
 /*
     @copy   default
 

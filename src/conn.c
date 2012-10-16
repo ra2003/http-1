@@ -75,6 +75,7 @@ void httpDestroyConn(HttpConn *conn)
 {
     if (conn->http) {
         mprAssert(conn->http);
+        HTTP_NOTIFY(conn, HTTP_EVENT_DESTROY, 0);
         httpRemoveConn(conn->http, conn);
         if (conn->endpoint) {
             if (conn->rx) {
@@ -82,10 +83,6 @@ void httpDestroyConn(HttpConn *conn)
             }
             httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_CONN, conn);
         }
-        if (HTTP_STATE_PARSED <= conn->state && conn->state < HTTP_STATE_COMPLETE) {
-            HTTP_NOTIFY(conn, HTTP_STATE_COMPLETE, 0);
-        }
-        HTTP_NOTIFY(conn, HTTP_EVENT_CLOSE, 0);
         conn->input = 0;
         if (conn->tx) {
             httpDestroyPipeline(conn);
@@ -138,18 +135,15 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->errorMsg);
         mprMark(conn->ip);
         mprMark(conn->protocol);
+        mprMark(conn->protocols);
         httpManageTrace(&conn->trace[0], flags);
         httpManageTrace(&conn->trace[1], flags);
         mprMark(conn->headersCallbackArg);
 
-        //  MOB - move password, authType into authData!
         mprMark(conn->authType);
         mprMark(conn->authData);
         mprMark(conn->username);
         mprMark(conn->password);
-#if BIT_WEB_SOCKETS
-        mprMark(conn->protocols);
-#endif
 
     } else if (flags & MPR_MANAGE_FREE) {
         httpDestroyConn(conn);
@@ -224,14 +218,12 @@ static void commonPrep(HttpConn *conn)
     conn->connError = 0;
     conn->errorMsg = 0;
     conn->state = 0;
-
-    //  MOB - better if these were in HttpTx
+#if UNUSED
     conn->responded = 0;
     conn->finalized = 0;
     conn->refinalize = 0;
     conn->connectorComplete = 0;
-
-    //  MOB - better if these were in HttpTx
+#endif
     conn->setCredentials = 0;
 
     if (conn->endpoint) {
@@ -340,7 +332,7 @@ void httpEvent(HttpConn *conn, MprEvent *event)
         readEvent(conn);
     }
     if (conn->endpoint) {
-        if (conn->keepAliveCount < 0 && conn->state <= HTTP_STATE_CONNECTED) {
+        if (conn->keepAliveCount < 0 && !conn->rx) {
             /*  
                 Idle connection.
                 NOTE: compare keepAliveCount with "< 0" so that the client can have one more keep alive request. 
@@ -396,7 +388,6 @@ static void readEvent(HttpConn *conn)
             }
             break;
         }
-        //  MOB - refactor these tests
         if (nbytes == 0 || conn->state >= HTTP_STATE_READY || !conn->canProceed) {
             break;
         }
@@ -596,7 +587,6 @@ void *httpGetConnHost(HttpConn *conn)
 
 void httpResetCredentials(HttpConn *conn)
 {
-    //  MOB - check
     conn->authType = 0;
     conn->username = 0;
     conn->password = 0;
@@ -701,7 +691,7 @@ void httpSetState(HttpConn *conn, int state)
     }
     conn->state = state;
     LOG(6, "Connection state change to %s", notifyState[state]);
-    HTTP_NOTIFY(conn, state, 0);
+    HTTP_NOTIFY(conn, HTTP_EVENT_STATE, state);
 }
 
 
@@ -739,15 +729,30 @@ HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 }
 
 
-void httpNotifyWritable(HttpConn *conn)
-{
-    HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_WRITABLE);
-}
+#if BIT_DEBUG
+char *events[] = {
+    "undefined", "state-change", "readable", "writable", "error", "destroy", "app-open", "app-close",
+};
+char *states[] = {
+    "undefined", "begin", "connected", "first", "parsed", "content", "ready", "running", "complete",
+};
+#endif
 
 
-void httpNotifyReadable(HttpConn *conn)
+void httpNotify(HttpConn *conn, int event, int arg)
 {
-    HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_READABLE);
+    if (conn->notifier) {
+#if BIT_DEBUG
+        if (event == HTTP_EVENT_STATE) {
+            mprLog(4, "Event: change to state \"%s\"", states[conn->state]);
+        } else if (event < 0 || event > HTTP_EVENT_MAX) {
+            mprLog(4, "Event: \"%d\" in state \"%s\"", event, states[conn->state]);
+        } else {
+            mprLog(4, "Event: \"%s\" in state \"%s\"", events[event], states[conn->state]);
+        }
+#endif
+        (conn->notifier)(conn, event, arg);
+    }
 }
 
 /*

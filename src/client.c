@@ -75,15 +75,10 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         mprLog(4, "Http: upgrade socket to TLS");
     }
 #endif
-#if BIT_WEB_SOCKETS
-    if (uri->wss) {
-        //  MOB - must set errorMsg
-        if (httpWebSockUpgrade(conn) < 0) {
-            conn->errorMsg = sp->errorMsg;
-            return 0;
-        }
+    if (uri->webSockets && httpUpgradeWebSocket(conn) < 0) {
+        conn->errorMsg = sp->errorMsg;
+        return 0;
     }
-#endif
     if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
         mprLog(level, "### Outgoing connection from %s:%d to %s:%d", 
             conn->ip, conn->port, conn->sock->ip, conn->sock->port);
@@ -138,7 +133,7 @@ int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl *ssl)
     httpSetState(conn, HTTP_STATE_CONNECTED);
     conn->setCredentials = 0;
     conn->tx->method = supper(method);
-    conn->tx->parsedUri = httpCreateUri(uri, /* MOB HTTP_COMPLETE_URI */ 0);
+    conn->tx->parsedUri = httpCreateUri(uri, 0);
 #if BIT_DEBUG
     conn->startTime = conn->http->now;
     conn->startTicks = mprGetTicks();

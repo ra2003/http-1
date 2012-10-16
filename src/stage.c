@@ -74,12 +74,11 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
             } else {
                 httpJoinPacketForService(q, packet, 0);
             }
-            HTTP_NOTIFY(q->conn, HTTP_EVENT_IO, HTTP_NOTIFY_READABLE);
         } else {
             /* Zero length packet means eof */
             httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-            HTTP_NOTIFY(q->conn, HTTP_EVENT_IO, HTTP_NOTIFY_READABLE);
         }
+        HTTP_NOTIFY(q->conn, HTTP_EVENT_READABLE, 0);
     }
     mprAssert(httpVerifyQueue(q));
 }

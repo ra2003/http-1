@@ -321,7 +321,6 @@ ssize httpRead(HttpConn *conn, char *buf, ssize size)
             httpWait(conn, 0, MPR_TIMEOUT_NO_BUSY);
         }
     }
-    //  MOB - better place for this?
     conn->lastActivity = conn->http->now;
     mprAssert(httpVerifyQueue(q));
 
@@ -531,10 +530,10 @@ ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize size)
                
     conn = q->conn;
     tx = conn->tx;
-    if (conn->finalized || tx == 0) {
+    if (tx == 0 || tx->finalized) {
         return MPR_ERR_CANT_WRITE;
     }
-    conn->responded = 1;
+    tx->responded = 1;
 
     for (written = 0; size > 0; ) {
         LOG(7, "httpWriteBlock q_count %d, q_max %d", q->count, q->max);

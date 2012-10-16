@@ -63,7 +63,7 @@ static void netOutgoingService(HttpQueue *q)
     conn->lastActivity = conn->http->now;
     mprAssert(conn->sock);
     
-    if (!conn->sock || conn->connectorComplete) {
+    if (!conn->sock || tx->connectorComplete) {
         return;
     }
     if (tx->flags & HTTP_TX_NO_BODY) {
@@ -131,7 +131,7 @@ static void netOutgoingService(HttpQueue *q)
         if ((q->flags & HTTP_QUEUE_EOF)) {
             httpConnectorComplete(conn);
         } else {
-            httpNotifyWritable(conn);
+            HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
         }
     }
 }

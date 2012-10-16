@@ -208,8 +208,6 @@ void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
     }
     host->ip = sclone(ip);
     host->port = port;
-
-    //  MOB - refactor this. Need a Host.name for trace and Host.name for using in redirections based on ServerName
     if (!host->name) {
         if (ip) {
             if (port > 0) {

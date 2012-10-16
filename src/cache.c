@@ -353,8 +353,8 @@ static void saveCachedResponse(HttpConn *conn)
     MprTime     modified;
 
     tx = conn->tx;
+    mprAssert(tx->finalized && tx->cacheBuffer);
 
-    mprAssert(conn->finalized && tx->cacheBuffer);
     buf = tx->cacheBuffer;
     mprAddNullToBuf(buf);
     tx->cacheBuffer = 0;

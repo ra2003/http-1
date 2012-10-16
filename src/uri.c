@@ -58,7 +58,7 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
             up->port = 80;
         }
         tok = &up->uri[5];
-        up->wss = 1;
+        up->webSockets = 1;
 
     } else if (sncmp(up->uri, "https://", 8) == 0) {
         up->scheme = sclone("https");
@@ -75,7 +75,7 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
             up->port = 443;
         }
         tok = &up->uri[6];
-        up->wss = 1;
+        up->webSockets = 1;
 
     } else {
         up->scheme = 0;
@@ -211,7 +211,7 @@ HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *pat
     if (scheme) {
         up->scheme = sclone(scheme);
         up->secure = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"));
-        up->wss = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
+        up->webSockets = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
     } else if (flags & HTTP_COMPLETE_URI) {
         up->scheme = "http";
     }
@@ -277,7 +277,7 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
         up->scheme = sclone("http");
     }
     up->secure = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"));
-    up->wss = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
+    up->webSockets = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
     if (base->host) {
         up->host = sclone(base->host);
     } else if (flags & HTTP_COMPLETE_URI) {
@@ -321,9 +321,8 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
 
 /*
     Complete the "uri" using missing parts from base
-    MOB - flags unused
  */
-HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
+HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
 {
     if (!base) {
         if (!uri->scheme) {
@@ -356,7 +355,7 @@ HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base, int flags)
         }
     }
     uri->secure = (smatch(uri->scheme, "https") || smatch(uri->scheme, "wss"));
-    uri->wss = (smatch(uri->scheme, "ws") || smatch(uri->scheme, "wss"));
+    uri->webSockets = (smatch(uri->scheme, "ws") || smatch(uri->scheme, "wss"));
     return uri;
 }
 

@@ -58,29 +58,27 @@ void httpDestroyTx(HttpTx *tx)
 static void manageTx(HttpTx *tx, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
-        mprMark(tx->ext);
-        mprMark(tx->etag);
-        mprMark(tx->filename);
-        mprMark(tx->handler);
-        mprMark(tx->parsedUri);
-        mprMark(tx->method);
-        mprMark(tx->conn);
-        mprMark(tx->outputPipeline);
-        mprMark(tx->connector);
-        mprMark(tx->queue[0]);
-        mprMark(tx->queue[1]);
-        mprMark(tx->headers);
+        mprMark(tx->altBody);
         mprMark(tx->cache);
         mprMark(tx->cacheBuffer);
         mprMark(tx->cachedContent);
-        mprMark(tx->outputRanges);
+        mprMark(tx->conn);
+        mprMark(tx->connector);
         mprMark(tx->currentRange);
-        mprMark(tx->rangeBoundary);
-        mprMark(tx->altBody);
+        mprMark(tx->ext);
+        mprMark(tx->etag);
         mprMark(tx->file);
-#if BIT_WEB_SOCKETS
+        mprMark(tx->filename);
+        mprMark(tx->handler);
+        mprMark(tx->headers);
+        mprMark(tx->method);
+        mprMark(tx->outputPipeline);
+        mprMark(tx->outputRanges);
+        mprMark(tx->parsedUri);
+        mprMark(tx->queue[0]);
+        mprMark(tx->queue[1]);
+        mprMark(tx->rangeBoundary);
         mprMark(tx->webSockKey);
-#endif
 
     } else if (flags & MPR_MANAGE_FREE) {
         httpDestroyTx(tx);
@@ -234,18 +232,21 @@ void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
  */
 void httpConnectorComplete(HttpConn *conn)
 {
-    conn->connectorComplete = 1;
-    conn->finalized = 1;
+    conn->tx->connectorComplete = 1;
+    conn->tx->finalized = 1;
 }
 
 
 void httpFinalize(HttpConn *conn)
 {
-    if (conn->finalized) {
+    HttpTx      *tx;
+
+    tx = conn->tx;
+    if (tx->finalized) {
         return;
     }
-    conn->responded = 1;
-    conn->finalized = 1;
+    tx->responded = 1;
+    tx->finalized = 1;
 
     if (conn->state >= HTTP_STATE_CONNECTED && conn->writeq && conn->sock) {
         httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
@@ -253,17 +254,17 @@ void httpFinalize(HttpConn *conn)
         if (conn->state >= HTTP_STATE_READY && !conn->inHttpProcess) {
             httpPump(conn, NULL);
         }
-        conn->refinalize = 0;
+        tx->refinalize = 0;
     } else {
         /* Pipeline has not been setup yet */
-        conn->refinalize = 1;
+        tx->refinalize = 1;
     }
 }
 
 
 int httpIsFinalized(HttpConn *conn)
 {
-    return conn->finalized;
+    return conn->tx->finalized;
 }
 
 
@@ -286,7 +287,7 @@ ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
     char        *body;
 
     tx = conn->tx;
-    conn->responded = 1;
+    tx->responded = 1;
     body = sfmtv(fmt, args);
     tx->altBody = body;
     tx->length = slen(tx->altBody);
@@ -399,12 +400,13 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     char            *dir, *cp;
 
     mprAssert(targetUri);
-    if (conn->finalized) {
+    rx = conn->rx;
+    tx = conn->tx;
+
+    if (tx->finalized) {
         /* A response has already been formulated */
         return;
     }
-    rx = conn->rx;
-    tx = conn->tx;
     tx->status = status;
 
     if (schr(targetUri, '$')) {
@@ -436,7 +438,7 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             }
             target->path = sjoin(dir, "/", target->path, NULL);
         }
-        target = httpCompleteUri(target, base, 0);
+        target = httpCompleteUri(target, base);
         targetUri = httpUriToString(target, 0);
         httpSetHeader(conn, "Location", "%s", targetUri);
         httpFormatResponse(conn, 
@@ -599,14 +601,14 @@ void httpSetEntityLength(HttpConn *conn, int64 len)
 
 void httpSetResponded(HttpConn *conn)
 {
-    conn->responded = 1;
+    conn->tx->responded = 1;
 }
 
 
 void httpSetStatus(HttpConn *conn, int status)
 {
     conn->tx->status = status;
-    conn->responded = 1;
+    conn->tx->responded = 1;
 }
 
 
@@ -635,7 +637,7 @@ void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
         return;
     }    
     tx->flags |= HTTP_TX_HEADERS_CREATED;
-    conn->responded = 1;
+    tx->responded = 1;
     if (conn->headersCallback) {
         /* Must be before headers below */
         (conn->headersCallback)(conn->headersCallbackArg);

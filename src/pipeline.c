@@ -79,8 +79,8 @@ void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     /*
         Refinalize if httpFinalize was called before the Tx pipeline was created
      */
-    if (conn->refinalize) {
-        conn->finalized = 0;
+    if (tx->refinalize) {
+        tx->finalized = 0;
         httpFinalize(conn);
     }
 }
@@ -241,9 +241,9 @@ void httpStartPipeline(HttpConn *conn)
         q->flags |= HTTP_QUEUE_STARTED;
         q->stage->start(q);
     }
-    if (!conn->error && !conn->connectorComplete && rx->remainingContent > 0) {
+    if (!conn->error && !tx->connectorComplete && rx->remainingContent > 0) {
         /* If no remaining content, wait till the processing stage to avoid duplicate writable events */
-        httpNotifyWritable(conn);
+        HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
     }
 }
 
@@ -259,8 +259,7 @@ void httpReadyHandler(HttpConn *conn)
 }
 
 
-//  MOB - rename. Conveys initial processing
-int httpProcessHandler(HttpConn *conn)
+bool httpPumpHandler(HttpConn *conn)
 {
     HttpQueue   *q;
     
@@ -268,7 +267,7 @@ int httpProcessHandler(HttpConn *conn)
     if (!q->stage->writable) {
        return 0;
     }
-    if (!conn->finalized) {
+    if (!conn->tx->finalized) {
         q->stage->writable(q);
         if (q->count > 0) {
             httpScheduleQueue(q);

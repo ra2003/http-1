@@ -348,7 +348,7 @@ static void loginServiceProc(HttpConn *conn)
                 Preserve protocol scheme from existing connection
              */
             HttpUri *where = httpCreateUri(referrer, 0);
-            httpCompleteUri(where, conn->rx->parsedUri, 0);
+            httpCompleteUri(where, conn->rx->parsedUri);
             referrer = httpUriToString(where, 0);
             httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, referrer);
         } else {
@@ -419,7 +419,7 @@ void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginService, c
             logoutService = &logoutService[8];
             secure = 1;
         }
-        //  MOB - should be only POST
+        //  TODO MOB - should be only POST
         httpSetRouteMethods(route, "GET, POST");
         route = httpCreateProcRoute(parent, logoutService, logoutServiceProc);
         route->auth->type = 0;

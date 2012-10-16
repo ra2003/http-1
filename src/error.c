@@ -23,7 +23,6 @@ void httpDisconnect(HttpConn *conn)
     conn->error = 1;
     conn->keepAliveCount = -1;
     if (conn->rx) {
-        //  MOB - what value is this? 
         conn->rx->eof = 1;
     }
 }
@@ -49,7 +48,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     HttpRx      *rx;
     HttpTx      *tx;
     cchar       *uri;
-    int         status;
+    int         abort, status;
 
     mprAssert(fmt);
     rx = conn->rx;
@@ -68,28 +67,23 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     if (flags & HTTP_ABORT) {
         conn->connError = 1;
         if (rx) {
-            //  MOB - what value is this?
             rx->eof = 1;
         }
     }
-    if (flags & HTTP_ABORT || (tx && tx->flags & HTTP_TX_HEADERS_CREATED)) {
-        /* 
-            If headers have been sent, must let the other side of the failure - abort is the only way.
-            Disconnect will cause a readable (EOF) event. Call formatErrorv for client-side code to set errorMsg.
-         */
-        httpDisconnect(conn);
-        formatErrorv(conn, status, fmt, args);
+    /* 
+        If headers have been sent, must let the other side of the failure - abort is the only way.
+        Disconnect will cause a readable (EOF) event. Call formatErrorv for client-side code to set errorMsg.
+     */
+    abort = (flags & HTTP_ABORT || (tx && tx->flags & HTTP_TX_HEADERS_CREATED));
+    if (!conn->error) {
         conn->error = 1;
-        HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_ERROR);
+        formatErrorv(conn, status, fmt, args);
+        HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
+    }
+    if (abort) {
+        httpDisconnect(conn);
         return;
     }
-    if (conn->error) {
-        return;
-    }
-    conn->error = 1;
-    formatErrorv(conn, status, fmt, args);
-    HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_ERROR);
-
     if (conn->endpoint && tx && rx) {
         if (!(tx->flags & HTTP_TX_HEADERS_CREATED)) {
             if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status))) {
@@ -99,7 +93,6 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
             }
         }
     }
-    conn->responded = 1;
     httpFinalize(conn);
 }
 

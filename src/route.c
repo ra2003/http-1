@@ -90,7 +90,7 @@ HttpRoute *httpCreateRoute(HttpHost *host)
     httpInitTrace(route->trace);
 
     if ((route->mimeTypes = mprCreateMimeTypes("mime.types")) == 0) {
-        route->mimeTypes = MPR->mimeTypes;                                                                  
+        route->mimeTypes = MPR->mimeTypes;
     }  
     definePathVars(route);
     return route;
@@ -225,9 +225,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->logFormat);
         mprMark(route->logPath);
         mprMark(route->mutex);
-#if BIT_WEB_SOCKETS
         mprMark(route->webSocketsProtocol);
-#endif
 
     } else if (flags & MPR_MANAGE_FREE) {
         if (route->patternCompiled && (route->flags & HTTP_ROUTE_FREE_PATTERN)) {
@@ -399,7 +397,7 @@ void httpRouteRequest(HttpConn *conn)
     if (rewrites >= HTTP_MAX_REWRITE) {
         httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
     }
-    if (conn->finalized) {
+    if (tx->finalized) {
         /* 
             Must be no data in queues as handlers and pipeline are not yet started. Only errors and redirects 
             using tx->altBody 
@@ -577,7 +575,7 @@ static int testRoute(HttpConn *conn, HttpRoute *route)
     if ((rc = (*proc)(conn, route, 0)) != HTTP_ROUTE_OK) {
         return rc;
     }
-    if (!conn->finalized && tx->handler->match) {
+    if (!tx->finalized && tx->handler->match) {
         rc = tx->handler->match(conn, route, HTTP_QUEUE_TX);
     }
     return rc;
@@ -1606,7 +1604,7 @@ void httpFinalizeRoute(HttpRoute *route)
 /********************************* Path and URI Expansion *****************************/
 /*
     What does this return. Does it return an absolute URI?
-    MOB - rename httpUri() and move to uri.c
+    MOB - consider rename httpUri() and move to uri.c
  */
 char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
 {
@@ -1948,7 +1946,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         return HTTP_ROUTE_OK;
     }
     if (!httpAuthenticate(conn)) {
-        if (!conn->finalized && route->auth && route->auth->type) {
+        if (!conn->tx->finalized && route->auth && route->auth->type) {
             (route->auth->type->askLogin)(conn);
         }
         /* Request has been denied and fully handled */
@@ -2283,7 +2281,6 @@ void httpAddResourceGroup(HttpRoute *parent, cchar *resource)
     addRestful(parent, "show",      "GET",    "/{id=[0-9]+}$",           "show",          resource);
     addRestful(parent, "update",    "PUT",    "/{id=[0-9]+}$",           "update",        resource);
     addRestful(parent, "destroy",   "DELETE", "/{id=[0-9]+}$",           "destroy",       resource);
-    //  MOB - rethink "custom" name - should action be after id? Should this be custom-${action}?
     addRestful(parent, "custom",    "POST",   "/{action}/{id=[0-9]+}$",  "${action}",     resource);
     addRestful(parent, "default",   "*",      "/{action}$",              "cmd-${action}", resource);
 }

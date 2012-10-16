@@ -1628,7 +1628,7 @@ extern int httpOpenWebSockFilter(Http *http);
 /** 
     Notifier events
  */
-#define HTTP_EVENT_STATE            1       /**< The request has data available for reading */
+#define HTTP_EVENT_STATE            1       /**< The request is changing state */
 #define HTTP_EVENT_READABLE         2       /**< The request has data available for reading */
 #define HTTP_EVENT_WRITABLE         3       /**< The request is now writable (post / put data) */
 #define HTTP_EVENT_ERROR            4       /**< The request has an error */
@@ -1637,7 +1637,7 @@ extern int httpOpenWebSockFilter(Http *http);
 /*
     Application level events 
  */
-#define HTTP_EVENT_APP_OPEN         6       /**< The request is now closed */
+#define HTTP_EVENT_APP_OPEN         6       /**< The request is now open */
 #define HTTP_EVENT_APP_CLOSE        7       /**< The request is now closed */
 #define HTTP_EVENT_MAX              8
 
@@ -2166,12 +2166,24 @@ extern void httpSetConnHost(HttpConn *conn, void *host);
 
 /** 
     Define a notifier callback for this connection.
-    @description The notifier callback will be invoked as Http requests are processed.
+    @description The notifier callback will be invoked for state changes and I/O events as Http requests are processed.
+    The supported events are:
+    <ul>
+    <li>HTTP_EVENT_STATE &mdash; The request is changing state. Valid states are:
+        HTTP_STATE_BEGIN, HTTP_STATE_CONNECTED, HTTP_STATE_FIRST, HTTP_STATE_CONTENT, HTTP_STATE_READY,
+        HTTP_STATE_RUNNING, HTTP_STATE_COMPLETE</li>
+    <li>HTTP_EVENT_READABLE &mdash; There is data available to read</li>
+    <li>HTTP_EVENT_WRITABLE &mdash; The outgoing pipeline can absorb more data</li>
+    <li>HTTP_EVENT_ERROR &mdash; The request has encountered an error</li>
+    <li>HTTP_EVENT_DESTROY &mdash; The request structure is about to be destoyed</li>
+    <li>HTTP_EVENT_OPEN &mdash; The application layer is now open</li>
+    <li>HTTP_EVENT_CLOSE &mdash; The application layer is now closed</li>
+    </ul>
     @param conn HttpConn connection object created via $httpCreateConn
-    @param fn Notifier function. 
+    @param notifier Notifier function. 
     @ingroup HttpConn
  */
-extern void httpSetConnNotifier(HttpConn *conn, HttpNotifier fn);
+void httpSetConnNotifier(HttpConn *conn, HttpNotifier notifier);
 
 /** 
     Set the Http credentials
@@ -5398,9 +5410,11 @@ extern void httpStopHost(HttpHost *host);
     @stability Prototype
     @defgroup HttpWebSockets HttpWebSockets
     @see httpGetWebSocketCloseReason httpGetWebSocketProtocol httpSend httpSendBlock httpSendClose
-    httpSetWebSocketProtocols httpWebSocketOrderlyClosed
+        httpSetWebSocketProtocols httpWebSocketOrderlyClosed
  */
-typedef struct WebSocket {} WebSocket;
+typedef struct WebSocket {
+    int     reserved;
+} WebSocket;
 
 #define WS_VERSION     13
 #define WS_MAGIC       "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -5466,7 +5480,7 @@ extern char *httpGetWebSocketProtocol(HttpConn *conn);
 extern ssize httpSend(HttpConn *conn, cchar *fmt, ...);
 
 /**
-    Send a message to the web socket peer
+    Send a message of a given type to the web socket peer
     @param conn HttpConn connection object created via $httpCreateConn
     @param type Web socket message type. Choose from WS_MSG_TEXT, WS_MSG_BINARY or WS_MSG_PING. 
         Use httpSendClose to send a close message. Do not send a WS_MSG_PONG message as it is generated internally

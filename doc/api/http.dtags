@@ -897,8 +897,8 @@
       <type>void</type>
       <name>httpSetConnNotifier</name>
       <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>gaa2583067b73bfb6b79019f21bec6b43d</anchor>
-      <arglist>(HttpConn *conn, HttpNotifier fn)</arglist>
+      <anchor>ga6c39eab8e8b50e632f7e5620fce05318</anchor>
+      <arglist>(HttpConn *conn, HttpNotifier notifier)</arglist>
     </member>
     <member kind="function">
       <type>void</type>

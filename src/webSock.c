@@ -10,7 +10,7 @@
 
 /********************************** Locals ************************************/
 /*
-    Input states
+    Message frame states
  */
 #define WS_BEGIN       0
 #define WS_EXT_DATA    1                /* Unused */
@@ -292,7 +292,7 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
             httpServiceQueues(q->conn);
             rx->currentPacket = 0;
         }
-        rx->state = WS_BEGIN;
+        rx->frameState = WS_BEGIN;
         return 0;
 
     case OP_CLOSE:
@@ -319,17 +319,18 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
         }
         /* Advance from the content state */
         httpSetState(conn, HTTP_STATE_READY);
-        rx->state = WS_CLOSED;
+        rx->frameState = WS_CLOSED;
+        rx->webSockState = WS_STATE_CLOSED;
         return 0;
 
     case OP_PING:
         httpSendBlock(conn, WS_MSG_PONG, mprGetBufStart(content), mprGetBufLength(content));
-        rx->state = WS_BEGIN;
+        rx->frameState = WS_BEGIN;
         return 0;
 
     case OP_PONG:
         /* Do nothing */
-        rx->state = WS_BEGIN;
+        rx->frameState = WS_BEGIN;
         return 0;
 
     default:
@@ -337,7 +338,8 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
         break;
     }
     /* Should not get here */
-    rx->state = WS_CLOSED;
+    rx->frameState = WS_CLOSED;
+    rx->webSockState = WS_STATE_CLOSED;
     return WS_STATUS_PROTOCOL_ERROR;
 }
 
@@ -361,13 +363,14 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     if (packet->flags & HTTP_PACKET_END) {
         /* EOF packet means the socket has been abortively closed */
         rx->closing = 1;
-        rx->state = WS_CLOSED;
+        rx->frameState = WS_CLOSED;
+        rx->webSockState = WS_STATE_CLOSED;
         rx->closeStatus = WS_STATUS_COMMS_ERROR;
     }
     while (1) {
-        mprLog(5, "webSocketFilter: incoming state %d", rx->state);
+        mprLog(5, "webSocketFilter: frame state %d", rx->frameState);
         error = 0;
-        switch (rx->state) {
+        switch (rx->frameState) {
         case WS_CLOSED:
             mprLog(5, "webSocketFilter: incoming closed. Finalizing");
             HTTP_NOTIFY(conn, HTTP_EVENT_APP_CLOSE, rx->closeStatus);
@@ -417,7 +420,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 len += (uchar) *fp++;
             }
             rx->frameLength = len;
-            rx->state = WS_MSG;
+            rx->frameState = WS_MSG;
             rx->maskOffset = mask ? 0 : -1;
             if (mask) {
                 for (i = 0; i < 4; i++) {
@@ -426,7 +429,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             }
             mprAssert(packet->content);
             mprAdjustBufStart(packet->content, fp - packet->content->start);
-            rx->state = WS_MSG;
+            rx->frameState = WS_MSG;
             mprLog(5, "webSocketFilter: Begin new packet \"%s\", fin %d, mask %d, length %d", codetxt[rx->opcode & 0xf],
                 rx->finalFrame, mask, len);
             break;
@@ -435,7 +438,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
         case WS_EXT_DATA:
             mprAssert(packet);
             mprLog(5, "webSocketFilter: EXT DATA - RESERVED");
-            rx->state = WS_MSG;
+            rx->frameState = WS_MSG;
             break;
 #endif
 
@@ -502,7 +505,8 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
         if (error) {
             mprError("webSocketFilter: WebSockets error Status %d", error);
             httpSendClose(conn, error, NULL);
-            rx->state = WS_CLOSED;
+            rx->frameState = WS_CLOSED;
+            rx->webSockState = WS_STATE_CLOSED;
             HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, error);
         }
     }
@@ -568,6 +572,7 @@ void httpSendClose(HttpConn *conn, int status, cchar *reason)
     /* 
         NOTE: this sets an expectation that the close message will be acknowledged by the peer, but we don't change state 
      */
+    rx->webSockState = WS_STATE_CLOSING;
     rx->closing = 1;
     if ((packet = httpCreateDataPacket(2)) == 0) {
         return;
@@ -729,6 +734,7 @@ int httpUpgradeWebSocket(HttpConn *conn)
     conn->upgraded = 1;
     conn->keepAliveCount = -1;
     conn->rx->remainingContent = MAXINT;
+    conn->rx->webSockState = WS_STATE_CONNECTING;
     return 0;
 }
 
@@ -761,6 +767,7 @@ bool httpVerifyWebSocketsHandshake(HttpConn *conn)
         return 0;
     }
     mprLog(4, "WebSockets handsake verified");
+    conn->rx->webSockState = WS_STATE_OPEN;
     return 1;
 }
 

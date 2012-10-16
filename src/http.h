@@ -4148,7 +4148,8 @@ typedef struct HttpRx {
 
     int             authenticated;          /**< Request has been authenticated */
     int             chunkState;             /**< Chunk encoding state */
-    int             state;                  /**< Packet framing state */
+    int             frameState;             /**< WebSockets message frame state */
+    int             webSockState;           /**< WebSockets state */
     int             flags;                  /**< Rx modifiers */
     int             form;                   /**< Using mime-type application/x-www-form-urlencoded */
     int             streamInput;            /**< Streaming read data. Means !form */
@@ -5449,6 +5450,14 @@ typedef struct WebSocket {
 #define WS_STATUS_MISSING_EXTENSION    1010     /**< Unsupported WebSockets extension */
 #define WS_STATUS_INTERNAL_ERROR       1011     /**< Server terminating due to an internal error */
 #define WS_STATUS_TLS_ERROR            1015     /**< TLS handshake error */
+
+/*
+    WebSocket states (rx->webSockState)
+ */
+#define WS_STATE_CONNECTING     0               /**< WebSocket connection is being established */
+#define WS_STATE_OPEN           1               /**< WebSocket handsake is complete and ready for communications */
+#define WS_STATE_CLOSING        2               /**< WebSocket is closing */
+#define WS_STATE_CLOSED         3               /**< WebSocket is closed */
 
 /**
     Get the close reason supplied by the peer.

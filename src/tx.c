@@ -242,7 +242,7 @@ void httpFinalize(HttpConn *conn)
     HttpTx      *tx;
 
     tx = conn->tx;
-    if (tx->finalized) {
+    if (!tx || tx->finalized) {
         return;
     }
     tx->responded = 1;

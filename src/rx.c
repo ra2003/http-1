@@ -162,7 +162,8 @@ void httpPump(HttpConn *conn, HttpPacket *packet)
             conn->canProceed = processCompletion(conn);
             break;
         }
-        if (conn->connError || (conn->endpoint && conn->tx->connectorComplete && conn->state >= HTTP_STATE_RUNNING)) {
+        if (conn->connError || 
+                (conn->endpoint && conn->state >= HTTP_STATE_RUNNING && conn->tx && conn->tx->connectorComplete)) {
             httpSetState(conn, HTTP_STATE_COMPLETE);
             continue;
         }

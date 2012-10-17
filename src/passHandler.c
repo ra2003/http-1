@@ -17,7 +17,7 @@
     Handle Trace and Options requests. Handlers can do this themselves if they desire, but typically
     all Trace/Options requests come here.
  */
-void httpHandleOptionsTrace(HttpConn *conn)
+PUBLIC void httpHandleOptionsTrace(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -79,7 +79,7 @@ static void readyError(HttpQueue *q)
 }
 
 
-int httpOpenPassHandler(Http *http)
+PUBLIC int httpOpenPassHandler(Http *http)
 {
     HttpStage     *stage;
 

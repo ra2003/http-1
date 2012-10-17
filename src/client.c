@@ -113,7 +113,7 @@ static void setDefaultHeaders(HttpConn *conn)
 }
 
 
-int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl *ssl)
+PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl *ssl)
 {
     mprAssert(conn);
     mprAssert(method && *method);
@@ -154,7 +154,7 @@ int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl *ssl)
 /*  
     Check the response for authentication failures and redirections. Return true if a retry is requried.
  */
-bool httpNeedRetry(HttpConn *conn, char **url)
+PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
 {
     HttpAuthType    *authType;
     HttpRx          *rx;
@@ -194,7 +194,7 @@ bool httpNeedRetry(HttpConn *conn, char **url)
 /*  
     Set the request as being a multipart mime upload. This defines the content type and defines a multipart mime boundary
  */
-void httpEnableUpload(HttpConn *conn)
+PUBLIC void httpEnableUpload(HttpConn *conn)
 {
     conn->boundary = sfmt("--BOUNDARY--%Ld", conn->http->now);
     httpSetHeader(conn, "Content-Type", "multipart/form-data; boundary=%s", &conn->boundary[2]);
@@ -240,7 +240,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
 /*  
     Write upload data. This routine blocks. If you need non-blocking ... cut and paste.
  */
-ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *formData)
+PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *formData)
 {
     char    *path, *pair, *key, *value, *name;
     cchar   *type;

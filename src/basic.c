@@ -12,7 +12,7 @@
 /*
     Parse the client 'Authorization' header and the server 'Www-Authenticate' header
  */
-int httpBasicParse(HttpConn *conn)
+PUBLIC int httpBasicParse(HttpConn *conn)
 {
     HttpRx  *rx;
     char    *decoded, *cp;
@@ -36,7 +36,7 @@ int httpBasicParse(HttpConn *conn)
 /*
     Respond to the request by asking for a client login
  */
-void httpBasicLogin(HttpConn *conn)
+PUBLIC void httpBasicLogin(HttpConn *conn)
 {
     HttpAuth    *auth;
 
@@ -49,7 +49,7 @@ void httpBasicLogin(HttpConn *conn)
 /*
     Add the client 'Authorization' header for authenticated requests
  */
-void httpBasicSetHeaders(HttpConn *conn)
+PUBLIC void httpBasicSetHeaders(HttpConn *conn)
 {
     httpAddHeader(conn, "Authorization", "basic %s", mprEncode64(sfmt("%s:%s", conn->username, conn->password)));
 }

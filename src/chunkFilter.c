@@ -19,7 +19,7 @@ static void setChunkPrefix(HttpQueue *q, HttpPacket *packet);
 /* 
    Loadable module initialization
  */
-int httpOpenChunkFilter(Http *http)
+PUBLIC int httpOpenChunkFilter(Http *http)
 {
     HttpStage     *filter;
 
@@ -85,7 +85,7 @@ static void openChunk(HttpQueue *q)
     Return number of bytes available to read.
     NOTE: may set rx->eof and return 0 bytes on EOF.
  */
-ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
+PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
 {
     HttpConn    *conn;
     HttpRx      *rx;

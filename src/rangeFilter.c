@@ -20,7 +20,7 @@ static void startRange(HttpQueue *q);
 
 /*********************************** Code *************************************/
 
-int httpOpenRangeFilter(Http *http)
+PUBLIC int httpOpenRangeFilter(Http *http)
 {
     HttpStage     *filter;
 

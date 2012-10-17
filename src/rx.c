@@ -29,7 +29,7 @@ static int setParsedUri(HttpConn *conn);
 
 /*********************************** Code *************************************/
 
-HttpRx *httpCreateRx(HttpConn *conn)
+PUBLIC HttpRx *httpCreateRx(HttpConn *conn)
 {
     HttpRx      *rx;
 
@@ -113,7 +113,7 @@ static void manageRx(HttpRx *rx, int flags)
 }
 
 
-void httpDestroyRx(HttpRx *rx)
+PUBLIC void httpDestroyRx(HttpRx *rx)
 {
     if (rx->conn) {
         rx->conn->rx = 0;
@@ -127,7 +127,7 @@ void httpDestroyRx(HttpRx *rx)
     Process incoming requests and drive the state machine. This will process as many requests as possible before returning. 
     All socket I/O is non-blocking, and this routine must not block. Note: packet may be null.
  */
-void httpPump(HttpConn *conn, HttpPacket *packet)
+PUBLIC void httpPump(HttpConn *conn, HttpPacket *packet)
 {
     mprAssert(conn);
 
@@ -1168,7 +1168,7 @@ static bool processCompletion(HttpConn *conn)
 /*
     Used by ejscript Request.close
  */
-void httpCloseRx(HttpConn *conn)
+PUBLIC void httpCloseRx(HttpConn *conn)
 {
     if (conn->rx && !conn->rx->remainingContent) {
         /* May not have consumed all read data, so can't be assured the next request will be okay */
@@ -1180,7 +1180,7 @@ void httpCloseRx(HttpConn *conn)
 }
 
 
-bool httpContentNotModified(HttpConn *conn)
+PUBLIC bool httpContentNotModified(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -1207,7 +1207,7 @@ bool httpContentNotModified(HttpConn *conn)
 }
 
 
-HttpRange *httpCreateRange(HttpConn *conn, MprOff start, MprOff end)
+PUBLIC HttpRange *httpCreateRange(HttpConn *conn, MprOff start, MprOff end)
 {
     HttpRange     *range;
 
@@ -1229,7 +1229,7 @@ static void manageRange(HttpRange *range, int flags)
 }
 
 
-MprOff httpGetContentLength(HttpConn *conn)
+PUBLIC MprOff httpGetContentLength(HttpConn *conn)
 {
     if (conn->rx == 0) {
         mprAssert(conn->rx);
@@ -1239,7 +1239,7 @@ MprOff httpGetContentLength(HttpConn *conn)
 }
 
 
-cchar *httpGetCookies(HttpConn *conn)
+PUBLIC cchar *httpGetCookies(HttpConn *conn)
 {
     if (conn->rx == 0) {
         mprAssert(conn->rx);
@@ -1249,7 +1249,7 @@ cchar *httpGetCookies(HttpConn *conn)
 }
 
 
-cchar *httpGetHeader(HttpConn *conn, cchar *key)
+PUBLIC cchar *httpGetHeader(HttpConn *conn, cchar *key)
 {
     if (conn->rx == 0) {
         mprAssert(conn->rx);
@@ -1259,7 +1259,7 @@ cchar *httpGetHeader(HttpConn *conn, cchar *key)
 }
 
 
-char *httpGetHeadersFromHash(MprHash *hash)
+PUBLIC char *httpGetHeadersFromHash(MprHash *hash)
 {
     MprKey      *kp;
     char        *headers, *cp;
@@ -1285,13 +1285,13 @@ char *httpGetHeadersFromHash(MprHash *hash)
 }
 
 
-char *httpGetHeaders(HttpConn *conn)
+PUBLIC char *httpGetHeaders(HttpConn *conn)
 {
     return httpGetHeadersFromHash(conn->rx->headers);
 }
 
 
-MprHash *httpGetHeaderHash(HttpConn *conn)
+PUBLIC MprHash *httpGetHeaderHash(HttpConn *conn)
 {
     if (conn->rx == 0) {
         mprAssert(conn->rx);
@@ -1301,25 +1301,25 @@ MprHash *httpGetHeaderHash(HttpConn *conn)
 }
 
 
-cchar *httpGetQueryString(HttpConn *conn)
+PUBLIC cchar *httpGetQueryString(HttpConn *conn)
 {
     return (conn->rx && conn->rx->parsedUri) ? conn->rx->parsedUri->query : 0;
 }
 
 
-int httpGetStatus(HttpConn *conn)
+PUBLIC int httpGetStatus(HttpConn *conn)
 {
     return (conn->rx) ? conn->rx->status : 0;
 }
 
 
-char *httpGetStatusMessage(HttpConn *conn)
+PUBLIC char *httpGetStatusMessage(HttpConn *conn)
 {
     return (conn->rx) ? conn->rx->statusMessage : 0;
 }
 
 
-void httpSetMethod(HttpConn *conn, cchar *method)
+PUBLIC void httpSetMethod(HttpConn *conn, cchar *method)
 {
     conn->rx->method = sclone(method);
     parseMethod(conn);
@@ -1355,7 +1355,7 @@ static int setParsedUri(HttpConn *conn)
 }
 
 
-int httpSetUri(HttpConn *conn, cchar *uri)
+PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
 {
     HttpRx      *rx;
     char        *pathInfo;
@@ -1391,7 +1391,7 @@ static void waitHandler(HttpConn *conn, struct MprEvent *event)
     @param timeout Timeout in msec. If timeout is zer, wait forever. If timeout is < 0, use default inactivity 
         and duration timeouts.
  */
-int httpWait(HttpConn *conn, int state, MprTime timeout)
+PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
 {
     MprTime     mark, remaining, inactivityTimeout;
     int         eventMask, saveAsync, justOne, workDone;
@@ -1462,7 +1462,7 @@ int httpWait(HttpConn *conn, int state, MprTime timeout)
 /*  
     Set the connector as write blocked and can't proceed.
  */
-void httpSocketBlocked(HttpConn *conn)
+PUBLIC void httpSocketBlocked(HttpConn *conn)
 {
     mprLog(6, "Socket Blocked");
     conn->writeBlocked = 1;
@@ -1517,7 +1517,7 @@ static char *getToken(HttpConn *conn, cchar *delim)
 /*  
     Match the entity's etag with the client's provided etag.
  */
-bool httpMatchEtag(HttpConn *conn, char *requestedEtag)
+PUBLIC bool httpMatchEtag(HttpConn *conn, char *requestedEtag)
 {
     HttpRx  *rx;
     char    *tag;
@@ -1543,7 +1543,7 @@ bool httpMatchEtag(HttpConn *conn, char *requestedEtag)
     If an IF-MODIFIED-SINCE was specified, then return true if the resource has not been modified. If using
     IF-UNMODIFIED, then return true if the resource was modified.
  */
-bool httpMatchModified(HttpConn *conn, MprTime time)
+PUBLIC bool httpMatchModified(HttpConn *conn, MprTime time)
 {
     HttpRx   *rx;
 
@@ -1654,7 +1654,7 @@ static bool parseRange(HttpConn *conn, char *value)
 }
 
 
-void httpSetStageData(HttpConn *conn, cchar *key, cvoid *data)
+PUBLIC void httpSetStageData(HttpConn *conn, cchar *key, cvoid *data)
 {
     HttpRx      *rx;
 
@@ -1666,7 +1666,7 @@ void httpSetStageData(HttpConn *conn, cchar *key, cvoid *data)
 }
 
 
-cvoid *httpGetStageData(HttpConn *conn, cchar *key)
+PUBLIC cvoid *httpGetStageData(HttpConn *conn, cchar *key)
 {
     HttpRx      *rx;
 
@@ -1678,7 +1678,7 @@ cvoid *httpGetStageData(HttpConn *conn, cchar *key)
 }
 
 
-char *httpGetPathExt(cchar *path)
+PUBLIC char *httpGetPathExt(cchar *path)
 {
     char    *ep, *ext;
 
@@ -1697,7 +1697,7 @@ char *httpGetPathExt(cchar *path)
     Get the request extension. Look first at the URI pathInfo. If no extension, look at the filename if defined.
     Return NULL if no extension.
  */
-char *httpGetExt(HttpConn *conn)
+PUBLIC char *httpGetExt(HttpConn *conn)
 {
     HttpRx  *rx;
     char    *ext;
@@ -1719,7 +1719,7 @@ static int compareLang(char **s1, char **s2)
 }
 
 
-HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *defaultLang)
+PUBLIC HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *defaultLang)
 {
     HttpRx      *rx;
     HttpLang    *lang;
@@ -1766,7 +1766,7 @@ HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *defaultLang)
     first path component containing a "." Any path information after that is regarded as extra path.
     WARNING: Extra path is an old, unreliable, CGI specific technique. Do not use directories with embedded periods.
  */
-void httpTrimExtraPath(HttpConn *conn)
+PUBLIC void httpTrimExtraPath(HttpConn *conn)
 {
     HttpRx      *rx;
     char        *cp, *extra;

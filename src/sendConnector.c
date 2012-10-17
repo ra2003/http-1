@@ -23,7 +23,7 @@ static void sendClose(HttpQueue *q);
 
 /*********************************** Code *************************************/
 
-int httpOpenSendConnector(Http *http)
+PUBLIC int httpOpenSendConnector(Http *http)
 {
     HttpStage     *stage;
 
@@ -42,7 +42,7 @@ int httpOpenSendConnector(Http *http)
 /*  
     Initialize the send connector for a request
  */
-void httpSendOpen(HttpQueue *q)
+PUBLIC void httpSendOpen(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpTx      *tx;
@@ -82,7 +82,7 @@ static void sendClose(HttpQueue *q)
 }
 
 
-void httpSendOutgoingService(HttpQueue *q)
+PUBLIC void httpSendOutgoingService(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpTx      *tx;
@@ -343,9 +343,9 @@ static void adjustSendVec(HttpQueue *q, MprOff written)
 
 
 #else
-int httpOpenSendConnector(Http *http) { return 0; }
-void httpSendOpen(HttpQueue *q) {}
-void httpSendOutgoingService(HttpQueue *q) {}
+PUBLIC int httpOpenSendConnector(Http *http) { return 0; }
+PUBLIC void httpSendOpen(HttpQueue *q) {}
+PUBLIC void httpSendOutgoingService(HttpQueue *q) {}
 #endif /* !BIT_ROM */
 
 /*

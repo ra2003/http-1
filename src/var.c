@@ -11,7 +11,7 @@
 /*
     Define standard CGI variables
  */
-void httpCreateCGIParams(HttpConn *conn)
+PUBLIC void httpCreateCGIParams(HttpConn *conn)
 {
     HttpRx          *rx;
     HttpTx          *tx;
@@ -185,14 +185,14 @@ static void addBodyParams(HttpConn *conn)
 }
 
 
-void httpAddParams(HttpConn *conn)
+PUBLIC void httpAddParams(HttpConn *conn)
 {
     addQueryParams(conn);
     addBodyParams(conn);
 }
 
 
-MprHash *httpGetParams(HttpConn *conn)
+PUBLIC MprHash *httpGetParams(HttpConn *conn)
 { 
     if (conn->rx->params == 0) {
         conn->rx->params = mprCreateHash(HTTP_MED_HASH_SIZE, 0);
@@ -201,7 +201,7 @@ MprHash *httpGetParams(HttpConn *conn)
 }
 
 
-int httpTestParam(HttpConn *conn, cchar *var)
+PUBLIC int httpTestParam(HttpConn *conn, cchar *var)
 {
     MprHash    *vars;
     
@@ -210,7 +210,7 @@ int httpTestParam(HttpConn *conn, cchar *var)
 }
 
 
-cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
+PUBLIC cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
 {
     MprHash     *vars;
     cchar       *value;
@@ -221,7 +221,7 @@ cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
 }
 
 
-int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
+PUBLIC int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
 {
     MprHash     *vars;
     cchar       *value;
@@ -242,7 +242,7 @@ static int sortParam(MprKey **h1, MprKey **h2)
     Return the request parameters as a string. 
     This will return the exact same string regardless of the order of form parameters.
  */
-char *httpGetParamsString(HttpConn *conn)
+PUBLIC char *httpGetParamsString(HttpConn *conn)
 {
     HttpRx      *rx;
     MprHash     *params;
@@ -283,7 +283,7 @@ char *httpGetParamsString(HttpConn *conn)
 }
 
 
-void httpSetParam(HttpConn *conn, cchar *var, cchar *value) 
+PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value) 
 {
     MprHash     *vars;
 
@@ -292,7 +292,7 @@ void httpSetParam(HttpConn *conn, cchar *var, cchar *value)
 }
 
 
-void httpSetIntParam(HttpConn *conn, cchar *var, int value) 
+PUBLIC void httpSetIntParam(HttpConn *conn, cchar *var, int value) 
 {
     MprHash     *vars;
     
@@ -301,7 +301,7 @@ void httpSetIntParam(HttpConn *conn, cchar *var, int value)
 }
 
 
-bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
+PUBLIC bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
 {
     if (strcmp(value, httpGetParam(conn, var, " __UNDEF__ ")) == 0) {
         return 1;
@@ -310,7 +310,7 @@ bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
 }
 
 
-void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *upfile)
+PUBLIC void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *upfile)
 {
     HttpRx   *rx;
 
@@ -322,7 +322,7 @@ void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *upfile)
 }
 
 
-void httpRemoveUploadFile(HttpConn *conn, cchar *id)
+PUBLIC void httpRemoveUploadFile(HttpConn *conn, cchar *id)
 {
     HttpRx    *rx;
     HttpUploadFile  *upfile;
@@ -337,7 +337,7 @@ void httpRemoveUploadFile(HttpConn *conn, cchar *id)
 }
 
 
-void httpRemoveAllUploadedFiles(HttpConn *conn)
+PUBLIC void httpRemoveAllUploadedFiles(HttpConn *conn)
 {
     HttpRx          *rx;
     HttpUploadFile  *upfile;

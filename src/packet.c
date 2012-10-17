@@ -18,7 +18,7 @@ static void managePacket(HttpPacket *packet, int flags);
     used for incoming body content. If size > 0, then create a non-growable buffer 
     of the requested size.
  */
-HttpPacket *httpCreatePacket(ssize size)
+PUBLIC HttpPacket *httpCreatePacket(ssize size)
 {
     HttpPacket  *packet;
 
@@ -44,7 +44,7 @@ static void managePacket(HttpPacket *packet, int flags)
 }
 
 
-HttpPacket *httpCreateDataPacket(ssize size)
+PUBLIC HttpPacket *httpCreateDataPacket(ssize size)
 {
     HttpPacket    *packet;
 
@@ -56,7 +56,7 @@ HttpPacket *httpCreateDataPacket(ssize size)
 }
 
 
-HttpPacket *httpCreateEntityPacket(MprOff pos, MprOff size, HttpFillProc fill)
+PUBLIC HttpPacket *httpCreateEntityPacket(MprOff pos, MprOff size, HttpFillProc fill)
 {
     HttpPacket    *packet;
 
@@ -71,7 +71,7 @@ HttpPacket *httpCreateEntityPacket(MprOff pos, MprOff size, HttpFillProc fill)
 }
 
 
-HttpPacket *httpCreateEndPacket()
+PUBLIC HttpPacket *httpCreateEndPacket()
 {
     HttpPacket    *packet;
 
@@ -83,7 +83,7 @@ HttpPacket *httpCreateEndPacket()
 }
 
 
-HttpPacket *httpCreateHeaderPacket()
+PUBLIC HttpPacket *httpCreateHeaderPacket()
 {
     HttpPacket    *packet;
 
@@ -95,7 +95,7 @@ HttpPacket *httpCreateHeaderPacket()
 }
 
 
-HttpPacket *httpClonePacket(HttpPacket *orig)
+PUBLIC HttpPacket *httpClonePacket(HttpPacket *orig)
 {
     HttpPacket  *packet;
 
@@ -116,7 +116,7 @@ HttpPacket *httpClonePacket(HttpPacket *orig)
 }
 
 
-void httpAdjustPacketStart(HttpPacket *packet, MprOff size)
+PUBLIC void httpAdjustPacketStart(HttpPacket *packet, MprOff size)
 {
     if (packet->esize) {
         packet->epos += size;
@@ -127,7 +127,7 @@ void httpAdjustPacketStart(HttpPacket *packet, MprOff size)
 }
 
 
-void httpAdjustPacketEnd(HttpPacket *packet, MprOff size)
+PUBLIC void httpAdjustPacketEnd(HttpPacket *packet, MprOff size)
 {
     if (packet->esize) {
         packet->esize += size;
@@ -137,7 +137,7 @@ void httpAdjustPacketEnd(HttpPacket *packet, MprOff size)
 }
 
 
-HttpPacket *httpGetPacket(HttpQueue *q)
+PUBLIC HttpPacket *httpGetPacket(HttpQueue *q)
 {
     HttpQueue     *prev;
     HttpPacket    *packet;
@@ -171,7 +171,7 @@ HttpPacket *httpGetPacket(HttpQueue *q)
 /*  
     Test if the packet is too too large to be accepted by the downstream queue.
  */
-bool httpIsPacketTooBig(HttpQueue *q, HttpPacket *packet)
+PUBLIC bool httpIsPacketTooBig(HttpQueue *q, HttpPacket *packet)
 {
     ssize   size;
     
@@ -183,7 +183,7 @@ bool httpIsPacketTooBig(HttpQueue *q, HttpPacket *packet)
 /*  
     Join a packet onto the service queue. This joins packet content data.
  */
-void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
+PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
     if (q->first == 0) {
         /*  Just use the service queue as a holding queue while we aggregate the post data.  */
@@ -211,7 +211,7 @@ void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
     Join two packets by pulling the content from the second into the first.
     WARNING: this will not update the queue count. Assumes the either both are on the queue or neither. 
  */
-int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
+PUBLIC int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
 {
     ssize   len;
 
@@ -233,7 +233,7 @@ int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
     Join queue packets up to the maximum of the given size and the downstream queue packet size.
     WARNING: this will not update the queue count.
  */
-void httpJoinPackets(HttpQueue *q, ssize size)
+PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
 {
     HttpPacket  *packet, *first;
     ssize       len;
@@ -259,7 +259,7 @@ void httpJoinPackets(HttpQueue *q, ssize size)
 }
 
 
-void httpPutPacket(HttpQueue *q, HttpPacket *packet)
+PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
 {
     mprAssert(packet);
     mprAssert(q->put);
@@ -271,7 +271,7 @@ void httpPutPacket(HttpQueue *q, HttpPacket *packet)
 /*  
     Pass to the next stage in the pipeline
  */
-void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
+PUBLIC void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
 {
     mprAssert(packet);
     mprAssert(q->nextQ->put);
@@ -280,7 +280,7 @@ void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
 }
 
 
-void httpPutPackets(HttpQueue *q)
+PUBLIC void httpPutPackets(HttpQueue *q)
 {
     HttpPacket    *packet;
 
@@ -293,7 +293,7 @@ void httpPutPackets(HttpQueue *q)
 /*  
     Put the packet back at the front of the queue
  */
-void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
+PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
 {
     mprAssert(packet);
     mprAssert(packet->next == 0);
@@ -313,7 +313,7 @@ void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
 /*  
     Put a packet on the service queue.
  */
-void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
+PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
     mprAssert(packet);
    
@@ -338,7 +338,7 @@ void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
     on the queue. Ensure that the packet is not larger than "size" if it is greater than zero. If size < 0, then
     use the default packet size. 
  */
-int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
+PUBLIC int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
 {
     HttpPacket  *tail;
     ssize       len;
@@ -374,7 +374,7 @@ int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
     Split a packet at a given offset and return a new packet containing the data after the offset.
     The prefix data remains with the original packet. 
  */
-HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
+PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 {
     HttpPacket  *packet;
     ssize       count, size;

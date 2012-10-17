@@ -28,7 +28,7 @@ static cchar *setHeadersFromCache(HttpConn *conn, cchar *content);
 
 /************************************ Code ************************************/
 
-int httpOpenCacheHandler(Http *http)
+PUBLIC int httpOpenCacheHandler(Http *http)
 {
     HttpStage     *handler, *filter;
 
@@ -367,7 +367,7 @@ static void saveCachedResponse(HttpConn *conn)
 }
 
 
-ssize httpWriteCached(HttpConn *conn)
+PUBLIC ssize httpWriteCached(HttpConn *conn)
 {
     MprTime     modified;
     cchar       *cacheKey, *data, *content;
@@ -391,7 +391,7 @@ ssize httpWriteCached(HttpConn *conn)
 }
 
 
-ssize httpUpdateCache(HttpConn *conn, cchar *uri, cchar *data, MprTime lifespan)
+PUBLIC ssize httpUpdateCache(HttpConn *conn, cchar *uri, cchar *data, MprTime lifespan)
 {
     cchar   *key;
     ssize   len;
@@ -420,7 +420,7 @@ ssize httpUpdateCache(HttpConn *conn, cchar *uri, cchar *data, MprTime lifespan)
     Note: the URI should not include the route prefix (scriptName)
     The extensions should not contain ".". The methods may contain "*" for all methods.
  */
-void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *extensions, cchar *types, MprTime clientLifespan, 
+PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *extensions, cchar *types, MprTime clientLifespan, 
         MprTime serverLifespan, int flags)
 {
     HttpCache   *cache;

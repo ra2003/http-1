@@ -18,7 +18,7 @@ typedef struct HttpStatusCode {
 } HttpStatusCode;
 
 
-HttpStatusCode HttpStatusCodes[] = {
+PUBLIC HttpStatusCode HttpStatusCodes[] = {
     { 100, "100", "Continue" },
     { 101, "101", "Switching Protocols" },
     { 200, "200", "OK" },
@@ -75,7 +75,7 @@ static void updateCurrentDate(Http *http);
 
 /*********************************** Code *************************************/
 
-Http *httpCreate()
+PUBLIC Http *httpCreate()
 {
     Http            *http;
     HttpStatusCode  *code;
@@ -184,7 +184,7 @@ static void manageHttp(Http *http, int flags)
 }
 
 
-void httpDestroy(Http *http)
+PUBLIC void httpDestroy(Http *http)
 {
     if (http->timer) {
         mprRemoveEvent(http->timer);
@@ -198,13 +198,13 @@ void httpDestroy(Http *http)
 }
 
 
-void httpAddEndpoint(Http *http, HttpEndpoint *endpoint)
+PUBLIC void httpAddEndpoint(Http *http, HttpEndpoint *endpoint)
 {
     mprAddItem(http->endpoints, endpoint);
 }
 
 
-void httpRemoveEndpoint(Http *http, HttpEndpoint *endpoint)
+PUBLIC void httpRemoveEndpoint(Http *http, HttpEndpoint *endpoint)
 {
     mprRemoveItem(http->endpoints, endpoint);
 }
@@ -213,7 +213,7 @@ void httpRemoveEndpoint(Http *http, HttpEndpoint *endpoint)
 /*  
     Lookup a host address. If ipAddr is null or port is -1, then those elements are wild.
  */
-HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
+PUBLIC HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
 {
     HttpEndpoint    *endpoint;
     int             next;
@@ -233,7 +233,7 @@ HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
 }
 
 
-HttpEndpoint *httpGetFirstEndpoint(Http *http)
+PUBLIC HttpEndpoint *httpGetFirstEndpoint(Http *http)
 {
     return mprGetFirstItem(http->endpoints);
 }
@@ -242,19 +242,19 @@ HttpEndpoint *httpGetFirstEndpoint(Http *http)
 /*
     WARNING: this should not be called by users as httpCreateHost will automatically call this.
  */
-void httpAddHost(Http *http, HttpHost *host)
+PUBLIC void httpAddHost(Http *http, HttpHost *host)
 {
     mprAddItem(http->hosts, host);
 }
 
 
-void httpRemoveHost(Http *http, HttpHost *host)
+PUBLIC void httpRemoveHost(Http *http, HttpHost *host)
 {
     mprRemoveItem(http->hosts, host);
 }
 
 
-HttpHost *httpLookupHost(Http *http, cchar *name)
+PUBLIC HttpHost *httpLookupHost(Http *http, cchar *name)
 {
     HttpHost    *host;
     int         next;
@@ -268,7 +268,7 @@ HttpHost *httpLookupHost(Http *http, cchar *name)
 }
 
 
-void httpInitLimits(HttpLimits *limits, bool serverSide)
+PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
 {
     memset(limits, 0, sizeof(HttpLimits));
     limits->cacheItemSize = HTTP_MAX_CACHE_ITEM;
@@ -316,7 +316,7 @@ void httpInitLimits(HttpLimits *limits, bool serverSide)
 }
 
 
-HttpLimits *httpCreateLimits(int serverSide)
+PUBLIC HttpLimits *httpCreateLimits(int serverSide)
 {
     HttpLimits  *limits;
 
@@ -327,7 +327,7 @@ HttpLimits *httpCreateLimits(int serverSide)
 }
 
 
-void httpEaseLimits(HttpLimits *limits)
+PUBLIC void httpEaseLimits(HttpLimits *limits)
 {
     limits->receiveFormSize = MAXOFF;
     limits->receiveBodySize = MAXOFF;
@@ -336,19 +336,19 @@ void httpEaseLimits(HttpLimits *limits)
 }
 
 
-void httpAddStage(Http *http, HttpStage *stage)
+PUBLIC void httpAddStage(Http *http, HttpStage *stage)
 {
     mprAddKey(http->stages, stage->name, stage);
 }
 
 
-HttpStage *httpLookupStage(Http *http, cchar *name)
+PUBLIC HttpStage *httpLookupStage(Http *http, cchar *name)
 {
     return mprLookupKey(http->stages, name);
 }
 
 
-void *httpLookupStageData(Http *http, cchar *name)
+PUBLIC void *httpLookupStageData(Http *http, cchar *name)
 {
     HttpStage   *stage;
     if ((stage = mprLookupKey(http->stages, name)) != 0) {
@@ -358,7 +358,7 @@ void *httpLookupStageData(Http *http, cchar *name)
 }
 
 
-cchar *httpLookupStatus(Http *http, int status)
+PUBLIC cchar *httpLookupStatus(Http *http, int status)
 {
     HttpStatusCode  *ep;
     char            *key;
@@ -372,14 +372,14 @@ cchar *httpLookupStatus(Http *http, int status)
 }
 
 
-void httpSetForkCallback(Http *http, MprForkCallback callback, void *data)
+PUBLIC void httpSetForkCallback(Http *http, MprForkCallback callback, void *data)
 {
     http->forkCallback = callback;
     http->forkData = data;
 }
 
 
-void httpSetListenCallback(Http *http, HttpListenCallback fn)
+PUBLIC void httpSetListenCallback(Http *http, HttpListenCallback fn)
 {
     http->listenCallback = fn;
 }
@@ -471,7 +471,7 @@ static void timestamp()
 }
 
 
-void httpSetTimestamp(MprTime period)
+PUBLIC void httpSetTimestamp(MprTime period)
 {
     Http    *http;
 
@@ -541,7 +541,7 @@ static bool isIdle()
 }
 
 
-void httpAddConn(Http *http, HttpConn *conn)
+PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 {
     conn->started = http->now;
     mprAddItem(http->connections, conn);
@@ -557,7 +557,7 @@ void httpAddConn(Http *http, HttpConn *conn)
 }
 
 
-void httpRemoveConn(Http *http, HttpConn *conn)
+PUBLIC void httpRemoveConn(Http *http, HttpConn *conn)
 {
     mprRemoveItem(http->connections, conn);
 }
@@ -567,7 +567,7 @@ void httpRemoveConn(Http *http, HttpConn *conn)
     Create a random secret for use in authentication. Create once for the entire http service. Created on demand.
     Users can recall as required to update.
  */
-int httpCreateSecret(Http *http)
+PUBLIC int httpCreateSecret(Http *http)
 {
     MprTime     now;
     char        *hex = "0123456789abcdef";
@@ -602,13 +602,13 @@ int httpCreateSecret(Http *http)
 }
 
 
-void httpEnableTraceMethod(HttpLimits *limits, bool on)
+PUBLIC void httpEnableTraceMethod(HttpLimits *limits, bool on)
 {
     limits->enableTraceMethod = on;
 }
 
 
-char *httpGetDateString(MprPath *sbuf)
+PUBLIC char *httpGetDateString(MprPath *sbuf)
 {
     MprTime     when;
 
@@ -621,49 +621,49 @@ char *httpGetDateString(MprPath *sbuf)
 }
 
 
-void *httpGetContext(Http *http)
+PUBLIC void *httpGetContext(Http *http)
 {
     return http->context;
 }
 
 
-void httpSetContext(Http *http, void *context)
+PUBLIC void httpSetContext(Http *http, void *context)
 {
     http->context = context;
 }
 
 
-int httpGetDefaultClientPort(Http *http)
+PUBLIC int httpGetDefaultClientPort(Http *http)
 {
     return http->defaultClientPort;
 }
 
 
-cchar *httpGetDefaultClientHost(Http *http)
+PUBLIC cchar *httpGetDefaultClientHost(Http *http)
 {
     return http->defaultClientHost;
 }
 
 
-void httpSetDefaultClientPort(Http *http, int port)
+PUBLIC void httpSetDefaultClientPort(Http *http, int port)
 {
     http->defaultClientPort = port;
 }
 
 
-void httpSetDefaultClientHost(Http *http, cchar *host)
+PUBLIC void httpSetDefaultClientHost(Http *http, cchar *host)
 {
     http->defaultClientHost = sclone(host);
 }
 
 
-void httpSetSoftware(Http *http, cchar *software)
+PUBLIC void httpSetSoftware(Http *http, cchar *software)
 {
     http->software = sclone(software);
 }
 
 
-void httpSetProxy(Http *http, cchar *host, int port)
+PUBLIC void httpSetProxy(Http *http, cchar *host, int port)
 {
     http->proxyHost = sclone(host);
     http->proxyPort = port;

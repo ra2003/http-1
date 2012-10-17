@@ -15,7 +15,7 @@ static void pairQueues(HttpConn *conn);
 
 /*********************************** Code *************************************/
 
-void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
+PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
 {
     Http        *http;
     HttpTx      *tx;
@@ -86,7 +86,7 @@ void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
 }
 
 
-void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
+PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
 {
     HttpTx      *tx;
     HttpRx      *rx;
@@ -164,13 +164,13 @@ static void openQueues(HttpConn *conn)
 }
 
 
-void httpSetPipelineHandler(HttpConn *conn, HttpStage *handler)
+PUBLIC void httpSetPipelineHandler(HttpConn *conn, HttpStage *handler)
 {
     conn->tx->handler = (handler) ? handler : conn->http->passHandler;
 }
 
 
-void httpSetSendConnector(HttpConn *conn, cchar *path)
+PUBLIC void httpSetSendConnector(HttpConn *conn, cchar *path)
 {
 #if !BIT_ROM
     HttpTx      *tx;
@@ -184,7 +184,7 @@ void httpSetSendConnector(HttpConn *conn, cchar *path)
 }
 
 
-void httpDestroyPipeline(HttpConn *conn)
+PUBLIC void httpDestroyPipeline(HttpConn *conn)
 {
     HttpTx      *tx;
     HttpQueue   *q, *qhead;
@@ -205,7 +205,7 @@ void httpDestroyPipeline(HttpConn *conn)
 }
 
 
-void httpStartPipeline(HttpConn *conn)
+PUBLIC void httpStartPipeline(HttpConn *conn)
 {
     HttpQueue   *qhead, *q, *prevQ, *nextQ;
     HttpTx      *tx;
@@ -248,7 +248,7 @@ void httpStartPipeline(HttpConn *conn)
 }
 
 
-void httpReadyHandler(HttpConn *conn)
+PUBLIC void httpReadyHandler(HttpConn *conn)
 {
     HttpQueue   *q;
     
@@ -259,7 +259,7 @@ void httpReadyHandler(HttpConn *conn)
 }
 
 
-bool httpPumpHandler(HttpConn *conn)
+PUBLIC bool httpPumpHandler(HttpConn *conn)
 {
     HttpQueue   *q;
     
@@ -281,7 +281,7 @@ bool httpPumpHandler(HttpConn *conn)
 /*  
     Run the queue service routines until there is no more work to be done. NOTE: all I/O is non-blocking.
  */
-bool httpServiceQueues(HttpConn *conn)
+PUBLIC bool httpServiceQueues(HttpConn *conn)
 {
     HttpQueue   *q;
     int         workDone;
@@ -300,7 +300,7 @@ bool httpServiceQueues(HttpConn *conn)
 }
 
 
-void httpDiscardData(HttpConn *conn, int dir)
+PUBLIC void httpDiscardData(HttpConn *conn, int dir)
 {
     HttpTx      *tx;
     HttpQueue   *q, *qhead;

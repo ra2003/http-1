@@ -30,7 +30,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
 
 /*********************************** Code *************************************/
 
-bool httpPamVerifyUser(HttpConn *conn)
+PUBLIC bool httpPamVerifyUser(HttpConn *conn)
 {
     MprBuf              *abilities;
     pam_handle_t        *pamh;

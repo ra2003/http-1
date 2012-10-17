@@ -13,7 +13,7 @@ static void manageQueue(HttpQueue *q, int flags);
 
 /************************************ Code ************************************/
 
-HttpQueue *httpCreateQueueHead(HttpConn *conn, cchar *name)
+PUBLIC HttpQueue *httpCreateQueueHead(HttpConn *conn, cchar *name)
 {
     HttpQueue   *q;
 
@@ -26,7 +26,7 @@ HttpQueue *httpCreateQueueHead(HttpConn *conn, cchar *name)
 }
 
 
-HttpQueue *httpCreateQueue(HttpConn *conn, HttpStage *stage, int dir, HttpQueue *prev)
+PUBLIC HttpQueue *httpCreateQueue(HttpConn *conn, HttpStage *stage, int dir, HttpQueue *prev)
 {
     HttpQueue   *q;
 
@@ -71,7 +71,7 @@ static void manageQueue(HttpQueue *q, int flags)
 }
 
 
-void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
+PUBLIC void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
 {
     q->stage = stage;
     q->close = stage->close;
@@ -88,7 +88,7 @@ void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
 }
 
 
-void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
+PUBLIC void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
 {
     q->conn = conn;
     q->nextQ = q;
@@ -104,7 +104,7 @@ void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
 /*  
     Insert a queue after the previous element
  */
-void httpAppendQueueToHead(HttpQueue *head, HttpQueue *q)
+PUBLIC void httpAppendQueueToHead(HttpQueue *head, HttpQueue *q)
 {
     q->nextQ = head;
     q->prevQ = head->prevQ;
@@ -114,7 +114,7 @@ void httpAppendQueueToHead(HttpQueue *head, HttpQueue *q)
 #endif
 
 
-void httpSuspendQueue(HttpQueue *q)
+PUBLIC void httpSuspendQueue(HttpQueue *q)
 {
     mprLog(7, "Suspend q %s", q->owner);
     q->flags |= HTTP_QUEUE_SUSPENDED;
@@ -125,7 +125,7 @@ void httpSuspendQueue(HttpQueue *q)
     Remove all data in the queue. If removePackets is true, actually remove the packet too.
     This preserves the header and EOT packets.
  */
-void httpDiscardQueueData(HttpQueue *q, bool removePackets)
+PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
 {
     HttpPacket  *packet, *prev, *next;
     ssize       len;
@@ -168,7 +168,7 @@ void httpDiscardQueueData(HttpQueue *q, bool removePackets)
     If blocking is requested, the call will block until the queue count falls below the queue max.
     WARNING: Be very careful when using blocking == true. Should only be used by end applications and not by middleware.
  */
-bool httpFlushQueue(HttpQueue *q, bool blocking)
+PUBLIC bool httpFlushQueue(HttpQueue *q, bool blocking)
 {
     HttpConn    *conn;
     HttpQueue   *next;
@@ -190,7 +190,7 @@ bool httpFlushQueue(HttpQueue *q, bool blocking)
 }
 
 
-void httpResumeQueue(HttpQueue *q)
+PUBLIC void httpResumeQueue(HttpQueue *q)
 {
     mprLog(7, "Enable q %s", q->owner);
     q->flags &= ~HTTP_QUEUE_SUSPENDED;
@@ -198,7 +198,7 @@ void httpResumeQueue(HttpQueue *q)
 }
 
 
-HttpQueue *httpFindPreviousQueue(HttpQueue *q)
+PUBLIC HttpQueue *httpFindPreviousQueue(HttpQueue *q)
 {
     while (q->prevQ) {
         q = q->prevQ;
@@ -210,7 +210,7 @@ HttpQueue *httpFindPreviousQueue(HttpQueue *q)
 }
 
 
-HttpQueue *httpGetNextQueueForService(HttpQueue *q)
+PUBLIC HttpQueue *httpGetNextQueueForService(HttpQueue *q)
 {
     HttpQueue     *next;
     
@@ -228,7 +228,7 @@ HttpQueue *httpGetNextQueueForService(HttpQueue *q)
 /*  
     Return the number of bytes the queue will accept. Always positive.
  */
-ssize httpGetQueueRoom(HttpQueue *q)
+PUBLIC ssize httpGetQueueRoom(HttpQueue *q)
 {
     mprAssert(q->max > 0);
     mprAssert(q->count >= 0);
@@ -240,7 +240,7 @@ ssize httpGetQueueRoom(HttpQueue *q)
 }
 
 
-void httpInitSchedulerQueue(HttpQueue *q)
+PUBLIC void httpInitSchedulerQueue(HttpQueue *q)
 {
     q->scheduleNext = q;
     q->schedulePrev = q;
@@ -250,7 +250,7 @@ void httpInitSchedulerQueue(HttpQueue *q)
 /*  
     Append a queue after the previous element
  */
-void httpAppendQueue(HttpQueue *prev, HttpQueue *q)
+PUBLIC void httpAppendQueue(HttpQueue *prev, HttpQueue *q)
 {
     q->nextQ = prev->nextQ;
     q->prevQ = prev;
@@ -259,13 +259,13 @@ void httpAppendQueue(HttpQueue *prev, HttpQueue *q)
 }
 
 
-bool httpIsQueueEmpty(HttpQueue *q)
+PUBLIC bool httpIsQueueEmpty(HttpQueue *q)
 {
     return q->first == 0;
 }
 
 
-int httpOpenQueue(HttpQueue *q, ssize chunkSize)
+PUBLIC int httpOpenQueue(HttpQueue *q, ssize chunkSize)
 {
     Http        *http;
     HttpConn    *conn;
@@ -303,7 +303,7 @@ int httpOpenQueue(HttpQueue *q, ssize chunkSize)
     Read data. If sync mode, this will block. If async, will never block.
     Will return what data is available up to the requested size. Returns a byte count.
  */
-ssize httpRead(HttpConn *conn, char *buf, ssize size)
+PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
 {
     HttpPacket  *packet;
     HttpQueue   *q;
@@ -354,13 +354,13 @@ ssize httpRead(HttpConn *conn, char *buf, ssize size)
 }
 
 
-ssize httpGetReadCount(HttpConn *conn)
+PUBLIC ssize httpGetReadCount(HttpConn *conn)
 {
     return conn->readq->count;
 }
 
 
-bool httpIsEof(HttpConn *conn) 
+PUBLIC bool httpIsEof(HttpConn *conn) 
 {
     return conn->rx == 0 || conn->rx->eof;
 }
@@ -369,7 +369,7 @@ bool httpIsEof(HttpConn *conn)
 /*
     Read data as a string
  */
-char *httpReadString(HttpConn *conn)
+PUBLIC char *httpReadString(HttpConn *conn)
 {
     HttpRx      *rx;
     ssize       sofar, nbytes, remaining;
@@ -410,7 +410,7 @@ char *httpReadString(HttpConn *conn)
 }
 
 
-void httpRemoveQueue(HttpQueue *q)
+PUBLIC void httpRemoveQueue(HttpQueue *q)
 {
     q->prevQ->nextQ = q->nextQ;
     q->nextQ->prevQ = q->prevQ;
@@ -418,7 +418,7 @@ void httpRemoveQueue(HttpQueue *q)
 }
 
 
-void httpScheduleQueue(HttpQueue *q)
+PUBLIC void httpScheduleQueue(HttpQueue *q)
 {
     HttpQueue     *head;
     
@@ -434,7 +434,7 @@ void httpScheduleQueue(HttpQueue *q)
 }
 
 
-void httpServiceQueue(HttpQueue *q)
+PUBLIC void httpServiceQueue(HttpQueue *q)
 {
     q->conn->currentq = q;
 
@@ -465,7 +465,7 @@ void httpServiceQueue(HttpQueue *q)
     Return true if the next queue will accept this packet. If not, then disable the queue's service procedure.
     This may split the packet if it exceeds the downstreams maximum packet size.
  */
-bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
+PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
 {
     HttpQueue   *nextQ;
     ssize       size;
@@ -497,7 +497,7 @@ bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
 /*  
     Return true if the next queue will accept a certain amount of data.
  */
-bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
+PUBLIC bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
 {
     HttpQueue   *nextQ;
 
@@ -519,7 +519,7 @@ bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
     may call the queue outgoing service routine and disable downstream queues if they are overfull.
     This routine will always accept the data and never return "short". 
  */
-ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize size)
+PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize size)
 {
     HttpPacket  *packet;
     HttpConn    *conn;
@@ -571,19 +571,19 @@ ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize size)
 }
 
 
-ssize httpWriteString(HttpQueue *q, cchar *s)
+PUBLIC ssize httpWriteString(HttpQueue *q, cchar *s)
 {
     return httpWriteBlock(q, s, strlen(s));
 }
 
 
-ssize httpWriteSafeString(HttpQueue *q, cchar *s)
+PUBLIC ssize httpWriteSafeString(HttpQueue *q, cchar *s)
 {
     return httpWriteString(q, mprEscapeHtml(s));
 }
 
 
-ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
+PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
 {
     va_list     vargs;
     char        *buf;
@@ -595,7 +595,7 @@ ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
 }
 
 
-bool httpVerifyQueue(HttpQueue *q)
+PUBLIC bool httpVerifyQueue(HttpQueue *q)
 {
     HttpPacket  *packet;
     ssize       count;

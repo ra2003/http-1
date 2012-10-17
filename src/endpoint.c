@@ -16,7 +16,7 @@ static int destroyEndpointConnections(HttpEndpoint *endpoint);
 /*
     Create a listening endpoint on ip:port. NOTE: ip may be empty which means bind to all addresses.
  */
-HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *dispatcher)
+PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *dispatcher)
 {
     HttpEndpoint    *endpoint;
     Http            *http;
@@ -38,7 +38,7 @@ HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *dispatcher)
 }
 
 
-void httpDestroyEndpoint(HttpEndpoint *endpoint)
+PUBLIC void httpDestroyEndpoint(HttpEndpoint *endpoint)
 {
     destroyEndpointConnections(endpoint);
     if (endpoint->sock) {
@@ -72,7 +72,7 @@ static int manageEndpoint(HttpEndpoint *endpoint, int flags)
 /*  
     Convenience function to create and configure a new endpoint without using a config file.
  */
-HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents, cchar *ip, int port)
+PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents, cchar *ip, int port)
 {
     Http            *http;
     HttpHost        *host;
@@ -150,7 +150,7 @@ static bool validateEndpoint(HttpEndpoint *endpoint)
 }
 
 
-int httpStartEndpoint(HttpEndpoint *endpoint)
+PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
 {
     HttpHost    *host;
     cchar       *proto, *ip;
@@ -189,7 +189,7 @@ int httpStartEndpoint(HttpEndpoint *endpoint)
 }
 
 
-void httpStopEndpoint(HttpEndpoint *endpoint)
+PUBLIC void httpStopEndpoint(HttpEndpoint *endpoint)
 {
     HttpHost    *host;
     int         next;
@@ -207,7 +207,7 @@ void httpStopEndpoint(HttpEndpoint *endpoint)
 /*
     OPT
  */
-bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn)
+PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn)
 {
     HttpLimits      *limits;
     Http            *http;
@@ -311,7 +311,7 @@ bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn)
     Accept a new client connection on a new socket. If multithreaded, this will come in on a worker thread 
     dedicated to this connection. This is called from the listen wait handler.
  */
-HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
+PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 {
     HttpConn        *conn;
     MprSocket       *sock;
@@ -381,7 +381,7 @@ HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 }
 
 
-void httpMatchHost(HttpConn *conn)
+PUBLIC void httpMatchHost(HttpConn *conn)
 { 
     MprSocket       *listenSock;
     HttpEndpoint    *endpoint;
@@ -414,7 +414,7 @@ void httpMatchHost(HttpConn *conn)
 }
 
 
-void *httpGetEndpointContext(HttpEndpoint *endpoint)
+PUBLIC void *httpGetEndpointContext(HttpEndpoint *endpoint)
 {
     assure(endpoint);
     if (endpoint) {
@@ -424,7 +424,7 @@ void *httpGetEndpointContext(HttpEndpoint *endpoint)
 }
 
 
-int httpIsEndpointAsync(HttpEndpoint *endpoint) 
+PUBLIC int httpIsEndpointAsync(HttpEndpoint *endpoint) 
 {
     assure(endpoint);
     if (endpoint) {
@@ -434,7 +434,7 @@ int httpIsEndpointAsync(HttpEndpoint *endpoint)
 }
 
 
-void httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
+PUBLIC void httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
 {
     assure(endpoint);
 
@@ -451,7 +451,7 @@ void httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
 }
 
 
-void httpSetEndpointAsync(HttpEndpoint *endpoint, int async)
+PUBLIC void httpSetEndpointAsync(HttpEndpoint *endpoint, int async)
 {
     if (endpoint->sock) {
         if (endpoint->async && !async) {
@@ -465,21 +465,21 @@ void httpSetEndpointAsync(HttpEndpoint *endpoint, int async)
 }
 
 
-void httpSetEndpointContext(HttpEndpoint *endpoint, void *context)
+PUBLIC void httpSetEndpointContext(HttpEndpoint *endpoint, void *context)
 {
     mprAssert(endpoint);
     endpoint->context = context;
 }
 
 
-void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier notifier)
+PUBLIC void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier notifier)
 {
     mprAssert(endpoint);
     endpoint->notifier = notifier;
 }
 
 
-int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
+PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 {
 #if BIT_PACK_SSL
     endpoint->ssl = ssl;
@@ -490,7 +490,7 @@ int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 }
 
 
-int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
+PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
 {
     HttpEndpoint    *endpoint;
     Http            *http;
@@ -515,7 +515,7 @@ int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
 }
 
 
-void httpAddHostToEndpoint(HttpEndpoint *endpoint, HttpHost *host)
+PUBLIC void httpAddHostToEndpoint(HttpEndpoint *endpoint, HttpHost *host)
 {
     mprAddItem(endpoint->hosts, host);
     if (endpoint->limits == 0) {
@@ -524,13 +524,13 @@ void httpAddHostToEndpoint(HttpEndpoint *endpoint, HttpHost *host)
 }
 
 
-bool httpHasNamedVirtualHosts(HttpEndpoint *endpoint)
+PUBLIC bool httpHasNamedVirtualHosts(HttpEndpoint *endpoint)
 {
     return endpoint->flags & HTTP_NAMED_VHOST;
 }
 
 
-void httpSetHasNamedVirtualHosts(HttpEndpoint *endpoint, bool on)
+PUBLIC void httpSetHasNamedVirtualHosts(HttpEndpoint *endpoint, bool on)
 {
     if (on) {
         endpoint->flags |= HTTP_NAMED_VHOST;
@@ -543,7 +543,7 @@ void httpSetHasNamedVirtualHosts(HttpEndpoint *endpoint, bool on)
 /*
     Only used for named virtual hosts
  */
-HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
+PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
 {
     HttpHost    *host;
     int         next;
@@ -568,7 +568,7 @@ HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
 }
 
 
-int httpConfigureNamedVirtualEndpoints(Http *http, cchar *ip, int port)
+PUBLIC int httpConfigureNamedVirtualEndpoints(Http *http, cchar *ip, int port)
 {
     HttpEndpoint    *endpoint;
     int             next, count;

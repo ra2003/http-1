@@ -21,7 +21,7 @@ static void manageHost(HttpHost *host, int flags);
 
 /*********************************** Code *************************************/
 
-HttpHost *httpCreateHost(cchar *home)
+PUBLIC HttpHost *httpCreateHost(cchar *home)
 {
     HttpHost    *host;
     Http        *http;
@@ -45,7 +45,7 @@ HttpHost *httpCreateHost(cchar *home)
 }
 
 
-HttpHost *httpCloneHost(HttpHost *parent)
+PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
 {
     HttpHost    *host;
     Http        *http;
@@ -94,7 +94,7 @@ static void manageHost(HttpHost *host, int flags)
 }
 
 
-int httpStartHost(HttpHost *host)
+PUBLIC int httpStartHost(HttpHost *host)
 {
     HttpRoute   *route;
     int         next;
@@ -111,7 +111,7 @@ int httpStartHost(HttpHost *host)
 }
 
 
-void httpStopHost(HttpHost *host)
+PUBLIC void httpStopHost(HttpHost *host)
 {
     HttpRoute   *route;
     int         next;
@@ -122,7 +122,7 @@ void httpStopHost(HttpHost *host)
 }
 
 
-HttpRoute *httpGetHostDefaultRoute(HttpHost *host)
+PUBLIC HttpRoute *httpGetHostDefaultRoute(HttpHost *host)
 {
     return host->defaultRoute;
 }
@@ -164,7 +164,7 @@ static void printRoute(HttpRoute *route, int next, bool full)
 }
 
 
-void httpLogRoutes(HttpHost *host, bool full)
+PUBLIC void httpLogRoutes(HttpHost *host, bool full)
 {
     HttpRoute   *route;
     int         next, foundDefault;
@@ -188,7 +188,7 @@ void httpLogRoutes(HttpHost *host, bool full)
 }
 
 
-void httpSetHostHome(HttpHost *host, cchar *home)
+PUBLIC void httpSetHostHome(HttpHost *host, cchar *home)
 {
     host->home = mprGetAbsPath(home);
 }
@@ -198,7 +198,7 @@ void httpSetHostHome(HttpHost *host, cchar *home)
     IP may be null in which case the host is listening on all interfaces. Port may be set to -1 and ip may contain a port
     specifier, ie. "address:port".
  */
-void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
+PUBLIC void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
 {
     char    *pip;
 
@@ -223,19 +223,19 @@ void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
 }
 
 
-void httpSetHostName(HttpHost *host, cchar *name)
+PUBLIC void httpSetHostName(HttpHost *host, cchar *name)
 {
     host->name = sclone(name);
 }
 
 
-void httpSetHostProtocol(HttpHost *host, cchar *protocol)
+PUBLIC void httpSetHostProtocol(HttpHost *host, cchar *protocol)
 {
     host->protocol = sclone(protocol);
 }
 
 
-int httpAddRoute(HttpHost *host, HttpRoute *route)
+PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)
 {
     HttpRoute   *prev, *item, *lastRoute;
     int         i, thisRoute;
@@ -272,7 +272,7 @@ int httpAddRoute(HttpHost *host, HttpRoute *route)
 }
 
 
-HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
+PUBLIC HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
 {
     HttpRoute   *route;
     int         next;
@@ -293,43 +293,43 @@ HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
 }
 
 
-void httpResetRoutes(HttpHost *host)
+PUBLIC void httpResetRoutes(HttpHost *host)
 {
     host->routes = mprCreateList(-1, 0);
 }
 
 
-void httpSetHostDefaultRoute(HttpHost *host, HttpRoute *route)
+PUBLIC void httpSetHostDefaultRoute(HttpHost *host, HttpRoute *route)
 {
     host->defaultRoute = route;
 }
 
 
-void httpSetDefaultHost(HttpHost *host)
+PUBLIC void httpSetDefaultHost(HttpHost *host)
 {
     defaultHost = host;
 }
 
 
-void httpSetHostSecureEndpoint(HttpHost *host, HttpEndpoint *endpoint)
+PUBLIC void httpSetHostSecureEndpoint(HttpHost *host, HttpEndpoint *endpoint)
 {
     host->secureEndpoint = endpoint;
 }
 
 
-void httpSetHostDefaultEndpoint(HttpHost *host, HttpEndpoint *endpoint)
+PUBLIC void httpSetHostDefaultEndpoint(HttpHost *host, HttpEndpoint *endpoint)
 {
     host->defaultEndpoint = endpoint;
 }
 
 
-HttpHost *httpGetDefaultHost()
+PUBLIC HttpHost *httpGetDefaultHost()
 {
     return defaultHost;
 }
 
 
-HttpRoute *httpGetDefaultRoute(HttpHost *host)
+PUBLIC HttpRoute *httpGetDefaultRoute(HttpHost *host)
 {
     if (host) {
         return host->defaultRoute;

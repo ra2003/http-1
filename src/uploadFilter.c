@@ -49,7 +49,7 @@ static int  processContentData(HttpQueue *q);
 
 /************************************* Code ***********************************/
 
-int httpOpenUploadFilter(Http *http)
+PUBLIC int httpOpenUploadFilter(Http *http)
 {
     HttpStage     *filter;
 

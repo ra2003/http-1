@@ -10,7 +10,7 @@
 
 /************************************ Code ************************************/
 
-int httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup, cchar *format, int flags)
+PUBLIC int httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup, cchar *format, int flags)
 {
     char    *src, *dest;
 
@@ -45,7 +45,7 @@ int httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup, cchar
 }
 
 
-void httpBackupRouteLog(HttpRoute *route)
+PUBLIC void httpBackupRouteLog(HttpRoute *route)
 {
     MprPath     info;
 
@@ -70,7 +70,7 @@ void httpBackupRouteLog(HttpRoute *route)
 }
 
 
-MprFile *httpOpenRouteLog(HttpRoute *route)
+PUBLIC MprFile *httpOpenRouteLog(HttpRoute *route)
 {
     MprFile     *file;
     int         mode;
@@ -86,7 +86,7 @@ MprFile *httpOpenRouteLog(HttpRoute *route)
 }
 
 
-void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
+PUBLIC void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
 {
     lock(MPR);
     if (route->logBackup > 0) {
@@ -106,7 +106,7 @@ void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
 }
 
 
-void httpLogRequest(HttpConn *conn)
+PUBLIC void httpLogRequest(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;

@@ -14,7 +14,7 @@ static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
 
 /*********************************** Code *************************************/
 
-void httpDisconnect(HttpConn *conn)
+PUBLIC void httpDisconnect(HttpConn *conn)
 {
     if (conn->sock) {
         mprDisconnectSocket(conn->sock);
@@ -28,7 +28,7 @@ void httpDisconnect(HttpConn *conn)
 }
 
 
-void httpError(HttpConn *conn, int flags, cchar *fmt, ...)
+PUBLIC void httpError(HttpConn *conn, int flags, cchar *fmt, ...)
 {
     va_list     args;
 
@@ -129,7 +129,7 @@ static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
     Just format conn->errorMsg and set status - nothing more
     NOTE: this is an internal API. Users should use httpError()
  */
-void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
+PUBLIC void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
 {
     va_list     args;
 
@@ -139,7 +139,7 @@ void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
 }
 
 
-cchar *httpGetError(HttpConn *conn)
+PUBLIC cchar *httpGetError(HttpConn *conn)
 {
     if (conn->errorMsg) {
         return conn->errorMsg;
@@ -151,7 +151,7 @@ cchar *httpGetError(HttpConn *conn)
 }
 
 
-void httpMemoryError(HttpConn *conn)
+PUBLIC void httpMemoryError(HttpConn *conn)
 {
     httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Memory allocation error");
 }

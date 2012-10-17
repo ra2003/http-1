@@ -84,7 +84,7 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
 }
 
 
-void httpDefaultOutgoingServiceStage(HttpQueue *q)
+PUBLIC void httpDefaultOutgoingServiceStage(HttpQueue *q)
 {
     HttpPacket    *packet;
 
@@ -103,7 +103,7 @@ static void incomingService(HttpQueue *q)
 }
 
 
-HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule *module)
+PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule *module)
 {
     HttpStage     *stage;
 
@@ -147,7 +147,7 @@ static void manageStage(HttpStage *stage, int flags)
 }
 
 
-HttpStage *httpCloneStage(Http *http, HttpStage *stage)
+PUBLIC HttpStage *httpCloneStage(Http *http, HttpStage *stage)
 {
     HttpStage   *clone;
 
@@ -159,19 +159,19 @@ HttpStage *httpCloneStage(Http *http, HttpStage *stage)
 }
 
 
-HttpStage *httpCreateHandler(Http *http, cchar *name, int flags, MprModule *module)
+PUBLIC HttpStage *httpCreateHandler(Http *http, cchar *name, int flags, MprModule *module)
 {
     return httpCreateStage(http, name, flags | HTTP_STAGE_HANDLER, module);
 }
 
 
-HttpStage *httpCreateFilter(Http *http, cchar *name, int flags, MprModule *module)
+PUBLIC HttpStage *httpCreateFilter(Http *http, cchar *name, int flags, MprModule *module)
 {
     return httpCreateStage(http, name, flags | HTTP_STAGE_FILTER, module);
 }
 
 
-HttpStage *httpCreateConnector(Http *http, cchar *name, int flags, MprModule *module)
+PUBLIC HttpStage *httpCreateConnector(Http *http, cchar *name, int flags, MprModule *module)
 {
     return httpCreateStage(http, name, flags | HTTP_STAGE_CONNECTOR, module);
 }

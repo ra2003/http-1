@@ -16,7 +16,7 @@ static void manageSession(HttpSession *sp, int flags);
 
 /************************************* Code ***********************************/
 
-HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTime lifespan)
+PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTime lifespan)
 {
     Http        *http;
     HttpSession *sp;
@@ -49,7 +49,7 @@ HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTime lifespan)
 }
 
 
-void httpDestroySession(HttpSession *sp)
+PUBLIC void httpDestroySession(HttpSession *sp)
 {
     Http    *http;
 
@@ -73,13 +73,13 @@ static void manageSession(HttpSession *sp, int flags)
 }
 
 
-HttpSession *httpCreateSession(HttpConn *conn)
+PUBLIC HttpSession *httpCreateSession(HttpConn *conn)
 {
     return httpGetSession(conn, 1);
 }
 
 
-HttpSession *httpGetSession(HttpConn *conn, int create)
+PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 {
     HttpRx      *rx;
     char        *id;
@@ -101,7 +101,7 @@ HttpSession *httpGetSession(HttpConn *conn, int create)
 }
 
 
-MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
+PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
 {
     cchar   *str;
 
@@ -113,7 +113,7 @@ MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
 }
 
 
-cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
+PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 {
     HttpSession  *sp;
     cchar       *result;
@@ -129,14 +129,14 @@ cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 }
 
 
-int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
+PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
 {
     httpSetSessionVar(conn, key, mprSerialize(obj, 0));
     return 0;
 }
 
 
-int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
+PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
 {
     HttpSession  *sp;
 
@@ -154,7 +154,7 @@ int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
 }
 
 
-int httpRemoveSessionVar(HttpConn *conn, cchar *key)
+PUBLIC int httpRemoveSessionVar(HttpConn *conn, cchar *key)
 {
     HttpSession  *sp;
 
@@ -168,7 +168,7 @@ int httpRemoveSessionVar(HttpConn *conn, cchar *key)
 }
 
 
-char *httpGetSessionID(HttpConn *conn)
+PUBLIC char *httpGetSessionID(HttpConn *conn)
 {
     HttpRx  *rx;
     cchar   *cookies, *cookie;

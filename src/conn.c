@@ -18,7 +18,7 @@ static void writeEvent(HttpConn *conn);
 /*
     Create a new connection object
  */
-HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *dispatcher)
+PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *dispatcher)
 {
     HttpConn    *conn;
     HttpHost    *host;
@@ -71,7 +71,7 @@ HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *disp
 /*
     Destroy a connection. This removes the connection from the list of connections. Should GC after that.
  */
-void httpDestroyConn(HttpConn *conn)
+PUBLIC void httpDestroyConn(HttpConn *conn)
 {
     if (conn->http) {
         mprAssert(conn->http);
@@ -154,7 +154,7 @@ static void manageConn(HttpConn *conn, int flags)
 /*  
     Close the connection but don't destroy the conn object.
  */
-void httpCloseConn(HttpConn *conn)
+PUBLIC void httpCloseConn(HttpConn *conn)
 {
     mprAssert(conn);
 
@@ -170,7 +170,7 @@ void httpCloseConn(HttpConn *conn)
 }
 
 
-void httpConnTimeout(HttpConn *conn)
+PUBLIC void httpConnTimeout(HttpConn *conn)
 {
     HttpLimits  *limits;
     MprTime     now;
@@ -243,7 +243,7 @@ static void commonPrep(HttpConn *conn)
 /*  
     Prepare a connection for a new request after completing a prior request.
  */
-void httpPrepServerConn(HttpConn *conn)
+PUBLIC void httpPrepServerConn(HttpConn *conn)
 {
     mprAssert(conn);
     mprAssert(conn->rx == 0);
@@ -255,7 +255,7 @@ void httpPrepServerConn(HttpConn *conn)
 }
 
 
-void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
+PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
 {
     MprHash     *headers;
 
@@ -280,7 +280,7 @@ void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
 }
 
 
-void httpConsumeLastRequest(HttpConn *conn)
+PUBLIC void httpConsumeLastRequest(HttpConn *conn)
 {
     MprTime     mark;
     char        junk[4096];
@@ -302,7 +302,7 @@ void httpConsumeLastRequest(HttpConn *conn)
 }
 
 
-void httpCallEvent(HttpConn *conn, int mask)
+PUBLIC void httpCallEvent(HttpConn *conn, int mask)
 {
     MprEvent    e;
 
@@ -320,7 +320,7 @@ void httpCallEvent(HttpConn *conn, int mask)
     server->dispatcher and the first I/O event will be handled on the server thread (or main thread). A request handler
     may create a new conn->dispatcher and transfer execution to a worker thread if required.
  */
-void httpEvent(HttpConn *conn, MprEvent *event)
+PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
 {
     LOG(6, "httpEvent for fd %d, mask %d", conn->sock->fd, event->mask);
     conn->lastActivity = conn->http->now;
@@ -414,7 +414,7 @@ static void writeEvent(HttpConn *conn)
 }
 
 
-void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
+PUBLIC void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
 {
     lock(conn->http);
     conn->oldDispatcher = conn->dispatcher;
@@ -426,7 +426,7 @@ void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
 }
 
 
-void httpUsePrimary(HttpConn *conn)
+PUBLIC void httpUsePrimary(HttpConn *conn)
 {
     lock(conn->http);
     mprAssert(conn->worker);
@@ -443,7 +443,7 @@ void httpUsePrimary(HttpConn *conn)
     Steal a connection with open socket from Http and disconnect it from management by Http.
     It is the callers responsibility to call mprCloseSocket when required.
  */
-MprSocket *httpStealConn(HttpConn *conn)
+PUBLIC MprSocket *httpStealConn(HttpConn *conn)
 {
     MprSocket   *sock;
 
@@ -466,7 +466,7 @@ MprSocket *httpStealConn(HttpConn *conn)
 }
 
 
-void httpEnableConnEvents(HttpConn *conn)
+PUBLIC void httpEnableConnEvents(HttpConn *conn)
 {
     HttpTx      *tx;
     HttpRx      *rx;
@@ -528,7 +528,7 @@ void httpEnableConnEvents(HttpConn *conn)
 }
 
 
-void httpFollowRedirects(HttpConn *conn, bool follow)
+PUBLIC void httpFollowRedirects(HttpConn *conn, bool follow)
 {
     conn->followRedirects = follow;
 }
@@ -558,13 +558,13 @@ static HttpPacket *getPacket(HttpConn *conn, ssize *size)
 }
 
 
-int httpGetAsync(HttpConn *conn)
+PUBLIC int httpGetAsync(HttpConn *conn)
 {
     return conn->async;
 }
 
 
-ssize httpGetChunkSize(HttpConn *conn)
+PUBLIC ssize httpGetChunkSize(HttpConn *conn)
 {
     if (conn->tx) {
         return conn->tx->chunkSize;
@@ -573,19 +573,19 @@ ssize httpGetChunkSize(HttpConn *conn)
 }
 
 
-void *httpGetConnContext(HttpConn *conn)
+PUBLIC void *httpGetConnContext(HttpConn *conn)
 {
     return conn->context;
 }
 
 
-void *httpGetConnHost(HttpConn *conn)
+PUBLIC void *httpGetConnHost(HttpConn *conn)
 {
     return conn->host;
 }
 
 
-void httpResetCredentials(HttpConn *conn)
+PUBLIC void httpResetCredentials(HttpConn *conn)
 {
     conn->authType = 0;
     conn->username = 0;
@@ -594,19 +594,19 @@ void httpResetCredentials(HttpConn *conn)
 }
 
 
-void httpSetAsync(HttpConn *conn, int enable)
+PUBLIC void httpSetAsync(HttpConn *conn, int enable)
 {
     conn->async = (enable) ? 1 : 0;
 }
 
 
-void httpSetConnNotifier(HttpConn *conn, HttpNotifier notifier)
+PUBLIC void httpSetConnNotifier(HttpConn *conn, HttpNotifier notifier)
 {
     conn->notifier = notifier;
 }
 
 
-void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password)
+PUBLIC void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password)
 {
     httpResetCredentials(conn);
     conn->username = sclone(username);
@@ -619,13 +619,13 @@ void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password)
 }
 
 
-void httpSetKeepAliveCount(HttpConn *conn, int count)
+PUBLIC void httpSetKeepAliveCount(HttpConn *conn, int count)
 {
     conn->keepAliveCount = count;
 }
 
 
-void httpSetChunkSize(HttpConn *conn, ssize size)
+PUBLIC void httpSetChunkSize(HttpConn *conn, ssize size)
 {
     if (conn->tx) {
         conn->tx->chunkSize = size;
@@ -633,26 +633,26 @@ void httpSetChunkSize(HttpConn *conn, ssize size)
 }
 
 
-void httpSetHeadersCallback(HttpConn *conn, HttpHeadersCallback fn, void *arg)
+PUBLIC void httpSetHeadersCallback(HttpConn *conn, HttpHeadersCallback fn, void *arg)
 {
     conn->headersCallback = fn;
     conn->headersCallbackArg = arg;
 }
 
 
-void httpSetIOCallback(HttpConn *conn, HttpIOCallback fn)
+PUBLIC void httpSetIOCallback(HttpConn *conn, HttpIOCallback fn)
 {
     conn->ioCallback = fn;
 }
 
 
-void httpSetConnContext(HttpConn *conn, void *context)
+PUBLIC void httpSetConnContext(HttpConn *conn, void *context)
 {
     conn->context = context;
 }
 
 
-void httpSetConnHost(HttpConn *conn, void *host)
+PUBLIC void httpSetConnHost(HttpConn *conn, void *host)
 {
     conn->host = host;
 }
@@ -661,7 +661,7 @@ void httpSetConnHost(HttpConn *conn, void *host)
 /*  
     Set the protocol to use for outbound requests
  */
-void httpSetProtocol(HttpConn *conn, cchar *protocol)
+PUBLIC void httpSetProtocol(HttpConn *conn, cchar *protocol)
 {
     if (conn->state < HTTP_STATE_CONNECTED) {
         conn->protocol = sclone(protocol);
@@ -669,7 +669,7 @@ void httpSetProtocol(HttpConn *conn, cchar *protocol)
 }
 
 
-void httpSetRetries(HttpConn *conn, int count)
+PUBLIC void httpSetRetries(HttpConn *conn, int count)
 {
     conn->retries = count;
 }
@@ -680,7 +680,7 @@ static char *notifyState[] = {
 };
 
 
-void httpSetState(HttpConn *conn, int state)
+PUBLIC void httpSetState(HttpConn *conn, int state)
 {
     if (state == conn->state) {
         return;
@@ -698,7 +698,7 @@ void httpSetState(HttpConn *conn, int state)
 /*
     Set each timeout arg to -1 to skip. Set to zero for no timeout. Otherwise set to number of msecs
  */
-void httpSetTimeout(HttpConn *conn, int requestTimeout, int inactivityTimeout)
+PUBLIC void httpSetTimeout(HttpConn *conn, int requestTimeout, int inactivityTimeout)
 {
     if (requestTimeout >= 0) {
         if (requestTimeout == 0) {
@@ -717,7 +717,7 @@ void httpSetTimeout(HttpConn *conn, int requestTimeout, int inactivityTimeout)
 }
 
 
-HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
+PUBLIC HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 {
     HttpLimits      *limits;
 
@@ -730,16 +730,16 @@ HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 
 
 #if BIT_DEBUG
-char *events[] = {
+PUBLIC char *events[] = {
     "undefined", "state-change", "readable", "writable", "error", "destroy", "app-open", "app-close",
 };
-char *states[] = {
+PUBLIC char *states[] = {
     "undefined", "begin", "connected", "first", "parsed", "content", "ready", "running", "complete",
 };
 #endif
 
 
-void httpNotify(HttpConn *conn, int event, int arg)
+PUBLIC void httpNotify(HttpConn *conn, int event, int arg)
 {
     if (conn->notifier) {
 #if BIT_DEBUG

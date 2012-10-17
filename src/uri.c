@@ -33,7 +33,7 @@ static void trimPathToDirname(HttpUri *uri);
 
     Missing fields are null or zero.
  */
-HttpUri *httpCreateUri(cchar *uri, int flags)
+PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
 {
     HttpUri     *up;
     char        *tok, *next;
@@ -199,7 +199,7 @@ static void manageUri(HttpUri *uri, int flags)
 /*  
     Create and initialize a URI. This accepts full URIs with schemes (http:) and partial URLs
  */
-HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, 
+PUBLIC HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, 
         int flags)
 {
     HttpUri     *up;
@@ -263,7 +263,7 @@ HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *pat
 }
 
 
-HttpUri *httpCloneUri(HttpUri *base, int flags)
+PUBLIC HttpUri *httpCloneUri(HttpUri *base, int flags)
 {
     HttpUri     *up;
     char        *path, *cp, *tok;
@@ -322,7 +322,7 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
 /*
     Complete the "uri" using missing parts from base
  */
-HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
+PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
 {
     if (!base) {
         if (!uri->scheme) {
@@ -363,7 +363,7 @@ HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
 /*  
     Format a string URI from parts
  */
-char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, int flags)
+PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, int flags)
 {
     char    *uri;
     cchar   *portStr, *hostDelim, *portDelim, *pathDelim, *queryDelim, *referenceDelim, *cp;
@@ -434,7 +434,7 @@ char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cchar *re
 
     uri = target.relative(base)
  */
-HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
+PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
 {
     HttpUri     *uri;
     char        *basePath, *bp, *cp, *tp, *startDiff;
@@ -515,7 +515,7 @@ HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
 /*
     result = base.join(other)
  */
-HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
+PUBLIC HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
 {
     char    *sep;
 
@@ -530,7 +530,7 @@ HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
 }
 
 
-HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
+PUBLIC HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
 {
     HttpUri     *other;
     int         i;
@@ -563,7 +563,7 @@ HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
 }
 
 
-HttpUri *httpMakeUriLocal(HttpUri *uri)
+PUBLIC HttpUri *httpMakeUriLocal(HttpUri *uri)
 {
     if (uri) {
         uri->host = 0;
@@ -574,7 +574,7 @@ HttpUri *httpMakeUriLocal(HttpUri *uri)
 }
 
 
-void httpNormalizeUri(HttpUri *uri)
+PUBLIC void httpNormalizeUri(HttpUri *uri)
 {
     uri->path = httpNormalizeUriPath(uri->path);
 }
@@ -584,7 +584,7 @@ void httpNormalizeUri(HttpUri *uri)
     Normalize a URI path to remove redundant "./" and cleanup "../" and make separator uniform. Does not make an abs path.
     It does not map separators nor change case. 
  */
-char *httpNormalizeUriPath(cchar *pathArg)
+PUBLIC char *httpNormalizeUriPath(cchar *pathArg)
 {
     char    *dupPath, *path, *sp, *dp, *mark, **segments;
     int     firstc, j, i, nseg, len;
@@ -657,7 +657,7 @@ char *httpNormalizeUriPath(cchar *pathArg)
 }
 
 
-HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool local)
+PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool local)
 {
     HttpUri     *current, *other;
     int         i;
@@ -703,7 +703,7 @@ HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool local)
 }
 
 
-char *httpUriToString(HttpUri *uri, int flags)
+PUBLIC char *httpUriToString(HttpUri *uri, int flags)
 {
     return httpFormatUri(uri->scheme, uri->host, uri->port, uri->path, uri->reference, uri->query, flags);
 }

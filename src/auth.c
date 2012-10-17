@@ -19,7 +19,7 @@ static bool verifyUser(HttpConn *conn);
 
 /*********************************** Code *************************************/
 
-void httpInitAuth(Http *http)
+PUBLIC void httpInitAuth(Http *http)
 {
     httpAddAuthType(http, "basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
     httpAddAuthType(http, "digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
@@ -35,7 +35,7 @@ void httpInitAuth(Http *http)
 }
 
 
-int httpAuthenticate(HttpConn *conn)
+PUBLIC int httpAuthenticate(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpAuth    *auth;
@@ -99,7 +99,7 @@ int httpAuthenticate(HttpConn *conn)
 }
 
 
-bool httpCanUser(HttpConn *conn)
+PUBLIC bool httpCanUser(HttpConn *conn)
 {
     HttpAuth    *auth;
     MprKey      *kp;
@@ -134,7 +134,7 @@ bool httpCanUser(HttpConn *conn)
 }
 
 
-bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
+PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
 {
     HttpAuth    *auth;
     HttpSession *session;
@@ -158,13 +158,13 @@ bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
 }
 
 
-bool httpIsAuthenticated(HttpConn *conn)
+PUBLIC bool httpIsAuthenticated(HttpConn *conn)
 {
     return conn->rx->authenticated;
 }
 
 
-HttpAuth *httpCreateAuth()
+PUBLIC HttpAuth *httpCreateAuth()
 {
     HttpAuth    *auth;
     
@@ -176,7 +176,7 @@ HttpAuth *httpCreateAuth()
 }
 
 
-HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
+PUBLIC HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
 {
     HttpAuth      *auth;
 
@@ -232,7 +232,7 @@ static void manageAuthType(HttpAuthType *type, int flags)
 }
 
 
-int httpAddAuthType(Http *http, cchar *name, HttpAskLogin askLogin, HttpParseAuth parseAuth, HttpSetAuth setAuth)
+PUBLIC int httpAddAuthType(Http *http, cchar *name, HttpAskLogin askLogin, HttpParseAuth parseAuth, HttpSetAuth setAuth)
 {
     HttpAuthType    *type;
 
@@ -262,7 +262,7 @@ static void manageAuthStore(HttpAuthStore *store, int flags)
 /*
     Add a password store backend
  */
-int httpAddAuthStore(Http *http, cchar *name, HttpVerifyUser verifyUser)
+PUBLIC int httpAddAuthStore(Http *http, cchar *name, HttpVerifyUser verifyUser)
 {
     HttpAuthStore    *store;
 
@@ -278,7 +278,7 @@ int httpAddAuthStore(Http *http, cchar *name, HttpVerifyUser verifyUser)
 }
 
 
-void httpSetAuthAllow(HttpAuth *auth, cchar *allow)
+PUBLIC void httpSetAuthAllow(HttpAuth *auth, cchar *allow)
 {
     if (auth->allow == 0 || (auth->parent && auth->parent->allow == auth->allow)) {
         auth->allow = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
@@ -287,13 +287,13 @@ void httpSetAuthAllow(HttpAuth *auth, cchar *allow)
 }
 
 
-void httpSetAuthAnyValidUser(HttpAuth *auth)
+PUBLIC void httpSetAuthAnyValidUser(HttpAuth *auth)
 {
     auth->permittedUsers = 0;
 }
 
 
-void httpSetAuthAutoLogin(HttpAuth *auth, bool on)
+PUBLIC void httpSetAuthAutoLogin(HttpAuth *auth, bool on)
 {
     auth->flags &= ~HTTP_AUTO_LOGIN;
     auth->flags |= on ? HTTP_AUTO_LOGIN : 0;
@@ -303,7 +303,7 @@ void httpSetAuthAutoLogin(HttpAuth *auth, bool on)
 /*
     Can supply a roles or abilities in the "abilities" parameter 
  */
-void httpSetAuthRequiredAbilities(HttpAuth *auth, cchar *abilities)
+PUBLIC void httpSetAuthRequiredAbilities(HttpAuth *auth, cchar *abilities)
 {
     char    *ability, *tok;
 
@@ -314,7 +314,7 @@ void httpSetAuthRequiredAbilities(HttpAuth *auth, cchar *abilities)
 }
 
 
-void httpSetAuthDeny(HttpAuth *auth, cchar *client)
+PUBLIC void httpSetAuthDeny(HttpAuth *auth, cchar *client)
 {
     if (auth->deny == 0 || (auth->parent && auth->parent->deny == auth->deny)) {
         auth->deny = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
@@ -323,7 +323,7 @@ void httpSetAuthDeny(HttpAuth *auth, cchar *client)
 }
 
 
-void httpSetAuthOrder(HttpAuth *auth, int order)
+PUBLIC void httpSetAuthOrder(HttpAuth *auth, int order)
 {
     auth->flags &= (HTTP_ALLOW_DENY | HTTP_DENY_ALLOW);
     auth->flags |= (order & (HTTP_ALLOW_DENY | HTTP_DENY_ALLOW));
@@ -374,7 +374,7 @@ static void logoutServiceProc(HttpConn *conn)
 }
 
 
-void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginService, cchar *logoutService, cchar *loggedIn)
+PUBLIC void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginService, cchar *logoutService, cchar *loggedIn)
 {
     HttpAuth    *auth;
     HttpRoute   *route;
@@ -430,20 +430,20 @@ void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginService, c
 }
 
 
-void httpSetAuthQop(HttpAuth *auth, cchar *qop)
+PUBLIC void httpSetAuthQop(HttpAuth *auth, cchar *qop)
 {
     auth->qop = sclone(qop);
 }
 
 
-void httpSetAuthRealm(HttpAuth *auth, cchar *realm)
+PUBLIC void httpSetAuthRealm(HttpAuth *auth, cchar *realm)
 {
     auth->realm = sclone(realm);
     auth->version = ((Http*) MPR->httpService)->nextAuth++;
 }
 
 
-void httpSetAuthPermittedUsers(HttpAuth *auth, cchar *users)
+PUBLIC void httpSetAuthPermittedUsers(HttpAuth *auth, cchar *users)
 {
     char    *user, *tok;
 
@@ -454,7 +454,7 @@ void httpSetAuthPermittedUsers(HttpAuth *auth, cchar *users)
 }
 
 
-int httpSetAuthStore(HttpAuth *auth, cchar *store)
+PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
 {
     Http    *http;
 
@@ -478,7 +478,7 @@ int httpSetAuthStore(HttpAuth *auth, cchar *store)
 }
 
 
-int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
+PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
 {
     Http    *http;
 
@@ -492,7 +492,7 @@ int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
 }
 
 
-HttpAuthType *httpLookupAuthType(cchar *type)
+PUBLIC HttpAuthType *httpLookupAuthType(cchar *type)
 {
     Http    *http;
 
@@ -501,7 +501,7 @@ HttpAuthType *httpLookupAuthType(cchar *type)
 }
 
 
-HttpRole *httpCreateRole(HttpAuth *auth, cchar *name, cchar *abilities)
+PUBLIC HttpRole *httpCreateRole(HttpAuth *auth, cchar *name, cchar *abilities)
 {
     HttpRole    *role;
     char        *ability, *tok;
@@ -527,7 +527,7 @@ static void manageRole(HttpRole *role, int flags)
 }
 
 
-int httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
+PUBLIC int httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
 {
     HttpRole    *role;
 
@@ -554,7 +554,7 @@ int httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
 }
 
 
-int httpRemoveRole(HttpAuth *auth, cchar *role)
+PUBLIC int httpRemoveRole(HttpAuth *auth, cchar *role)
 {
     if (auth->roles == 0 || !mprLookupKey(auth->roles, role)) {
         return MPR_ERR_CANT_ACCESS;
@@ -564,7 +564,7 @@ int httpRemoveRole(HttpAuth *auth, cchar *role)
 }
 
 
-HttpUser *httpCreateUser(HttpAuth *auth, cchar *name, cchar *password, cchar *roles)
+PUBLIC HttpUser *httpCreateUser(HttpAuth *auth, cchar *name, cchar *password, cchar *roles)
 {
     HttpUser    *user;
 
@@ -592,7 +592,7 @@ static void manageUser(HttpUser *user, int flags)
 }
 
 
-int httpAddUser(HttpAuth *auth, cchar *name, cchar *password, cchar *roles)
+PUBLIC int httpAddUser(HttpAuth *auth, cchar *name, cchar *password, cchar *roles)
 {
     HttpUser    *user;
 
@@ -617,7 +617,7 @@ int httpAddUser(HttpAuth *auth, cchar *name, cchar *password, cchar *roles)
 }
 
 
-int httpRemoveUser(HttpAuth *auth, cchar *user)
+PUBLIC int httpRemoveUser(HttpAuth *auth, cchar *user)
 {
     if (auth->users == 0 || !mprLookupKey(auth->users, user)) {
         return MPR_ERR_CANT_ACCESS;
@@ -654,7 +654,7 @@ static void computeAbilities(HttpAuth *auth, MprHash *abilities, cchar *role)
     Compute the set of user abilities from the user roles. User ability strings can be either roles or abilities. Expand
     roles into the equivalent set of abilities.
  */
-void httpComputeUserAbilities(HttpAuth *auth, HttpUser *user)
+PUBLIC void httpComputeUserAbilities(HttpAuth *auth, HttpUser *user)
 {
     char        *ability, *tok;
 
@@ -676,7 +676,7 @@ void httpComputeUserAbilities(HttpAuth *auth, HttpUser *user)
 }
 
 
-void httpComputeAllUserAbilities(HttpAuth *auth)
+PUBLIC void httpComputeAllUserAbilities(HttpAuth *auth)
 {
     MprKey      *kp;
     HttpUser    *user;

@@ -96,7 +96,7 @@ static void webSockPing(HttpConn *conn);
 /* 
    Loadable module initialization
  */
-int httpOpenWebSockFilter(Http *http)
+PUBLIC int httpOpenWebSockFilter(Http *http)
 {
     HttpStage     *filter;
 
@@ -517,7 +517,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     Send a text message. Caller must submit valid UTF8.
     Returns the number of data message bytes written. Should equal the length.
  */
-ssize httpSend(HttpConn *conn, cchar *fmt, ...)
+PUBLIC ssize httpSend(HttpConn *conn, cchar *fmt, ...)
 {
     va_list     args;
     char        *buf;
@@ -532,7 +532,7 @@ ssize httpSend(HttpConn *conn, cchar *fmt, ...)
 /*
     Returns the number of data message bytes written. Should equal the length.
  */
-ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len)
+PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len)
 {
     HttpPacket  *packet;
 
@@ -558,7 +558,7 @@ ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len)
 /*
     The reason string is optional
  */
-void httpSendClose(HttpConn *conn, int status, cchar *reason)
+PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
 {
     HttpPacket  *packet;
     HttpRx      *rx;
@@ -652,25 +652,25 @@ static void outgoingWebSockService(HttpQueue *q)
 }
 
 
-char *httpGetWebSocketProtocol(HttpConn *conn)
+PUBLIC char *httpGetWebSocketProtocol(HttpConn *conn)
 {
     return conn->rx->subProtocol;
 }
 
 
-char *httpGetWebSocketCloseReason(HttpConn *conn)
+PUBLIC char *httpGetWebSocketCloseReason(HttpConn *conn)
 {
     return conn->rx->closeReason;
 }
 
 
-bool httpWebSocketOrderlyClosed(HttpConn *conn)
+PUBLIC bool httpWebSocketOrderlyClosed(HttpConn *conn)
 {
     return conn->rx->closeStatus != WS_STATUS_COMMS_ERROR;
 }
 
 
-void httpSetWebSocketProtocols(HttpConn *conn, cchar *protocols)
+PUBLIC void httpSetWebSocketProtocols(HttpConn *conn, cchar *protocols)
 {
     conn->protocols = sclone(protocols);
 }
@@ -715,7 +715,7 @@ static bool validUTF8(cchar *str, ssize len)
 /*
     Upgrade a client socket to use Web Sockets
  */
-int httpUpgradeWebSocket(HttpConn *conn)
+PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
 {
     char    num[16];
 
@@ -739,7 +739,7 @@ int httpUpgradeWebSocket(HttpConn *conn)
 }
 
 
-bool httpVerifyWebSocketsHandshake(HttpConn *conn)
+PUBLIC bool httpVerifyWebSocketsHandshake(HttpConn *conn)
 {
     HttpRx          *rx;
     HttpTx          *tx;

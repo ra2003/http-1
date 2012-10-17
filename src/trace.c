@@ -9,7 +9,7 @@
 
 /*********************************** Code *************************************/
 
-void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_TRACE_MAX_ITEM], ssize len, 
+PUBLIC void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_TRACE_MAX_ITEM], ssize len, 
     cchar *include, cchar *exclude)
 {
     HttpTrace   *trace;
@@ -48,7 +48,7 @@ void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_TRACE_MA
 }
 
 
-void httpManageTrace(HttpTrace *trace, int flags)
+PUBLIC void httpManageTrace(HttpTrace *trace, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(trace->include);
@@ -57,7 +57,7 @@ void httpManageTrace(HttpTrace *trace, int flags)
 }
 
 
-void httpInitTrace(HttpTrace *trace)
+PUBLIC void httpInitTrace(HttpTrace *trace)
 {
     int     dir;
 
@@ -78,7 +78,7 @@ void httpInitTrace(HttpTrace *trace)
 /*
     If tracing should occur, return the level
  */
-int httpShouldTrace(HttpConn *conn, int dir, int item, cchar *ext)
+PUBLIC int httpShouldTrace(HttpConn *conn, int dir, int item, cchar *ext)
 {
     HttpTrace   *trace;
 
@@ -155,7 +155,7 @@ static void traceBuf(HttpConn *conn, int dir, int level, cchar *msg, cchar *buf,
 }
 
 
-void httpTraceContent(HttpConn *conn, int dir, int item, HttpPacket *packet, ssize len, MprOff total)
+PUBLIC void httpTraceContent(HttpConn *conn, int dir, int item, HttpPacket *packet, ssize len, MprOff total)
 {
     HttpTrace   *trace;
     ssize       size;

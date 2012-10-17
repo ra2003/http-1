@@ -29,7 +29,7 @@ static void startProc(HttpQueue *q)
 }
 
 
-void httpDefineProc(cchar *name, HttpProc proc)
+PUBLIC void httpDefineProc(cchar *name, HttpProc proc)
 {
     HttpStage   *stage;
 
@@ -41,7 +41,7 @@ void httpDefineProc(cchar *name, HttpProc proc)
 }
 
 
-int httpOpenProcHandler(Http *http)
+PUBLIC int httpOpenProcHandler(Http *http)
 {
     HttpStage     *stage;
 

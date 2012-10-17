@@ -37,7 +37,7 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
 /*
     Parse the client 'Authorization' header and the server 'Www-Authenticate' header
  */
-int httpDigestParse(HttpConn *conn)
+PUBLIC int httpDigestParse(HttpConn *conn)
 {
     HttpRx      *rx;
     DigestData  *dp;
@@ -234,7 +234,7 @@ static void manageDigestData(DigestData *dp, int flags)
 /*
     Respond to the request by asking for a client login
  */
-void httpDigestLogin(HttpConn *conn)
+PUBLIC void httpDigestLogin(HttpConn *conn)
 {
     HttpAuth    *auth;
     char        *nonce, *opaque;
@@ -260,7 +260,7 @@ void httpDigestLogin(HttpConn *conn)
 /*
     Add the client 'Authorization' header for authenticated requests
  */
-void httpDigestSetHeaders(HttpConn *conn)
+PUBLIC void httpDigestSetHeaders(HttpConn *conn)
 { 
     Http        *http;
     HttpTx      *tx;

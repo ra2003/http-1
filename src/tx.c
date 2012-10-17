@@ -13,7 +13,7 @@ static void manageTx(HttpTx *tx, int flags);
 
 /*********************************** Code *************************************/
 
-HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
+PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
 {
     HttpTx      *tx;
 
@@ -42,7 +42,7 @@ HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
 }
 
 
-void httpDestroyTx(HttpTx *tx)
+PUBLIC void httpDestroyTx(HttpTx *tx)
 {
     if (tx->file) {
         mprCloseFile(tx->file);
@@ -98,7 +98,7 @@ static void addHdr(HttpConn *conn, cchar *key, cchar *value)
 }
 
 
-int httpRemoveHeader(HttpConn *conn, cchar *key)
+PUBLIC int httpRemoveHeader(HttpConn *conn, cchar *key)
 {
     mprAssert(key && *key);
     if (conn->tx == 0) {
@@ -111,7 +111,7 @@ int httpRemoveHeader(HttpConn *conn, cchar *key)
 /*  
     Add a http header if not already defined
  */
-void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
+PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 {
     char        *value;
     va_list     vargs;
@@ -132,7 +132,7 @@ void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 /*
     Add a header string if not already defined
  */
-void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
+PUBLIC void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
     mprAssert(key && *key);
     mprAssert(value);
@@ -147,7 +147,7 @@ void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
    Append a header. If already defined, the value is catenated to the pre-existing value after a ", " separator.
    As per the HTTP/1.1 spec.
  */
-void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
+PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 {
     va_list     vargs;
     char        *value;
@@ -180,7 +180,7 @@ void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
    Append a header string. If already defined, the value is catenated to the pre-existing value after a ", " separator.
    As per the HTTP/1.1 spec.
  */
-void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
+PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
     cchar   *oldValue;
 
@@ -203,7 +203,7 @@ void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
 /*  
     Set a http header. Overwrite if present.
  */
-void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
+PUBLIC void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 {
     char        *value;
     va_list     vargs;
@@ -218,7 +218,7 @@ void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 }
 
 
-void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
+PUBLIC void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
     mprAssert(key && *key);
     mprAssert(value);
@@ -230,14 +230,14 @@ void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 /*
     Called by connectors (ONLY) when writing the transmission is complete
  */
-void httpConnectorComplete(HttpConn *conn)
+PUBLIC void httpConnectorComplete(HttpConn *conn)
 {
     conn->tx->connectorComplete = 1;
     conn->tx->finalized = 1;
 }
 
 
-void httpFinalize(HttpConn *conn)
+PUBLIC void httpFinalize(HttpConn *conn)
 {
     HttpTx      *tx;
 
@@ -262,7 +262,7 @@ void httpFinalize(HttpConn *conn)
 }
 
 
-int httpIsFinalized(HttpConn *conn)
+PUBLIC int httpIsFinalized(HttpConn *conn)
 {
     return conn->tx->finalized;
 }
@@ -271,7 +271,7 @@ int httpIsFinalized(HttpConn *conn)
 /*
     Flush the write queue
  */
-void httpFlush(HttpConn *conn)
+PUBLIC void httpFlush(HttpConn *conn)
 {
     httpFlushQueue(conn->writeq, !conn->async);
 }
@@ -281,7 +281,7 @@ void httpFlush(HttpConn *conn)
     This formats a response and sets the altBody. The response is not HTML escaped.
     This is the lowest level for formatResponse.
  */
-ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
+PUBLIC ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
 {
     HttpTx      *tx;
     char        *body;
@@ -300,7 +300,7 @@ ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
 /*
     This formats a response and sets the altBody. The response is not HTML escaped.
  */
-ssize httpFormatResponse(HttpConn *conn, cchar *fmt, ...)
+PUBLIC ssize httpFormatResponse(HttpConn *conn, cchar *fmt, ...)
 {
     va_list     args;
     ssize       rc;
@@ -316,7 +316,7 @@ ssize httpFormatResponse(HttpConn *conn, cchar *fmt, ...)
     This formats a complete response. Depending on the Accept header, the response will be either HTML or plain text.
     The response is not HTML escaped.  This calls httpFormatResponse.
  */
-ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...)
+PUBLIC ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...)
 {
     va_list     args;
     char        *msg, *body;
@@ -341,7 +341,7 @@ ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...)
     Create an alternate body response. Typically used for error responses. The message is HTML escaped.
     NOTE: this is an internal API. Users should use httpFormatError
  */
-void httpFormatResponseError(HttpConn *conn, int status, cchar *fmt, ...)
+PUBLIC void httpFormatResponseError(HttpConn *conn, int status, cchar *fmt, ...)
 {
     va_list     args;
     cchar       *statusMsg;
@@ -363,7 +363,7 @@ void httpFormatResponseError(HttpConn *conn, int status, cchar *fmt, ...)
 }
 
 
-void *httpGetQueueData(HttpConn *conn)
+PUBLIC void *httpGetQueueData(HttpConn *conn)
 {
     HttpQueue     *q;
 
@@ -372,7 +372,7 @@ void *httpGetQueueData(HttpConn *conn)
 }
 
 
-void httpOmitBody(HttpConn *conn)
+PUBLIC void httpOmitBody(HttpConn *conn)
 {
     if (conn->tx) {
         conn->tx->flags |= HTTP_TX_NO_BODY;
@@ -390,7 +390,7 @@ void httpOmitBody(HttpConn *conn)
 /*  
     Redirect the user to another web page. The targetUri may or may not have a scheme.
  */
-void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
+PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 {
     HttpTx          *tx;
     HttpRx          *rx;
@@ -457,7 +457,7 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 }
 
 
-void httpSetContentLength(HttpConn *conn, MprOff length)
+PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
 {
     HttpTx      *tx;
 
@@ -469,7 +469,7 @@ void httpSetContentLength(HttpConn *conn, MprOff length)
     httpSetHeader(conn, "Content-Length", "%Ld", tx->length);
 }
 
-void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, MprTime lifespan, int flags)
+PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, MprTime lifespan, int flags)
 {
     HttpRx      *rx;
     char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *secure, *httponly;
@@ -587,7 +587,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
 }
 
 
-void httpSetEntityLength(HttpConn *conn, int64 len)
+PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
 {
     HttpTx      *tx;
 
@@ -599,26 +599,26 @@ void httpSetEntityLength(HttpConn *conn, int64 len)
 }
 
 
-void httpSetResponded(HttpConn *conn)
+PUBLIC void httpSetResponded(HttpConn *conn)
 {
     conn->tx->responded = 1;
 }
 
 
-void httpSetStatus(HttpConn *conn, int status)
+PUBLIC void httpSetStatus(HttpConn *conn, int status)
 {
     conn->tx->status = status;
     conn->tx->responded = 1;
 }
 
 
-void httpSetContentType(HttpConn *conn, cchar *mimeType)
+PUBLIC void httpSetContentType(HttpConn *conn, cchar *mimeType)
 {
     httpSetHeaderString(conn, "Content-Type", sclone(mimeType));
 }
 
 
-void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
+PUBLIC void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
 {
     Http        *http;
     HttpTx      *tx;
@@ -712,7 +712,7 @@ void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
 }
 
 
-bool httpFileExists(HttpConn *conn)
+PUBLIC bool httpFileExists(HttpConn *conn)
 {
     HttpTx      *tx;
 

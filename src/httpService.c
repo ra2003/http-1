@@ -293,7 +293,7 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
 
     limits->webSocketsMax = HTTP_MAX_WSS_SOCKETS;
     limits->webSocketsMessageSize = HTTP_MAX_WSS_MESSAGE;
-    limits->webSocketsFrameSize  =HTTP_MAX_WSS_FRAME;
+    limits->webSocketsFrameSize = HTTP_MAX_WSS_FRAME;
     limits->webSocketsPacketSize = HTTP_MAX_WSS_PACKET;
     limits->webSocketsPing = HTTP_WSS_PING_PERIOD;
 

@@ -64,6 +64,7 @@ static void netOutgoingService(HttpQueue *q)
     mprAssert(conn->sock);
     
     if (!conn->sock || tx->connectorComplete) {
+        assure(conn->sock && !tx->connectorComplete);
         return;
     }
     if (tx->flags & HTTP_TX_NO_BODY) {

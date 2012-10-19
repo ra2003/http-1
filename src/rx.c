@@ -932,9 +932,9 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     ssize       nbytes;
 
     mprAssert(conn);
-    mprAssert(packet);
     mprAssert(!conn->rx->eof);
     if (!packet) {
+        httpServiceQueues(conn);
         return 0;
     }
     rx = conn->rx;

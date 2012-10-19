@@ -109,6 +109,8 @@ PUBLIC HttpPacket *httpClonePacket(HttpPacket *orig)
         packet->prefix = mprCloneBuf(orig->prefix);
     }
     packet->flags = orig->flags;
+    packet->type = orig->type;
+    packet->last = orig->last;
     packet->esize = orig->esize;
     packet->epos = orig->epos;
     packet->fill = orig->fill;
@@ -419,7 +421,16 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 #endif
     }
     packet->flags = orig->flags;
+    packet->type = orig->type;
+    packet->last = orig->last;
+    orig->last = 0;
     return packet;
+}
+
+
+bool httpIsLastPacket(HttpPacket *packet) 
+{
+    return packet->last;
 }
 
 

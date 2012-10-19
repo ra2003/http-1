@@ -585,6 +585,12 @@ PUBLIC void *httpGetConnHost(HttpConn *conn)
 }
 
 
+PUBLIC ssize httpGetWriteQueueCount(HttpConn *conn)
+{
+    return conn->writeq ? conn->writeq->count : 0;
+}
+
+
 PUBLIC void httpResetCredentials(HttpConn *conn)
 {
     conn->authType = 0;

@@ -22,7 +22,7 @@ Bit.load({
         api: {
             action: "
                 apidoc('api/http.dox', '${SRC}/src/http.h', 'Http API', 'api/*.tags')
-                apiwrap(['api/http.html' ])
+                apiwrap(['api/http.html'])
             ",
         }, 
 

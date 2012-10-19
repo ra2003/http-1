@@ -188,7 +188,9 @@ ALIASES                = "reminder=\xrefitem reminders \"Reminder\" \"Reminders\
                          "options=\par \b Configure options:\n" \
                          "description=\par \b Description:\n" \
                          "elements=\par \b Elements:\n" \
-                         "stability=\par \b API Stability:\n"
+                         "stability=\par \b API Stability:\n" \
+                         "l=\link" \
+                         "el=\endlink"
 
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C 
@@ -1258,15 +1260,15 @@ INCLUDE_FILE_PATTERNS  =
 
 PREDEFINED             = WIN=1 \
 						 LINUX=1 \
+                         DOXYGEN=1 \
                          BIT_UNIX_LIKE=1 \
                          BIT_WIN_LIKE=1 \
                          BIT_ASSERT=1 \
                          BIT_FLOAT=1 \
-                         BIT_HTTP=1 \
-                         BIT_PACK_REGEXP=1 \
+                         BIT_PACK_PCRE=1 \
                          BIT_PACK_SSL=1 \
                          BIT_PACK_OPENSSL=1 \
-                         DOXYGEN=1
+                         PUBLIC=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 

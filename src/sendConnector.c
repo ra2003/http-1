@@ -167,12 +167,9 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
  */
 static MprOff buildSendVec(HttpQueue *q)
 {
-    HttpConn    *conn;
     HttpPacket  *packet;
 
     mprAssert(q->ioIndex == 0);
-
-    conn = q->conn;
     q->ioCount = 0;
     q->ioFile = 0;
 

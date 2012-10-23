@@ -269,7 +269,6 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
         }
     }
     rc += httpWrite(conn->writeq, "%s--\r\n--", conn->boundary);
-    httpFinalize(conn);
     return rc;
 }
 

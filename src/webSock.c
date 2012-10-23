@@ -36,6 +36,10 @@ static char *codetxt[16] = {
     "close", "ping", "pong", "reserved", "reserved", "reserved", "reserved", "reserved",
 };
 
+static char *wscodetxt[] = {
+    "close", "text", "binary", "ping", "pong",
+};
+
 /*
     Frame format
 
@@ -103,7 +107,7 @@ PUBLIC int httpOpenWebSockFilter(Http *http)
     mprAssert(http);
 
     mprLog(5, "Open WebSock filter");
-    if ((filter = httpCreateFilter(http, "webSocketFilter", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((filter = httpCreateFilter(http, "webSocketFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->webSocketFilter = filter;
@@ -292,9 +296,6 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
             httpServiceQueues(q->conn);
             rx->currentPacket = 0;
         }
-#if UNUSED
-        rx->frameState = WS_BEGIN;
-#endif
         return 0;
 
     case OP_CLOSE:
@@ -304,14 +305,15 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
             if (httpGetPacketLength(packet) >= 4) {
                 mprAddNullToBuf(content);
                 if (rx->maskOffset >= 0) {
-                    for (cp = &content->start[2]; cp < content->end; cp++) {
+                    for (cp = content->start; cp < content->end; cp++) {
                         *cp = *cp ^ rx->dataMask[rx->maskOffset++ & 0x3];
                     }
                 }
                 rx->closeReason = sclone(&content->start[2]);
             }
         }
-        mprLog(5, "webSocketFilter: close status %d, reason %s, closing %d", rx->closeStatus, rx->closeReason, rx->closing);
+        mprLog(5, "webSocketFilter: close status %d, reason \"%s\", closing %d", rx->closeStatus, 
+                rx->closeReason, rx->closing);
         if (rx->closing) {
             httpDisconnect(conn);
         } else {
@@ -321,24 +323,15 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
         }
         /* Advance from the content state */
         httpSetState(conn, HTTP_STATE_READY);
-#if UNUSED
-        rx->frameState = WS_CLOSED;
-#endif
         rx->webSockState = WS_STATE_CLOSED;
         return 0;
 
     case OP_PING:
         httpSendBlock(conn, WS_MSG_PONG, mprGetBufStart(content), mprGetBufLength(content), 1);
-#if UNUSED
-        rx->frameState = WS_BEGIN;
-#endif
         return 0;
 
     case OP_PONG:
         /* Do nothing */
-#if UNUSED
-        rx->frameState = WS_BEGIN;
-#endif
         return 0;
 
     default:
@@ -346,9 +339,6 @@ static int processPacket(HttpQueue *q, HttpPacket *packet)
         break;
     }
     /* Should not get here */
-#if UNUSED
-    rx->frameState = WS_CLOSED;
-#endif
     rx->webSockState = WS_STATE_CLOSED;
     return WS_STATUS_PROTOCOL_ERROR;
 }
@@ -385,7 +375,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             mprLog(5, "webSocketFilter: incoming closed. Finalizing");
             HTTP_NOTIFY(conn, HTTP_EVENT_APP_CLOSE, rx->closeStatus);
             /* Finalize for safety. The handler/callback should have done this above */
-            httpFinalize(conn);
+            httpComplete(conn);
             return;
 
         case WS_BEGIN:
@@ -495,9 +485,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 }
             }
             if (error || rx->closing) {
-                /*
-                    Discard message if closing.       
-                 */
+                /* Discard message if closing */
                 rx->frameState = WS_BEGIN;
             } else {
                 /*
@@ -511,8 +499,10 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                         error = WS_STATUS_MESSAGE_TOO_LARGE;
                     } else {
                         error = processPacket(q, packet);
-                        rx->frameState = (error || rx->webSockState == WS_STATE_CLOSED) ? WS_CLOSED : WS_BEGIN;
+                        rx->frameState = (rx->webSockState == WS_STATE_CLOSED) ? WS_CLOSED : WS_BEGIN;
                     }
+                } else if (!tail) {
+                    break;
                 }
             }
             packet = tail;
@@ -559,7 +549,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, bool
         mprError("webSocketFilter: Outgoing message is too large %d/%d", len, conn->limits->webSocketsMessageSize);
         return MPR_ERR_WONT_FIT;
     }
-    mprLog(5, "webSocketFilter: Sending message \"%s\", len %d", codetxt[type & 0xf], len);
+    mprLog(5, "webSocketFilter: Sending message \"%s\", len %d", wscodetxt[type & 0xf], len);
     while (len > 0) {
         /*
             Break into frames. Note: downstream may also fragment packets.
@@ -587,39 +577,29 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, bool
 PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
 {
     HttpRx      *rx;
-    char        *msg;
+    char        msg[128];
     ssize       len;
 
     rx = conn->rx;
     if (rx->closing) {
         return;
     }
-    /* 
-        NOTE: this sets an expectation that the close message will be acknowledged by the peer, but we don't change state 
-     */
-    rx->webSockState = WS_STATE_CLOSING;
     rx->closing = 1;
-#if UNUSED
-    if ((packet = httpCreateDataPacket(2)) == 0) {
-        return;
-    }
-    packet->type = WS_MSG_CLOSE;
-#endif
-    if (slen(reason) >= 124) {
-        reason = "Web sockets close reason message was too big";
-        mprError(reason);
-    }
-    //  MOB - use static buffer as can't be >= than 124
-    len = 2 + (reason ? (slen(reason) + 1) : 0);
-    if ((msg = mprAlloc(len)) == 0) {
-        return;
+    rx->webSockState = WS_STATE_CLOSING;
+    len = 2;
+    if (reason) {
+        if (slen(reason) >= 124) {
+            reason = "Web sockets close reason message was too big";
+            mprError(reason);
+        }
+        len += slen(reason) + 1;
     }
     msg[0] = (status >> 8) & 0xff;
     msg[1] = status & 0xff;
     if (reason) {
         scopy(&msg[2], len - 2, reason);
     }
-    mprLog(5, "webSocketFilter: sendClose");
+    mprLog(5, "webSocketFilter: sendClose, status %d reason \"%s\"", status, reason);
     httpSendBlock(conn, WS_MSG_CLOSE, msg, len, 1);
 }
 
@@ -661,7 +641,6 @@ static void outgoingWebSockService(HttpQueue *q)
                 }
             }
             if (!conn->endpoint) {
-                //  MOB - is this really necessary? 
                 mprGetRandomBytes(dataMask, sizeof(dataMask), 0);
                 for (i = 0; i < 4; i++) {
                     *prefix++ = dataMask[i];

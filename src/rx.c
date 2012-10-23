@@ -379,9 +379,11 @@ static void parseMethod(HttpConn *conn)
         }
         break;
     }
+#if UNUSED
     if (methodFlags == 0) {
         methodFlags = HTTP_UNKNOWN;
     }
+#endif
     rx->flags |= methodFlags;
 }
 
@@ -513,7 +515,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
     limits = conn->limits;
     keepAlive = (conn->http10) ? 0 : 1;
 
-    for (count = 0; content->start[0] != '\r' && !conn->error; count++) {
+    for (count = 0; content->start[0] != '\r' && !tx->complete; count++) {
         if (count >= limits->headerMax) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Too many headers");
             return 0;
@@ -902,13 +904,15 @@ static bool processParsed(HttpConn *conn)
         precedence and 100 Continue will not be sent. Also, if the connector has already written bytes to the socket, we
         do not send 100 Continue to avoid corrupting the response.
      */
-    if ((rx->flags & HTTP_EXPECT_CONTINUE) && !conn->error && !conn->tx->bytesWritten) {
+    if ((rx->flags & HTTP_EXPECT_CONTINUE) && !conn->tx->complete && !conn->tx->bytesWritten) {
         sendContinue(conn);
         rx->flags &= ~HTTP_EXPECT_CONTINUE;
     }
     if (!conn->endpoint && conn->upgraded && !httpVerifyWebSocketsHandshake(conn)) {
         return 1;
     }
+    httpSetState(conn, HTTP_STATE_CONTENT);
+
     if (rx->remainingContent == 0 && !conn->upgraded && !rx->form) {
         /* 
             Go directly to ready state if there is no request body to read. Unless a form, in which case we still
@@ -916,8 +920,6 @@ static bool processParsed(HttpConn *conn)
          */
         rx->eof = 1;
         httpSetState(conn, HTTP_STATE_READY);
-    } else {
-        httpSetState(conn, HTTP_STATE_CONTENT);
     }
     return 1;
 }
@@ -992,8 +994,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
             } else {
                 conn->input = 0;
             }
-            if (!(tx->finalized && conn->endpoint)) {
-                /* If conn->error, then finalized will also be true */
+            if (!(tx->complete && conn->endpoint)) {
                 if (rx->form) {
                     httpPutForService(q, packet, HTTP_DELAY_SERVICE);
                 } else {
@@ -1003,7 +1004,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         }
     }
     if (rx->eof) {
-        if (!tx->finalized) {
+        if (!tx->complete) {
             if (rx->form && conn->endpoint) {
                 /* Forms wait for all data before routing */
                 routeRequest(conn);
@@ -1024,8 +1025,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     }
     httpServiceQueues(conn);
 
-    if (conn->error) {
-        /* Can proceed to handle the error */
+    if (tx->complete) {
         return 1;
     }
     if (rx->chunkState && nbytes <= 0) {
@@ -1068,7 +1068,7 @@ static bool processRunning(HttpConn *conn)
 
     if (conn->endpoint) {
         /* Server side */
-        if (tx->finalized) {
+        if (tx->complete) {
             if (!tx->connectorComplete) {
                 /* Wait for Tx I/O event. Do suspend incase handler not using auto-flow routines */
                 conn->writeBlocked = 1;
@@ -1098,7 +1098,7 @@ static bool processRunning(HttpConn *conn)
         if (conn->upgraded) {
             canProceed = 0;
         } else {
-            httpFinalize(conn);
+            httpComplete(conn);
             httpSetState(conn, HTTP_STATE_COMPLETE);
         }
     }
@@ -1446,7 +1446,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
             break;
         }
         remaining = mprGetRemainingTime(mark, timeout);
-    } while (!justOne && !conn->error && conn->state < state && remaining > 0);
+    } while (!justOne && !conn->tx->complete && conn->state < state && remaining > 0);
 
     conn->async = saveAsync;
     if (conn->sock == 0 || conn->error) {

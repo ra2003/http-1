@@ -75,7 +75,7 @@ static void updateCurrentDate(Http *http);
 
 /*********************************** Code *************************************/
 
-PUBLIC Http *httpCreate()
+PUBLIC Http *httpCreate(int flags)
 {
     Http            *http;
     HttpStatusCode  *code;
@@ -94,18 +94,11 @@ PUBLIC Http *httpCreate()
     http->protocol = sclone("HTTP/1.1");
     http->mutex = mprCreateLock(http);
     http->stages = mprCreateHash(-1, 0);
-    http->routeTargets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
-    http->routeConditions = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
-    http->routeUpdates = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
     http->hosts = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
-    http->endpoints = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
     http->connections = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
     http->authTypes = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE);
     http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE);
-    http->defaultClientHost = sclone("127.0.0.1");
-    http->defaultClientPort = 80;
     http->booted = mprGetTime();
-    http->sessionCache = mprCreateCache(MPR_CACHE_SHARED);
 
     updateCurrentDate(http);
     http->statusCodes = mprCreateHash(41, MPR_HASH_STATIC_VALUES | MPR_HASH_STATIC_KEYS);
@@ -118,19 +111,30 @@ PUBLIC Http *httpCreate()
     httpOpenSendConnector(http);
     httpOpenRangeFilter(http);
     httpOpenChunkFilter(http);
-    httpOpenUploadFilter(http);
     httpOpenWebSockFilter(http);
-    httpOpenCacheHandler(http);
-    httpOpenPassHandler(http);
-    httpOpenProcHandler(http);
-
-    http->clientLimits = httpCreateLimits(0);
-    http->serverLimits = httpCreateLimits(1);
-    http->clientRoute = httpCreateConfiguredRoute(0, 0);
 
     mprSetIdleCallback(isIdle);
     mprAddTerminator(terminateHttp);
-    httpDefineRouteBuiltins();
+
+    if (flags & HTTP_SERVER_SIDE) {
+        http->endpoints = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
+        http->routeTargets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
+        http->routeConditions = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
+        http->routeUpdates = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
+        http->sessionCache = mprCreateCache(MPR_CACHE_SHARED);
+        httpOpenUploadFilter(http);
+        httpOpenCacheHandler(http);
+        httpOpenPassHandler(http);
+        httpOpenProcHandler(http);
+        http->serverLimits = httpCreateLimits(1);
+        httpDefineRouteBuiltins();
+    }
+    if (flags & HTTP_CLIENT_SIDE) {
+        http->defaultClientHost = sclone("127.0.0.1");
+        http->defaultClientPort = 80;
+        http->clientLimits = httpCreateLimits(0);
+        http->clientRoute = httpCreateConfiguredRoute(0, 0);
+    }
     mprGlobalUnlock();
     return http;
 }
@@ -599,12 +603,6 @@ PUBLIC int httpCreateSecret(Http *http)
     *ap = '\0';
     http->secret = sclone(ascii);
     return 0;
-}
-
-
-PUBLIC void httpEnableTraceMethod(HttpLimits *limits, bool on)
-{
-    limits->enableTraceMethod = on;
 }
 
 

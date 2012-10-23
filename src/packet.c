@@ -156,11 +156,11 @@ PUBLIC HttpPacket *httpGetPacket(HttpQueue *q)
             }
         }
         if (q->count < q->low) {
-            /*
-                This queue was full and now is below the low water mark. Back-enable the previous queue.
-             */
             prev = httpFindPreviousQueue(q);
             if (prev && prev->flags & HTTP_QUEUE_SUSPENDED) {
+                /*
+                    This queue was full and now is below the low water mark. Back-enable the previous queue.
+                 */
                 httpResumeQueue(prev);
             }
         }
@@ -423,7 +423,6 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
     packet->flags = orig->flags;
     packet->type = orig->type;
     packet->last = orig->last;
-    orig->last = 0;
     return packet;
 }
 

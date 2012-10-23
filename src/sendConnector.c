@@ -28,7 +28,7 @@ PUBLIC int httpOpenSendConnector(Http *http)
     HttpStage     *stage;
 
     mprLog(5, "Open send connector");
-    if ((stage = httpCreateConnector(http, "sendConnector", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((stage = httpCreateConnector(http, "sendConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     stage->open = httpSendOpen;
@@ -184,8 +184,7 @@ static MprOff buildSendVec(HttpQueue *q)
      */
     for (packet = q->first; packet; packet = packet->next) {
         if (packet->flags & HTTP_PACKET_HEADER) {
-            httpWriteHeaders(conn, packet);
-            q->count += httpGetPacketLength(packet);
+            httpWriteHeaders(q, packet);
             
         } else if (httpGetPacketLength(packet) == 0 && packet->esize == 0) {
             q->flags |= HTTP_QUEUE_EOF;

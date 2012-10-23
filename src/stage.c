@@ -20,6 +20,7 @@ static void manageStage(HttpStage *stage, int flags);
     Invoked for all stages
  */
 
+#if UNUSED
 static void defaultOpen(HttpQueue *q)
 {
     HttpTx      *tx;
@@ -35,6 +36,7 @@ static void defaultOpen(HttpQueue *q)
 static void defaultClose(HttpQueue *q)
 {
 }
+#endif
 
 
 /*  
@@ -98,9 +100,11 @@ PUBLIC void httpDefaultOutgoingServiceStage(HttpQueue *q)
 }
 
 
+#if UNUSED
 static void incomingService(HttpQueue *q)
 {
 }
+#endif
 
 
 PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule *module)
@@ -118,15 +122,21 @@ PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule 
     } else if ((stage = mprAllocObj(HttpStage, manageStage)) == 0) {
         return 0;
     }
+#if UNUSED
     if ((flags & HTTP_METHOD_MASK) == 0) {
         flags |= HTTP_STAGE_METHODS;
     }
+#endif
     stage->flags = flags;
     stage->name = sclone(name);
+#if UNUSED
     stage->open = defaultOpen;
     stage->close = defaultClose;
+#endif
     stage->incoming = incoming;
+#if UNUSED
     stage->incomingService = incomingService;
+#endif
     stage->outgoing = outgoing;
     stage->outgoingService = httpDefaultOutgoingServiceStage;
     stage->module = module;
@@ -159,21 +169,21 @@ PUBLIC HttpStage *httpCloneStage(Http *http, HttpStage *stage)
 }
 
 
-PUBLIC HttpStage *httpCreateHandler(Http *http, cchar *name, int flags, MprModule *module)
+PUBLIC HttpStage *httpCreateHandler(Http *http, cchar *name, MprModule *module)
 {
-    return httpCreateStage(http, name, flags | HTTP_STAGE_HANDLER, module);
+    return httpCreateStage(http, name, HTTP_STAGE_HANDLER, module);
 }
 
 
-PUBLIC HttpStage *httpCreateFilter(Http *http, cchar *name, int flags, MprModule *module)
+PUBLIC HttpStage *httpCreateFilter(Http *http, cchar *name, MprModule *module)
 {
-    return httpCreateStage(http, name, flags | HTTP_STAGE_FILTER, module);
+    return httpCreateStage(http, name, HTTP_STAGE_FILTER, module);
 }
 
 
-PUBLIC HttpStage *httpCreateConnector(Http *http, cchar *name, int flags, MprModule *module)
+PUBLIC HttpStage *httpCreateConnector(Http *http, cchar *name, MprModule *module)
 {
-    return httpCreateStage(http, name, flags | HTTP_STAGE_CONNECTOR, module);
+    return httpCreateStage(http, name, HTTP_STAGE_CONNECTOR, module);
 }
 
 

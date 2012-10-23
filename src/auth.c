@@ -55,12 +55,6 @@ PUBLIC int httpAuthenticate(HttpConn *conn)
     mprAssert(auth);
     mprLog(5, "Checking user authentication user %s on route %s", conn->username, route->name);
 
-#if UNUSED
-    if (!auth->type || (auth->flags & HTTP_AUTO_LOGIN)) {
-        /* Authentication not required */
-        return 1;
-    }
-#endif
     cached = 0;
     if (rx->cookie && (session = httpGetSession(conn, 0)) != 0) {
         if ((conn->username = (char*) httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0)) != 0) {
@@ -78,6 +72,7 @@ PUBLIC int httpAuthenticate(HttpConn *conn)
         }
         if (rx->authDetails && (auth->type->parseAuth)(conn) < 0) {
             mprAssert(conn->error);
+            mprAssert(conn->tx->complete);
             return 0;
         }
         if (!conn->username) {
@@ -398,7 +393,6 @@ PUBLIC void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginSer
         route->auth->type = 0;
         if (secure) {
             httpAddRouteCondition(route, "secure", 0, 0);
-
         }
         httpFinalizeRoute(route);
     }

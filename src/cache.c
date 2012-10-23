@@ -35,7 +35,7 @@ PUBLIC int httpOpenCacheHandler(Http *http)
     /*
         Create the cache handler to serve cached content 
      */
-    if ((handler = httpCreateHandler(http, "cacheHandler", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((handler = httpCreateHandler(http, "cacheHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->cacheHandler = handler;
@@ -45,7 +45,7 @@ PUBLIC int httpOpenCacheHandler(Http *http)
     /*
         Create the cache filter to capture and cache response content
      */
-    if ((filter = httpCreateFilter(http, "cacheFilter", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((filter = httpCreateFilter(http, "cacheFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->cacheFilter = filter;
@@ -101,7 +101,7 @@ static void readyCacheHandler(HttpQueue *q)
             httpWriteString(q, data);
         }
     }
-    httpFinalize(conn);
+    httpComplete(conn);
 }
 
 
@@ -386,7 +386,7 @@ PUBLIC ssize httpWriteCached(HttpConn *conn)
     httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
     conn->tx->cacheBuffer = 0;
     httpWriteString(conn->writeq, data);
-    httpFinalize(conn);
+    httpComplete(conn);
     return slen(data);
 }
 

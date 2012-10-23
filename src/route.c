@@ -57,8 +57,10 @@ static int updateRequest(HttpConn *conn, HttpRoute *route, HttpRouteOp *update);
  */
 PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
 {
-    HttpRoute  *route;
+    Http        *http;
+    HttpRoute   *route;
 
+    http = MPR->httpService;
     if ((route = mprAllocObj(HttpRoute, manageRoute)) == 0) {
         return 0;
     }
@@ -83,7 +85,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->workers = -1;
 
     if (MPR->httpService) {
-        route->limits = mprMemdup(((Http*) MPR->httpService)->serverLimits, sizeof(HttpLimits));
+        route->limits = mprMemdup(http->serverLimits ? http->serverLimits : http->clientLimits, sizeof(HttpLimits));
     }
     route->mimeTypes = MPR->mimeTypes;
     route->mutex = mprCreateLock();
@@ -397,18 +399,14 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     if (rewrites >= HTTP_MAX_REWRITE) {
         httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
     }
-    if (tx->finalized) {
-        /* 
-            Must be no data in queues as handlers and pipeline are not yet started. Only errors and redirects 
-            using tx->altBody 
-         */ 
+    if (tx->complete) {
+        /* Pass handler can transmit the error */
         tx->handler = conn->http->passHandler;
     }
     if (rx->traceLevel >= 0) {
         mprLog(rx->traceLevel, "Select handler: \"%s\" for \"%s\"", tx->handler->name, rx->uri);
     }
 }
-
 
 
 PUBLIC int httpMatchRoute(HttpConn *conn, HttpRoute *route)
@@ -575,7 +573,7 @@ static int testRoute(HttpConn *conn, HttpRoute *route)
     if ((rc = (*proc)(conn, route, 0)) != HTTP_ROUTE_OK) {
         return rc;
     }
-    if (!tx->finalized && tx->handler->match) {
+    if (tx->handler->match) {
         rc = tx->handler->match(conn, route, HTTP_QUEUE_TX);
     }
     return rc;
@@ -1946,7 +1944,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         return HTTP_ROUTE_OK;
     }
     if (!httpAuthenticate(conn)) {
-        if (!conn->tx->finalized && route->auth && route->auth->type) {
+        if (!conn->tx->complete && route->auth && route->auth->type) {
             (route->auth->type->askLogin)(conn);
         }
         /* Request has been denied and fully handled */
@@ -2195,7 +2193,7 @@ static int writeTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     }
     httpSetStatus(conn, route->responseStatus);
     httpFormatResponse(conn, "%s", str);
-    httpFinalize(conn);
+    httpComplete(conn);
     return HTTP_ROUTE_OK;
 }
 
@@ -3031,6 +3029,17 @@ PUBLIC void httpSetOption(MprHash *options, cchar *field, cchar *value)
     }
     if ((kp = mprAddKey(options, field, value)) != 0) {
         kp->type = MPR_JSON_STRING;
+    }
+}
+
+
+PUBLIC void httpEnableTraceMethod(HttpRoute *route, bool on)
+{
+    assure(route);
+    if (on) {
+        route->flags |= HTTP_ROUTE_TRACE_METHOD;
+    } else {
+        route->flags &= ~HTTP_ROUTE_TRACE_METHOD;
     }
 }
 

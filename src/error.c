@@ -10,7 +10,7 @@
 /********************************** Forwards **********************************/
 
 static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args);
-static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
+static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
 
 /*********************************** Code *************************************/
 
@@ -24,6 +24,9 @@ PUBLIC void httpDisconnect(HttpConn *conn)
     conn->keepAliveCount = -1;
     if (conn->rx) {
         conn->rx->eof = 1;
+    }
+    if (conn->tx) {
+        conn->tx->complete = 1;
     }
 }
 
@@ -47,8 +50,8 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
 {
     HttpRx      *rx;
     HttpTx      *tx;
-    cchar       *uri;
-    int         abort, status;
+    cchar       *uri, *statusMsg;;
+    int         status;
 
     mprAssert(fmt);
     rx = conn->rx;
@@ -69,31 +72,41 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         if (rx) {
             rx->eof = 1;
         }
+        httpDisconnect(conn);
     }
     /* 
         If headers have been sent, must let the other side of the failure - abort is the only way.
-        Disconnect will cause a readable (EOF) event. Call formatErrorv for client-side code to set errorMsg.
+        Disconnect will cause a readable (EOF) event.
      */
-    abort = (flags & HTTP_ABORT || (tx && tx->flags & HTTP_TX_HEADERS_CREATED));
     if (!conn->error) {
         conn->error = 1;
-        formatErrorv(conn, status, fmt, args);
+        httpOmitBody(conn);
+        conn->errorMsg = formatErrorv(conn, status, fmt, args);
         HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
-    }
-    if (abort) {
-        httpDisconnect(conn);
-        return;
-    }
-    if (conn->endpoint && tx && rx) {
-        if (!(tx->flags & HTTP_TX_HEADERS_CREATED)) {
-            if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status))) {
-                httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
-            } else {
-                httpFormatResponseError(conn, status, "%s", conn->errorMsg);
+        if (conn->endpoint && tx && rx) {
+            if (!(tx->flags & HTTP_TX_HEADERS_CREATED)) {
+                if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status))) {
+                    httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
+                } else {
+                    httpAddHeaderString(conn, "Cache-Control", "no-cache");
+                    statusMsg = httpLookupStatus(conn->http, status);
+                    if (scmp(conn->rx->accept, "text/plain") == 0) {
+                        tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, conn->errorMsg);
+                    } else {
+                        tx->altBody = sfmt("<!DOCTYPE html>\r\n"
+                            "<html><head><title>%s</title></head>\r\n"
+                            "<body>\r\n<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n</body>\r\n</html>\r\n",
+                            statusMsg, status, statusMsg, mprEscapeHtml(conn->errorMsg));
+                    }
+                    tx->length = slen(tx->altBody);
+                    tx->responded = 1;
+                    tx->flags |= HTTP_TX_NO_BODY;
+                    httpDiscardData(conn, HTTP_QUEUE_TX);
+                }
             }
         }
+        httpComplete(conn);
     }
-    httpFinalize(conn);
 }
 
 
@@ -101,7 +114,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     Just format conn->errorMsg and set status - nothing more
     NOTE: this is an internal API. Users should use httpError()
  */
-static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
+static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
 {
     if (conn->errorMsg == 0) {
         conn->errorMsg = sfmtv(fmt, args);
@@ -122,6 +135,7 @@ static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
                 httpLookupStatus(conn->http, status), status, conn->rx->uri ? conn->rx->uri : "", conn->errorMsg);
         }
     }
+    return conn->errorMsg;
 }
 
 
@@ -134,7 +148,7 @@ PUBLIC void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
     va_list     args;
 
     va_start(args, fmt); 
-    formatErrorv(conn, status, fmt, args);
+    conn->errorMsg = formatErrorv(conn, status, fmt, args);
     va_end(args); 
 }
 

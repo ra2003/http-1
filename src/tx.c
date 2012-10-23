@@ -25,7 +25,6 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     tx->status = HTTP_CODE_OK;
     tx->length = -1;
     tx->entityLength = -1;
-    tx->traceMethods = HTTP_STAGE_ALL;
     tx->chunkSize = -1;
 
     tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
@@ -237,6 +236,13 @@ PUBLIC void httpConnectorComplete(HttpConn *conn)
 }
 
 
+PUBLIC void httpComplete(HttpConn *conn)
+{
+    httpFinalize(conn);
+    conn->tx->complete = 1;
+}
+
+
 PUBLIC void httpFinalize(HttpConn *conn)
 {
     HttpTx      *tx;
@@ -259,6 +265,12 @@ PUBLIC void httpFinalize(HttpConn *conn)
         /* Pipeline has not been setup yet */
         tx->refinalize = 1;
     }
+}
+
+
+PUBLIC int httpIsComplete(HttpConn *conn)
+{
+    return conn->tx->complete;
 }
 
 
@@ -288,10 +300,10 @@ PUBLIC ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
 
     tx = conn->tx;
     tx->responded = 1;
-    body = sfmtv(fmt, args);
+    body = fmt ? sfmtv(fmt, args) : conn->errorMsg;
     tx->altBody = body;
     tx->length = slen(tx->altBody);
-    conn->tx->flags |= HTTP_TX_NO_BODY;
+    tx->flags |= HTTP_TX_NO_BODY;
     httpDiscardData(conn, HTTP_QUEUE_TX);
     return (ssize) tx->length;
 }
@@ -314,7 +326,7 @@ PUBLIC ssize httpFormatResponse(HttpConn *conn, cchar *fmt, ...)
 
 /*
     This formats a complete response. Depending on the Accept header, the response will be either HTML or plain text.
-    The response is not HTML escaped.  This calls httpFormatResponse.
+    The response is not HTML escaped. This calls httpFormatResponse.
  */
 PUBLIC ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...)
 {
@@ -322,7 +334,8 @@ PUBLIC ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ..
     char        *msg, *body;
 
     va_start(args, fmt);
-    body = sfmtv(fmt, args);
+    body = fmt ? sfmtv(fmt, args) : conn->errorMsg;
+
     if (scmp(conn->rx->accept, "text/plain") == 0) {
         msg = body;
     } else {
@@ -337,9 +350,10 @@ PUBLIC ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ..
 }
 
 
+#if UNUSED
 /*
     Create an alternate body response. Typically used for error responses. The message is HTML escaped.
-    NOTE: this is an internal API. Users should use httpFormatError
+    NOTE: this is an internal API. Users should use httpFormatError.
  */
 PUBLIC void httpFormatResponseError(HttpConn *conn, int status, cchar *fmt, ...)
 {
@@ -347,20 +361,20 @@ PUBLIC void httpFormatResponseError(HttpConn *conn, int status, cchar *fmt, ...)
     cchar       *statusMsg;
     char        *msg;
 
-    mprAssert(fmt && fmt);
-
     va_start(args, fmt);
-    msg = sfmtv(fmt, args);
+    msg = fmt ? sfmtv(fmt, args) : conn->errorMsg;
     statusMsg = httpLookupStatus(conn->http, status);
     if (scmp(conn->rx->accept, "text/plain") == 0) {
         msg = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, msg);
     } else {
         msg = sfmt("<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n", status, statusMsg, mprEscapeHtml(msg));
     }
+    conn->errorMsg = msg;
     httpAddHeaderString(conn, "Cache-Control", "no-cache");
-    httpFormatResponseBody(conn, statusMsg, "%s", msg);
+    httpFormatResponseBody(conn, statusMsg, NULL);
     va_end(args);
 }
+#endif
 
 
 PUBLIC void *httpGetQueueData(HttpConn *conn)
@@ -374,11 +388,15 @@ PUBLIC void *httpGetQueueData(HttpConn *conn)
 
 PUBLIC void httpOmitBody(HttpConn *conn)
 {
-    if (conn->tx) {
-        conn->tx->flags |= HTTP_TX_NO_BODY;
-        conn->tx->length = -1;
+    HttpTx  *tx;
+
+    tx = conn->tx;
+    if (!tx) {
+        return;
     }
-    if (conn->tx->flags & HTTP_TX_HEADERS_CREATED) {
+    tx->flags |= HTTP_TX_NO_BODY;
+    tx->length = -1;
+    if (tx->flags & HTTP_TX_HEADERS_CREATED) {
         mprError("Can't set response body if headers have already been created");
         /* Connectors will detect this also and disconnect */
     } else {
@@ -403,7 +421,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     rx = conn->rx;
     tx = conn->tx;
 
-    if (tx->finalized) {
+    if (tx->complete) {
         /* A response has already been formulated */
         return;
     }
@@ -421,10 +439,13 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         }
         target = httpCreateUri(targetUri, 0);
         base = rx->parsedUri;
-        if (!target->port && target->scheme) {
+        if (!target->port && target->scheme && !smatch(target->scheme, base->scheme)) {
             endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
             if (endpoint) {
                 target->port = endpoint->port;
+            } else {
+                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Can't find endpoint for scheme %s", target->scheme);
+                return;
             }
         }
         if (target->path && target->path[0] != '/') {
@@ -453,7 +474,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             "<body><h1>%s</h1>\r\n</body></html>\r\n",
             msg, msg);
     }
-    httpFinalize(conn);
+    httpComplete(conn);
 }
 
 
@@ -469,7 +490,9 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
     httpSetHeader(conn, "Content-Length", "%Ld", tx->length);
 }
 
-PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, MprTime lifespan, int flags)
+
+PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, 
+        MprTime lifespan, int flags)
 {
     HttpRx      *rx;
     char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *secure, *httponly;
@@ -545,22 +568,28 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     if (tx->etag) {
         httpAddHeader(conn, "ETag", "%s", tx->etag);
     }
+
     length = tx->length > 0 ? tx->length : 0;
     if (rx->flags & HTTP_HEAD) {
         conn->tx->flags |= HTTP_TX_NO_BODY;
         httpDiscardData(conn, HTTP_QUEUE_TX);
         httpAddHeader(conn, "Content-Length", "%Ld", length);
+
     } else if (tx->chunkSize > 0) {
         httpSetHeaderString(conn, "Transfer-Encoding", "chunked");
+
     } else if (conn->endpoint) {
         /* Server must not emit a content length header for 1XX, 204 and 304 status */
-        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304)) {
+        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || 
+                tx->status == 304 || tx->flags & HTTP_TX_NO_LENGTH)) {
             httpAddHeader(conn, "Content-Length", "%Ld", length);
         }
+
     } else if (tx->length > 0) {
         /* client with body */
         httpAddHeader(conn, "Content-Length", "%Ld", length);
     }
+
     if (tx->outputRanges) {
         if (tx->outputRanges->next == 0) {
             range = tx->outputRanges;
@@ -618,9 +647,10 @@ PUBLIC void httpSetContentType(HttpConn *conn, cchar *mimeType)
 }
 
 
-PUBLIC void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
+PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
 {
     Http        *http;
+    HttpConn    *conn;
     HttpTx      *tx;
     HttpUri     *parsedUri;
     MprKey      *kp;
@@ -629,6 +659,7 @@ PUBLIC void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
 
     mprAssert(packet->flags == HTTP_PACKET_HEADER);
 
+    conn = q->conn;
     http = conn->http;
     tx = conn->tx;
     buf = packet->content;
@@ -695,7 +726,6 @@ PUBLIC void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
         mprPutStringToBuf(packet->content, "\r\n");
         kp = mprGetNextKey(conn->tx->headers, kp);
     }
-
     /* 
         By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter
      */
@@ -709,6 +739,7 @@ PUBLIC void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
     }
     tx->headerSize = mprGetBufLength(buf);
     tx->flags |= HTTP_TX_HEADERS_CREATED;
+    q->count += httpGetPacketLength(packet);
 }
 
 

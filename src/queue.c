@@ -90,13 +90,20 @@ PUBLIC void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
 
 PUBLIC void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
 {
+    HttpTx      *tx;
+
+    tx = conn->tx;
     q->conn = conn;
     q->nextQ = q;
     q->prevQ = q;
     q->owner = sclone(name);
-    q->packetSize = conn->limits->stageBufferSize;
     q->max = conn->limits->stageBufferSize;
     q->low = q->max / 100 *  5;    
+    if (tx && tx->chunkSize > 0) {
+        q->packetSize = tx->chunkSize;
+    } else {
+        q->packetSize = q->max;
+    }
 }
 
 
@@ -200,7 +207,7 @@ PUBLIC void httpResumeQueue(HttpQueue *q)
 
 PUBLIC HttpQueue *httpFindPreviousQueue(HttpQueue *q)
 {
-    while (q->prevQ) {
+    while (q->prevQ && q->prevQ->stage && q->prevQ != q) {
         q = q->prevQ;
         if (q->service) {
             return q;
@@ -265,6 +272,7 @@ PUBLIC bool httpIsQueueEmpty(HttpQueue *q)
 }
 
 
+#if MOVED
 PUBLIC int httpOpenQueue(HttpQueue *q, ssize chunkSize)
 {
     Http        *http;
@@ -297,6 +305,7 @@ PUBLIC int httpOpenQueue(HttpQueue *q, ssize chunkSize)
     }
     return 0;
 }
+#endif
 
 
 /*  
@@ -315,7 +324,7 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
     mprAssert(size >= 0);
     mprAssert(httpVerifyQueue(q));
 
-    while (q->count <= 0 && !conn->async && !conn->error && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
+    while (q->count <= 0 && !conn->async && !conn->tx->complete && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
         httpServiceQueues(conn);
         if (conn->sock) {
             httpWait(conn, 0, MPR_TIMEOUT_NO_BUSY);

@@ -214,16 +214,10 @@ static void commonPrep(HttpConn *conn)
     }
     conn->lastActivity = conn->http->now;
     conn->canProceed = 1;
-    conn->error = 0;
     conn->connError = 0;
+    conn->error = 0;
     conn->errorMsg = 0;
     conn->state = 0;
-#if UNUSED
-    conn->responded = 0;
-    conn->finalized = 0;
-    conn->refinalize = 0;
-    conn->connectorComplete = 0;
-#endif
     conn->setCredentials = 0;
 
     if (conn->endpoint) {
@@ -343,7 +337,7 @@ PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
             httpDestroyConn(conn);
 
         } else if (conn->sock) {
-            if (mprIsSocketEof(conn->sock)) {
+            if (mprIsSocketEof(conn->sock) && conn->state != HTTP_STATE_RUNNING) {
                 httpDestroyConn(conn);
             } else {
                 mprAssert(conn->state < HTTP_STATE_COMPLETE);
@@ -372,29 +366,31 @@ static void readEvent(HttpConn *conn)
         if (nbytes > 0) {
             mprAdjustBufEnd(packet->content, nbytes);
             httpPump(conn, packet);
+            if (conn->state >= HTTP_STATE_READY || !conn->canProceed) {
+                break;
+            }
+            if (conn->readq && conn->readq->count > conn->readq->max) {
+                break;
+            }
+            if (mprDispatcherHasEvents(conn->dispatcher)) {
+                break;
+            }
 
         } else if (nbytes < 0) {
             if (conn->state <= HTTP_STATE_CONNECTED) {
                 if (mprIsSocketEof(conn->sock)) {
                     conn->keepAliveCount = -1;
                 }
-                break;
             } else if (conn->state < HTTP_STATE_COMPLETE) {
                 httpPump(conn, packet);
-                if (!conn->error && conn->state < HTTP_STATE_COMPLETE && mprIsSocketEof(conn->sock)) {
+                if (!conn->error && conn->state < HTTP_STATE_RUNNING && mprIsSocketEof(conn->sock)) {
                     httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
                     break;
                 }
             }
             break;
-        }
-        if (nbytes == 0 || conn->state >= HTTP_STATE_READY || !conn->canProceed) {
-            break;
-        }
-        if (conn->readq && conn->readq->count > conn->readq->max) {
-            break;
-        }
-        if (mprDispatcherHasEvents(conn->dispatcher)) {
+
+        } else {
             break;
         }
     }
@@ -506,7 +502,9 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
                 eventMask |= MPR_READABLE;
             }
         } else {
-            eventMask |= MPR_READABLE;
+            if (!mprIsSocketEof(conn->sock)) {
+                eventMask |= MPR_READABLE;
+            }
         }
         if (eventMask) {
             if (conn->waitHandler == 0) {
@@ -686,18 +684,22 @@ static char *notifyState[] = {
 };
 
 
-PUBLIC void httpSetState(HttpConn *conn, int state)
+PUBLIC void httpSetState(HttpConn *conn, int targetState)
 {
-    if (state == conn->state) {
+    int     state;
+
+    if (targetState == conn->state) {
         return;
     }
-    if (state < conn->state) {
+    if (targetState < conn->state) {
         /* Prevent regressions */
         return;
     }
-    conn->state = state;
-    LOG(6, "Connection state change to %s", notifyState[state]);
-    HTTP_NOTIFY(conn, HTTP_EVENT_STATE, state);
+    for (state = conn->state + 1; state <= targetState; state++) { 
+        conn->state = state;
+        LOG(6, "Connection state change to %s", notifyState[state]);
+        HTTP_NOTIFY(conn, HTTP_EVENT_STATE, state);
+    }
 }
 
 

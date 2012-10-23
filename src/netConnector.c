@@ -29,7 +29,7 @@ PUBLIC int httpOpenNetConnector(Http *http)
     HttpStage     *stage;
 
     mprLog(5, "Open net connector");
-    if ((stage = httpCreateConnector(http, "netConnector", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((stage = httpCreateConnector(http, "netConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     stage->close = netClose;
@@ -160,8 +160,7 @@ static MprOff buildNetVec(HttpQueue *q)
                 /* Incase no chunking filter and we've not seen all the data yet */
                 conn->keepAliveCount = 0;
             }
-            httpWriteHeaders(conn, packet);
-            q->count += httpGetPacketLength(packet);
+            httpWriteHeaders(q, packet);
 
         } else if (packet->flags & HTTP_PACKET_END) {
             q->flags |= HTTP_QUEUE_EOF;

@@ -20,6 +20,9 @@ static void startProc(HttpQueue *q)
 
     mprLog(5, "Start procHandler");
     conn = q->conn;
+    assure(!conn->error);
+    assure(!conn->tx->complete);
+
     name = conn->rx->pathInfo;
     if ((proc = mprLookupKey(conn->tx->handler->stageData, name)) == 0) {
         mprError("Can't find procction callback %s", name);
@@ -45,7 +48,7 @@ PUBLIC int httpOpenProcHandler(Http *http)
 {
     HttpStage     *stage;
 
-    if ((stage = httpCreateHandler(http, "procHandler", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((stage = httpCreateHandler(http, "procHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->procHandler = stage;

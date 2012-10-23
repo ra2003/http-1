@@ -977,7 +977,7 @@ typedef void (*HttpQueueService)(struct HttpQueue *q);
         httpIsEof httpIsPacketTooBig httpIsQueueEmpty httpJoinPacketForService httpJoinPackets
         httpPutBackPacket httpPutForService httpPutPacket httpPutPacketToNext httpRemoveQueue httpResizePacket
         httpResumeQueue httpScheduleQueue httpServiceQueue httpSuspendQueue
-        httpWillNextQueueAccept httpWillNextQueueAcceptSize httpWrite httpWriteBlock httpWriteBody httpWriteString 
+        httpWillNextQueueAcceptPacket httpWillNextQueueAcceptSize httpWrite httpWriteBlock httpWriteBody httpWriteString 
  */
 typedef struct HttpQueue {
     cchar               *owner;                 /**< Name of owning stage */
@@ -1430,7 +1430,7 @@ typedef struct HttpStage {
     /** 
         Service the outgoing data queue
         @description This callback should service packets on the queue and process or forward as appropriate.
-        A service routine should check downstream queues by calling #httpWillNextQueueAccept before forwarding packets
+        A service routine should check downstream queues by calling #httpWillNextQueueAcceptPacket before forwarding packets
         to ensure they do not overfow downstream queues.
         @param q Queue instance object
         @ingroup HttpStage
@@ -1454,7 +1454,7 @@ typedef struct HttpStage {
     /** 
         Service the incoming data queue
         @description This callback should service packets on the queue and process or forward as appropriate.
-        A service routine should check upstream queues by calling #httpWillNextQueueAccept before forwarding packets
+        A service routine should check upstream queues by calling #httpWillNextQueueAcceptPacket before forwarding packets
         to ensure they do not overfow upstream queues.
         @param q Queue instance object
         @ingroup HttpStage
@@ -1594,7 +1594,8 @@ PUBLIC cvoid *httpGetStageData(struct HttpConn *conn, cchar *key);
     Handle a Http Trace or Options method request
     @description Convenience routine to respond to an OPTIONS or TRACE request. 
     @param conn HttpConn object created via #httpCreateConn
-    @param methods Comma separated list of supported methods excluding OPTIONS and TRACE.
+    @param methods Comma separated list of supported methods excluding OPTIONS and TRACE which are automatically
+        added if the route supports these methods.
     @ingroup HttpStage
  */
 PUBLIC void httpHandleOptionsTrace(struct HttpConn *conn, cchar *methods);

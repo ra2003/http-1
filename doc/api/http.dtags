@@ -1549,6 +1549,13 @@
       <arglist>(HttpRoute *route, HttpLimits *limits)</arglist>
     </member>
     <member kind="function">
+      <type>char *</type>
+      <name>httpLink</name>
+      <anchorfile>group___http_route.html</anchorfile>
+      <anchor>ga5b051e0b1cf729188162294091feca6d</anchor>
+      <arglist>(HttpConn *conn, cchar *target, MprHash *options)</arglist>
+    </member>
+    <member kind="function">
       <type>void</type>
       <name>httpLogRoutes</name>
       <anchorfile>group___http_route.html</anchorfile>

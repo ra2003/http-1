@@ -3516,6 +3516,7 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits);
         </ul>
     @param options Hash of option values for embedded tokens.
     @return A normalized, server-local Uri string.
+    @ingroup HttpRoute
     @remarks Examples:<pre>
     httpLink(conn, "http://example.com/index.html", 0);
     httpLink(conn, "/path/to/index.html", 0);

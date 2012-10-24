@@ -298,17 +298,17 @@ PUBLIC HttpRoute *httpCreateAliasRoute(HttpRoute *parent, cchar *pattern, cchar 
 /*
     This routine binds a new route to a URI. It creates a handler, route and binds a callback to that route. 
  */
-PUBLIC HttpRoute *httpCreateProcRoute(HttpRoute *parent, cchar *pattern, HttpProc proc)
+PUBLIC HttpRoute *httpCreateActionRoute(HttpRoute *parent, cchar *pattern, HttpAction action)
 {
     HttpRoute   *route;
 
-    if (!pattern || !proc) {
+    if (!pattern || !action) {
         return 0;
     }
     if ((route = httpCreateInheritedRoute(parent)) != 0) {
-        route->handler = route->http->procHandler;
+        route->handler = route->http->actionHandler;
         httpSetRoutePattern(route, pattern, 0);
-        httpDefineProc(pattern, proc);
+        httpDefineAction(pattern, action);
         httpFinalizeRoute(route);
     }
     return route;

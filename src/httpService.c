@@ -125,7 +125,7 @@ PUBLIC Http *httpCreate(int flags)
         httpOpenUploadFilter(http);
         httpOpenCacheHandler(http);
         httpOpenPassHandler(http);
-        httpOpenProcHandler(http);
+        httpOpenActionHandler(http);
         http->serverLimits = httpCreateLimits(1);
         httpDefineRouteBuiltins();
     }

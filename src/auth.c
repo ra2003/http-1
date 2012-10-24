@@ -401,7 +401,7 @@ PUBLIC void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginSer
             loginService = &loginService[8];
             secure = 1;
         }
-        route = httpCreateProcRoute(parent, loginService, loginServiceProc);
+        route = httpCreateActionRoute(parent, loginService, loginServiceProc);
         httpSetRouteMethods(route, "POST");
         route->auth->type = 0;
         if (secure) {
@@ -415,7 +415,7 @@ PUBLIC void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginSer
         }
         //  TODO MOB - should be only POST
         httpSetRouteMethods(route, "GET, POST");
-        route = httpCreateProcRoute(parent, logoutService, logoutServiceProc);
+        route = httpCreateActionRoute(parent, logoutService, logoutServiceProc);
         route->auth->type = 0;
         if (secure) {
             httpAddRouteCondition(route, "secure", 0, 0);

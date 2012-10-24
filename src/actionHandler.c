@@ -1,7 +1,7 @@
 /*
-    procHandler.c -- Procedure callback handler
+    actionHandler.c -- Action handler
 
-    This handler maps URIs to procction names that have been registered via httpDefineProc.
+    This handler maps URIs to actions that are C functions that have been registered via httpDefineAction.
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
@@ -12,50 +12,50 @@
 
 /*********************************** Code *************************************/
 
-static void startProc(HttpQueue *q)
+static void startAction(HttpQueue *q)
 {
     HttpConn    *conn;
-    HttpProc     proc;
+    HttpAction     action;
     cchar       *name;
 
-    mprLog(5, "Start procHandler");
+    mprLog(5, "Start actionHandler");
     conn = q->conn;
     assure(!conn->error);
     assure(!conn->tx->complete);
 
     name = conn->rx->pathInfo;
-    if ((proc = mprLookupKey(conn->tx->handler->stageData, name)) == 0) {
-        mprError("Can't find procction callback %s", name);
+    if ((action = mprLookupKey(conn->tx->handler->stageData, name)) == 0) {
+        mprError("Can't find action: %s", name);
     } else {
-        (*proc)(conn);
+        (*action)(conn);
     }
 }
 
 
-PUBLIC void httpDefineProc(cchar *name, HttpProc proc)
+PUBLIC void httpDefineAction(cchar *name, HttpAction action)
 {
     HttpStage   *stage;
 
-    if ((stage = httpLookupStage(MPR->httpService, "procHandler")) == 0) {
-        mprError("Can't find procHandler");
+    if ((stage = httpLookupStage(MPR->httpService, "actionHandler")) == 0) {
+        mprError("Can't find actionHandler");
         return;
     }
-    mprAddKey(stage->stageData, name, proc);
+    mprAddKey(stage->stageData, name, action);
 }
 
 
-PUBLIC int httpOpenProcHandler(Http *http)
+PUBLIC int httpOpenActionHandler(Http *http)
 {
     HttpStage     *stage;
 
-    if ((stage = httpCreateHandler(http, "procHandler", NULL)) == 0) {
+    if ((stage = httpCreateHandler(http, "actionHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->procHandler = stage;
+    http->actionHandler = stage;
     if ((stage->stageData = mprCreateHash(0, MPR_HASH_STATIC_VALUES)) == 0) {
         return MPR_ERR_MEMORY;
     }
-    stage->start = startProc;
+    stage->start = startAction;
     return 0;
 }
 

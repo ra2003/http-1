@@ -134,6 +134,7 @@ PUBLIC Http *httpCreate(int flags)
         http->defaultClientPort = 80;
         http->clientLimits = httpCreateLimits(0);
         http->clientRoute = httpCreateConfiguredRoute(0, 0);
+        http->clientHandler = httpCreateHandler(http, "client", 0);
     }
     mprGlobalUnlock();
     return http;
@@ -160,6 +161,7 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->clientLimits);
         mprMark(http->serverLimits);
         mprMark(http->clientRoute);
+        mprMark(http->clientHandler);
         mprMark(http->timer);
         mprMark(http->timestamp);
         mprMark(http->mutex);

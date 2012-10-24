@@ -114,10 +114,11 @@ static void traceBuf(HttpConn *conn, int dir, int level, cchar *msg, cchar *buf,
 
     start = buf;
     if (len > 3 && start[0] == (char) 0xef && start[1] == (char) 0xbb && start[2] == (char) 0xbf) {
+        /* Step over UTF encoding */
         start += 3;
     }
     for (printable = 1, i = 0; i < len; i++) {
-        if (!isascii((uchar) start[i])) {
+        if (!isprint((uchar) start[i]) && start[i] != '\n' && start[i] != '\r' && start[i] != '\t') {
             printable = 0;
         }
     }

@@ -110,6 +110,8 @@ PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
     }
     if (tx->handler) {
         mprAddItem(rx->inputPipeline, tx->handler);
+    } else {
+        mprAddItem(rx->inputPipeline, httpCreateStage(conn->http, "readq", 0, 0));
     }
     /*  Create the incoming queue heads and open the queues.  */
     q = tx->queue[HTTP_QUEUE_RX];

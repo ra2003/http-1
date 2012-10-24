@@ -16,29 +16,6 @@
 static void manageStage(HttpStage *stage, int flags);
 
 /*********************************** Code *************************************/
-/*
-    Invoked for all stages
- */
-
-#if UNUSED
-static void defaultOpen(HttpQueue *q)
-{
-    HttpTx      *tx;
-
-    tx = q->conn->tx;
-    q->packetSize = (tx->chunkSize > 0) ? min(q->max, tx->chunkSize): q->max;
-}
-
-
-/*
-    Invoked for all stages
- */
-static void defaultClose(HttpQueue *q)
-{
-}
-#endif
-
-
 /*  
     Put packets on the service queue.
  */
@@ -100,13 +77,6 @@ PUBLIC void httpDefaultOutgoingServiceStage(HttpQueue *q)
 }
 
 
-#if UNUSED
-static void incomingService(HttpQueue *q)
-{
-}
-#endif
-
-
 PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule *module)
 {
     HttpStage     *stage;
@@ -122,21 +92,9 @@ PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule 
     } else if ((stage = mprAllocObj(HttpStage, manageStage)) == 0) {
         return 0;
     }
-#if UNUSED
-    if ((flags & HTTP_METHOD_MASK) == 0) {
-        flags |= HTTP_STAGE_METHODS;
-    }
-#endif
     stage->flags = flags;
     stage->name = sclone(name);
-#if UNUSED
-    stage->open = defaultOpen;
-    stage->close = defaultClose;
-#endif
     stage->incoming = incoming;
-#if UNUSED
-    stage->incomingService = incomingService;
-#endif
     stage->outgoing = outgoing;
     stage->outgoingService = httpDefaultOutgoingServiceStage;
     stage->module = module;

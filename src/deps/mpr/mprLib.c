@@ -19863,6 +19863,7 @@ PUBLIC ssize mprWriteSocketVector(MprSocket *sp, MprIOVec *iovec, int count)
     } else
 #endif
     {
+        //  OPT - better to buffer and have fewer raw writes
         if (count <= 0) {
             return 0;
         }

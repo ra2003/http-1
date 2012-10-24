@@ -69,7 +69,7 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
         tok = &up->uri[8];
 
     } else if (sncmp(up->uri, "wss://", 6) == 0) {
-        up->scheme = sclone("https");
+        up->scheme = sclone("wss");
         up->secure = 1;
         if (flags & HTTP_COMPLETE_URI) {
             up->port = 443;

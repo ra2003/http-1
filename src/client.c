@@ -257,6 +257,10 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
     }
     if (fileData) {
         for (rc = next = 0; rc >= 0 && (path = mprGetNextItem(fileData, &next)) != 0; ) {
+            if (!mprPathExists(path, R_OK)) {
+                httpFormatError(conn, 0, "Can't open %s", path);
+                return MPR_ERR_CANT_OPEN;
+            }
             name = mprGetPathBase(path);
             rc += httpWrite(conn->writeq, "%s\r\nContent-Disposition: form-data; name=\"file%d\"; filename=\"%s\"\r\n", 
                 conn->boundary, next - 1, name);
@@ -264,7 +268,9 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
                 rc += httpWrite(conn->writeq, "Content-Type: %s\r\n", mprLookupMime(MPR->mimeTypes, path));
             }
             httpWrite(conn->writeq, "\r\n");
-            rc += blockingFileCopy(conn, path);
+            if (blockingFileCopy(conn, path) < 0) {
+                return MPR_ERR_CANT_WRITE;
+            }
             rc += httpWrite(conn->writeq, "\r\n");
         }
     }

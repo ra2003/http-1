@@ -192,6 +192,9 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, bool blocking)
         if (conn->sock == 0) {
             break;
         }
+        if (blocking) {
+            httpPumpHandler(conn);
+        }
     } while (blocking && q->count > 0);
     return (q->count < q->max) ? 1 : 0;
 }
@@ -322,7 +325,7 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
     q = conn->readq;
     mprAssert(q->count >= 0);
     mprAssert(size >= 0);
-    mprAssert(httpVerifyQueue(q));
+    VERIFY_QUEUE(q);
 
     while (q->count <= 0 && !conn->async && !conn->tx->complete && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
         httpServiceQueues(conn);
@@ -331,7 +334,6 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
         }
     }
     conn->lastActivity = conn->http->now;
-    mprAssert(httpVerifyQueue(q));
 
     for (nbytes = 0; size > 0 && q->count > 0; ) {
         if ((packet = q->first) == 0) {
@@ -355,7 +357,6 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
         }
     }
     mprAssert(q->count >= 0);
-    mprAssert(httpVerifyQueue(q));
     if (nbytes < size) {
         buf[nbytes] = '\0';
     }
@@ -604,6 +605,7 @@ PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
 }
 
 
+#if BIT_DEBUG
 PUBLIC bool httpVerifyQueue(HttpQueue *q)
 {
     HttpPacket  *packet;
@@ -611,11 +613,15 @@ PUBLIC bool httpVerifyQueue(HttpQueue *q)
 
     count = 0;
     for (packet = q->first; packet; packet = packet->next) {
+        if (packet->next == 0) {
+            assure(packet == q->last);
+        }
         count += httpGetPacketLength(packet);
     }
-    mprAssert(count <= q->count);
+    assure(count == q->count);
     return count <= q->count;
 }
+#endif
 
 /*
     @copy   default

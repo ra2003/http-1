@@ -26,10 +26,8 @@ static void outgoing(HttpQueue *q, HttpPacket *packet)
     /*  
         Handlers service routines must only be auto-enabled if in the running state.
      */
-    mprAssert(httpVerifyQueue(q));
     enableService = !(q->stage->flags & HTTP_STAGE_HANDLER) || (q->conn->state >= HTTP_STATE_READY) ? 1 : 0;
     httpPutForService(q, packet, enableService);
-    mprAssert(httpVerifyQueue(q));
 }
 
 
@@ -39,8 +37,8 @@ static void outgoing(HttpQueue *q, HttpPacket *packet)
 static void incoming(HttpQueue *q, HttpPacket *packet)
 {
     mprAssert(q);
+    VERIFY_QUEUE(q);
     mprAssert(packet);
-    mprAssert(httpVerifyQueue(q));
     
     if (q->nextQ->put) {
         httpPutPacketToNext(q, packet);
@@ -59,7 +57,6 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
         }
         HTTP_NOTIFY(q->conn, HTTP_EVENT_READABLE, 0);
     }
-    mprAssert(httpVerifyQueue(q));
 }
 
 

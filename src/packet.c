@@ -154,6 +154,9 @@ PUBLIC HttpPacket *httpGetPacket(HttpQueue *q)
                 q->last = 0;
                 mprAssert(q->first == 0);
             }
+            if (q->first == 0) {
+                mprAssert(q->last == 0);
+            }
         }
         if (q->count < q->low) {
             prev = httpFindPreviousQueue(q);
@@ -202,7 +205,7 @@ PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serv
         }
         q->count += httpGetPacketLength(packet);
     }
-    mprAssert(httpVerifyQueue(q));
+    VERIFY_QUEUE(q);
     if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
         httpScheduleQueue(q);
     }
@@ -256,6 +259,9 @@ PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
             httpJoinPacket(first, packet);
             /* Unlink the packet */
             first->next = packet->next;
+            if (q->last == packet) {
+                q->last = first;
+            }
         }
     }
 }

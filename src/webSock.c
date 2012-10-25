@@ -349,17 +349,18 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     HttpLimits  *limits;
     MprBuf      *content;
     char        *fp;
-    ssize       len, currentLen, offset, plen;
+    ssize       len, currentLen, offset, plen, flen;
     int         i, error, mask, lenBytes, opcode, msgComplete;
 
     conn = q->conn;
     rx = conn->rx;
     limits = conn->limits;
-
-    httpJoinPacketForService(q, packet, 0);
     assure(packet);
 
-    mprLog(4, "webSocketFilter: incoming data. Packet type: %d", packet->type);
+    if (packet->flags & HTTP_PACKET_DATA) {
+        httpJoinPacketForService(q, packet, 0);
+    }
+    mprLog(4, "webSocketFilter: incoming data. Length: %d", httpGetPacketLength(packet));
 
     if (packet->flags & HTTP_PACKET_END) {
         /* EOF packet means the socket has been abortively closed */
@@ -433,7 +434,10 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 }
             }
             mprAssert(content);
-            mprAdjustBufStart(content, fp - content->start);
+            flen = fp - content->start;
+            mprAdjustBufStart(content, flen);
+            q->count -= flen;
+            assure(q->count >= 0);
             rx->frameState = WS_MSG;
             mprLog(5, "webSocketFilter: Begin new packet \"%s\", last %d, mask %d, length %d", codetxt[opcode & 0xf],
                 packet->last, mask, len);

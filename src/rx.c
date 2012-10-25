@@ -1026,6 +1026,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     httpServiceQueues(conn);
 
     if (tx->complete) {
+        httpSetState(conn, HTTP_STATE_READY);
         return 1;
     }
     if (rx->chunkState && nbytes <= 0) {

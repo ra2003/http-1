@@ -541,7 +541,7 @@ static HttpPacket *getPacket(HttpConn *conn, ssize *size)
     MprBuf      *content;
 
     if ((packet = conn->input) == NULL) {
-        conn->input = packet = httpCreatePacket(HTTP_BUFSIZE);
+        conn->input = packet = httpCreateDataPacket(HTTP_BUFSIZE);
     } else {
         content = packet->content;
         mprResetBufIfEmpty(content);

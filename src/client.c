@@ -206,7 +206,6 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
     MprFile     *file;
     char        buf[MPR_BUFSIZE];
     ssize       bytes, nbytes, offset;
-    int         oldMode;
 
     file = mprOpenFile(path, O_RDONLY | O_BINARY, 0);
     if (file == 0) {
@@ -214,11 +213,10 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
         return MPR_ERR_CANT_OPEN;
     }
     mprAddRoot(file);
-    oldMode = mprSetSocketBlockingMode(conn->sock, 1);
     while ((bytes = mprReadFile(file, buf, sizeof(buf))) > 0) {
         offset = 0;
         while (bytes > 0) {
-            if ((nbytes = httpWriteBlock(conn->writeq, &buf[offset], bytes)) < 0) {
+            if ((nbytes = httpWriteBlock(conn->writeq, &buf[offset], bytes, HTTP_BLOCK)) < 0) {
                 mprCloseFile(file);
                 mprRemoveRoot(file);
                 return MPR_ERR_CANT_WRITE;
@@ -230,7 +228,6 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
         mprYield(0);
     }
     httpFlushQueue(conn->writeq, 1);
-    mprSetSocketBlockingMode(conn->sock, oldMode);
     mprCloseFile(file);
     mprRemoveRoot(file);
     return 0;

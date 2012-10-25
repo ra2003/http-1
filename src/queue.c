@@ -107,6 +107,13 @@ PUBLIC void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
 }
 
 
+PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize low, ssize max)
+{
+    q->low = low;
+    q->max = max;
+}
+
+
 #if UNUSED && KEEP
 /*  
     Insert a queue after the previous element
@@ -487,7 +494,76 @@ PUBLIC bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
 }
 
 
-/*  
+/*
+    Write a block of data. This is the lowest level write routine for data. This will buffer the data and flush if
+    the queue buffer is full. Flushing is done by calling httpFlushQueue which will service queues as required. This
+    may call the queue outgoing service routine and disable downstream queues if they are overfull.
+    This routine will always accept the data and never return "short". 
+ */
+PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
+{
+    HttpPacket  *packet;
+    HttpConn    *conn;
+    HttpTx      *tx;
+    ssize       totalWritten, packetSize, thisWrite;
+
+    mprAssert(q == q->conn->writeq);
+               
+    conn = q->conn;
+    tx = conn->tx;
+    if (tx == 0 || tx->finalized) {
+        return MPR_ERR_CANT_WRITE;
+    }
+    tx->responded = 1;
+
+    for (totalWritten = 0; len > 0; ) {
+        LOG(7, "httpWriteBlock q_count %d, q_max %d", q->count, q->max);
+        if (conn->state >= HTTP_STATE_COMPLETE) {
+            return MPR_ERR_CANT_WRITE;
+        }
+        if (q->last && q->last != q->first && q->last->flags & HTTP_PACKET_DATA && mprGetBufSpace(q->last->content) > 0) {
+            packet = q->last;
+        } else {
+            packetSize = (tx->chunkSize > 0) ? tx->chunkSize : q->packetSize;
+            if ((packet = httpCreateDataPacket(packetSize)) == 0) {
+                return MPR_ERR_MEMORY;
+            }
+            httpPutForService(q, packet, HTTP_DELAY_SERVICE);
+        }
+        thisWrite = min(len, mprGetBufSpace(packet->content));
+        if (!(flags & HTTP_BUFFER)) {
+            thisWrite = min(thisWrite, q->max - (q->count + thisWrite));
+        }
+        if ((thisWrite = mprPutBlockToBuf(packet->content, buf, thisWrite)) == 0) {
+            return MPR_ERR_MEMORY;
+        }
+        buf += thisWrite;
+        len -= thisWrite;
+        q->count += thisWrite;
+        totalWritten += thisWrite;
+
+        if (q->count >= q->max) {
+            httpFlushQueue(q, 0);
+            if (q->count >= q->max) {
+                if (flags & HTTP_NONBLOCK) {
+                    break;
+                } else if (flags & HTTP_BLOCK) {
+                    while (q->count >= q->max) {
+                        mprWaitForEvent(conn->dispatcher, conn->limits->inactivityTimeout);
+                    }
+                }
+            }
+        }
+    }
+    if (conn->error) {
+        return MPR_ERR_CANT_WRITE;
+    }
+    return totalWritten;
+}
+
+
+#if UNUSED
+/*
     Write a block of data. This is the lowest level write routine for data. This will buffer the data and flush if
     the queue buffer is full. Flushing is done by calling httpFlushQueue which will service queues as required. This
     may call the queue outgoing service routine and disable downstream queues if they are overfull.
@@ -543,11 +619,12 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize size)
     }
     return written;
 }
+#endif
 
 
 PUBLIC ssize httpWriteString(HttpQueue *q, cchar *s)
 {
-    return httpWriteBlock(q, s, strlen(s));
+    return httpWriteBlock(q, s, strlen(s), HTTP_BUFFER);
 }
 
 

@@ -532,7 +532,7 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
         }
         thisWrite = min(len, mprGetBufSpace(packet->content));
         if (!(flags & HTTP_BUFFER)) {
-            thisWrite = min(thisWrite, q->max - (q->count + thisWrite));
+            thisWrite = min(thisWrite, q->max - q->count);
         }
         if ((thisWrite = mprPutBlockToBuf(packet->content, buf, thisWrite)) == 0) {
             return MPR_ERR_MEMORY;

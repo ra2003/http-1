@@ -56,3 +56,4 @@ xcode
 *.dmp
 *-xcode
 *-vsdebug
+projects/*macosx-full.xcodeproj

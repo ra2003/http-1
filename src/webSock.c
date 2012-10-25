@@ -575,7 +575,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         thisWrite = min(len, conn->limits->webSocketsFrameSize);
         thisWrite = min(thisWrite, q->packetSize);
         if (!(flags & HTTP_BUFFER)) {
-            thisWrite = min(thisWrite, q->max - (q->count + thisWrite));
+            thisWrite = min(thisWrite, q->max - q->count);
         }
         if ((packet = httpCreateDataPacket(thisWrite)) == 0) {
             return MPR_ERR_MEMORY;

@@ -944,6 +944,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     content = packet->content;
 
     q = tx->queue[HTTP_QUEUE_RX];
+    VERIFY_QUEUE(q);
     LOG(6, "processContent: packet of %d bytes, remaining %d", mprGetBufLength(content), rx->remainingContent);
     
     /*
@@ -1015,15 +1016,18 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
             /*
                 Send "end" pack to signify eof to the handler
              */
+            VERIFY_QUEUE(q);
             httpPutPacketToNext(q, httpCreateEndPacket());
             if (!rx->streamInput) {
                 httpStartPipeline(conn);
             }
+            VERIFY_QUEUE(q);
         }
         httpSetState(conn, HTTP_STATE_READY);
         return conn->workerEvent ? 0 : 1;
     }
     httpServiceQueues(conn);
+    VERIFY_QUEUE(q);
 
     if (tx->complete) {
         httpSetState(conn, HTTP_STATE_READY);

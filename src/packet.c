@@ -378,7 +378,7 @@ PUBLIC int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
 }
 
 
-/*  
+/*
     Split a packet at a given offset and return a new packet containing the data after the offset.
     The prefix data remains with the original packet. 
  */
@@ -386,6 +386,9 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 {
     HttpPacket  *packet;
     ssize       count, size;
+
+    /* Must not be in a queue */
+    assure(orig->next == 0);
 
     if (orig->esize) {
         if ((packet = httpCreateEntityPacket(orig->epos + offset, orig->esize - offset, orig->fill)) == 0) {

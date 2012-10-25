@@ -275,42 +275,6 @@ PUBLIC bool httpIsQueueEmpty(HttpQueue *q)
 }
 
 
-#if MOVED
-PUBLIC int httpOpenQueue(HttpQueue *q, ssize chunkSize)
-{
-    Http        *http;
-    HttpConn    *conn;
-    HttpStage   *stage;
-    MprModule   *module;
-
-    stage = q->stage;
-    conn = q->conn;
-    http = q->conn->http;
-
-    if (chunkSize > 0) {
-        q->packetSize = min(q->packetSize, chunkSize);
-    }
-    if (stage->flags & HTTP_STAGE_UNLOADED && stage->module) {
-        module = stage->module;
-        module = mprCreateModule(module->name, module->path, module->entry, http);
-        if (mprLoadModule(module) < 0) {
-            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Can't load module %s", module->name);
-            return MPR_ERR_CANT_READ;
-        }
-        stage->module = module;
-    }
-    if (stage->module) {
-        stage->module->lastActivity = http->now;
-    }
-    q->flags |= HTTP_QUEUE_OPEN;
-    if (q->open) {
-        q->stage->open(q);
-    }
-    return 0;
-}
-#endif
-
-
 /*  
     Read data. If sync mode, this will block. If async, will never block.
     Will return what data is available up to the requested size. Returns a byte count.

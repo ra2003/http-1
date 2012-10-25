@@ -54,6 +54,7 @@ clean:
 	rm -rf $(CONFIG)/obj/manager.o
 	rm -rf $(CONFIG)/obj/makerom.o
 	rm -rf $(CONFIG)/obj/pcre.o
+	rm -rf $(CONFIG)/obj/actionHandler.o
 	rm -rf $(CONFIG)/obj/auth.o
 	rm -rf $(CONFIG)/obj/basic.o
 	rm -rf $(CONFIG)/obj/cache.o
@@ -71,7 +72,6 @@ clean:
 	rm -rf $(CONFIG)/obj/pam.o
 	rm -rf $(CONFIG)/obj/passHandler.o
 	rm -rf $(CONFIG)/obj/pipeline.o
-	rm -rf $(CONFIG)/obj/procHandler.o
 	rm -rf $(CONFIG)/obj/queue.o
 	rm -rf $(CONFIG)/obj/rangeFilter.o
 	rm -rf $(CONFIG)/obj/route.o
@@ -141,6 +141,12 @@ $(CONFIG)/bin/libpcre.so:  \
 $(CONFIG)/inc/http.h: 
 	rm -fr $(CONFIG)/inc/http.h
 	cp -r src/http.h $(CONFIG)/inc/http.h
+
+$(CONFIG)/obj/actionHandler.o: \
+        src/actionHandler.c \
+        $(CONFIG)/inc/bit.h \
+        src/http.h
+	$(CC) -c -o $(CONFIG)/obj/actionHandler.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/actionHandler.c
 
 $(CONFIG)/obj/auth.o: \
         src/auth.c \
@@ -244,12 +250,6 @@ $(CONFIG)/obj/pipeline.o: \
         src/http.h
 	$(CC) -c -o $(CONFIG)/obj/pipeline.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/pipeline.c
 
-$(CONFIG)/obj/procHandler.o: \
-        src/procHandler.c \
-        $(CONFIG)/inc/bit.h \
-        src/http.h
-	$(CC) -c -o $(CONFIG)/obj/procHandler.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/procHandler.c
-
 $(CONFIG)/obj/queue.o: \
         src/queue.c \
         $(CONFIG)/inc/bit.h \
@@ -332,6 +332,7 @@ $(CONFIG)/bin/libhttp.so:  \
         $(CONFIG)/bin/libmpr.so \
         $(CONFIG)/bin/libpcre.so \
         $(CONFIG)/inc/http.h \
+        $(CONFIG)/obj/actionHandler.o \
         $(CONFIG)/obj/auth.o \
         $(CONFIG)/obj/basic.o \
         $(CONFIG)/obj/cache.o \
@@ -349,7 +350,6 @@ $(CONFIG)/bin/libhttp.so:  \
         $(CONFIG)/obj/pam.o \
         $(CONFIG)/obj/passHandler.o \
         $(CONFIG)/obj/pipeline.o \
-        $(CONFIG)/obj/procHandler.o \
         $(CONFIG)/obj/queue.o \
         $(CONFIG)/obj/rangeFilter.o \
         $(CONFIG)/obj/route.o \
@@ -363,7 +363,7 @@ $(CONFIG)/bin/libhttp.so:  \
         $(CONFIG)/obj/uri.o \
         $(CONFIG)/obj/var.o \
         $(CONFIG)/obj/webSock.o
-	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/procHandler.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lpcre -lmpr $(LIBS)
+	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lpcre -lmpr $(LIBS)
 
 $(CONFIG)/obj/http.o: \
         src/http.c \

@@ -42,24 +42,24 @@
 		741E1913741E474500000012 /* mprSsl.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000013 /* mprSsl.c */; };
 		741E1913741E474500000014 /* makerom.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000015 /* makerom.c */; };
 		741E1913741E474500000016 /* pcre.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000017 /* pcre.c */; };
-		741E1913741E474500000018 /* auth.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000019 /* auth.c */; };
-		741E1913741E47450000001A /* basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000001B /* basic.c */; };
-		741E1913741E47450000001C /* cache.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000001D /* cache.c */; };
-		741E1913741E47450000001E /* chunkFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000001F /* chunkFilter.c */; };
-		741E1913741E474500000020 /* client.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000021 /* client.c */; };
-		741E1913741E474500000022 /* conn.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000023 /* conn.c */; };
-		741E1913741E474500000024 /* digest.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000025 /* digest.c */; };
-		741E1913741E474500000026 /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000027 /* endpoint.c */; };
-		741E1913741E474500000028 /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000029 /* error.c */; };
-		741E1913741E47450000002A /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000002B /* host.c */; };
-		741E1913741E47450000002C /* httpService.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000002D /* httpService.c */; };
-		741E1913741E47450000002E /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000002F /* log.c */; };
-		741E1913741E474500000030 /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000031 /* netConnector.c */; };
-		741E1913741E474500000032 /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000033 /* packet.c */; };
-		741E1913741E474500000034 /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000035 /* pam.c */; };
-		741E1913741E474500000036 /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000037 /* passHandler.c */; };
-		741E1913741E474500000038 /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000039 /* pipeline.c */; };
-		741E1913741E47450000003A /* procHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000003B /* procHandler.c */; };
+		741E1913741E474500000018 /* actionHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000019 /* actionHandler.c */; };
+		741E1913741E47450000001A /* auth.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000001B /* auth.c */; };
+		741E1913741E47450000001C /* basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000001D /* basic.c */; };
+		741E1913741E47450000001E /* cache.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000001F /* cache.c */; };
+		741E1913741E474500000020 /* chunkFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000021 /* chunkFilter.c */; };
+		741E1913741E474500000022 /* client.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000023 /* client.c */; };
+		741E1913741E474500000024 /* conn.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000025 /* conn.c */; };
+		741E1913741E474500000026 /* digest.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000027 /* digest.c */; };
+		741E1913741E474500000028 /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000029 /* endpoint.c */; };
+		741E1913741E47450000002A /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000002B /* error.c */; };
+		741E1913741E47450000002C /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000002D /* host.c */; };
+		741E1913741E47450000002E /* httpService.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000002F /* httpService.c */; };
+		741E1913741E474500000030 /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000031 /* log.c */; };
+		741E1913741E474500000032 /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000033 /* netConnector.c */; };
+		741E1913741E474500000034 /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000035 /* packet.c */; };
+		741E1913741E474500000036 /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000037 /* pam.c */; };
+		741E1913741E474500000038 /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000039 /* passHandler.c */; };
+		741E1913741E47450000003A /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000003B /* pipeline.c */; };
 		741E1913741E47450000003C /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000003D /* queue.c */; };
 		741E1913741E47450000003E /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E47450000003F /* rangeFilter.c */; };
 		741E1913741E474500000040 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = 741E1913741E474500000041 /* route.c */; };
@@ -215,25 +215,25 @@
 		741E1913741E47450000007B /* makerom */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = makerom; sourceTree = BUILT_PRODUCTS_DIR; };
 		741E1913741E474500000017 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/deps/pcre/pcre.c; sourceTree = "<group>"; };
 		741E1913741E47450000005C /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		741E1913741E474500000019 /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
+		741E1913741E474500000019 /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
 		741E1913741E47450000007C /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = src/http.h; sourceTree = "<group>"; };
-		741E1913741E47450000001B /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
-		741E1913741E47450000001D /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
-		741E1913741E47450000001F /* chunkFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chunkFilter.c; path = src/chunkFilter.c; sourceTree = "<group>"; };
-		741E1913741E474500000021 /* client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = client.c; path = src/client.c; sourceTree = "<group>"; };
-		741E1913741E474500000023 /* conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = conn.c; path = src/conn.c; sourceTree = "<group>"; };
-		741E1913741E474500000025 /* digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = digest.c; path = src/digest.c; sourceTree = "<group>"; };
-		741E1913741E474500000027 /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
-		741E1913741E474500000029 /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
-		741E1913741E47450000002B /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
-		741E1913741E47450000002D /* httpService.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = httpService.c; path = src/httpService.c; sourceTree = "<group>"; };
-		741E1913741E47450000002F /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = log.c; path = src/log.c; sourceTree = "<group>"; };
-		741E1913741E474500000031 /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
-		741E1913741E474500000033 /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
-		741E1913741E474500000035 /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
-		741E1913741E474500000037 /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
-		741E1913741E474500000039 /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
-		741E1913741E47450000003B /* procHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = procHandler.c; path = src/procHandler.c; sourceTree = "<group>"; };
+		741E1913741E47450000001B /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
+		741E1913741E47450000001D /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
+		741E1913741E47450000001F /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
+		741E1913741E474500000021 /* chunkFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chunkFilter.c; path = src/chunkFilter.c; sourceTree = "<group>"; };
+		741E1913741E474500000023 /* client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = client.c; path = src/client.c; sourceTree = "<group>"; };
+		741E1913741E474500000025 /* conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = conn.c; path = src/conn.c; sourceTree = "<group>"; };
+		741E1913741E474500000027 /* digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = digest.c; path = src/digest.c; sourceTree = "<group>"; };
+		741E1913741E474500000029 /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
+		741E1913741E47450000002B /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
+		741E1913741E47450000002D /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
+		741E1913741E47450000002F /* httpService.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = httpService.c; path = src/httpService.c; sourceTree = "<group>"; };
+		741E1913741E474500000031 /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = log.c; path = src/log.c; sourceTree = "<group>"; };
+		741E1913741E474500000033 /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
+		741E1913741E474500000035 /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
+		741E1913741E474500000037 /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
+		741E1913741E474500000039 /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
+		741E1913741E47450000003B /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
 		741E1913741E47450000003D /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
 		741E1913741E47450000003F /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
 		741E1913741E474500000041 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
@@ -365,24 +365,24 @@
             children = (
 				741E1913741E474500000079 /* bit.h */,
 				741E1913741E47450000007C /* http.h */,
-				741E1913741E474500000019 /* auth.c */,
-				741E1913741E47450000001B /* basic.c */,
-				741E1913741E47450000001D /* cache.c */,
-				741E1913741E47450000001F /* chunkFilter.c */,
-				741E1913741E474500000021 /* client.c */,
-				741E1913741E474500000023 /* conn.c */,
-				741E1913741E474500000025 /* digest.c */,
-				741E1913741E474500000027 /* endpoint.c */,
-				741E1913741E474500000029 /* error.c */,
-				741E1913741E47450000002B /* host.c */,
-				741E1913741E47450000002D /* httpService.c */,
-				741E1913741E47450000002F /* log.c */,
-				741E1913741E474500000031 /* netConnector.c */,
-				741E1913741E474500000033 /* packet.c */,
-				741E1913741E474500000035 /* pam.c */,
-				741E1913741E474500000037 /* passHandler.c */,
-				741E1913741E474500000039 /* pipeline.c */,
-				741E1913741E47450000003B /* procHandler.c */,
+				741E1913741E474500000019 /* actionHandler.c */,
+				741E1913741E47450000001B /* auth.c */,
+				741E1913741E47450000001D /* basic.c */,
+				741E1913741E47450000001F /* cache.c */,
+				741E1913741E474500000021 /* chunkFilter.c */,
+				741E1913741E474500000023 /* client.c */,
+				741E1913741E474500000025 /* conn.c */,
+				741E1913741E474500000027 /* digest.c */,
+				741E1913741E474500000029 /* endpoint.c */,
+				741E1913741E47450000002B /* error.c */,
+				741E1913741E47450000002D /* host.c */,
+				741E1913741E47450000002F /* httpService.c */,
+				741E1913741E474500000031 /* log.c */,
+				741E1913741E474500000033 /* netConnector.c */,
+				741E1913741E474500000035 /* packet.c */,
+				741E1913741E474500000037 /* pam.c */,
+				741E1913741E474500000039 /* passHandler.c */,
+				741E1913741E47450000003B /* pipeline.c */,
 				741E1913741E47450000003D /* queue.c */,
 				741E1913741E47450000003F /* rangeFilter.c */,
 				741E1913741E474500000041 /* route.c */,
@@ -637,24 +637,24 @@ fi";
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				741E1913741E474500000018 /* auth.c in Sources */,
-				741E1913741E47450000001A /* basic.c in Sources */,
-				741E1913741E47450000001C /* cache.c in Sources */,
-				741E1913741E47450000001E /* chunkFilter.c in Sources */,
-				741E1913741E474500000020 /* client.c in Sources */,
-				741E1913741E474500000022 /* conn.c in Sources */,
-				741E1913741E474500000024 /* digest.c in Sources */,
-				741E1913741E474500000026 /* endpoint.c in Sources */,
-				741E1913741E474500000028 /* error.c in Sources */,
-				741E1913741E47450000002A /* host.c in Sources */,
-				741E1913741E47450000002C /* httpService.c in Sources */,
-				741E1913741E47450000002E /* log.c in Sources */,
-				741E1913741E474500000030 /* netConnector.c in Sources */,
-				741E1913741E474500000032 /* packet.c in Sources */,
-				741E1913741E474500000034 /* pam.c in Sources */,
-				741E1913741E474500000036 /* passHandler.c in Sources */,
-				741E1913741E474500000038 /* pipeline.c in Sources */,
-				741E1913741E47450000003A /* procHandler.c in Sources */,
+				741E1913741E474500000018 /* actionHandler.c in Sources */,
+				741E1913741E47450000001A /* auth.c in Sources */,
+				741E1913741E47450000001C /* basic.c in Sources */,
+				741E1913741E47450000001E /* cache.c in Sources */,
+				741E1913741E474500000020 /* chunkFilter.c in Sources */,
+				741E1913741E474500000022 /* client.c in Sources */,
+				741E1913741E474500000024 /* conn.c in Sources */,
+				741E1913741E474500000026 /* digest.c in Sources */,
+				741E1913741E474500000028 /* endpoint.c in Sources */,
+				741E1913741E47450000002A /* error.c in Sources */,
+				741E1913741E47450000002C /* host.c in Sources */,
+				741E1913741E47450000002E /* httpService.c in Sources */,
+				741E1913741E474500000030 /* log.c in Sources */,
+				741E1913741E474500000032 /* netConnector.c in Sources */,
+				741E1913741E474500000034 /* packet.c in Sources */,
+				741E1913741E474500000036 /* pam.c in Sources */,
+				741E1913741E474500000038 /* passHandler.c in Sources */,
+				741E1913741E47450000003A /* pipeline.c in Sources */,
 				741E1913741E47450000003C /* queue.c in Sources */,
 				741E1913741E47450000003E /* rangeFilter.c in Sources */,
 				741E1913741E474500000040 /* route.c in Sources */,
@@ -934,24 +934,10 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = libmprssl;
 
-				HEADER_SEARCH_PATHS = (
-					"../../packages-macosx-x64/openssl/openssl-1.0.1c/include",
-					"$(inherited)"
-				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
 					"$(inherited)"
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"../../packages-macosx-x64/openssl/openssl-1.0.1c",
-					"$(inherited)"
-				);
-				OTHER_LDFLAGS = (
-					"-lssl",
-					"-lcrypto",
-					"$(inherited)"
-				);
-
 			};
 			name = Debug;
 		};
@@ -960,20 +946,6 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = libmprssl;
 
-				HEADER_SEARCH_PATHS = (
-					"../../packages-macosx-x64/openssl/openssl-1.0.1c/include",
-					"$(inherited)"
-				);
-
-				LIBRARY_SEARCH_PATHS = (
-					"../../packages-macosx-x64/openssl/openssl-1.0.1c",
-					"$(inherited)"
-				);
-				OTHER_LDFLAGS = (
-					"-lssl",
-					"-lcrypto",
-					"$(inherited)"
-				);
 
 			};
 			name = Release;

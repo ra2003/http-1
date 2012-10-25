@@ -52,6 +52,8 @@ cp -r src/deps/pcre/pcre.h ${CONFIG}/inc/pcre.h
 rm -rf ${CONFIG}/inc/http.h
 cp -r src/http.h ${CONFIG}/inc/http.h
 
+"${CC}" -c -Fo${CONFIG}/obj/actionHandler.obj -Fd${CONFIG}/obj/actionHandler.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/actionHandler.c
+
 "${CC}" -c -Fo${CONFIG}/obj/auth.obj -Fd${CONFIG}/obj/auth.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/auth.c
 
 "${CC}" -c -Fo${CONFIG}/obj/basic.obj -Fd${CONFIG}/obj/basic.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/basic.c
@@ -86,8 +88,6 @@ cp -r src/http.h ${CONFIG}/inc/http.h
 
 "${CC}" -c -Fo${CONFIG}/obj/pipeline.obj -Fd${CONFIG}/obj/pipeline.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/pipeline.c
 
-"${CC}" -c -Fo${CONFIG}/obj/procHandler.obj -Fd${CONFIG}/obj/procHandler.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/procHandler.c
-
 "${CC}" -c -Fo${CONFIG}/obj/queue.obj -Fd${CONFIG}/obj/queue.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/queue.c
 
 "${CC}" -c -Fo${CONFIG}/obj/rangeFilter.obj -Fd${CONFIG}/obj/rangeFilter.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/rangeFilter.c
@@ -114,7 +114,7 @@ cp -r src/http.h ${CONFIG}/inc/http.h
 
 "${CC}" -c -Fo${CONFIG}/obj/webSock.obj -Fd${CONFIG}/obj/webSock.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/webSock.c
 
-"${LD}" -dll -out:${CONFIG}/bin/libhttp.dll -entry:_DllMainCRTStartup@12 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/auth.obj ${CONFIG}/obj/basic.obj ${CONFIG}/obj/cache.obj ${CONFIG}/obj/chunkFilter.obj ${CONFIG}/obj/client.obj ${CONFIG}/obj/conn.obj ${CONFIG}/obj/digest.obj ${CONFIG}/obj/endpoint.obj ${CONFIG}/obj/error.obj ${CONFIG}/obj/host.obj ${CONFIG}/obj/httpService.obj ${CONFIG}/obj/log.obj ${CONFIG}/obj/netConnector.obj ${CONFIG}/obj/packet.obj ${CONFIG}/obj/pam.obj ${CONFIG}/obj/passHandler.obj ${CONFIG}/obj/pipeline.obj ${CONFIG}/obj/procHandler.obj ${CONFIG}/obj/queue.obj ${CONFIG}/obj/rangeFilter.obj ${CONFIG}/obj/route.obj ${CONFIG}/obj/rx.obj ${CONFIG}/obj/sendConnector.obj ${CONFIG}/obj/session.obj ${CONFIG}/obj/stage.obj ${CONFIG}/obj/trace.obj ${CONFIG}/obj/tx.obj ${CONFIG}/obj/uploadFilter.obj ${CONFIG}/obj/uri.obj ${CONFIG}/obj/var.obj ${CONFIG}/obj/webSock.obj libpcre.lib libmpr.lib ${LIBS}
+"${LD}" -dll -out:${CONFIG}/bin/libhttp.dll -entry:_DllMainCRTStartup@12 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/actionHandler.obj ${CONFIG}/obj/auth.obj ${CONFIG}/obj/basic.obj ${CONFIG}/obj/cache.obj ${CONFIG}/obj/chunkFilter.obj ${CONFIG}/obj/client.obj ${CONFIG}/obj/conn.obj ${CONFIG}/obj/digest.obj ${CONFIG}/obj/endpoint.obj ${CONFIG}/obj/error.obj ${CONFIG}/obj/host.obj ${CONFIG}/obj/httpService.obj ${CONFIG}/obj/log.obj ${CONFIG}/obj/netConnector.obj ${CONFIG}/obj/packet.obj ${CONFIG}/obj/pam.obj ${CONFIG}/obj/passHandler.obj ${CONFIG}/obj/pipeline.obj ${CONFIG}/obj/queue.obj ${CONFIG}/obj/rangeFilter.obj ${CONFIG}/obj/route.obj ${CONFIG}/obj/rx.obj ${CONFIG}/obj/sendConnector.obj ${CONFIG}/obj/session.obj ${CONFIG}/obj/stage.obj ${CONFIG}/obj/trace.obj ${CONFIG}/obj/tx.obj ${CONFIG}/obj/uploadFilter.obj ${CONFIG}/obj/uri.obj ${CONFIG}/obj/var.obj ${CONFIG}/obj/webSock.obj libpcre.lib libmpr.lib ${LIBS}
 
 "${CC}" -c -Fo${CONFIG}/obj/http.obj -Fd${CONFIG}/obj/http.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/http.c
 

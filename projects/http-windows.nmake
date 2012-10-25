@@ -55,6 +55,7 @@ clean:
 	-if exist $(CONFIG)\obj\manager.obj del /Q $(CONFIG)\obj\manager.obj
 	-if exist $(CONFIG)\obj\makerom.obj del /Q $(CONFIG)\obj\makerom.obj
 	-if exist $(CONFIG)\obj\pcre.obj del /Q $(CONFIG)\obj\pcre.obj
+	-if exist $(CONFIG)\obj\actionHandler.obj del /Q $(CONFIG)\obj\actionHandler.obj
 	-if exist $(CONFIG)\obj\auth.obj del /Q $(CONFIG)\obj\auth.obj
 	-if exist $(CONFIG)\obj\basic.obj del /Q $(CONFIG)\obj\basic.obj
 	-if exist $(CONFIG)\obj\cache.obj del /Q $(CONFIG)\obj\cache.obj
@@ -72,7 +73,6 @@ clean:
 	-if exist $(CONFIG)\obj\pam.obj del /Q $(CONFIG)\obj\pam.obj
 	-if exist $(CONFIG)\obj\passHandler.obj del /Q $(CONFIG)\obj\passHandler.obj
 	-if exist $(CONFIG)\obj\pipeline.obj del /Q $(CONFIG)\obj\pipeline.obj
-	-if exist $(CONFIG)\obj\procHandler.obj del /Q $(CONFIG)\obj\procHandler.obj
 	-if exist $(CONFIG)\obj\queue.obj del /Q $(CONFIG)\obj\queue.obj
 	-if exist $(CONFIG)\obj\rangeFilter.obj del /Q $(CONFIG)\obj\rangeFilter.obj
 	-if exist $(CONFIG)\obj\route.obj del /Q $(CONFIG)\obj\route.obj
@@ -139,6 +139,12 @@ $(CONFIG)\bin\libpcre.dll:  \
 $(CONFIG)\inc\http.h: 
 	-if exist $(CONFIG)\inc\http.h del /Q $(CONFIG)\inc\http.h
 	copy /Y src\http.h $(CONFIG)\inc\http.h
+
+$(CONFIG)\obj\actionHandler.obj: \
+        src\actionHandler.c \
+        $(CONFIG)\inc\bit.h \
+        src\http.h
+	"$(CC)" -c -Fo$(CONFIG)\obj\actionHandler.obj -Fd$(CONFIG)\obj\actionHandler.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\actionHandler.c
 
 $(CONFIG)\obj\auth.obj: \
         src\auth.c \
@@ -242,12 +248,6 @@ $(CONFIG)\obj\pipeline.obj: \
         src\http.h
 	"$(CC)" -c -Fo$(CONFIG)\obj\pipeline.obj -Fd$(CONFIG)\obj\pipeline.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\pipeline.c
 
-$(CONFIG)\obj\procHandler.obj: \
-        src\procHandler.c \
-        $(CONFIG)\inc\bit.h \
-        src\http.h
-	"$(CC)" -c -Fo$(CONFIG)\obj\procHandler.obj -Fd$(CONFIG)\obj\procHandler.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\procHandler.c
-
 $(CONFIG)\obj\queue.obj: \
         src\queue.c \
         $(CONFIG)\inc\bit.h \
@@ -330,6 +330,7 @@ $(CONFIG)\bin\libhttp.dll:  \
         $(CONFIG)\bin\libmpr.dll \
         $(CONFIG)\bin\libpcre.dll \
         $(CONFIG)\inc\http.h \
+        $(CONFIG)\obj\actionHandler.obj \
         $(CONFIG)\obj\auth.obj \
         $(CONFIG)\obj\basic.obj \
         $(CONFIG)\obj\cache.obj \
@@ -347,7 +348,6 @@ $(CONFIG)\bin\libhttp.dll:  \
         $(CONFIG)\obj\pam.obj \
         $(CONFIG)\obj\passHandler.obj \
         $(CONFIG)\obj\pipeline.obj \
-        $(CONFIG)\obj\procHandler.obj \
         $(CONFIG)\obj\queue.obj \
         $(CONFIG)\obj\rangeFilter.obj \
         $(CONFIG)\obj\route.obj \
@@ -361,7 +361,7 @@ $(CONFIG)\bin\libhttp.dll:  \
         $(CONFIG)\obj\uri.obj \
         $(CONFIG)\obj\var.obj \
         $(CONFIG)\obj\webSock.obj
-	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\procHandler.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(CONFIG)\obj\webSock.obj libpcre.lib libmpr.lib $(LIBS)
+	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\actionHandler.obj $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(CONFIG)\obj\webSock.obj libpcre.lib libmpr.lib $(LIBS)
 
 $(CONFIG)\obj\http.obj: \
         src\http.c \

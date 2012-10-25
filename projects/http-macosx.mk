@@ -54,6 +54,7 @@ clean:
 	rm -rf $(CONFIG)/obj/manager.o
 	rm -rf $(CONFIG)/obj/makerom.o
 	rm -rf $(CONFIG)/obj/pcre.o
+	rm -rf $(CONFIG)/obj/actionHandler.o
 	rm -rf $(CONFIG)/obj/auth.o
 	rm -rf $(CONFIG)/obj/basic.o
 	rm -rf $(CONFIG)/obj/cache.o
@@ -71,7 +72,6 @@ clean:
 	rm -rf $(CONFIG)/obj/pam.o
 	rm -rf $(CONFIG)/obj/passHandler.o
 	rm -rf $(CONFIG)/obj/pipeline.o
-	rm -rf $(CONFIG)/obj/procHandler.o
 	rm -rf $(CONFIG)/obj/queue.o
 	rm -rf $(CONFIG)/obj/rangeFilter.o
 	rm -rf $(CONFIG)/obj/route.o
@@ -109,12 +109,12 @@ $(CONFIG)/obj/mprSsl.o: \
         src/deps/mpr/mprSsl.c \
         $(CONFIG)/inc/bit.h \
         $(CONFIG)/inc/mpr.h
-	$(CC) -c -o $(CONFIG)/obj/mprSsl.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc -I../packages-macosx-x64/openssl/openssl-1.0.1c/include src/deps/mpr/mprSsl.c
+	$(CC) -c -o $(CONFIG)/obj/mprSsl.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/mpr/mprSsl.c
 
 $(CONFIG)/bin/libmprssl.dylib:  \
         $(CONFIG)/bin/libmpr.dylib \
         $(CONFIG)/obj/mprSsl.o
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.0.1 -current_version 1.0.1 -compatibility_version 1.0.1 -current_version 1.0.1 $(LIBPATHS) -L../packages-macosx-x64/openssl/openssl-1.0.1c -install_name @rpath/libmprssl.dylib $(CONFIG)/obj/mprSsl.o -lmpr $(LIBS) -lssl -lcrypto
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.0.1 -current_version 1.0.1 -compatibility_version 1.0.1 -current_version 1.0.1 $(LIBPATHS) -install_name @rpath/libmprssl.dylib $(CONFIG)/obj/mprSsl.o -lmpr $(LIBS)
 
 $(CONFIG)/obj/makerom.o: \
         src/deps/mpr/makerom.c \
@@ -145,6 +145,12 @@ $(CONFIG)/bin/libpcre.dylib:  \
 $(CONFIG)/inc/http.h: 
 	rm -fr $(CONFIG)/inc/http.h
 	cp -r src/http.h $(CONFIG)/inc/http.h
+
+$(CONFIG)/obj/actionHandler.o: \
+        src/actionHandler.c \
+        $(CONFIG)/inc/bit.h \
+        $(CONFIG)/inc/http.h
+	$(CC) -c -o $(CONFIG)/obj/actionHandler.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/actionHandler.c
 
 $(CONFIG)/obj/auth.o: \
         src/auth.c \
@@ -248,12 +254,6 @@ $(CONFIG)/obj/pipeline.o: \
         $(CONFIG)/inc/http.h
 	$(CC) -c -o $(CONFIG)/obj/pipeline.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/pipeline.c
 
-$(CONFIG)/obj/procHandler.o: \
-        src/procHandler.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
-	$(CC) -c -o $(CONFIG)/obj/procHandler.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/procHandler.c
-
 $(CONFIG)/obj/queue.o: \
         src/queue.c \
         $(CONFIG)/inc/bit.h \
@@ -337,6 +337,7 @@ $(CONFIG)/bin/libhttp.dylib:  \
         $(CONFIG)/bin/libmpr.dylib \
         $(CONFIG)/bin/libpcre.dylib \
         $(CONFIG)/inc/http.h \
+        $(CONFIG)/obj/actionHandler.o \
         $(CONFIG)/obj/auth.o \
         $(CONFIG)/obj/basic.o \
         $(CONFIG)/obj/cache.o \
@@ -354,7 +355,6 @@ $(CONFIG)/bin/libhttp.dylib:  \
         $(CONFIG)/obj/pam.o \
         $(CONFIG)/obj/passHandler.o \
         $(CONFIG)/obj/pipeline.o \
-        $(CONFIG)/obj/procHandler.o \
         $(CONFIG)/obj/queue.o \
         $(CONFIG)/obj/rangeFilter.o \
         $(CONFIG)/obj/route.o \
@@ -368,7 +368,7 @@ $(CONFIG)/bin/libhttp.dylib:  \
         $(CONFIG)/obj/uri.o \
         $(CONFIG)/obj/var.o \
         $(CONFIG)/obj/webSock.o
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib -arch x86_64 $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/procHandler.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lpcre -lmpr $(LIBS) -lpam -lpam
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib -arch x86_64 $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lpcre -lmpr $(LIBS) -lpam -lpam
 
 $(CONFIG)/obj/http.o: \
         src/http.c \

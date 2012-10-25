@@ -100,6 +100,7 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <ClCompile Include="..\..\src\actionHandler.c" />
     <ClCompile Include="..\..\src\auth.c" />
     <ClCompile Include="..\..\src\basic.c" />
     <ClCompile Include="..\..\src\cache.c" />
@@ -117,7 +118,6 @@
     <ClCompile Include="..\..\src\pam.c" />
     <ClCompile Include="..\..\src\passHandler.c" />
     <ClCompile Include="..\..\src\pipeline.c" />
-    <ClCompile Include="..\..\src\procHandler.c" />
     <ClCompile Include="..\..\src\queue.c" />
     <ClCompile Include="..\..\src\rangeFilter.c" />
     <ClCompile Include="..\..\src\route.c" />

@@ -1,5 +1,5 @@
 #
-#   http-windows.nmake -- Makefile to build Http Library for windows
+#   http-windows-debug.nmake -- Makefile to build Http Library for windows
 #
 
 PA        = $(PROCESSOR_ARCHITECTURE)

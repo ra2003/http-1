@@ -57,3 +57,4 @@ xcode
 *-xcode
 *-vsdebug
 projects/*macosx-full.xcodeproj
+*-mine*

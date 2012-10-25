@@ -1,5 +1,5 @@
 #
-#   http-macosx.sh -- Build It Shell Script to build Http Library
+#   http-macosx-debug.sh -- Build It Shell Script to build Http Library
 #
 
 ARCH="x64"

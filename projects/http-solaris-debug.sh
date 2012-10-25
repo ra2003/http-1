@@ -1,5 +1,5 @@
 #
-#   http-solaris.sh -- Build It Shell Script to build Http Library
+#   http-solaris-debug.sh -- Build It Shell Script to build Http Library
 #
 
 ARCH="x86"

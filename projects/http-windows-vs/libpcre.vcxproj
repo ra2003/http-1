@@ -13,7 +13,7 @@
   </ItemDefinitionGroup>
 
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{898e2c1e-65bb-4ce6-8505-1d107e18b50f}</ProjectGuid>
+    <ProjectGuid>{42d2a7df-906e-4baf-9432-ce3a9124cfd9}</ProjectGuid>
     <RootNamespace />
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -83,28 +83,28 @@
     <_ProjectFileVersion>10</_ProjectFileVersion>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\libmpr\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\libpcre\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\libmpr\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\libpcre\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\libmpr\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\libpcre\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\libmpr\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\libpcre\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PreBuildEvent</CustomBuildBeforeTargets>
   </PropertyGroup>
   
   <ItemGroup>
-    <ClCompile Include="..\..\src\deps\mpr\mprLib.c" />
+    <ClCompile Include="..\..\src\deps\pcre\pcre.c" />
   </ItemGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(IncDir)\mpr.h" />
+    <ClInclude Include="$(IncDir)\pcre.h" />
   </ItemGroup>
 
   <ItemDefinitionGroup>
@@ -114,10 +114,10 @@
   </Link>
 
   <CustomBuildStep>
-    <Command>cd ..\..\src\deps\mpr
-copy /Y mpr.h $(IncDir)
-cd ..\..\..\projects\http-windows</Command>
-    <Outputs>$(BinDir)\libmpr.dll</Outputs>
+    <Command>cd ..\..\src\deps\pcre
+copy /Y pcre.h $(IncDir)
+cd ..\..\..\projects\http-windows-vs</Command>
+    <Outputs>$(BinDir)\libpcre.dll</Outputs>
   </CustomBuildStep>
   </ItemDefinitionGroup>
 

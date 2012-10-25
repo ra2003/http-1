@@ -1,5 +1,5 @@
 #
-#   http-macosx.mk -- Makefile to build Http Library for macosx
+#   http-macosx-debug.mk -- Makefile to build Http Library for macosx
 #
 
 ARCH     ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/')

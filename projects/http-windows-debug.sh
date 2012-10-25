@@ -1,5 +1,5 @@
 #
-#   http-windows.sh -- Build It Shell Script to build Http Library
+#   http-windows-debug.sh -- Build It Shell Script to build Http Library
 #
 
 export PATH="$(SDK)/Bin:$(VS)/VC/Bin:$(VS)/Common7/IDE:$(VS)/Common7/Tools:$(VS)/SDK/v3.5/bin:$(VS)/VC/VCPackages;$(PATH)"

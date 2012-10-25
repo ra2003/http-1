@@ -146,7 +146,7 @@
   <CustomBuildStep>
     <Command>cd ..\..
 copy /Y src\http.h $(IncDir)
-cd projects\http-windows</Command>
+cd projects\http-windows-vs</Command>
     <Outputs>$(BinDir)\libhttp.dll</Outputs>
   </CustomBuildStep>
   </ItemDefinitionGroup>

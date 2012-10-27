@@ -138,21 +138,26 @@ static void traceBuf(HttpConn *conn, int dir, int level, cchar *msg, cchar *buf,
     } else {
         mprRawLog(level, "\n>>>>>>>>>> %s %s packet %d, len %d (conn %d) >>>>>>>>>> (binary)\n", tag, msg, seqno, 
             len, conn->seqno);
-        data = mprAlloc(len * 3 + ((len / 16) + 1) + 1);
-        digits = "0123456789ABCDEF";
-        for (i = 0, cp = start, dp = data; cp < &start[len]; cp++) {
-            *dp++ = digits[(*cp >> 4) & 0x0f];
-            *dp++ = digits[*cp & 0x0f];
-            *dp++ = ' ';
-            if ((++i % 16) == 0) {
-                *dp++ = '\n';
+        /* To trace binary, must be two levels higher (typically 6) */
+        if (MPR->logLevel < (level + 2)) {
+            mprRawLog(level, "    Omitted. Display at log level %d\n", level + 2);
+        } else {
+            data = mprAlloc(len * 3 + ((len / 16) + 1) + 1);
+            digits = "0123456789ABCDEF";
+            for (i = 0, cp = start, dp = data; cp < &start[len]; cp++) {
+                *dp++ = digits[(*cp >> 4) & 0x0f];
+                *dp++ = digits[*cp & 0x0f];
+                *dp++ = ' ';
+                if ((++i % 16) == 0) {
+                    *dp++ = '\n';
+                }
             }
+            *dp++ = '\n';
+            *dp = '\0';
+            mprRawLog(level, "%s", data);
         }
-        *dp++ = '\n';
-        *dp = '\0';
-        mprRawLog(level, "%s", data);
     }
-    mprRawLog(level, "<<<<<<<<<< End %s packet, conn %d\n\n", tag, conn->seqno);
+    mprRawLog(level, "<<<<<<<<<< End %s packet, conn %d\n", tag, conn->seqno);
 }
 
 

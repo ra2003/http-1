@@ -679,11 +679,6 @@ PUBLIC void httpSetRetries(HttpConn *conn, int count)
 }
 
 
-static char *notifyState[] = {
-    "IO_EVENT", "BEGIN", "STARTED", "FIRST", "PARSED", "CONTENT", "READY", "RUNNING", "COMPLETE", 
-};
-
-
 PUBLIC void httpSetState(HttpConn *conn, int targetState)
 {
     int     state;
@@ -697,11 +692,34 @@ PUBLIC void httpSetState(HttpConn *conn, int targetState)
     }
     for (state = conn->state + 1; state <= targetState; state++) { 
         conn->state = state;
-        LOG(6, "Connection state change to %s", notifyState[state]);
         HTTP_NOTIFY(conn, HTTP_EVENT_STATE, state);
     }
 }
 
+
+static char *events[] = {
+    "undefined", "state-change", "readable", "writable", "error", "destroy", "app-open", "app-close",
+};
+static char *states[] = {
+    "undefined", "begin", "connected", "first", "parsed", "content", "ready", "running", "complete",
+};
+
+
+PUBLIC void httpNotify(HttpConn *conn, int event, int arg)
+{
+    if (conn->notifier) {
+        if (MPR->logLevel >= 6) {
+            if (event == HTTP_EVENT_STATE) {
+                mprLog(6, "Event: change to state \"%s\"", states[conn->state]);
+            } else if (event < 0 || event > HTTP_EVENT_MAX) {
+                mprLog(6, "Event: \"%d\" in state \"%s\"", event, states[conn->state]);
+            } else {
+                mprLog(6, "Event: \"%s\" in state \"%s\"", events[event], states[conn->state]);
+            }
+        }
+        (conn->notifier)(conn, event, arg);
+    }
+}
 
 /*
     Set each timeout arg to -1 to skip. Set to zero for no timeout. Otherwise set to number of msecs
@@ -736,32 +754,6 @@ PUBLIC HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
     return limits;
 }
 
-
-#if BIT_DEBUG
-PUBLIC char *events[] = {
-    "undefined", "state-change", "readable", "writable", "error", "destroy", "app-open", "app-close",
-};
-PUBLIC char *states[] = {
-    "undefined", "begin", "connected", "first", "parsed", "content", "ready", "running", "complete",
-};
-#endif
-
-
-PUBLIC void httpNotify(HttpConn *conn, int event, int arg)
-{
-    if (conn->notifier) {
-#if BIT_DEBUG
-        if (event == HTTP_EVENT_STATE) {
-            mprLog(4, "Event: change to state \"%s\"", states[conn->state]);
-        } else if (event < 0 || event > HTTP_EVENT_MAX) {
-            mprLog(4, "Event: \"%d\" in state \"%s\"", event, states[conn->state]);
-        } else {
-            mprLog(4, "Event: \"%s\" in state \"%s\"", events[event], states[conn->state]);
-        }
-#endif
-        (conn->notifier)(conn, event, arg);
-    }
-}
 
 /*
     @copy   default

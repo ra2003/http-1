@@ -277,6 +277,7 @@ PUBLIC HttpHost *httpLookupHost(Http *http, cchar *name)
 PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
 {
     memset(limits, 0, sizeof(HttpLimits));
+    limits->bufferSize = HTTP_MAX_STAGE_BUFFER;
     limits->cacheItemSize = HTTP_MAX_CACHE_ITEM;
     limits->chunkSize = HTTP_MAX_CHUNK;
     limits->clientMax = HTTP_MAX_CLIENTS;
@@ -288,7 +289,6 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->processMax = HTTP_MAX_REQUESTS;
     limits->requestMax = HTTP_MAX_REQUESTS;
     limits->sessionMax = HTTP_MAX_SESSIONS;
-    limits->stageBufferSize = HTTP_MAX_STAGE_BUFFER;
     limits->transmissionBodySize = HTTP_MAX_TX_BODY;
     limits->uploadSize = HTTP_MAX_UPLOAD;
     limits->uriSize = MPR_MAX_URL;

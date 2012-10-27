@@ -67,7 +67,7 @@ static void openChunk(HttpQueue *q)
     HttpConn    *conn;
 
     conn = q->conn;
-    q->packetSize = min(conn->limits->stageBufferSize, q->max);
+    q->packetSize = min(conn->limits->bufferSize, q->max);
 }
 
 

@@ -388,7 +388,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
         return;
     }
     if (rx->traceLevel >= 0) {
-        mprLog(4, "Select route \"%s\" target \"%s\"", route->name, route->targetRule);
+        mprLog(rx->traceLevel, "Select route \"%s\" target \"%s\"", route->name, route->targetRule);
     }
     rx->route = route;
     conn->limits = route->limits;

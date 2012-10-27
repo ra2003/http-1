@@ -97,7 +97,7 @@ PUBLIC void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
     q->nextQ = q;
     q->prevQ = q;
     q->owner = sclone(name);
-    q->max = conn->limits->stageBufferSize;
+    q->max = conn->limits->bufferSize;
     q->low = q->max / 100 *  5;    
     if (tx && tx->chunkSize > 0) {
         q->packetSize = tx->chunkSize;
@@ -508,9 +508,11 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
     ssize       totalWritten, packetSize, thisWrite;
 
     mprAssert(q == q->conn->writeq);
-               
     conn = q->conn;
     tx = conn->tx;
+    if (flags == 0) {
+        flags = HTTP_BUFFER;
+    }
     if (tx == 0 || tx->finalized) {
         return MPR_ERR_CANT_WRITE;
     }
@@ -531,7 +533,7 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
             httpPutForService(q, packet, HTTP_DELAY_SERVICE);
         }
         thisWrite = min(len, mprGetBufSpace(packet->content));
-        if (!(flags & HTTP_BUFFER)) {
+        if (flags & (HTTP_BLOCK | HTTP_NON_BLOCK)) {
             thisWrite = min(thisWrite, q->max - q->count);
         }
         if ((thisWrite = mprPutBlockToBuf(packet->content, buf, thisWrite)) == 0) {
@@ -545,10 +547,11 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
         if (q->count >= q->max) {
             httpFlushQueue(q, 0);
             if (q->count >= q->max) {
-                if (flags & HTTP_NONBLOCK) {
+                if (flags & HTTP_NON_BLOCK) {
                     break;
                 } else if (flags & HTTP_BLOCK) {
                     while (q->count >= q->max) {
+                        httpEnableConnEvents(conn);
                         mprWaitForEvent(conn->dispatcher, conn->limits->inactivityTimeout);
                     }
                 }

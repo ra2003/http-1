@@ -311,24 +311,20 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
     Accept a new client connection on a new socket. If multithreaded, this will come in on a worker thread 
     dedicated to this connection. This is called from the listen wait handler.
  */
-PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
+static HttpConn *acceptConn(MprDispatcher *dispatcher, HttpEndpoint *endpoint)
 {
     HttpConn        *conn;
     MprSocket       *sock;
-    MprDispatcher   *dispatcher;
     MprEvent        e;
     int             level;
 
+    mprAssert(dispatcher);
     mprAssert(endpoint);
-    mprAssert(event);
 
     /*
-        This will block in sync mode until a connection arrives
+        In sync mode, this will block until a connection arrives
      */
     if ((sock = mprAcceptSocket(endpoint->sock)) == 0) {
-        if (endpoint->sock->handler) {
-            mprEnableSocketEvents(endpoint->sock, MPR_READABLE);
-        }
         return 0;
     }
     if (endpoint->ssl) {
@@ -337,12 +333,6 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
             return 0;
         }
     }
-    if (endpoint->sock->handler) {
-        /* Re-enable events on the listen socket */
-        mprEnableSocketEvents(endpoint->sock, MPR_READABLE);
-    }
-    dispatcher = event->dispatcher;
-
     if (mprShouldDenyNewRequests()) {
         mprCloseSocket(sock, 0);
         return 0;
@@ -377,6 +367,21 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     e.mask = MPR_READABLE;
     e.timestamp = conn->http->now;
     (conn->ioCallback)(conn, &e);
+    return conn;
+}
+
+
+PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
+{
+    HttpConn        *conn;
+
+    conn = acceptConn(event->dispatcher, endpoint);
+    if (endpoint->sock->handler) {
+        /* 
+            Re-enable events on the listen socket
+         */
+        mprEnableSocketEvents(endpoint->sock, MPR_READABLE);
+    }
     return conn;
 }
 

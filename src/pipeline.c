@@ -12,6 +12,7 @@
 static bool matchFilter(HttpConn *conn, HttpStage *filter, HttpRoute *route, int dir);
 static void openQueues(HttpConn *conn);
 static void pairQueues(HttpConn *conn);
+static void httpStartHandler(HttpConn *conn);
 
 /*********************************** Code *************************************/
 
@@ -43,7 +44,9 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         for (next = 0; (filter = mprGetNextItem(route->outputStages, &next)) != 0; ) {
             if (matchFilter(conn, filter, route, HTTP_STAGE_TX) == HTTP_ROUTE_OK) {
                 mprAddItem(tx->outputPipeline, filter);
-                mprLog(4, "Select output filter: \"%s\"", filter->name);
+                if (rx->traceLevel >= 0) {
+                    mprLog(rx->traceLevel, "Select output filter: \"%s\"", filter->name);
+                }
                 hasOutputFilters = 1;
             }
         }
@@ -59,8 +62,9 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         }
     }
     mprAddItem(tx->outputPipeline, tx->connector);
-    mprLog(4, "Select connector: \"%s\"", tx->connector->name);
-
+    if (rx->traceLevel >= 0) {
+        mprLog(rx->traceLevel + 1, "Select connector: \"%s\"", tx->connector->name);
+    }
     /*  Create the outgoing queue heads and open the queues */
     q = tx->queue[HTTP_QUEUE_TX];
     for (next = 0; (stage = mprGetNextItem(tx->outputPipeline, &next)) != 0; ) {
@@ -77,11 +81,8 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     httpPutForService(conn->writeq, httpCreateHeaderPacket(), HTTP_DELAY_SERVICE);
     openQueues(conn);
 
-    /*
-        Refinalize if httpFinalize was called before the Tx pipeline was created
-     */
-    if (tx->refinalize) {
-        tx->finalized = 0;
+    if (tx->pendingCompletion) {
+        tx->complete = 0;
         httpComplete(conn);
     }
 }
@@ -263,11 +264,7 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
     }
     /* Start the handler last */
     q = qhead->nextQ;
-    if (q->start && !tx->complete) {
-        mprAssert(!(q->flags & HTTP_QUEUE_STARTED));
-        q->flags |= HTTP_QUEUE_STARTED;
-        q->stage->start(q);
-    }
+    httpStartHandler(conn);
     if (!tx->complete && !tx->connectorComplete && rx->remainingContent > 0) {
         /* If no remaining content, wait till the processing stage to avoid duplicate writable events */
         HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
@@ -280,12 +277,28 @@ PUBLIC void httpReadyHandler(HttpConn *conn)
     HttpQueue   *q;
     
     q = conn->writeq;
-    if (q->stage->ready && !conn->tx->complete) {
+    if (q->stage->ready && !conn->tx->complete && !(q->flags & HTTP_QUEUE_READY)) {
+        q->flags |= HTTP_QUEUE_READY;
         q->stage->ready(q);
     }
 }
 
 
+static void httpStartHandler(HttpConn *conn)
+{
+    HttpQueue   *q;
+    
+    q = conn->writeq;
+    if (q->stage->start && !conn->tx->complete && !(q->flags & HTTP_QUEUE_STARTED)) {
+        q->flags |= HTTP_QUEUE_STARTED;
+        q->stage->start(q);
+    }
+}
+
+
+/*
+    Called by processRunning
+ */
 PUBLIC bool httpPumpHandler(HttpConn *conn)
 {
     HttpQueue   *q;

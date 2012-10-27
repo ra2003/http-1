@@ -231,15 +231,37 @@ PUBLIC void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
  */
 PUBLIC void httpConnectorComplete(HttpConn *conn)
 {
-    conn->tx->connectorComplete = 1;
-    conn->tx->finalized = 1;
+    HttpTx      *tx;
+
+    tx = conn->tx;
+    tx->connectorComplete = 1;
+    tx->finalized = 1;
+    if (tx->complete) {
+        httpSetState(conn, HTTP_STATE_COMPLETE);
+    }
 }
 
 
 PUBLIC void httpComplete(HttpConn *conn)
 {
-    httpFinalize(conn);
-    conn->tx->complete = 1;
+    HttpTx  *tx;
+
+    tx = conn->tx;
+    if (!tx || tx->complete) {
+        return;
+    }
+    tx->complete = 1;
+    if (conn->state < HTTP_STATE_CONNECTED || !conn->writeq) {
+        /* Tx Pipeline not yet created */
+        tx->pendingCompletion = 1;
+        return;
+    }
+    if (!tx->finalized) {
+        httpFinalize(conn);
+    } else {
+        httpServiceQueues(conn);
+        httpEnableConnEvents(conn);
+    }
 }
 
 
@@ -251,19 +273,12 @@ PUBLIC void httpFinalize(HttpConn *conn)
     if (!tx || tx->finalized) {
         return;
     }
-    tx->responded = 1;
-    tx->finalized = 1;
-
-    if (conn->state >= HTTP_STATE_CONNECTED && conn->writeq && conn->sock) {
+    if (conn->state >= HTTP_STATE_CONNECTED && conn->writeq) {
+        tx->responded = 1;
+        tx->finalized = 1;
         httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
         httpServiceQueues(conn);
-        if (conn->state >= HTTP_STATE_READY && !conn->inHttpProcess) {
-            httpPump(conn, NULL);
-        }
-        tx->refinalize = 0;
-    } else {
-        /* Pipeline has not been setup yet */
-        tx->refinalize = 1;
+        httpEnableConnEvents(conn);
     }
 }
 

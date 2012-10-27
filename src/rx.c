@@ -94,8 +94,10 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->lang);
         mprMark(rx->target);
 
-        //  MOB SORT
         mprMark(rx->upgrade);
+        mprMark(rx->webSocket);
+#if UNUSED
+        //  MOB SORT
         mprMark(rx->origin);
         mprMark(rx->webSockKey);
         mprMark(rx->webSockProtocols);
@@ -104,6 +106,7 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->pingEvent);
         mprMark(rx->subProtocol);
         mprMark(rx->closeReason);
+#endif
 
     } else if (flags & MPR_MANAGE_FREE) {
         if (rx->conn) {
@@ -129,12 +132,18 @@ PUBLIC void httpDestroyRx(HttpRx *rx)
  */
 PUBLIC void httpPump(HttpConn *conn, HttpPacket *packet)
 {
+    int     lastState;
+
     mprAssert(conn);
 
+    if (conn->pumping) {
+        return;
+    }
     conn->canProceed = 1;
-    conn->inHttpProcess = 1;
+    conn->pumping = 1;
 
     while (conn->canProceed) {
+        lastState = conn->state;
         LOG(7, "httpProcess %s, state %d, error %d", conn->dispatcher->name, conn->state, conn->error);
         switch (conn->state) {
         case HTTP_STATE_BEGIN:
@@ -156,20 +165,23 @@ PUBLIC void httpPump(HttpConn *conn, HttpPacket *packet)
 
         case HTTP_STATE_RUNNING:
             conn->canProceed = processRunning(conn);
+            assure(conn->canProceed || conn->state == HTTP_STATE_RUNNING);
             break;
 
         case HTTP_STATE_COMPLETE:
             conn->canProceed = processCompletion(conn);
             break;
         }
-        if (conn->connError || 
-                (conn->endpoint && conn->state >= HTTP_STATE_RUNNING && conn->tx && conn->tx->connectorComplete)) {
+#if UNUSED
+        if (conn->state != HTTP_STATE_COMPLETE && (conn->connError || conn->complete)) {
             httpSetState(conn, HTTP_STATE_COMPLETE);
-            continue;
+            conn->canProceed = 1;
         }
+#endif
         packet = conn->input;
     }
-    conn->inHttpProcess = 0;
+    conn->pumping = 0;
+    assure(conn->state != HTTP_STATE_COMPLETE || !conn->rx || !conn->endpoint);
 }
 
 
@@ -778,6 +790,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
 
         case 's':
+#if UNUSED
             if (strcasecmp(key, "sec-websocket-key") == 0) {
                 rx->webSockKey = sclone(value);
             } else if (strcasecmp(key, "sec-websocket-extensions") == 0) {
@@ -791,6 +804,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             } else if (strcasecmp(key, "sec-websocket-version") == 0) {
                 rx->webSockVersion = (int) stoi(value);
             }
+#endif
             break;
 
         case 't':
@@ -894,11 +908,7 @@ static bool processParsed(HttpConn *conn)
         Don't stream input if a form or upload. NOTE: Upload needs the Files[] collection.
      */
     rx->streamInput = !(rx->form || rx->upload);
-    httpServiceQueues(conn);
 
-    if (rx->streamInput) {
-        httpStartPipeline(conn);
-    }
     /*
         Send a 100 (Continue) response if the client has requested it. If the connection has an error, that takes
         precedence and 100 Continue will not be sent. Also, if the connector has already written bytes to the socket, we
@@ -921,6 +931,10 @@ static bool processParsed(HttpConn *conn)
         rx->eof = 1;
         httpSetState(conn, HTTP_STATE_READY);
     }
+    if (rx->streamInput) {
+        httpStartPipeline(conn);
+    }
+    httpServiceQueues(conn);
     return 1;
 }
 
@@ -1074,37 +1088,49 @@ static bool processRunning(HttpConn *conn)
     if (conn->endpoint) {
         /* Server side */
         if (tx->complete) {
-            if (!tx->connectorComplete) {
-                /* Wait for Tx I/O event. Do suspend incase handler not using auto-flow routines */
+            if (tx->connectorComplete) {
+                /* Request complete and output complete */
+                httpSetState(conn, HTTP_STATE_COMPLETE);
+            } else {
+                /* Still got output to do. Wait for Tx I/O event. Do suspend incase handler not using auto-flow routines */
                 conn->writeBlocked = 1;
                 httpSuspendQueue(q);
                 httpEnableConnEvents(q->conn);
                 canProceed = 0;
+                assure(conn->state != HTTP_STATE_COMPLETE);
             }
+
         } else if (!httpPumpHandler(conn)) {
-            /* No process callback defined */
+            /* Request not complete yet. No process callback defined */
             canProceed = 0;
-        } else if (q->count == 0) {
-            /* Queue is empty and data may have drained above in httpServiceQueues. Yield to reclaim memory. */
-            mprYield(0);
+            assure(conn->state != HTTP_STATE_COMPLETE);
+
         } else if (q->count < q->low) {
+            if (q->count == 0) {
+                /* Queue is empty and data may have drained above in httpServiceQueues. Yield to reclaim memory. */
+                mprYield(0);
+            }
             if (q->flags & HTTP_QUEUE_SUSPENDED) {
                 httpResumeQueue(q);
             }
         } else {
+            /* Wait for output to drain */
             conn->writeBlocked = 1;
             httpSuspendQueue(q);
             httpEnableConnEvents(q->conn);
             canProceed = 0;
+            assure(conn->state != HTTP_STATE_COMPLETE);
         }
     } else {
         /* Client side */
         httpServiceQueues(conn);
         if (conn->upgraded) {
             canProceed = 0;
+            assure(conn->state != HTTP_STATE_COMPLETE);
         } else {
             httpComplete(conn);
             httpSetState(conn, HTTP_STATE_COMPLETE);
+            assure(canProceed);
         }
     }
     return canProceed;
@@ -1179,7 +1205,7 @@ PUBLIC void httpCloseRx(HttpConn *conn)
         /* May not have consumed all read data, so can't be assured the next request will be okay */
         conn->keepAliveCount = -1;
     }
-    if (conn->state < HTTP_STATE_COMPLETE && !conn->inHttpProcess) {
+    if (conn->state < HTTP_STATE_COMPLETE) {
         httpPump(conn, NULL);
     }
 }
@@ -1469,7 +1495,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
  */
 PUBLIC void httpSocketBlocked(HttpConn *conn)
 {
-    mprLog(6, "Socket Blocked");
+    mprLog(7, "Socket full, waiting to drain.");
     conn->writeBlocked = 1;
 }
 

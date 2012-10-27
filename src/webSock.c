@@ -382,7 +382,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
 {
     HttpConn        *conn;
     HttpWebSocket   *ws;
-    HttpRx          *rx;
     HttpPacket      *tail;
     HttpLimits      *limits;
     MprBuf          *content;
@@ -393,7 +392,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     conn = q->conn;
     ws = conn->rx->webSocket;
     assure(ws);
-    rx = conn->rx;
     limits = conn->limits;
     assure(packet);
     VERIFY_QUEUE(q);
@@ -669,13 +667,11 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
 PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
 {
     HttpWebSocket   *ws;
-    HttpRx          *rx;
     char            msg[128];
     ssize           len;
 
     ws = conn->rx->webSocket;
     assure(ws);
-    rx = conn->rx;
     if (ws->closing) {
         return;
     }

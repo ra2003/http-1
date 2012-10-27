@@ -132,8 +132,6 @@ PUBLIC void httpDestroyRx(HttpRx *rx)
  */
 PUBLIC void httpPump(HttpConn *conn, HttpPacket *packet)
 {
-    int     lastState;
-
     mprAssert(conn);
 
     if (conn->pumping) {
@@ -143,7 +141,6 @@ PUBLIC void httpPump(HttpConn *conn, HttpPacket *packet)
     conn->pumping = 1;
 
     while (conn->canProceed) {
-        lastState = conn->state;
         LOG(7, "httpProcess %s, state %d, error %d", conn->dispatcher->name, conn->state, conn->error);
         switch (conn->state) {
         case HTTP_STATE_BEGIN:

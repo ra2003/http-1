@@ -1418,7 +1418,7 @@ PUBLIC void mprYield(int flags)
         return;
     }
     /*
-        Must not call mprLog or derviatives here as it will allocate memory and assert
+        Must not call mprLog or derviatives after setting yielded as they will allocate memory and assert.
      */
     tp->yielded = 1;
     if (flags & MPR_YIELD_STICKY) {
@@ -10524,7 +10524,6 @@ static ssize fillBuf(MprFile *file)
         return len;
     }
     mprAdjustBufEnd(bp, len);
-    mprAddNullToBuf(bp);
     return len;
 }
 
@@ -13336,7 +13335,7 @@ PUBLIC void mprLog(int level, cchar *fmt, ...)
     va_list     args;
     char        buf[MPR_MAX_LOG];
 
-    if (level > mprGetLogLevel()) {
+    if (level < 0 || level > mprGetLogLevel()) {
         return;
     }
     va_start(args, fmt);
@@ -21606,6 +21605,9 @@ PUBLIC char *stok(char *str, cchar *delim, char **last)
 {
     char    *start, *end;
     ssize   i;
+
+    assure(last);
+    assure(delim);
 
     start = str ? str : *last;
 

@@ -236,9 +236,13 @@ PUBLIC void httpConnectorComplete(HttpConn *conn)
     tx = conn->tx;
     tx->connectorComplete = 1;
     tx->finalized = 1;
-#if UNUSED
+    /*
+        Use case: 
+        - server calling finalize in a timer. Must notify for close event in ejs.web/test/request/events.tst
+      */ 
+#if MOB_CHANGE || 1
     /* Can't do this if there is still data to read */
-    if (tx->complete) {
+    if (tx->complete && conn->rx->eof) {
         httpSetState(conn, HTTP_STATE_COMPLETE);
     }
 #endif
@@ -254,18 +258,20 @@ PUBLIC void httpComplete(HttpConn *conn)
         return;
     }
     tx->complete = 1;
-    if (conn->state < HTTP_STATE_CONNECTED || !conn->writeq || !conn->sock) {
-        /* Tx Pipeline not yet created */
-        tx->pendingCompletion = 1;
-        return;
-    }
     if (!tx->finalized) {
         httpFinalize(conn);
     } else {
         httpServiceQueues(conn);
+#if MOB_CHANGE
+        /*
+            Use case:
+            - server calling finalized from timeout. Don't get readable event because of keep-alive.
+                ejs.web/test/request/events.tst
+         */
         if (!conn->pumping) {
             httpEnableConnEvents(conn);
         }
+#endif
     }
 }
 
@@ -278,15 +284,25 @@ PUBLIC void httpFinalize(HttpConn *conn)
     if (!tx || tx->finalized) {
         return;
     }
-    if (conn->state >= HTTP_STATE_CONNECTED && conn->writeq && conn->sock) {
-        tx->responded = 1;
-        tx->finalized = 1;
-        httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
-        httpServiceQueues(conn);
-        if (!conn->pumping) {
-            httpEnableConnEvents(conn);
-        }
+    tx->responded = 1;
+    tx->finalized = 1;
+    if (conn->state < HTTP_STATE_CONNECTED || !conn->writeq || !conn->sock) {
+        /* Tx Pipeline not yet created */
+        tx->pendingFinalize = 1;
+        return;
     }
+    httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
+    httpServiceQueues(conn);
+#if MOB_CHANGE
+    /*
+        Use cases:
+        - server calling finalized from timeout. Don't get readable event because of keep-alive.
+            ejs.web/test/request/events.tst
+     */
+    if (!conn->pumping) {
+        httpEnableConnEvents(conn);
+    }
+#endif
 }
 
 

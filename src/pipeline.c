@@ -81,9 +81,9 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     httpPutForService(conn->writeq, httpCreateHeaderPacket(), HTTP_DELAY_SERVICE);
     openQueues(conn);
 
-    if (tx->pendingCompletion) {
-        tx->complete = 0;
-        httpComplete(conn);
+    if (tx->pendingFinalize) {
+        tx->finalized = 0;
+        httpFinalize(conn);
     }
 }
 

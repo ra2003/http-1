@@ -99,7 +99,6 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                             statusMsg, status, statusMsg, mprEscapeHtml(conn->errorMsg));
                     }
                     tx->length = slen(tx->altBody);
-                    tx->responded = 1;
                     tx->flags |= HTTP_TX_NO_BODY;
                     httpDiscardData(conn, HTTP_QUEUE_TX);
                 }

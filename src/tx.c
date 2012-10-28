@@ -260,7 +260,9 @@ PUBLIC void httpComplete(HttpConn *conn)
         httpFinalize(conn);
     } else {
         httpServiceQueues(conn);
-        httpEnableConnEvents(conn);
+        if (!conn->pumping) {
+            httpEnableConnEvents(conn);
+        }
     }
 }
 
@@ -278,7 +280,9 @@ PUBLIC void httpFinalize(HttpConn *conn)
         tx->finalized = 1;
         httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
         httpServiceQueues(conn);
-        httpEnableConnEvents(conn);
+        if (!conn->pumping) {
+            httpEnableConnEvents(conn);
+        }
     }
 }
 

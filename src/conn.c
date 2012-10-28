@@ -165,6 +165,19 @@ PUBLIC void httpCloseConn(HttpConn *conn)
             conn->waitHandler = 0;
         }
         mprCloseSocket(conn->sock, 0);
+#if BIT_DEBUG
+        {
+            MprEvent    *event;
+            /*
+                Should not be any queued events after closing the socket
+             */
+            for (event = conn->dispatcher->eventQ->next; event != conn->dispatcher->eventQ; event = event->next) {
+                if (event->fd == conn->sock->fd) {
+                    assure(0);
+                }
+            }
+        }
+#endif
         conn->sock = 0;
     }
 }
@@ -316,6 +329,7 @@ PUBLIC void httpCallEvent(HttpConn *conn, int mask)
  */
 PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
 {
+    assure(conn->sock);
     LOG(6, "httpEvent for fd %d, mask %d", conn->sock->fd, event->mask);
     conn->lastActivity = conn->http->now;
 

@@ -236,9 +236,12 @@ PUBLIC void httpConnectorComplete(HttpConn *conn)
     tx = conn->tx;
     tx->connectorComplete = 1;
     tx->finalized = 1;
+#if UNUSED
+    /* Can't do this if there is still data to read */
     if (tx->complete) {
         httpSetState(conn, HTTP_STATE_COMPLETE);
     }
+#endif
 }
 
 

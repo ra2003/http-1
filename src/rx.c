@@ -1039,11 +1039,13 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     }
     httpServiceQueues(conn);
     VERIFY_QUEUE(q);
-
+#if UNUSED
+    //  NOt until all the data is read
     if (tx->complete) {
         httpSetState(conn, HTTP_STATE_READY);
         return 1;
     }
+#endif
     if (rx->chunkState && nbytes <= 0) {
         /* Insufficient data */
         return 0;

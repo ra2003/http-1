@@ -1453,7 +1453,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
             break;
         }
         remaining = mprGetRemainingTime(mark, timeout);
-    } while (!justOne && !conn->tx->finalized && conn->state < state && remaining > 0);
+    } while (!justOne && !conn->error && conn->state < state && remaining > 0);
 
     conn->async = saveAsync;
     if (conn->sock == 0 || conn->error) {

@@ -1386,10 +1386,12 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
 }
 
 
+#if UNUSED
 static void waitHandler(HttpConn *conn, struct MprEvent *event)
 {
     httpCallEvent(conn, event->mask);
 }
+#endif
 
 
 /*
@@ -1437,11 +1439,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
         eventMask |= MPR_WRITABLE;
     }
     if (conn->state < state) {
-        if (conn->waitHandler == 0) {
-            conn->waitHandler = mprCreateWaitHandler(conn->sock->fd, eventMask, conn->dispatcher, waitHandler, conn, 0);
-        } else {
-            mprWaitOn(conn->waitHandler, eventMask);
-        }
+        httpSetupWaitHandler(conn, eventMask);
     }
     remaining = timeout;
     do {

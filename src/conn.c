@@ -520,22 +520,30 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
                 eventMask |= MPR_READABLE;
             }
         }
-        if (eventMask) {
-            if (conn->waitHandler == 0) {
-                conn->waitHandler = mprCreateWaitHandler(conn->sock->fd, eventMask, conn->dispatcher, conn->ioCallback, 
-                    conn, 0);
-            } else {
-                conn->waitHandler->dispatcher = conn->dispatcher;
-                mprWaitOn(conn->waitHandler, eventMask);
-            }
-        } else if (conn->waitHandler) {
-            mprWaitOn(conn->waitHandler, eventMask);
-        }
+        httpSetupWaitHandler(conn, eventMask);
         mprAssert(conn->dispatcher->enabled);
         unlock(conn->http);
     }
     if (tx && tx->handler && tx->handler->module) {
         tx->handler->module->lastActivity = conn->lastActivity;
+    }
+}
+
+
+PUBLIC void httpSetupWaitHandler(HttpConn *conn, int eventMask)
+{
+    if (conn->sock == 0) {
+        return;
+    }
+    if (eventMask) {
+        if (conn->waitHandler == 0) {
+            conn->waitHandler = mprCreateWaitHandler(conn->sock->fd, eventMask, conn->dispatcher, conn->ioCallback, conn, 0);
+        } else {
+            conn->waitHandler->dispatcher = conn->dispatcher;
+            mprWaitOn(conn->waitHandler, eventMask);
+        }
+    } else if (conn->waitHandler) {
+        mprWaitOn(conn->waitHandler, eventMask);
     }
 }
 

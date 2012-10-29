@@ -229,43 +229,40 @@ PUBLIC void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 /*
     Called by connectors (ONLY) when writing the transmission is complete
  */
-PUBLIC void httpConnectorComplete(HttpConn *conn)
+PUBLIC void httpFinalizeConnector(HttpConn *conn)
 {
     HttpTx      *tx;
 
     tx = conn->tx;
-    tx->connectorComplete = 1;
-    tx->finalized = 1;
+    tx->finalizedConnector = 1;
+    tx->finalizedOutput = 1;
     /*
-        Use case: 
-        - server calling finalize in a timer. Must notify for close event in ejs.web/test/request/events.tst
+        Use case: server calling finalize in a timer. Must notify for close event in ejs.web/test/request/events.tst
       */ 
-#if MOB_CHANGE || 1
     /* Can't do this if there is still data to read */
-    if (tx->complete && conn->rx->eof) {
+    if (tx->finalized && conn->rx->eof) {
         httpSetState(conn, HTTP_STATE_COMPLETE);
     }
-#endif
 }
 
 
-PUBLIC void httpComplete(HttpConn *conn)
+PUBLIC void httpFinalize(HttpConn *conn)
 {
     HttpTx  *tx;
 
     tx = conn->tx;
-    if (!tx || tx->complete) {
+    if (!tx || tx->finalized) {
         return;
     }
-    tx->complete = 1;
-    if (!tx->finalized) {
-        httpFinalize(conn);
+    tx->finalized = 1;
+    if (!tx->finalizedOutput) {
+        httpFinalizeOutput(conn);
     } else {
         httpServiceQueues(conn);
-#if MOB_CHANGE
+#if UNUSED
         /*
             Use case:
-            - server calling finalized from timeout. Don't get readable event because of keep-alive.
+            - server calling httpFinalizeOutput from timeout. Don't get readable event because of keep-alive.
                 ejs.web/test/request/events.tst
          */
         if (!conn->pumping) {
@@ -276,16 +273,16 @@ PUBLIC void httpComplete(HttpConn *conn)
 }
 
 
-PUBLIC void httpFinalize(HttpConn *conn)
+PUBLIC void httpFinalizeOutput(HttpConn *conn)
 {
     HttpTx      *tx;
 
     tx = conn->tx;
-    if (!tx || tx->finalized) {
+    if (!tx || tx->finalizedOutput) {
         return;
     }
     tx->responded = 1;
-    tx->finalized = 1;
+    tx->finalizedOutput = 1;
     if (conn->state < HTTP_STATE_CONNECTED || !conn->writeq || !conn->sock) {
         /* Tx Pipeline not yet created */
         tx->pendingFinalize = 1;
@@ -293,10 +290,10 @@ PUBLIC void httpFinalize(HttpConn *conn)
     }
     httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
     httpServiceQueues(conn);
-#if MOB_CHANGE
+#if UNUSED
     /*
         Use cases:
-        - server calling finalized from timeout. Don't get readable event because of keep-alive.
+        - server calling httpFinalizeOutput from timeout. Don't get readable event because of keep-alive.
             ejs.web/test/request/events.tst
      */
     if (!conn->pumping) {
@@ -306,15 +303,15 @@ PUBLIC void httpFinalize(HttpConn *conn)
 }
 
 
-PUBLIC int httpIsComplete(HttpConn *conn)
-{
-    return conn->tx->complete;
-}
-
-
 PUBLIC int httpIsFinalized(HttpConn *conn)
 {
     return conn->tx->finalized;
+}
+
+
+PUBLIC int httpIsOutputFinalized(HttpConn *conn)
+{
+    return conn->tx->finalizedOutput;
 }
 
 
@@ -459,7 +456,8 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     rx = conn->rx;
     tx = conn->tx;
 
-    if (tx->complete) {
+    //  MOB - should really test responded
+    if (tx->finalized) {
         /* A response has already been formulated */
         return;
     }
@@ -512,7 +510,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             "<body><h1>%s</h1>\r\n</body></html>\r\n",
             msg, msg);
     }
-    httpComplete(conn);
+    httpFinalize(conn);
 }
 
 

@@ -72,7 +72,7 @@ PUBLIC int httpAuthenticate(HttpConn *conn)
         }
         if (rx->authDetails && (auth->type->parseAuth)(conn) < 0) {
             mprAssert(conn->error);
-            mprAssert(conn->tx->complete);
+            mprAssert(conn->tx->finalized);
             return 0;
         }
         if (!conn->username) {

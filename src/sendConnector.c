@@ -95,8 +95,8 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     conn->lastActivity = conn->http->now;
     mprAssert(conn->sock);
 
-    if (!conn->sock || tx->connectorComplete) {
-        assure(conn->sock && !tx->connectorComplete);
+    if (!conn->sock || tx->finalizedConnector) {
+        assure(conn->sock && !tx->finalizedConnector);
         return;
     }
     if (tx->flags & HTTP_TX_NO_BODY) {
@@ -106,7 +106,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
         httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE | ((tx->bytesWritten) ? HTTP_ABORT : 0),
             "Http transmission aborted. Exceeded max body of %,Ld bytes", conn->limits->transmissionBodySize);
         if (tx->bytesWritten) {
-            httpConnectorComplete(conn);
+            httpFinalizeConnector(conn);
             return;
         }
     }
@@ -136,7 +136,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
                 mprLog(7, "SendFileToSocket failed, errCode %d", errCode);
             }
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "SendFileToSocket failed, errCode %d", errCode);
-            httpConnectorComplete(conn);
+            httpFinalizeConnector(conn);
             break;
 
         } else if (written == 0) {
@@ -152,7 +152,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     }
     if (q->ioCount == 0) {
         if ((q->flags & HTTP_QUEUE_EOF)) {
-            httpConnectorComplete(conn);
+            httpFinalizeConnector(conn);
         } else {
             HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
         }

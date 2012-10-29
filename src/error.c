@@ -26,7 +26,9 @@ PUBLIC void httpDisconnect(HttpConn *conn)
         conn->rx->eof = 1;
     }
     if (conn->tx) {
-        conn->tx->complete = 1;
+        conn->tx->finalized = 1;
+        conn->tx->finalizedOutput = 1;
+        conn->tx->finalizedConnector = 1;
     }
 }
 
@@ -104,7 +106,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                 }
             }
         }
-        httpComplete(conn);
+        httpFinalize(conn);
     }
 }
 

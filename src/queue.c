@@ -298,7 +298,7 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
     mprAssert(size >= 0);
     VERIFY_QUEUE(q);
 
-    while (q->count <= 0 && !conn->async && !conn->tx->complete && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
+    while (q->count <= 0 && !conn->async && !conn->tx->finalized && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
         httpServiceQueues(conn);
         if (conn->sock) {
             httpWait(conn, 0, MPR_TIMEOUT_NO_BUSY);
@@ -513,7 +513,7 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
     if (flags == 0) {
         flags = HTTP_BUFFER;
     }
-    if (tx == 0 || tx->finalized) {
+    if (tx == 0 || tx->finalizedOutput) {
         return MPR_ERR_CANT_WRITE;
     }
     tx->responded = 1;

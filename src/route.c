@@ -399,7 +399,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     if (rewrites >= HTTP_MAX_REWRITE) {
         httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
     }
-    if (tx->complete) {
+    if (tx->finalized) {
         /* Pass handler can transmit the error */
         tx->handler = conn->http->passHandler;
     }
@@ -1944,7 +1944,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         return HTTP_ROUTE_OK;
     }
     if (!httpAuthenticate(conn)) {
-        if (!conn->tx->complete && route->auth && route->auth->type) {
+        if (!conn->tx->finalized && route->auth && route->auth->type) {
             (route->auth->type->askLogin)(conn);
         }
         /* Request has been denied and fully handled */
@@ -2193,7 +2193,7 @@ static int writeTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     }
     httpSetStatus(conn, route->responseStatus);
     httpFormatResponse(conn, "%s", str);
-    httpComplete(conn);
+    httpFinalize(conn);
     return HTTP_ROUTE_OK;
 }
 

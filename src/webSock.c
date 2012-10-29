@@ -419,7 +419,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             if (httpGetPacketLength(packet) > 0) {
                 mprLog(5, "webSocketFilter: closed, ignore incoming packet");
             }
-            httpComplete(conn);
+            httpFinalize(conn);
             break;
 
         case WS_BEGIN:
@@ -498,7 +498,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             VERIFY_QUEUE(q);
             currentFrameLen = httpGetPacketLength(ws->currentFrame);
             len = httpGetPacketLength(packet);
-//  MOB - not right as currentFrameLen may have multiple, complete frames
             if ((currentFrameLen + len) > ws->frameLength) {
                 offset = ws->frameLength - currentFrameLen;
                 VERIFY_QUEUE(q);
@@ -527,10 +526,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 content = packet->content;
             }
             frameLen = httpGetPacketLength(packet);
-#if UNUSED
-            msgComplete = (packet->last && frameLen == ws->frameLength);
-            if (msgComplete || frameLen >= limits->webSocketsPacketSize) {
-#endif
             assure(frameLen <= ws->frameLength);
             if (frameLen == ws->frameLength) {
                 VERIFY_QUEUE(q);
@@ -546,7 +541,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 VERIFY_QUEUE(q);
                 if (ws->state == WS_STATE_CLOSED) {
                     HTTP_NOTIFY(conn, HTTP_EVENT_APP_CLOSE, ws->closeStatus);
-                    httpComplete(conn);
+                    httpFinalize(conn);
                     ws->frameState = WS_CLOSED;
                     break;
                 }

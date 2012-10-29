@@ -24,7 +24,7 @@ static void startPass(HttpQueue *q)
 
 static void readyPass(HttpQueue *q)
 {
-    httpComplete(q->conn);
+    httpFinalize(q->conn);
 }
 
 
@@ -36,7 +36,7 @@ static void readyError(HttpQueue *q)
          */
         httpError(q->conn, HTTP_CODE_SERVICE_UNAVAILABLE, "The requested resource is not available");
     }
-    httpComplete(q->conn);
+    httpFinalize(q->conn);
 }
 
 
@@ -94,7 +94,7 @@ PUBLIC void httpHandleOptionsTrace(HttpConn *conn, cchar *methods)
         }
         assure(tx->length <= 0);
     }
-    httpComplete(conn);
+    httpFinalize(conn);
 }
 
 

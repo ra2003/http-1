@@ -101,7 +101,7 @@ static void readyCacheHandler(HttpQueue *q)
             httpWriteString(q, data);
         }
     }
-    httpComplete(conn);
+    httpFinalize(conn);
 }
 
 
@@ -353,7 +353,7 @@ static void saveCachedResponse(HttpConn *conn)
     MprTime     modified;
 
     tx = conn->tx;
-    mprAssert(tx->finalized && tx->cacheBuffer);
+    mprAssert(tx->finalizedOutput && tx->cacheBuffer);
 
     buf = tx->cacheBuffer;
     mprAddNullToBuf(buf);
@@ -386,7 +386,7 @@ PUBLIC ssize httpWriteCached(HttpConn *conn)
     httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
     conn->tx->cacheBuffer = 0;
     httpWriteString(conn->writeq, data);
-    httpComplete(conn);
+    httpFinalize(conn);
     return slen(data);
 }
 

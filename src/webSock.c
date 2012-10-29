@@ -615,7 +615,8 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         return MPR_ERR_WONT_FIT;
     }
     mprLog(5, "webSocketFilter: Sending message type \"%s\", len %d", codetxt[type & 0xf], len);
-    for (totalWritten = 0; len > 0; ) {
+    totalWritten = 0;
+    do {
         /*
             Break into frames. Note: downstream may also fragment packets.
             The outgoing service routine will convert every packet into a frame.
@@ -629,12 +630,14 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
             return MPR_ERR_MEMORY;
         }
         packet->type = type;
-        if (mprPutBlockToBuf(packet->content, buf, thisWrite) != thisWrite) {
-            return MPR_ERR_MEMORY;
+        if (thisWrite > 0) {
+            if (mprPutBlockToBuf(packet->content, buf, thisWrite) != thisWrite) {
+                return MPR_ERR_MEMORY;
+            }
+            len -= thisWrite;
+            buf += thisWrite;
+            totalWritten += thisWrite;
         }
-        len -= thisWrite;
-        buf += thisWrite;
-        totalWritten += thisWrite;
         packet->last = (len > 0) ? 0 : !(flags & HTTP_MORE);
         httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
 
@@ -650,7 +653,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
                 }
             }
         }
-    }
+    } while (len > 0);
     httpServiceQueues(conn);
     return totalWritten;
 }

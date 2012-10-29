@@ -501,7 +501,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
     limits = conn->limits;
     keepAlive = (conn->http10) ? 0 : 1;
 
-    for (count = 0; content->start[0] != '\r' && !tx->finalized; count++) {
+    for (count = 0; content->start[0] != '\r' && !conn->error; count++) {
         if (count >= limits->headerMax) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Too many headers");
             return 0;

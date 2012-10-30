@@ -36,9 +36,9 @@ static void outgoing(HttpQueue *q, HttpPacket *packet)
  */
 static void incoming(HttpQueue *q, HttpPacket *packet)
 {
-    mprAssert(q);
+    assure(q);
     VERIFY_QUEUE(q);
-    mprAssert(packet);
+    assure(packet);
     
     if (q->nextQ->put) {
         httpPutPacketToNext(q, packet);
@@ -78,8 +78,8 @@ PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule 
 {
     HttpStage     *stage;
 
-    mprAssert(http);
-    mprAssert(name && *name);
+    assure(http);
+    assure(name && *name);
 
     if ((stage = httpLookupStage(http, name)) != 0) {
         if (!(stage->flags & HTTP_STAGE_UNLOADED)) {

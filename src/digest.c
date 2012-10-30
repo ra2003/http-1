@@ -302,7 +302,7 @@ static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm)
     char         nonce[256];
     static int64 next = 0;
 
-    mprAssert(realm && *realm);
+    assure(realm && *realm);
 
     now = conn->http->now;
     fmt(nonce, sizeof(nonce), "%s:%s:%Lx:%Lx", secret, realm, now, next++);
@@ -337,7 +337,7 @@ static char *calcDigest(HttpConn *conn, DigestData *dp)
     if (!conn->user) {
         conn->user = mprLookupKey(auth->users, conn->username);
     }
-    mprAssert(conn->user && conn->user->password);
+    assure(conn->user && conn->user->password);
     if (conn->user == 0 || conn->user->password == 0) {
         return 0;
     }

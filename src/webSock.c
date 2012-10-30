@@ -91,7 +91,7 @@ PUBLIC int httpOpenWebSockFilter(Http *http)
 {
     HttpStage     *filter;
 
-    mprAssert(http);
+    assure(http);
 
     mprLog(5, "Open WebSock filter");
     if ((filter = httpCreateFilter(http, "webSocketFilter", NULL)) == 0) {
@@ -120,13 +120,13 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
     cchar           *key, *protocols;
     int             version;
 
-    mprAssert(conn);
-    mprAssert(route);
+    assure(conn);
+    assure(route);
 
     rx = conn->rx;
     tx = conn->tx;
-    mprAssert(rx);
-    mprAssert(tx);
+    assure(rx);
+    assure(tx);
 
     if (!conn->endpoint) {
         if (rx->webSocket) {
@@ -221,7 +221,7 @@ static void openWebSock(HttpQueue *q)
     HttpWebSocket   *ws;
     HttpPacket      *packet;
 
-    mprAssert(q);
+    assure(q);
     conn = q->conn;
     ws = conn->rx->webSocket;
     assure(ws);
@@ -232,7 +232,7 @@ static void openWebSock(HttpQueue *q)
     conn->timeoutCallback = webSockTimeout;
 
     if ((packet = httpGetPacket(conn->writeq)) != 0) {
-        mprAssert(packet->flags & HTTP_PACKET_HEADER);
+        assure(packet->flags & HTTP_PACKET_HEADER);
         httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
     }
     conn->tx->responded = 0;
@@ -290,7 +290,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
     assure(ws);
     rx = conn->rx;
     content = packet->content;
-    mprAssert(content);
+    assure(content);
 
     mprLog(4, "webSocketFilter: Process packet type %d, \"%s\", data length %d", packet->type, 
         codetxt[packet->type], mprGetBufLength(content));
@@ -476,7 +476,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                     ws->dataMask[i] = *fp++;
                 }
             }
-            mprAssert(content);
+            assure(content);
             mprAdjustBufStart(content, fp - content->start);
             VERIFY_QUEUE(q);
             assure(q->count >= 0);
@@ -554,7 +554,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
 
 #if UNUSED && KEEP
         case WS_EXT_DATA:
-            mprAssert(packet);
+            assure(packet);
             mprLog(5, "webSocketFilter: EXT DATA - RESERVED");
             ws->frameState = WS_MSG;
             break;
@@ -846,7 +846,7 @@ static bool validUTF8(cchar *str, ssize len)
                 return 0;
             }
         }
-        mprAssert(nbytes >= 1);
+        assure(nbytes >= 1);
     } 
     return 1;
 }
@@ -854,7 +854,7 @@ static bool validUTF8(cchar *str, ssize len)
 
 static void webSockPing(HttpConn *conn)
 {
-    mprAssert(conn->rx);
+    assure(conn->rx);
     httpSendBlock(conn, WS_MSG_PING, NULL, 0, HTTP_BUFFER);
 }
 

@@ -74,7 +74,7 @@ PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatche
 PUBLIC void httpDestroyConn(HttpConn *conn)
 {
     if (conn->http) {
-        mprAssert(conn->http);
+        assure(conn->http);
         HTTP_NOTIFY(conn, HTTP_EVENT_DESTROY, 0);
         httpRemoveConn(conn->http, conn);
         if (conn->endpoint) {
@@ -101,7 +101,7 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
 
 static void manageConn(HttpConn *conn, int flags)
 {
-    mprAssert(conn);
+    assure(conn);
 
     if (flags & MPR_MANAGE_MARK) {
         mprMark(conn->rx);
@@ -156,7 +156,7 @@ static void manageConn(HttpConn *conn, int flags)
  */
 PUBLIC void httpCloseConn(HttpConn *conn)
 {
-    mprAssert(conn);
+    assure(conn);
 
     if (conn->sock) {
         mprLog(6, "Closing connection");
@@ -193,7 +193,7 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
     }
     now = conn->http->now;
     limits = conn->limits;
-    mprAssert(limits);
+    assure(limits);
 
     mprLog(6, "Inactive connection timed out");
     if (conn->state >= HTTP_STATE_PARSED) {
@@ -252,9 +252,9 @@ static void commonPrep(HttpConn *conn)
  */
 PUBLIC void httpPrepServerConn(HttpConn *conn)
 {
-    mprAssert(conn);
-    mprAssert(conn->rx == 0);
-    mprAssert(conn->tx == 0);
+    assure(conn);
+    assure(conn->rx == 0);
+    assure(conn->tx == 0);
 
     conn->readq = 0;
     conn->writeq = 0;
@@ -266,7 +266,7 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
 {
     MprHash     *headers;
 
-    mprAssert(conn);
+    assure(conn);
 
     if (conn->keepAliveCount >= 0 && conn->sock) {
         /* Eat remaining input incase last request did not consume all data */
@@ -354,7 +354,7 @@ PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
             if (mprIsSocketEof(conn->sock) && conn->state != HTTP_STATE_RUNNING) {
                 httpDestroyConn(conn);
             } else {
-                mprAssert(conn->state < HTTP_STATE_COMPLETE);
+                assure(conn->state < HTTP_STATE_COMPLETE);
                 httpEnableConnEvents(conn);
             }
         }
@@ -430,7 +430,7 @@ PUBLIC void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *e
     conn->oldDispatcher = conn->dispatcher;
     conn->dispatcher = dispatcher;
     conn->worker = 1;
-    mprAssert(!conn->workerEvent);
+    assure(!conn->workerEvent);
     conn->workerEvent = event;
     unlock(conn->http);
 }
@@ -439,9 +439,9 @@ PUBLIC void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *e
 PUBLIC void httpUsePrimary(HttpConn *conn)
 {
     lock(conn->http);
-    mprAssert(conn->worker);
-    mprAssert(conn->state == HTTP_STATE_BEGIN);
-    mprAssert(conn->oldDispatcher && conn->dispatcher != conn->oldDispatcher);
+    assure(conn->worker);
+    assure(conn->state == HTTP_STATE_BEGIN);
+    assure(conn->oldDispatcher && conn->dispatcher != conn->oldDispatcher);
     conn->dispatcher = conn->oldDispatcher;
     conn->oldDispatcher = 0;
     conn->worker = 0;
@@ -521,7 +521,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
             }
         }
         httpSetupWaitHandler(conn, eventMask);
-        mprAssert(conn->dispatcher->enabled);
+        assure(conn->dispatcher->enabled);
         unlock(conn->http);
     }
     if (tx && tx->handler && tx->handler->module) {
@@ -573,7 +573,7 @@ static HttpPacket *getPacket(HttpConn *conn, ssize *size)
         }
     }
     *size = mprGetBufSpace(packet->content);
-    mprAssert(*size > 0);
+    assure(*size > 0);
     return packet;
 }
 

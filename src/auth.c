@@ -52,7 +52,7 @@ PUBLIC int httpAuthenticate(HttpConn *conn)
 
     route = rx->route;
     auth = route->auth;
-    mprAssert(auth);
+    assure(auth);
     mprLog(5, "Checking user authentication user %s on route %s", conn->username, route->name);
 
     cached = 0;
@@ -71,8 +71,8 @@ PUBLIC int httpAuthenticate(HttpConn *conn)
             return 0;
         }
         if (rx->authDetails && (auth->type->parseAuth)(conn) < 0) {
-            mprAssert(conn->error);
-            mprAssert(conn->tx->finalized);
+            assure(conn->error);
+            assure(conn->tx->finalized);
             return 0;
         }
         if (!conn->username) {

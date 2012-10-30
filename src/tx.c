@@ -90,8 +90,8 @@ static void manageTx(HttpTx *tx, int flags)
 */
 static void addHdr(HttpConn *conn, cchar *key, cchar *value)
 {
-    mprAssert(key && *key);
-    mprAssert(value);
+    assure(key && *key);
+    assure(value);
 
     mprAddKey(conn->tx->headers, key, value);
 }
@@ -99,7 +99,7 @@ static void addHdr(HttpConn *conn, cchar *key, cchar *value)
 
 PUBLIC int httpRemoveHeader(HttpConn *conn, cchar *key)
 {
-    mprAssert(key && *key);
+    assure(key && *key);
     if (conn->tx == 0) {
         return MPR_ERR_CANT_ACCESS;
     }
@@ -115,8 +115,8 @@ PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     char        *value;
     va_list     vargs;
 
-    mprAssert(key && *key);
-    mprAssert(fmt && *fmt);
+    assure(key && *key);
+    assure(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -133,8 +133,8 @@ PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
  */
 PUBLIC void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
-    mprAssert(key && *key);
-    mprAssert(value);
+    assure(key && *key);
+    assure(value);
 
     if (!mprLookupKey(conn->tx->headers, key)) {
         addHdr(conn, key, sclone(value));
@@ -152,8 +152,8 @@ PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     char        *value;
     cchar       *oldValue;
 
-    mprAssert(key && *key);
-    mprAssert(fmt && *fmt);
+    assure(key && *key);
+    assure(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -183,8 +183,8 @@ PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
     cchar   *oldValue;
 
-    mprAssert(key && *key);
-    mprAssert(value && *value);
+    assure(key && *key);
+    assure(value && *value);
 
     oldValue = mprLookupKey(conn->tx->headers, key);
     if (oldValue) {
@@ -207,8 +207,8 @@ PUBLIC void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     char        *value;
     va_list     vargs;
 
-    mprAssert(key && *key);
-    mprAssert(fmt && *fmt);
+    assure(key && *key);
+    assure(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -219,8 +219,8 @@ PUBLIC void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 
 PUBLIC void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
-    mprAssert(key && *key);
-    mprAssert(value);
+    assure(key && *key);
+    assure(value);
 
     addHdr(conn, key, sclone(value));
 }
@@ -452,7 +452,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     cchar           *msg;
     char            *dir, *cp;
 
-    mprAssert(targetUri);
+    assure(targetUri);
     rx = conn->rx;
     tx = conn->tx;
 
@@ -581,7 +581,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     MprOff      length;
     cchar       *mimeType;
 
-    mprAssert(packet->flags == HTTP_PACKET_HEADER);
+    assure(packet->flags == HTTP_PACKET_HEADER);
 
     rx = conn->rx;
     tx = conn->tx;
@@ -693,7 +693,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
     MprBuf      *buf;
     int         level;
 
-    mprAssert(packet->flags == HTTP_PACKET_HEADER);
+    assure(packet->flags == HTTP_PACKET_HEADER);
 
     conn = q->conn;
     http = conn->http;

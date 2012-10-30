@@ -183,7 +183,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
     ssize       count;
     int         done, rc;
     
-    mprAssert(packet);
+    assure(packet);
     
     conn = q->conn;
     rx = conn->rx;
@@ -260,14 +260,14 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
         mprCompactBuf(content);
     }
     q->count -= (count - httpGetPacketLength(packet));
-    mprAssert(q->count >= 0);
+    assure(q->count >= 0);
 
     if (httpGetPacketLength(packet) == 0) {
         /* 
            Quicker to remove the buffer so the packets don't have to be joined the next time 
          */
         httpGetPacket(q);
-        mprAssert(q->count >= 0);
+        assure(q->count >= 0);
     }
 }
 
@@ -586,9 +586,9 @@ static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundary
     char    *cp, *endp;
     char    first;
 
-    mprAssert(buf);
-    mprAssert(boundary);
-    mprAssert(boundaryLen > 0);
+    assure(buf);
+    assure(boundary);
+    assure(boundaryLen > 0);
 
     first = *((char*) boundary);
     cp = (char*) buf;

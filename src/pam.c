@@ -39,9 +39,9 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn)
     struct group        *gp;
     int                 res, i;
    
-    mprAssert(conn->username);
-    mprAssert(conn->password);
-    mprAssert(!conn->encoded);
+    assure(conn->username);
+    assure(conn->password);
+    assure(!conn->encoded);
 
     info.name = (char*) conn->username;
     info.password = (char*) conn->password;

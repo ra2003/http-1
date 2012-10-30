@@ -229,7 +229,7 @@ PUBLIC HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
     }
     for (next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
         if (endpoint->port <= 0 || port <= 0 || endpoint->port == port) {
-            mprAssert(endpoint->ip);
+            assure(endpoint->ip);
             if (*endpoint->ip == '\0' || *ip == '\0' || scmp(endpoint->ip, ip) == 0) {
                 return endpoint;
             }
@@ -405,7 +405,7 @@ static void httpTimer(Http *http, MprEvent *event)
     MprModule   *module;
     int         next, active;
 
-    mprAssert(event);
+    assure(event);
     
     updateCurrentDate(http);
     if (mprGetDebugMode()) {
@@ -593,7 +593,7 @@ PUBLIC int httpCreateSecret(Http *http)
         for (i = 0; i < sizeof(pid) && bp < &bytes[HTTP_MAX_SECRET]; i++) {
             *bp++ = *cp++;
         }
-        mprAssert(0);
+        assure(0);
         return MPR_ERR_CANT_INITIALIZE;
     }
 

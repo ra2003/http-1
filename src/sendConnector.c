@@ -56,7 +56,7 @@ PUBLIC void httpSendOpen(HttpQueue *q)
         return;
     }
     if (!(tx->flags & HTTP_TX_NO_BODY)) {
-        mprAssert(tx->fileInfo.valid);
+        assure(tx->fileInfo.valid);
         if (tx->fileInfo.size > conn->limits->transmissionBodySize) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Http transmission aborted. File size exceeds max body of %,Ld bytes", conn->limits->transmissionBodySize);
@@ -93,7 +93,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     conn = q->conn;
     tx = conn->tx;
     conn->lastActivity = conn->http->now;
-    mprAssert(conn->sock);
+    assure(conn->sock);
 
     if (!conn->sock || tx->finalizedConnector) {
         assure(conn->sock && !tx->finalizedConnector);
@@ -169,7 +169,7 @@ static MprOff buildSendVec(HttpQueue *q)
 {
     HttpPacket  *packet;
 
-    mprAssert(q->ioIndex == 0);
+    assure(q->ioIndex == 0);
     q->ioCount = 0;
     q->ioFile = 0;
 
@@ -203,8 +203,8 @@ static MprOff buildSendVec(HttpQueue *q)
  */
 static void addToSendVector(HttpQueue *q, char *ptr, ssize bytes)
 {
-    mprAssert(ptr > 0);
-    mprAssert(bytes > 0);
+    assure(ptr > 0);
+    assure(bytes > 0);
 
     q->iovec[q->ioIndex].start = ptr;
     q->iovec[q->ioIndex].len = bytes;
@@ -225,14 +225,14 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
     conn = q->conn;
     tx = conn->tx;
     
-    mprAssert(q->count >= 0);
-    mprAssert(q->ioIndex < (HTTP_MAX_IOVEC - 2));
+    assure(q->count >= 0);
+    assure(q->ioIndex < (HTTP_MAX_IOVEC - 2));
 
     if (packet->prefix) {
         addToSendVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));
     }
     if (packet->esize > 0) {
-        mprAssert(q->ioFile == 0);
+        assure(q->ioFile == 0);
         q->ioFile = 1;
         q->ioCount += packet->esize;
 
@@ -259,9 +259,9 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
     HttpPacket  *packet;
     ssize       len;
 
-    mprAssert(q->first);
-    mprAssert(q->count >= 0);
-    mprAssert(bytes >= 0);
+    assure(q->first);
+    assure(q->count >= 0);
+    assure(bytes >= 0);
 
     while ((packet = q->first) != 0) {
         if (packet->prefix) {
@@ -279,8 +279,8 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             packet->esize -= len;
             packet->epos += len;
             bytes -= len;
-            mprAssert(packet->esize >= 0);
-            mprAssert(bytes == 0);
+            assure(packet->esize >= 0);
+            assure(bytes == 0);
             if (packet->esize > 0) {
                 break;
             }
@@ -289,12 +289,12 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             mprAdjustBufStart(packet->content, len);
             bytes -= len;
             q->count -= len;
-            mprAssert(q->count >= 0);
+            assure(q->count >= 0);
         }
         if (httpGetPacketLength(packet) == 0) {
             httpGetPacket(q);
         }
-        mprAssert(bytes >= 0);
+        assure(bytes >= 0);
         if (bytes == 0 && (q->first == NULL || !(q->first->flags & HTTP_PACKET_END))) {
             break;
         }

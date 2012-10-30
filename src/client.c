@@ -22,7 +22,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     char        *ip;
     int         port, rc, level;
 
-    mprAssert(conn);
+    assure(conn);
 
     http = conn->http;
     uri = conn->tx->parsedUri;
@@ -91,7 +91,7 @@ static void setDefaultHeaders(HttpConn *conn)
 {
     HttpAuthType    *authType;
 
-    mprAssert(conn);
+    assure(conn);
 
     if (smatch(conn->protocol, "HTTP/1.0")) {
         conn->http10 = 1;
@@ -115,9 +115,9 @@ static void setDefaultHeaders(HttpConn *conn)
 
 PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl *ssl)
 {
-    mprAssert(conn);
-    mprAssert(method && *method);
-    mprAssert(uri && *uri);
+    assure(conn);
+    assure(method && *method);
+    assure(uri && *uri);
 
     if (conn->endpoint) {
         httpError(conn, HTTP_CODE_BAD_GATEWAY, "Can't call connect in a server");
@@ -129,7 +129,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         /* WARNING: this will erase headers */
         httpPrepClientConn(conn, 0);
     }
-    mprAssert(conn->state == HTTP_STATE_BEGIN);
+    assure(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
     conn->setCredentials = 0;
     conn->tx->method = supper(method);
@@ -159,7 +159,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
     HttpAuthType    *authType;
     HttpRx          *rx;
 
-    mprAssert(conn->rx);
+    assure(conn->rx);
 
     *url = 0;
     rx = conn->rx;
@@ -223,7 +223,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
             }
             bytes -= nbytes;
             offset += nbytes;
-            mprAssert(bytes >= 0);
+            assure(bytes >= 0);
         }
         mprYield(0);
     }

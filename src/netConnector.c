@@ -61,7 +61,7 @@ static void netOutgoingService(HttpQueue *q)
     conn = q->conn;
     tx = conn->tx;
     conn->lastActivity = conn->http->now;
-    mprAssert(conn->sock);
+    assure(conn->sock);
     
     if (!conn->sock || tx->finalizedConnector) {
         assure(conn->sock && !tx->finalizedConnector);
@@ -100,7 +100,7 @@ static void netOutgoingService(HttpQueue *q)
         /*  
             Issue a single I/O request to write all the blocks in the I/O vector
          */
-        mprAssert(q->ioIndex > 0);
+        assure(q->ioIndex > 0);
         written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
         LOG(5, "Net connector wrote %d, written so far %Ld, q->count %d/%d", written, tx->bytesWritten, q->count, q->max);
         if (written < 0) {
@@ -182,7 +182,7 @@ static MprOff buildNetVec(HttpQueue *q)
  */
 static void addToNetVector(HttpQueue *q, char *ptr, ssize bytes)
 {
-    mprAssert(bytes > 0);
+    assure(bytes > 0);
 
     q->iovec[q->ioIndex].start = ptr;
     q->iovec[q->ioIndex].len = bytes;
@@ -203,8 +203,8 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     conn = q->conn;
     tx = conn->tx;
 
-    mprAssert(q->count >= 0);
-    mprAssert(q->ioIndex < (HTTP_MAX_IOVEC - 2));
+    assure(q->count >= 0);
+    assure(q->ioIndex < (HTTP_MAX_IOVEC - 2));
 
     if (packet->prefix) {
         addToNetVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));
@@ -224,8 +224,8 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
     HttpPacket    *packet;
     ssize         len;
 
-    mprAssert(q->count >= 0);
-    mprAssert(bytes >= 0);
+    assure(q->count >= 0);
+    assure(bytes >= 0);
 
     while (bytes > 0 && (packet = q->first) != 0) {
         if (packet->prefix) {
@@ -244,7 +244,7 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
             mprAdjustBufStart(packet->content, len);
             bytes -= len;
             q->count -= len;
-            mprAssert(q->count >= 0);
+            assure(q->count >= 0);
         }
         if (packet->content == 0 || mprGetBufLength(packet->content) == 0) {
             /*
@@ -280,7 +280,7 @@ static void adjustNetVec(HttpQueue *q, ssize written)
             Partial write of an vector entry. Need to copy down the unwritten vector entries.
          */
         q->ioCount -= written;
-        mprAssert(q->ioCount >= 0);
+        assure(q->ioCount >= 0);
         iovec = q->iovec;
         for (i = 0; i < q->ioIndex; i++) {
             len = iovec[i].len;

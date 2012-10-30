@@ -69,13 +69,13 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         /*  
             Only set PATH_TRANSLATED if extraPath is set (CGI spec) 
          */
-        mprAssert(rx->extraPath[0] == '/');
+        assure(rx->extraPath[0] == '/');
         mprAddKey(svars, "PATH_TRANSLATED", mprNormalizePath(sfmt("%s%s", rx->route->dir, rx->extraPath)));
     }
 
     if (rx->files) {
         vars = httpGetParams(conn);
-        mprAssert(vars);
+        assure(vars);
         for (index = 0, kp = 0; (kp = mprGetNextKey(conn->rx->files, kp)) != 0; index++) {
             up = (HttpUploadFile*) kp->data;
             mprAddKey(vars, sfmt("FILE_%d_FILENAME", index), up->filename);
@@ -102,7 +102,7 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
     cchar       *oldValue;
     char        *newValue, *decoded, *keyword, *value, *tok;
 
-    mprAssert(conn);
+    assure(conn);
     vars = httpGetParams(conn);
     decoded = mprAlloc(len + 1);
     decoded[len] = '\0';
@@ -143,7 +143,7 @@ static void addParamsFromQueue(HttpQueue *q)
     HttpRx      *rx;
     MprBuf      *content;
 
-    mprAssert(q);
+    assure(q);
     
     conn = q->conn;
     rx = conn->rx;
@@ -252,7 +252,7 @@ PUBLIC char *httpGetParamsString(HttpConn *conn)
     ssize       len;
     int         next;
 
-    mprAssert(conn);
+    assure(conn);
 
     rx = conn->rx;
 

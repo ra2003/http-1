@@ -216,7 +216,7 @@ PUBLIC void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
                 host->name = sclone(ip);
             }
         } else {
-            mprAssert(port > 0);
+            assure(port > 0);
             host->name = sfmt("*:%d", port);
         }
     }
@@ -240,7 +240,7 @@ PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)
     HttpRoute   *prev, *item, *lastRoute;
     int         i, thisRoute;
 
-    mprAssert(route);
+    assure(route);
     
     if (host->parent && host->routes == host->parent->routes) {
         host->routes = mprCloneList(host->parent->routes);
@@ -284,7 +284,7 @@ PUBLIC HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
         return 0;
     }
     for (next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
-        mprAssert(route->name);
+        assure(route->name);
         if (smatch(route->name, name)) {
             return route;
         }

@@ -38,7 +38,7 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
     HttpUri     *up;
     char        *tok, *next;
 
-    mprAssert(uri);
+    assure(uri);
 
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         return 0;
@@ -641,7 +641,7 @@ PUBLIC char *httpNormalizeUriPath(cchar *pathArg)
         }
     }
     nseg = j;
-    mprAssert(nseg >= 0);
+    assure(nseg >= 0);
     if ((path = mprAlloc(len + nseg + 1)) != 0) {
         for (i = 0, dp = path; i < nseg; ) {
             strcpy(dp, segments[i]);

@@ -160,13 +160,13 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
                     q->last = prev;
                 }
                 q->count -= httpGetPacketLength(packet);
-                mprAssert(q->count >= 0);
+                assure(q->count >= 0);
                 continue;
             } else {
                 len = httpGetPacketLength(packet);
                 q->conn->tx->length -= len;
                 q->count -= len;
-                mprAssert(q->count >= 0);
+                assure(q->count >= 0);
                 if (packet->content) {
                     mprFlushBuf(packet->content);
                 }
@@ -188,7 +188,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, bool blocking)
     HttpQueue   *next;
 
     conn = q->conn;
-    mprAssert(conn->sock);
+    assure(conn->sock);
     do {
         httpScheduleQueue(q);
         next = q->nextQ;
@@ -247,8 +247,8 @@ PUBLIC HttpQueue *httpGetNextQueueForService(HttpQueue *q)
  */
 PUBLIC ssize httpGetQueueRoom(HttpQueue *q)
 {
-    mprAssert(q->max > 0);
-    mprAssert(q->count >= 0);
+    assure(q->max > 0);
+    assure(q->count >= 0);
     
     if (q->count >= q->max) {
         return 0;
@@ -294,8 +294,8 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
     ssize       nbytes, len;
 
     q = conn->readq;
-    mprAssert(q->count >= 0);
-    mprAssert(size >= 0);
+    assure(q->count >= 0);
+    assure(size >= 0);
     VERIFY_QUEUE(q);
 
     while (q->count <= 0 && !conn->async && !conn->error && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
@@ -313,21 +313,21 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
         content = packet->content;
         len = mprGetBufLength(content);
         len = min(len, size);
-        mprAssert(len <= q->count);
+        assure(len <= q->count);
         if (len > 0) {
             len = mprGetBlockFromBuf(content, buf, len);
-            mprAssert(len <= q->count);
+            assure(len <= q->count);
         }
         buf += len;
         size -= len;
         q->count -= len;
-        mprAssert(q->count >= 0);
+        assure(q->count >= 0);
         nbytes += len;
         if (mprGetBufLength(content) == 0) {
             httpGetPacket(q);
         }
     }
-    mprAssert(q->count >= 0);
+    assure(q->count >= 0);
     if (nbytes < size) {
         buf[nbytes] = '\0';
     }
@@ -403,7 +403,7 @@ PUBLIC void httpScheduleQueue(HttpQueue *q)
 {
     HttpQueue     *head;
     
-    mprAssert(q->conn);
+    assure(q->conn);
     head = q->conn->serviceq;
     
     if (q->scheduleNext == q && !(q->flags & HTTP_QUEUE_SUSPENDED)) {
@@ -460,7 +460,7 @@ PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
         return 0;
     }
     size = httpGetPacketLength(packet);
-    mprAssert(size <= nextQ->packetSize);
+    assure(size <= nextQ->packetSize);
     if ((size + nextQ->count) <= nextQ->max) {
         return 1;
     }
@@ -507,7 +507,7 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
     HttpTx      *tx;
     ssize       totalWritten, packetSize, thisWrite;
 
-    mprAssert(q == q->conn->writeq);
+    assure(q == q->conn->writeq);
     conn = q->conn;
     tx = conn->tx;
     if (flags == 0) {

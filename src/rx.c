@@ -120,7 +120,7 @@ PUBLIC void httpDestroyRx(HttpRx *rx)
  */
 PUBLIC void httpPump(HttpConn *conn, HttpPacket *packet)
 {
-    mprAssert(conn);
+    assure(conn);
 
     if (conn->pumping) {
         return;
@@ -264,7 +264,7 @@ static void routeRequest(HttpConn *conn)
 {
     HttpRx  *rx;
 
-    mprAssert(conn->endpoint);
+    assure(conn->endpoint);
 
     rx = conn->rx;
     httpAddParams(conn);
@@ -579,7 +579,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     return 0;
                 }
                 rx->contentLength = sclone(value);
-                mprAssert(rx->length >= 0);
+                assure(rx->length >= 0);
                 if (conn->endpoint || !scaselessmatch(tx->method, "HEAD")) {
                     rx->remainingContent = rx->length;
                     rx->needInputPipeline = 1;
@@ -667,7 +667,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     *cp = '\0';
                 }
                 if (mprParseTime(&newDate, value, MPR_UTC_TIMEZONE, NULL) < 0) {
-                    mprAssert(0);
+                    assure(0);
                     break;
                 }
                 if (newDate) {
@@ -853,8 +853,8 @@ static int sendContinue(HttpConn *conn)
 {
     cchar      *response;
 
-    mprAssert(conn);
-    mprAssert(conn->sock);
+    assure(conn);
+    assure(conn->sock);
 
     /* Write the response to the socket and flush. */
     response = sfmt("%s 100 Continue\r\n\r\n", conn->protocol);
@@ -921,8 +921,8 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     MprBuf      *content;
     ssize       nbytes;
 
-    mprAssert(conn);
-    mprAssert(!conn->rx->eof);
+    assure(conn);
+    assure(!conn->rx->eof);
     if (!packet) {
         httpServiceQueues(conn);
         return 0;
@@ -952,7 +952,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     if (nbytes > 0) {
         if (!conn->upgraded) {
             rx->remainingContent -= nbytes;
-            mprAssert(rx->remainingContent >= 0);
+            assure(rx->remainingContent >= 0);
         }
         rx->bytesRead += nbytes;
         if (httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, tx->ext) >= 0) {
@@ -1149,7 +1149,7 @@ static bool processCompletion(HttpConn *conn)
     bool        more;
 
     rx = conn->rx;
-    mprAssert(conn->state == HTTP_STATE_COMPLETE);
+    assure(conn->state == HTTP_STATE_COMPLETE);
     httpDestroyPipeline(conn);
     measure(conn);
     if (conn->endpoint && rx) {
@@ -1202,7 +1202,7 @@ PUBLIC bool httpContentNotModified(HttpConn *conn)
             If both checks, the last modification time and etag, claim that the request doesn't need to be
             performed, skip the transfer.
          */
-        mprAssert(tx->fileInfo.valid);
+        assure(tx->fileInfo.valid);
         modified = (MprTime) tx->fileInfo.mtime * MPR_TICKS_PER_SEC;
         same = httpMatchModified(conn, modified) && httpMatchEtag(conn, tx->etag);
         if (tx->outputRanges && !same) {
@@ -1239,7 +1239,7 @@ static void manageRange(HttpRange *range, int flags)
 PUBLIC MprOff httpGetContentLength(HttpConn *conn)
 {
     if (conn->rx == 0) {
-        mprAssert(conn->rx);
+        assure(conn->rx);
         return 0;
     }
     return conn->rx->length;
@@ -1249,7 +1249,7 @@ PUBLIC MprOff httpGetContentLength(HttpConn *conn)
 PUBLIC cchar *httpGetCookies(HttpConn *conn)
 {
     if (conn->rx == 0) {
-        mprAssert(conn->rx);
+        assure(conn->rx);
         return 0;
     }
     return conn->rx->cookie;
@@ -1259,7 +1259,7 @@ PUBLIC cchar *httpGetCookies(HttpConn *conn)
 PUBLIC cchar *httpGetHeader(HttpConn *conn, cchar *key)
 {
     if (conn->rx == 0) {
-        mprAssert(conn->rx);
+        assure(conn->rx);
         return 0;
     }
     return mprLookupKey(conn->rx->headers, slower(key));
@@ -1301,7 +1301,7 @@ PUBLIC char *httpGetHeaders(HttpConn *conn)
 PUBLIC MprHash *httpGetHeaderHash(HttpConn *conn)
 {
     if (conn->rx == 0) {
-        mprAssert(conn->rx);
+        assure(conn->rx);
         return 0;
     }
     return conn->rx->headers;
@@ -1412,13 +1412,13 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
         justOne = 0;
     }
     if (conn->state <= HTTP_STATE_BEGIN) {
-        mprAssert(conn->state >= HTTP_STATE_BEGIN);
+        assure(conn->state >= HTTP_STATE_BEGIN);
         return MPR_ERR_BAD_STATE;
     } 
     if (conn->input && httpGetPacketLength(conn->input) > 0) {
         httpPump(conn, conn->input);
     }
-    mprAssert(conn->sock);
+    assure(conn->sock);
     if (conn->error || !conn->sock) {
         return MPR_ERR_BAD_STATE;
     }

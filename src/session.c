@@ -21,7 +21,7 @@ PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTime lifespan
     Http        *http;
     HttpSession *sp;
 
-    mprAssert(conn);
+    assure(conn);
     http = conn->http;
 
     lock(http);
@@ -55,10 +55,10 @@ PUBLIC void httpDestroySession(HttpSession *sp)
 
     http = MPR->httpService;
 
-    mprAssert(sp);
+    assure(sp);
     lock(http);
     http->sessionCount--;
-    mprAssert(http->sessionCount >= 0);
+    assure(http->sessionCount >= 0);
     unlock(http);
     sp->id = 0;
 }
@@ -84,9 +84,9 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
     HttpRx      *rx;
     char        *id;
 
-    mprAssert(conn);
+    assure(conn);
     rx = conn->rx;
-    mprAssert(rx);
+    assure(rx);
     if (rx->session || !conn) {
         return rx->session;
     }
@@ -106,7 +106,7 @@ PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
     cchar   *str;
 
     if ((str = httpGetSessionVar(conn, key, 0)) != 0 && *str) {
-        mprAssert(*str == '{');
+        assure(*str == '{');
         return mprDeserialize(str);
     }
     return 0;
@@ -118,8 +118,8 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
     HttpSession  *sp;
     cchar       *result;
 
-    mprAssert(conn);
-    mprAssert(key && *key);
+    assure(conn);
+    assure(key && *key);
 
     result = 0;
     if ((sp = httpGetSession(conn, 0)) != 0) {
@@ -140,9 +140,9 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
 {
     HttpSession  *sp;
 
-    mprAssert(conn);
-    mprAssert(key && *key);
-    mprAssert(value);
+    assure(conn);
+    assure(key && *key);
+    assure(value);
 
     if ((sp = httpGetSession(conn, 1)) == 0) {
         return 0;
@@ -158,8 +158,8 @@ PUBLIC int httpRemoveSessionVar(HttpConn *conn, cchar *key)
 {
     HttpSession  *sp;
 
-    mprAssert(conn);
-    mprAssert(key && *key);
+    assure(conn);
+    assure(key && *key);
 
     if ((sp = httpGetSession(conn, 1)) == 0) {
         return 0;
@@ -175,9 +175,9 @@ PUBLIC char *httpGetSessionID(HttpConn *conn)
     char    *cp, *value;
     int     quoted;
 
-    mprAssert(conn);
+    assure(conn);
     rx = conn->rx;
-    mprAssert(rx);
+    assure(rx);
 
     if (rx->session) {
         return rx->session->id;
@@ -219,7 +219,7 @@ static char *makeSessionID(HttpConn *conn)
     char        idBuf[64];
     static int  nextSession = 0;
 
-    mprAssert(conn);
+    assure(conn);
 
     /* Thread race here on nextSession++ not critical */
     fmt(idBuf, sizeof(idBuf), "%08x%08x%d", PTOI(conn->data) + PTOI(conn), (int) mprGetTime(), nextSession++);

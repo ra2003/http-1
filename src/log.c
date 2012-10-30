@@ -14,9 +14,9 @@ PUBLIC int httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup
 {
     char    *src, *dest;
 
-    mprAssert(route);
-    mprAssert(path && *path);
-    mprAssert(format);
+    assure(route);
+    assure(path && *path);
+    assure(format);
     
     if (format == NULL || *format == '\0') {
         format = HTTP_LOG_FORMAT;
@@ -49,8 +49,8 @@ PUBLIC void httpBackupRouteLog(HttpRoute *route)
 {
     MprPath     info;
 
-    mprAssert(route->logBackup);
-    mprAssert(route->logSize > 100);
+    assure(route->logBackup);
+    assure(route->logSize > 100);
 
     if (route->parent && route->parent->log == route->log) {
         httpBackupRouteLog(route->parent);
@@ -75,7 +75,7 @@ PUBLIC MprFile *httpOpenRouteLog(HttpRoute *route)
     MprFile     *file;
     int         mode;
 
-    mprAssert(route->log == 0);
+    assure(route->log == 0);
     mode = O_CREAT | O_WRONLY | O_TEXT;
     if ((file = mprOpenFile(route->logPath, mode, 0664)) == 0) {
         mprError("Can't open log file %s", route->logPath);

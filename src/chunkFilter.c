@@ -96,13 +96,13 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
 
     conn = q->conn;
     rx = conn->rx;
-    mprAssert(packet);
+    assure(packet);
     buf = packet->content;
-    mprAssert(buf);
+    assure(buf);
 
     switch (rx->chunkState) {
     case HTTP_CHUNK_UNCHUNKED:
-        mprAssert(0);
+        assure(0);
         return -1;
 
     case HTTP_CHUNK_DATA:

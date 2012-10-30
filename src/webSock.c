@@ -749,18 +749,6 @@ static void outgoingWebSockService(HttpQueue *q)
 }
 
 
-PUBLIC char *httpGetWebSocketProtocol(HttpConn *conn)
-{
-    HttpWebSocket   *ws;
-
-    if ((ws = conn->rx->webSocket) == 0) {
-        return 0;
-    }
-    assure(ws);
-    return ws->subProtocol;
-}
-
-
 PUBLIC char *httpGetWebSocketCloseReason(HttpConn *conn)
 {
     HttpWebSocket   *ws;
@@ -782,6 +770,30 @@ PUBLIC ssize httpGetWebSocketMessageLength(HttpConn *conn)
     }
     assure(ws);
     return ws->messageLength;
+}
+
+
+PUBLIC char *httpGetWebSocketProtocol(HttpConn *conn)
+{
+    HttpWebSocket   *ws;
+
+    if ((ws = conn->rx->webSocket) == 0) {
+        return 0;
+    }
+    assure(ws);
+    return ws->subProtocol;
+}
+
+
+PUBLIC ssize httpGetWebSocketState(HttpConn *conn)
+{
+    HttpWebSocket   *ws;
+
+    if ((ws = conn->rx->webSocket) == 0) {
+        return 0;
+    }
+    assure(ws);
+    return ws->state;
 }
 
 

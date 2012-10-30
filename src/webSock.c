@@ -478,14 +478,12 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             }
             assure(content);
             mprAdjustBufStart(content, fp - content->start);
-            VERIFY_QUEUE(q);
             assure(q->count >= 0);
             ws->frameState = WS_MSG;
             mprLog(5, "webSocketFilter: Begin new packet \"%s\", last %d, mask %d, length %d", codetxt[opcode & 0xf],
                 packet->last, mask, len);
             /* Keep packet on queue as we need the packet->type */
             httpPutBackPacket(q, packet);
-            VERIFY_QUEUE(q);
             if (httpGetPacketLength(packet) == 0) {
                 return;
             }
@@ -495,23 +493,17 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             /*
                 Split packet if it contains data for the next frame
              */
-            VERIFY_QUEUE(q);
             currentFrameLen = httpGetPacketLength(ws->currentFrame);
             len = httpGetPacketLength(packet);
             if ((currentFrameLen + len) > ws->frameLength) {
                 offset = ws->frameLength - currentFrameLen;
-                VERIFY_QUEUE(q);
                 if ((tail = httpSplitPacket(packet, offset)) != 0) {
-                    VERIFY_QUEUE(q);
                     tail->last = 0;
                     tail->type = 0;
-                    VERIFY_QUEUE(q);
                     httpPutBackPacket(q, tail);
-                    VERIFY_QUEUE(q);
                     mprLog(6, "webSocketFilter: Split data packet, %d/%d", ws->frameLength, httpGetPacketLength(tail));
                     len = httpGetPacketLength(packet);
                 }
-                VERIFY_QUEUE(q);
             }
             //  MOB - should we check
             if ((currentFrameLen + len) > conn->limits->webSocketsMessageSize) {
@@ -528,7 +520,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             frameLen = httpGetPacketLength(packet);
             assure(frameLen <= ws->frameLength);
             if (frameLen == ws->frameLength) {
-                VERIFY_QUEUE(q);
                 assure(packet->type);
                 if (ws->maskOffset >= 0) {
                     for (cp = content->start; cp < content->end; cp++) {
@@ -538,7 +529,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 if ((error = processFrame(q, packet)) != 0) {
                     break;
                 }
-                VERIFY_QUEUE(q);
                 if (ws->state == WS_STATE_CLOSED) {
                     HTTP_NOTIFY(conn, HTTP_EVENT_APP_CLOSE, ws->closeStatus);
                     httpFinalize(conn);
@@ -573,7 +563,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             return;
         }
     }
-    VERIFY_QUEUE(q);
 }
 
 

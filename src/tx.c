@@ -259,16 +259,6 @@ PUBLIC void httpFinalize(HttpConn *conn)
         httpFinalizeOutput(conn);
     } else {
         httpServiceQueues(conn);
-#if UNUSED
-        /*
-            Use case:
-            - server calling httpFinalizeOutput from timeout. Don't get readable event because of keep-alive.
-                ejs.web/test/request/events.tst
-         */
-        if (!conn->pumping) {
-            httpEnableConnEvents(conn);
-        }
-#endif
     }
 }
 
@@ -290,16 +280,6 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
     }
     httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
     httpServiceQueues(conn);
-#if UNUSED
-    /*
-        Use cases:
-        - server calling httpFinalizeOutput from timeout. Don't get readable event because of keep-alive.
-            ejs.web/test/request/events.tst
-     */
-    if (!conn->pumping) {
-        httpEnableConnEvents(conn);
-    }
-#endif
 }
 
 
@@ -383,33 +363,6 @@ PUBLIC ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ..
     va_end(args);
     return httpFormatResponse(conn, "%s", msg);
 }
-
-
-#if UNUSED
-/*
-    Create an alternate body response. Typically used for error responses. The message is HTML escaped.
-    NOTE: this is an internal API. Users should use httpFormatError.
- */
-PUBLIC void httpFormatResponseError(HttpConn *conn, int status, cchar *fmt, ...)
-{
-    va_list     args;
-    cchar       *statusMsg;
-    char        *msg;
-
-    va_start(args, fmt);
-    msg = fmt ? sfmtv(fmt, args) : conn->errorMsg;
-    statusMsg = httpLookupStatus(conn->http, status);
-    if (scmp(conn->rx->accept, "text/plain") == 0) {
-        msg = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, msg);
-    } else {
-        msg = sfmt("<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n", status, statusMsg, mprEscapeHtml(msg));
-    }
-    conn->errorMsg = msg;
-    httpAddHeaderString(conn, "Cache-Control", "no-cache");
-    httpFormatResponseBody(conn, statusMsg, NULL);
-    va_end(args);
-}
-#endif
 
 
 PUBLIC void *httpGetQueueData(HttpConn *conn)

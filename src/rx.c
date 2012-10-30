@@ -1004,25 +1004,15 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
             /*
                 Send "end" pack to signify eof to the handler
              */
-            VERIFY_QUEUE(q);
             httpPutPacketToNext(q, httpCreateEndPacket());
             if (!rx->streamInput) {
                 httpStartPipeline(conn);
             }
-            VERIFY_QUEUE(q);
         }
         httpSetState(conn, HTTP_STATE_READY);
         return conn->workerEvent ? 0 : 1;
     }
     httpServiceQueues(conn);
-    VERIFY_QUEUE(q);
-#if UNUSED
-    //  Not until all the data is read
-    if (tx->finalized) {
-        httpSetState(conn, HTTP_STATE_READY);
-        return 1;
-    }
-#endif
     if (rx->chunkState && nbytes <= 0) {
         /* Insufficient data */
         return 0;
@@ -1384,14 +1374,6 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
     rx->scriptName = mprEmptyString();
     return 0;
 }
-
-
-#if UNUSED
-static void waitHandler(HttpConn *conn, struct MprEvent *event)
-{
-    httpCallEvent(conn, event->mask);
-}
-#endif
 
 
 /*

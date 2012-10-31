@@ -17,9 +17,12 @@
 #define WS_MSG         2
 #define WS_CLOSED      3
 
+#if UNUSED
 static int opcodes[8] = {
     WS_MSG_CLOSE, WS_MSG_TEXT, WS_MSG_BINARY, WS_MSG_PING, WS_MSG_PONG, WS_MSG_CLOSE, WS_MSG_CLOSE, WS_MSG_CLOSE,
 };
+#endif
+
 static char *codetxt[16] = {
     "continuation", "text", "binary", "reserved", "reserved", "reserved", "reserved", "reserved",
     "close", "ping", "pong", "reserved", "reserved", "reserved", "reserved", "reserved",
@@ -85,7 +88,7 @@ static void webSockTimeout(HttpConn *conn);
 
 /*********************************** Code *************************************/
 /* 
-   Loadable module initialization
+   WebSocket Filter initialization
  */
 PUBLIC int httpOpenWebSockFilter(Http *http)
 {
@@ -109,7 +112,7 @@ PUBLIC int httpOpenWebSockFilter(Http *http)
 
 
 /*
-    Match if the filter is required for this request. This is called twice: once for TX and once for RX.
+    Match if the filter is required for this request. This is called twice: once for TX and once for RX. RX first.
  */
 static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
 {
@@ -122,7 +125,6 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
 
     assure(conn);
     assure(route);
-
     rx = conn->rx;
     tx = conn->tx;
     assure(rx);
@@ -146,10 +148,6 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
     if (dir & HTTP_STAGE_TX) {
         return rx->webSocket ? HTTP_ROUTE_OK : HTTP_ROUTE_REJECT;
     }
-
-    /*
-        Deliberately not checking Origin as it offers illusory security
-     */
     if (!rx->upgrade || !scaselessmatch(rx->upgrade, "websocket")) {
         return HTTP_ROUTE_REJECT;
     }
@@ -159,12 +157,10 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
     version = (int) stoi(httpGetHeader(conn, "sec-websocket-version"));
     if (version < WS_VERSION) {
         httpSetHeader(conn, "Sec-WebSocket-Version", "%d", WS_VERSION);
-        //  MOB TEST
         httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Unsupported Sec-WebSocket-Version");
         return HTTP_ROUTE_OK;
     }
     if ((key = httpGetHeader(conn, "sec-websocket-key")) == 0) {
-        //  MOB TEST
         httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad Sec-WebSocket-Key");
         return HTTP_ROUTE_OK;
     }
@@ -197,7 +193,9 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
         httpSetHeader(conn, "Connection", "Upgrade");
         httpSetHeader(conn, "Upgrade", "WebSocket");
         httpSetHeader(conn, "Sec-WebSocket-Accept", mprGetSHABase64(sjoin(key, WS_MAGIC, NULL)));
-        httpSetHeader(conn, "Sec-WebSocket-Protocol", ws->subProtocol);
+        if (ws->subProtocol && *ws->subProtocol) {
+            httpSetHeader(conn, "Sec-WebSocket-Protocol", ws->subProtocol);
+        }
         httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
         httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
 
@@ -215,6 +213,9 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
 }
 
 
+/*
+    Open the filter for a new request
+ */
 static void openWebSock(HttpQueue *q)
 {
     HttpConn        *conn;
@@ -226,7 +227,7 @@ static void openWebSock(HttpQueue *q)
     ws = conn->rx->webSocket;
     assure(ws);
 
-    mprLog(5, "webSocketFilter: Open WebSocket filter");
+    mprLog(5, "webSocketFilter: Opening a new request ");
     q->packetSize = min(conn->limits->bufferSize, q->max);
     ws->closeStatus = WS_STATUS_NO_STATUS;
     conn->timeoutCallback = webSockTimeout;
@@ -268,6 +269,7 @@ static void closeWebSock(HttpQueue *q)
 
 static void readyWebSock(HttpQueue *q)
 {
+    //  MOB - are we getting here in normal operation?
     if (q->conn->endpoint) {
         HTTP_NOTIFY(q->conn, HTTP_EVENT_APP_OPEN, 0);
     }
@@ -289,6 +291,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
     ws = conn->rx->webSocket;
     assure(ws);
     rx = conn->rx;
+    assure(packet);
     content = packet->content;
     assure(content);
 
@@ -362,6 +365,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         break;
 
     case WS_MSG_PING:
+        /* Respond with the same content as specified in the ping message */
         httpSendBlock(conn, WS_MSG_PONG, mprGetBufStart(content), mprGetBufLength(content), HTTP_BUFFER);
         break;
 
@@ -389,14 +393,19 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     ssize           len, currentFrameLen, offset, frameLen;
     int             i, error, mask, lenBytes, opcode;
 
+    assure(packet);
     conn = q->conn;
+    assure(conn->rx);
     ws = conn->rx->webSocket;
     assure(ws);
     limits = conn->limits;
-    assure(packet);
     VERIFY_QUEUE(q);
 
     if (packet->flags & HTTP_PACKET_DATA) {
+        /*
+            The service queue is used to hold data that is yet to be analyzed.
+            The ws->currentFrame holds the current frame that is being read from the service queue.
+         */
         httpJoinPacketForService(q, packet, 0);
     }
     mprLog(4, "webSocketFilter: incoming data. State %d, Frame state %d, Length: %d", 
@@ -478,6 +487,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 }
             }
             assure(content);
+            assure(fp >= content->start);
             mprAdjustBufStart(content, fp - content->start);
             assure(q->count >= 0);
             ws->frameState = WS_MSG;
@@ -491,12 +501,12 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             break;
 
         case WS_MSG:
-            /*
-                Split packet if it contains data for the next frame
-             */
             currentFrameLen = httpGetPacketLength(ws->currentFrame);
             len = httpGetPacketLength(packet);
             if ((currentFrameLen + len) > ws->frameLength) {
+                /*
+                    Split packet if it contains data for the next frame
+                 */
                 offset = ws->frameLength - currentFrameLen;
                 if ((tail = httpSplitPacket(packet, offset)) != 0) {
                     tail->last = 0;
@@ -506,7 +516,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                     len = httpGetPacketLength(packet);
                 }
             }
-            //  MOB - should we check
             if ((currentFrameLen + len) > conn->limits->webSocketsMessageSize) {
                 mprError("webSocketFilter: Incoming message is too large %d/%d", len, limits->webSocketsMessageSize);
                 error = WS_STATUS_MESSAGE_TOO_LARGE;
@@ -521,6 +530,9 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             frameLen = httpGetPacketLength(packet);
             assure(frameLen <= ws->frameLength);
             if (frameLen == ws->frameLength) {
+                /*
+                    Got a cmplete frame 
+                 */
                 assure(packet->type);
                 if (ws->maskOffset >= 0) {
                     for (cp = content->start; cp < content->end; cp++) {
@@ -556,6 +568,10 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             break;
         }
         if (error) {
+            /*
+                Notify of the error and send a close to the peer. The peer may or may not be still there.
+                Want to wait for a possible close response message, so don't finalize here.
+             */
             mprError("webSocketFilter: WebSockets error Status %d", error);
             HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, error);
             httpSendClose(conn, error, NULL);
@@ -593,6 +609,14 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     HttpQueue   *q;
     ssize       thisWrite, totalWritten;
 
+    assure(conn);
+    assure(HTTP_STATE_CONTENT <= conn->state && conn->state < HTTP_STATE_COMPLETE);
+    assure(buf);
+
+    if (type < 0 || type > WS_MSG_PONG) {
+        mprError("webSocketFilter: httpSendBlock: bad message type %d", type);
+        return MPR_ERR_BAD_ARGS;
+    }
     q = conn->writeq;
     if (flags == 0) {
         flags = HTTP_BUFFER;
@@ -638,6 +662,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
                     break;
                 } else if (flags & HTTP_BLOCK) {
                     while (q->count >= q->max) {
+                        assure(conn->limits->inactivityTimeout > 10);
                         mprWaitForEvent(conn->dispatcher, conn->limits->inactivityTimeout);
                     }
                 }
@@ -658,6 +683,7 @@ PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
     char            msg[128];
     ssize           len;
 
+    assure(0 <= status && status <= WS_STATUS_MAX);
     ws = conn->rx->webSocket;
     assure(ws);
     if (ws->closing) {
@@ -668,7 +694,7 @@ PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
     len = 2;
     if (reason) {
         if (slen(reason) >= 124) {
-            reason = "Web sockets close reason message was too big";
+            reason = "WebSockets reason message was too big";
             mprError(reason);
         }
         len += slen(reason) + 1;
@@ -683,6 +709,10 @@ PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
 }
 
 
+/*
+    This is the outgoing filter routine. It services packets on the outgoing queue and transforms them into 
+    WebSockets frames.
+ */
 static void outgoingWebSockService(HttpQueue *q)
 {
     HttpConn    *conn;
@@ -701,10 +731,21 @@ static void outgoingWebSockService(HttpQueue *q)
                 httpPutBackPacket(q, packet);
                 return;
             }
+            if (packet->type < 0 || packet->type > WS_MSG_MAX) {
+                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Bad WebSocket packet type %d", packet->type);
+                break;
+            }
             len = httpGetPacketLength(packet);
             packet->prefix = mprCreateBuf(16, 16);
+#if UNUSED
             code = opcodes[packet->type & 0x7];
+#else
+            code = packet->type;
+#endif
             prefix = packet->prefix->start;
+            /*
+                Server-side does not mask outgoing data
+             */
             mask = conn->endpoint ? 0 : 1;
             *prefix++ = SET_FIN(packet->last) | SET_CODE(code);
             if (len <= 125) {
@@ -743,6 +784,9 @@ PUBLIC char *httpGetWebSocketCloseReason(HttpConn *conn)
 {
     HttpWebSocket   *ws;
 
+    if (!conn || !conn->rx) {
+        return 0;
+    }
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
@@ -755,6 +799,9 @@ PUBLIC ssize httpGetWebSocketMessageLength(HttpConn *conn)
 {
     HttpWebSocket   *ws;
 
+    if (!conn || !conn->rx) {
+        return 0;
+    }
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
@@ -767,6 +814,9 @@ PUBLIC char *httpGetWebSocketProtocol(HttpConn *conn)
 {
     HttpWebSocket   *ws;
 
+    if (!conn || !conn->rx) {
+        return 0;
+    }
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
@@ -779,6 +829,9 @@ PUBLIC ssize httpGetWebSocketState(HttpConn *conn)
 {
     HttpWebSocket   *ws;
 
+    if (!conn || !conn->rx) {
+        return 0;
+    }
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
@@ -791,6 +844,9 @@ PUBLIC bool httpWebSocketOrderlyClosed(HttpConn *conn)
 {
     HttpWebSocket   *ws;
 
+    if (!conn || !conn->rx) {
+        return 0;
+    }
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
@@ -801,6 +857,7 @@ PUBLIC bool httpWebSocketOrderlyClosed(HttpConn *conn)
 
 PUBLIC void httpSetWebSocketProtocols(HttpConn *conn, cchar *protocols)
 {
+    assure(conn);
     assure(protocols && *protocols);
     conn->protocols = sclone(protocols);
 }
@@ -811,6 +868,7 @@ static bool validUTF8(cchar *str, ssize len)
     cuchar      *cp, *end;
     int         nbytes, i;
   
+    assure(str);
     cp = (cuchar*) str;
     end = (cuchar*) &str[len];
     for (; cp < end && *cp; cp += nbytes) {
@@ -844,25 +902,31 @@ static bool validUTF8(cchar *str, ssize len)
 
 static void webSockPing(HttpConn *conn)
 {
+    assure(conn);
     assure(conn->rx);
+    /*
+        Send a ping. Optimze by sending no data message with it.
+     */
     httpSendBlock(conn, WS_MSG_PING, NULL, 0, HTTP_BUFFER);
 }
 
 
 static void webSockTimeout(HttpConn *conn)
 {
+    assure(conn);
     httpSendClose(conn, WS_STATUS_POLICY_VIOLATION, "Request timeout");
 }
 
 
 /*
-    Upgrade a client socket to use Web Sockets
+    Upgrade a client socket to use Web Sockets. This is called by the client to request a web sockets upgrade.
  */
 PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
 {
     HttpTx  *tx;
     char    num[16];
 
+    assure(!conn->endpoint);
     tx = conn->tx;
     mprLog(5, "webSocketFilter: Upgrade socket");
     httpSetStatus(conn, HTTP_CODE_SWITCHING);
@@ -875,7 +939,6 @@ PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
     httpSetHeader(conn, "Sec-WebSocket-Version", "13");
     httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
     httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
-
     conn->upgraded = 1;
     conn->keepAliveCount = -1;
     conn->rx->remainingContent = MAXINT;
@@ -883,14 +946,21 @@ PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
 }
 
 
+/*
+    Client verification of the server WebSockets handshake response
+ */
 PUBLIC bool httpVerifyWebSocketsHandshake(HttpConn *conn)
 {
     HttpRx          *rx;
     HttpTx          *tx;
     cchar           *key, *expected;
 
+    assure(conn->endpoint);
     rx = conn->rx;
     tx = conn->tx;
+    assure(rx);
+    assure(rx->webSocket);
+    assure(conn->upgraded);
 
     if (rx->status != HTTP_CODE_SWITCHING) {
         httpError(conn, HTTP_CODE_BAD_HANDSHAKE, "Bad WebSocket handshake status %d", rx->status);

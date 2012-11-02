@@ -145,7 +145,9 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     if (!(auth->store->verifyUser)(conn)) {
         return 0;
     }
-    if ((session = httpCreateSession(conn)) != 0) {
+    if ((session = httpCreateSession(conn)) == 0) {
+        return 0;
+    } else {
         httpSetSessionVar(conn, HTTP_SESSION_AUTHVER, itos(auth->version));
         httpSetSessionVar(conn, HTTP_SESSION_USERNAME, conn->username);
     }

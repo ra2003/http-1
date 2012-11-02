@@ -18,13 +18,13 @@ static void manageSession(HttpSession *sp, int flags);
 
 PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTime lifespan)
 {
-    Http        *http;
     HttpSession *sp;
 
     assure(conn);
+#if UNUSED && FUTURE
+    Http        *http;
     http = conn->http;
 
-#if UNUSED && FUTURE
     //  OPT less contentions mutex
     lock(http);
     if (http->sessionCount >= conn->limits->sessionMax) {

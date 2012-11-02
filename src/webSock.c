@@ -17,12 +17,6 @@
 #define WS_MSG         2
 #define WS_CLOSED      3
 
-#if UNUSED
-static int opcodes[8] = {
-    WS_MSG_CLOSE, WS_MSG_TEXT, WS_MSG_BINARY, WS_MSG_PING, WS_MSG_PONG, WS_MSG_CLOSE, WS_MSG_CLOSE, WS_MSG_CLOSE,
-};
-#endif
-
 static char *codetxt[16] = {
     "continuation", "text", "binary", "reserved", "reserved", "reserved", "reserved", "reserved",
     "close", "ping", "pong", "reserved", "reserved", "reserved", "reserved", "reserved",
@@ -610,8 +604,13 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     ssize       thisWrite, totalWritten;
 
     assure(conn);
-    assure(HTTP_STATE_CONTENT <= conn->state && conn->state < HTTP_STATE_COMPLETE);
     assure(buf);
+
+    /*
+        Note: we can come here before the handshake is complete. The data is queued and if the connection handshake 
+        succeeds, then the data is sent.
+     */
+    assure(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_COMPLETE);
 
     if (type < 0 || type > WS_MSG_PONG) {
         mprError("webSocketFilter: httpSendBlock: bad message type %d", type);
@@ -719,7 +718,7 @@ static void outgoingWebSockService(HttpQueue *q)
     HttpPacket  *packet;
     char        *ep, *fp, *prefix, dataMask[4];
     ssize       len;
-    int         i, mask, code;
+    int         i, mask;
 
     conn = q->conn;
     mprLog(6, "webSocketFilter: outgoing service");
@@ -737,17 +736,12 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             len = httpGetPacketLength(packet);
             packet->prefix = mprCreateBuf(16, 16);
-#if UNUSED
-            code = opcodes[packet->type & 0x7];
-#else
-            code = packet->type;
-#endif
             prefix = packet->prefix->start;
             /*
                 Server-side does not mask outgoing data
              */
             mask = conn->endpoint ? 0 : 1;
-            *prefix++ = SET_FIN(packet->last) | SET_CODE(code);
+            *prefix++ = SET_FIN(packet->last) | SET_CODE(packet->type);
             if (len <= 125) {
                 *prefix++ = SET_MASK(mask) | SET_LEN(len, 0);
             } else if (len <= 65535) {
@@ -955,7 +949,7 @@ PUBLIC bool httpVerifyWebSocketsHandshake(HttpConn *conn)
     HttpTx          *tx;
     cchar           *key, *expected;
 
-    assure(conn->endpoint);
+    assure(!conn->endpoint);
     rx = conn->rx;
     tx = conn->tx;
     assure(rx);

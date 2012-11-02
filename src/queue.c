@@ -200,7 +200,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, bool blocking)
             break;
         }
         if (blocking) {
-            httpPumpHandler(conn);
+            httpGetMoreOutput(conn);
         }
     } while (blocking && q->count > 0);
     return (q->count < q->max) ? 1 : 0;

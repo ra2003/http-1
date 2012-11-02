@@ -359,9 +359,16 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     tx = conn->tx;
 
     for (next = rewrites = 0; rewrites < HTTP_MAX_REWRITE; ) {
+#if BIT_LOCK_FIX
         if ((route = mprGetNextItem(conn->host->routes, &next)) == 0) {
             break;
         }
+#else
+        if (next >= conn->host->routes->length) {
+            break;
+        }
+        route = conn->host->routes->items[next++];
+#endif
         if (route->startSegment && strncmp(rx->pathInfo, route->startSegment, route->startSegmentLen) != 0) {
             /* Failed to match the first URI segment, skip to the next group */
             assure(next <= route->nextGroup);

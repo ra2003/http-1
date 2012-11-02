@@ -92,7 +92,7 @@ PUBLIC Http *httpCreate(int flags)
     MPR->httpService = http;
     http->software = sclone(HTTP_NAME);
     http->protocol = sclone("HTTP/1.1");
-    http->mutex = mprCreateLock(http);
+    http->mutex = mprCreateLock();
     http->stages = mprCreateHash(-1, 0);
     http->hosts = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
     http->connections = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
@@ -179,13 +179,13 @@ static void manageHttp(Http *http, int flags)
         /*
             Endpoints keep connections alive until a timeout. Keep marking even if no other references.
          */
-        lock(http);
+        lock(http->connections);
         for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
             if (conn->endpoint) {
                 mprMark(conn);
             }
         }
-        unlock(http);
+        unlock(http->connections);
     }
 }
 
@@ -414,7 +414,7 @@ static void httpTimer(Http *http, MprEvent *event)
     /* 
        Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
      */
-    lock(http);
+    lock(http->connections);
     mprLog(6, "httpTimer: %d active connections", mprGetListLength(http->connections));
     for (active = 0, next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; active++) {
         rx = conn->rx;
@@ -424,7 +424,7 @@ static void httpTimer(Http *http, MprEvent *event)
                 (conn->started + limits->requestTimeout) < http->now)) {
             if (rx) {
                 /*
-                    Don't call APIs on the conn directly (thread-race). Schedule a timer on the connection's dispatcher
+                    Don't call APIs on the conn directly (thread-race). Schedule a timer on the connection's dispatcher.
                  */
                 if (!conn->timeoutEvent) {
                     conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, httpConnTimeout, conn, 0);
@@ -467,7 +467,7 @@ static void httpTimer(Http *http, MprEvent *event)
         http->timer = 0;
     }
     //  OPT - run GC here
-    unlock(http);
+    unlock(http->connections);
 }
 
 
@@ -524,18 +524,18 @@ static bool isIdle()
     http = (Http*) mprGetMpr()->httpService;
     now = http->now;
 
-    lock(http);
+    lock(http->connections);
     for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
         if (conn->state != HTTP_STATE_BEGIN) {
             if (lastTrace < now) {
                 mprLog(1, "Waiting for request %s to complete", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
                 lastTrace = now;
             }
-            unlock(http);
+            unlock(http->connections);
             return 0;
         }
     }
-    unlock(http);
+    unlock(http->connections);
     if (!mprServicesAreIdle()) {
         if (lastTrace < now) {
             mprLog(4, "Waiting for MPR services complete");
@@ -551,10 +551,11 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 {
     conn->started = http->now;
     mprAddItem(http->connections, conn);
+    updateCurrentDate(http);
 
+    //  OPT - use a less contentions mutex
     lock(http);
     conn->seqno = http->connCount++;
-    updateCurrentDate(http);
     if (!http->timer) {
         http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
             MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);

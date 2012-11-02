@@ -24,13 +24,18 @@ PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTime lifespan
     assure(conn);
     http = conn->http;
 
+#if UNUSED && FUTURE
+    //  OPT less contentions mutex
     lock(http);
     if (http->sessionCount >= conn->limits->sessionMax) {
+        httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE,
+            "Too many sessions %d/%d", http->sessionCount, conn->limits->sessionMax);
         unlock(http);
         return 0;
     }
     http->sessionCount++;
     unlock(http);
+#endif
 
     if ((sp = mprAllocObj(HttpSession, manageSession)) == 0) {
         return 0;
@@ -56,6 +61,7 @@ PUBLIC void httpDestroySession(HttpSession *sp)
     http = MPR->httpService;
 
     assure(sp);
+    //  OPT less contentions mutex
     lock(http);
     http->sessionCount--;
     assure(http->sessionCount >= 0);

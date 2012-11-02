@@ -297,9 +297,9 @@ static void httpStartHandler(HttpConn *conn)
 
 
 /*
-    Called by processRunning
+    Get more output by invoking the stage 'writable' callback. Called by processRunning.
  */
-PUBLIC bool httpPumpHandler(HttpConn *conn)
+PUBLIC bool httpGetMoreOutput(HttpConn *conn)
 {
     HttpQueue   *q;
     

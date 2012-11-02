@@ -18,7 +18,7 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet);
 static bool parseRange(HttpConn *conn, char *value);
 static bool parseRequestLine(HttpConn *conn, HttpPacket *packet);
 static bool parseResponseLine(HttpConn *conn, HttpPacket *packet);
-static bool processCompletion(HttpConn *conn);
+static void processCompletion(HttpConn *conn);
 static bool processContent(HttpConn *conn, HttpPacket *packet);
 static void parseMethod(HttpConn *conn);
 static bool processParsed(HttpConn *conn);
@@ -115,15 +115,16 @@ PUBLIC void httpDestroyRx(HttpRx *rx)
 
 /*  
     Pump the Http engine.
-    Process incoming requests and drive the state machine. This will process as many requests as possible before returning. 
+    Process an incoming request and drive the state machine. This will process only one request.
     All socket I/O is non-blocking, and this routine must not block. Note: packet may be null.
+    Return true if the request is completed successfully.
  */
-PUBLIC void httpPump(HttpConn *conn, HttpPacket *packet)
+PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
 {
     assure(conn);
 
     if (conn->pumping) {
-        return;
+        return 0;
     }
     conn->canProceed = 1;
     conn->pumping = 1;
@@ -154,13 +155,14 @@ PUBLIC void httpPump(HttpConn *conn, HttpPacket *packet)
             break;
 
         case HTTP_STATE_COMPLETE:
-            conn->canProceed = processCompletion(conn);
-            break;
+            processCompletion(conn);
+            conn->pumping = 0;
+            return !conn->connError;
         }
         packet = conn->input;
     }
     conn->pumping = 0;
-    assure(conn->state != HTTP_STATE_COMPLETE || !conn->rx || !conn->endpoint);
+    return 0;
 }
 
 
@@ -922,7 +924,6 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     ssize       nbytes;
 
     assure(conn);
-    assure(!conn->rx->eof);
     if (!packet) {
         httpServiceQueues(conn);
         return 0;
@@ -942,6 +943,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         nbytes = httpFilterChunkData(q, packet);
         if (rx->chunkState == HTTP_CHUNK_EOF) {
             rx->eof = 1;
+            assure(rx->remainingContent == 0);
         }
     } else {
         nbytes = (ssize) min(rx->remainingContent, mprGetBufLength(content));
@@ -993,6 +995,10 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         }
     }
     if (rx->eof) {
+        if (rx->remainingContent > 0 && !conn->http10) {
+            /* Closing is the only way for HTTP/1.0 to signify the end of data */
+            httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
+        }
         if (!tx->finalized) {
             if (rx->form && conn->endpoint) {
                 /* Forms wait for all data before routing */
@@ -1059,14 +1065,14 @@ static bool processRunning(HttpConn *conn)
                 httpSetState(conn, HTTP_STATE_COMPLETE);
             } else {
                 /* Still got output to do. Wait for Tx I/O event. Do suspend incase handler not using auto-flow routines */
-                conn->writeBlocked = 1;
+                tx->writeBlocked = 1;
                 httpSuspendQueue(q);
                 httpEnableConnEvents(q->conn);
                 canProceed = 0;
                 assure(conn->state != HTTP_STATE_COMPLETE);
             }
 
-        } else if (!httpPumpHandler(conn)) {
+        } else if (!httpGetMoreOutput(conn)) {
             /* Request not complete yet. No process callback defined */
             canProceed = 0;
             assure(conn->state != HTTP_STATE_COMPLETE);
@@ -1081,7 +1087,7 @@ static bool processRunning(HttpConn *conn)
             }
         } else {
             /* Wait for output to drain */
-            conn->writeBlocked = 1;
+            tx->writeBlocked = 1;
             httpSuspendQueue(q);
             httpEnableConnEvents(q->conn);
             canProceed = 0;
@@ -1132,38 +1138,27 @@ static void measure(HttpConn *conn)
 #endif
 
 
-static bool processCompletion(HttpConn *conn)
+static void processCompletion(HttpConn *conn)
 {
-    HttpPacket  *packet;
     HttpRx      *rx;
-    bool        more;
 
-    rx = conn->rx;
     assure(conn->state == HTTP_STATE_COMPLETE);
+    rx = conn->rx;
     httpDestroyPipeline(conn);
     measure(conn);
     if (conn->endpoint && rx) {
+        assure(rx->route);
         if (rx->route && rx->route->log) {
             httpLogRequest(conn);
         }
         httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_REQUEST, conn);
-        rx->conn = 0;
-        conn->tx->conn = 0;
-        conn->rx = 0;
-        conn->tx = 0;
-        packet = conn->input;
-        more = packet && !conn->connError && (httpGetPacketLength(packet) > 0);
-        if (conn->sock && conn->keepAliveCount >= 0) {
-            httpPrepServerConn(conn);
-        }
-        return more;
     }
-    return 0;
 }
 
 
 /*
     Used by ejscript Request.close
+    MOB - review
  */
 PUBLIC void httpCloseRx(HttpConn *conn)
 {
@@ -1172,7 +1167,7 @@ PUBLIC void httpCloseRx(HttpConn *conn)
         conn->keepAliveCount = -1;
     }
     if (conn->state < HTTP_STATE_COMPLETE) {
-        httpPump(conn, NULL);
+        httpPumpRequest(conn, NULL);
     }
 }
 
@@ -1398,7 +1393,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
         return MPR_ERR_BAD_STATE;
     } 
     if (conn->input && httpGetPacketLength(conn->input) > 0) {
-        httpPump(conn, conn->input);
+        httpPumpRequest(conn, conn->input);
     }
     assure(conn->sock);
     if (conn->error || !conn->sock) {
@@ -1452,7 +1447,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
 PUBLIC void httpSocketBlocked(HttpConn *conn)
 {
     mprLog(7, "Socket full, waiting to drain.");
-    conn->writeBlocked = 1;
+    conn->tx->writeBlocked = 1;
 }
 
 

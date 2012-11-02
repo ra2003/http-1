@@ -9,6 +9,7 @@
 
 /********************************** Forwards **********************************/
 
+static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndpoint *endpoint);
 static int manageEndpoint(HttpEndpoint *endpoint, int flags);
 static int destroyEndpointConnections(HttpEndpoint *endpoint);
 
@@ -33,6 +34,7 @@ PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *disp
     endpoint->ip = sclone(ip);
     endpoint->dispatcher = dispatcher;
     endpoint->hosts = mprCreateList(-1, 0);
+    endpoint->mutex = mprCreateLock();
     httpAddEndpoint(http, endpoint);
     return endpoint;
 }
@@ -61,6 +63,7 @@ static int manageEndpoint(HttpEndpoint *endpoint, int flags)
         mprMark(endpoint->sock);
         mprMark(endpoint->dispatcher);
         mprMark(endpoint->ssl);
+        mprMark(endpoint->mutex);
 
     } else if (flags & MPR_MANAGE_FREE) {
         httpDestroyEndpoint(endpoint);
@@ -124,8 +127,7 @@ static int destroyEndpointConnections(HttpEndpoint *endpoint)
     int         next;
 
     http = endpoint->http;
-    lock(http);
-
+    lock(http->connections);
     for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
         if (conn->endpoint == endpoint) {
             conn->endpoint = 0;
@@ -133,7 +135,7 @@ static int destroyEndpointConnections(HttpEndpoint *endpoint)
             next--;
         }
     }
-    unlock(http);
+    unlock(http->connections);
     return 0;
 }
 
@@ -220,7 +222,7 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
     assure(conn->endpoint == endpoint);
     http = endpoint->http;
 
-    lock(http);
+    lock(endpoint);
 
     switch (event) {
     case HTTP_VALIDATE_OPEN_CONN:
@@ -228,7 +230,7 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
             This measures active client systems with unique IP addresses.
          */
         if (endpoint->clientCount >= limits->clientMax) {
-            unlock(http);
+            unlock(endpoint);
             /*  Abort connection */
             httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, 
                 "Too many concurrent clients %d/%d", endpoint->clientCount, limits->clientMax);
@@ -256,7 +258,7 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
     case HTTP_VALIDATE_OPEN_REQUEST:
         assure(conn->rx);
         if (endpoint->requestCount >= limits->requestMax) {
-            unlock(http);
+            unlock(endpoint);
             httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Server overloaded");
             mprLog(2, "Too many concurrent requests %d/%d", endpoint->requestCount, limits->requestMax);
             return 0;
@@ -279,13 +281,13 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
         break;
 
     case HTTP_VALIDATE_OPEN_PROCESS:
-        if (http->processCount >= limits->processMax) {
-            unlock(http);
+        http->processCount++;
+        if (http->processCount > limits->processMax) {
+            unlock(endpoint);
             httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Server overloaded");
             mprLog(2, "Too many concurrent processes %d/%d", http->processCount, limits->processMax);
             return 0;
         }
-        http->processCount++;
         action = "start process";
         dir = HTTP_TRACE_RX;
         break;
@@ -302,31 +304,46 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
                 endpoint->clientCount, limits->clientMax);
         }
     }
-    unlock(http);
+    unlock(endpoint);
     return 1;
 }
 
 
+PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
+{
+    MprSocket   *sock;
+
+    /*
+        In sync mode, this will block until a connection arrives
+     */
+    sock = mprAcceptSocket(endpoint->sock);
+
+    /*
+        Immediately re-enable because acceptConn can block while servicing a request. Must always re-enable even if
+        the sock acceptance above fails.
+     */
+    if (endpoint->sock->handler) {
+        mprEnableSocketEvents(endpoint->sock, MPR_READABLE);
+    }
+    if (sock == 0) {
+        return 0;
+    }
+    return acceptConn(sock, event->dispatcher, endpoint);
+}
+
+
 /*  
-    Accept a new client connection on a new socket. If multithreaded, this will come in on a worker thread 
-    dedicated to this connection. This is called from the listen wait handler.
+    Accept a new client connection on a new socket. This will come in on a worker thread dedicated to this connection. 
  */
-static HttpConn *acceptConn(MprDispatcher *dispatcher, HttpEndpoint *endpoint)
+static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndpoint *endpoint)
 {
     HttpConn        *conn;
-    MprSocket       *sock;
     MprEvent        e;
     int             level;
 
     assure(dispatcher);
     assure(endpoint);
 
-    /*
-        In sync mode, this will block until a connection arrives
-     */
-    if ((sock = mprAcceptSocket(endpoint->sock)) == 0) {
-        return 0;
-    }
     if (endpoint->ssl) {
         if (mprUpgradeSocket(sock, endpoint->ssl, 1) < 0) {
             mprCloseSocket(sock, 0);
@@ -367,21 +384,6 @@ static HttpConn *acceptConn(MprDispatcher *dispatcher, HttpEndpoint *endpoint)
     e.mask = MPR_READABLE;
     e.timestamp = conn->http->now;
     (conn->ioCallback)(conn, &e);
-    return conn;
-}
-
-
-PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
-{
-    HttpConn        *conn;
-
-    conn = acceptConn(event->dispatcher, endpoint);
-    if (endpoint->sock->handler) {
-        /* 
-            Re-enable events on the listen socket
-         */
-        mprEnableSocketEvents(endpoint->sock, MPR_READABLE);
-    }
     return conn;
 }
 

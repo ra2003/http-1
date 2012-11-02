@@ -385,7 +385,6 @@ PUBLIC void httpOmitBody(HttpConn *conn)
     tx->flags |= HTTP_TX_NO_BODY;
     tx->length = -1;
     if (tx->flags & HTTP_TX_HEADERS_CREATED) {
-        mprError("Can't set response body if headers have already been created");
         /* Connectors will detect this also and disconnect */
     } else {
         httpDiscardData(conn, HTTP_QUEUE_TX);

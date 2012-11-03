@@ -284,7 +284,8 @@ PUBLIC bool httpIsQueueEmpty(HttpQueue *q)
 
 /*  
     Read data. If sync mode, this will block. If async, will never block.
-    Will return what data is available up to the requested size. Returns a byte count.
+    Will return what data is available up to the requested size. 
+    Returns a count of bytes read. Returns zero if not data. EOF if returns zero and conn->state is > HTTP_STATE_CONTENT.
  */
 PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
 {

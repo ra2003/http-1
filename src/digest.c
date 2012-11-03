@@ -303,7 +303,6 @@ static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm)
     static int64 next = 0;
 
     assure(realm && *realm);
-
     now = conn->http->now;
     fmt(nonce, sizeof(nonce), "%s:%s:%Lx:%Lx", secret, realm, now, next++);
     return mprEncode64(nonce);

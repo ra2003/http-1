@@ -582,7 +582,6 @@ PUBLIC int httpCreateSecret(Http *http)
     int         i, pid;
 
     if (mprGetRandomBytes(bytes, sizeof(bytes), 0) < 0) {
-        mprError("Can't get sufficient random data for secure SSL operation. If SSL is used, it may not be secure.");
         now = http->now;
         pid = (int) getpid();
         cp = (char*) &now;
@@ -597,7 +596,6 @@ PUBLIC int httpCreateSecret(Http *http)
         assure(0);
         return MPR_ERR_CANT_INITIALIZE;
     }
-
     ap = ascii;
     for (i = 0; i < (int) sizeof(bytes); i++) {
         *ap++ = hex[((uchar) bytes[i]) >> 4];

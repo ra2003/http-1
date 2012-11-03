@@ -158,7 +158,7 @@ PUBLIC void httpCloseConn(HttpConn *conn)
     assure(conn);
 
     if (conn->sock) {
-        mprLog(6, "Closing connection");
+        mprLog(5, "Closing connection");
         if (conn->waitHandler) {
             mprRemoveWaitHandler(conn->waitHandler);
             conn->waitHandler = 0;
@@ -378,6 +378,8 @@ static void readEvent(HttpConn *conn)
         if ((packet = getPacket(conn, &size)) == 0) {
             return;
         }
+        assure(conn->input == packet);
+
         nbytes = mprReadSocket(conn->sock, mprGetBufEnd(packet->content), size);
         LOG(7, "http: read event. Got %d", nbytes);
 
@@ -392,7 +394,7 @@ static void readEvent(HttpConn *conn)
             }
         }
         do {
-            if (!httpPumpRequest(conn, packet)) {
+            if (!httpPumpRequest(conn, conn->input)) {
                 break;
             }
         } while (conn->endpoint && prepForNext(conn));

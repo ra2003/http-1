@@ -71,8 +71,7 @@ PUBLIC int httpAuthenticate(HttpConn *conn)
             return 0;
         }
         if (rx->authDetails && (auth->type->parseAuth)(conn) < 0) {
-            assure(conn->error);
-            assure(conn->tx->finalized);
+            httpError(conn, HTTP_CODE_BAD_REQUEST, "Access denied. Bad authentication data.");
             return 0;
         }
         if (!conn->username) {

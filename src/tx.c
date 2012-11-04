@@ -29,6 +29,8 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
 
     tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
     tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
+    conn->readq = tx->queue[HTTP_QUEUE_RX]->prevQ;
+    conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
 
     if (headers) {
         tx->headers = headers;
@@ -273,11 +275,25 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
     }
     tx->responded = 1;
     tx->finalizedOutput = 1;
-    if (conn->state < HTTP_STATE_CONNECTED || !conn->writeq || !conn->sock) {
+    assure(conn->sock);
+    assure(conn->writeq);
+    if (conn->writeq == tx->queue[HTTP_QUEUE_TX]) {
         /* Tx Pipeline not yet created */
         tx->pendingFinalize = 1;
         return;
     }
+    assure(conn->state >= HTTP_STATE_CONNECTED);
+    assure(conn->sock);
+#if UNUSED
+    //  MOB UNUSED
+    if (conn->state < HTTP_STATE_CONNECTED /* MOB || !conn->writeq */ || !conn->sock) {
+        /* Tx Pipeline not yet created */
+        assure(conn->state >= HTTP_STATE_CONNECTED);
+        assure(conn->sock);
+        tx->pendingFinalize = 1;
+        return;
+    }
+#endif
     httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
     httpServiceQueues(conn);
 }

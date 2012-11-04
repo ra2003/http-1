@@ -138,6 +138,9 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
     conn->startTime = conn->http->now;
     conn->startTicks = mprGetTicks();
 #endif
+    /*
+        The receive pipeline is created when parsing the response in parseIncoming()
+     */
     httpCreateTxPipeline(conn, conn->http->clientRoute);
     if (openConnection(conn, ssl) == 0) {
         return MPR_ERR_CANT_OPEN;

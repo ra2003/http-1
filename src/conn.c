@@ -310,11 +310,11 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
     if (conn->tx) {
         conn->tx->conn = 0;
     }
-    headers = (keepHeaders && conn->tx) ? conn->tx->headers: NULL;
-    conn->tx = httpCreateTx(conn, headers);
     if (conn->rx) {
         conn->rx->conn = 0;
     }
+    headers = (keepHeaders && conn->tx) ? conn->tx->headers: NULL;
+    conn->tx = httpCreateTx(conn, headers);
     conn->rx = httpCreateRx(conn);
     commonPrep(conn);
 }
@@ -373,6 +373,7 @@ PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
 static void readEvent(HttpConn *conn)
 {
     HttpPacket  *packet;
+    HttpQueue   *q;
     ssize       nbytes, size;
 
     do {
@@ -400,7 +401,8 @@ static void readEvent(HttpConn *conn)
             }
         } while (conn->endpoint && prepForNext(conn));
 
-    } while (nbytes > 0 && !mprGetSocketBlockingMode(conn->sock));
+        q = conn->readq;
+    } while (nbytes > 0 && !mprGetSocketBlockingMode(conn->sock) && (!q || q->count < q->max));
 }
 
 
@@ -496,6 +498,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 #if !BIT_LOCK_FIX
         lock(conn->http);
 #endif
+        assure(tx || !mprIsSocketEof(conn->sock));
         if (tx) {
             /*
                 Can be blocked with data in the iovec and none in the queue
@@ -506,13 +509,22 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
             /*
                 Enable read events if the read queue is not full. 
              */
+            q = conn->readq;
+#if UNUSED
+            assure(q == tx->queue[HTTP_QUEUE_RX]->prevQ);
+            //  MOB - should be prevQ
             q = tx->queue[HTTP_QUEUE_RX]->nextQ;
+#endif
             //  MOB - why rx->form?
             if (q->count < q->max || rx->form) {
                 eventMask |= MPR_READABLE;
             }
+#if UNUSED && MOB01
         //  MOB - tested above - remove this test
         } else if (!mprIsSocketEof(conn->sock)) {
+#else 
+        } else {
+#endif
             eventMask |= MPR_READABLE;
         }
         httpSetupWaitHandler(conn, eventMask);

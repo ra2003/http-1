@@ -1557,10 +1557,10 @@ PUBLIC bool httpMatchModified(HttpConn *conn, MprTime time)
     Where n1 is first byte pos and n2 is last byte pos
 
     Examples:
-        Range: 0-49             first 50 bytes
-        Range: 50-99,200-249    Two 50 byte ranges from 50 and 200
-        Range: -50              Last 50 bytes
-        Range: 1-               Skip first byte then emit the rest
+        Range: bytes=0-49             first 50 bytes
+        Range: bytes=50-99,200-249    Two 50 byte ranges from 50 and 200
+        Range: bytes=-50              Last 50 bytes
+        Range: bytes=1-               Skip first byte then emit the rest
 
     Return 1 if more ranges, 0 if end of ranges, -1 if bad range.
  */

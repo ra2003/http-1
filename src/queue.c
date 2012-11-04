@@ -37,8 +37,11 @@ PUBLIC HttpQueue *httpCreateQueue(HttpConn *conn, HttpStage *stage, int dir, Htt
     httpInitQueue(conn, q, stage->name);
     httpInitSchedulerQueue(q);
     httpAssignQueue(q, stage, dir);
-    if (prev) {
-        httpAppendQueue(prev, q);
+    httpAppendQueue(prev, q);
+    if (dir == HTTP_QUEUE_RX) {
+        conn->readq = conn->tx->queue[HTTP_QUEUE_RX]->prevQ;
+    } else {
+        conn->writeq = conn->tx->queue[HTTP_QUEUE_TX]->nextQ;
     }
     return q;
 }

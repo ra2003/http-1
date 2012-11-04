@@ -1825,7 +1825,9 @@ typedef struct HttpConn {
     char            *protocol;              /**< HTTP protocol */
     char            *protocols;             /**< Supported web socket protocols (clients) */
     int             async;                  /**< Connection is in async mode (non-blocking) */
+#if UNUSED
     int             canProceed;             /**< State machine should continue to process the request */
+#endif
     int             followRedirects;        /**< Follow redirects for client requests */
     int             keepAliveCount;         /**< Count of remaining Keep-Alive requests for this connection */
     int             http10;                 /**< Using legacy HTTP/1.0 */

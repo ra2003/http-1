@@ -121,49 +121,47 @@ PUBLIC void httpDestroyRx(HttpRx *rx)
  */
 PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
 {
-    assure(conn);
+    bool    canProceed;
 
+    assure(conn);
     if (conn->pumping) {
         return 0;
     }
-    conn->canProceed = 1;
+    canProceed = 1;
     conn->pumping = 1;
 
-    //  MOB - change conn->canProceed => canProceed
-
-    while (conn->canProceed) {
+    while (canProceed) {
         LOG(7, "httpProcess %s, state %d, error %d", conn->dispatcher->name, conn->state, conn->error);
         switch (conn->state) {
         case HTTP_STATE_BEGIN:
         case HTTP_STATE_CONNECTED:
-            conn->canProceed = parseIncoming(conn, packet);
+            canProceed = parseIncoming(conn, packet);
             break;
 
         case HTTP_STATE_PARSED:
-            conn->canProceed = processParsed(conn);
+            canProceed = processParsed(conn);
             break;
 
         case HTTP_STATE_CONTENT:
-            conn->canProceed = processContent(conn, packet);
+            canProceed = processContent(conn, packet);
             break;
 
         case HTTP_STATE_READY:
-            conn->canProceed = processReady(conn);
+            canProceed = processReady(conn);
             break;
 
         case HTTP_STATE_RUNNING:
-            conn->canProceed = processRunning(conn);
-            assure(conn->canProceed || conn->state == HTTP_STATE_RUNNING);
+            canProceed = processRunning(conn);
+            assure(canProceed || conn->state == HTTP_STATE_RUNNING);
             break;
 
         case HTTP_STATE_FINALIZED:
             processCompletion(conn);
-            conn->pumping = 0;
-            return !conn->connError;
+            break;
 
         case HTTP_STATE_COMPLETE:
-            conn->canProceed = 0;
-            break;
+            conn->pumping = 0;
+            return !conn->connError;
         }
         packet = conn->input;
     }
@@ -1107,8 +1105,16 @@ static bool processRunning(HttpConn *conn)
             assure(conn->state < HTTP_STATE_FINALIZED);
         } else {
             httpFinalize(conn);
+            if (tx->finalized && conn->rx->eof) {
+                httpSetState(conn, HTTP_STATE_FINALIZED);
+            } else {
+                assure(0);
+            }
+#if UNUSED
+            //  MOB - should not do this MOB77
             httpSetState(conn, HTTP_STATE_FINALIZED);
             assure(canProceed);
+#endif
         }
     }
     return canProceed;
@@ -1148,6 +1154,9 @@ static void processCompletion(HttpConn *conn)
 {
     HttpRx      *rx;
 
+    assure(conn->tx->finalized);
+    assure(conn->tx->finalizedOutput);
+    assure(conn->tx->finalizedConnector);
     rx = conn->rx;
     httpDestroyPipeline(conn);
     measure(conn);

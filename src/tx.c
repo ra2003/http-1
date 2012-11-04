@@ -241,7 +241,7 @@ PUBLIC void httpFinalizeConnector(HttpConn *conn)
       */ 
     /* Can't do this if there is still data to read */
     if (tx->finalized && conn->rx->eof) {
-        httpSetState(conn, HTTP_STATE_COMPLETE);
+        httpSetState(conn, HTTP_STATE_FINALIZED);
     }
 }
 

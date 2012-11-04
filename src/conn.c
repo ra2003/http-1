@@ -288,6 +288,7 @@ PUBLIC void httpConsumeLastRequest(HttpConn *conn)
             }
         }
     }
+    //  MOB UNUSURE
     if (HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_COMPLETE) {
         conn->keepAliveCount = -1;
     }

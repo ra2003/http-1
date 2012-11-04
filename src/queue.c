@@ -521,7 +521,8 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
 
     for (totalWritten = 0; len > 0; ) {
         LOG(7, "httpWriteBlock q_count %d, q_max %d", q->count, q->max);
-        if (conn->state >= HTTP_STATE_COMPLETE) {
+        //  MOB UNUSURE
+        if (conn->state >= HTTP_STATE_FINALIZED) {
             return MPR_ERR_CANT_WRITE;
         }
         if (q->last && q->last != q->first && q->last->flags & HTTP_PACKET_DATA && mprGetBufSpace(q->last->content) > 0) {

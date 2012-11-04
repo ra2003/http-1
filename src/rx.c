@@ -129,6 +129,8 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
     conn->canProceed = 1;
     conn->pumping = 1;
 
+    //  MOB - change conn->canProceed => canProceed
+
     while (conn->canProceed) {
         LOG(7, "httpProcess %s, state %d, error %d", conn->dispatcher->name, conn->state, conn->error);
         switch (conn->state) {
@@ -154,10 +156,14 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
             assure(conn->canProceed || conn->state == HTTP_STATE_RUNNING);
             break;
 
-        case HTTP_STATE_COMPLETE:
+        case HTTP_STATE_FINALIZED:
             processCompletion(conn);
             conn->pumping = 0;
             return !conn->connError;
+
+        case HTTP_STATE_COMPLETE:
+            conn->canProceed = 0;
+            break;
         }
         packet = conn->input;
     }
@@ -1062,20 +1068,20 @@ static bool processRunning(HttpConn *conn)
         if (tx->finalized) {
             if (tx->finalizedConnector) {
                 /* Request complete and output complete */
-                httpSetState(conn, HTTP_STATE_COMPLETE);
+                httpSetState(conn, HTTP_STATE_FINALIZED);
             } else {
                 /* Still got output to do. Wait for Tx I/O event. Do suspend incase handler not using auto-flow routines */
                 tx->writeBlocked = 1;
                 httpSuspendQueue(q);
                 httpEnableConnEvents(q->conn);
                 canProceed = 0;
-                assure(conn->state != HTTP_STATE_COMPLETE);
+                assure(conn->state < HTTP_STATE_FINALIZED);
             }
 
         } else if (!httpGetMoreOutput(conn)) {
             /* Request not complete yet. No process callback defined */
             canProceed = 0;
-            assure(conn->state != HTTP_STATE_COMPLETE);
+            assure(conn->state < HTTP_STATE_FINALIZED);
 
         } else if (q->count < q->low) {
             if (q->count == 0) {
@@ -1091,17 +1097,17 @@ static bool processRunning(HttpConn *conn)
             httpSuspendQueue(q);
             httpEnableConnEvents(q->conn);
             canProceed = 0;
-            assure(conn->state != HTTP_STATE_COMPLETE);
+            assure(conn->state < HTTP_STATE_FINALIZED);
         }
     } else {
         /* Client side */
         httpServiceQueues(conn);
         if (conn->upgraded) {
             canProceed = 0;
-            assure(conn->state != HTTP_STATE_COMPLETE);
+            assure(conn->state < HTTP_STATE_FINALIZED);
         } else {
             httpFinalize(conn);
-            httpSetState(conn, HTTP_STATE_COMPLETE);
+            httpSetState(conn, HTTP_STATE_FINALIZED);
             assure(canProceed);
         }
     }
@@ -1142,7 +1148,6 @@ static void processCompletion(HttpConn *conn)
 {
     HttpRx      *rx;
 
-    assure(conn->state == HTTP_STATE_COMPLETE);
     rx = conn->rx;
     httpDestroyPipeline(conn);
     measure(conn);
@@ -1153,6 +1158,8 @@ static void processCompletion(HttpConn *conn)
         }
         httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_REQUEST, conn);
     }
+    assure(conn->state == HTTP_STATE_FINALIZED);
+    httpSetState(conn, HTTP_STATE_COMPLETE);
 }
 
 
@@ -1166,7 +1173,7 @@ PUBLIC void httpCloseRx(HttpConn *conn)
         /* May not have consumed all read data, so can't be assured the next request will be okay */
         conn->keepAliveCount = -1;
     }
-    if (conn->state < HTTP_STATE_COMPLETE) {
+    if (conn->state < HTTP_STATE_FINALIZED) {
         httpPumpRequest(conn, NULL);
     }
 }
@@ -1383,7 +1390,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
     int         eventMask, saveAsync, justOne, workDone;
 
     if (state == 0) {
-        state = HTTP_STATE_COMPLETE;
+        state = HTTP_STATE_FINALIZED;
         justOne = 1;
     } else {
         justOne = 0;

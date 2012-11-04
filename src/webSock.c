@@ -610,7 +610,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         Note: we can come here before the handshake is complete. The data is queued and if the connection handshake 
         succeeds, then the data is sent.
      */
-    assure(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_COMPLETE);
+    assure(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED);
 
     if (type < 0 || type > WS_MSG_PONG) {
         mprError("webSocketFilter: httpSendBlock: bad message type %d", type);

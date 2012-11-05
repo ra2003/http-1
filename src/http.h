@@ -1793,7 +1793,9 @@ typedef struct HttpConn {
 
     HttpLimits      *limits;                /**< Service limits */
     Http            *http;                  /**< Http service object  */
+#if UNUSED
     MprHash         *stages;                /**< Stages in pipeline */
+#endif
     MprDispatcher   *dispatcher;            /**< Event dispatcher */
     MprDispatcher   *newDispatcher;         /**< New dispatcher if using a worker thread */
     MprDispatcher   *oldDispatcher;         /**< Original dispatcher if using a worker thread */

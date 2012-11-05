@@ -275,7 +275,6 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
     }
     tx->responded = 1;
     tx->finalizedOutput = 1;
-    assure(conn->sock);
     assure(conn->writeq);
     if (conn->writeq == tx->queue[HTTP_QUEUE_TX]) {
         /* Tx Pipeline not yet created */
@@ -283,7 +282,6 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
         return;
     }
     assure(conn->state >= HTTP_STATE_CONNECTED);
-    assure(conn->sock);
 #if UNUSED
     //  MOB UNUSED
     if (conn->state < HTTP_STATE_CONNECTED /* MOB || !conn->writeq */ || !conn->sock) {
@@ -294,8 +292,13 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
         return;
     }
 #endif
-    httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
-    httpServiceQueues(conn);
+    /*
+        This may be called from httpError when the connection fails.
+     */
+    if (conn->sock) {
+        httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
+        httpServiceQueues(conn);
+    }
 }
 
 

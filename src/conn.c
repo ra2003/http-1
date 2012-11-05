@@ -95,6 +95,9 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
         httpCloseConn(conn);
         conn->http = 0;
     }
+    if (conn->dispatcher->flags & MPR_DISPATCHER_AUTO_CREATE) {
+        mprDisableDispatcher(conn->dispatcher);
+    }
 }
 
 
@@ -165,6 +168,7 @@ PUBLIC void httpCloseConn(HttpConn *conn)
         }
         mprCloseSocket(conn->sock, 0);
 #if BIT_DEBUG
+        //  MOB - remove
         {
             MprEvent    *event;
             /*
@@ -528,7 +532,6 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
             eventMask |= MPR_READABLE;
         }
         httpSetupWaitHandler(conn, eventMask);
-        assure(conn->dispatcher->enabled);
 #if !BIT_LOCK_FIX
         unlock(conn->http);
 #endif

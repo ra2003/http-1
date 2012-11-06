@@ -135,8 +135,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
     conn->tx->method = supper(method);
     conn->tx->parsedUri = httpCreateUri(uri, 0);
 #if BIT_DEBUG
-    conn->startTime = conn->http->now;
-    conn->startTicks = mprGetTicks();
+    conn->startMark = mprGetHiResTime();
 #endif
     /*
         The receive pipeline is created when parsing the response in parseIncoming()

@@ -392,8 +392,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 
     rx = conn->rx;
 #if BIT_DEBUG
-    conn->startTime = conn->http->now;
-    conn->startTicks = mprGetTicks();
+    conn->startMark = mprGetHiResTime();
 #endif
     traceRequest(conn, packet);
 
@@ -1124,7 +1123,7 @@ static bool processRunning(HttpConn *conn)
 #if BIT_DEBUG
 static void measure(HttpConn *conn)
 {
-    MprTime     elapsed;
+    MprTicks    elapsed;
     HttpTx      *tx;
     cchar       *uri;
     int         level;
@@ -1136,10 +1135,10 @@ static void measure(HttpConn *conn)
     uri = (conn->endpoint) ? conn->rx->uri : tx->parsedUri->path;
    
     if ((level = httpShouldTrace(conn, HTTP_TRACE_TX, HTTP_TRACE_TIME, tx->ext)) >= 0) {
-        elapsed = mprGetTime() - conn->startTime;
+        elapsed = mprGetTicks() - conn->started;
 #if MPR_HIGH_RES_TIMER
         if (elapsed < 1000) {
-            mprLog(level, "TIME: Request %s took %,d msec %,d ticks", uri, elapsed, mprGetTicks() - conn->startTicks);
+            mprLog(level, "TIME: Request %s took %,d msec %,d ticks", uri, elapsed, mprGetHiResTime() - conn->startMark);
         } else
 #endif
             mprLog(level, "TIME: Request %s took %,d msec", uri, elapsed);
@@ -1393,9 +1392,9 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
     @param timeout Timeout in msec. If timeout is zer, wait forever. If timeout is < 0, use default inactivity 
         and duration timeouts.
  */
-PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
+PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
 {
-    MprTime     mark, remaining, inactivityTimeout;
+    MprTicks    mark, remaining, inactivityTimeout;
     int         eventMask, saveAsync, justOne, workDone;
 
     if (state == 0) {
@@ -1415,7 +1414,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
     if (conn->error || !conn->sock) {
         return MPR_ERR_BAD_STATE;
     }
-    mark = mprGetTime();
+    mark = mprGetTicks();
     if (mprGetDebugMode()) {
         inactivityTimeout = timeout = MPR_MAX_TIMEOUT;
     } else {
@@ -1443,7 +1442,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTime timeout)
         if (conn->sock && mprIsSocketEof(conn->sock) && !workDone) {
             break;
         }
-        remaining = mprGetRemainingTime(mark, timeout);
+        remaining = mprGetRemainingTicks(mark, timeout);
     } while (!justOne && !conn->error && conn->state < state && remaining > 0);
 
     conn->async = saveAsync;

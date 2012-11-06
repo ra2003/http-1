@@ -298,13 +298,11 @@ PUBLIC void httpDigestSetHeaders(HttpConn *conn)
  */ 
 static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm)
 {
-    MprTime      now;
     char         nonce[256];
     static int64 next = 0;
 
     assure(realm && *realm);
-    now = conn->http->now;
-    fmt(nonce, sizeof(nonce), "%s:%s:%Lx:%Lx", secret, realm, now, next++);
+    fmt(nonce, sizeof(nonce), "%s:%s:%Lx:%Lx", secret, realm, mprGetTime(), next++);
     return mprEncode64(nonce);
 }
 

@@ -16,7 +16,7 @@ static void manageSession(HttpSession *sp, int flags);
 
 /************************************* Code ***********************************/
 
-PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTime lifespan)
+PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTicks lifespan)
 {
     HttpSession *sp;
 

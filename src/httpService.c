@@ -413,9 +413,10 @@ static void httpTimer(Http *http, MprEvent *event)
     }
     /* 
        Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
+       OPT - could check for expired connections every 10 seconds.
      */
     lock(http->connections);
-    mprLog(6, "httpTimer: %d active connections", mprGetListLength(http->connections));
+    mprLog(7, "httpTimer: %d active connections", mprGetListLength(http->connections));
     for (active = 0, next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; active++) {
         rx = conn->rx;
         limits = conn->limits;
@@ -441,6 +442,7 @@ static void httpTimer(Http *http, MprEvent *event)
 
     /*
         Check for unloadable modules
+        OPT - could check for modules every minute
      */
     if (mprGetListLength(http->connections) == 0) {
         for (next = 0; (module = mprGetNextItem(MPR->moduleService->modules, &next)) != 0; ) {
@@ -477,7 +479,7 @@ static void timestamp()
 }
 
 
-PUBLIC void httpSetTimestamp(MprTime period)
+PUBLIC void httpSetTimestamp(MprTicks period)
 {
     Http    *http;
 
@@ -517,9 +519,9 @@ static bool isIdle()
 {
     HttpConn        *conn;
     Http            *http;
-    MprTime         now;
+    MprTicks        now;
     int             next;
-    static MprTime  lastTrace = 0;
+    static MprTicks lastTrace = 0;
 
     http = (Http*) mprGetMpr()->httpService;
     now = http->now;
@@ -549,6 +551,7 @@ static bool isIdle()
 
 PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 {
+    http->now = mprGetTicks();
     conn->started = http->now;
     mprAddItem(http->connections, conn);
     updateCurrentDate(http);
@@ -576,7 +579,7 @@ PUBLIC void httpRemoveConn(Http *http, HttpConn *conn)
  */
 PUBLIC int httpCreateSecret(Http *http)
 {
-    MprTime     now;
+    MprTicks    now;
     char        *hex = "0123456789abcdef";
     char        bytes[HTTP_MAX_SECRET], ascii[HTTP_MAX_SECRET * 2 + 1], *ap, *cp, *bp;
     int         i, pid;
@@ -609,12 +612,12 @@ PUBLIC int httpCreateSecret(Http *http)
 
 PUBLIC char *httpGetDateString(MprPath *sbuf)
 {
-    MprTime     when;
+    MprTicks    when;
 
     if (sbuf == 0) {
         when = ((Http*) MPR->httpService)->now;
     } else {
-        when = (MprTime) sbuf->mtime * MPR_TICKS_PER_SEC;
+        when = (MprTicks) sbuf->mtime * MPR_TICKS_PER_SEC;
     }
     return mprFormatUniversalTime(HTTP_DATE_FORMAT, when);
 }
@@ -671,8 +674,11 @@ PUBLIC void httpSetProxy(Http *http, cchar *host, int port)
 
 static void updateCurrentDate(Http *http)
 {
-    http->now = mprGetTime();
+    http->now = mprGetTicks();
     if (http->now > (http->currentTime + MPR_TICKS_PER_SEC - 1)) {
+        /*
+            Optimize and only update the string date representation once per second
+         */
         http->currentTime = http->now;
         http->currentDate = httpGetDateString(NULL);
     }

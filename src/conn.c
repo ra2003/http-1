@@ -195,7 +195,7 @@ PUBLIC void httpCloseConn(HttpConn *conn)
 PUBLIC void httpConnTimeout(HttpConn *conn)
 {
     HttpLimits  *limits;
-    MprTime     now;
+    MprTicks    now;
 
     if (!conn->http) {
         return;
@@ -287,7 +287,7 @@ static bool prepForNext(HttpConn *conn)
 
 PUBLIC void httpConsumeLastRequest(HttpConn *conn)
 {
-    MprTime     mark;
+    MprTicks    mark;
     char        junk[4096];
 
     if (!conn->sock) {
@@ -295,7 +295,7 @@ PUBLIC void httpConsumeLastRequest(HttpConn *conn)
     }
     if (conn->state >= HTTP_STATE_FIRST) {
         mark = conn->http->now;
-        while (!httpIsEof(conn) && mprGetRemainingTime(mark, conn->limits->requestTimeout) > 0) {
+        while (!httpIsEof(conn) && mprGetRemainingTicks(mark, conn->limits->requestTimeout) > 0) {
             if (httpRead(conn, junk, sizeof(junk)) <= 0) {
                 break;
             }
@@ -774,7 +774,7 @@ PUBLIC void httpNotify(HttpConn *conn, int event, int arg)
 /*
     Set each timeout arg to -1 to skip. Set to zero for no timeout. Otherwise set to number of msecs
  */
-PUBLIC void httpSetTimeout(HttpConn *conn, int requestTimeout, int inactivityTimeout)
+PUBLIC void httpSetTimeout(HttpConn *conn, MprTicks requestTimeout, MprTicks inactivityTimeout)
 {
     if (requestTimeout >= 0) {
         if (requestTimeout == 0) {

@@ -499,7 +499,7 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
 
 
 PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, 
-        MprTime lifespan, int flags)
+        MprTicks lifespan, int flags)
 {
     HttpRx      *rx;
     char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *secure, *httponly;
@@ -524,7 +524,7 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     }
     if (lifespan > 0) {
         expiresAtt = "; expires=";
-        expires = mprFormatUniversalTime(MPR_HTTP_DATE, conn->http->now + lifespan);
+        expires = mprFormatUniversalTime(MPR_HTTP_DATE, mprGetTime() + lifespan);
 
     } else {
         expires = expiresAtt = "";

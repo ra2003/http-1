@@ -18,6 +18,9 @@
 #ifndef BIT_DEPTH
     #define BIT_DEPTH 1
 #endif
+#ifndef BIT_ENDIAN
+    #define BIT_ENDIAN 1
+#endif
 #ifndef BIT_HAS_DOUBLE_BRACES
     #define BIT_HAS_DOUBLE_BRACES 1
 #endif
@@ -26,6 +29,9 @@
 #endif
 #ifndef BIT_HAS_LIB_EDIT
     #define BIT_HAS_LIB_EDIT 1
+#endif
+#ifndef BIT_HAS_LIB_RT
+    #define BIT_HAS_LIB_RT 0
 #endif
 #ifndef BIT_HAS_MMU
     #define BIT_HAS_MMU 1

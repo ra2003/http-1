@@ -18901,7 +18901,7 @@ static void signalEvent(MprSignal *sp, MprEvent *event)
             Call all chained signal handlers. Create new event for each handler so we get the right dispatcher.
             WARNING: sp may have been removed and so sp->next may be null. That is why we capture np = sp->next above.
          */
-        mprCreateEvent(np->dispatcher, "signalEvent", 0, signalEvent, np, 0);
+        mprCreateEvent(np->dispatcher, "signalEvent", 0, signalEvent, np, MPR_EVENT_QUICK);
     }
 }
 
@@ -23613,9 +23613,10 @@ PUBLIC int mprStartWorker(MprWorkerProc proc, void *data)
     /*
         Try to find an idle thread and wake it up. It will wakeup in workerMain(). If not any available, then add 
         another thread to the worker. Must account for workers we've already created but have not yet gone to work 
-        and inserted themselves in the idle/busy queues.
+        and inserted themselves in the idle/busy queues. Get most recently used idle worker so we tend to reuse 
+        active threads. This lets the pruner trim idle workers.
      */
-    worker = mprGetFirstItem(ws->idleThreads);
+    worker = mprGetLastItem(ws->idleThreads);
     if (worker) {
         worker->proc = proc;
         worker->data = data;
@@ -23679,7 +23680,7 @@ static void pruneWorkers(MprWorkerService *ws, MprEvent *timer)
     }
     if (pruned) {
         mprLog(2, "Pruned %d workers, pool has %d workers. Limits %d-%d.", 
-            pruned, ws->numThreads, ws->minThreads, ws->maxThreads);
+            pruned, ws->numThreads - pruned, ws->minThreads, ws->maxThreads);
     }
     unlock(ws);
 }

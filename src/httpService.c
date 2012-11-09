@@ -552,6 +552,7 @@ static bool isIdle()
 PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 {
     http->now = mprGetTicks();
+    assure(http->now >= 0);
     conn->started = http->now;
     mprAddItem(http->connections, conn);
     updateCurrentDate(http);
@@ -675,6 +676,7 @@ PUBLIC void httpSetProxy(Http *http, cchar *host, int port)
 static void updateCurrentDate(Http *http)
 {
     http->now = mprGetTicks();
+    assure(http->now >= 0);
     if (http->now > (http->currentTime + MPR_TICKS_PER_SEC - 1)) {
         /*
             Optimize and only update the string date representation once per second

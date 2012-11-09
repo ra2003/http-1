@@ -130,6 +130,8 @@ static void netOutgoingService(HttpQueue *q)
     }
     if (q->ioCount == 0) {
         if ((q->flags & HTTP_QUEUE_EOF)) {
+            assure(conn->writeq->count == 0);
+            assure(conn->tx->finalizedOutput);
             httpFinalizeConnector(conn);
         } else {
             HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
@@ -163,6 +165,8 @@ static MprOff buildNetVec(HttpQueue *q)
             httpWriteHeaders(q, packet);
 
         } else if (packet->flags & HTTP_PACKET_END) {
+            assure(conn->writeq->count == 0);
+            assure(conn->tx->finalizedOutput);
             q->flags |= HTTP_QUEUE_EOF;
             if (packet->prefix == NULL) {
                 break;

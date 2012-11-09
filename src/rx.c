@@ -1087,9 +1087,10 @@ static bool processRunning(HttpConn *conn)
             }
             if (q->flags & HTTP_QUEUE_SUSPENDED) {
                 httpResumeQueue(q);
-            } else {
-                canProceed = 0;
             }
+            /* Need to give events a chance to run. Otherwise can ping/pong suspend to resume */
+            canProceed = 0;
+
         } else {
             /* Wait for output to drain */
             tx->writeBlocked = 1;

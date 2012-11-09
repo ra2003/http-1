@@ -541,14 +541,15 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
         if (flags & (HTTP_BLOCK | HTTP_NON_BLOCK)) {
             thisWrite = min(thisWrite, q->max - q->count);
         }
-        if ((thisWrite = mprPutBlockToBuf(packet->content, buf, thisWrite)) == 0) {
-            return MPR_ERR_MEMORY;
+        if (thisWrite > 0) {
+            if ((thisWrite = mprPutBlockToBuf(packet->content, buf, thisWrite)) == 0) {
+                return MPR_ERR_MEMORY;
+            }
+            buf += thisWrite;
+            len -= thisWrite;
+            q->count += thisWrite;
+            totalWritten += thisWrite;
         }
-        buf += thisWrite;
-        len -= thisWrite;
-        q->count += thisWrite;
-        totalWritten += thisWrite;
-
         if (q->count >= q->max) {
             httpFlushQueue(q, 0);
             if (q->count >= q->max) {

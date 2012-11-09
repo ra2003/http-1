@@ -1087,6 +1087,8 @@ static bool processRunning(HttpConn *conn)
             }
             if (q->flags & HTTP_QUEUE_SUSPENDED) {
                 httpResumeQueue(q);
+            } else {
+                canProceed = 0;
             }
         } else {
             /* Wait for output to drain */
@@ -1109,11 +1111,6 @@ static bool processRunning(HttpConn *conn)
             } else {
                 assure(0);
             }
-#if UNUSED
-            //  MOB - should not do this MOB77
-            httpSetState(conn, HTTP_STATE_FINALIZED);
-            assure(canProceed);
-#endif
         }
     }
     return canProceed;

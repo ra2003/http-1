@@ -112,15 +112,9 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->host);
         mprMark(conn->limits);
         mprMark(conn->http);
-#if UNUSED
-        mprMark(conn->stages);
-#endif
         mprMark(conn->dispatcher);
         mprMark(conn->newDispatcher);
         mprMark(conn->oldDispatcher);
-#if UNUSED
-        mprMark(conn->waitHandler);
-#endif
         mprMark(conn->sock);
         mprMark(conn->serviceq);
         mprMark(conn->currentq);
@@ -166,12 +160,6 @@ PUBLIC void httpCloseConn(HttpConn *conn)
 
     if (conn->sock) {
         mprLog(5, "Closing connection");
-#if UNUSED
-        if (conn->waitHandler) {
-            mprRemoveWaitHandler(conn->waitHandler);
-            conn->waitHandler = 0;
-        }
-#endif
         mprCloseSocket(conn->sock, 0);
 #if BIT_DEBUG
         //  MOB - remove
@@ -218,12 +206,6 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
         }
     }
     httpDestroyConn(conn);
-#if UNUSED
-    httpDisconnect(conn);
-    httpDiscardQueueData(conn->writeq, 1);
-    httpEnableConnEvents(conn);
-    conn->timeoutEvent = 0;
-#endif
 }
 
 
@@ -468,14 +450,7 @@ PUBLIC MprSocket *httpStealConn(HttpConn *conn)
     sock = conn->sock;
     conn->sock = 0;
 
-#if UNUSED
-    if (conn->waitHandler) {
-        mprRemoveWaitHandler(conn->waitHandler);
-        conn->waitHandler = 0;
-    }
-#else
     mprRemoveSocketHandler(conn->sock);
-#endif
     if (conn->http) {
         lock(conn->http);
         httpRemoveConn(conn->http, conn);
@@ -527,21 +502,10 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
                 Enable read events if the read queue is not full. 
              */
             q = conn->readq;
-#if UNUSED
-            assure(q == tx->queue[HTTP_QUEUE_RX]->prevQ);
-            //  MOB - should be prevQ
-            q = tx->queue[HTTP_QUEUE_RX]->nextQ;
-#endif
-            //  MOB - why rx->form?
-            if (q->count < q->max || rx->form) {
+            if (q->count < q->max && !rx->eof /* UNUSED || rx->form */) {
                 eventMask |= MPR_READABLE;
             }
-#if UNUSED && MOB01
-        //  MOB - tested above - remove this test
-        } else if (!mprIsSocketEof(conn->sock)) {
-#else 
         } else {
-#endif
             eventMask |= MPR_READABLE;
         }
         httpSetupWaitHandler(conn, eventMask);

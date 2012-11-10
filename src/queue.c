@@ -71,7 +71,6 @@ static void manageQueue(HttpQueue *q, int flags)
         mprMark(q->schedulePrev);
         mprMark(q->pair);
         mprMark(q->queueData);
-        mprMark(q->queueData);
         if (q->nextQ && q->nextQ->stage) {
             /* Not a queue head */
             mprMark(q->nextQ);
@@ -141,7 +140,7 @@ PUBLIC void httpAppendQueueToHead(HttpQueue *head, HttpQueue *q)
 
 PUBLIC bool httpIsQueueSuspended(HttpQueue *q)
 {
-    return q->flags & HTTP_QUEUE_SUSPENDED;
+    return (q->flags & HTTP_QUEUE_SUSPENDED) ? 1 : 0;
 }
 
 

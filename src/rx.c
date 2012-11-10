@@ -887,7 +887,6 @@ static bool processParsed(HttpConn *conn)
         Don't stream input if a form or upload. NOTE: Upload needs the Files[] collection.
      */
     rx->streamInput = !(rx->form || rx->upload);
-
     /*
         Send a 100 (Continue) response if the client has requested it. If the connection has an error, that takes
         precedence and 100 Continue will not be sent. Also, if the connector has already written bytes to the socket, we
@@ -902,16 +901,12 @@ static bool processParsed(HttpConn *conn)
     }
     httpSetState(conn, HTTP_STATE_CONTENT);
 
-    if (rx->remainingContent == 0 && !conn->upgraded && !rx->form) {
-        /* 
-            Go directly to ready state if there is no request body to read. Unless a form, in which case we still
-            need to route the request.
-         */
-        rx->eof = 1;
-        httpSetState(conn, HTTP_STATE_READY);
-    }
     if (rx->streamInput) {
         httpStartPipeline(conn);
+    } else if (rx->remainingContent == 0) {
+        httpPutPacketToNext(conn->readq, httpCreateEndPacket());
+        rx->eof = 1;
+        httpSetState(conn, HTTP_STATE_READY);
     }
     httpServiceQueues(conn);
     return 1;
@@ -950,9 +945,12 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         }
     } else {
         nbytes = (ssize) min(rx->remainingContent, mprGetBufLength(content));
-        if (mprIsSocketEof(conn->sock) || (!conn->upgraded && (rx->remainingContent - nbytes) <= 0)) {
+        if (!conn->upgraded && (rx->remainingContent - nbytes) <= 0) {
             rx->eof = 1;
         }
+    }
+    if (mprIsSocketEof(conn->sock)) {
+        rx->eof = 1;
     }
     if (nbytes > 0) {
         if (!conn->upgraded) {
@@ -1040,6 +1038,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
  */
 static bool processReady(HttpConn *conn)
 {
+    httpServiceQueues(conn);
     httpReadyHandler(conn);
     httpSetState(conn, HTTP_STATE_RUNNING);
     return 1;

@@ -2155,8 +2155,7 @@ static int closeTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     assure(conn);
     assure(route);
 
-    httpError(conn, HTTP_CODE_RESET, "Route target \"close\" is closing request");
-    httpDisconnect(conn);
+    httpError(conn, HTTP_CODE_RESET | HTTP_ABORT, "Route target \"close\" is closing request");
     return HTTP_ROUTE_OK;
 }
 

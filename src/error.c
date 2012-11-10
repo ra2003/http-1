@@ -74,19 +74,20 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         if (rx) {
             rx->eof = 1;
         }
-        httpDisconnect(conn);
     }
-    /* 
-        If headers have been sent, must let the other side of the failure - abort is the only way.
-        Disconnect will cause a readable (EOF) event.
-     */
     if (!conn->error) {
         conn->error = 1;
         httpOmitBody(conn);
         conn->errorMsg = formatErrorv(conn, status, fmt, args);
         HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
         if (conn->endpoint && tx && rx) {
-            if (!(tx->flags & HTTP_TX_HEADERS_CREATED)) {
+            if (tx->flags & HTTP_TX_HEADERS_CREATED) {
+                /* 
+                    If the response headers have been sent, must let the other side of the failure. Abort abort is the only way.
+                    Disconnect will cause a readable (EOF) event.
+                 */
+                flags |= HTTP_ABORT;
+            } else {
                 if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status))) {
                     httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
                 } else {
@@ -107,6 +108,9 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
             }
         }
         httpFinalize(conn);
+    }
+    if (flags & HTTP_ABORT) {
+        httpDisconnect(conn);
     }
 }
 

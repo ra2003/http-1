@@ -161,6 +161,10 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
         case HTTP_STATE_COMPLETE:
             conn->pumping = 0;
             return !conn->connError;
+
+        default:
+            assure(conn->state == HTTP_STATE_COMPLETE);
+            break;
         }
         packet = conn->input;
     }

@@ -152,7 +152,6 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
 
         case HTTP_STATE_RUNNING:
             canProceed = processRunning(conn);
-            assure(canProceed || conn->state == HTTP_STATE_RUNNING);
             break;
 
         case HTTP_STATE_FINALIZED:
@@ -1078,6 +1077,10 @@ static bool processRunning(HttpConn *conn)
             /* Request not complete yet. No process callback defined */
             canProceed = 0;
             assure(conn->state < HTTP_STATE_FINALIZED);
+
+        } else if (conn->state >= HTTP_STATE_FINALIZED) {
+            /* This happens when httpGetMoreOutput calls writable on windows which then completes the request */
+            canProceed = 1;
 
         } else if (q->count < q->low) {
             if (q->count == 0) {

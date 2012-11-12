@@ -5068,11 +5068,13 @@ static void vxCmdManager(MprCmd *cmd)
 PUBLIC void mprDestroyCmd(MprCmd *cmd)
 {
     assure(cmd);
+    slock(cmd);
     resetCmd(cmd);
     if (cmd->signal) {
         mprRemoveSignalHandler(cmd->signal);
         cmd->signal = 0;
     }
+    sunlock(cmd);
 }
 
 
@@ -5521,15 +5523,15 @@ PUBLIC void mprDisableCmdEvents(MprCmd *cmd, int channel)
 
 #if BIT_WIN_LIKE && !WINCE
 /*
-    Windows only routine to wait for I/O on the channels to the gateway and the child process.
-    NamedPipes can't use WaitForMultipleEvents (can use overlapped I/O)
-    WARNING: this should not be called from a dispatcher other than cmd->dispatcher. If so, then the calls to
-    mprWaitForEvent may occur after the event has been processed.
+    Windows only routine to wait for I/O on the channels to the CGI program. NamedPipes can't use WaitForMultipleEvents 
+    (can use overlapped I/O). WARNING: this should not be called from a dispatcher other than cmd->dispatcher. If so, 
+    then the calls to mprWaitForEvent may occur after the event has been processed.
  */
 static void waitForWinEvent(MprCmd *cmd, MprTicks timeout)
 {
-    MprTicks    mark, remaining, delay;
-    int         i, rc, nbytes;
+    MprTicks        mark, remaining, delay;
+    MprWaitHandler  *wp;
+    int             i, rc, nbytes;
 
     mark = mprGetTicks();
     if (cmd->stopped) {
@@ -5537,43 +5539,35 @@ static void waitForWinEvent(MprCmd *cmd, MprTicks timeout)
     }
     for (i = MPR_CMD_STDOUT; i < MPR_CMD_MAX_PIPE; i++) {
         if (cmd->files[i].handle) {
-            rc = PeekNamedPipe(cmd->files[i].handle, NULL, 0, NULL, &nbytes, NULL);
-            if (rc && nbytes > 0 || cmd->process == 0) {
-                mprQueueIOEvent(cmd->handlers[i]);
-                mprWaitForEvent(cmd->dispatcher, timeout);
-                return;
+            wp = cmd->handlers[i];
+            if (wp->desiredMask & MPR_READABLE) {
+                rc = PeekNamedPipe(cmd->files[i].handle, NULL, 0, NULL, &nbytes, NULL);
+                if (rc && nbytes > 0 || cmd->process == 0) {
+                    mprQueueIOEvent(wp);
+                }
             }
         }
     }
     if (cmd->files[MPR_CMD_STDIN].handle) {
-        /* Not finalized */
-        mprQueueIOEvent(cmd->handlers[MPR_CMD_STDIN]);
-        mprWaitForEvent(cmd->dispatcher, timeout);
-        return;
+        wp = cmd->handlers[MPR_CMD_STDIN];
+        if (wp->desiredMask & MPR_WRITABLE) {
+            mprQueueIOEvent(wp);
+        }
     }
     if (cmd->process) {
         delay = (cmd->eofCount == cmd->requiredEof && cmd->files[MPR_CMD_STDIN].handle == 0) ? timeout : 0;
-        mprYield(MPR_YIELD_STICKY);
-        if (WaitForSingleObject(cmd->process, (DWORD) delay) == WAIT_OBJECT_0) {
-            mprResetYield();
-            reapCmd(cmd, 0);
-            return;
-        }
-        mprResetYield();
-        if (cmd->eofCount == cmd->requiredEof) {
-            remaining = mprGetRemainingTicks(mark, timeout);
+        do {
             mprYield(MPR_YIELD_STICKY);
-            rc = WaitForSingleObject(cmd->process, (DWORD) remaining);
-            mprResetYield();
-            if (rc == WAIT_OBJECT_0) {
+            if (WaitForSingleObject(cmd->process, (DWORD) delay) == WAIT_OBJECT_0) {
+                mprResetYield();
                 reapCmd(cmd, 0);
-                return;
+                break;
+            } else {
+                mprResetYield();
             }
-            mprError("Error waiting CGI I/O, error %d", mprGetOsError());
-        }
+            delay = mprGetRemainingTicks(mark, timeout);
+        } while (cmd->eofCount == cmd->requiredEof);
     }
-    /* Stop busy waiting */
-    mprSleep(10);
 }
 #endif
 
@@ -5606,8 +5600,9 @@ PUBLIC int mprWaitForCmd(MprCmd *cmd, MprTicks timeout)
         if (mprShouldAbortRequests()) {
             break;
         }
-#if BIT_WIN_LIKE
+#if BIT_WIN_LIKE && !WINCE
         waitForWinEvent(cmd, remaining);
+        mprWaitForEvent(cmd->dispatcher, 10);
 #else
         mprWaitForEvent(cmd->dispatcher, remaining);
 #endif
@@ -8549,9 +8544,9 @@ PUBLIC int mprServiceEvents(MprTicks timeout, int flags)
 
 
 /*
-    Wait for an event to occur. Expect the event to signal the cond var.
-    WARNING: this will enable GC while sleeping
+    Wait for an event to occur and dispatch the event. This is the primary event dispatch routine.
     Return Return 0 if an event was signalled. Return MPR_ERR_TIMEOUT if no event was seen before the timeout.
+    WARNING: this will enable GC while sleeping
  */
 PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
 {
@@ -8592,7 +8587,7 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
     }
     unlock(es);
 
-    while (es->now < expires && !mprIsStoppingCore()) {
+    while (es->now <= expires && !mprIsStoppingCore()) {
         assure(!(dispatcher->flags & MPR_DISPATCHER_DESTROYED));
         if (runEvents) {
             makeRunnable(dispatcher);

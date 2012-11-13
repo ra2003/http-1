@@ -251,12 +251,13 @@ static bool prepForNext(HttpConn *conn)
 {
     assure(conn->endpoint);
     assure(conn->state == HTTP_STATE_COMPLETE);
-    assure(conn->tx && conn->rx);
     if (conn->tx) {
         assure(conn->tx->finalized && conn->tx->finalizedConnector && conn->tx->finalizedOutput);
+        conn->tx->conn = 0;
     }
-    conn->rx->conn = 0;
-    conn->tx->conn = 0;
+    if (conn->rx) {
+        conn->rx->conn = 0;
+    }
     conn->rx = 0;
     conn->tx = 0;
     conn->readq = 0;
@@ -330,12 +331,15 @@ PUBLIC void httpCallEvent(HttpConn *conn, int mask)
 //  MOB - rename
 PUBLIC void httpPostEvent(HttpConn *conn)
 {
-    if (conn->state == HTTP_STATE_COMPLETE && conn->endpoint) {
-        prepForNext(conn);
+    if (conn->endpoint) {
+        if (conn->keepAliveCount < 0 && (conn->state == HTTP_STATE_BEGIN || conn->state == HTTP_STATE_COMPLETE)) {
+            httpDestroyConn(conn);
+            return;
+        } else if (conn->state == HTTP_STATE_COMPLETE) {
+            prepForNext(conn);
+        }
     }
-    if (conn->keepAliveCount < 0 && conn->state < HTTP_STATE_FIRST && conn->endpoint) {
-        httpDestroyConn(conn);
-    } else if (!conn->state != HTTP_STATE_RUNNING) {
+    if (!conn->state != HTTP_STATE_RUNNING) {
         httpEnableConnEvents(conn);
     }
 }

@@ -342,12 +342,15 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
  */
 static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndpoint *endpoint)
 {
-    HttpConn        *conn;
-    MprEvent        e;
-    int             level;
+    Http        *http;
+    HttpConn    *conn;
+    MprEvent    e;
+    static int  warnOnceConnections = 0;
+    int         level, count;
 
     assure(dispatcher);
     assure(endpoint);
+    http = endpoint->http;
 
     if (endpoint->ssl) {
         if (mprUpgradeSocket(sock, endpoint->ssl, 1) < 0) {
@@ -359,7 +362,17 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
         mprCloseSocket(sock, 0);
         return 0;
     }
-    if ((conn = httpCreateConn(endpoint->http, endpoint, dispatcher)) == 0) {
+    if ((count = mprGetListLength(http->connections)) >= endpoint->limits->requestMax) {
+        /* To help alleviate DOS - we just close without responding */
+        if (!warnOnceConnections) {
+            warnOnceConnections = 1;
+            mprLog(2, "Too many concurrent connections %d/%d", count, endpoint->limits->requestMax);
+        }
+        mprCloseSocket(sock, 0);
+        http->underAttack = 1;
+        return 0;
+    }
+    if ((conn = httpCreateConn(http, endpoint, dispatcher)) == 0) {
         mprCloseSocket(sock, 0);
         return 0;
     }

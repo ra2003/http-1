@@ -191,12 +191,12 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
     now = conn->http->now;
     limits = conn->limits;
     assure(limits);
-
     mprLog(6, "Inactive connection timed out");
-    if (conn->state >= HTTP_STATE_PARSED) {
-        if (conn->timeoutCallback) {
-            (conn->timeoutCallback)(conn);
-        }
+
+    if (conn->timeoutCallback) {
+        (conn->timeoutCallback)(conn);
+    }
+    if (conn->state >= HTTP_STATE_PARSED && !conn->connError) {
         if ((conn->lastActivity + limits->inactivityTimeout) < now) {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT,
                 "Exceeded inactivity timeout of %Ld sec", limits->inactivityTimeout / 1000);
@@ -332,7 +332,7 @@ PUBLIC void httpCallEvent(HttpConn *conn, int mask)
 PUBLIC void httpPostEvent(HttpConn *conn)
 {
     if (conn->endpoint) {
-        if (conn->keepAliveCount < 0 && (conn->state == HTTP_STATE_BEGIN || conn->state == HTTP_STATE_COMPLETE)) {
+        if (conn->keepAliveCount < 0 && (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE)) {
             httpDestroyConn(conn);
             return;
         } else if (conn->state == HTTP_STATE_COMPLETE) {
@@ -391,7 +391,7 @@ static void readEvent(HttpConn *conn)
             break;
         } else if (nbytes < 0 && mprIsSocketEof(conn->sock)) {
             conn->keepAliveCount = -1;
-            if (conn->state < HTTP_STATE_FIRST) {
+            if (conn->state < HTTP_STATE_PARSED) {
                 break;
             }
         }
@@ -478,7 +478,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 
     mprLog(7, "EnableConnEvents");
 
-    if (!conn->async || !conn->sock || mprIsSocketEof(conn->sock)) {
+    if (!conn->async || !conn->sock) {
         return;
     }
     tx = conn->tx;
@@ -495,7 +495,6 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 #if !BIT_LOCK_FIX
         lock(conn->http);
 #endif
-        assure(tx || !mprIsSocketEof(conn->sock));
         if (tx) {
             /*
                 Can be blocked with data in the iovec and none in the queue
@@ -507,7 +506,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
                 Enable read events if the read queue is not full. 
              */
             q = conn->readq;
-            if (q->count < q->max && !rx->eof /* UNUSED || rx->form */) {
+            if (q->count < q->max && !rx->eof) {
                 eventMask |= MPR_READABLE;
             }
         } else {

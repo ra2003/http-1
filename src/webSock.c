@@ -352,6 +352,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             /* Acknowledge the close. Echo the received status */
             httpSendClose(conn, WS_STATUS_OK, NULL);
             rx->eof = 1;
+            rx->remainingContent = 0;
         }
         /* Advance from the content state */
         httpSetState(conn, HTTP_STATE_READY);

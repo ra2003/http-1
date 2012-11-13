@@ -83,8 +83,8 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         if (conn->endpoint && tx && rx) {
             if (tx->flags & HTTP_TX_HEADERS_CREATED) {
                 /* 
-                    If the response headers have been sent, must let the other side of the failure. Abort abort is the only way.
-                    Disconnect will cause a readable (EOF) event.
+                    If the response headers have been sent, must let the other side of the failure. 
+                    Abort abort is the only way. Disconnect will cause a readable (EOF) event.
                  */
                 flags |= HTTP_ABORT;
             } else {

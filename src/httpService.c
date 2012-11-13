@@ -403,7 +403,7 @@ static void httpTimer(Http *http, MprEvent *event)
     HttpRx      *rx;
     HttpLimits  *limits;
     MprModule   *module;
-    int         next, active;
+    int         next, active, abort;
 
     assure(event);
     
@@ -420,9 +420,16 @@ static void httpTimer(Http *http, MprEvent *event)
     for (active = 0, next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; active++) {
         rx = conn->rx;
         limits = conn->limits;
-        if (!conn->timeoutEvent && (
-                (conn->lastActivity + limits->inactivityTimeout) < http->now || 
-                (conn->started + limits->requestTimeout) < http->now)) {
+#if UNUSED
+        disconnect = 0;
+        if (http->underAttack) {
+            //  MOB - define 3000
+            if (conn->state < HTTP_STATE_PARSED && (conn->lastActivity + 3000) < http->now) {
+                disconnect = 1;
+                mprLog(0, "Request parse timeout");
+            }
+        } else if ((conn->lastActivity + limits->inactivityTimeout) < http->now || 
+                (conn->started + limits->requestTimeout) < http->now) {
             if (rx) {
                 /*
                     Don't call APIs on the conn directly (thread-race). Schedule a timer on the connection's dispatcher.
@@ -432,12 +439,30 @@ static void httpTimer(Http *http, MprEvent *event)
                 }
             } else {
                 mprLog(6, "Idle connection without active request timed out");
-                httpDisconnect(conn);
-                httpDiscardQueueData(conn->writeq, 1);
-                httpEnableConnEvents(conn);
-                conn->lastActivity = conn->started = http->now;
+                disconnect = 1;
             }
         }
+        if (disconnect) {
+            httpDisconnect(conn);
+            httpDiscardQueueData(conn->writeq, 1);
+            httpEnableConnEvents(conn);
+            conn->lastActivity = conn->started = http->now;
+        }
+#else
+        if (!conn->timeoutEvent) {
+            abort = 0;
+            if (http->underAttack && conn->state < HTTP_STATE_PARSED && (conn->lastActivity + 3000) < http->now) {
+                abort = 1;
+                httpDisconnect(conn);
+            } else if ((conn->lastActivity + limits->inactivityTimeout) < http->now || 
+                    (conn->started + limits->requestTimeout) < http->now) {
+                abort = 1;
+            }
+            if (abort) {
+                conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, httpConnTimeout, conn, 0);
+            }
+        }
+#endif
     }
 
     /*

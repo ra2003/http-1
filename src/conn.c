@@ -489,9 +489,10 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
             }
             /*
                 Enable read events if the read queue is not full. 
+                If request is a form, then must read and buffer all the input regardless
              */
             q = conn->readq;
-            if (q->count < q->max && !rx->eof) {
+            if (!rx->eof && (q->count < q->max || rx->form)) {
                 eventMask |= MPR_READABLE;
             }
         } else {

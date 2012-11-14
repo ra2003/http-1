@@ -967,34 +967,34 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
         /*
             Enforce sandbox limits
          */
-        if (rx->bytesRead >= conn->limits->receiveBodySize) {
-            httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
-                "Request body of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveBodySize);
+        if (!conn->error) {
+            if (rx->bytesRead >= conn->limits->receiveBodySize) {
+                httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+                    "Request body of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveBodySize);
 
-        } else if (rx->form && rx->length >= conn->limits->receiveFormSize) {
-            httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
-                "Request form of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveFormSize);
-
+            } else if (rx->form && rx->bytesRead >= conn->limits->receiveFormSize) {
+                httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+                    "Request form of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveFormSize);
+            }
+        }
+        /*
+            Send packet upstream toward the handler
+         */
+        if (packet == rx->headerPacket && nbytes > 0) {
+            packet = httpSplitPacket(packet, 0);
+        }
+        if (httpGetPacketLength(packet) > nbytes) {
+            /*  Split excess data belonging to the next chunk or pipelined request */
+            LOG(7, "processContent: Split packet of %d at %d", httpGetPacketLength(packet), nbytes);
+            conn->input = httpSplitPacket(packet, nbytes);
         } else {
-            /*
-                Send packet upstream toward the handler
-             */
-            if (packet == rx->headerPacket && nbytes > 0) {
-                packet = httpSplitPacket(packet, 0);
-            }
-            if (httpGetPacketLength(packet) > nbytes) {
-                /*  Split excess data belonging to the next chunk or pipelined request */
-                LOG(7, "processContent: Split packet of %d at %d", httpGetPacketLength(packet), nbytes);
-                conn->input = httpSplitPacket(packet, nbytes);
+            conn->input = 0;
+        }
+        if (!(tx->finalized && conn->endpoint)) {
+            if (rx->form) {
+                httpPutForService(q, packet, HTTP_DELAY_SERVICE);
             } else {
-                conn->input = 0;
-            }
-            if (!(tx->finalized && conn->endpoint)) {
-                if (rx->form) {
-                    httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-                } else {
-                    httpPutPacketToNext(q, packet);
-                }
+                httpPutPacketToNext(q, packet);
             }
         }
     }
@@ -1003,7 +1003,9 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
             /* Closing is the only way for HTTP/1.0 to signify the end of data */
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
         }
+#if UNUSED
         if (!tx->finalized) {
+#endif
             if (rx->form && conn->endpoint) {
                 /* Forms wait for all data before routing */
                 routeRequest(conn);
@@ -1018,7 +1020,9 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
             if (!rx->streamInput) {
                 httpStartPipeline(conn);
             }
+#if UNUSED
         }
+#endif
         httpSetState(conn, HTTP_STATE_READY);
         return conn->workerEvent ? 0 : 1;
     }

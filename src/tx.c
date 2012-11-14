@@ -282,16 +282,6 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
         return;
     }
     assure(conn->state >= HTTP_STATE_CONNECTED);
-#if UNUSED
-    //  MOB UNUSED
-    if (conn->state < HTTP_STATE_CONNECTED /* MOB || !conn->writeq */ || !conn->sock) {
-        /* Tx Pipeline not yet created */
-        assure(conn->state >= HTTP_STATE_CONNECTED);
-        assure(conn->sock);
-        tx->pendingFinalize = 1;
-        return;
-    }
-#endif
     /*
         This may be called from httpError when the connection fails.
      */
@@ -427,7 +417,6 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     rx = conn->rx;
     tx = conn->tx;
 
-    //  MOB - should really test responded
     if (tx->finalized) {
         /* A response has already been formulated */
         return;

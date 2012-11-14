@@ -161,20 +161,6 @@ PUBLIC void httpCloseConn(HttpConn *conn)
     if (conn->sock) {
         mprLog(5, "Closing connection");
         mprCloseSocket(conn->sock, 0);
-#if BIT_DEBUG
-        //  MOB - remove
-        {
-            MprEvent    *event;
-            /*
-                Should not be any queued events after closing the socket
-             */
-            for (event = conn->dispatcher->eventQ->next; event != conn->dispatcher->eventQ; event = event->next) {
-                if (event->fd == conn->sock->fd) {
-                    assure(0);
-                }
-            }
-        }
-#endif
         conn->sock = 0;
     }
 }
@@ -284,7 +270,6 @@ PUBLIC void httpConsumeLastRequest(HttpConn *conn)
             }
         }
     }
-    //  MOB UNUSURE
     if (HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_COMPLETE) {
         conn->keepAliveCount = -1;
     }

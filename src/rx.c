@@ -1177,7 +1177,6 @@ static void processCompletion(HttpConn *conn)
 
 /*
     Used by ejscript Request.close
-    MOB - review
  */
 PUBLIC void httpCloseRx(HttpConn *conn)
 {

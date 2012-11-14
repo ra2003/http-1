@@ -44,7 +44,6 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
         httpPutPacketToNext(q, packet);
     } else {
         /* This queue is the last queue in the pipeline */
-        //  MOB - should this call WillAccept?
         if (httpGetPacketLength(packet) > 0) {
             if (packet->flags & HTTP_PACKET_SOLO) {
                 httpPutForService(q, packet, HTTP_DELAY_SERVICE);

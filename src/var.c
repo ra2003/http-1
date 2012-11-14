@@ -177,11 +177,6 @@ static void addBodyParams(HttpConn *conn)
     rx = conn->rx;
     if (rx->form) {
         if (!(rx->flags & HTTP_ADDED_FORM_PARAMS)) {
-#if UNUSED && MOB01
-            //  MOB - should be already set
-            assure(conn->readq == conn->tx->queue[HTTP_QUEUE_RX]->prevQ);
-            conn->readq = conn->tx->queue[HTTP_QUEUE_RX]->prevQ;
-#endif
             addParamsFromQueue(conn->readq);
             rx->flags |= HTTP_ADDED_FORM_PARAMS;
         }

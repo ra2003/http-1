@@ -92,9 +92,6 @@ PUBLIC void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
         q->put = stage->incoming;
         q->service = stage->incomingService;
     }
-#if UNUSED
-    q->name = stage->name;
-#endif
 }
 
 
@@ -573,7 +570,6 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
 
     for (totalWritten = 0; len > 0; ) {
         LOG(7, "httpWriteBlock q_count %d, q_max %d", q->count, q->max);
-        //  MOB UNUSURE
         if (conn->state >= HTTP_STATE_FINALIZED) {
             return MPR_ERR_CANT_WRITE;
         }

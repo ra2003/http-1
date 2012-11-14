@@ -70,11 +70,6 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     for (next = 0; (stage = mprGetNextItem(tx->outputPipeline, &next)) != 0; ) {
         q = httpCreateQueue(conn, stage, HTTP_QUEUE_TX, q);
     }
-#if UNUSED && MOB01
-    //  MOB - remove
-    assure(conn->writeq == tx->queue[HTTP_QUEUE_TX]->nextQ);
-    conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
-#endif
     conn->connectorq = tx->queue[HTTP_QUEUE_TX]->prevQ;
     pairQueues(conn);
 
@@ -119,11 +114,6 @@ PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
     for (next = 0; (stage = mprGetNextItem(rx->inputPipeline, &next)) != 0; ) {
         q = httpCreateQueue(conn, stage, HTTP_QUEUE_RX, q);
     }
-#if UNUSED && MOB01
-    //  MOB - remove
-    assure(conn->readq == tx->queue[HTTP_QUEUE_RX]->prevQ);
-    conn->readq = tx->queue[HTTP_QUEUE_RX]->prevQ;
-#endif
     if (!conn->endpoint) {
         pairQueues(conn);
         openQueues(conn);

@@ -549,7 +549,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             }
             break;
 
-#if UNUSED && KEEP
+#if KEEP
         case WS_EXT_DATA:
             assure(packet);
             mprLog(5, "webSocketFilter: EXT DATA - RESERVED");

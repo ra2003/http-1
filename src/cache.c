@@ -277,7 +277,7 @@ static void cacheAtClient(HttpConn *conn)
         } else {
             httpAddHeader(conn, "Cache-Control", "max-age=%d", cache->clientLifespan / MPR_TICKS_PER_SEC);
         }
-#if UNUSED && KEEP
+#if KEEP
         {
             /* Old HTTP/1.0 clients don't understand Cache-Control */
             struct tm   tm;
@@ -495,7 +495,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
     cache->flags = flags;
     mprAddItem(route->caching, cache);
 
-#if UNUSED && KEEP
+#if KEEP
     mprLog(3, "Caching route %s for methods %s, URIs %s, extensions %s, types %s, client lifespan %d, server lifespan %d", 
         route->name,
         (methods) ? methods: "*",

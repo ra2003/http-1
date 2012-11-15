@@ -121,7 +121,7 @@ PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize low, ssize max)
 }
 
 
-#if UNUSED && KEEP
+#if KEEP
 /*  
     Insert a queue after the previous element
  */

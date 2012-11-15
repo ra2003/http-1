@@ -209,7 +209,6 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
 
     /*
         Don't start processing until all the headers have been received (delimited by two blank lines)
-        MOB - should be tolerant and allow '\n\n'
      */
     if ((end = sncontains(start, "\r\n\r\n", len)) == 0) {
         if (len >= conn->limits->headerSize) {
@@ -518,7 +517,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header format");
             return 0;
         }
-        //  MOB - should be tolerant and allow '\n'
         value = getToken(conn, "\r\n");
         while (isspace((uchar) *value)) {
             value++;
@@ -1003,26 +1001,20 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
             /* Closing is the only way for HTTP/1.0 to signify the end of data */
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
         }
-#if UNUSED
-        if (!tx->finalized) {
-#endif
-            if (rx->form && conn->endpoint) {
-                /* Forms wait for all data before routing */
-                routeRequest(conn);
-                while ((packet = httpGetPacket(q)) != 0) {
-                    httpPutPacketToNext(q, packet);
-                }
+        if (rx->form && conn->endpoint) {
+            /* Forms wait for all data before routing */
+            routeRequest(conn);
+            while ((packet = httpGetPacket(q)) != 0) {
+                httpPutPacketToNext(q, packet);
             }
-            /*
-                Send "end" pack to signify eof to the handler
-             */
-            httpPutPacketToNext(q, httpCreateEndPacket());
-            if (!rx->streamInput) {
-                httpStartPipeline(conn);
-            }
-#if UNUSED
         }
-#endif
+        /*
+            Send "end" pack to signify eof to the handler
+         */
+        httpPutPacketToNext(q, httpCreateEndPacket());
+        if (!rx->streamInput) {
+            httpStartPipeline(conn);
+        }
         httpSetState(conn, HTTP_STATE_READY);
         return conn->workerEvent ? 0 : 1;
     }

@@ -52,5 +52,9 @@ xcode
 /*-*-debug/
 /*-*-release/
 .*.guid
-start.bit
+/start.bit
 *.dmp
+*-xcode
+*-vsdebug
+projects/*macosx-full.xcodeproj
+*-mine*

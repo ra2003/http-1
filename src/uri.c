@@ -30,13 +30,15 @@ static void trimPathToDirname(HttpUri *uri);
 
         NOTE: the following is not supported and requires a scheme prefix. This is because it is ambiguous with URI.
         HOST/URI
+
+    Missing fields are null or zero.
  */
-HttpUri *httpCreateUri(cchar *uri, int flags)
+PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
 {
     HttpUri     *up;
     char        *tok, *next;
 
-    mprAssert(uri);
+    assure(uri);
 
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         return 0;
@@ -50,6 +52,14 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
         }
         tok = &up->uri[7];
 
+    } else if (sncmp(up->uri, "ws://", 5) == 0) {
+        up->scheme = sclone("ws");
+        if (flags & HTTP_COMPLETE_URI) {
+            up->port = 80;
+        }
+        tok = &up->uri[5];
+        up->webSockets = 1;
+
     } else if (sncmp(up->uri, "https://", 8) == 0) {
         up->scheme = sclone("https");
         up->secure = 1;
@@ -58,12 +68,21 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
         }
         tok = &up->uri[8];
 
+    } else if (sncmp(up->uri, "wss://", 6) == 0) {
+        up->scheme = sclone("wss");
+        up->secure = 1;
+        if (flags & HTTP_COMPLETE_URI) {
+            up->port = 443;
+        }
+        tok = &up->uri[6];
+        up->webSockets = 1;
+
     } else {
         up->scheme = 0;
         tok = up->uri;
     }
     if (schr(tok, ':')) {
-        /* Must be a host portion */
+        /* Has port specifier */
         if (*tok == '[' && ((next = strchr(tok, ']')) != 0)) {
             /* IPv6  [::]:port/uri */
             up->host = snclone(&tok[1], (next - tok) - 1);
@@ -74,30 +93,78 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
 
         } else if ((next = spbrk(tok, ":/")) == NULL) {
             /* hostname */
-            up->host = sclone(tok);
+            if (*tok) {
+                up->host = sclone(tok);
+            }
             tok = 0;
 
         } else if (*next == ':') {
             /* hostname:port */
-            up->host = snclone(tok, next - tok);
+            if (next > tok) {
+                up->host = snclone(tok, next - tok);
+            }
             up->port = atoi(++next);
             tok = schr(next, '/');
 
         } else if (*next == '/') {
             /* hostname/uri */
-            up->host = snclone(tok, next - tok);
+            if (next > tok) {
+                up->host = snclone(tok, next - tok);
+            }
             tok = next;
         }
 
     } else if (up->scheme && *tok != '/') {
         /* hostname/uri */
         if ((next = schr(tok, '/')) != 0) {
-            up->host = snclone(tok, next - tok);
+            if (next > tok) {
+                up->host = snclone(tok, next - tok);
+            }
             tok = next;
         } else {
             /* hostname */
-            up->host = sclone(tok);
+            if (*tok) {
+                up->host = sclone(tok);
+            }
             tok = 0;
+        }
+    }
+    if (tok) {
+        if ((next = spbrk(tok, "#?")) == NULL) {
+            if (*tok) {
+                up->path = sclone(tok);
+            }
+        } else {
+            if (next > tok) {
+                up->path = snclone(tok, next - tok);
+            }
+            tok = next + 1;
+            if (*next == '#') {
+                if ((next = schr(tok, '?')) != NULL) {
+                    up->reference = snclone(tok, next - tok);
+                    up->query = sclone(++next);
+                } else {
+                    up->reference = sclone(tok);
+                }
+            } else {
+                up->query = sclone(tok);
+            }
+        }
+        if (up->path && (tok = srchr(up->path, '.')) != NULL) {
+            if (tok[1]) {
+                if ((next = srchr(up->path, '/')) != NULL) {
+                    if (next <= tok) {
+                        up->ext = sclone(++tok);
+                    }
+                } else {
+                    up->ext = sclone(++tok);
+                }
+            }
+        }
+    }
+    if (flags & (HTTP_COMPLETE_URI | HTTP_COMPLETE_URI_PATH)) {
+        if (up->path == 0 || *up->path == '\0') {
+            up->path = sclone("/");
         }
     }
     if (flags & HTTP_COMPLETE_URI) {
@@ -109,36 +176,6 @@ HttpUri *httpCreateUri(cchar *uri, int flags)
         }
         if (!up->port) {
             up->port = 80;
-        }
-    }
-    if ((next = spbrk(tok, "#?")) == NULL) {
-        up->path = sclone(tok);
-    } else {
-        up->path = snclone(tok, next - tok);
-        tok = next + 1;
-        if (*next == '#') {
-            if ((next = schr(tok, '?')) != NULL) {
-                up->reference = snclone(tok, next - tok);
-                up->query = sclone(++next);
-            } else {
-                up->reference = sclone(tok);
-            }
-        } else {
-            up->query = sclone(tok);
-        }
-    }
-    if (up->path && (tok = srchr(up->path, '.')) != NULL) {
-        if ((next = srchr(up->path, '/')) != NULL) {
-            if (next <= tok) {
-                up->ext = sclone(++tok);
-            }
-        } else {
-            up->ext = sclone(++tok);
-        }
-    }
-    if (flags & (HTTP_COMPLETE_URI | HTTP_COMPLETE_URI_PATH)) {
-        if (up->path == 0 || *up->path == '\0') {
-            up->path = sclone("/");
         }
     }
     return up;
@@ -162,7 +199,7 @@ static void manageUri(HttpUri *uri, int flags)
 /*  
     Create and initialize a URI. This accepts full URIs with schemes (http:) and partial URLs
  */
-HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, 
+PUBLIC HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, 
         int flags)
 {
     HttpUri     *up;
@@ -173,6 +210,8 @@ HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *pat
     }
     if (scheme) {
         up->scheme = sclone(scheme);
+        up->secure = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"));
+        up->webSockets = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
     } else if (flags & HTTP_COMPLETE_URI) {
         up->scheme = "http";
     }
@@ -200,8 +239,10 @@ HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *pat
         }
         up->path = sclone(path);
     }
-    if (up->path == 0) {
-        up->path = sclone("/");
+    if (flags & (HTTP_COMPLETE_URI | HTTP_COMPLETE_URI_PATH)) {
+        if (up->path == 0 || *up->path == '\0') {
+            up->path = sclone("/");
+        }
     }
     if (reference) {
         up->reference = sclone(reference);
@@ -222,7 +263,7 @@ HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *pat
 }
 
 
-HttpUri *httpCloneUri(HttpUri *base, int flags)
+PUBLIC HttpUri *httpCloneUri(HttpUri *base, int flags)
 {
     HttpUri     *up;
     char        *path, *cp, *tok;
@@ -230,14 +271,14 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         return 0;
     }
-    path = base->path;
-
-    if (base->scheme && *base->scheme) {
+    if (base->scheme) {
         up->scheme = sclone(base->scheme);
     } else if (flags & HTTP_COMPLETE_URI) {
         up->scheme = sclone("http");
     }
-    if (base->host && *base->host) {
+    up->secure = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"));
+    up->webSockets = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
+    if (base->host) {
         up->host = sclone(base->host);
     } else if (flags & HTTP_COMPLETE_URI) {
         up->host = sclone("localhost");
@@ -245,16 +286,19 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
     if (base->port) {
         up->port = base->port;
     } else if (flags & HTTP_COMPLETE_URI) {
-        up->port = smatch(up->scheme, "https") ? 443 : 80;
+        up->port = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"))? 443 : 80;
     }
+    path = base->path;
     if (path) {
         while (path[0] == '/' && path[1] == '/') {
             path++;
         }
         up->path = sclone(path);
     }
-    if (up->path == 0) {
-        up->path = sclone("/");
+    if (flags & (HTTP_COMPLETE_URI | HTTP_COMPLETE_URI_PATH)) {
+        if (up->path == 0 || *up->path == '\0') {
+            up->path = sclone("/");
+        }
     }
     if (base->reference) {
         up->reference = sclone(base->reference);
@@ -262,7 +306,7 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
     if (base->query) {
         up->query = sclone(base->query);
     }
-    if ((tok = srchr(up->path, '.')) != NULL) {
+    if (up->path && (tok = srchr(up->path, '.')) != NULL) {
         if ((cp = srchr(up->path, '/')) != NULL) {
             if (cp <= tok) {
                 up->ext = sclone(&tok[1]);
@@ -275,27 +319,43 @@ HttpUri *httpCloneUri(HttpUri *base, int flags)
 }
 
 
-HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *missing)
+/*
+    Complete the "uri" using missing parts from base
+ */
+PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
 {
-    char        *scheme, *host;
-    int         port;
-
-    scheme = (missing) ? missing->scheme : "http";
-    host = (missing) ? missing->host : "localhost";
-    port = (missing) ? missing->port : 0;
-
-    if (uri->scheme == 0) {
-        uri->scheme = sclone(scheme);
-    }
-    if (uri->port == 0 && port) {
-        /* Don't complete port if there is a host */
-        if (uri->host == 0) {
-            uri->port = port;
+    if (!base) {
+        if (!uri->scheme) {
+            uri->scheme = sclone("http");
+        }
+        if (!uri->host) {
+            uri->host = sclone("localhost");
+        }
+        if (!uri->path) {
+            uri->path = sclone("/");
+        }
+    } else {
+        if (!uri->host) {
+            uri->host = base->host;
+            if (!uri->port) {
+                uri->port = base->port;
+            }
+        }
+        if (!uri->scheme) {
+            uri->scheme = base->scheme;
+        }
+        if (!uri->path) {
+            uri->path = base->path;
+            if (!uri->query) {
+                uri->query = base->query;
+            }
+            if (!uri->reference) {
+                uri->reference = base->reference;
+            }
         }
     }
-    if (uri->host == 0) {
-        uri->host = sclone(host);
-    }
+    uri->secure = (smatch(uri->scheme, "https") || smatch(uri->scheme, "wss"));
+    uri->webSockets = (smatch(uri->scheme, "ws") || smatch(uri->scheme, "wss"));
     return uri;
 }
 
@@ -303,7 +363,7 @@ HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *missing)
 /*  
     Format a string URI from parts
  */
-char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, int flags)
+PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, int flags)
 {
     char    *uri;
     cchar   *portStr, *hostDelim, *portDelim, *pathDelim, *queryDelim, *referenceDelim, *cp;
@@ -326,7 +386,7 @@ char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cchar *re
         if (mprIsIPv6(host)) {
             if (*host != '[') {
                 host = sfmt("[%s]", host);
-            } else if ((cp = scontains(host, "]:", -1)) != 0) {
+            } else if ((cp = scontains(host, "]:")) != 0) {
                 port = 0;
             }
         } else if (schr(host, ':')) {
@@ -374,7 +434,7 @@ char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cchar *re
 
     uri = target.relative(base)
  */
-HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
+PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
 {
     HttpUri     *uri;
     char        *basePath, *bp, *cp, *tp, *startDiff;
@@ -421,15 +481,6 @@ HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
             }
         }
     }
-
-    /*
-        Add one more segment if the last segment matches. Handle trailing separators.
-     */
-#if OLD
-    if ((*bp == '/' || *bp == '\0') && (*tp == '/' || *tp == '\0')) {
-        commonSegments++;
-    }
-#endif
     if (*startDiff == '/') {
         startDiff++;
     }
@@ -464,7 +515,7 @@ HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
 /*
     result = base.join(other)
  */
-HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
+PUBLIC HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
 {
     char    *sep;
 
@@ -479,7 +530,7 @@ HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
 }
 
 
-HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
+PUBLIC HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
 {
     HttpUri     *other;
     int         i;
@@ -512,7 +563,7 @@ HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
 }
 
 
-HttpUri *httpMakeUriLocal(HttpUri *uri)
+PUBLIC HttpUri *httpMakeUriLocal(HttpUri *uri)
 {
     if (uri) {
         uri->host = 0;
@@ -523,7 +574,7 @@ HttpUri *httpMakeUriLocal(HttpUri *uri)
 }
 
 
-void httpNormalizeUri(HttpUri *uri)
+PUBLIC void httpNormalizeUri(HttpUri *uri)
 {
     uri->path = httpNormalizeUriPath(uri->path);
 }
@@ -533,7 +584,7 @@ void httpNormalizeUri(HttpUri *uri)
     Normalize a URI path to remove redundant "./" and cleanup "../" and make separator uniform. Does not make an abs path.
     It does not map separators nor change case. 
  */
-char *httpNormalizeUriPath(cchar *pathArg)
+PUBLIC char *httpNormalizeUriPath(cchar *pathArg)
 {
     char    *dupPath, *path, *sp, *dp, *mark, **segments;
     int     firstc, j, i, nseg, len;
@@ -590,7 +641,7 @@ char *httpNormalizeUriPath(cchar *pathArg)
         }
     }
     nseg = j;
-    mprAssert(nseg >= 0);
+    assure(nseg >= 0);
     if ((path = mprAlloc(len + nseg + 1)) != 0) {
         for (i = 0, dp = path; i < nseg; ) {
             strcpy(dp, segments[i]);
@@ -606,7 +657,7 @@ char *httpNormalizeUriPath(cchar *pathArg)
 }
 
 
-HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool local)
+PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool local)
 {
     HttpUri     *current, *other;
     int         i;
@@ -652,7 +703,7 @@ HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool local)
 }
 
 
-char *httpUriToString(HttpUri *uri, int flags)
+PUBLIC char *httpUriToString(HttpUri *uri, int flags)
 {
     return httpFormatUri(uri->scheme, uri->host, uri->port, uri->path, uri->reference, uri->query, flags);
 }
@@ -663,13 +714,13 @@ static int getPort(HttpUri *uri)
     if (uri->port) {
         return uri->port;
     }
-    return (uri->scheme && scmp(uri->scheme, "https") == 0) ? 443 : 80;
+    return (uri->scheme && (smatch(uri->scheme, "https") || smatch(uri->scheme, "wss"))) ? 443 : 80;
 }
 
 
 static int getDefaultPort(cchar *scheme)
 {
-    return (scheme && scmp(scheme, "https") == 0) ? 443 : 80;
+    return (scheme && (smatch(scheme, "https") || smatch(scheme, "wss"))) ? 443 : 80;
 }
 
 
@@ -702,28 +753,12 @@ static void trimPathToDirname(HttpUri *uri)
     @copy   default
 
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire
-    a commercial license from Embedthis Software. You agree to be fully bound
-    by the terms of either license. Consult the LICENSE.TXT distributed with
-    this software for full details.
-
-    This software is open source; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the
-    Free Software Foundation; either version 2 of the License, or (at your
-    option) any later version. See the GNU General Public License for more
-    details at: http://embedthis.com/downloads/gplLicense.html
-
-    This program is distributed WITHOUT ANY WARRANTY; without even the
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-    This GPL license does NOT permit incorporating this software into
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses
-    for this software and support services are available from Embedthis
-    Software at http://embedthis.com
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
 
     Local variables:
     tab-width: 4

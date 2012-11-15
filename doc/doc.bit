@@ -8,7 +8,11 @@ Bit.load({
         patch: {
             action: "
                 trace('Patch', 'Expand DSI')
-                for each (path in Path('.').glob('**.html', {exclude: /Bare.html|dsi/})) {
+                let path = Path('dsi/head.html')
+                let settings = bit.settings
+                path.write(path.readString().replace(/version\">.*</, 'version\">' + 
+                    settings.title + ' ' + settings.version + '<'))
+                for each (path in Path('.').files('**.html', {exclude: /Bare.html|dsi/})) {
                     vtrace('Patch', path)
                     Cmd('dsi -v -I. ' + path)
                 }
@@ -18,7 +22,7 @@ Bit.load({
         api: {
             action: "
                 apidoc('api/http.dox', '${SRC}/src/http.h', 'Http API', 'api/*.tags')
-                apiwrap(['api/http.html' ])
+                apiwrap(['api/http.html'])
             ",
         }, 
 

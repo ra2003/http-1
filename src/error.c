@@ -10,11 +10,11 @@
 /********************************** Forwards **********************************/
 
 static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args);
-static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
+static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
 
 /*********************************** Code *************************************/
 
-void httpDisconnect(HttpConn *conn)
+PUBLIC void httpDisconnect(HttpConn *conn)
 {
     if (conn->sock) {
         mprDisconnectSocket(conn->sock);
@@ -25,10 +25,15 @@ void httpDisconnect(HttpConn *conn)
     if (conn->rx) {
         conn->rx->eof = 1;
     }
+    if (conn->tx) {
+        conn->tx->finalized = 1;
+        conn->tx->finalizedOutput = 1;
+        conn->tx->finalizedConnector = 1;
+    }
 }
 
 
-void httpError(HttpConn *conn, int flags, cchar *fmt, ...)
+PUBLIC void httpError(HttpConn *conn, int flags, cchar *fmt, ...)
 {
     va_list     args;
 
@@ -47,10 +52,10 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
 {
     HttpRx      *rx;
     HttpTx      *tx;
-    cchar       *uri;
+    cchar       *uri, *statusMsg;
     int         status;
 
-    mprAssert(fmt);
+    assure(fmt);
     rx = conn->rx;
     tx = conn->tx;
 
@@ -66,37 +71,47 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     }
     if (flags & HTTP_ABORT) {
         conn->connError = 1;
-    }
-    if (flags & HTTP_ABORT || (tx && tx->flags & HTTP_TX_HEADERS_CREATED)) {
-        /* 
-            If headers have been sent, must let the other side of the failure - abort is the only way.
-            Disconnect will cause a readable (EOF) event. Call formatErrorv for client-side code to set errorMsg.
-         */
-        httpDisconnect(conn);
-        formatErrorv(conn, status, fmt, args);
-        conn->error = 1;
-        return;
-    }
-    if (conn->error) {
-        return;
-    }
-    conn->error = 1;
-    if (rx) {
-        rx->eof = 1;
-    }
-    formatErrorv(conn, status, fmt, args);
-
-    if (conn->endpoint && tx && rx) {
-        if (!(tx->flags & HTTP_TX_HEADERS_CREATED)) {
-            if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status))) {
-                httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
-            } else {
-                httpFormatResponseError(conn, status, "%s", conn->errorMsg);
-            }
+        if (rx) {
+            rx->eof = 1;
         }
     }
-    conn->responded = 1;
-    httpFinalize(conn);
+    if (!conn->error) {
+        conn->error = 1;
+        httpOmitBody(conn);
+        conn->errorMsg = formatErrorv(conn, status, fmt, args);
+        HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
+        if (conn->endpoint && tx && rx) {
+            if (tx->flags & HTTP_TX_HEADERS_CREATED) {
+                /* 
+                    If the response headers have been sent, must let the other side of the failure. 
+                    Abort abort is the only way. Disconnect will cause a readable (EOF) event.
+                 */
+                flags |= HTTP_ABORT;
+            } else {
+                if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status))) {
+                    httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
+                } else {
+                    httpAddHeaderString(conn, "Cache-Control", "no-cache");
+                    statusMsg = httpLookupStatus(conn->http, status);
+                    if (scmp(conn->rx->accept, "text/plain") == 0) {
+                        tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, conn->errorMsg);
+                    } else {
+                        tx->altBody = sfmt("<!DOCTYPE html>\r\n"
+                            "<html><head><title>%s</title></head>\r\n"
+                            "<body>\r\n<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n</body>\r\n</html>\r\n",
+                            statusMsg, status, statusMsg, mprEscapeHtml(conn->errorMsg));
+                    }
+                    tx->length = slen(tx->altBody);
+                    tx->flags |= HTTP_TX_NO_BODY;
+                    httpDiscardData(conn, HTTP_QUEUE_TX);
+                }
+            }
+        }
+        httpFinalize(conn);
+    }
+    if (flags & HTTP_ABORT) {
+        httpDisconnect(conn);
+    }
 }
 
 
@@ -104,7 +119,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     Just format conn->errorMsg and set status - nothing more
     NOTE: this is an internal API. Users should use httpError()
  */
-static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
+static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
 {
     if (conn->errorMsg == 0) {
         conn->errorMsg = sfmtv(fmt, args);
@@ -125,6 +140,7 @@ static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
                 httpLookupStatus(conn->http, status), status, conn->rx->uri ? conn->rx->uri : "", conn->errorMsg);
         }
     }
+    return conn->errorMsg;
 }
 
 
@@ -132,17 +148,17 @@ static void formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
     Just format conn->errorMsg and set status - nothing more
     NOTE: this is an internal API. Users should use httpError()
  */
-void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
+PUBLIC void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
 {
     va_list     args;
 
     va_start(args, fmt); 
-    formatErrorv(conn, status, fmt, args);
+    conn->errorMsg = formatErrorv(conn, status, fmt, args);
     va_end(args); 
 }
 
 
-cchar *httpGetError(HttpConn *conn)
+PUBLIC cchar *httpGetError(HttpConn *conn)
 {
     if (conn->errorMsg) {
         return conn->errorMsg;
@@ -154,7 +170,7 @@ cchar *httpGetError(HttpConn *conn)
 }
 
 
-void httpMemoryError(HttpConn *conn)
+PUBLIC void httpMemoryError(HttpConn *conn)
 {
     httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Memory allocation error");
 }
@@ -164,29 +180,13 @@ void httpMemoryError(HttpConn *conn)
     @copy   default
 
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire
-    a commercial license from Embedthis Software. You agree to be fully bound
-    by the terms of either license. Consult the LICENSE.TXT distributed with
-    this software for full details.
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
 
-    This software is open source; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the
-    Free Software Foundation; either version 2 of the License, or (at your
-    option) any later version. See the GNU General Public License for more
-    details at: http://embedthis.com/downloads/gplLicense.html
-
-    This program is distributed WITHOUT ANY WARRANTY; without even the
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-    This GPL license does NOT permit incorporating this software into
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses
-    for this software and support services are available from Embedthis
-    Software at http://embedthis.com
- 
     Local variables:
     tab-width: 4
     c-basic-offset: 4

@@ -28,14 +28,14 @@ static cchar *setHeadersFromCache(HttpConn *conn, cchar *content);
 
 /************************************ Code ************************************/
 
-int httpOpenCacheHandler(Http *http)
+PUBLIC int httpOpenCacheHandler(Http *http)
 {
     HttpStage     *handler, *filter;
 
     /*
         Create the cache handler to serve cached content 
      */
-    if ((handler = httpCreateHandler(http, "cacheHandler", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((handler = httpCreateHandler(http, "cacheHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->cacheHandler = handler;
@@ -45,7 +45,7 @@ int httpOpenCacheHandler(Http *http)
     /*
         Create the cache filter to capture and cache response content
      */
-    if ((filter = httpCreateFilter(http, "cacheFilter", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((filter = httpCreateFilter(http, "cacheFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->cacheFilter = filter;
@@ -62,7 +62,7 @@ static int matchCacheHandler(HttpConn *conn, HttpRoute *route, int dir)
 {
     HttpCache   *cache;
 
-    mprAssert(route->caching);
+    assure(route->caching);
 
     if ((cache = conn->tx->cache = lookupCacheControl(conn)) == 0) {
         /* Caching not configured for this route */
@@ -246,10 +246,11 @@ static HttpCache *lookupCacheControl(HttpConn *conn)
             continue;
         }
         if (cache->types) {
-            if ((mimeType = (char*) mprLookupMime(rx->route->mimeTypes, tx->ext)) != 0) {
-                if (!mprLookupKey(cache->types, mimeType)) {
-                    continue;
-                }
+            if ((mimeType = (char*) mprLookupMime(rx->route->mimeTypes, tx->ext)) == 0) {
+                continue;
+            }
+            if (!mprLookupKey(cache->types, mimeType)) {
+                continue;
             }
         }
         /* All match */
@@ -276,7 +277,7 @@ static void cacheAtClient(HttpConn *conn)
         } else {
             httpAddHeader(conn, "Cache-Control", "max-age=%d", cache->clientLifespan / MPR_TICKS_PER_SEC);
         }
-#if UNUSED && KEEP
+#if KEEP
         {
             /* Old HTTP/1.0 clients don't understand Cache-Control */
             struct tm   tm;
@@ -306,7 +307,7 @@ static bool fetchCachedResponse(HttpConn *conn)
      */
     key = makeCacheKey(conn);
     if ((value = httpGetHeader(conn, "Cache-Control")) != 0 && 
-            (scontains(value, "max-age=0", -1) == 0 || scontains(value, "no-cache", -1) == 0)) {
+            (scontains(value, "max-age=0") == 0 || scontains(value, "no-cache") == 0)) {
         mprLog(3, "Client reload. Cache-control header '%s' rejects use of cached content.", value);
 
     } else if ((tx->cachedContent = mprReadCache(conn->host->responseCache, key, &modified, 0)) != 0) {
@@ -352,8 +353,8 @@ static void saveCachedResponse(HttpConn *conn)
     MprTime     modified;
 
     tx = conn->tx;
+    assure(tx->finalizedOutput && tx->cacheBuffer);
 
-    mprAssert(conn->finalized && tx->cacheBuffer);
     buf = tx->cacheBuffer;
     mprAddNullToBuf(buf);
     tx->cacheBuffer = 0;
@@ -366,7 +367,7 @@ static void saveCachedResponse(HttpConn *conn)
 }
 
 
-ssize httpWriteCached(HttpConn *conn)
+PUBLIC ssize httpWriteCached(HttpConn *conn)
 {
     MprTime     modified;
     cchar       *cacheKey, *data, *content;
@@ -390,7 +391,7 @@ ssize httpWriteCached(HttpConn *conn)
 }
 
 
-ssize httpUpdateCache(HttpConn *conn, cchar *uri, cchar *data, MprTime lifespan)
+PUBLIC ssize httpUpdateCache(HttpConn *conn, cchar *uri, cchar *data, MprTicks lifespan)
 {
     cchar   *key;
     ssize   len;
@@ -419,8 +420,8 @@ ssize httpUpdateCache(HttpConn *conn, cchar *uri, cchar *data, MprTime lifespan)
     Note: the URI should not include the route prefix (scriptName)
     The extensions should not contain ".". The methods may contain "*" for all methods.
  */
-void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *extensions, cchar *types, MprTime clientLifespan, 
-        MprTime serverLifespan, int flags)
+PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *extensions, cchar *types, 
+        MprTicks clientLifespan, MprTicks serverLifespan, int flags)
 {
     HttpCache   *cache;
     char        *item, *tok;
@@ -472,7 +473,7 @@ void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *extensio
     if (uris) {
         cache->uris = mprCreateHash(0, 0);
         for (item = stok(sclone(uris), " \t,", &tok); item; item = stok(0, " \t,", &tok)) {
-            if (flags & HTTP_CACHE_ONLY && route->prefix && !scontains(item, sfmt("prefix=%s", route->prefix), -1)) {
+            if (flags & HTTP_CACHE_ONLY && route->prefix && !scontains(item, sfmt("prefix=%s", route->prefix))) {
                 /*
                     Auto-add ?prefix=ROUTE_NAME if there is no query
                  */
@@ -494,7 +495,7 @@ void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *extensio
     cache->flags = flags;
     mprAddItem(route->caching, cache);
 
-#if UNUSED && KEEP
+#if KEEP
     mprLog(3, "Caching route %s for methods %s, URIs %s, extensions %s, types %s, client lifespan %d, server lifespan %d", 
         route->name,
         (methods) ? methods: "*",
@@ -560,31 +561,15 @@ static cchar *setHeadersFromCache(HttpConn *conn, cchar *content)
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.TXT distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

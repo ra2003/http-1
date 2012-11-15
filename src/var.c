@@ -11,7 +11,7 @@
 /*
     Define standard CGI variables
  */
-void httpCreateCGIParams(HttpConn *conn)
+PUBLIC void httpCreateCGIParams(HttpConn *conn)
 {
     HttpRx          *rx;
     HttpTx          *tx;
@@ -32,8 +32,8 @@ void httpCreateCGIParams(HttpConn *conn)
     host = conn->host;
     sock = conn->sock;
 
-    mprAddKey(svars, "AUTH_TYPE", rx->authType);
-    mprAddKey(svars, "AUTH_USER", conn->authUser);
+    mprAddKey(svars, "AUTH_TYPE", conn->authType);
+    mprAddKey(svars, "AUTH_USER", conn->username);
     mprAddKey(svars, "AUTH_ACL", MPR->emptyString);
     mprAddKey(svars, "CONTENT_LENGTH", rx->contentLength);
     mprAddKey(svars, "CONTENT_TYPE", rx->mimeType);
@@ -42,7 +42,9 @@ void httpCreateCGIParams(HttpConn *conn)
     mprAddKey(svars, "QUERY_STRING", rx->parsedUri->query);
     mprAddKey(svars, "REMOTE_ADDR", conn->ip);
     mprAddKeyFmt(svars, "REMOTE_PORT", "%d", conn->port);
-    mprAddKey(svars, "REMOTE_USER", conn->authUser);
+
+    /* Set to the same as AUTH_USER */
+    mprAddKey(svars, "REMOTE_USER", conn->username);
     mprAddKey(svars, "REQUEST_METHOD", rx->method);
     mprAddKey(svars, "REQUEST_TRANSPORT", sclone((char*) ((conn->secure) ? "https" : "http")));
     mprAddKey(svars, "SERVER_ADDR", sock->acceptIp);
@@ -67,13 +69,13 @@ void httpCreateCGIParams(HttpConn *conn)
         /*  
             Only set PATH_TRANSLATED if extraPath is set (CGI spec) 
          */
-        mprAssert(rx->extraPath[0] == '/');
+        assure(rx->extraPath[0] == '/');
         mprAddKey(svars, "PATH_TRANSLATED", mprNormalizePath(sfmt("%s%s", rx->route->dir, rx->extraPath)));
     }
 
     if (rx->files) {
         vars = httpGetParams(conn);
-        mprAssert(vars);
+        assure(vars);
         for (index = 0, kp = 0; (kp = mprGetNextKey(conn->rx->files, kp)) != 0; index++) {
             up = (HttpUploadFile*) kp->data;
             mprAddKey(vars, sfmt("FILE_%d_FILENAME", index), up->filename);
@@ -100,7 +102,7 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
     cchar       *oldValue;
     char        *newValue, *decoded, *keyword, *value, *tok;
 
-    mprAssert(conn);
+    assure(conn);
     vars = httpGetParams(conn);
     decoded = mprAlloc(len + 1);
     decoded[len] = '\0';
@@ -141,7 +143,7 @@ static void addParamsFromQueue(HttpQueue *q)
     HttpRx      *rx;
     MprBuf      *content;
 
-    mprAssert(q);
+    assure(q);
     
     conn = q->conn;
     rx = conn->rx;
@@ -175,7 +177,6 @@ static void addBodyParams(HttpConn *conn)
     rx = conn->rx;
     if (rx->form) {
         if (!(rx->flags & HTTP_ADDED_FORM_PARAMS)) {
-            conn->readq = conn->tx->queue[HTTP_QUEUE_RX]->prevQ;
             addParamsFromQueue(conn->readq);
             rx->flags |= HTTP_ADDED_FORM_PARAMS;
         }
@@ -183,14 +184,14 @@ static void addBodyParams(HttpConn *conn)
 }
 
 
-void httpAddParams(HttpConn *conn)
+PUBLIC void httpAddParams(HttpConn *conn)
 {
     addQueryParams(conn);
     addBodyParams(conn);
 }
 
 
-MprHash *httpGetParams(HttpConn *conn)
+PUBLIC MprHash *httpGetParams(HttpConn *conn)
 { 
     if (conn->rx->params == 0) {
         conn->rx->params = mprCreateHash(HTTP_MED_HASH_SIZE, 0);
@@ -199,7 +200,7 @@ MprHash *httpGetParams(HttpConn *conn)
 }
 
 
-int httpTestParam(HttpConn *conn, cchar *var)
+PUBLIC int httpTestParam(HttpConn *conn, cchar *var)
 {
     MprHash    *vars;
     
@@ -208,7 +209,7 @@ int httpTestParam(HttpConn *conn, cchar *var)
 }
 
 
-cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
+PUBLIC cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
 {
     MprHash     *vars;
     cchar       *value;
@@ -219,7 +220,7 @@ cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
 }
 
 
-int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
+PUBLIC int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
 {
     MprHash     *vars;
     cchar       *value;
@@ -240,7 +241,7 @@ static int sortParam(MprKey **h1, MprKey **h2)
     Return the request parameters as a string. 
     This will return the exact same string regardless of the order of form parameters.
  */
-char *httpGetParamsString(HttpConn *conn)
+PUBLIC char *httpGetParamsString(HttpConn *conn)
 {
     HttpRx      *rx;
     MprHash     *params;
@@ -250,7 +251,7 @@ char *httpGetParamsString(HttpConn *conn)
     ssize       len;
     int         next;
 
-    mprAssert(conn);
+    assure(conn);
 
     rx = conn->rx;
 
@@ -263,7 +264,7 @@ char *httpGetParamsString(HttpConn *conn)
                     len += slen(kp->key) + slen(kp->data) + 2;
                 }
                 if ((buf = mprAlloc(len + 1)) != 0) {
-                    mprSortList(list, sortParam);
+                    mprSortList(list, (MprSortProc) sortParam, 0);
                     cp = buf;
                     for (next = 0; (kp = mprGetNextItem(list, &next)) != 0; ) {
                         strcpy(cp, kp->key); cp += slen(kp->key);
@@ -281,7 +282,7 @@ char *httpGetParamsString(HttpConn *conn)
 }
 
 
-void httpSetParam(HttpConn *conn, cchar *var, cchar *value) 
+PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value) 
 {
     MprHash     *vars;
 
@@ -290,7 +291,7 @@ void httpSetParam(HttpConn *conn, cchar *var, cchar *value)
 }
 
 
-void httpSetIntParam(HttpConn *conn, cchar *var, int value) 
+PUBLIC void httpSetIntParam(HttpConn *conn, cchar *var, int value) 
 {
     MprHash     *vars;
     
@@ -299,7 +300,7 @@ void httpSetIntParam(HttpConn *conn, cchar *var, int value)
 }
 
 
-bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
+PUBLIC bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
 {
     if (strcmp(value, httpGetParam(conn, var, " __UNDEF__ ")) == 0) {
         return 1;
@@ -308,7 +309,7 @@ bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
 }
 
 
-void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *upfile)
+PUBLIC void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *upfile)
 {
     HttpRx   *rx;
 
@@ -320,7 +321,7 @@ void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *upfile)
 }
 
 
-void httpRemoveUploadFile(HttpConn *conn, cchar *id)
+PUBLIC void httpRemoveUploadFile(HttpConn *conn, cchar *id)
 {
     HttpRx    *rx;
     HttpUploadFile  *upfile;
@@ -335,7 +336,7 @@ void httpRemoveUploadFile(HttpConn *conn, cchar *id)
 }
 
 
-void httpRemoveAllUploadedFiles(HttpConn *conn)
+PUBLIC void httpRemoveAllUploadedFiles(HttpConn *conn)
 {
     HttpRx          *rx;
     HttpUploadFile  *upfile;
@@ -354,31 +355,15 @@ void httpRemoveAllUploadedFiles(HttpConn *conn)
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.TXT distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

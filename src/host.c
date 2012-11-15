@@ -11,13 +11,17 @@
 
 #include    "http.h"
 
+/*********************************** Locals ***********************************/
+
+static HttpHost *defaultHost;
+
 /********************************** Forwards **********************************/
 
 static void manageHost(HttpHost *host, int flags);
 
 /*********************************** Code *************************************/
 
-HttpHost *httpCreateHost(cchar *home)
+PUBLIC HttpHost *httpCreateHost(cchar *home)
 {
     HttpHost    *host;
     Http        *http;
@@ -41,7 +45,7 @@ HttpHost *httpCreateHost(cchar *home)
 }
 
 
-HttpHost *httpCloneHost(HttpHost *parent)
+PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
 {
     HttpHost    *host;
     Http        *http;
@@ -80,6 +84,8 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->protocol);
         mprMark(host->mutex);
         mprMark(host->home);
+        mprMark(host->defaultEndpoint);
+        mprMark(host->secureEndpoint);
 
     } else if (flags & MPR_MANAGE_FREE) {
         /* The http->hosts list is static. ie. The hosts won't be marked via http->hosts */
@@ -88,7 +94,7 @@ static void manageHost(HttpHost *host, int flags)
 }
 
 
-int httpStartHost(HttpHost *host)
+PUBLIC int httpStartHost(HttpHost *host)
 {
     HttpRoute   *route;
     int         next;
@@ -105,7 +111,7 @@ int httpStartHost(HttpHost *host)
 }
 
 
-void httpStopHost(HttpHost *host)
+PUBLIC void httpStopHost(HttpHost *host)
 {
     HttpRoute   *route;
     int         next;
@@ -116,7 +122,7 @@ void httpStopHost(HttpHost *host)
 }
 
 
-HttpRoute *httpGetHostDefaultRoute(HttpHost *host)
+PUBLIC HttpRoute *httpGetHostDefaultRoute(HttpHost *host)
 {
     return host->defaultRoute;
 }
@@ -158,7 +164,7 @@ static void printRoute(HttpRoute *route, int next, bool full)
 }
 
 
-void httpLogRoutes(HttpHost *host, bool full)
+PUBLIC void httpLogRoutes(HttpHost *host, bool full)
 {
     HttpRoute   *route;
     int         next, foundDefault;
@@ -182,7 +188,7 @@ void httpLogRoutes(HttpHost *host, bool full)
 }
 
 
-void httpSetHostHome(HttpHost *host, cchar *home)
+PUBLIC void httpSetHostHome(HttpHost *host, cchar *home)
 {
     host->home = mprGetAbsPath(home);
 }
@@ -192,7 +198,7 @@ void httpSetHostHome(HttpHost *host, cchar *home)
     IP may be null in which case the host is listening on all interfaces. Port may be set to -1 and ip may contain a port
     specifier, ie. "address:port".
  */
-void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
+PUBLIC void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
 {
     char    *pip;
 
@@ -202,7 +208,6 @@ void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
     }
     host->ip = sclone(ip);
     host->port = port;
-
     if (!host->name) {
         if (ip) {
             if (port > 0) {
@@ -211,37 +216,42 @@ void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
                 host->name = sclone(ip);
             }
         } else {
-            mprAssert(port > 0);
+            assure(port > 0);
             host->name = sfmt("*:%d", port);
         }
     }
 }
 
 
-void httpSetHostName(HttpHost *host, cchar *name)
+PUBLIC void httpSetHostName(HttpHost *host, cchar *name)
 {
     host->name = sclone(name);
 }
 
 
-void httpSetHostProtocol(HttpHost *host, cchar *protocol)
+PUBLIC void httpSetHostProtocol(HttpHost *host, cchar *protocol)
 {
     host->protocol = sclone(protocol);
 }
 
 
-int httpAddRoute(HttpHost *host, HttpRoute *route)
+PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)
 {
-    HttpRoute   *prev, *item;
+    HttpRoute   *prev, *item, *lastRoute;
     int         i, thisRoute;
 
-    mprAssert(route);
+    assure(route);
     
     if (host->parent && host->routes == host->parent->routes) {
         host->routes = mprCloneList(host->parent->routes);
     }
     if (mprLookupItem(host->routes, route) < 0) {
-        thisRoute = mprAddItem(host->routes, route);
+        if ((lastRoute = mprGetLastItem(host->routes)) && lastRoute->pattern[0] == '\0') {
+            /* Insert before default route */
+            thisRoute = mprInsertItemAtPos(host->routes, mprGetListLength(host->routes) - 1, route);
+        } else {
+            thisRoute = mprAddItem(host->routes, route);
+        }
         if (thisRoute > 0) {
             prev = mprGetItem(host->routes, thisRoute - 1);
             if (!smatch(prev->startSegment, route->startSegment)) {
@@ -262,7 +272,7 @@ int httpAddRoute(HttpHost *host, HttpRoute *route)
 }
 
 
-HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
+PUBLIC HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
 {
     HttpRoute   *route;
     int         next;
@@ -270,8 +280,11 @@ HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
     if (name == 0 || *name == '\0') {
         name = "default";
     }
+    if (!host && (host = httpGetDefaultHost()) == 0) {
+        return 0;
+    }
     for (next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
-        mprAssert(route->name);
+        assure(route->name);
         if (smatch(route->name, name)) {
             return route;
         }
@@ -280,43 +293,63 @@ HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
 }
 
 
-void httpResetRoutes(HttpHost *host)
+PUBLIC void httpResetRoutes(HttpHost *host)
 {
     host->routes = mprCreateList(-1, 0);
 }
 
 
-void httpSetHostDefaultRoute(HttpHost *host, HttpRoute *route)
+PUBLIC void httpSetHostDefaultRoute(HttpHost *host, HttpRoute *route)
 {
     host->defaultRoute = route;
 }
+
+
+PUBLIC void httpSetDefaultHost(HttpHost *host)
+{
+    defaultHost = host;
+}
+
+
+PUBLIC void httpSetHostSecureEndpoint(HttpHost *host, HttpEndpoint *endpoint)
+{
+    host->secureEndpoint = endpoint;
+}
+
+
+PUBLIC void httpSetHostDefaultEndpoint(HttpHost *host, HttpEndpoint *endpoint)
+{
+    host->defaultEndpoint = endpoint;
+}
+
+
+PUBLIC HttpHost *httpGetDefaultHost()
+{
+    return defaultHost;
+}
+
+
+PUBLIC HttpRoute *httpGetDefaultRoute(HttpHost *host)
+{
+    if (host) {
+        return host->defaultRoute;
+    } else if (defaultHost) {
+        return defaultHost->defaultRoute;
+    }
+    return 0;
+}
+
 
 /*
     @copy   default
 
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire
-    a commercial license from Embedthis Software. You agree to be fully bound
-    by the terms of either license. Consult the LICENSE.TXT distributed with
-    this software for full details.
-
-    This software is open source; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the
-    Free Software Foundation; either version 2 of the License, or (at your
-    option) any later version. See the GNU General Public License for more
-    details at: http://embedthis.com/downloads/gplLicense.html
-
-    This program is distributed WITHOUT ANY WARRANTY; without even the
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-    This GPL license does NOT permit incorporating this software into
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses
-    for this software and support services are available from Embedthis
-    Software at http://embedthis.com
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
 
     Local variables:
     tab-width: 4

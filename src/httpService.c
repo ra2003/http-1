@@ -18,8 +18,9 @@ typedef struct HttpStatusCode {
 } HttpStatusCode;
 
 
-HttpStatusCode HttpStatusCodes[] = {
+PUBLIC HttpStatusCode HttpStatusCodes[] = {
     { 100, "100", "Continue" },
+    { 101, "101", "Switching Protocols" },
     { 200, "200", "OK" },
     { 201, "201", "Created" },
     { 202, "202", "Accepted" },
@@ -40,7 +41,7 @@ HttpStatusCode HttpStatusCodes[] = {
     { 406, "406", "Not Acceptable" },
     { 408, "408", "Request Timeout" },
     { 409, "409", "Conflict" },
-    { 410, "410", "Length Required" },
+    { 410, "410", "Gone" },
     { 411, "411", "Length Required" },
     { 412, "412", "Precondition Failed" },
     { 413, "413", "Request Entity Too Large" },
@@ -74,30 +75,29 @@ static void updateCurrentDate(Http *http);
 
 /*********************************** Code *************************************/
 
-Http *httpCreate()
+PUBLIC Http *httpCreate(int flags)
 {
     Http            *http;
     HttpStatusCode  *code;
 
+    mprGlobalLock();
     if (MPR->httpService) {
+        mprGlobalUnlock();
         return MPR->httpService;
     }
     if ((http = mprAllocObj(Http, manageHttp)) == 0) {
+        mprGlobalUnlock();
         return 0;
     }
     MPR->httpService = http;
     http->software = sclone(HTTP_NAME);
     http->protocol = sclone("HTTP/1.1");
-    http->mutex = mprCreateLock(http);
+    http->mutex = mprCreateLock();
     http->stages = mprCreateHash(-1, 0);
-    http->routeTargets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
-    http->routeConditions = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
-    http->routeUpdates = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
     http->hosts = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
-    http->endpoints = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
     http->connections = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
-    http->defaultClientHost = sclone("127.0.0.1");
-    http->defaultClientPort = 80;
+    http->authTypes = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE);
+    http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE);
     http->booted = mprGetTime();
 
     updateCurrentDate(http);
@@ -111,17 +111,32 @@ Http *httpCreate()
     httpOpenSendConnector(http);
     httpOpenRangeFilter(http);
     httpOpenChunkFilter(http);
-    httpOpenUploadFilter(http);
-    httpOpenCacheHandler(http);
-    httpOpenPassHandler(http);
-
-    http->clientLimits = httpCreateLimits(0);
-    http->serverLimits = httpCreateLimits(1);
-    http->clientRoute = httpCreateConfiguredRoute(0, 0);
+    httpOpenWebSockFilter(http);
 
     mprSetIdleCallback(isIdle);
     mprAddTerminator(terminateHttp);
-    httpDefineRouteBuiltins();
+
+    if (flags & HTTP_SERVER_SIDE) {
+        http->endpoints = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
+        http->routeTargets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
+        http->routeConditions = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
+        http->routeUpdates = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
+        http->sessionCache = mprCreateCache(MPR_CACHE_SHARED);
+        httpOpenUploadFilter(http);
+        httpOpenCacheHandler(http);
+        httpOpenPassHandler(http);
+        httpOpenActionHandler(http);
+        http->serverLimits = httpCreateLimits(1);
+        httpDefineRouteBuiltins();
+    }
+    if (flags & HTTP_CLIENT_SIDE) {
+        http->defaultClientHost = sclone("127.0.0.1");
+        http->defaultClientPort = 80;
+        http->clientLimits = httpCreateLimits(0);
+        http->clientRoute = httpCreateConfiguredRoute(0, 0);
+        http->clientHandler = httpCreateHandler(http, "client", 0);
+    }
+    mprGlobalUnlock();
     return http;
 }
 
@@ -140,11 +155,13 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->routeTargets);
         mprMark(http->routeConditions);
         mprMark(http->routeUpdates);
+        mprMark(http->sessionCache);
         /* Don't mark convenience stage references as they will be in http->stages */
         
         mprMark(http->clientLimits);
         mprMark(http->serverLimits);
         mprMark(http->clientRoute);
+        mprMark(http->clientHandler);
         mprMark(http->timer);
         mprMark(http->timestamp);
         mprMark(http->mutex);
@@ -152,45 +169,48 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->forkData);
         mprMark(http->context);
         mprMark(http->currentDate);
-        mprMark(http->expiresDate);
         mprMark(http->secret);
         mprMark(http->defaultClientHost);
         mprMark(http->protocol);
         mprMark(http->proxyHost);
+        mprMark(http->authTypes);
+        mprMark(http->authStores);
 
         /*
             Endpoints keep connections alive until a timeout. Keep marking even if no other references.
          */
-        lock(http);
+        lock(http->connections);
         for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
             if (conn->endpoint) {
                 mprMark(conn);
             }
         }
-        unlock(http);
+        unlock(http->connections);
     }
 }
 
 
-void httpDestroy(Http *http)
+PUBLIC void httpDestroy(Http *http)
 {
     if (http->timer) {
         mprRemoveEvent(http->timer);
+        http->timer = 0;
     }
     if (http->timestamp) {
         mprRemoveEvent(http->timestamp);
+        http->timestamp = 0;
     }
     MPR->httpService = NULL;
 }
 
 
-void httpAddEndpoint(Http *http, HttpEndpoint *endpoint)
+PUBLIC void httpAddEndpoint(Http *http, HttpEndpoint *endpoint)
 {
     mprAddItem(http->endpoints, endpoint);
 }
 
 
-void httpRemoveEndpoint(Http *http, HttpEndpoint *endpoint)
+PUBLIC void httpRemoveEndpoint(Http *http, HttpEndpoint *endpoint)
 {
     mprRemoveItem(http->endpoints, endpoint);
 }
@@ -199,7 +219,7 @@ void httpRemoveEndpoint(Http *http, HttpEndpoint *endpoint)
 /*  
     Lookup a host address. If ipAddr is null or port is -1, then those elements are wild.
  */
-HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
+PUBLIC HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
 {
     HttpEndpoint    *endpoint;
     int             next;
@@ -209,7 +229,7 @@ HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
     }
     for (next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
         if (endpoint->port <= 0 || port <= 0 || endpoint->port == port) {
-            mprAssert(endpoint->ip);
+            assure(endpoint->ip);
             if (*endpoint->ip == '\0' || *ip == '\0' || scmp(endpoint->ip, ip) == 0) {
                 return endpoint;
             }
@@ -219,7 +239,7 @@ HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
 }
 
 
-HttpEndpoint *httpGetFirstEndpoint(Http *http)
+PUBLIC HttpEndpoint *httpGetFirstEndpoint(Http *http)
 {
     return mprGetFirstItem(http->endpoints);
 }
@@ -228,19 +248,19 @@ HttpEndpoint *httpGetFirstEndpoint(Http *http)
 /*
     WARNING: this should not be called by users as httpCreateHost will automatically call this.
  */
-void httpAddHost(Http *http, HttpHost *host)
+PUBLIC void httpAddHost(Http *http, HttpHost *host)
 {
     mprAddItem(http->hosts, host);
 }
 
 
-void httpRemoveHost(Http *http, HttpHost *host)
+PUBLIC void httpRemoveHost(Http *http, HttpHost *host)
 {
     mprRemoveItem(http->hosts, host);
 }
 
 
-HttpHost *httpLookupHost(Http *http, cchar *name)
+PUBLIC HttpHost *httpLookupHost(Http *http, cchar *name)
 {
     HttpHost    *host;
     int         next;
@@ -254,9 +274,10 @@ HttpHost *httpLookupHost(Http *http, cchar *name)
 }
 
 
-void httpInitLimits(HttpLimits *limits, bool serverSide)
+PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
 {
     memset(limits, 0, sizeof(HttpLimits));
+    limits->bufferSize = HTTP_MAX_STAGE_BUFFER;
     limits->cacheItemSize = HTTP_MAX_CACHE_ITEM;
     limits->chunkSize = HTTP_MAX_CHUNK;
     limits->clientMax = HTTP_MAX_CLIENTS;
@@ -267,7 +288,7 @@ void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->receiveBodySize = HTTP_MAX_RECEIVE_BODY;
     limits->processMax = HTTP_MAX_REQUESTS;
     limits->requestMax = HTTP_MAX_REQUESTS;
-    limits->stageBufferSize = HTTP_MAX_STAGE_BUFFER;
+    limits->sessionMax = HTTP_MAX_SESSIONS;
     limits->transmissionBodySize = HTTP_MAX_TX_BODY;
     limits->uploadSize = HTTP_MAX_UPLOAD;
     limits->uriSize = MPR_MAX_URL;
@@ -276,18 +297,24 @@ void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->requestTimeout = MAXINT;
     limits->sessionTimeout = HTTP_SESSION_TIMEOUT;
 
+    limits->webSocketsMax = HTTP_MAX_WSS_SOCKETS;
+    limits->webSocketsMessageSize = HTTP_MAX_WSS_MESSAGE;
+    limits->webSocketsFrameSize = HTTP_MAX_WSS_FRAME;
+    limits->webSocketsPacketSize = HTTP_MAX_WSS_PACKET;
+    limits->webSocketsPing = HTTP_WSS_PING_PERIOD;
+
 #if FUTURE
     mprSetMaxSocketClients(endpoint, atoi(value));
 
-    if (scasecmp(key, "LimitClients") == 0) {
+    if (scaselesscmp(key, "LimitClients") == 0) {
         mprSetMaxSocketClients(endpoint, atoi(value));
         return 1;
     }
-    if (scasecmp(key, "LimitMemoryMax") == 0) {
+    if (scaselesscmp(key, "LimitMemoryMax") == 0) {
         mprSetAllocLimits(endpoint, -1, atoi(value));
         return 1;
     }
-    if (scasecmp(key, "LimitMemoryRedline") == 0) {
+    if (scaselesscmp(key, "LimitMemoryRedline") == 0) {
         mprSetAllocLimits(endpoint, atoi(value), -1);
         return 1;
     }
@@ -295,7 +322,7 @@ void httpInitLimits(HttpLimits *limits, bool serverSide)
 }
 
 
-HttpLimits *httpCreateLimits(int serverSide)
+PUBLIC HttpLimits *httpCreateLimits(int serverSide)
 {
     HttpLimits  *limits;
 
@@ -306,7 +333,7 @@ HttpLimits *httpCreateLimits(int serverSide)
 }
 
 
-void httpEaseLimits(HttpLimits *limits)
+PUBLIC void httpEaseLimits(HttpLimits *limits)
 {
     limits->receiveFormSize = MAXOFF;
     limits->receiveBodySize = MAXOFF;
@@ -315,19 +342,19 @@ void httpEaseLimits(HttpLimits *limits)
 }
 
 
-void httpAddStage(Http *http, HttpStage *stage)
+PUBLIC void httpAddStage(Http *http, HttpStage *stage)
 {
     mprAddKey(http->stages, stage->name, stage);
 }
 
 
-HttpStage *httpLookupStage(Http *http, cchar *name)
+PUBLIC HttpStage *httpLookupStage(Http *http, cchar *name)
 {
     return mprLookupKey(http->stages, name);
 }
 
 
-void *httpLookupStageData(Http *http, cchar *name)
+PUBLIC void *httpLookupStageData(Http *http, cchar *name)
 {
     HttpStage   *stage;
     if ((stage = mprLookupKey(http->stages, name)) != 0) {
@@ -337,7 +364,7 @@ void *httpLookupStageData(Http *http, cchar *name)
 }
 
 
-cchar *httpLookupStatus(Http *http, int status)
+PUBLIC cchar *httpLookupStatus(Http *http, int status)
 {
     HttpStatusCode  *ep;
     char            *key;
@@ -351,44 +378,33 @@ cchar *httpLookupStatus(Http *http, int status)
 }
 
 
-void httpSetForkCallback(Http *http, MprForkCallback callback, void *data)
+PUBLIC void httpSetForkCallback(Http *http, MprForkCallback callback, void *data)
 {
     http->forkCallback = callback;
     http->forkData = data;
 }
 
 
-void httpSetListenCallback(Http *http, HttpListenCallback fn)
+PUBLIC void httpSetListenCallback(Http *http, HttpListenCallback fn)
 {
     http->listenCallback = fn;
 }
 
 
 /*  
-    Start the http timer. This may create multiple timers -- no worry. httpAddConn does its best to only schedule one.
- */
-static void startTimer(Http *http)
-{
-    updateCurrentDate(http);
-    http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
-        MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
-}
-
-
-/*  
     The http timer does maintenance activities and will fire per second while there are active requests.
+    This is run in both servers and clients.
     NOTE: Because we lock the http here, connections cannot be deleted while we are modifying the list.
  */
 static void httpTimer(Http *http, MprEvent *event)
 {
     HttpConn    *conn;
     HttpStage   *stage;
-    HttpRx      *rx;
     HttpLimits  *limits;
     MprModule   *module;
-    int         next, active;
+    int         next, active, abort;
 
-    mprAssert(event);
+    assure(event);
     
     updateCurrentDate(http);
     if (mprGetDebugMode()) {
@@ -396,35 +412,30 @@ static void httpTimer(Http *http, MprEvent *event)
     }
     /* 
        Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
+       OPT - could check for expired connections every 10 seconds.
      */
-    lock(http);
-    mprLog(6, "httpTimer: %d active connections", mprGetListLength(http->connections));
+    lock(http->connections);
+    mprLog(7, "httpTimer: %d active connections", mprGetListLength(http->connections));
     for (active = 0, next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; active++) {
-        rx = conn->rx;
         limits = conn->limits;
-        if (!conn->timeoutEvent && (
-            (conn->lastActivity + limits->inactivityTimeout) < http->now || 
-            (conn->started + limits->requestTimeout) < http->now)) {
-            if (rx) {
-                /*
-                    Don't call APIs on the conn directly (thread-race). Schedule a timer on the connection's dispatcher
-                 */
-                if (!conn->timeoutEvent) {
-                    conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, httpConnTimeout, conn, 0);
-                }
-            } else {
-                mprLog(6, "Idle connection timed out");
+        if (!conn->timeoutEvent) {
+            abort = 0;
+            if (http->underAttack && conn->state < HTTP_STATE_PARSED && (conn->lastActivity + 3000) < http->now) {
+                abort = 1;
                 httpDisconnect(conn);
-                httpDiscardQueueData(conn->writeq, 1);
-                httpEnableConnEvents(conn);
-                conn->lastActivity = conn->started = http->now;
+            } else if ((conn->lastActivity + limits->inactivityTimeout) < http->now || 
+                    (conn->started + limits->requestTimeout) < http->now) {
+                abort = 1;
+            }
+            if (abort) {
+                conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, httpConnTimeout, conn, 0);
             }
         }
     }
 
     /*
         Check for unloadable modules
-        MOB - move down into MPR and set stage->flags in an unload callback
+        OPT - could check for modules every minute
      */
     if (mprGetListLength(http->connections) == 0) {
         for (next = 0; (module = mprGetNextItem(MPR->moduleService->modules, &next)) != 0; ) {
@@ -450,7 +461,8 @@ static void httpTimer(Http *http, MprEvent *event)
         mprRemoveEvent(event);
         http->timer = 0;
     }
-    unlock(http);
+    //  OPT - run GC here
+    unlock(http->connections);
 }
 
 
@@ -460,19 +472,19 @@ static void timestamp()
 }
 
 
-void httpSetTimestamp(MprTime period)
+PUBLIC void httpSetTimestamp(MprTicks period)
 {
     Http    *http;
 
     http = MPR->httpService;
-    if (http->timestamp) {
-        mprRemoveEvent(http->timestamp);
-    }
     if (period < (10 * MPR_TICKS_PER_SEC)) {
         period = (10 * MPR_TICKS_PER_SEC);
     }
+    if (http->timestamp) {
+        mprRemoveEvent(http->timestamp);
+    }
     if (period > 0) {
-        http->timer = mprCreateTimerEvent(NULL, "httpTimestamp", period, timestamp, NULL, 
+        http->timestamp = mprCreateTimerEvent(NULL, "httpTimestamp", period, timestamp, NULL, 
             MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
     }
 }
@@ -500,25 +512,25 @@ static bool isIdle()
 {
     HttpConn        *conn;
     Http            *http;
-    MprTime         now;
+    MprTicks        now;
     int             next;
-    static MprTime  lastTrace = 0;
+    static MprTicks lastTrace = 0;
 
     http = (Http*) mprGetMpr()->httpService;
     now = http->now;
 
-    lock(http);
+    lock(http->connections);
     for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
         if (conn->state != HTTP_STATE_BEGIN) {
             if (lastTrace < now) {
                 mprLog(1, "Waiting for request %s to complete", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
                 lastTrace = now;
             }
-            unlock(http);
+            unlock(http->connections);
             return 0;
         }
     }
-    unlock(http);
+    unlock(http->connections);
     if (!mprServicesAreIdle()) {
         if (lastTrace < now) {
             mprLog(4, "Waiting for MPR services complete");
@@ -530,25 +542,28 @@ static bool isIdle()
 }
 
 
-void httpAddConn(Http *http, HttpConn *conn)
+PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 {
-    lock(http);
-    mprAddItem(http->connections, conn);
+    http->now = mprGetTicks();
+    assure(http->now >= 0);
     conn->started = http->now;
-    conn->seqno = http->connCount++;
+    mprAddItem(http->connections, conn);
     updateCurrentDate(http);
-    if (http->timer == 0) {
-        startTimer(http);
+
+    //  OPT - use a less contentions mutex
+    lock(http);
+    conn->seqno = http->connCount++;
+    if (!http->timer) {
+        http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
+            MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
     }
     unlock(http);
 }
 
 
-void httpRemoveConn(Http *http, HttpConn *conn)
+PUBLIC void httpRemoveConn(Http *http, HttpConn *conn)
 {
-    lock(http);
     mprRemoveItem(http->connections, conn);
-    unlock(http);
 }
 
 
@@ -556,15 +571,14 @@ void httpRemoveConn(Http *http, HttpConn *conn)
     Create a random secret for use in authentication. Create once for the entire http service. Created on demand.
     Users can recall as required to update.
  */
-int httpCreateSecret(Http *http)
+PUBLIC int httpCreateSecret(Http *http)
 {
-    MprTime     now;
+    MprTicks    now;
     char        *hex = "0123456789abcdef";
     char        bytes[HTTP_MAX_SECRET], ascii[HTTP_MAX_SECRET * 2 + 1], *ap, *cp, *bp;
     int         i, pid;
 
     if (mprGetRandomBytes(bytes, sizeof(bytes), 0) < 0) {
-        mprError("Can't get sufficient random data for secure SSL operation. If SSL is used, it may not be secure.");
         now = http->now;
         pid = (int) getpid();
         cp = (char*) &now;
@@ -576,10 +590,9 @@ int httpCreateSecret(Http *http)
         for (i = 0; i < sizeof(pid) && bp < &bytes[HTTP_MAX_SECRET]; i++) {
             *bp++ = *cp++;
         }
-        mprAssert(0);
+        assure(0);
         return MPR_ERR_CANT_INITIALIZE;
     }
-
     ap = ascii;
     for (i = 0; i < (int) sizeof(bytes); i++) {
         *ap++ = hex[((uchar) bytes[i]) >> 4];
@@ -591,85 +604,62 @@ int httpCreateSecret(Http *http)
 }
 
 
-void httpEnableTraceMethod(HttpLimits *limits, bool on)
+PUBLIC char *httpGetDateString(MprPath *sbuf)
 {
-    limits->enableTraceMethod = on;
-}
-
-
-char *httpGetDateString(MprPath *sbuf)
-{
-    MprTime     when;
+    MprTicks    when;
 
     if (sbuf == 0) {
         when = ((Http*) MPR->httpService)->now;
     } else {
-        when = (MprTime) sbuf->mtime * MPR_TICKS_PER_SEC;
+        when = (MprTicks) sbuf->mtime * MPR_TICKS_PER_SEC;
     }
     return mprFormatUniversalTime(HTTP_DATE_FORMAT, when);
 }
 
 
-void *httpGetContext(Http *http)
+PUBLIC void *httpGetContext(Http *http)
 {
     return http->context;
 }
 
 
-void httpSetContext(Http *http, void *context)
+PUBLIC void httpSetContext(Http *http, void *context)
 {
     http->context = context;
 }
 
 
-int httpGetDefaultClientPort(Http *http)
+PUBLIC int httpGetDefaultClientPort(Http *http)
 {
     return http->defaultClientPort;
 }
 
 
-cchar *httpGetDefaultClientHost(Http *http)
+PUBLIC cchar *httpGetDefaultClientHost(Http *http)
 {
     return http->defaultClientHost;
 }
 
 
-int httpLoadSsl(Http *http)
-{
-#if BIT_FEATURE_SSL
-    if (!http->sslLoaded) {
-        if (!mprLoadSsl(0)) {
-            mprError("Can't load SSL provider");
-            return MPR_ERR_CANT_LOAD;
-        }
-        http->sslLoaded = 1;
-    }
-#else
-    mprError("SSL communications support not included in build");
-#endif
-    return 0;
-}
-
-
-void httpSetDefaultClientPort(Http *http, int port)
+PUBLIC void httpSetDefaultClientPort(Http *http, int port)
 {
     http->defaultClientPort = port;
 }
 
 
-void httpSetDefaultClientHost(Http *http, cchar *host)
+PUBLIC void httpSetDefaultClientHost(Http *http, cchar *host)
 {
     http->defaultClientHost = sclone(host);
 }
 
 
-void httpSetSoftware(Http *http, cchar *software)
+PUBLIC void httpSetSoftware(Http *http, cchar *software)
 {
     http->software = sclone(software);
 }
 
 
-void httpSetProxy(Http *http, cchar *host, int port)
+PUBLIC void httpSetProxy(Http *http, cchar *host, int port)
 {
     http->proxyHost = sclone(host);
     http->proxyPort = port;
@@ -678,16 +668,14 @@ void httpSetProxy(Http *http, cchar *host, int port)
 
 static void updateCurrentDate(Http *http)
 {
-    static MprTime  recalcExpires = 0;
-
-    http->now = mprGetTime();
+    http->now = mprGetTicks();
+    assure(http->now >= 0);
     if (http->now > (http->currentTime + MPR_TICKS_PER_SEC - 1)) {
+        /*
+            Optimize and only update the string date representation once per second
+         */
         http->currentTime = http->now;
         http->currentDate = httpGetDateString(NULL);
-        if (http->expiresDate == 0 || recalcExpires < (http->now / (60 * 1000))) {
-            http->expiresDate = mprFormatUniversalTime(HTTP_DATE_FORMAT, http->now + (86400 * 1000));
-            recalcExpires = http->now / (60 * 1000);
-        }
     }
 }
 
@@ -696,28 +684,12 @@ static void updateCurrentDate(Http *http)
     @copy   default
 
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire
-    a commercial license from Embedthis Software. You agree to be fully bound
-    by the terms of either license. Consult the LICENSE.TXT distributed with
-    this software for full details.
-
-    This software is open source; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the
-    Free Software Foundation; either version 2 of the License, or (at your
-    option) any later version. See the GNU General Public License for more
-    details at: http://embedthis.com/downloads/gplLicense.html
-
-    This program is distributed WITHOUT ANY WARRANTY; without even the
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-    This GPL license does NOT permit incorporating this software into
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses
-    for this software and support services are available from Embedthis
-    Software at http://embedthis.com
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
 
     Local variables:
     tab-width: 4

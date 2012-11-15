@@ -22,13 +22,16 @@ Bit.load({
         product: 'http',
         title: 'Http Library',
         company: 'Embedthis',
-        version: '1.0.0',
-        buildNumber: 'B2',
+        version: '1.0.1',
+        buildNumber: '0',
         manager: '',
+        ciphers: "HIGH:MEDIUM",
         sync: [ 'mpr', 'pcre' ],
         '+required': [ 'pcre' ],
         '+optional': [ 'doxygen', 'dsi', 'ejs', 'man', 'man2html', 'openssl', 'matrixssl', 'ssl', 'utest' ],
-        'without-all': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'ssl'],
+        'without-all': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'matrixssl', 'ssl', 'openssl' ],
+        'without-own': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'matrixssl', ],
+        pam: true,
     },
 
     usage: {
@@ -55,10 +58,11 @@ Bit.load({
             type: 'lib',
             headers: [ 'src/*.h' ],
             sources: [ 'src/*.c' ],
-            depends: [ 'libmpr', 'libpcre', 'libmprssl' ],
+            exclude: /http.c/,
+            depends: [ 'libmpr', 'libpcre' ],
             scripts: {
                 prebuild: "
-                    if (bit.settings.hasPam) {
+                    if (bit.settings.hasPam && bit.settings.pam) {
                         bit.target.libraries.push('pam')
                     }
                 ",
@@ -68,7 +72,7 @@ Bit.load({
         http: {
             type: 'exe',
             depends: [ 'libhttp' ],
-            sources: [ 'src/utils/http.c' ],
+            sources: [ 'src/http.c' ],
         },
 
         package: {
@@ -80,26 +84,18 @@ Bit.load({
             action: "
                 let d = bit.dir.pkg.join('${settings.product}-${settings.version}')
                 safeRemove(bit.dir.pkg)
-                //  MOB - why hidden?
                 install('package/http.bit', d.join('src/deps/http/http.bit'), {hidden: true})
-                install(['doc/api/http.html', 'doc/api/httpBare.html', 'doc/api/http*.tags', 'doc/api/http.dtags'],
-                    d.join('doc/api'))
+                install(['doc/api/httpBare.html', 'doc/api/http*.tags', 'doc/api/http.dtags'], d.join('doc/api'))
                 install('doc/man/http.1', d.join('doc/man/http.1'))
-                install(['src/http.h', 'src/utils/http.c'], d.join('src/deps/http'))
+                install(['src/http.h', 'src/http.c'], d.join('src/deps/http'))
                 install('src/*.c', d.join('src/deps/http/httpLib.c'), {
                     cat: true,
+                    exclude: /http.c/,
                     filter: /^#inc.*http.*$/mg,
                     header: '#include \"http.h\"',
                     title: bit.settings.title + ' Library Source',
                 })
                 package(bit.dir.pkg, ['combo', 'flat'])
-            ",
-        },
-
-        api: {
-            action: "
-                apidoc('${SRC}/doc/api/http.dox', '${SRC}/src/http.h', 'Http API')
-                apiwrap('${SRC}/doc/api/http.html')
             ",
         },
     },

@@ -13,7 +13,7 @@ static void manageQueue(HttpQueue *q, int flags);
 
 /************************************ Code ************************************/
 
-HttpQueue *httpCreateQueueHead(HttpConn *conn, cchar *name)
+PUBLIC HttpQueue *httpCreateQueueHead(HttpConn *conn, cchar *name)
 {
     HttpQueue   *q;
 
@@ -26,7 +26,11 @@ HttpQueue *httpCreateQueueHead(HttpConn *conn, cchar *name)
 }
 
 
-HttpQueue *httpCreateQueue(HttpConn *conn, HttpStage *stage, int dir, HttpQueue *prev)
+/*
+    Create a queue associated with a connection.
+    Prev may be set to the previous queue in a pipeline. If so, then the Conn.readq and writeq are updated.
+ */
+PUBLIC HttpQueue *httpCreateQueue(HttpConn *conn, HttpStage *stage, int dir, HttpQueue *prev)
 {
     HttpQueue   *q;
 
@@ -34,11 +38,16 @@ HttpQueue *httpCreateQueue(HttpConn *conn, HttpStage *stage, int dir, HttpQueue 
         return 0;
     }
     q->conn = conn;
-    httpInitQueue(conn, q, stage->name);
+    httpInitQueue(conn, q, sfmt("%s-%s", stage->name, dir == HTTP_QUEUE_TX ? "tx" : "rx"));
     httpInitSchedulerQueue(q);
     httpAssignQueue(q, stage, dir);
     if (prev) {
-        httpInsertQueue(prev, q);
+        httpAppendQueue(prev, q);
+        if (dir == HTTP_QUEUE_RX) {
+            conn->readq = conn->tx->queue[HTTP_QUEUE_RX]->prevQ;
+        } else {
+            conn->writeq = conn->tx->queue[HTTP_QUEUE_TX]->nextQ;
+        }
     }
     return q;
 }
@@ -49,7 +58,7 @@ static void manageQueue(HttpQueue *q, int flags)
     HttpPacket      *packet;
 
     if (flags & MPR_MANAGE_MARK) {
-        mprMark(q->owner);
+        mprMark(q->name);
         for (packet = q->first; packet; packet = packet->next) {
             mprMark(packet);
         }
@@ -62,7 +71,6 @@ static void manageQueue(HttpQueue *q, int flags)
         mprMark(q->schedulePrev);
         mprMark(q->pair);
         mprMark(q->queueData);
-        mprMark(q->queueData);
         if (q->nextQ && q->nextQ->stage) {
             /* Not a queue head */
             mprMark(q->nextQ);
@@ -71,7 +79,7 @@ static void manageQueue(HttpQueue *q, int flags)
 }
 
 
-void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
+PUBLIC void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
 {
     q->stage = stage;
     q->close = stage->close;
@@ -84,46 +92,74 @@ void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
         q->put = stage->incoming;
         q->service = stage->incomingService;
     }
-    q->owner = stage->name;
 }
 
 
-void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
+PUBLIC void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
 {
+    HttpTx      *tx;
+
+    tx = conn->tx;
     q->conn = conn;
     q->nextQ = q;
     q->prevQ = q;
-    q->owner = sclone(name);
-    q->packetSize = conn->limits->stageBufferSize;
-    q->max = conn->limits->stageBufferSize;
+    q->name = sclone(name);
+    q->max = conn->limits->bufferSize;
     q->low = q->max / 100 *  5;    
+    if (tx && tx->chunkSize > 0) {
+        q->packetSize = tx->chunkSize;
+    } else {
+        q->packetSize = q->max;
+    }
 }
 
 
+PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize low, ssize max)
+{
+    q->low = low;
+    q->max = max;
+}
+
+
+#if KEEP
 /*  
     Insert a queue after the previous element
  */
-void httpAppendQueue(HttpQueue *head, HttpQueue *q)
+PUBLIC void httpAppendQueueToHead(HttpQueue *head, HttpQueue *q)
 {
     q->nextQ = head;
     q->prevQ = head->prevQ;
     head->prevQ->nextQ = q;
     head->prevQ = q;
 }
+#endif
 
 
-void httpSuspendQueue(HttpQueue *q)
+PUBLIC bool httpIsQueueSuspended(HttpQueue *q)
 {
-    mprLog(7, "Suspend q %s", q->owner);
+    return (q->flags & HTTP_QUEUE_SUSPENDED) ? 1 : 0;
+}
+
+
+PUBLIC void httpSuspendQueue(HttpQueue *q)
+{
+    mprLog(7, "Suspend q %s", q->name);
     q->flags |= HTTP_QUEUE_SUSPENDED;
 }
+
+
+PUBLIC bool httpIsSuspendQueue(HttpQueue *q)
+{
+    return q->flags & HTTP_QUEUE_SUSPENDED;
+}
+
 
 
 /*  
     Remove all data in the queue. If removePackets is true, actually remove the packet too.
     This preserves the header and EOT packets.
  */
-void httpDiscardQueueData(HttpQueue *q, bool removePackets)
+PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
 {
     HttpPacket  *packet, *prev, *next;
     ssize       len;
@@ -144,13 +180,13 @@ void httpDiscardQueueData(HttpQueue *q, bool removePackets)
                     q->last = prev;
                 }
                 q->count -= httpGetPacketLength(packet);
-                mprAssert(q->count >= 0);
+                assure(q->count >= 0);
                 continue;
             } else {
                 len = httpGetPacketLength(packet);
                 q->conn->tx->length -= len;
                 q->count -= len;
-                mprAssert(q->count >= 0);
+                assure(q->count >= 0);
                 if (packet->content) {
                     mprFlushBuf(packet->content);
                 }
@@ -166,13 +202,13 @@ void httpDiscardQueueData(HttpQueue *q, bool removePackets)
     If blocking is requested, the call will block until the queue count falls below the queue max.
     WARNING: Be very careful when using blocking == true. Should only be used by end applications and not by middleware.
  */
-bool httpFlushQueue(HttpQueue *q, bool blocking)
+PUBLIC bool httpFlushQueue(HttpQueue *q, bool blocking)
 {
     HttpConn    *conn;
     HttpQueue   *next;
 
     conn = q->conn;
-    mprAssert(conn->sock);
+    assure(conn->sock);
     do {
         httpScheduleQueue(q);
         next = q->nextQ;
@@ -183,22 +219,25 @@ bool httpFlushQueue(HttpQueue *q, bool blocking)
         if (conn->sock == 0) {
             break;
         }
+        if (blocking) {
+            httpGetMoreOutput(conn);
+        }
     } while (blocking && q->count > 0);
     return (q->count < q->max) ? 1 : 0;
 }
 
 
-void httpResumeQueue(HttpQueue *q)
+PUBLIC void httpResumeQueue(HttpQueue *q)
 {
-    mprLog(7, "Enable q %s", q->owner);
+    mprLog(7, "Resume q %s", q->name);
     q->flags &= ~HTTP_QUEUE_SUSPENDED;
     httpScheduleQueue(q);
 }
 
 
-HttpQueue *httpFindPreviousQueue(HttpQueue *q)
+PUBLIC HttpQueue *httpFindPreviousQueue(HttpQueue *q)
 {
-    while (q->prevQ) {
+    while (q->prevQ && q->prevQ->stage && q->prevQ != q) {
         q = q->prevQ;
         if (q->service) {
             return q;
@@ -208,7 +247,7 @@ HttpQueue *httpFindPreviousQueue(HttpQueue *q)
 }
 
 
-HttpQueue *httpGetNextQueueForService(HttpQueue *q)
+PUBLIC HttpQueue *httpGetNextQueueForService(HttpQueue *q)
 {
     HttpQueue     *next;
     
@@ -226,10 +265,10 @@ HttpQueue *httpGetNextQueueForService(HttpQueue *q)
 /*  
     Return the number of bytes the queue will accept. Always positive.
  */
-ssize httpGetQueueRoom(HttpQueue *q)
+PUBLIC ssize httpGetQueueRoom(HttpQueue *q)
 {
-    mprAssert(q->max > 0);
-    mprAssert(q->count >= 0);
+    assure(q->max > 0);
+    assure(q->count >= 0);
     
     if (q->count >= q->max) {
         return 0;
@@ -238,7 +277,7 @@ ssize httpGetQueueRoom(HttpQueue *q)
 }
 
 
-void httpInitSchedulerQueue(HttpQueue *q)
+PUBLIC void httpInitSchedulerQueue(HttpQueue *q)
 {
     q->scheduleNext = q;
     q->schedulePrev = q;
@@ -246,10 +285,9 @@ void httpInitSchedulerQueue(HttpQueue *q)
 
 
 /*  
-    Insert a queue after the previous element
-    TODO - rename append
+    Append a queue after the previous element
  */
-void httpInsertQueue(HttpQueue *prev, HttpQueue *q)
+PUBLIC void httpAppendQueue(HttpQueue *prev, HttpQueue *q)
 {
     q->nextQ = prev->nextQ;
     q->prevQ = prev;
@@ -258,51 +296,18 @@ void httpInsertQueue(HttpQueue *prev, HttpQueue *q)
 }
 
 
-bool httpIsQueueEmpty(HttpQueue *q)
+PUBLIC bool httpIsQueueEmpty(HttpQueue *q)
 {
     return q->first == 0;
 }
 
 
-int httpOpenQueue(HttpQueue *q, ssize chunkSize)
-{
-    Http        *http;
-    HttpConn    *conn;
-    HttpStage   *stage;
-    MprModule   *module;
-
-    stage = q->stage;
-    conn = q->conn;
-    http = q->conn->http;
-
-    if (chunkSize > 0) {
-        q->packetSize = min(q->packetSize, chunkSize);
-    }
-    if (stage->flags & HTTP_STAGE_UNLOADED && stage->module) {
-        module = stage->module;
-        module = mprCreateModule(module->name, module->path, module->entry, http);
-        if (mprLoadModule(module) < 0) {
-            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Can't load module %s", module->name);
-            return MPR_ERR_CANT_READ;
-        }
-        stage->module = module;
-    }
-    if (stage->module) {
-        stage->module->lastActivity = http->now;
-    }
-    q->flags |= HTTP_QUEUE_OPEN;
-    if (q->open) {
-        q->stage->open(q);
-    }
-    return 0;
-}
-
-
 /*  
     Read data. If sync mode, this will block. If async, will never block.
-    Will return what data is available up to the requested size. Returns a byte count.
+    Will return what data is available up to the requested size. 
+    Returns a count of bytes read. Returns zero if not data. EOF if returns zero and conn->state is > HTTP_STATE_CONTENT.
  */
-ssize httpRead(HttpConn *conn, char *buf, ssize size)
+PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
 {
     HttpPacket  *packet;
     HttpQueue   *q;
@@ -310,9 +315,9 @@ ssize httpRead(HttpConn *conn, char *buf, ssize size)
     ssize       nbytes, len;
 
     q = conn->readq;
-    mprAssert(q->count >= 0);
-    mprAssert(size >= 0);
-    mprAssert(httpVerifyQueue(q));
+    assure(q->count >= 0);
+    assure(size >= 0);
+    VERIFY_QUEUE(q);
 
     while (q->count <= 0 && !conn->async && !conn->error && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
         httpServiceQueues(conn);
@@ -320,9 +325,7 @@ ssize httpRead(HttpConn *conn, char *buf, ssize size)
             httpWait(conn, 0, MPR_TIMEOUT_NO_BUSY);
         }
     }
-    //  TODO - better place for this?
     conn->lastActivity = conn->http->now;
-    mprAssert(httpVerifyQueue(q));
 
     for (nbytes = 0; size > 0 && q->count > 0; ) {
         if ((packet = q->first) == 0) {
@@ -331,36 +334,44 @@ ssize httpRead(HttpConn *conn, char *buf, ssize size)
         content = packet->content;
         len = mprGetBufLength(content);
         len = min(len, size);
-        mprAssert(len <= q->count);
+        assure(len <= q->count);
         if (len > 0) {
             len = mprGetBlockFromBuf(content, buf, len);
-            mprAssert(len <= q->count);
+            assure(len <= q->count);
         }
         buf += len;
         size -= len;
         q->count -= len;
-        mprAssert(q->count >= 0);
+        assure(q->count >= 0);
         nbytes += len;
         if (mprGetBufLength(content) == 0) {
             httpGetPacket(q);
         }
     }
-    mprAssert(q->count >= 0);
-    mprAssert(httpVerifyQueue(q));
+    assure(q->count >= 0);
+    if (nbytes < size) {
+        buf[nbytes] = '\0';
+    }
     return nbytes;
 }
 
 
-bool httpIsEof(HttpConn *conn) 
+PUBLIC ssize httpGetReadCount(HttpConn *conn)
+{
+    return conn->readq->count;
+}
+
+
+PUBLIC bool httpIsEof(HttpConn *conn) 
 {
     return conn->rx == 0 || conn->rx->eof;
 }
 
 
 /*
-    Read all the content buffered so far
+    Read data as a string
  */
-char *httpReadString(HttpConn *conn)
+PUBLIC char *httpReadString(HttpConn *conn)
 {
     HttpRx      *rx;
     ssize       sofar, nbytes, remaining;
@@ -370,7 +381,9 @@ char *httpReadString(HttpConn *conn)
     remaining = (ssize) min(MAXSSIZE, rx->length);
 
     if (remaining > 0) {
-        content = mprAlloc(remaining + 1);
+        if ((content = mprAlloc(remaining + 1)) == 0) {
+            return 0;
+        }
         sofar = 0;
         while (remaining > 0) {
             nbytes = httpRead(conn, &content[sofar], remaining);
@@ -399,7 +412,7 @@ char *httpReadString(HttpConn *conn)
 }
 
 
-void httpRemoveQueue(HttpQueue *q)
+PUBLIC void httpRemoveQueue(HttpQueue *q)
 {
     q->prevQ->nextQ = q->nextQ;
     q->nextQ->prevQ = q->prevQ;
@@ -407,11 +420,11 @@ void httpRemoveQueue(HttpQueue *q)
 }
 
 
-void httpScheduleQueue(HttpQueue *q)
+PUBLIC void httpScheduleQueue(HttpQueue *q)
 {
     HttpQueue     *head;
     
-    mprAssert(q->conn);
+    assure(q->conn);
     head = q->conn->serviceq;
     
     if (q->scheduleNext == q && !(q->flags & HTTP_QUEUE_SUSPENDED)) {
@@ -423,7 +436,7 @@ void httpScheduleQueue(HttpQueue *q)
 }
 
 
-void httpServiceQueue(HttpQueue *q)
+PUBLIC void httpServiceQueue(HttpQueue *q)
 {
     q->conn->currentq = q;
 
@@ -454,7 +467,7 @@ void httpServiceQueue(HttpQueue *q)
     Return true if the next queue will accept this packet. If not, then disable the queue's service procedure.
     This may split the packet if it exceeds the downstreams maximum packet size.
  */
-bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
+PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
 {
     HttpQueue   *nextQ;
     ssize       size;
@@ -468,7 +481,7 @@ bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
         return 0;
     }
     size = httpGetPacketLength(packet);
-    mprAssert(size <= nextQ->packetSize);
+    assure(size <= nextQ->packetSize);
     if ((size + nextQ->count) <= nextQ->max) {
         return 1;
     }
@@ -483,10 +496,39 @@ bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
 }
 
 
+PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpPacket *packet, bool split)
+{
+    ssize       size;
+
+    size = httpGetPacketLength(packet);
+    if (size <= q->packetSize && (size + q->count) <= q->max) {
+        return 1;
+    }
+    if (split) {
+        if (httpResizePacket(q, packet, 0) < 0) {
+            return 0;
+        }
+        size = httpGetPacketLength(packet);
+        assure(size <= q->packetSize);
+        if ((size + q->count) <= q->max) {
+            return 1;
+        }
+    }
+    /*  
+        The downstream queue is full, so disable the queue and mark the downstream queue as full and service 
+     */
+    if (!(q->flags & HTTP_QUEUE_SUSPENDED)) {
+        httpScheduleQueue(q);
+    }
+    return 0;
+}
+
+
 /*  
-    Return true if the next queue will accept a certain amount of data.
+    Return true if the next queue will accept a certain amount of data. If not, then disable the queue's service procedure.
+    Will not split the packet.
  */
-bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
+PUBLIC bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
 {
     HttpQueue   *nextQ;
 
@@ -502,77 +544,96 @@ bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
 }
 
 
-/*  
+/*
     Write a block of data. This is the lowest level write routine for data. This will buffer the data and flush if
     the queue buffer is full. Flushing is done by calling httpFlushQueue which will service queues as required. This
     may call the queue outgoing service routine and disable downstream queues if they are overfull.
     This routine will always accept the data and never return "short". 
  */
-ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize size)
+PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
 {
     HttpPacket  *packet;
     HttpConn    *conn;
     HttpTx      *tx;
-    ssize       bytes, written, packetSize;
+    ssize       totalWritten, packetSize, thisWrite;
 
-    mprAssert(q == q->conn->writeq);
-               
+    assure(q == q->conn->writeq);
     conn = q->conn;
     tx = conn->tx;
-    if (conn->finalized || tx == 0) {
+    if (flags == 0) {
+        flags = HTTP_BUFFER;
+    }
+    if (tx == 0 || tx->finalizedOutput) {
         return MPR_ERR_CANT_WRITE;
     }
-    conn->responded = 1;
+    tx->responded = 1;
 
-    for (written = 0; size > 0; ) {
+    for (totalWritten = 0; len > 0; ) {
         LOG(7, "httpWriteBlock q_count %d, q_max %d", q->count, q->max);
-        if (conn->state >= HTTP_STATE_COMPLETE) {
+        if (conn->state >= HTTP_STATE_FINALIZED) {
             return MPR_ERR_CANT_WRITE;
         }
-        if (q->last != q->first && q->last->flags & HTTP_PACKET_DATA) {
+        if (q->last && q->last != q->first && q->last->flags & HTTP_PACKET_DATA && mprGetBufSpace(q->last->content) > 0) {
             packet = q->last;
-            mprAssert(packet->content);
         } else {
-            packet = 0;
-        }
-        if (packet == 0 || mprGetBufSpace(packet->content) == 0) {
             packetSize = (tx->chunkSize > 0) ? tx->chunkSize : q->packetSize;
             if ((packet = httpCreateDataPacket(packetSize)) == 0) {
                 return MPR_ERR_MEMORY;
             }
             httpPutForService(q, packet, HTTP_DELAY_SERVICE);
         }
-        if ((bytes = mprPutBlockToBuf(packet->content, buf, size)) == 0) {
-            return MPR_ERR_MEMORY;
+        assure(mprGetBufSpace(packet->content) > 0);
+        thisWrite = min(len, mprGetBufSpace(packet->content));
+        if (flags & (HTTP_BLOCK | HTTP_NON_BLOCK)) {
+            thisWrite = min(thisWrite, q->max - q->count);
         }
-        buf += bytes;
-        size -= bytes;
-        q->count += bytes;
-        written += bytes;
+        if (thisWrite > 0) {
+            if ((thisWrite = mprPutBlockToBuf(packet->content, buf, thisWrite)) == 0) {
+                return MPR_ERR_MEMORY;
+            }
+            buf += thisWrite;
+            len -= thisWrite;
+            q->count += thisWrite;
+            totalWritten += thisWrite;
+        }
         if (q->count >= q->max) {
             httpFlushQueue(q, 0);
+            if (q->count >= q->max) {
+                if (flags & HTTP_NON_BLOCK) {
+                    break;
+                } else if (flags & HTTP_BLOCK) {
+                    while (q->count >= q->max && !tx->finalized) {
+                        if (mprWaitForSingleIO(conn->sock->fd, MPR_WRITABLE, conn->limits->inactivityTimeout) 
+                                != MPR_WRITABLE) {
+                            return MPR_ERR_TIMEOUT;
+                        }
+                        httpResumeQueue(conn->connectorq);
+                        httpServiceQueues(conn);
+                    }
+                }
+            }
         }
     }
     if (conn->error) {
         return MPR_ERR_CANT_WRITE;
     }
-    return written;
+    return totalWritten;
 }
 
 
-ssize httpWriteString(HttpQueue *q, cchar *s)
+PUBLIC ssize httpWriteString(HttpQueue *q, cchar *s)
 {
-    return httpWriteBlock(q, s, strlen(s));
+    return httpWriteBlock(q, s, strlen(s), HTTP_BUFFER);
 }
 
 
-ssize httpWriteSafeString(HttpQueue *q, cchar *s)
+PUBLIC ssize httpWriteSafeString(HttpQueue *q, cchar *s)
 {
     return httpWriteString(q, mprEscapeHtml(s));
 }
 
 
-ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
+PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
 {
     va_list     vargs;
     char        *buf;
@@ -584,46 +645,35 @@ ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
 }
 
 
-bool httpVerifyQueue(HttpQueue *q)
+#if BIT_DEBUG
+PUBLIC bool httpVerifyQueue(HttpQueue *q)
 {
     HttpPacket  *packet;
     ssize       count;
 
     count = 0;
     for (packet = q->first; packet; packet = packet->next) {
+        if (packet->next == 0) {
+            assure(packet == q->last);
+        }
         count += httpGetPacketLength(packet);
     }
-    mprAssert(count <= q->count);
+    assure(count == q->count);
     return count <= q->count;
 }
+#endif
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.TXT distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

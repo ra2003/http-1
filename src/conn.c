@@ -11,14 +11,15 @@
 
 static void manageConn(HttpConn *conn, int flags);
 static HttpPacket *getPacket(HttpConn *conn, ssize *bytesToRead);
+static bool prepForNext(HttpConn *conn);
 static void readEvent(HttpConn *conn);
 static void writeEvent(HttpConn *conn);
 
 /*********************************** Code *************************************/
 /*
-    Create a new connection object.
+    Create a new connection object
  */
-HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *dispatcher)
+PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *dispatcher)
 {
     HttpConn    *conn;
     HttpHost    *host;
@@ -28,8 +29,6 @@ HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *disp
         return 0;
     }
     conn->http = http;
-    conn->canProceed = 1;
-
     conn->protocol = http->protocol;
     conn->port = -1;
     conn->retries = HTTP_RETRIES;
@@ -71,10 +70,11 @@ HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *disp
 /*
     Destroy a connection. This removes the connection from the list of connections. Should GC after that.
  */
-void httpDestroyConn(HttpConn *conn)
+PUBLIC void httpDestroyConn(HttpConn *conn)
 {
     if (conn->http) {
-        mprAssert(conn->http);
+        assure(conn->http);
+        HTTP_NOTIFY(conn, HTTP_EVENT_DESTROY, 0);
         httpRemoveConn(conn->http, conn);
         if (conn->endpoint) {
             if (conn->rx) {
@@ -82,10 +82,6 @@ void httpDestroyConn(HttpConn *conn)
             }
             httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_CONN, conn);
         }
-        if (HTTP_STATE_PARSED <= conn->state && conn->state < HTTP_STATE_COMPLETE) {
-            HTTP_NOTIFY(conn, HTTP_STATE_COMPLETE, 0);
-        }
-        HTTP_NOTIFY(conn, HTTP_EVENT_CLOSE, 0);
         conn->input = 0;
         if (conn->tx) {
             httpDestroyPipeline(conn);
@@ -99,12 +95,15 @@ void httpDestroyConn(HttpConn *conn)
         httpCloseConn(conn);
         conn->http = 0;
     }
+    if (conn->dispatcher->flags & MPR_DISPATCHER_AUTO_CREATE) {
+        mprDisableDispatcher(conn->dispatcher);
+    }
 }
 
 
 static void manageConn(HttpConn *conn, int flags)
 {
-    mprAssert(conn);
+    assure(conn);
 
     if (flags & MPR_MANAGE_MARK) {
         mprMark(conn->rx);
@@ -113,11 +112,9 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->host);
         mprMark(conn->limits);
         mprMark(conn->http);
-        mprMark(conn->stages);
         mprMark(conn->dispatcher);
         mprMark(conn->newDispatcher);
         mprMark(conn->oldDispatcher);
-        mprMark(conn->waitHandler);
         mprMark(conn->sock);
         mprMark(conn->serviceq);
         mprMark(conn->currentq);
@@ -138,19 +135,15 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->errorMsg);
         mprMark(conn->ip);
         mprMark(conn->protocol);
+        mprMark(conn->protocols);
         httpManageTrace(&conn->trace[0], flags);
         httpManageTrace(&conn->trace[1], flags);
-
-        mprMark(conn->authCnonce);
-        mprMark(conn->authDomain);
-        mprMark(conn->authNonce);
-        mprMark(conn->authOpaque);
-        mprMark(conn->authRealm);
-        mprMark(conn->authQop);
-        mprMark(conn->authType);
-        mprMark(conn->authUser);
-        mprMark(conn->authPassword);
         mprMark(conn->headersCallbackArg);
+
+        mprMark(conn->authType);
+        mprMark(conn->authData);
+        mprMark(conn->username);
+        mprMark(conn->password);
 
     } else if (flags & MPR_MANAGE_FREE) {
         httpDestroyConn(conn);
@@ -161,36 +154,35 @@ static void manageConn(HttpConn *conn, int flags)
 /*  
     Close the connection but don't destroy the conn object.
  */
-void httpCloseConn(HttpConn *conn)
+PUBLIC void httpCloseConn(HttpConn *conn)
 {
-    mprAssert(conn);
+    assure(conn);
 
     if (conn->sock) {
-        mprLog(6, "Closing connection");
-        if (conn->waitHandler) {
-            mprRemoveWaitHandler(conn->waitHandler);
-            conn->waitHandler = 0;
-        }
+        mprLog(5, "Closing connection");
         mprCloseSocket(conn->sock, 0);
         conn->sock = 0;
     }
 }
 
 
-void httpConnTimeout(HttpConn *conn)
+PUBLIC void httpConnTimeout(HttpConn *conn)
 {
     HttpLimits  *limits;
-    MprTime     now;
+    MprTicks    now;
 
     if (!conn->http) {
         return;
     }
     now = conn->http->now;
     limits = conn->limits;
-    mprAssert(limits);
-
+    assure(limits);
     mprLog(6, "Inactive connection timed out");
-    if (conn->state >= HTTP_STATE_PARSED) {
+
+    if (conn->timeoutCallback) {
+        (conn->timeoutCallback)(conn);
+    }
+    if (conn->state >= HTTP_STATE_PARSED && !conn->connError) {
         if ((conn->lastActivity + limits->inactivityTimeout) < now) {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT,
                 "Exceeded inactivity timeout of %Ld sec", limits->inactivityTimeout / 1000);
@@ -199,10 +191,7 @@ void httpConnTimeout(HttpConn *conn)
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "Exceeded timeout %d sec", limits->requestTimeout / 1000);
         }
     }
-    httpDisconnect(conn);
-    httpDiscardQueueData(conn->writeq, 1);
-    httpEnableConnEvents(conn);
-    conn->timeoutEvent = 0;
+    httpDestroyConn(conn);
 }
 
 
@@ -211,71 +200,63 @@ static void commonPrep(HttpConn *conn)
     Http    *http;
 
     http = conn->http;
+#if !BIT_LOCK_FIX
     lock(http);
+#endif
 
     if (conn->timeoutEvent) {
         mprRemoveEvent(conn->timeoutEvent);
     }
-    conn->canProceed = 1;
+    conn->lastActivity = conn->http->now;
     conn->error = 0;
-    conn->connError = 0;
     conn->errorMsg = 0;
     conn->state = 0;
-    conn->responded = 0;
-    conn->finalized = 0;
-    conn->refinalize = 0;
-    conn->connectorComplete = 0;
-    conn->lastActivity = conn->http->now;
+    conn->setCredentials = 0;
+
+    if (conn->endpoint) {
+        conn->authType = 0;
+        conn->username = 0;
+        conn->password = 0;
+        conn->user = 0;
+        conn->authData = 0;
+        conn->encoded = 0;
+    }
     httpSetState(conn, HTTP_STATE_BEGIN);
     httpInitSchedulerQueue(conn->serviceq);
+#if !BIT_LOCK_FIX
     unlock(http);
+#endif
 }
 
 
-/*  
-    Prepare a connection for a new request after completing a prior request.
+/*
+    Prepare for another request
+    Return true if there is another request ready for serving
  */
-void httpPrepServerConn(HttpConn *conn)
+static bool prepForNext(HttpConn *conn)
 {
-    mprAssert(conn);
-    mprAssert(conn->rx == 0);
-    mprAssert(conn->tx == 0);
-    mprAssert(conn->endpoint);
-
-    conn->readq = 0;
-    conn->writeq = 0;
-    commonPrep(conn);
-}
-
-
-void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
-{
-    MprHash     *headers;
-
-    mprAssert(conn);
-
-    if (conn->keepAliveCount >= 0 && conn->sock) {
-        /* Eat remaining input incase last request did not consume all data */
-        httpConsumeLastRequest(conn);
-    } else {
-        conn->input = 0;
-    }
+    assure(conn->endpoint);
+    assure(conn->state == HTTP_STATE_COMPLETE);
     if (conn->tx) {
+        assure(conn->tx->finalized && conn->tx->finalizedConnector && conn->tx->finalizedOutput);
         conn->tx->conn = 0;
     }
-    headers = (keepHeaders && conn->tx) ? conn->tx->headers: NULL;
-    conn->tx = httpCreateTx(conn, headers);
     if (conn->rx) {
         conn->rx->conn = 0;
     }
-    conn->rx = httpCreateRx(conn);
+    conn->rx = 0;
+    conn->tx = 0;
+    conn->readq = 0;
+    conn->writeq = 0;
     commonPrep(conn);
+    assure(conn->state == HTTP_STATE_BEGIN);
+    return conn->input && (httpGetPacketLength(conn->input) > 0) && !conn->connError;
 }
 
 
-void httpConsumeLastRequest(HttpConn *conn)
+PUBLIC void httpConsumeLastRequest(HttpConn *conn)
 {
-    MprTime     mark;
+    MprTicks    mark;
     char        junk[4096];
 
     if (!conn->sock) {
@@ -283,7 +264,7 @@ void httpConsumeLastRequest(HttpConn *conn)
     }
     if (conn->state >= HTTP_STATE_FIRST) {
         mark = conn->http->now;
-        while (!httpIsEof(conn) && mprGetRemainingTime(mark, conn->limits->requestTimeout) > 0) {
+        while (!httpIsEof(conn) && mprGetRemainingTicks(mark, conn->limits->requestTimeout) > 0) {
             if (httpRead(conn, junk, sizeof(junk)) <= 0) {
                 break;
             }
@@ -293,9 +274,34 @@ void httpConsumeLastRequest(HttpConn *conn)
         conn->keepAliveCount = -1;
     }
 }
+ 
+
+PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
+{
+    MprHash     *headers;
+
+    assure(conn);
+    if (conn->keepAliveCount >= 0 && conn->sock) {
+        /* Eat remaining input incase last request did not consume all data */
+        httpConsumeLastRequest(conn);
+    } else {
+        conn->input = 0;
+    }
+    conn->input = 0;
+    if (conn->tx) {
+        conn->tx->conn = 0;
+    }
+    if (conn->rx) {
+        conn->rx->conn = 0;
+    }
+    headers = (keepHeaders && conn->tx) ? conn->tx->headers: NULL;
+    conn->tx = httpCreateTx(conn, headers);
+    conn->rx = httpCreateRx(conn);
+    commonPrep(conn);
+}
 
 
-void httpCallEvent(HttpConn *conn, int mask)
+PUBLIC void httpCallEvent(HttpConn *conn, int mask)
 {
     MprEvent    e;
 
@@ -307,15 +313,33 @@ void httpCallEvent(HttpConn *conn, int mask)
 }
 
 
+//  MOB - rename
+PUBLIC void httpPostEvent(HttpConn *conn)
+{
+    if (conn->endpoint) {
+        if (conn->keepAliveCount < 0 && (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE)) {
+            httpDestroyConn(conn);
+            return;
+        } else if (conn->state == HTTP_STATE_COMPLETE) {
+            prepForNext(conn);
+        }
+    }
+    if (!conn->state != HTTP_STATE_RUNNING) {
+        httpEnableConnEvents(conn);
+    }
+}
+
+
 /*  
     IO event handler. This is invoked by the wait subsystem in response to I/O events. It is also invoked via 
     relay when an accept event is received by the server. Initially the conn->dispatcher will be set to the
     server->dispatcher and the first I/O event will be handled on the server thread (or main thread). A request handler
     may create a new conn->dispatcher and transfer execution to a worker thread if required.
  */
-void httpEvent(HttpConn *conn, MprEvent *event)
+PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
 {
-    LOG(5, "httpEvent for fd %d, mask %d\n", conn->sock->fd, event->mask);
+    assure(conn->sock);
+    LOG(6, "httpEvent for fd %d, mask %d", conn->sock->fd, event->mask);
     conn->lastActivity = conn->http->now;
 
     if (event->mask & MPR_WRITABLE) {
@@ -324,74 +348,46 @@ void httpEvent(HttpConn *conn, MprEvent *event)
     if (event->mask & MPR_READABLE) {
         readEvent(conn);
     }
-    if (conn->endpoint) {
-        if (conn->error || (conn->keepAliveCount < 0 && conn->state <= HTTP_STATE_CONNECTED)) {
-            /*  
-                Either an unhandled error or an Idle connection.
-                NOTE: compare keepAliveCount with "< 0" so that the client can have one more keep alive request. 
-                It should respond to the "Connection: close" and thus initiate a client-led close. This reduces 
-                TIME_WAIT states on the server. NOTE: after httpDestroyConn, conn structure and memory is still 
-                intact but conn->sock is zero.
-             */
-            httpDestroyConn(conn);
-
-        } else if (conn->sock) {
-            if (mprIsSocketEof(conn->sock)) {
-                httpDestroyConn(conn);
-            } else {
-                mprAssert(conn->state < HTTP_STATE_COMPLETE);
-                httpEnableConnEvents(conn);
-            }
-        }
-    } else if (conn->state < HTTP_STATE_COMPLETE) {
-        httpEnableConnEvents(conn);
-    }
+    httpPostEvent(conn);
+#if !BIT_LOCK_FIX
     mprYield(0);
+#endif
 }
 
 
-/*
-    Process a socket readable event
- */
 static void readEvent(HttpConn *conn)
 {
     HttpPacket  *packet;
+    HttpQueue   *q;
     ssize       nbytes, size;
 
-    while (!conn->connError && (packet = getPacket(conn, &size)) != 0) {
+    do {
+        if ((packet = getPacket(conn, &size)) == 0) {
+            return;
+        }
+        assure(conn->input == packet);
+
         nbytes = mprReadSocket(conn->sock, mprGetBufEnd(packet->content), size);
-        LOG(8, "http: read event. Got %d", nbytes);
-       
+        LOG(7, "http: read event. Got %d", nbytes);
+
         if (nbytes > 0) {
             mprAdjustBufEnd(packet->content, nbytes);
-            httpPump(conn, packet);
-
-        } else if (nbytes < 0) {
-            if (conn->state <= HTTP_STATE_CONNECTED) {
-                if (mprIsSocketEof(conn->sock)) {
-                    conn->keepAliveCount = -1;
-                }
+        } else if (nbytes == 0) {
+            break;
+        } else if (nbytes < 0 && mprIsSocketEof(conn->sock)) {
+            conn->keepAliveCount = -1;
+            if (conn->state < HTTP_STATE_PARSED) {
                 break;
-            } else if (conn->state < HTTP_STATE_COMPLETE) {
-                httpPump(conn, packet);
-                if (!conn->error && conn->state < HTTP_STATE_COMPLETE && mprIsSocketEof(conn->sock)) {
-                    httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
-                    break;
-                }
             }
-            break;
         }
-        //  MOB - refactor these tests
-        if (nbytes == 0 || conn->state >= HTTP_STATE_READY || !conn->canProceed) {
-            break;
-        }
-        if (conn->readq && conn->readq->count > conn->readq->max) {
-            break;
-        }
-        if (mprDispatcherHasEvents(conn->dispatcher)) {
-            break;
-        }
-    }
+        do {
+            if (!httpPumpRequest(conn, conn->input)) {
+                break;
+            }
+        } while (conn->endpoint && prepForNext(conn));
+
+        q = conn->readq;
+    } while (nbytes > 0 && !mprGetSocketBlockingMode(conn->sock) && (!q || q->count < q->max));
 }
 
 
@@ -399,33 +395,33 @@ static void writeEvent(HttpConn *conn)
 {
     LOG(6, "httpProcessWriteEvent, state %d", conn->state);
 
-    conn->writeBlocked = 0;
     if (conn->tx) {
+        conn->tx->writeBlocked = 0;
         httpResumeQueue(conn->connectorq);
         httpServiceQueues(conn);
-        httpPump(conn, NULL);
+        httpPumpRequest(conn, NULL);
     }
 }
 
 
-void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
+PUBLIC void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
 {
     lock(conn->http);
     conn->oldDispatcher = conn->dispatcher;
     conn->dispatcher = dispatcher;
     conn->worker = 1;
-    mprAssert(!conn->workerEvent);
+    assure(!conn->workerEvent);
     conn->workerEvent = event;
     unlock(conn->http);
 }
 
 
-void httpUsePrimary(HttpConn *conn)
+PUBLIC void httpUsePrimary(HttpConn *conn)
 {
     lock(conn->http);
-    mprAssert(conn->worker);
-    mprAssert(conn->state == HTTP_STATE_BEGIN);
-    mprAssert(conn->oldDispatcher && conn->dispatcher != conn->oldDispatcher);
+    assure(conn->worker);
+    assure(conn->state == HTTP_STATE_BEGIN);
+    assure(conn->oldDispatcher && conn->dispatcher != conn->oldDispatcher);
     conn->dispatcher = conn->oldDispatcher;
     conn->oldDispatcher = 0;
     conn->worker = 0;
@@ -437,17 +433,14 @@ void httpUsePrimary(HttpConn *conn)
     Steal a connection with open socket from Http and disconnect it from management by Http.
     It is the callers responsibility to call mprCloseSocket when required.
  */
-MprSocket *httpStealConn(HttpConn *conn)
+PUBLIC MprSocket *httpStealConn(HttpConn *conn)
 {
     MprSocket   *sock;
 
     sock = conn->sock;
     conn->sock = 0;
 
-    if (conn->waitHandler) {
-        mprRemoveWaitHandler(conn->waitHandler);
-        conn->waitHandler = 0;
-    }
+    mprRemoveSocketHandler(conn->sock);
     if (conn->http) {
         lock(conn->http);
         httpRemoveConn(conn->http, conn);
@@ -460,7 +453,7 @@ MprSocket *httpStealConn(HttpConn *conn)
 }
 
 
-void httpEnableConnEvents(HttpConn *conn)
+PUBLIC void httpEnableConnEvents(HttpConn *conn)
 {
     HttpTx      *tx;
     HttpRx      *rx;
@@ -470,7 +463,7 @@ void httpEnableConnEvents(HttpConn *conn)
 
     mprLog(7, "EnableConnEvents");
 
-    if (!conn->async || !conn->sock || mprIsSocketEof(conn->sock)) {
+    if (!conn->async || !conn->sock) {
         return;
     }
     tx = conn->tx;
@@ -484,37 +477,31 @@ void httpEnableConnEvents(HttpConn *conn)
         mprQueueEvent(conn->dispatcher, event);
 
     } else {
+#if !BIT_LOCK_FIX
         lock(conn->http);
+#endif
         if (tx) {
             /*
-                Can be writeBlocked with data in the iovec and none in the queue
+                Can be blocked with data in the iovec and none in the queue
              */
-            if (conn->writeBlocked || (conn->connectorq && conn->connectorq->count > 0)) {
+            if (tx->writeBlocked || (conn->connectorq && conn->connectorq->count > 0)) {
                 eventMask |= MPR_WRITABLE;
             }
             /*
                 Enable read events if the read queue is not full. 
+                If request is a form, then must read and buffer all the input regardless
              */
-            q = tx->queue[HTTP_QUEUE_RX]->nextQ;
-            if (q->count < q->max || rx->form) {
+            q = conn->readq;
+            if (!rx->eof && (q->count < q->max || rx->form)) {
                 eventMask |= MPR_READABLE;
             }
         } else {
             eventMask |= MPR_READABLE;
         }
-        if (eventMask) {
-            if (conn->waitHandler == 0) {
-                conn->waitHandler = mprCreateWaitHandler(conn->sock->fd, eventMask, conn->dispatcher, conn->ioCallback, 
-                    conn, 0);
-            } else {
-                conn->waitHandler->dispatcher = conn->dispatcher;
-                mprWaitOn(conn->waitHandler, eventMask);
-            }
-        } else if (conn->waitHandler) {
-            mprWaitOn(conn->waitHandler, eventMask);
-        }
-        mprAssert(conn->dispatcher->enabled);
+        httpSetupWaitHandler(conn, eventMask);
+#if !BIT_LOCK_FIX
         unlock(conn->http);
+#endif
     }
     if (tx && tx->handler && tx->handler->module) {
         tx->handler->module->lastActivity = conn->lastActivity;
@@ -522,7 +509,28 @@ void httpEnableConnEvents(HttpConn *conn)
 }
 
 
-void httpFollowRedirects(HttpConn *conn, bool follow)
+PUBLIC void httpSetupWaitHandler(HttpConn *conn, int eventMask)
+{
+    MprSocket   *sock;
+
+    sock = conn->sock;
+    if (sock == 0) {
+        return;
+    }
+    if (eventMask) {
+        if (sock->handler == 0) {
+            mprAddSocketHandler(sock, eventMask, conn->dispatcher, conn->ioCallback, conn, 0);
+        } else {
+            sock->handler->dispatcher = conn->dispatcher;
+            mprWaitOn(sock->handler, eventMask);
+        }
+    } else if (sock->handler) {
+        mprWaitOn(sock->handler, eventMask);
+    }
+}
+
+
+PUBLIC void httpFollowRedirects(HttpConn *conn, bool follow)
 {
     conn->followRedirects = follow;
 }
@@ -537,28 +545,28 @@ static HttpPacket *getPacket(HttpConn *conn, ssize *size)
     MprBuf      *content;
 
     if ((packet = conn->input) == NULL) {
-        conn->input = packet = httpCreatePacket(HTTP_BUFSIZE);
+        conn->input = packet = httpCreateDataPacket(HTTP_BUFSIZE);
     } else {
         content = packet->content;
         mprResetBufIfEmpty(content);
         mprAddNullToBuf(content);
-        if (mprGetBufSpace(content) < HTTP_BUFSIZE) {
-            mprGrowBuf(content, HTTP_BUFSIZE);
+        if (mprGetBufSpace(content) < HTTP_BUFSIZE && mprGrowBuf(content, HTTP_BUFSIZE) < 0) {
+            return 0;
         }
     }
     *size = mprGetBufSpace(packet->content);
-    mprAssert(*size > 0);
+    assure(*size > 0);
     return packet;
 }
 
 
-int httpGetAsync(HttpConn *conn)
+PUBLIC int httpGetAsync(HttpConn *conn)
 {
     return conn->async;
 }
 
 
-ssize httpGetChunkSize(HttpConn *conn)
+PUBLIC ssize httpGetChunkSize(HttpConn *conn)
 {
     if (conn->tx) {
         return conn->tx->chunkSize;
@@ -567,67 +575,65 @@ ssize httpGetChunkSize(HttpConn *conn)
 }
 
 
-void *httpGetConnContext(HttpConn *conn)
+PUBLIC void *httpGetConnContext(HttpConn *conn)
 {
     return conn->context;
 }
 
 
-void *httpGetConnHost(HttpConn *conn)
+PUBLIC void *httpGetConnHost(HttpConn *conn)
 {
     return conn->host;
 }
 
 
-void httpResetCredentials(HttpConn *conn)
+PUBLIC ssize httpGetWriteQueueCount(HttpConn *conn)
+{
+    return conn->writeq ? conn->writeq->count : 0;
+}
+
+
+PUBLIC void httpResetCredentials(HttpConn *conn)
 {
     conn->authType = 0;
-    conn->authDomain = 0;
-    conn->authCnonce = 0;
-    conn->authNonce = 0;
-    conn->authOpaque = 0;
-    conn->authPassword = 0;
-    conn->authRealm = 0;
-    conn->authQop = 0;
-    conn->authType = 0;
-    conn->authUser = 0;
-    
+    conn->username = 0;
+    conn->password = 0;
     httpRemoveHeader(conn, "Authorization");
 }
 
 
-void httpSetAsync(HttpConn *conn, int enable)
+PUBLIC void httpSetAsync(HttpConn *conn, int enable)
 {
     conn->async = (enable) ? 1 : 0;
 }
 
 
-void httpSetConnNotifier(HttpConn *conn, HttpNotifier notifier)
+PUBLIC void httpSetConnNotifier(HttpConn *conn, HttpNotifier notifier)
 {
     conn->notifier = notifier;
 }
 
 
-void httpSetCredentials(HttpConn *conn, cchar *user, cchar *password)
+PUBLIC void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password)
 {
     httpResetCredentials(conn);
-    conn->authUser = sclone(user);
-    if (password == NULL && strchr(user, ':') != 0) {
-        conn->authUser = stok(conn->authUser, ":", &conn->authPassword);
-        conn->authPassword = sclone(conn->authPassword);
+    conn->username = sclone(username);
+    if (password == NULL && strchr(username, ':') != 0) {
+        conn->username = stok(conn->username, ":", &conn->password);
+        conn->password = sclone(conn->password);
     } else {
-        conn->authPassword = sclone(password);
+        conn->password = sclone(password);
     }
 }
 
 
-void httpSetKeepAliveCount(HttpConn *conn, int count)
+PUBLIC void httpSetKeepAliveCount(HttpConn *conn, int count)
 {
     conn->keepAliveCount = count;
 }
 
 
-void httpSetChunkSize(HttpConn *conn, ssize size)
+PUBLIC void httpSetChunkSize(HttpConn *conn, ssize size)
 {
     if (conn->tx) {
         conn->tx->chunkSize = size;
@@ -635,26 +641,26 @@ void httpSetChunkSize(HttpConn *conn, ssize size)
 }
 
 
-void httpSetHeadersCallback(HttpConn *conn, HttpHeadersCallback fn, void *arg)
+PUBLIC void httpSetHeadersCallback(HttpConn *conn, HttpHeadersCallback fn, void *arg)
 {
     conn->headersCallback = fn;
     conn->headersCallbackArg = arg;
 }
 
 
-void httpSetIOCallback(HttpConn *conn, HttpIOCallback fn)
+PUBLIC void httpSetIOCallback(HttpConn *conn, HttpIOCallback fn)
 {
     conn->ioCallback = fn;
 }
 
 
-void httpSetConnContext(HttpConn *conn, void *context)
+PUBLIC void httpSetConnContext(HttpConn *conn, void *context)
 {
     conn->context = context;
 }
 
 
-void httpSetConnHost(HttpConn *conn, void *host)
+PUBLIC void httpSetConnHost(HttpConn *conn, void *host)
 {
     conn->host = host;
 }
@@ -663,47 +669,66 @@ void httpSetConnHost(HttpConn *conn, void *host)
 /*  
     Set the protocol to use for outbound requests
  */
-void httpSetProtocol(HttpConn *conn, cchar *protocol)
+PUBLIC void httpSetProtocol(HttpConn *conn, cchar *protocol)
 {
     if (conn->state < HTTP_STATE_CONNECTED) {
         conn->protocol = sclone(protocol);
-        if (strcmp(protocol, "HTTP/1.0") == 0) {
-            conn->keepAliveCount = -1;
-        }
     }
 }
 
 
-void httpSetRetries(HttpConn *conn, int count)
+PUBLIC void httpSetRetries(HttpConn *conn, int count)
 {
     conn->retries = count;
 }
 
 
-static char *notifyState[] = {
-    "IO_EVENT", "BEGIN", "STARTED", "FIRST", "PARSED", "CONTENT", "READY", "RUNNING", "COMPLETE", 
-};
-
-
-void httpSetState(HttpConn *conn, int state)
+PUBLIC void httpSetState(HttpConn *conn, int targetState)
 {
-    if (state == conn->state) {
+    int     state;
+
+    if (targetState == conn->state) {
         return;
     }
-    if (state < conn->state) {
+    if (targetState < conn->state) {
         /* Prevent regressions */
         return;
     }
-    conn->state = state;
-    LOG(6, "Connection state change to %s", notifyState[state]);
-    HTTP_NOTIFY(conn, state, 0);
+    for (state = conn->state + 1; state <= targetState; state++) { 
+        conn->state = state;
+        HTTP_NOTIFY(conn, HTTP_EVENT_STATE, state);
+    }
 }
 
+
+static char *events[] = {
+    "undefined", "state-change", "readable", "writable", "error", "destroy", "app-open", "app-close",
+};
+static char *states[] = {
+    "undefined", "begin", "connected", "first", "parsed", "content", "ready", "running", "complete",
+};
+
+
+PUBLIC void httpNotify(HttpConn *conn, int event, int arg)
+{
+    if (conn->notifier) {
+        if (MPR->logLevel >= 6) {
+            if (event == HTTP_EVENT_STATE) {
+                mprLog(6, "Event: change to state \"%s\"", states[conn->state]);
+            } else if (event < 0 || event > HTTP_EVENT_MAX) {
+                mprLog(6, "Event: \"%d\" in state \"%s\"", event, states[conn->state]);
+            } else {
+                mprLog(6, "Event: \"%s\" in state \"%s\"", events[event], states[conn->state]);
+            }
+        }
+        (conn->notifier)(conn, event, arg);
+    }
+}
 
 /*
     Set each timeout arg to -1 to skip. Set to zero for no timeout. Otherwise set to number of msecs
  */
-void httpSetTimeout(HttpConn *conn, int requestTimeout, int inactivityTimeout)
+PUBLIC void httpSetTimeout(HttpConn *conn, MprTicks requestTimeout, MprTicks inactivityTimeout)
 {
     if (requestTimeout >= 0) {
         if (requestTimeout == 0) {
@@ -722,7 +747,7 @@ void httpSetTimeout(HttpConn *conn, int requestTimeout, int inactivityTimeout)
 }
 
 
-HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
+PUBLIC HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 {
     HttpLimits      *limits;
 
@@ -734,38 +759,17 @@ HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 }
 
 
-void httpNotifyWritable(HttpConn *conn)
-{
-    HTTP_NOTIFY(conn, HTTP_EVENT_IO, HTTP_NOTIFY_WRITABLE);
-}
-
 /*
     @copy   default
 
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire
-    a commercial license from Embedthis Software. You agree to be fully bound
-    by the terms of either license. Consult the LICENSE.TXT distributed with
-    this software for full details.
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
 
-    This software is open source; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the
-    Free Software Foundation; either version 2 of the License, or (at your
-    option) any later version. See the GNU General Public License for more
-    details at: http://embedthis.com/downloads/gplLicense.html
-
-    This program is distributed WITHOUT ANY WARRANTY; without even the
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-    This GPL license does NOT permit incorporating this software into
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses
-    for this software and support services are available from Embedthis
-    Software at http://embedthis.com
- 
     Local variables:
     tab-width: 4
     c-basic-offset: 4

@@ -18,7 +18,7 @@ static void managePacket(HttpPacket *packet, int flags);
     used for incoming body content. If size > 0, then create a non-growable buffer 
     of the requested size.
  */
-HttpPacket *httpCreatePacket(ssize size)
+PUBLIC HttpPacket *httpCreatePacket(ssize size)
 {
     HttpPacket  *packet;
 
@@ -44,7 +44,7 @@ static void managePacket(HttpPacket *packet, int flags)
 }
 
 
-HttpPacket *httpCreateDataPacket(ssize size)
+PUBLIC HttpPacket *httpCreateDataPacket(ssize size)
 {
     HttpPacket    *packet;
 
@@ -56,7 +56,7 @@ HttpPacket *httpCreateDataPacket(ssize size)
 }
 
 
-HttpPacket *httpCreateEntityPacket(MprOff pos, MprOff size, HttpFillProc fill)
+PUBLIC HttpPacket *httpCreateEntityPacket(MprOff pos, MprOff size, HttpFillProc fill)
 {
     HttpPacket    *packet;
 
@@ -71,7 +71,7 @@ HttpPacket *httpCreateEntityPacket(MprOff pos, MprOff size, HttpFillProc fill)
 }
 
 
-HttpPacket *httpCreateEndPacket()
+PUBLIC HttpPacket *httpCreateEndPacket()
 {
     HttpPacket    *packet;
 
@@ -83,7 +83,7 @@ HttpPacket *httpCreateEndPacket()
 }
 
 
-HttpPacket *httpCreateHeaderPacket()
+PUBLIC HttpPacket *httpCreateHeaderPacket()
 {
     HttpPacket    *packet;
 
@@ -95,7 +95,7 @@ HttpPacket *httpCreateHeaderPacket()
 }
 
 
-HttpPacket *httpClonePacket(HttpPacket *orig)
+PUBLIC HttpPacket *httpClonePacket(HttpPacket *orig)
 {
     HttpPacket  *packet;
 
@@ -109,6 +109,8 @@ HttpPacket *httpClonePacket(HttpPacket *orig)
         packet->prefix = mprCloneBuf(orig->prefix);
     }
     packet->flags = orig->flags;
+    packet->type = orig->type;
+    packet->last = orig->last;
     packet->esize = orig->esize;
     packet->epos = orig->epos;
     packet->fill = orig->fill;
@@ -116,7 +118,7 @@ HttpPacket *httpClonePacket(HttpPacket *orig)
 }
 
 
-void httpAdjustPacketStart(HttpPacket *packet, MprOff size)
+PUBLIC void httpAdjustPacketStart(HttpPacket *packet, MprOff size)
 {
     if (packet->esize) {
         packet->epos += size;
@@ -127,7 +129,7 @@ void httpAdjustPacketStart(HttpPacket *packet, MprOff size)
 }
 
 
-void httpAdjustPacketEnd(HttpPacket *packet, MprOff size)
+PUBLIC void httpAdjustPacketEnd(HttpPacket *packet, MprOff size)
 {
     if (packet->esize) {
         packet->esize += size;
@@ -137,7 +139,7 @@ void httpAdjustPacketEnd(HttpPacket *packet, MprOff size)
 }
 
 
-HttpPacket *httpGetPacket(HttpQueue *q)
+PUBLIC HttpPacket *httpGetPacket(HttpQueue *q)
 {
     HttpQueue     *prev;
     HttpPacket    *packet;
@@ -147,18 +149,21 @@ HttpPacket *httpGetPacket(HttpQueue *q)
             q->first = packet->next;
             packet->next = 0;
             q->count -= httpGetPacketLength(packet);
-            mprAssert(q->count >= 0);
+            assure(q->count >= 0);
             if (packet == q->last) {
                 q->last = 0;
-                mprAssert(q->first == 0);
+                assure(q->first == 0);
+            }
+            if (q->first == 0) {
+                assure(q->last == 0);
             }
         }
         if (q->count < q->low) {
-            /*
-                This queue was full and now is below the low water mark. Back-enable the previous queue.
-             */
             prev = httpFindPreviousQueue(q);
             if (prev && prev->flags & HTTP_QUEUE_SUSPENDED) {
+                /*
+                    This queue was full and now is below the low water mark. Back-enable the previous queue.
+                 */
                 httpResumeQueue(prev);
             }
         }
@@ -171,7 +176,7 @@ HttpPacket *httpGetPacket(HttpQueue *q)
 /*  
     Test if the packet is too too large to be accepted by the downstream queue.
  */
-bool httpIsPacketTooBig(HttpQueue *q, HttpPacket *packet)
+PUBLIC bool httpIsPacketTooBig(HttpQueue *q, HttpPacket *packet)
 {
     ssize   size;
     
@@ -183,7 +188,7 @@ bool httpIsPacketTooBig(HttpQueue *q, HttpPacket *packet)
 /*  
     Join a packet onto the service queue. This joins packet content data.
  */
-void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
+PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
     if (q->first == 0) {
         /*  Just use the service queue as a holding queue while we aggregate the post data.  */
@@ -200,7 +205,7 @@ void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
         }
         q->count += httpGetPacketLength(packet);
     }
-    mprAssert(httpVerifyQueue(q));
+    VERIFY_QUEUE(q);
     if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
         httpScheduleQueue(q);
     }
@@ -211,16 +216,18 @@ void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
     Join two packets by pulling the content from the second into the first.
     WARNING: this will not update the queue count. Assumes the either both are on the queue or neither. 
  */
-int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
+PUBLIC int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
 {
     ssize   len;
 
-    mprAssert(packet->esize == 0);
-    mprAssert(p->esize == 0);
+    assure(packet->esize == 0);
+    assure(p->esize == 0);
+    assure(!(packet->flags & HTTP_PACKET_SOLO));
+    assure(!(p->flags & HTTP_PACKET_SOLO));
 
     len = httpGetPacketLength(p);
     if (mprPutBlockToBuf(packet->content, mprGetBufStart(p->content), (ssize) len) != len) {
-        mprAssert(0);
+        assure(0);
         return MPR_ERR_MEMORY;
     }
     return 0;
@@ -231,7 +238,7 @@ int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
     Join queue packets up to the maximum of the given size and the downstream queue packet size.
     WARNING: this will not update the queue count.
  */
-void httpJoinPackets(HttpQueue *q, ssize size)
+PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
 {
     HttpPacket  *packet, *first;
     ssize       len;
@@ -248,19 +255,22 @@ void httpJoinPackets(HttpQueue *q, ssize size)
             if (packet->content == 0 || (len = httpGetPacketLength(packet)) == 0) {
                 break;
             }
-            mprAssert(!(packet->flags & HTTP_PACKET_END));
+            assure(!(packet->flags & HTTP_PACKET_END));
             httpJoinPacket(first, packet);
             /* Unlink the packet */
             first->next = packet->next;
+            if (q->last == packet) {
+                q->last = first;
+            }
         }
     }
 }
 
 
-void httpPutPacket(HttpQueue *q, HttpPacket *packet)
+PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
 {
-    mprAssert(packet);
-    mprAssert(q->put);
+    assure(packet);
+    assure(q->put);
 
     q->put(q, packet);
 }
@@ -269,16 +279,16 @@ void httpPutPacket(HttpQueue *q, HttpPacket *packet)
 /*  
     Pass to the next stage in the pipeline
  */
-void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
+PUBLIC void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
 {
-    mprAssert(packet);
-    mprAssert(q->nextQ->put);
+    assure(packet);
+    assure(q->nextQ->put);
 
     q->nextQ->put(q->nextQ, packet);
 }
 
 
-void httpPutPackets(HttpQueue *q)
+PUBLIC void httpPutPackets(HttpQueue *q)
 {
     HttpPacket    *packet;
 
@@ -291,11 +301,11 @@ void httpPutPackets(HttpQueue *q)
 /*  
     Put the packet back at the front of the queue
  */
-void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
+PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
 {
-    mprAssert(packet);
-    mprAssert(packet->next == 0);
-    mprAssert(q->count >= 0);
+    assure(packet);
+    assure(packet->next == 0);
+    assure(q->count >= 0);
     
     if (packet) {
         packet->next = q->first;
@@ -311,9 +321,9 @@ void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
 /*  
     Put a packet on the service queue.
  */
-void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
+PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
-    mprAssert(packet);
+    assure(packet);
    
     q->count += httpGetPacketLength(packet);
     packet->next = 0;
@@ -336,7 +346,7 @@ void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
     on the queue. Ensure that the packet is not larger than "size" if it is greater than zero. If size < 0, then
     use the default packet size. 
  */
-int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
+PUBLIC int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
 {
     HttpPacket  *tail;
     ssize       len;
@@ -368,14 +378,17 @@ int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
 }
 
 
-/*  
+/*
     Split a packet at a given offset and return a new packet containing the data after the offset.
     The prefix data remains with the original packet. 
  */
-HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
+PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 {
     HttpPacket  *packet;
     ssize       count, size;
+
+    /* Must not be in a queue */
+    assure(orig->next == 0);
 
     if (orig->esize) {
         if ((packet = httpCreateEntityPacket(orig->epos + offset, orig->esize - offset, orig->fill)) == 0) {
@@ -385,7 +398,7 @@ HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 
     } else {
         if (offset >= httpGetPacketLength(orig)) {
-            mprAssert(offset < httpGetPacketLength(orig));
+            assure(offset < httpGetPacketLength(orig));
             return 0;
         }
         /*
@@ -417,37 +430,29 @@ HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 #endif
     }
     packet->flags = orig->flags;
+    packet->type = orig->type;
+    packet->last = orig->last;
     return packet;
+}
+
+
+bool httpIsLastPacket(HttpPacket *packet) 
+{
+    return packet->last;
 }
 
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.TXT distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

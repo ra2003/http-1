@@ -49,11 +49,11 @@ static int  processContentData(HttpQueue *q);
 
 /************************************* Code ***********************************/
 
-int httpOpenUploadFilter(Http *http)
+PUBLIC int httpOpenUploadFilter(Http *http)
 {
     HttpStage     *filter;
 
-    if ((filter = httpCreateFilter(http, "uploadFilter", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((filter = httpCreateFilter(http, "uploadFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->uploadFilter = filter;
@@ -83,7 +83,7 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
     }
     pat = "multipart/form-data";
     len = strlen(pat);
-    if (sncasecmp(rx->mimeType, pat, len) == 0) {
+    if (sncaselesscmp(rx->mimeType, pat, len) == 0) {
         rx->upload = 1;
         mprLog(5, "matchUpload for %s", rx->uri);
         return HTTP_ROUTE_OK;
@@ -183,7 +183,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
     ssize       count;
     int         done, rc;
     
-    mprAssert(packet);
+    assure(packet);
     
     conn = q->conn;
     rx = conn->rx;
@@ -260,14 +260,14 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
         mprCompactBuf(content);
     }
     q->count -= (count - httpGetPacketLength(packet));
-    mprAssert(q->count >= 0);
+    assure(q->count >= 0);
 
     if (httpGetPacketLength(packet) == 0) {
         /* 
            Quicker to remove the buffer so the packets don't have to be joined the next time 
          */
         httpGetPacket(q);
-        mprAssert(q->count >= 0);
+        assure(q->count >= 0);
     }
 }
 
@@ -327,7 +327,7 @@ static int processContentHeader(HttpQueue *q, char *line)
     headerTok = line;
     stok(line, ": ", &rest);
 
-    if (scasecmp(headerTok, "Content-Disposition") == 0) {
+    if (scaselesscmp(headerTok, "Content-Disposition") == 0) {
 
         /*  
             The content disposition header describes either a form
@@ -352,13 +352,13 @@ static int processContentHeader(HttpQueue *q, char *line)
             stok(key, "= ", &value);
             value = strim(value, "\"", MPR_TRIM_BOTH);
 
-            if (scasecmp(key, "form-data") == 0) {
+            if (scaselesscmp(key, "form-data") == 0) {
                 /* Nothing to do */
 
-            } else if (scasecmp(key, "name") == 0) {
+            } else if (scaselesscmp(key, "name") == 0) {
                 up->id = sclone(value);
 
-            } else if (scasecmp(key, "filename") == 0) {
+            } else if (scaselesscmp(key, "filename") == 0) {
                 if (up->id == 0) {
                     httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad upload state. Missing name field");
                     return MPR_ERR_BAD_STATE;
@@ -390,13 +390,13 @@ static int processContentHeader(HttpQueue *q, char *line)
             key = nextPair;
         }
 
-    } else if (scasecmp(headerTok, "Content-Type") == 0) {
+    } else if (scaselesscmp(headerTok, "Content-Type") == 0) {
         if (up->clientFilename) {
             mprLog(5, "Set files[%s][CONTENT_TYPE] = %s", up->id, rest);
             up->currentFile->contentType = sclone(rest);
         }
     }
-    return 1;
+    return 0;
 }
 
 
@@ -463,7 +463,7 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
         rc = mprWriteFile(up->file, data, len);
         if (rc != len) {
             httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, 
-                "Can't write to upload temp file %s, rc %d, errno %d", up->tmpPath, rc, mprGetOsError(up));
+                "Can't write to upload temp file %s, rc %d, errno %d", up->tmpPath, rc, mprGetOsError());
             return MPR_ERR_CANT_WRITE;
         }
         file->size += len;
@@ -574,7 +574,7 @@ static int processContentData(HttpQueue *q)
         httpPutPacketToNext(q, packet);
     }
     up->contentState = HTTP_UPLOAD_BOUNDARY;
-    return 1;
+    return 0;
 }
 
 
@@ -586,9 +586,9 @@ static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundary
     char    *cp, *endp;
     char    first;
 
-    mprAssert(buf);
-    mprAssert(boundary);
-    mprAssert(boundaryLen > 0);
+    assure(buf);
+    assure(boundary);
+    assure(boundaryLen > 0);
 
     first = *((char*) boundary);
     cp = (char*) buf;
@@ -612,31 +612,15 @@ static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundary
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.TXT distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

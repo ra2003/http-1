@@ -13,25 +13,26 @@
 #include    "http.h"
 
 /**************************** Forward Declarations ****************************/
-#if !BIT_FEATURE_ROMFS
+#if !BIT_ROM
 
 static void addPacketForSend(HttpQueue *q, HttpPacket *packet);
 static void adjustSendVec(HttpQueue *q, MprOff written);
 static MprOff buildSendVec(HttpQueue *q);
 static void adjustPacketData(HttpQueue *q, MprOff written);
+static void sendClose(HttpQueue *q);
 
 /*********************************** Code *************************************/
 
-int httpOpenSendConnector(Http *http)
+PUBLIC int httpOpenSendConnector(Http *http)
 {
     HttpStage     *stage;
 
     mprLog(5, "Open send connector");
-    if ((stage = httpCreateConnector(http, "sendConnector", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((stage = httpCreateConnector(http, "sendConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     stage->open = httpSendOpen;
-    stage->close = httpSendClose;
+    stage->close = sendClose;
     stage->outgoingService = httpSendOutgoingService; 
     http->sendConnector = stage;
     return 0;
@@ -41,7 +42,7 @@ int httpOpenSendConnector(Http *http)
 /*  
     Initialize the send connector for a request
  */
-void httpSendOpen(HttpQueue *q)
+PUBLIC void httpSendOpen(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpTx      *tx;
@@ -55,7 +56,7 @@ void httpSendOpen(HttpQueue *q)
         return;
     }
     if (!(tx->flags & HTTP_TX_NO_BODY)) {
-        mprAssert(tx->fileInfo.valid);
+        assure(tx->fileInfo.valid);
         if (tx->fileInfo.size > conn->limits->transmissionBodySize) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Http transmission aborted. File size exceeds max body of %,Ld bytes", conn->limits->transmissionBodySize);
@@ -69,7 +70,7 @@ void httpSendOpen(HttpQueue *q)
 }
 
 
-void httpSendClose(HttpQueue *q)
+static void sendClose(HttpQueue *q)
 {
     HttpTx  *tx;
 
@@ -81,7 +82,7 @@ void httpSendClose(HttpQueue *q)
 }
 
 
-void httpSendOutgoingService(HttpQueue *q)
+PUBLIC void httpSendOutgoingService(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpTx      *tx;
@@ -92,9 +93,9 @@ void httpSendOutgoingService(HttpQueue *q)
     conn = q->conn;
     tx = conn->tx;
     conn->lastActivity = conn->http->now;
-    mprAssert(conn->sock);
+    assure(conn->sock);
 
-    if (!conn->sock || conn->connectorComplete) {
+    if (!conn->sock || tx->finalizedConnector) {
         return;
     }
     if (tx->flags & HTTP_TX_NO_BODY) {
@@ -104,7 +105,7 @@ void httpSendOutgoingService(HttpQueue *q)
         httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE | ((tx->bytesWritten) ? HTTP_ABORT : 0),
             "Http transmission aborted. Exceeded max body of %,Ld bytes", conn->limits->transmissionBodySize);
         if (tx->bytesWritten) {
-            httpConnectorComplete(conn);
+            httpFinalizeConnector(conn);
             return;
         }
     }
@@ -134,7 +135,7 @@ void httpSendOutgoingService(HttpQueue *q)
                 mprLog(7, "SendFileToSocket failed, errCode %d", errCode);
             }
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "SendFileToSocket failed, errCode %d", errCode);
-            httpConnectorComplete(conn);
+            httpFinalizeConnector(conn);
             break;
 
         } else if (written == 0) {
@@ -150,9 +151,10 @@ void httpSendOutgoingService(HttpQueue *q)
     }
     if (q->ioCount == 0) {
         if ((q->flags & HTTP_QUEUE_EOF)) {
-            httpConnectorComplete(conn);
+            assure(conn->tx->finalizedOutput);
+            httpFinalizeConnector(conn);
         } else {
-            httpNotifyWritable(conn);
+            HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
         }
     }
 }
@@ -165,12 +167,9 @@ void httpSendOutgoingService(HttpQueue *q)
  */
 static MprOff buildSendVec(HttpQueue *q)
 {
-    HttpConn    *conn;
     HttpPacket  *packet;
 
-    mprAssert(q->ioIndex == 0);
-
-    conn = q->conn;
+    assure(q->ioIndex == 0);
     q->ioCount = 0;
     q->ioFile = 0;
 
@@ -182,8 +181,7 @@ static MprOff buildSendVec(HttpQueue *q)
      */
     for (packet = q->first; packet; packet = packet->next) {
         if (packet->flags & HTTP_PACKET_HEADER) {
-            httpWriteHeaders(conn, packet);
-            q->count += httpGetPacketLength(packet);
+            httpWriteHeaders(q, packet);
             
         } else if (httpGetPacketLength(packet) == 0 && packet->esize == 0) {
             q->flags |= HTTP_QUEUE_EOF;
@@ -205,8 +203,8 @@ static MprOff buildSendVec(HttpQueue *q)
  */
 static void addToSendVector(HttpQueue *q, char *ptr, ssize bytes)
 {
-    mprAssert(ptr > 0);
-    mprAssert(bytes > 0);
+    assure(ptr > 0);
+    assure(bytes > 0);
 
     q->iovec[q->ioIndex].start = ptr;
     q->iovec[q->ioIndex].len = bytes;
@@ -227,14 +225,14 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
     conn = q->conn;
     tx = conn->tx;
     
-    mprAssert(q->count >= 0);
-    mprAssert(q->ioIndex < (HTTP_MAX_IOVEC - 2));
+    assure(q->count >= 0);
+    assure(q->ioIndex < (HTTP_MAX_IOVEC - 2));
 
     if (packet->prefix) {
         addToSendVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));
     }
     if (packet->esize > 0) {
-        mprAssert(q->ioFile == 0);
+        assure(q->ioFile == 0);
         q->ioFile = 1;
         q->ioCount += packet->esize;
 
@@ -261,9 +259,9 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
     HttpPacket  *packet;
     ssize       len;
 
-    mprAssert(q->first);
-    mprAssert(q->count >= 0);
-    mprAssert(bytes >= 0);
+    assure(q->first);
+    assure(q->count >= 0);
+    assure(bytes >= 0);
 
     while ((packet = q->first) != 0) {
         if (packet->prefix) {
@@ -281,8 +279,8 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             packet->esize -= len;
             packet->epos += len;
             bytes -= len;
-            mprAssert(packet->esize >= 0);
-            mprAssert(bytes == 0);
+            assure(packet->esize >= 0);
+            assure(bytes == 0);
             if (packet->esize > 0) {
                 break;
             }
@@ -291,12 +289,12 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             mprAdjustBufStart(packet->content, len);
             bytes -= len;
             q->count -= len;
-            mprAssert(q->count >= 0);
+            assure(q->count >= 0);
         }
         if (httpGetPacketLength(packet) == 0) {
             httpGetPacket(q);
         }
-        mprAssert(bytes >= 0);
+        assure(bytes >= 0);
         if (bytes == 0 && (q->first == NULL || !(q->first->flags & HTTP_PACKET_END))) {
             break;
         }
@@ -342,38 +340,22 @@ static void adjustSendVec(HttpQueue *q, MprOff written)
 
 
 #else
-int httpOpenSendConnector(Http *http) { return 0; }
-void httpSendOpen(HttpQueue *q) {}
-void httpSendOutgoingService(HttpQueue *q) {}
+PUBLIC int httpOpenSendConnector(Http *http) { return 0; }
+PUBLIC void httpSendOpen(HttpQueue *q) {}
+PUBLIC void httpSendOutgoingService(HttpQueue *q) {}
+#endif /* !BIT_ROM */
 
-#endif /* !BIT_FEATURE_ROMFS */
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.TXT distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

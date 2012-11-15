@@ -20,12 +20,12 @@ static void startRange(HttpQueue *q);
 
 /*********************************** Code *************************************/
 
-int httpOpenRangeFilter(Http *http)
+PUBLIC int httpOpenRangeFilter(Http *http)
 {
     HttpStage     *filter;
 
     mprLog(5, "Open range filter");
-    if ((filter = httpCreateFilter(http, "rangeFilter", HTTP_STAGE_ALL, NULL)) == 0) {
+    if ((filter = httpCreateFilter(http, "rangeFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->rangeFilter = filter;
@@ -36,10 +36,14 @@ int httpOpenRangeFilter(Http *http)
 }
 
 
+/*
+    This is called twice: once for TX and once for RX
+ */
 static int matchRange(HttpConn *conn, HttpRoute *route, int dir)
 {
-    mprAssert(conn->rx);
+    assure(conn->rx);
 
+    httpSetHeader(conn, "Accept-Ranges", "bytes");
     if ((dir & HTTP_STAGE_TX) && conn->tx->outputRanges) {
         return HTTP_ROUTE_OK;
     }
@@ -138,10 +142,10 @@ static bool applyRange(HttpQueue *q, HttpPacket *packet)
 
         } else {
             /* In range */
-            mprAssert(range->start <= tx->rangePos && tx->rangePos < range->end);
+            assure(range->start <= tx->rangePos && tx->rangePos < range->end);
             span = min(length, (range->end - tx->rangePos));
             count = (ssize) min(span, q->nextQ->packetSize);
-            mprAssert(count > 0);
+            assure(count > 0);
             if (!httpWillNextQueueAcceptSize(q, count)) {
                 httpPutBackPacket(q, packet);
                 return 0;
@@ -216,7 +220,7 @@ static void createRangeBoundary(HttpConn *conn)
     int         when;
 
     tx = conn->tx;
-    mprAssert(tx->rangeBoundary == 0);
+    assure(tx->rangeBoundary == 0);
     when = (int) conn->http->now;
     tx->rangeBoundary = sfmt("%08X%08X", PTOI(tx) + PTOI(conn) * when, when);
 }
@@ -276,31 +280,15 @@ static bool fixRangeLength(HttpConn *conn)
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.TXT distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

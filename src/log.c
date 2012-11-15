@@ -10,13 +10,13 @@
 
 /************************************ Code ************************************/
 
-void httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup, cchar *format, int flags)
+PUBLIC int httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup, cchar *format, int flags)
 {
     char    *src, *dest;
 
-    mprAssert(route);
-    mprAssert(path && *path);
-    mprAssert(format);
+    assure(route);
+    assure(path && *path);
+    assure(format);
     
     if (format == NULL || *format == '\0') {
         format = HTTP_LOG_FORMAT;
@@ -34,23 +34,29 @@ void httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup, ccha
         *dest++ = *src;
     }
     *dest = '\0';
+    if (route->logBackup > 0) {
+        httpBackupRouteLog(route);
+    }
+    route->logFlags &= ~MPR_LOG_ANEW;
+    if (!httpOpenRouteLog(route)) {
+        return MPR_ERR_CANT_OPEN;
+    }
+    return 0;
 }
 
 
-void httpBackupRouteLog(HttpRoute *route)
+PUBLIC void httpBackupRouteLog(HttpRoute *route)
 {
     MprPath     info;
 
-    mprAssert(route->logBackup);
-    mprAssert(route->logSize > 100);
+    assure(route->logBackup);
+    assure(route->logSize > 100);
 
-    lock(route);
     if (route->parent && route->parent->log == route->log) {
         httpBackupRouteLog(route->parent);
-        route->log = route->parent->log;
-        unlock(route);
         return;
     }
+    lock(route);
     mprGetPathInfo(route->logPath, &info);
     if (info.valid && ((route->logFlags & MPR_LOG_ANEW) || info.size > route->logSize || route->logSize <= 0)) {
         if (route->log) {
@@ -64,16 +70,15 @@ void httpBackupRouteLog(HttpRoute *route)
 }
 
 
-MprFile *httpOpenRouteLog(HttpRoute *route)
+PUBLIC MprFile *httpOpenRouteLog(HttpRoute *route)
 {
     MprFile     *file;
     int         mode;
 
-    mprAssert(route->log == 0);
+    assure(route->log == 0);
     mode = O_CREAT | O_WRONLY | O_TEXT;
     if ((file = mprOpenFile(route->logPath, mode, 0664)) == 0) {
         mprError("Can't open log file %s", route->logPath);
-        unlock(MPR);
         return 0;
     }
     route->log = file;
@@ -81,11 +86,11 @@ MprFile *httpOpenRouteLog(HttpRoute *route)
 }
 
 
-void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
+PUBLIC void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
 {
     lock(MPR);
     if (route->logBackup > 0) {
-        //  TODO OPT - don't check this on every write
+        //  OPT - don't check this on every write
         httpBackupRouteLog(route);
         if (!route->log && !httpOpenRouteLog(route)) {
             unlock(MPR);
@@ -101,7 +106,7 @@ void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
 }
 
 
-void httpLogRequest(HttpConn *conn)
+PUBLIC void httpLogRequest(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -151,7 +156,6 @@ void httpLogRequest(HttpConn *conn)
             break;
 
         case 'h':                           /* Remote host */
-            //  TODO - Should this trigger a reverse DNS?
             mprPutStringToBuf(buf, conn->ip);
             break;
 
@@ -179,7 +183,7 @@ void httpLogRequest(HttpConn *conn)
             break;
 
         case 'u':                           /* Remote username */
-            mprPutStringToBuf(buf, conn->authUser ? conn->authUser : "-");
+            mprPutStringToBuf(buf, conn->username ? conn->username : "-");
             break;
 
         case '{':                           /* Header line */
@@ -226,31 +230,15 @@ void httpLogRequest(HttpConn *conn)
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.TXT distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

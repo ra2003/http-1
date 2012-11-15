@@ -13,7 +13,7 @@ static void manageTx(HttpTx *tx, int flags);
 
 /*********************************** Code *************************************/
 
-HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
+PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
 {
     HttpTx      *tx;
 
@@ -25,18 +25,17 @@ HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     tx->status = HTTP_CODE_OK;
     tx->length = -1;
     tx->entityLength = -1;
-    tx->traceMethods = HTTP_STAGE_ALL;
     tx->chunkSize = -1;
 
     tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
     tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
+    conn->readq = tx->queue[HTTP_QUEUE_RX]->prevQ;
+    conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
 
     if (headers) {
         tx->headers = headers;
     } else if ((tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS)) != 0) {
-        if (conn->endpoint) {
-            httpAddHeaderString(conn, "Server", conn->http->software);
-        } else {
+        if (!conn->endpoint) {
             httpAddHeaderString(conn, "User-Agent", sclone(HTTP_NAME));
         }
     }
@@ -44,7 +43,7 @@ HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
 }
 
 
-void httpDestroyTx(HttpTx *tx)
+PUBLIC void httpDestroyTx(HttpTx *tx)
 {
     if (tx->file) {
         mprCloseFile(tx->file);
@@ -60,26 +59,27 @@ void httpDestroyTx(HttpTx *tx)
 static void manageTx(HttpTx *tx, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
-        mprMark(tx->ext);
-        mprMark(tx->etag);
-        mprMark(tx->filename);
-        mprMark(tx->handler);
-        mprMark(tx->parsedUri);
-        mprMark(tx->method);
-        mprMark(tx->conn);
-        mprMark(tx->outputPipeline);
-        mprMark(tx->connector);
-        mprMark(tx->queue[0]);
-        mprMark(tx->queue[1]);
-        mprMark(tx->headers);
+        mprMark(tx->altBody);
         mprMark(tx->cache);
         mprMark(tx->cacheBuffer);
         mprMark(tx->cachedContent);
-        mprMark(tx->outputRanges);
+        mprMark(tx->conn);
+        mprMark(tx->connector);
         mprMark(tx->currentRange);
-        mprMark(tx->rangeBoundary);
-        mprMark(tx->altBody);
+        mprMark(tx->ext);
+        mprMark(tx->etag);
         mprMark(tx->file);
+        mprMark(tx->filename);
+        mprMark(tx->handler);
+        mprMark(tx->headers);
+        mprMark(tx->method);
+        mprMark(tx->outputPipeline);
+        mprMark(tx->outputRanges);
+        mprMark(tx->parsedUri);
+        mprMark(tx->queue[0]);
+        mprMark(tx->queue[1]);
+        mprMark(tx->rangeBoundary);
+        mprMark(tx->webSockKey);
 
     } else if (flags & MPR_MANAGE_FREE) {
         httpDestroyTx(tx);
@@ -92,16 +92,16 @@ static void manageTx(HttpTx *tx, int flags)
 */
 static void addHdr(HttpConn *conn, cchar *key, cchar *value)
 {
-    mprAssert(key && *key);
-    mprAssert(value);
+    assure(key && *key);
+    assure(value);
 
     mprAddKey(conn->tx->headers, key, value);
 }
 
 
-int httpRemoveHeader(HttpConn *conn, cchar *key)
+PUBLIC int httpRemoveHeader(HttpConn *conn, cchar *key)
 {
-    mprAssert(key && *key);
+    assure(key && *key);
     if (conn->tx == 0) {
         return MPR_ERR_CANT_ACCESS;
     }
@@ -112,13 +112,13 @@ int httpRemoveHeader(HttpConn *conn, cchar *key)
 /*  
     Add a http header if not already defined
  */
-void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
+PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 {
     char        *value;
     va_list     vargs;
 
-    mprAssert(key && *key);
-    mprAssert(fmt && *fmt);
+    assure(key && *key);
+    assure(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -133,10 +133,10 @@ void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 /*
     Add a header string if not already defined
  */
-void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
+PUBLIC void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
-    mprAssert(key && *key);
-    mprAssert(value);
+    assure(key && *key);
+    assure(value);
 
     if (!mprLookupKey(conn->tx->headers, key)) {
         addHdr(conn, key, sclone(value));
@@ -148,14 +148,14 @@ void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
    Append a header. If already defined, the value is catenated to the pre-existing value after a ", " separator.
    As per the HTTP/1.1 spec.
  */
-void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
+PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 {
     va_list     vargs;
     char        *value;
     cchar       *oldValue;
 
-    mprAssert(key && *key);
-    mprAssert(fmt && *fmt);
+    assure(key && *key);
+    assure(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -166,7 +166,7 @@ void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
         /*
             Set-Cookie has legacy behavior and some browsers require separate headers
          */
-        if (scasematch(key, "Set-Cookie")) {
+        if (scaselessmatch(key, "Set-Cookie")) {
             mprAddDuplicateKey(conn->tx->headers, key, value);
         } else {
             addHdr(conn, key, sfmt("%s, %s", oldValue, value));
@@ -181,16 +181,16 @@ void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
    Append a header string. If already defined, the value is catenated to the pre-existing value after a ", " separator.
    As per the HTTP/1.1 spec.
  */
-void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
+PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
     cchar   *oldValue;
 
-    mprAssert(key && *key);
-    mprAssert(value && *value);
+    assure(key && *key);
+    assure(value && *value);
 
     oldValue = mprLookupKey(conn->tx->headers, key);
     if (oldValue) {
-        if (scasematch(key, "Set-Cookie")) {
+        if (scaselessmatch(key, "Set-Cookie")) {
             mprAddDuplicateKey(conn->tx->headers, key, sclone(value));
         } else {
             addHdr(conn, key, sfmt("%s, %s", oldValue, value));
@@ -204,13 +204,13 @@ void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
 /*  
     Set a http header. Overwrite if present.
  */
-void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
+PUBLIC void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 {
     char        *value;
     va_list     vargs;
 
-    mprAssert(key && *key);
-    mprAssert(fmt && *fmt);
+    assure(key && *key);
+    assure(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -219,10 +219,10 @@ void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 }
 
 
-void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
+PUBLIC void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
-    mprAssert(key && *key);
-    mprAssert(value);
+    assure(key && *key);
+    assure(value);
 
     addHdr(conn, key, sclone(value));
 }
@@ -231,45 +231,83 @@ void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 /*
     Called by connectors (ONLY) when writing the transmission is complete
  */
-void httpConnectorComplete(HttpConn *conn)
+PUBLIC void httpFinalizeConnector(HttpConn *conn)
 {
-    conn->connectorComplete = 1;
-    conn->finalized = 1;
+    HttpTx      *tx;
+
+    tx = conn->tx;
+    tx->finalizedConnector = 1;
+    tx->finalizedOutput = 1;
+    /*
+        Use case: server calling finalize in a timer. Must notify for close event in ejs.web/test/request/events.tst
+      */ 
+    /* Can't do this if there is still data to read */
+    if (tx->finalized && conn->rx->eof) {
+        httpSetState(conn, HTTP_STATE_FINALIZED);
+    }
 }
 
 
-void httpFinalize(HttpConn *conn)
+PUBLIC void httpFinalize(HttpConn *conn)
 {
-    if (conn->finalized) {
+    HttpTx  *tx;
+
+    tx = conn->tx;
+    if (!tx || tx->finalized) {
         return;
     }
-    conn->responded = 1;
-    conn->finalized = 1;
-
-    if (conn->state >= HTTP_STATE_CONNECTED && conn->writeq && conn->sock) {
-        httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
-        httpServiceQueues(conn);
-        if (conn->state >= HTTP_STATE_READY /* MOB && conn->connectorComplete */ && !conn->inHttpProcess) {
-            httpPump(conn, NULL);
-        }
-        conn->refinalize = 0;
+    tx->finalized = 1;
+    if (!tx->finalizedOutput) {
+        httpFinalizeOutput(conn);
     } else {
-        /* Pipeline has not been setup yet */
-        conn->refinalize = 1;
+        httpServiceQueues(conn);
     }
 }
 
 
-int httpIsFinalized(HttpConn *conn)
+PUBLIC void httpFinalizeOutput(HttpConn *conn)
 {
-    return conn->finalized;
+    HttpTx      *tx;
+
+    tx = conn->tx;
+    if (!tx || tx->finalizedOutput) {
+        return;
+    }
+    tx->responded = 1;
+    tx->finalizedOutput = 1;
+    assure(conn->writeq);
+    if (conn->writeq == tx->queue[HTTP_QUEUE_TX]) {
+        /* Tx Pipeline not yet created */
+        tx->pendingFinalize = 1;
+        return;
+    }
+    assure(conn->state >= HTTP_STATE_CONNECTED);
+    /*
+        This may be called from httpError when the connection fails.
+     */
+    if (conn->sock) {
+        httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
+        httpServiceQueues(conn);
+    }
+}
+
+
+PUBLIC int httpIsFinalized(HttpConn *conn)
+{
+    return conn->tx->finalized;
+}
+
+
+PUBLIC int httpIsOutputFinalized(HttpConn *conn)
+{
+    return conn->tx->finalizedOutput;
 }
 
 
 /*
     Flush the write queue
  */
-void httpFlush(HttpConn *conn)
+PUBLIC void httpFlush(HttpConn *conn)
 {
     httpFlushQueue(conn->writeq, !conn->async);
 }
@@ -279,17 +317,18 @@ void httpFlush(HttpConn *conn)
     This formats a response and sets the altBody. The response is not HTML escaped.
     This is the lowest level for formatResponse.
  */
-ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
+PUBLIC ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
 {
     HttpTx      *tx;
     char        *body;
 
     tx = conn->tx;
-    conn->responded = 1;
-    body = sfmtv(fmt, args);
-    httpOmitBody(conn);
+    tx->responded = 1;
+    body = fmt ? sfmtv(fmt, args) : conn->errorMsg;
     tx->altBody = body;
     tx->length = slen(tx->altBody);
+    tx->flags |= HTTP_TX_NO_BODY;
+    httpDiscardData(conn, HTTP_QUEUE_TX);
     return (ssize) tx->length;
 }
 
@@ -297,7 +336,7 @@ ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
 /*
     This formats a response and sets the altBody. The response is not HTML escaped.
  */
-ssize httpFormatResponse(HttpConn *conn, cchar *fmt, ...)
+PUBLIC ssize httpFormatResponse(HttpConn *conn, cchar *fmt, ...)
 {
     va_list     args;
     ssize       rc;
@@ -311,15 +350,16 @@ ssize httpFormatResponse(HttpConn *conn, cchar *fmt, ...)
 
 /*
     This formats a complete response. Depending on the Accept header, the response will be either HTML or plain text.
-    The response is not HTML escaped.  This calls httpFormatResponse.
+    The response is not HTML escaped. This calls httpFormatResponse.
  */
-ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...)
+PUBLIC ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...)
 {
     va_list     args;
     char        *msg, *body;
 
     va_start(args, fmt);
-    body = sfmtv(fmt, args);
+    body = fmt ? sfmtv(fmt, args) : conn->errorMsg;
+
     if (scmp(conn->rx->accept, "text/plain") == 0) {
         msg = body;
     } else {
@@ -334,33 +374,7 @@ ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...)
 }
 
 
-/*
-    Create an alternate body response. Typically used for error responses. The message is HTML escaped.
-    NOTE: this is an internal API. Users should use httpFormatError
- */
-void httpFormatResponseError(HttpConn *conn, int status, cchar *fmt, ...)
-{
-    va_list     args;
-    cchar       *statusMsg;
-    char        *msg;
-
-    mprAssert(fmt && fmt);
-
-    va_start(args, fmt);
-    msg = sfmtv(fmt, args);
-    statusMsg = httpLookupStatus(conn->http, status);
-    if (scmp(conn->rx->accept, "text/plain") == 0) {
-        msg = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, msg);
-    } else {
-        msg = sfmt("<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n", status, statusMsg, mprEscapeHtml(msg));
-    }
-    httpAddHeaderString(conn, "Cache-Control", "no-cache");
-    httpFormatResponseBody(conn, statusMsg, "%s", msg);
-    va_end(args);
-}
-
-
-void *httpGetQueueData(HttpConn *conn)
+PUBLIC void *httpGetQueueData(HttpConn *conn)
 {
     HttpQueue     *q;
 
@@ -369,13 +383,17 @@ void *httpGetQueueData(HttpConn *conn)
 }
 
 
-void httpOmitBody(HttpConn *conn)
+PUBLIC void httpOmitBody(HttpConn *conn)
 {
-    if (conn->tx) {
-        conn->tx->flags |= HTTP_TX_NO_BODY;
+    HttpTx  *tx;
+
+    tx = conn->tx;
+    if (!tx) {
+        return;
     }
-    if (conn->tx->flags & HTTP_TX_HEADERS_CREATED) {
-        mprError("Can't set response body if headers have already been created");
+    tx->flags |= HTTP_TX_NO_BODY;
+    tx->length = -1;
+    if (tx->flags & HTTP_TX_HEADERS_CREATED) {
         /* Connectors will detect this also and disconnect */
     } else {
         httpDiscardData(conn, HTTP_QUEUE_TX);
@@ -386,22 +404,29 @@ void httpOmitBody(HttpConn *conn)
 /*  
     Redirect the user to another web page. The targetUri may or may not have a scheme.
  */
-void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
+PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 {
-    HttpTx      *tx;
-    HttpRx      *rx;
-    HttpUri     *target, *prev;
-    cchar       *msg;
-    char        *path, *uri, *dir, *cp;
-    int         port;
+    HttpTx          *tx;
+    HttpRx          *rx;
+    HttpUri         *target, *base;
+    HttpEndpoint    *endpoint;
+    cchar           *msg;
+    char            *dir, *cp;
 
-    mprAssert(targetUri);
-
-    mprLog(3, "redirect %d %s", status, targetUri);
-
+    assure(targetUri);
     rx = conn->rx;
     tx = conn->tx;
+
+    if (tx->finalized) {
+        /* A response has already been formulated */
+        return;
+    }
     tx->status = status;
+
+    if (schr(targetUri, '$')) {
+        targetUri = httpExpandRouteVars(conn, targetUri);
+    }
+    mprLog(3, "redirect %d %s", status, targetUri);
     msg = httpLookupStatus(conn->http, status);
 
     if (300 <= status && status <= 399) {
@@ -409,35 +434,29 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             targetUri = "/";
         }
         target = httpCreateUri(targetUri, 0);
-
-        if (conn->http->redirectCallback) {
-            targetUri = (conn->http->redirectCallback)(conn, &status, target);
-        }
-        if (strstr(targetUri, "://") == 0) {
-            prev = rx->parsedUri;
-            port = strchr(targetUri, ':') ? prev->port : conn->endpoint->port;
-            uri = 0;
-            if (target->path[0] == '/') {
-                /*
-                    Absolute URL. If hostName has a port specifier, it overrides prev->port.
-                 */
-                uri = httpFormatUri(prev->scheme, rx->hostHeader, port, target->path, target->reference, target->query, 
-                    HTTP_COMPLETE_URI);
+        base = rx->parsedUri;
+        if (!target->port && target->scheme && !smatch(target->scheme, base->scheme)) {
+            endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
+            if (endpoint) {
+                target->port = endpoint->port;
             } else {
-                /*
-                    Relative file redirection to a file in the same directory as the previous request.
-                 */
-                dir = sclone(rx->pathInfo);
-                if ((cp = strrchr(dir, '/')) != 0) {
-                    /* Remove basename */
-                    *cp = '\0';
-                }
-                path = sjoin(dir, "/", target->path, NULL);
-                uri = httpFormatUri(prev->scheme, rx->hostHeader, port, path, target->reference, target->query, 
-                    HTTP_COMPLETE_URI);
+                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Can't find endpoint for scheme %s", target->scheme);
+                return;
             }
-            targetUri = uri;
         }
+        if (target->path && target->path[0] != '/') {
+            /*
+                Relative file redirection to a file in the same directory as the previous request.
+             */
+            dir = sclone(rx->pathInfo);
+            if ((cp = strrchr(dir, '/')) != 0) {
+                /* Remove basename */
+                *cp = '\0';
+            }
+            target->path = sjoin(dir, "/", target->path, NULL);
+        }
+        target = httpCompleteUri(target, base);
+        targetUri = httpUriToString(target, 0);
         httpSetHeader(conn, "Location", "%s", targetUri);
         httpFormatResponse(conn, 
             "<!DOCTYPE html>\r\n"
@@ -455,7 +474,7 @@ void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 }
 
 
-void httpSetContentLength(HttpConn *conn, MprOff length)
+PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
 {
     HttpTx      *tx;
 
@@ -468,73 +487,45 @@ void httpSetContentLength(HttpConn *conn, MprOff length)
 }
 
 
-void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, 
-        MprTime lifespan, int flags)
+PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, 
+        MprTicks lifespan, int flags)
 {
     HttpRx      *rx;
-    char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *extra;
-    int         webkitVersion;
+    char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *secure, *httponly;
 
     rx = conn->rx;
     if (path == 0) {
         path = "/";
     }
-    /* 
-        Fix for Safari >= 3.2.1 with Bonjour addresses with a trailing ".". Safari discards cookies without a domain 
-        specifier or with a domain that includes a trailing ".". Solution: include an explicit domain and trim the 
-        trailing ".".
-      
-        User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_6; en-us) 
-             AppleWebKit/530.0+ (KHTML, like Gecko) Version/3.1.2 Safari/525.20.1
-    */
-    webkitVersion = 0;
-    if (cookieDomain == 0 && rx->userAgent && strstr(rx->userAgent, "AppleWebKit") != 0) {
-        if ((cp = strstr(rx->userAgent, "Version/")) != NULL && strlen(cp) >= 13) {
-            cp = &cp[8];
-            webkitVersion = (cp[0] - '0') * 100 + (cp[2] - '0') * 10 + (cp[4] - '0');
-        }
-    }
     domain = (char*) cookieDomain;
-    if (webkitVersion >= 312) {
+    if (!domain) {
         domain = sclone(rx->hostHeader);
         if ((cp = strchr(domain, ':')) != 0) {
             *cp = '\0';
         }
         if (*domain && domain[strlen(domain) - 1] == '.') {
             domain[strlen(domain) - 1] = '\0';
-        } else {
-            domain = 0;
         }
     }
-    if (domain) {
-        if (*domain != '.') {
-            domain = sjoin(".", domain, NULL);
-        }
-        domainAtt = "; domain=";
-    } else {
-        domainAtt = "";
-        domain = "";
+    domainAtt = domain ? "; domain=" : "";
+    if (domain && !strchr(domain, '.')) {
+        domain = sjoin(".", domain, NULL);
     }
     if (lifespan > 0) {
         expiresAtt = "; expires=";
-        expires = mprFormatUniversalTime(MPR_HTTP_DATE, conn->http->now + lifespan);
+        expires = mprFormatUniversalTime(MPR_HTTP_DATE, mprGetTime() + lifespan);
 
     } else {
         expires = expiresAtt = "";
     }
-    if (flags & HTTP_COOKIE_SECURE) {
-        extra = "; secure";
-    } else if (flags & HTTP_COOKIE_HTTP) {
-        extra = "; secure";
-    } else {
-        extra = ";";
-    }
     /* 
        Allow multiple cookie headers. Even if the same name. Later definitions take precedence
      */
+    secure = (flags & HTTP_COOKIE_SECURE) ? "; secure" : "";
+    httponly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
     httpAppendHeader(conn, "Set-Cookie", 
-        sjoin(name, "=", value, "; path=", path, domainAtt, domain, expiresAtt, expires, extra, NULL));
-    httpAppendHeader(conn, "Cache-control", "no-cache=\"set-cookie\"");
+        sjoin(name, "=", value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
+    httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
 }
 
 
@@ -547,9 +538,10 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     HttpTx      *tx;
     HttpRoute   *route;
     HttpRange   *range;
+    MprOff      length;
     cchar       *mimeType;
 
-    mprAssert(packet->flags == HTTP_PACKET_HEADER);
+    assure(packet->flags == HTTP_PACKET_HEADER);
 
     rx = conn->rx;
     tx = conn->tx;
@@ -572,12 +564,27 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     if (tx->etag) {
         httpAddHeader(conn, "ETag", "%s", tx->etag);
     }
-    if (tx->chunkSize > 0) {
-        if (!(rx->flags & HTTP_HEAD)) {
-            httpSetHeaderString(conn, "Transfer-Encoding", "chunked");
+    length = tx->length > 0 ? tx->length : 0;
+    if (rx->flags & HTTP_HEAD) {
+        conn->tx->flags |= HTTP_TX_NO_BODY;
+        httpDiscardData(conn, HTTP_QUEUE_TX);
+        if (tx->chunkSize <= 0) {
+            httpAddHeader(conn, "Content-Length", "%Ld", length);
         }
-    } else if (tx->length > 0 || conn->endpoint) {
-        httpAddHeader(conn, "Content-Length", "%Ld", tx->length);
+
+    } else if (tx->length < 0 && tx->chunkSize > 0) {
+        httpSetHeaderString(conn, "Transfer-Encoding", "chunked");
+
+    } else if (conn->endpoint) {
+        /* Server must not emit a content length header for 1XX, 204 and 304 status */
+        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || 
+                tx->status == 304 || tx->flags & HTTP_TX_NO_LENGTH)) {
+            httpAddHeader(conn, "Content-Length", "%Ld", length);
+        }
+
+    } else if (tx->length > 0) {
+        /* client with body */
+        httpAddHeader(conn, "Content-Length", "%Ld", length);
     }
     if (tx->outputRanges) {
         if (tx->outputRanges->next == 0) {
@@ -593,8 +600,9 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         httpSetHeader(conn, "Accept-Ranges", "bytes");
     }
     if (conn->endpoint) {
+        httpAddHeaderString(conn, "Server", conn->http->software);
         if (--conn->keepAliveCount > 0) {
-            httpAddHeaderString(conn, "Connection", "keep-alive");
+            httpAddHeaderString(conn, "Connection", "Keep-Alive");
             httpAddHeader(conn, "Keep-Alive", "timeout=%Ld, max=%d", conn->limits->inactivityTimeout / 1000,
                 conn->keepAliveCount);
         } else {
@@ -604,7 +612,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
 }
 
 
-void httpSetEntityLength(HttpConn *conn, int64 len)
+PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
 {
     HttpTx      *tx;
 
@@ -616,36 +624,38 @@ void httpSetEntityLength(HttpConn *conn, int64 len)
 }
 
 
-void httpSetResponded(HttpConn *conn)
+PUBLIC void httpSetResponded(HttpConn *conn)
 {
-    conn->responded = 1;
+    conn->tx->responded = 1;
 }
 
 
-void httpSetStatus(HttpConn *conn, int status)
+PUBLIC void httpSetStatus(HttpConn *conn, int status)
 {
     conn->tx->status = status;
-    conn->responded = 1;
+    conn->tx->responded = 1;
 }
 
 
-void httpSetContentType(HttpConn *conn, cchar *mimeType)
+PUBLIC void httpSetContentType(HttpConn *conn, cchar *mimeType)
 {
     httpSetHeaderString(conn, "Content-Type", sclone(mimeType));
 }
 
 
-void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
+PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
 {
     Http        *http;
+    HttpConn    *conn;
     HttpTx      *tx;
     HttpUri     *parsedUri;
     MprKey      *kp;
     MprBuf      *buf;
     int         level;
 
-    mprAssert(packet->flags == HTTP_PACKET_HEADER);
+    assure(packet->flags == HTTP_PACKET_HEADER);
 
+    conn = q->conn;
     http = conn->http;
     tx = conn->tx;
     buf = packet->content;
@@ -653,10 +663,15 @@ void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
     if (tx->flags & HTTP_TX_HEADERS_CREATED) {
         return;
     }    
-    conn->responded = 1;
+    tx->flags |= HTTP_TX_HEADERS_CREATED;
+    tx->responded = 1;
     if (conn->headersCallback) {
         /* Must be before headers below */
         (conn->headersCallback)(conn->headersCallbackArg);
+    }
+    if (tx->flags & HTTP_TX_USE_OWN_HEADERS && !conn->error) {
+        conn->keepAliveCount = -1;
+        return;
     }
     setHeaders(conn, packet);
 
@@ -695,7 +710,7 @@ void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
     mprPutStringToBuf(buf, "\r\n");
 
     /* 
-       Output headers
+        Output headers
      */
     kp = mprGetFirstKey(conn->tx->headers);
     while (kp) {
@@ -707,11 +722,10 @@ void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
         mprPutStringToBuf(packet->content, "\r\n");
         kp = mprGetNextKey(conn->tx->headers, kp);
     }
-
     /* 
-       By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter
+        By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter
      */
-    if (tx->chunkSize <= 0) {
+    if (tx->length >= 0 || tx->chunkSize <= 0) {
         mprPutStringToBuf(buf, "\r\n");
     }
     if (tx->altBody) {
@@ -721,10 +735,11 @@ void httpWriteHeaders(HttpConn *conn, HttpPacket *packet)
     }
     tx->headerSize = mprGetBufLength(buf);
     tx->flags |= HTTP_TX_HEADERS_CREATED;
+    q->count += httpGetPacketLength(packet);
 }
 
 
-bool httpFileExists(HttpConn *conn)
+PUBLIC bool httpFileExists(HttpConn *conn)
 {
     HttpTx      *tx;
 
@@ -740,28 +755,12 @@ bool httpFileExists(HttpConn *conn)
     @copy   default
 
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire
-    a commercial license from Embedthis Software. You agree to be fully bound
-    by the terms of either license. Consult the LICENSE.TXT distributed with
-    this software for full details.
-
-    This software is open source; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the
-    Free Software Foundation; either version 2 of the License, or (at your
-    option) any later version. See the GNU General Public License for more
-    details at: http://embedthis.com/downloads/gplLicense.html
-
-    This program is distributed WITHOUT ANY WARRANTY; without even the
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-    This GPL license does NOT permit incorporating this software into
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses
-    for this software and support services are available from Embedthis
-    Software at http://embedthis.com
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
 
     Local variables:
     tab-width: 4

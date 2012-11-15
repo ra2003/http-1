@@ -9,7 +9,7 @@
 
 /*********************************** Code *************************************/
 
-void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_TRACE_MAX_ITEM], ssize len, 
+PUBLIC void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_TRACE_MAX_ITEM], ssize len, 
     cchar *include, cchar *exclude)
 {
     HttpTrace   *trace;
@@ -48,7 +48,7 @@ void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_TRACE_MA
 }
 
 
-void httpManageTrace(HttpTrace *trace, int flags)
+PUBLIC void httpManageTrace(HttpTrace *trace, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(trace->include);
@@ -57,11 +57,11 @@ void httpManageTrace(HttpTrace *trace, int flags)
 }
 
 
-void httpInitTrace(HttpTrace *trace)
+PUBLIC void httpInitTrace(HttpTrace *trace)
 {
     int     dir;
 
-    mprAssert(trace);
+    assure(trace);
 
     for (dir = 0; dir < HTTP_TRACE_MAX_DIR; dir++) {
         trace[dir].levels[HTTP_TRACE_CONN] = 3;
@@ -78,12 +78,12 @@ void httpInitTrace(HttpTrace *trace)
 /*
     If tracing should occur, return the level
  */
-int httpShouldTrace(HttpConn *conn, int dir, int item, cchar *ext)
+PUBLIC int httpShouldTrace(HttpConn *conn, int dir, int item, cchar *ext)
 {
     HttpTrace   *trace;
 
-    mprAssert(0 <= dir && dir < HTTP_TRACE_MAX_DIR);
-    mprAssert(0 <= item && item < HTTP_TRACE_MAX_ITEM);
+    assure(0 <= dir && dir < HTTP_TRACE_MAX_DIR);
+    assure(0 <= item && item < HTTP_TRACE_MAX_ITEM);
 
     trace = &conn->trace[dir];
     if (trace->disable || trace->levels[item] > MPR->logLevel) {
@@ -114,10 +114,11 @@ static void traceBuf(HttpConn *conn, int dir, int level, cchar *msg, cchar *buf,
 
     start = buf;
     if (len > 3 && start[0] == (char) 0xef && start[1] == (char) 0xbb && start[2] == (char) 0xbf) {
+        /* Step over UTF encoding */
         start += 3;
     }
     for (printable = 1, i = 0; i < len; i++) {
-        if (!isascii(start[i])) {
+        if (!isprint((uchar) start[i]) && start[i] != '\n' && start[i] != '\r' && start[i] != '\t') {
             printable = 0;
         }
     }
@@ -137,25 +138,30 @@ static void traceBuf(HttpConn *conn, int dir, int level, cchar *msg, cchar *buf,
     } else {
         mprRawLog(level, "\n>>>>>>>>>> %s %s packet %d, len %d (conn %d) >>>>>>>>>> (binary)\n", tag, msg, seqno, 
             len, conn->seqno);
-        data = mprAlloc(len * 3 + ((len / 16) + 1) + 1);
-        digits = "0123456789ABCDEF";
-        for (i = 0, cp = start, dp = data; cp < &start[len]; cp++) {
-            *dp++ = digits[(*cp >> 4) & 0x0f];
-            *dp++ = digits[*cp++ & 0x0f];
-            *dp++ = ' ';
-            if ((++i % 16) == 0) {
-                *dp++ = '\n';
+        /* To trace binary, must be two levels higher (typically 6) */
+        if (MPR->logLevel < (level + 2)) {
+            mprRawLog(level, "    Omitted. Display at log level %d\n", level + 2);
+        } else {
+            data = mprAlloc(len * 3 + ((len / 16) + 1) + 1);
+            digits = "0123456789ABCDEF";
+            for (i = 0, cp = start, dp = data; cp < &start[len]; cp++) {
+                *dp++ = digits[(*cp >> 4) & 0x0f];
+                *dp++ = digits[*cp & 0x0f];
+                *dp++ = ' ';
+                if ((++i % 16) == 0) {
+                    *dp++ = '\n';
+                }
             }
+            *dp++ = '\n';
+            *dp = '\0';
+            mprRawLog(level, "%s", data);
         }
-        *dp++ = '\n';
-        *dp = '\0';
-        mprRawLog(level, "%s", data);
     }
-    mprRawLog(level, "<<<<<<<<<< End %s packet, conn %d\n\n", tag, conn->seqno);
+    mprRawLog(level, "<<<<<<<<<< End %s packet, conn %d\n", tag, conn->seqno);
 }
 
 
-void httpTraceContent(HttpConn *conn, int dir, int item, HttpPacket *packet, ssize len, MprOff total)
+PUBLIC void httpTraceContent(HttpConn *conn, int dir, int item, HttpPacket *packet, ssize len, MprOff total)
 {
     HttpTrace   *trace;
     ssize       size;
@@ -189,29 +195,13 @@ void httpTraceContent(HttpConn *conn, int dir, int item, HttpPacket *packet, ssi
     @copy   default
 
     Copyright (c) Embedthis Software LLC, 2003-2012. All Rights Reserved.
-    Copyright (c) Michael O'Brien, 1993-2012. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire
-    a commercial license from Embedthis Software. You agree to be fully bound
-    by the terms of either license. Consult the LICENSE.TXT distributed with
-    this software for full details.
+    You may use the Embedthis Open Source license or you may acquire a 
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
 
-    This software is open source; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the
-    Free Software Foundation; either version 2 of the License, or (at your
-    option) any later version. See the GNU General Public License for more
-    details at: http://embedthis.com/downloads/gplLicense.html
-
-    This program is distributed WITHOUT ANY WARRANTY; without even the
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-    This GPL license does NOT permit incorporating this software into
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses
-    for this software and support services are available from Embedthis
-    Software at http://embedthis.com
- 
     Local variables:
     tab-width: 4
     c-basic-offset: 4

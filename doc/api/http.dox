@@ -188,7 +188,9 @@ ALIASES                = "reminder=\xrefitem reminders \"Reminder\" \"Reminders\
                          "options=\par \b Configure options:\n" \
                          "description=\par \b Description:\n" \
                          "elements=\par \b Elements:\n" \
-                         "stability=\par \b API Stability:\n"
+                         "stability=\par \b API Stability:\n" \
+                         "l=\link" \
+                         "el=\endlink"
 
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C 
@@ -1239,7 +1241,7 @@ SEARCH_INCLUDES        = YES
 # contain include files that are not input files but should be processed by 
 # the preprocessor.
 
-INCLUDE_PATH           = ../../../src
+INCLUDE_PATH           = ../../src
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard 
 # patterns (like *.h and *.hpp) to filter out the header-files in the 
@@ -1258,16 +1260,15 @@ INCLUDE_FILE_PATTERNS  =
 
 PREDEFINED             = WIN=1 \
 						 LINUX=1 \
+                         DOXYGEN=1 \
                          BIT_UNIX_LIKE=1 \
                          BIT_WIN_LIKE=1 \
-                         BIT_FEATURE_ASSERT=1 \
-                         BIT_FEATURE_FLOAT=1 \
-                         BIT_FEATURE_HTTP=1 \
-                         BIT_FEATURE_REGEXP=1 \
-                         BIT_FEATURE_SSL=1 \
-                         BIT_FEATURE_OPENSSL=1 \
-                         BIT_FEATURE_AUTH_FILE=1 \
-                         DOXYGEN=1
+                         BIT_ASSERT=1 \
+                         BIT_FLOAT=1 \
+                         BIT_PACK_PCRE=1 \
+                         BIT_PACK_SSL=1 \
+                         BIT_PACK_OPENSSL=1 \
+                         PUBLIC=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 
@@ -1305,12 +1306,12 @@ SKIP_FUNCTION_MACROS   = YES
 # If a tag file is not located in the directory in which doxygen 
 # is run, you must also specify the path to the tagfile here.
 
-TAGFILES                = ../mpr.dtags
+TAGFILES                = mpr.dtags
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create 
 # a tag file that is based on the input files it reads.
 
-GENERATE_TAGFILE       = ../http.dtags
+GENERATE_TAGFILE       = http.dtags
 
 # If the ALLEXTERNALS tag is set to YES all external classes will be listed 
 # in the class index. If set to NO only the inherited external classes 

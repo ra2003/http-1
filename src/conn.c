@@ -211,7 +211,7 @@ static void commonPrep(HttpConn *conn)
     conn->error = 0;
     conn->errorMsg = 0;
     conn->state = 0;
-    conn->setCredentials = 0;
+    conn->authRequested = 0;
 
     if (conn->endpoint) {
         conn->authType = 0;
@@ -614,7 +614,11 @@ PUBLIC void httpSetConnNotifier(HttpConn *conn, HttpNotifier notifier)
 }
 
 
-PUBLIC void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password)
+/*
+    password and authType can be null
+    User may be a combined user:password
+ */
+PUBLIC void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password, cchar *authType)
 {
     httpResetCredentials(conn);
     conn->username = sclone(username);
@@ -623,6 +627,9 @@ PUBLIC void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password)
         conn->password = sclone(conn->password);
     } else {
         conn->password = sclone(password);
+    }
+    if (authType) {
+        conn->authType = sclone(authType);
     }
 }
 

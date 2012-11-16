@@ -48,10 +48,12 @@ PUBLIC void httpBasicLogin(HttpConn *conn)
 
 /*
     Add the client 'Authorization' header for authenticated requests
+    NOTE: Can do this without first getting a 401 response
  */
-PUBLIC void httpBasicSetHeaders(HttpConn *conn)
+PUBLIC bool httpBasicSetHeaders(HttpConn *conn)
 {
     httpAddHeader(conn, "Authorization", "basic %s", mprEncode64(sfmt("%s:%s", conn->username, conn->password)));
+    return 1;
 }
 
 

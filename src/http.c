@@ -653,8 +653,7 @@ static int processThread(HttpConn *conn, MprEvent *event)
         if (app->password == 0 && !strchr(app->username, ':')) {
             app->password = getPassword();
         }
-        httpSetCredentials(conn, app->username, app->password);
-        conn->authType = app->authType;
+        httpSetCredentials(conn, app->username, app->password, app->authType);
     }
     for (count = 0; count < app->iterations; count++) {
         if (mprShouldDenyNewRequests(conn)) {

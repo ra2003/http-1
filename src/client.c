@@ -89,16 +89,19 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
 
 static void setDefaultHeaders(HttpConn *conn)
 {
-    HttpAuthType    *authType;
+    HttpAuthType    *ap;
 
     assure(conn);
 
     if (smatch(conn->protocol, "HTTP/1.0")) {
         conn->http10 = 1;
     }
-    if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {
-        (authType->setAuth)(conn);
-        conn->setCredentials = 1;
+    if (conn->username && conn->authType) {
+        if ((ap = httpLookupAuthType(conn->authType)) != 0) {
+            if ((ap->setAuth)(conn)) {
+                conn->authRequested = 1;
+            }
+        }
     }
     if (conn->port != 80) {
         httpAddHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
@@ -131,7 +134,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
     }
     assure(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
-    conn->setCredentials = 0;
+    conn->authRequested = 0;
     conn->tx->method = supper(method);
     conn->tx->parsedUri = httpCreateUri(uri, 0);
 #if BIT_DEBUG
@@ -170,9 +173,9 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
         return 0;
     }
     if (rx->status == HTTP_CODE_UNAUTHORIZED) {
-        if (conn->username == 0) {
+        if (conn->username == 0 || conn->authType == 0) {
             httpFormatError(conn, rx->status, "Authentication required");
-        } else if (conn->setCredentials) {
+        } else if (conn->authRequested) {
             httpFormatError(conn, rx->status, "Authentication failed");
         } else {
             if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {

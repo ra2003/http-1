@@ -259,8 +259,9 @@ PUBLIC void httpDigestLogin(HttpConn *conn)
 
 /*
     Add the client 'Authorization' header for authenticated requests
+    Must first get a 401 response to get the authData.
  */
-PUBLIC void httpDigestSetHeaders(HttpConn *conn)
+PUBLIC bool httpDigestSetHeaders(HttpConn *conn)
 { 
     Http        *http;
     HttpTx      *tx;
@@ -270,8 +271,10 @@ PUBLIC void httpDigestSetHeaders(HttpConn *conn)
 
     http = conn->http;
     tx = conn->tx;
-    dp = conn->authData;
-
+    if ((dp = conn->authData) == 0) {
+        /* Need to await a failing auth response */
+        return 0;
+    }
     cnonce = sfmt("%s:%s:%x", http->secret, dp->realm, (int) http->now);
     fmt(a1Buf, sizeof(a1Buf), "%s:%s:%s", conn->username, dp->realm, conn->password);
     ha1 = mprGetMD5(a1Buf);
@@ -290,6 +293,7 @@ PUBLIC void httpDigestSetHeaders(HttpConn *conn)
         httpAddHeader(conn, "Authorization", "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", "
             "uri=\"%s\", response=\"%s\"", conn->username, dp->realm, dp->nonce, tx->parsedUri->path, digest);
     }
+    return 1;
 }
 
 

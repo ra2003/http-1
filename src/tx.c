@@ -241,7 +241,7 @@ PUBLIC void httpFinalizeConnector(HttpConn *conn)
     /*
         Use case: server calling finalize in a timer. Must notify for close event in ejs.web/test/request/events.tst
       */ 
-    /* Can't do this if there is still data to read */
+    /* Cannot do this if there is still data to read */
     if (tx->finalized && conn->rx->eof) {
         httpSetState(conn, HTTP_STATE_FINALIZED);
     }
@@ -440,7 +440,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             if (endpoint) {
                 target->port = endpoint->port;
             } else {
-                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Can't find endpoint for scheme %s", target->scheme);
+                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot find endpoint for scheme %s", target->scheme);
                 return;
             }
         }

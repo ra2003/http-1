@@ -78,7 +78,7 @@ PUBLIC MprFile *httpOpenRouteLog(HttpRoute *route)
     assure(route->log == 0);
     mode = O_CREAT | O_WRONLY | O_TEXT;
     if ((file = mprOpenFile(route->logPath, mode, 0664)) == 0) {
-        mprError("Can't open log file %s", route->logPath);
+        mprError("Cannot open log file %s", route->logPath);
         return 0;
     }
     route->log = file;
@@ -98,7 +98,7 @@ PUBLIC void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
         }
     }
     if (mprWriteFile(route->log, (char*) buf, len) != len) {
-        mprError("Can't write to access log %s", route->logPath);
+        mprError("Cannot write to access log %s", route->logPath);
         mprCloseFile(route->log);
         route->log = 0;
     }

@@ -25,7 +25,7 @@ static void startAction(HttpQueue *q)
 
     name = conn->rx->pathInfo;
     if ((action = mprLookupKey(conn->tx->handler->stageData, name)) == 0) {
-        mprError("Can't find action: %s", name);
+        mprError("Cannot find action: %s", name);
     } else {
         (*action)(conn);
     }
@@ -37,7 +37,7 @@ PUBLIC void httpDefineAction(cchar *name, HttpAction action)
     HttpStage   *stage;
 
     if ((stage = httpLookupStage(MPR->httpService, "actionHandler")) == 0) {
-        mprError("Can't find actionHandler");
+        mprError("Cannot find actionHandler");
         return;
     }
     mprAddKey(stage->stageData, name, action);

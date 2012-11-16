@@ -160,7 +160,7 @@ static int openQueue(HttpQueue *q, ssize chunkSize)
         module = stage->module;
         module = mprCreateModule(module->name, module->path, module->entry, http);
         if (mprLoadModule(module) < 0) {
-            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Can't load module %s", module->name);
+            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot load module %s", module->name);
             return MPR_ERR_CANT_READ;
         }
         stage->module = module;

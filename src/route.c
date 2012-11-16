@@ -327,7 +327,7 @@ PUBLIC int httpStartRoute(HttpRoute *route)
             assure(!route->log);
             route->log = mprOpenFile(route->logPath, O_CREAT | O_APPEND | O_WRONLY | O_TEXT, 0664);
             if (route->log == 0) {
-                mprError("Can't open log file %s", route->logPath);
+                mprError("Cannot open log file %s", route->logPath);
                 return MPR_ERR_CANT_OPEN;
             }
         }
@@ -391,8 +391,8 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     }
     if (route == 0 || tx->handler == 0) {
         /* Ensure this is emitted to the log */
-        mprError("Can't find suitable route for request %s", rx->pathInfo);
-        httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Can't find suitable route for request");
+        mprError("Cannot find suitable route for request %s", rx->pathInfo);
+        httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot find suitable route for request");
         return;
     }
     if (rx->traceLevel >= 0) {
@@ -575,7 +575,7 @@ static int testRoute(HttpConn *conn, HttpRoute *route)
         }
     }
     if ((proc = mprLookupKey(conn->http->routeTargets, route->targetRule)) == 0) {
-        httpError(conn, -1, "Can't find route target rule \"%s\"", route->targetRule);
+        httpError(conn, -1, "Cannot find route target rule \"%s\"", route->targetRule);
         return HTTP_ROUTE_REJECT;
     }
     if ((rc = (*proc)(conn, route, 0)) != HTTP_ROUTE_OK) {
@@ -691,7 +691,7 @@ PUBLIC int httpAddRouteCondition(HttpRoute *route, cchar *name, cchar *details, 
             return MPR_ERR_BAD_SYNTAX;
         }
         if ((op->mdata = pcre_compile2(pattern, 0, 0, &errMsg, &column, NULL)) == 0) {
-            mprError("Can't compile condition match pattern. Error %s at column %d", errMsg, column); 
+            mprError("Cannot compile condition match pattern. Error %s at column %d", errMsg, column); 
             return MPR_ERR_BAD_SYNTAX;
         }
         op->details = finalizeReplacement(route, value);
@@ -716,7 +716,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     
     stage = httpLookupStage(route->http, name);
     if (stage == 0) {
-        mprError("Can't find filter %s", name); 
+        mprError("Cannot find filter %s", name); 
         return MPR_ERR_CANT_FIND;
     }
     /*
@@ -768,7 +768,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
 
     http = route->http;
     if ((handler = httpLookupStage(http, name)) == 0) {
-        mprError("Can't find stage %s", name); 
+        mprError("Cannot find stage %s", name); 
         return MPR_ERR_CANT_FIND;
     }
     GRADUATE_HASH(route, extensions);
@@ -830,7 +830,7 @@ PUBLIC void httpAddRouteHeader(HttpRoute *route, cchar *header, cchar *value, in
         return;
     }
     if ((op->mdata = pcre_compile2(value, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprError("Can't compile header pattern. Error %s at column %d", errMsg, column); 
+        mprError("Cannot compile header pattern. Error %s at column %d", errMsg, column); 
     } else {
         mprAddItem(route->headers, op);
     }
@@ -871,7 +871,7 @@ PUBLIC void httpAddRouteParam(HttpRoute *route, cchar *field, cchar *value, int 
         return;
     }
     if ((op->mdata = pcre_compile2(value, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprError("Can't compile field pattern. Error %s at column %d", errMsg, column); 
+        mprError("Cannot compile field pattern. Error %s at column %d", errMsg, column); 
     } else {
         mprAddItem(route->params, op);
     }
@@ -1038,7 +1038,7 @@ PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
     
     stage = httpLookupStage(route->http, name);
     if (stage == 0) {
-        mprError("Can't find connector %s", name); 
+        mprError("Cannot find connector %s", name); 
         return MPR_ERR_CANT_FIND;
     }
     route->connector = stage;
@@ -1076,7 +1076,7 @@ PUBLIC int httpSetRouteHandler(HttpRoute *route, cchar *name)
     assure(name && *name);
     
     if ((handler = httpLookupStage(route->http, name)) == 0) {
-        mprError("Can't find handler %s", name); 
+        mprError("Cannot find handler %s", name); 
         return MPR_ERR_CANT_FIND;
     }
     route->handler = handler;
@@ -1415,7 +1415,7 @@ static void finalizePattern(HttpRoute *route)
         free(route->patternCompiled);
     }
     if ((route->patternCompiled = pcre_compile2(route->optimizedPattern, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprError("Can't compile route. Error %s at column %d", errMsg, column); 
+        mprError("Cannot compile route. Error %s at column %d", errMsg, column); 
     }
     route->flags |= HTTP_ROUTE_FREE_PATTERN;
 }
@@ -1473,7 +1473,7 @@ static char *finalizeReplacement(HttpRoute *route, cchar *str)
                             mprPutCharToBuf(buf, '$');
                             mprPutStringToBuf(buf, token);
                         } else {
-                            mprError("Can't find token \"%s\" in template \"%s\"", token, route->pattern);
+                            mprError("Cannot find token \"%s\" in template \"%s\"", token, route->pattern);
                         }
                     }
                 }
@@ -1698,7 +1698,7 @@ PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
         if (tplate) {
             target = httpTemplate(conn, tplate, options);
         } else {
-            mprError("Can't find template for URI %s", target);
+            mprError("Cannot find template for URI %s", target);
             target = "/";
         }
     }
@@ -1877,7 +1877,7 @@ static int testCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *conditio
     assure(condition);
 
     if ((proc = mprLookupKey(conn->http->routeConditions, condition->name)) == 0) {
-        httpError(conn, -1, "Can't find route condition rule %s", condition->name);
+        httpError(conn, -1, "Cannot find route condition rule %s", condition->name);
         return 0;
     }
     mprLog(6, "run condition on route %s condition %s", route->name, condition->name);
@@ -2069,7 +2069,7 @@ static int updateRequest(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     assure(op);
 
     if ((proc = mprLookupKey(conn->http->routeUpdates, op->name)) == 0) {
-        httpError(conn, -1, "Can't find route update rule %s", op->name);
+        httpError(conn, -1, "Cannot find route update rule %s", op->name);
         return HTTP_ROUTE_OK;
     }
     mprLog(6, "run update on route %s update %s", route->name, op->name);

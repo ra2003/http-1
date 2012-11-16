@@ -256,10 +256,10 @@ static bool fixRangeLength(HttpConn *conn)
         if (range->start < 0) {
             if (length <= 0) {
                 /*
-                    Can't compute an offset from the end as we don't know the entity length and it is not always possible
+                    Cannot compute an offset from the end as we don't know the entity length and it is not always possible
                     or wise to buffer all the output.
                  */
-                httpError(conn, HTTP_CODE_RANGE_NOT_SATISFIABLE, "Can't compute end range with unknown content length"); 
+                httpError(conn, HTTP_CODE_RANGE_NOT_SATISFIABLE, "Cannot compute end range with unknown content length"); 
                 return 0;
             }
             /* select last -range-end bytes */

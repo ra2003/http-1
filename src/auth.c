@@ -113,7 +113,7 @@ PUBLIC bool httpCanUser(HttpConn *conn)
     }
     if (!conn->user) {
         if (auth->users == 0 || (conn->user = mprLookupKey(auth->users, conn->username)) == 0) {
-            mprLog(2, "Can't find user %s", conn->username);
+            mprLog(2, "Cannot find user %s", conn->username);
             return 0;
         }
     }
@@ -459,7 +459,7 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
     }
 #if BIT_HAS_PAM && BIT_PAM
     if (smatch(store, "pam") && auth->type && smatch(auth->type->name, "digest")) {
-        mprError("Can't use PAM password stores with digest authentication");
+        mprError("Cannot use PAM password stores with digest authentication");
         return MPR_ERR_BAD_ARGS;
     }
 #else
@@ -479,7 +479,7 @@ PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
 
     http = MPR->httpService;
     if ((auth->type = mprLookupKey(http->authTypes, type)) == 0) {
-        mprError("Can't find auth type %s", type);
+        mprError("Cannot find auth type %s", type);
         return MPR_ERR_CANT_FIND;
     }
     auth->version = ((Http*) MPR->httpService)->nextAuth++;

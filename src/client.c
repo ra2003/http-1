@@ -49,11 +49,11 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         return conn;
     }
     if ((sp = mprCreateSocket()) == 0) {
-        httpError(conn, HTTP_CODE_COMMS_ERROR, "Can't create socket for %s", uri->uri);
+        httpError(conn, HTTP_CODE_COMMS_ERROR, "Cannot create socket for %s", uri->uri);
         return 0;
     }
     if ((rc = mprConnectSocket(sp, ip, port, 0)) < 0) {
-        httpError(conn, HTTP_CODE_COMMS_ERROR, "Can't open socket on %s:%d", ip, port);
+        httpError(conn, HTTP_CODE_COMMS_ERROR, "Cannot open socket on %s:%d", ip, port);
         return 0;
     }
     conn->sock = sp;
@@ -120,7 +120,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
     assure(uri && *uri);
 
     if (conn->endpoint) {
-        httpError(conn, HTTP_CODE_BAD_GATEWAY, "Can't call connect in a server");
+        httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
         return MPR_ERR_BAD_STATE;
     }
     mprLog(4, "Http: client request: %s %s", method, uri);
@@ -211,7 +211,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
 
     file = mprOpenFile(path, O_RDONLY | O_BINARY, 0);
     if (file == 0) {
-        mprError("Can't open %s", path);
+        mprError("Cannot open %s", path);
         return MPR_ERR_CANT_OPEN;
     }
     mprAddRoot(file);
@@ -257,7 +257,7 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
     if (fileData) {
         for (rc = next = 0; rc >= 0 && (path = mprGetNextItem(fileData, &next)) != 0; ) {
             if (!mprPathExists(path, R_OK)) {
-                httpFormatError(conn, 0, "Can't open %s", path);
+                httpFormatError(conn, 0, "Cannot open %s", path);
                 return MPR_ERR_CANT_OPEN;
             }
             name = mprGetPathBase(path);

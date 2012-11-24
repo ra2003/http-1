@@ -1426,10 +1426,13 @@ PUBLIC void mprYield(int flags)
     if (flags & MPR_YIELD_STICKY) {
         tp->stickyYield = 1;
     }
-    assure(tp->yielded);
+    //  MOB - remove heap->marker
     while (tp->yielded && (heap->mustYield || (flags & MPR_YIELD_BLOCK)) && heap->marker) {
         if (heap->flags & MPR_MARK_THREAD) {
             mprSignalCond(ts->cond);
+        }
+        if (tp->stickyYield && flags & MPR_YIELD_NO_BLOCK) {
+            return;
         }
         mprWaitForCond(tp->cond, -1);
         flags &= ~MPR_YIELD_BLOCK;
@@ -3434,7 +3437,7 @@ PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
     }
     SetTimer(ws->hwnd, 0, (UINT) timeout, NULL);
 
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     if (GetMessage(&msg, NULL, 0, 0) == 0) {
         mprResetYield();
         mprTerminate(MPR_EXIT_DEFAULT, -1);
@@ -5555,7 +5558,7 @@ PUBLIC void mprPollWinCmd(MprCmd *cmd, MprTicks timeout)
     if (cmd->process) {
         delay = (cmd->eofCount == cmd->requiredEof && cmd->files[MPR_CMD_STDIN].handle == 0) ? timeout : 0;
         do {
-            mprYield(MPR_YIELD_STICKY);
+            mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
             if (WaitForSingleObject(cmd->process, (DWORD) delay) == WAIT_OBJECT_0) {
                 mprResetYield();
                 reapCmd(cmd, 0);
@@ -8571,7 +8574,7 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
         unlock(es);
         
         assure(dispatcher->magic == MPR_DISPATCHER_MAGIC);
-        mprYield(MPR_YIELD_STICKY);
+        mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
         assure(dispatcher->magic == MPR_DISPATCHER_MAGIC);
 
         if (mprWaitForCond(dispatcher->cond, delay) == 0) {
@@ -9611,7 +9614,7 @@ PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
         mprDoWaitRecall(ws);
         return;
     }
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     rc = epoll_wait(ws->epoll, ws->events, ws->eventsMax, timeout);
     mprResetYield();
 
@@ -11972,7 +11975,7 @@ PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
     unlock(ws);
 
     LOG(8, "kevent sleep for %d", timeout);
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     rc = kevent(ws->kq, ws->stableInterest, ws->stableInterestCount, ws->events, ws->eventsMax, &ts);
     mprResetYield();
     LOG(8, "kevent wakes rc %d", rc);
@@ -13592,13 +13595,7 @@ static void defaultLogHandler(int flags, int level, cchar *msg)
     int         mode;
     static int  check = 0;
 
-#if !BIT_LOCK_FIX
-    lock(MPR);
-#endif
     if ((file = MPR->logFile) == 0) {
-#if !BIT_LOCK_FIX
-        unlock(MPR);
-#endif
         return;
     }
     prefix = MPR->name;
@@ -13606,9 +13603,7 @@ static void defaultLogHandler(int flags, int level, cchar *msg)
     if (MPR->logBackup > 0 && MPR->logSize && (check++ % 1000) == 0) {
         mprGetPathInfo(MPR->logPath, &info);
         if (info.valid && info.size > MPR->logSize) {
-#if BIT_LOCK_FIX
             lock(MPR);
-#endif
             mprSetLogFile(0);
             mprBackupLog(MPR->logPath, MPR->logBackup);
             mode = O_CREAT | O_WRONLY | O_TEXT;
@@ -13618,9 +13613,7 @@ static void defaultLogHandler(int flags, int level, cchar *msg)
                 return;
             }
             mprSetLogFile(file);
-#if BIT_LOCK_FIX
             unlock(MPR);
-#endif
         }
     }
     while (*msg == '\n') {
@@ -13651,9 +13644,6 @@ static void defaultLogHandler(int flags, int level, cchar *msg)
     } else if (flags & MPR_RAW) {
         mprWriteFileString(file, msg);
     }
-#if !BIT_LOCK_FIX
-    unlock(MPR);
-#endif
 }
 
 
@@ -16837,7 +16827,7 @@ PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
     }
     unlock(ws);
 
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     rc = poll(ws->pollFds, count, (int) timeout);
     mprResetYield();
 
@@ -18456,7 +18446,7 @@ PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
     maxfd = ws->highestFd + 1;
     unlock(ws);
 
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     rc = select(maxfd, &ws->stableReadMask, &ws->stableWriteMask, NULL, &tval);
     mprResetYield();
 
@@ -19532,7 +19522,7 @@ PUBLIC MprSocket *mprAcceptSocket(MprSocket *listen)
     addrlen = sizeof(addrStorage);
 
     if (listen->flags & MPR_SOCKET_BLOCK) {
-        mprYield(MPR_YIELD_STICKY);
+        mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     }
     fd = (int) accept(listen->fd, addr, &addrlen);
     if (listen->flags & MPR_SOCKET_BLOCK) {
@@ -19639,7 +19629,7 @@ static ssize readSocket(MprSocket *sp, void *buf, ssize bufsize)
     }
 again:
     if (sp->flags & MPR_SOCKET_BLOCK) {
-        mprYield(MPR_YIELD_STICKY);
+        mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     }
     if (sp->flags & MPR_SOCKET_DATAGRAM) {
         len = sizeof(server);
@@ -19735,7 +19725,7 @@ static ssize writeSocket(MprSocket *sp, cvoid *buf, ssize bufsize)
         while (len > 0) {
             unlock(sp);
             if (sp->flags & MPR_SOCKET_BLOCK) {
-                mprYield(MPR_YIELD_STICKY);
+                mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
             }
             if ((sp->flags & MPR_SOCKET_BROADCAST) || (sp->flags & MPR_SOCKET_DATAGRAM)) {
                 written = sendto(sp->fd, &((char*) buf)[sofar], (int) len, MSG_NOSIGNAL, addr, addrlen);
@@ -19871,7 +19861,7 @@ PUBLIC MprOff mprSendFileToSocket(MprSocket *sock, MprFile *file, MprOff offset,
     if (file && file->fd >= 0) {
         written = bytes;
         if (sock->flags & MPR_SOCKET_BLOCK) {
-            mprYield(MPR_YIELD_STICKY);
+            mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
         }
         rc = sendfile(file->fd, sock->fd, offset, &written, &def, 0);
         if (sock->flags & MPR_SOCKET_BLOCK) {
@@ -19915,7 +19905,7 @@ PUBLIC MprOff mprSendFileToSocket(MprSocket *sock, MprFile *file, MprOff offset,
             while (!done && toWriteFile > 0) {
                 nbytes = (ssize) min(MAXSSIZE, toWriteFile);
                 if (sock->flags & MPR_SOCKET_BLOCK) {
-                    mprYield(MPR_YIELD_STICKY);
+                    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
                 }
 #if LINUX && !__UCLIBC__
     #if BIT_HAS_OFF64
@@ -23630,19 +23620,12 @@ static void workerMain(MprWorker *worker, MprThread *tp)
     if (ws->startWorker) {
         (*ws->startWorker)(worker->data, worker);
     }
-#if !BIT_LOCK_FIX
     lock(ws);
-#endif
-
     while (!(worker->state & MPR_WORKER_PRUNED) && !mprIsStopping()) {
         if (worker->proc) {
-#if !BIT_LOCK_FIX
             unlock(ws);
-#endif
             (*worker->proc)(worker->data, worker);
-#if !BIT_LOCK_FIX
             lock(ws);
-#endif
             worker->proc = 0;
         }
         worker->lastActivity = MPR->eventService->now;
@@ -23654,23 +23637,15 @@ static void workerMain(MprWorker *worker, MprThread *tp)
             worker->cleanup = NULL;
         }
         worker->data = 0;
-#if !BIT_LOCK_FIX
         unlock(ws);
-#endif
-
         /*
             Sleep till there is more work to do. Yield for GC first.
          */
-        mprYield(MPR_YIELD_STICKY);
+        mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
         mprWaitForCond(worker->idleCond, -1);
         mprResetYield();
-#if !BIT_LOCK_FIX
         lock(ws);
-#endif
     }
-#if BIT_LOCK_FIX
-    lock(ws);
-#endif
     changeState(worker, 0);
     worker->thread = 0;
     ws->numThreads--;
@@ -25712,7 +25687,7 @@ PUBLIC void mprNap(MprTicks timeout)
 
 PUBLIC void mprSleep(MprTicks timeout)
 {
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     mprNap(timeout);
     mprResetYield();
 }
@@ -25741,6 +25716,40 @@ PUBLIC void mprWriteToOsLog(cchar *message, int flags, int level)
 PUBLIC int mprInitWindow()
 {
     return 0;
+}
+
+
+PUBLIC void mprSetFilesLimit(int limit)
+{
+    struct rlimit r;
+    int           i;
+
+    if (limit == 0 || limit == MAXINT) {
+        /*
+            We need to determine a reasonable maximum possible limit value.
+            There is no #define we can use for this, so we test to determine it empirically
+         */
+        for (limit = 0x40000000; limit > 0; limit >>= 1) {
+            r.rlim_cur = r.rlim_max = limit;
+            if (setrlimit(RLIMIT_NOFILE, &r) == 0) {
+                for (i = (limit >> 4) * 15; i > 0; i--) {
+                    r.rlim_max = r.rlim_cur = limit + i;
+                    if (setrlimit(RLIMIT_NOFILE, &r) == 0) {
+                        limit = 0;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    } else {
+        r.rlim_cur = r.rlim_max = limit;
+        if (setrlimit(RLIMIT_NOFILE, &r) < 0) {
+            mprError("Can't set file limit to %d", limit);
+        }
+    }
+    getrlimit(RLIMIT_NOFILE, &r);
+    mprLog(6, "Set files limit to soft %d, max %d\n", r.rlim_cur, r.rlim_max);
 }
 
 #endif /* BIT_UNIX_LIKE */
@@ -25899,7 +25908,7 @@ PUBLIC void mprNap(MprTicks milliseconds)
 
 PUBLIC void mprSleep(MprTicks timeout)
 {
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     mprNap(timeout);
     mprResetYield();
 }
@@ -27563,7 +27572,7 @@ PUBLIC void mprNap(MprTicks timeout)
 
 PUBLIC void mprSleep(MprTicks timeout)
 {
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     mprNap(timeout);
     mprResetYield();
 }
@@ -28013,7 +28022,7 @@ PUBLIC void mprSleep(MprTicks timeout)
 
 PUBLIC void mprSleep(MprTicks timeout)
 {
-    mprYield(MPR_YIELD_STICKY);
+    mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
     mprNap(timeout);
     mprResetYield();
 }

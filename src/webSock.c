@@ -407,12 +407,14 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
 
     if (packet->flags & HTTP_PACKET_END) {
         /* EOF packet means the socket has been abortively closed */
-        ws->closing = 1;
-        ws->frameState = WS_CLOSED;
-        ws->state = WS_STATE_CLOSED;
-        ws->closeStatus = WS_STATUS_COMMS_ERROR;
-        HTTP_NOTIFY(conn, HTTP_EVENT_APP_CLOSE, ws->closeStatus);
-        httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
+        if (ws->state != WS_STATE_CLOSED) {
+            ws->closing = 1;
+            ws->frameState = WS_CLOSED;
+            ws->state = WS_STATE_CLOSED;
+            ws->closeStatus = WS_STATUS_COMMS_ERROR;
+            HTTP_NOTIFY(conn, HTTP_EVENT_APP_CLOSE, ws->closeStatus);
+            httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
+        }
     }
     while ((packet = httpGetPacket(q)) != 0) {
         content = packet->content;

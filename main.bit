@@ -22,7 +22,7 @@ Bit.load({
         product: 'http',
         title: 'Http Library',
         company: 'Embedthis',
-        version: '1.1.0',
+        version: '1.2.0',
         buildNumber: '0',
         manager: '',
         ciphers: "HIGH:MEDIUM",

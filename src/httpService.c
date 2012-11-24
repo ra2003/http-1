@@ -287,6 +287,7 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->receiveFormSize = HTTP_MAX_RECEIVE_FORM;
     limits->receiveBodySize = HTTP_MAX_RECEIVE_BODY;
     limits->processMax = HTTP_MAX_REQUESTS;
+    limits->requestsPerClientMax = HTTP_MAX_REQUESTS_PER_CLIENT;
     limits->requestMax = HTTP_MAX_REQUESTS;
     limits->sessionMax = HTTP_MAX_SESSIONS;
     limits->transmissionBodySize = HTTP_MAX_TX_BODY;
@@ -294,7 +295,8 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->uriSize = MPR_MAX_URL;
 
     limits->inactivityTimeout = HTTP_INACTIVITY_TIMEOUT;
-    limits->requestTimeout = MAXINT;
+    limits->requestTimeout = HTTP_REQUEST_TIMEOUT;
+    limits->requestParseTimeout = HTTP_PARSE_TIMEOUT;
     limits->sessionTimeout = HTTP_SESSION_TIMEOUT;
 
     limits->webSocketsMax = HTTP_MAX_WSS_SOCKETS;
@@ -420,9 +422,8 @@ static void httpTimer(Http *http, MprEvent *event)
         limits = conn->limits;
         if (!conn->timeoutEvent) {
             abort = 0;
-            if (http->underAttack && conn->state < HTTP_STATE_PARSED && (conn->lastActivity + 3000) < http->now) {
+            if (conn->state < HTTP_STATE_PARSED && (conn->started + limits->requestParseTimeout) < http->now) {
                 abort = 1;
-                httpDisconnect(conn);
             } else if ((conn->lastActivity + limits->inactivityTimeout) < http->now || 
                     (conn->started + limits->requestTimeout) < http->now) {
                 abort = 1;

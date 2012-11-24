@@ -237,6 +237,14 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
             return 0;
         }
         count = (int) PTOL(mprLookupKey(endpoint->clientLoad, conn->ip));
+        mprLog(7, "Connection count for client %s, count %d limit %d\n", conn->ip, count, limits->requestsPerClientMax);
+        if (count >= limits->requestsPerClientMax) {
+            unlock(endpoint);
+            /*  Abort connection */
+            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, 
+                "Too many concurrent requests for this client %s %d/%d", conn->ip, count, limits->requestsPerClientMax);
+            return 0;
+        }
         mprAddKey(endpoint->clientLoad, conn->ip, ITOP(count + 1));
         endpoint->clientCount = (int) mprGetHashLength(endpoint->clientLoad);
         action = "open conn";

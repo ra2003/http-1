@@ -211,14 +211,12 @@ PUBLIC void httpStopEndpoint(HttpEndpoint *endpoint)
  */
 PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn)
 {
-    HttpLimits      *limits;
-    Http            *http;
-    cchar           *action;
-    int             count, level, dir;
+    HttpLimits  *limits;
+    Http        *http;
+    int         count, level, dir;
 
     limits = conn->limits;
     dir = HTTP_TRACE_RX;
-    action = "unknown";
     assure(conn->endpoint == endpoint);
     http = endpoint->http;
 
@@ -247,7 +245,6 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
         }
         mprAddKey(endpoint->clientLoad, conn->ip, ITOP(count + 1));
         endpoint->clientCount = (int) mprGetHashLength(endpoint->clientLoad);
-        action = "open conn";
         dir = HTTP_TRACE_RX;
         break;
 
@@ -259,7 +256,6 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
             mprRemoveKey(endpoint->clientLoad, conn->ip);
         }
         endpoint->clientCount = (int) mprGetHashLength(endpoint->clientLoad);
-        action = "close conn";
         dir = HTTP_TRACE_TX;
         break;
     
@@ -273,7 +269,6 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
         }
         endpoint->requestCount++;
         conn->rx->flags |= HTTP_LIMITS_OPENED;
-        action = "open request";
         dir = HTTP_TRACE_RX;
         break;
 
@@ -282,7 +277,6 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
             /* Requests incremented only when conn->rx is assigned */
             endpoint->requestCount--;
             assure(endpoint->requestCount >= 0);
-            action = "close request";
             dir = HTTP_TRACE_TX;
             conn->rx->flags &= ~HTTP_LIMITS_OPENED;
         }
@@ -296,7 +290,6 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
             mprLog(2, "Too many concurrent processes %d/%d", http->processCount, limits->processMax);
             return 0;
         }
-        action = "start process";
         dir = HTTP_TRACE_RX;
         break;
 
@@ -307,16 +300,14 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
     }
     if (event == HTTP_VALIDATE_CLOSE_CONN || event == HTTP_VALIDATE_CLOSE_REQUEST) {
         if ((level = httpShouldTrace(conn, dir, HTTP_TRACE_LIMITS, NULL)) >= 0) {
-            LOG(4, "Validate request for %s. Active connections %d, active requests: %d/%d, active client IP %d/%d", 
-                action, mprGetListLength(http->connections), endpoint->requestCount, limits->requestMax, 
+            LOG(4, "Validate request for %d. Active connections %d, active requests: %d/%d, active client IP %d/%d", 
+                event, mprGetListLength(http->connections), endpoint->requestCount, limits->requestMax, 
                 endpoint->clientCount, limits->clientMax);
         }
     }
-#if KEEP
     LOG(0, "Validate Active connections %d, requests: %d/%d, IP %d/%d, Processes %d/%d", 
         mprGetListLength(http->connections), endpoint->requestCount, limits->requestMax, 
         endpoint->clientCount, limits->clientMax, http->processCount, limits->processMax);
-#endif
     unlock(endpoint);
     return 1;
 }

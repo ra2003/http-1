@@ -21,7 +21,7 @@ static void manageHost(HttpHost *host, int flags);
 
 /*********************************** Code *************************************/
 
-PUBLIC HttpHost *httpCreateHost(cchar *home)
+PUBLIC HttpHost *httpCreateHost()
 {
     HttpHost    *host;
     Http        *http;
@@ -39,7 +39,6 @@ PUBLIC HttpHost *httpCreateHost(cchar *home)
     host->routes = mprCreateList(-1, 0);
     host->flags = HTTP_HOST_NO_TRACE;
     host->protocol = sclone("HTTP/1.1");
-    host->home = sclone(home ? home : ".");
     httpAddHost(http, host);
     return host;
 }
@@ -63,7 +62,6 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
      */
     host->parent = parent;
     host->responseCache = parent->responseCache;
-    host->home = parent->home;
     host->routes = parent->routes;
     host->flags = parent->flags | HTTP_HOST_VHOST;
     host->protocol = parent->protocol;
@@ -83,7 +81,6 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->defaultRoute);
         mprMark(host->protocol);
         mprMark(host->mutex);
-        mprMark(host->home);
         mprMark(host->defaultEndpoint);
         mprMark(host->secureEndpoint);
 
@@ -185,12 +182,6 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
         printRoute(host->defaultRoute, next - 1, full);
     }
     mprRawLog(0, "\n");
-}
-
-
-PUBLIC void httpSetHostHome(HttpHost *host, cchar *home)
-{
-    host->home = mprGetAbsPath(home);
 }
 
 

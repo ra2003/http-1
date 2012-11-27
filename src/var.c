@@ -32,6 +32,10 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     host = conn->host;
     sock = conn->sock;
 
+    mprAddKey(svars, "ROUTE_HOME", rx->route->home);
+    //  DEPRECATED
+    mprAddKey(svars, "SERVER_ROOT", rx->route->home);
+
     mprAddKey(svars, "AUTH_TYPE", conn->authType);
     mprAddKey(svars, "AUTH_USER", conn->username);
     mprAddKey(svars, "AUTH_ACL", MPR->emptyString);
@@ -51,7 +55,6 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     mprAddKey(svars, "SERVER_NAME", host->name);
     mprAddKeyFmt(svars, "SERVER_PORT", "%d", sock->acceptPort);
     mprAddKey(svars, "SERVER_PROTOCOL", conn->protocol);
-    mprAddKey(svars, "SERVER_ROOT", host->home);
     mprAddKey(svars, "SERVER_SOFTWARE", conn->http->software);
     /*
         For PHP, REQUEST_URI must be the original URI. The SCRIPT_NAME will refer to the new pathInfo

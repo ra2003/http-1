@@ -67,6 +67,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->auth = httpCreateAuth();
     route->defaultLanguage = sclone("en");
     route->dir = mprGetCurrentPath(".");
+    route->home = route->dir;
     route->errorDocuments = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
     route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->flags = HTTP_ROUTE_GZIP;
@@ -121,6 +122,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->connector = parent->connector;
     route->defaultLanguage = parent->defaultLanguage;
     route->dir = parent->dir;
+    route->home = parent->home;
     route->data = parent->data;
     route->eroute = parent->eroute;
     route->errorDocuments = parent->errorDocuments;
@@ -186,6 +188,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->targetRule);
         mprMark(route->target);
         mprMark(route->dir);
+        mprMark(route->home);
         mprMark(route->indicies);
         mprMark(route->methodSpec);
         mprMark(route->handler);
@@ -1088,6 +1091,16 @@ PUBLIC void httpSetRouteDir(HttpRoute *route, cchar *path)
 }
 
 
+PUBLIC void httpSetRouteHome(HttpRoute *route, cchar *path)
+{
+    assure(route);
+    assure(path && *path);
+    
+    route->home = httpMakePath(route, path);
+    httpSetRouteVar(route, "ROUTE_HOME", route->home);
+}
+
+
 /*
     WARNING: internal API only. 
  */
@@ -1784,7 +1797,7 @@ PUBLIC void httpSetRouteVar(HttpRoute *route, cchar *key, cchar *value)
 
 /*
     Make a path name. This replaces $references, converts to an absolute path name, cleans the path and maps delimiters.
-    Paths are resolved relative to host->home (ServerRoot).
+    Paths are resolved relative to the route home.
  */
 PUBLIC char *httpMakePath(HttpRoute *route, cchar *file)
 {
@@ -1797,7 +1810,7 @@ PUBLIC char *httpMakePath(HttpRoute *route, cchar *file)
         return 0;
     }
     if (mprIsPathRel(path) && route->host) {
-        path = mprJoinPath(route->host->home, path);
+        path = mprJoinPath(route->home, path);
     }
     return mprGetAbsPath(path);
 }
@@ -2460,7 +2473,9 @@ static void defineHostVars(HttpRoute *route)
 {
     assure(route);
     mprAddKey(route->vars, "DOCUMENT_ROOT", route->dir);
-    mprAddKey(route->vars, "SERVER_ROOT", route->host->home);
+    mprAddKey(route->vars, "ROUTE_HOME", route->home);
+    //  DEPRECATE
+    mprAddKey(route->vars, "SERVER_ROOT", route->home);
     mprAddKey(route->vars, "SERVER_NAME", route->host->name);
     mprAddKey(route->vars, "SERVER_PORT", itos(route->host->port));
 }

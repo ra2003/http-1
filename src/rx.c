@@ -562,10 +562,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 } else if (scaselesscmp(value, "CLOSE") == 0) {
                     /*  Not really required, but set to 0 to be sure */
                     conn->keepAliveCount = 0;
-#if UNUSED && CLASHES
-                } else if (scaselesscmp(value, "upgrade") == 0) {
-                    rx->upgrade = sclone(value);
-#endif
                 }
 
             } else if (strcasecmp(key, "content-length") == 0) {
@@ -758,33 +754,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             } else if (strcasecmp(key, "referer") == 0) {
                 /* NOTE: yes the header is misspelt in the spec */
                 rx->referrer = sclone(value);
-#if UNUSED
-            /*
-                There is a draft spec for these, but it has bad DOS security implications.
-             */
-            } else if (strcasecmp(key, "request-timeout") == 0) {
-                conn->limits->requestTimeout = stoi(value) * MPR_TICKS_PER_SEC;
-                conn->limits->inactivityTimeout = stoi(value) * MPR_TICKS_PER_SEC;
-#endif
             }
-            break;
-
-        case 's':
-#if UNUSED
-            if (strcasecmp(key, "sec-websocket-key") == 0) {
-                rx->webSockKey = sclone(value);
-            } else if (strcasecmp(key, "sec-websocket-extensions") == 0) {
-                if (rx->extensions) {
-                    rx->extensions = sjoin(rx->extensions, ", ", value, NULL);
-                } else {
-                    rx->extensions = sclone(value);
-                }
-            } else if (strcasecmp(key, "sec-websocket-protocol") == 0) {
-                rx->webSockProtocols = sclone(value);
-            } else if (strcasecmp(key, "sec-websocket-version") == 0) {
-                rx->webSockVersion = (int) stoi(value);
-            }
-#endif
             break;
 
         case 't':

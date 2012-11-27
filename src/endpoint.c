@@ -305,7 +305,7 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
                 endpoint->clientCount, limits->clientMax);
         }
     }
-#if UNUSED
+#if KEEP
     LOG(0, "Validate Active connections %d, requests: %d/%d, IP %d/%d, Processes %d/%d", 
         mprGetListLength(http->connections), endpoint->requestCount, limits->requestMax, 
         endpoint->clientCount, limits->clientMax, http->processCount, limits->processMax);

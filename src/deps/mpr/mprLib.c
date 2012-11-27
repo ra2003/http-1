@@ -19197,6 +19197,14 @@ static int listenSocket(MprSocket *sp, cchar *ip, int port, int initialFlags)
         rc = 1;
         setsockopt(sp->fd, SOL_SOCKET, SO_REUSEADDR, (char*) &rc, sizeof(rc));
     }
+#elif WINDOWS && _WIN32_WINNT >= 0x0600
+    /*
+        Vista introduced dual network stack for IPv4 and IPv6
+     */
+    {
+        int off = 0;
+        setsockopt(sp->fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*) &off, sizeof(off));
+    }
 #endif
     if (sp->service->prebind) {
         if ((sp->service->prebind)(sp) < 0) {

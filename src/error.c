@@ -89,11 +89,19 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                 flags |= HTTP_ABORT;
             } else {
                 if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status))) {
-                    if (sstarts(uri, "http")) {
+                    /*
+                        If the response has started or it is an external redirect ... do a redirect
+                     */
+                    if (sstarts(uri, "http") || tx->flags & HTTP_TX_HEADERS_CREATED) {
                         httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
                     } else {
-                        rx->uri = (char*) uri;
-                        rx->flags |= HTTP_REROUTE;
+                        /*
+                            No response started and it is an internal redirect, so we can rerun the request.
+                            Set finalized to "cap" any output. processCompletion() in rx.c will rerun the request using
+                            the errorDocument.
+                         */
+                        tx->errorDocument = uri;
+                        tx->finalized = tx->finalizedOutput = tx->finalizedConnector = 1;
                     }
                 } else {
                     httpAddHeaderString(conn, "Cache-Control", "no-cache");
@@ -112,9 +120,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                 }
             }
         }
-        if (!(rx->flags & HTTP_REROUTE)) {
-            httpFinalize(conn);
-        }
+        httpFinalize(conn);
     }
     if (flags & HTTP_ABORT) {
         httpDisconnect(conn);

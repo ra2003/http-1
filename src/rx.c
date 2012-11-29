@@ -271,31 +271,15 @@ static void mapMethod(HttpConn *conn)
 static void routeRequest(HttpConn *conn)
 {
     HttpRx  *rx;
-    HttpTx  *tx;
-    int     count;
 
     assure(conn->endpoint);
 
     rx = conn->rx;
-    tx = conn->tx;
     httpAddParams(conn);
     mapMethod(conn);
-    count = 0;
-    while (1) {
-        httpRouteRequest(conn);  
-        httpCreateRxPipeline(conn, rx->route);
-        httpCreateTxPipeline(conn, rx->route);
-        if (conn->error && rx->flags & HTTP_REROUTE && !(tx->flags & HTTP_TX_HEADERS_CREATED) && ++count < 10) {
-            rx->flags &= ~HTTP_REROUTE;
-            tx->flags &= ~HTTP_TX_NO_BODY;
-            conn->error = 0;
-            conn->errorMsg = 0;
-            httpDestroyPipeline(conn);
-            setParsedUri(conn);
-        } else {
-            break;
-        }
-    }
+    httpRouteRequest(conn);  
+    httpCreateRxPipeline(conn, rx->route);
+    httpCreateTxPipeline(conn, rx->route);
 }
 
 
@@ -1134,14 +1118,75 @@ static void measure(HttpConn *conn)
 #endif
 
 
+static void createErrorRequest(HttpConn *conn)
+{
+    HttpRx      *rx;
+    HttpTx      *tx;
+    HttpPacket  *packet;
+    MprBuf      *buf;
+    char        *cp, *headers;
+    int         key;
+
+    rx = conn->rx;
+    tx = conn->tx;
+    assure(rx->headerPacket);
+
+    conn->rx = httpCreateRx(conn);
+    conn->tx = httpCreateTx(conn, NULL);
+
+    /* Preserve the old status */
+    conn->tx->status = tx->status;
+    conn->error = 0;
+    conn->errorMsg = 0;
+    conn->upgraded = 0;
+    conn->worker = 0;
+
+    packet = httpCreateDataPacket(HTTP_BUFSIZE);
+    mprPutFmtToBuf(packet->content, "%s %s %s\r\n", rx->method, tx->errorDocument, conn->protocol);
+
+    /*
+        Reconstruct the headers. Change nulls to '\r', ' ', or ':' as appropriate
+     */
+    key = 0;
+    headers = 0;
+    buf = rx->headerPacket->content;
+    for (cp = buf->data; cp < &buf->end[-1]; cp++) {
+        if (*cp == '\0') {
+            if (cp[1] == '\n') {
+                if (!headers) {
+                    headers = &cp[2];
+                }
+                *cp = '\r';
+                key = 0;
+            } else if (!key) {
+                *cp = ':';
+                key = 1;
+            } else {
+                *cp = ' ';
+            }
+        }
+    }
+    if (headers && headers < buf->end) {
+        mprPutStringToBuf(packet->content, headers);
+        conn->input = packet;
+        conn->state = HTTP_STATE_CONNECTED;
+    } else {
+        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Can't reconstruct headers");
+    }
+}
+
+
 static void processCompletion(HttpConn *conn)
 {
     HttpRx      *rx;
+    HttpTx      *tx;
 
-    assure(conn->tx->finalized);
-    assure(conn->tx->finalizedOutput);
-    assure(conn->tx->finalizedConnector);
     rx = conn->rx;
+    tx = conn->tx;
+    assure(tx->finalized);
+    assure(tx->finalizedOutput);
+    assure(tx->finalizedConnector);
+
     httpDestroyPipeline(conn);
     measure(conn);
     if (conn->endpoint && rx) {
@@ -1153,6 +1198,11 @@ static void processCompletion(HttpConn *conn)
     }
     assure(conn->state == HTTP_STATE_FINALIZED);
     httpSetState(conn, HTTP_STATE_COMPLETE);
+
+    if (tx->errorDocument && !conn->connError) {
+        mprLog(2, "Create error document %s for status %d from %s", tx->errorDocument, tx->status, rx->uri);
+        createErrorRequest(conn);
+    }
 }
 
 

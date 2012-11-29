@@ -68,6 +68,7 @@ static void manageTx(HttpTx *tx, int flags)
         mprMark(tx->currentRange);
         mprMark(tx->ext);
         mprMark(tx->etag);
+        mprMark(tx->errorDocument);
         mprMark(tx->file);
         mprMark(tx->filename);
         mprMark(tx->handler);

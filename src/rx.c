@@ -271,15 +271,31 @@ static void mapMethod(HttpConn *conn)
 static void routeRequest(HttpConn *conn)
 {
     HttpRx  *rx;
+    HttpTx  *tx;
+    int     count;
 
     assure(conn->endpoint);
 
     rx = conn->rx;
+    tx = conn->tx;
     httpAddParams(conn);
     mapMethod(conn);
-    httpRouteRequest(conn);  
-    httpCreateRxPipeline(conn, rx->route);
-    httpCreateTxPipeline(conn, rx->route);
+    count = 0;
+    while (1) {
+        httpRouteRequest(conn);  
+        httpCreateRxPipeline(conn, rx->route);
+        httpCreateTxPipeline(conn, rx->route);
+        if (conn->error && rx->flags & HTTP_REROUTE && !(tx->flags & HTTP_TX_HEADERS_CREATED) && ++count < 10) {
+            rx->flags &= ~HTTP_REROUTE;
+            tx->flags &= ~HTTP_TX_NO_BODY;
+            conn->error = 0;
+            conn->errorMsg = 0;
+            httpDestroyPipeline(conn);
+            setParsedUri(conn);
+        } else {
+            break;
+        }
+    }
 }
 
 

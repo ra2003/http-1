@@ -1129,8 +1129,9 @@ static void createErrorRequest(HttpConn *conn)
 
     rx = conn->rx;
     tx = conn->tx;
-    assure(rx->headerPacket);
-
+    if (!rx->headerPacket) {
+        return;
+    }
     conn->rx = httpCreateRx(conn);
     conn->tx = httpCreateTx(conn, NULL);
 

@@ -1514,7 +1514,7 @@ static void addMatchEtag(HttpConn *conn, char *etag)
     if (rx->etags == 0) {
         rx->etags = mprCreateList(-1, 0);
     }
-    mprAddItem(rx->etags, etag);
+    mprAddItem(rx->etags, sclone(etag));
 }
 
 

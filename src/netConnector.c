@@ -101,7 +101,6 @@ static void netOutgoingService(HttpQueue *q)
          */
         assure(q->ioIndex > 0);
         written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
-        LOG(5, "Net connector wrote %d, written so far %Ld, q->count %d/%d", written, tx->bytesWritten, q->count, q->max);
         if (written < 0) {
             errCode = mprGetError(q);
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
@@ -109,10 +108,11 @@ static void netOutgoingService(HttpQueue *q)
                 httpSocketBlocked(conn);
                 break;
             }
-            if (errCode != EPIPE && errCode != ECONNRESET) {
-                LOG(5, "netOutgoingService write failed, error %d", errCode);
+            if (errCode != EPIPE && errCode != ECONNRESET && errCode != ENOTCONN) {
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Write error %d", errCode);
+            } else {
+                httpDisconnect(conn);
             }
-            httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Write error %d", errCode);
             httpFinalizeConnector(conn);
             break;
 
@@ -127,6 +127,7 @@ static void netOutgoingService(HttpQueue *q)
             adjustNetVec(q, written);
         }
     }
+    LOG(5, "Net connector wrote %d, written so far %Ld, q->count %d/%d", written, tx->bytesWritten, q->count, q->max);
     if (q->ioCount == 0) {
         if ((q->flags & HTTP_QUEUE_EOF)) {
             assure(conn->writeq->count == 0);

@@ -71,6 +71,13 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         q = httpCreateQueue(conn, stage, HTTP_QUEUE_TX, q);
     }
     conn->connectorq = tx->queue[HTTP_QUEUE_TX]->prevQ;
+
+    /*
+        Double the connector max hi-water mark. This optimization permits connectors to accept packets without 
+        unnecesary flow control.
+     */
+    conn->connectorq->max *= 2;
+
     pairQueues(conn);
 
     /*

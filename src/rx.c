@@ -1204,9 +1204,8 @@ static void processCompletion(HttpConn *conn)
     }
     assure(conn->state == HTTP_STATE_FINALIZED);
     httpSetState(conn, HTTP_STATE_COMPLETE);
-
     if (tx->errorDocument && !conn->connError && !smatch(tx->errorDocument, rx->uri)) {
-        mprLog(2, "Create error document %s for status %d from %s and retry", tx->errorDocument, tx->status, rx->uri);
+        mprLog(2, "  ErrorDoc %s for %d from %s", tx->errorDocument, tx->status, rx->uri);
         createErrorRequest(conn);
     }
 }

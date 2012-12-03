@@ -187,15 +187,24 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
                 (conn->started + limits->requestParseTimeout) < now) {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "Exceeded parse headers timeout of %Ld sec", 
                 limits->requestParseTimeout  / 1000);
+            if (conn->rx) {
+                LOG(2, "  State %d, uri %s", conn->state, conn->rx->uri);
+            }
         } else {
             if ((conn->lastActivity + limits->inactivityTimeout) < now) {
                 if (conn->state > HTTP_STATE_BEGIN) {
                     httpError(conn, HTTP_CODE_REQUEST_TIMEOUT,
                         "Exceeded inactivity timeout of %Ld sec", limits->inactivityTimeout / 1000);
+                    if (conn->rx) {
+                        LOG(2, "  State %d, uri %s", conn->state, conn->rx->uri);
+                    }
                 }
 
             } else if ((conn->started + limits->requestTimeout) < now) {
                 httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "Exceeded timeout %d sec", limits->requestTimeout / 1000);
+                if (conn->rx) {
+                    LOG(2, "  State %d, uri %s", conn->state, conn->rx->uri);
+                }
             }
         }
     }

@@ -90,7 +90,8 @@ clean:
 clobber: clean
 	rm -fr ./$(CONFIG)
 
-$(CONFIG)/inc/mpr.h: 
+$(CONFIG)/inc/mpr.h:  \
+        $(CONFIG)/inc/bit.h
 	rm -fr $(CONFIG)/inc/mpr.h
 	cp -r src/deps/mpr/mpr.h $(CONFIG)/inc/mpr.h
 
@@ -103,7 +104,7 @@ $(CONFIG)/obj/mprLib.o: \
 $(CONFIG)/bin/libmpr.dylib:  \
         $(CONFIG)/inc/mpr.h \
         $(CONFIG)/obj/mprLib.o
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libmpr.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.0.1 -current_version 1.0.1 -compatibility_version 1.0.1 -current_version 1.0.1 $(LIBPATHS) -install_name @rpath/libmpr.dylib $(CONFIG)/obj/mprLib.o $(LIBS)
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libmpr.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.2.0 -current_version 1.2.0 -compatibility_version 1.2.0 -current_version 1.2.0 $(LIBPATHS) -install_name @rpath/libmpr.dylib $(CONFIG)/obj/mprLib.o $(LIBS)
 
 $(CONFIG)/obj/mprSsl.o: \
         src/deps/mpr/mprSsl.c \
@@ -114,7 +115,7 @@ $(CONFIG)/obj/mprSsl.o: \
 $(CONFIG)/bin/libmprssl.dylib:  \
         $(CONFIG)/bin/libmpr.dylib \
         $(CONFIG)/obj/mprSsl.o
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.0.1 -current_version 1.0.1 -compatibility_version 1.0.1 -current_version 1.0.1 $(LIBPATHS) -install_name @rpath/libmprssl.dylib $(CONFIG)/obj/mprSsl.o -lmpr $(LIBS)
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.2.0 -current_version 1.2.0 -compatibility_version 1.2.0 -current_version 1.2.0 $(LIBPATHS) -install_name @rpath/libmprssl.dylib $(CONFIG)/obj/mprSsl.o -lmpr $(LIBS)
 
 $(CONFIG)/obj/makerom.o: \
         src/deps/mpr/makerom.c \
@@ -127,7 +128,8 @@ $(CONFIG)/bin/makerom:  \
         $(CONFIG)/obj/makerom.o
 	$(CC) -o $(CONFIG)/bin/makerom -arch x86_64 $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS)
 
-$(CONFIG)/inc/pcre.h: 
+$(CONFIG)/inc/pcre.h:  \
+        $(CONFIG)/inc/bit.h
 	rm -fr $(CONFIG)/inc/pcre.h
 	cp -r src/deps/pcre/pcre.h $(CONFIG)/inc/pcre.h
 
@@ -142,7 +144,9 @@ $(CONFIG)/bin/libpcre.dylib:  \
         $(CONFIG)/obj/pcre.o
 	$(CC) -dynamiclib -o $(CONFIG)/bin/libpcre.dylib -arch x86_64 $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libpcre.dylib $(CONFIG)/obj/pcre.o $(LIBS)
 
-$(CONFIG)/inc/http.h: 
+$(CONFIG)/inc/http.h:  \
+        $(CONFIG)/inc/bit.h \
+        $(CONFIG)/inc/mpr.h
 	rm -fr $(CONFIG)/inc/http.h
 	cp -r src/http.h $(CONFIG)/inc/http.h
 

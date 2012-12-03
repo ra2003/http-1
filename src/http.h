@@ -5293,7 +5293,6 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent);
 /**
     Create a host
     @description Create a new host object. The host is added to the Http service's list of hosts.
-    @param home directory for the host's configuration files.
     @return The new HttpHost object.
     @ingroup HttpHost
  */

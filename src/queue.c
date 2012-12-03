@@ -482,11 +482,17 @@ PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
     }
     size = httpGetPacketLength(packet);
     assure(size <= nextQ->packetSize);
-    if ((size + nextQ->count) <= nextQ->max) {
+    /* 
+        Packet size is now acceptable. Accept the packet if the queue is mostly empty (< low) or if the 
+        packet will fit entirely under the max or if the queue.
+        NOTE: queue maximums are advisory. We choose to potentially overflow the max here to optimize the case where
+        the queue may have say one byte and a max size packet would overflow by 1.
+     */
+    if (nextQ->count < nextQ->low || (size + nextQ->count) <= nextQ->max) {
         return 1;
     }
     /*  
-        The downstream queue is full, so disable the queue and mark the downstream queue as full and service 
+        The downstream queue cannot accept this packet, so disable queue and mark the downstream queue as full and service 
      */
     httpSuspendQueue(q);
     if (!(nextQ->flags & HTTP_QUEUE_SUSPENDED)) {

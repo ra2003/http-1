@@ -109,53 +109,35 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
             return;
         }
     }
+    if (q->ioIndex == 0) {
+        buildSendVec(q);
+    }
     /*
-        Loop doing non-blocking I/O until blocked or all the packets received are written.
+        No need to loop around as send file tries to write as much of the file as possible. 
+        If not eof, will always have the socket blocked.
      */
-    while (1) {
-        /*
-            Rebuild the iovector only when the past vector has been completely written. Simplifies the logic quite a bit.
-         */
-        if (q->ioIndex == 0 && buildSendVec(q) <= 0) {
-            break;
-        }
-        file = q->ioFile ? tx->file : 0;
-        written = mprSendFileToSocket(conn->sock, file, q->ioPos, q->ioCount, q->iovec, q->ioIndex, NULL, 0);
-        if (written < 0) {
-            errCode = mprGetError();
-            if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
-                /* Socket is full. Wait for an I/O event */
-                httpSocketBlocked(conn);
-                break;
-            }
+    file = q->ioFile ? tx->file : 0;
+    written = mprSendFileToSocket(conn->sock, file, q->ioPos, q->ioCount, q->iovec, q->ioIndex, NULL, 0);
+    if (written < 0) {
+        errCode = mprGetError();
+        if (errCode != EAGAIN && errCode != EWOULDBLOCK) {
             if (errCode != EPIPE && errCode != ECONNRESET && errCode != ENOTCONN) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "SendFileToSocket failed, errCode %d", errCode);
             } else {
                 httpDisconnect(conn);
             }
             httpFinalizeConnector(conn);
-            break;
-
-        } else if (written == 0) {
-            /* Socket is full. Wait for an I/O event */
-            httpSocketBlocked(conn);
-            break;
-
-        } else if (written > 0) {
-            tx->bytesWritten += written;
-            adjustPacketData(q, written);
-            adjustSendVec(q, written);
         }
+    } else if (written > 0) {
+        tx->bytesWritten += written;
+        adjustPacketData(q, written);
+        adjustSendVec(q, written);
     }
-    mprLog(8, "Send connector ioCount %d, wrote %Ld, written so far %Ld, sending file %d, q->count %d/%d", 
-            q->ioCount, written, tx->bytesWritten, q->ioFile, q->count, q->max);
-    if (q->ioCount == 0) {
-        if ((q->flags & HTTP_QUEUE_EOF)) {
-            assure(conn->tx->finalizedOutput);
-            httpFinalizeConnector(conn);
-        } else {
-            HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
-        }
+    if ((q->flags & HTTP_QUEUE_EOF)) {
+        httpFinalizeConnector(conn);
+    } else {
+        httpSocketBlocked(conn);
+        HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
     }
 }
 
@@ -182,14 +164,9 @@ static MprOff buildSendVec(HttpQueue *q)
     for (packet = q->first; packet; packet = packet->next) {
         if (packet->flags & HTTP_PACKET_HEADER) {
             httpWriteHeaders(q, packet);
-            
-        } else if (httpGetPacketLength(packet) == 0 && packet->esize == 0) {
-            q->flags |= HTTP_QUEUE_EOF;
-            if (packet->prefix == NULL) {
-                break;
-            }
         }
         if (q->ioFile || q->ioIndex >= (HTTP_MAX_IOVEC - 2)) {
+            /* Only one file entry allowed */
             break;
         }
         addPacketForSend(q, packet);
@@ -281,8 +258,8 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             bytes -= len;
             assure(packet->esize >= 0);
             assure(bytes == 0);
-            if (packet->esize > 0) {
-                break;
+            if (packet->esize) {
+               break;
             }
         } else if ((len = httpGetPacketLength(packet)) > 0) {
             len = (ssize) min(len, bytes);
@@ -291,12 +268,11 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             q->count -= len;
             assure(q->count >= 0);
         }
+        if (packet->flags & HTTP_PACKET_HEADER) {
+            q->flags |= HTTP_QUEUE_EOF;
+        }
         if (httpGetPacketLength(packet) == 0) {
             httpGetPacket(q);
-        }
-        assure(bytes >= 0);
-        if (bytes == 0 && (q->first == NULL || !(q->first->flags & HTTP_PACKET_END))) {
-            break;
         }
     }
 }

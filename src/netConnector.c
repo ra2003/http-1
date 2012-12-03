@@ -116,26 +116,17 @@ static void netOutgoingService(HttpQueue *q)
             httpFinalizeConnector(conn);
             break;
 
-        } else if (written == 0) {
-            /*  Socket full, wait for an I/O event */
-            httpSocketBlocked(conn);
-            break;
-
         } else if (written > 0) {
             tx->bytesWritten += written;
             freeNetPackets(q, written);
             adjustNetVec(q, written);
         }
     }
-    LOG(5, "Net connector wrote %d, written so far %Ld, q->count %d/%d", written, tx->bytesWritten, q->count, q->max);
-    if (q->ioCount == 0) {
-        if ((q->flags & HTTP_QUEUE_EOF)) {
-            assure(conn->writeq->count == 0);
-            assure(conn->tx->finalizedOutput);
-            httpFinalizeConnector(conn);
-        } else {
-            HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
-        }
+    if (q->first && q->first->flags & HTTP_PACKET_END) {
+        httpFinalizeConnector(conn);
+    } else {
+        httpSocketBlocked(conn);
+        HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
     }
 }
 
@@ -163,13 +154,6 @@ static MprOff buildNetVec(HttpQueue *q)
                 conn->keepAliveCount = 0;
             }
             httpWriteHeaders(q, packet);
-
-        } else if (packet->flags & HTTP_PACKET_END) {
-            assure(conn->tx->finalizedOutput);
-            q->flags |= HTTP_QUEUE_EOF;
-            if (packet->prefix == NULL) {
-                break;
-            }
         }
         if (q->ioIndex >= (HTTP_MAX_IOVEC - 2)) {
             break;
@@ -224,14 +208,17 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
 
 static void freeNetPackets(HttpQueue *q, ssize bytes)
 {
-    HttpPacket    *packet;
-    ssize         len;
+    HttpPacket  *packet;
+    ssize       len;
 
     assure(q->count >= 0);
-    assure(bytes >= 0);
+    assure(bytes > 0);
 
-    while (bytes > 0 && (packet = q->first) != 0) {
+    while ((packet = q->first) != 0) {
         if (packet->prefix) {
+            /*
+                Note: the end packet may have the final chunk trailer in its prefix
+             */
             len = mprGetBufLength(packet->prefix);
             len = min(len, bytes);
             mprAdjustBufStart(packet->prefix, len);
@@ -249,11 +236,15 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
             q->count -= len;
             assure(q->count >= 0);
         }
-        if (packet->content == 0 || mprGetBufLength(packet->content) == 0) {
-            /*
-                This will remove the packet from the queue and will re-enable upstream disabled queues.
-             */
+        /*
+            Must not consume the END packet
+         */
+        if (httpGetPacketLength(packet) == 0 && !(packet->flags & HTTP_PACKET_END)) {
+            /* Consume the packet here */
             httpGetPacket(q);
+        }
+        if (bytes == 0) {
+            break;
         }
     }
 }

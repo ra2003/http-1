@@ -274,6 +274,9 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
         if (httpGetPacketLength(packet) == 0) {
             httpGetPacket(q);
         }
+        if (bytes == 0) {
+            break;
+        }
     }
 }
 

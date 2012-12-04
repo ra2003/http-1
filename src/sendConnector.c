@@ -240,7 +240,7 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
     assure(q->count >= 0);
     assure(bytes >= 0);
 
-    while ((packet = q->first) != 0) {
+    while (bytes > 0 && (packet = q->first) != 0) {
         if (packet->prefix) {
             len = mprGetBufLength(packet->prefix);
             len = (ssize) min(len, bytes);
@@ -268,15 +268,15 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             q->count -= len;
             assure(q->count >= 0);
         }
-        if (packet->flags & HTTP_PACKET_END) {
-            q->flags |= HTTP_QUEUE_EOF;
-        }
         if (httpGetPacketLength(packet) == 0) {
+            if (packet->flags & HTTP_PACKET_END) {
+                q->flags |= HTTP_QUEUE_EOF;
+            }
             httpGetPacket(q);
         }
-        if (bytes == 0) {
-            break;
-        }
+    }
+    if (q->first && q->first->flags & HTTP_PACKET_END) {
+        q->flags |= HTTP_QUEUE_EOF;
     }
 }
 

@@ -126,7 +126,9 @@ static void netOutgoingService(HttpQueue *q)
     if (q->first && q->first->flags & HTTP_PACKET_END) {
         httpFinalizeConnector(conn);
     } else {
+#if UNUSED
         httpSocketBlocked(conn);
+#endif
         HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
     }
 }

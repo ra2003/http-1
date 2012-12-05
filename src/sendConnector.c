@@ -120,7 +120,10 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     written = mprSendFileToSocket(conn->sock, file, q->ioPos, q->ioCount, q->iovec, q->ioIndex, NULL, 0);
     if (written < 0) {
         errCode = mprGetError();
-        if (errCode != EAGAIN && errCode != EWOULDBLOCK) {
+        if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
+            /*  Socket full, wait for an I/O event */
+            httpSocketBlocked(conn);
+        } else {
             if (errCode != EPIPE && errCode != ECONNRESET && errCode != ENOTCONN) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "SendFileToSocket failed, errCode %d", errCode);
             } else {
@@ -137,7 +140,9 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     if (q->first && q->first->flags & HTTP_PACKET_END) {
         httpFinalizeConnector(conn);
     } else {
+#if UNUSED
         httpSocketBlocked(conn);
+#endif
         HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
     }
 }

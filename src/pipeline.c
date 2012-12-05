@@ -87,6 +87,11 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     httpPutForService(conn->writeq, httpCreateHeaderPacket(), HTTP_DELAY_SERVICE);
     openQueues(conn);
 
+#if FUTURE
+    if (rx->upgrade && !conn->upgraded) {
+        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Cannot upgrade communications protocol");
+    }
+#endif
     if (tx->pendingFinalize) {
         tx->finalizedOutput = 0;
         httpFinalizeOutput(conn);

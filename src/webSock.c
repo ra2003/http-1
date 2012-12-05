@@ -613,7 +613,9 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         succeeds, then the data is sent.
      */
     assure(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED);
-
+    if (!(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED) || !conn->upgraded) {
+        return MPR_ERR_BAD_STATE;
+    }
     if (type < 0 || type > WS_MSG_PONG) {
         mprError("webSocketFilter: httpSendBlock: bad message type %d", type);
         return MPR_ERR_BAD_ARGS;
@@ -692,6 +694,11 @@ PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
     }
     ws->closing = 1;
     ws->state = WS_STATE_CLOSING;
+
+    if (!(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED) || !conn->upgraded) {
+        /* Ignore closes when already finalized or not yet connected */
+        return;
+    } 
     len = 2;
     if (reason) {
         if (slen(reason) >= 124) {
@@ -957,6 +964,8 @@ PUBLIC bool httpVerifyWebSocketsHandshake(HttpConn *conn)
     assure(rx);
     assure(rx->webSocket);
     assure(conn->upgraded);
+
+    rx->webSocket->state = WS_STATE_CLOSED;
 
     if (rx->status != HTTP_CODE_SWITCHING) {
         httpError(conn, HTTP_CODE_BAD_HANDSHAKE, "Bad WebSocket handshake status %d", rx->status);

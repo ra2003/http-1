@@ -133,7 +133,8 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
         adjustPacketData(q, written);
         adjustSendVec(q, written);
     }
-    if ((q->flags & HTTP_QUEUE_EOF)) {
+    LOG(6, "sendConnector wrote %d, qflags %x", (int) written, q->flags);
+    if (q->first && q->first->flags & HTTP_PACKET_END) {
         httpFinalizeConnector(conn);
     } else {
         httpSocketBlocked(conn);
@@ -269,15 +270,15 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             assure(q->count >= 0);
         }
         if (httpGetPacketLength(packet) == 0) {
-            if (packet->flags & HTTP_PACKET_END) {
-                q->flags |= HTTP_QUEUE_EOF;
-            }
+            assure(!(packet->flags & HTTP_PACKET_END));
             httpGetPacket(q);
         }
     }
+#if UNUSED
     if (q->first && q->first->flags & HTTP_PACKET_END) {
         q->flags |= HTTP_QUEUE_EOF;
     }
+#endif
 }
 
 

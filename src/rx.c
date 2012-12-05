@@ -131,7 +131,7 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
     conn->pumping = 1;
 
     while (canProceed) {
-        LOG(7, "httpProcess %s, state %d, error %d", conn->dispatcher->name, conn->state, conn->error);
+        LOG(6, "httpProcess %s, state %d, error %d", conn->dispatcher->name, conn->state, conn->error);
         switch (conn->state) {
         case HTTP_STATE_BEGIN:
         case HTTP_STATE_CONNECTED:
@@ -864,6 +864,7 @@ static bool processParsed(HttpConn *conn)
         rx->flags &= ~HTTP_EXPECT_CONTINUE;
     }
     if (!conn->endpoint && conn->upgraded && !httpVerifyWebSocketsHandshake(conn)) {
+        httpSetState(conn, HTTP_STATE_FINALIZED);
         return 1;
     }
     httpSetState(conn, HTTP_STATE_CONTENT);
@@ -1192,6 +1193,9 @@ static void processCompletion(HttpConn *conn)
     assure(tx->finalized);
     assure(tx->finalizedOutput);
     assure(tx->finalizedConnector);
+
+    mprLog(3, "Request complete, status %d, error %d, connError %d, uri %s",
+        tx->status, conn->error, conn->connError, rx->uri);
 
     httpDestroyPipeline(conn);
     measure(conn);

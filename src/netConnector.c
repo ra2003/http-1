@@ -122,7 +122,8 @@ static void netOutgoingService(HttpQueue *q)
             adjustNetVec(q, written);
         }
     }
-    if ((q->flags & HTTP_QUEUE_EOF)) {
+    LOG(6, "netConnector wrote %d, qflags %x", (int) written, q->flags);
+    if (q->first && q->first->flags & HTTP_PACKET_END) {
         httpFinalizeConnector(conn);
     } else {
         httpSocketBlocked(conn);
@@ -216,9 +217,6 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
 
     while (bytes > 0 && (packet = q->first) != 0) {
         if (packet->prefix) {
-            /*
-                Note: the end packet may have the final chunk trailer in its prefix
-             */
             len = mprGetBufLength(packet->prefix);
             len = min(len, bytes);
             mprAdjustBufStart(packet->prefix, len);
@@ -237,15 +235,15 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
             assure(q->count >= 0);
         }
         if (httpGetPacketLength(packet) == 0) {
-            if (packet->flags & HTTP_PACKET_END) {
-                q->flags |= HTTP_QUEUE_EOF;
-            }
+            assure(!(packet->flags & HTTP_PACKET_END));
             httpGetPacket(q);
         }
     }
+#if UNUSED
     if (q->first && q->first->flags & HTTP_PACKET_END) {
         q->flags |= HTTP_QUEUE_EOF;
     }
+#endif
 }
 
 

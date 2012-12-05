@@ -169,7 +169,7 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
 static void outgoingChunkService(HttpQueue *q)
 {
     HttpConn    *conn;
-    HttpPacket  *packet;
+    HttpPacket  *packet, *finalChunk;
     HttpTx      *tx;
     cchar       *value;
 
@@ -201,7 +201,7 @@ static void outgoingChunkService(HttpQueue *q)
         httpDefaultOutgoingServiceStage(q);
     } else {
         for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
-            if (!(packet->flags & HTTP_PACKET_HEADER)) {
+            if (packet->flags & HTTP_PACKET_DATA) {
                 httpPutBackPacket(q, packet);
                 httpJoinPackets(q, tx->chunkSize);
                 packet = httpGetPacket(q);
@@ -213,8 +213,14 @@ static void outgoingChunkService(HttpQueue *q)
                 httpPutBackPacket(q, packet);
                 return;
             }
-            if (!(packet->flags & HTTP_PACKET_HEADER)) {
+            if (packet->flags & HTTP_PACKET_DATA) {
                 setChunkPrefix(q, packet);
+
+            } else if (packet->flags & HTTP_PACKET_END) {
+                /* Insert a packet for the final chunk */
+                finalChunk = httpCreateDataPacket(0);
+                setChunkPrefix(q, finalChunk);
+                httpPutPacketToNext(q, finalChunk);
             }
             httpPutPacketToNext(q, packet);
         }

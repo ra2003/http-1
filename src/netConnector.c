@@ -214,6 +214,12 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
     assure(q->count >= 0);
     assure(bytes > 0);
 
+    /*
+        Loop while data to be accounted for and we have not hit the end of data packet.
+        Chunks will have the chunk header in the packet->prefix.
+        The final chunk trailer will be in a packet->prefix with no other data content.
+        Must leave this routine with the end packet still on the queue and all bytes accounted for.
+     */
     while ((packet = q->first) != 0 && !(packet->flags & HTTP_PACKET_END)) {
         if (packet->prefix) {
             len = mprGetBufLength(packet->prefix);
@@ -234,6 +240,7 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
             assure(q->count >= 0);
         }
         if (httpGetPacketLength(packet) == 0) {
+            /* Done with this packet - consume it */
             assure(!(packet->flags & HTTP_PACKET_END));
             httpGetPacket(q);
         } else {

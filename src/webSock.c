@@ -151,11 +151,11 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
     version = (int) stoi(httpGetHeader(conn, "sec-websocket-version"));
     if (version < WS_VERSION) {
         httpSetHeader(conn, "Sec-WebSocket-Version", "%d", WS_VERSION);
-        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Unsupported Sec-WebSocket-Version");
+        httpError(conn, HTTP_CLOSE | HTTP_CODE_BAD_REQUEST, "Unsupported Sec-WebSocket-Version");
         return HTTP_ROUTE_OK;
     }
     if ((key = httpGetHeader(conn, "sec-websocket-key")) == 0) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad Sec-WebSocket-Key");
+        httpError(conn, HTTP_CLOSE | HTTP_CODE_BAD_REQUEST, "Bad Sec-WebSocket-Key");
         return HTTP_ROUTE_OK;
     }
     protocols = httpGetHeader(conn, "sec-websocket-protocol");
@@ -175,7 +175,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
                 }
             }
             if (!kind) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Unsupported Sec-WebSocket-Protocol");
+                httpError(conn, HTTP_CLOSE | HTTP_CODE_BAD_REQUEST, "Unsupported Sec-WebSocket-Protocol");
                 return HTTP_ROUTE_OK;
             }
             ws->subProtocol = sclone(kind);

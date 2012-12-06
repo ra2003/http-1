@@ -140,9 +140,6 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     if (q->first && q->first->flags & HTTP_PACKET_END) {
         httpFinalizeConnector(conn);
     } else {
-#if UNUSED
-        httpSocketBlocked(conn);
-#endif
         HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
     }
 }
@@ -246,7 +243,7 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
     assure(q->count >= 0);
     assure(bytes >= 0);
 
-    while (bytes > 0 && (packet = q->first) != 0) {
+    while ((packet = q->first) != 0 && !(packet->flags & HTTP_PACKET_END)) {
         if (packet->prefix) {
             len = mprGetBufLength(packet->prefix);
             len = (ssize) min(len, bytes);
@@ -263,7 +260,6 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
             packet->epos += len;
             bytes -= len;
             assure(packet->esize >= 0);
-            assure(bytes == 0);
             if (packet->esize) {
                break;
             }
@@ -277,13 +273,11 @@ static void adjustPacketData(HttpQueue *q, MprOff bytes)
         if (httpGetPacketLength(packet) == 0) {
             assure(!(packet->flags & HTTP_PACKET_END));
             httpGetPacket(q);
+        } else {
+            break;
         }
     }
-#if UNUSED
-    if (q->first && q->first->flags & HTTP_PACKET_END) {
-        q->flags |= HTTP_QUEUE_EOF;
-    }
-#endif
+    assure(bytes == 0);
 }
 
 

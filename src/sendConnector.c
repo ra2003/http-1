@@ -125,7 +125,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
             httpSocketBlocked(conn);
         } else {
             if (errCode != EPIPE && errCode != ECONNRESET && errCode != ENOTCONN) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "SendFileToSocket failed, errCode %d", errCode);
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "sendConnector: error, errCode %d", errCode);
             } else {
                 httpDisconnect(conn);
             }
@@ -136,8 +136,9 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
         freeSendPackets(q, written);
         adjustSendVec(q, written);
     }
-    LOG(6, "sendConnector wrote %d, qflags %x", (int) written, q->flags);
+    LOG(6, "sendConnector: wrote %d, qflags %x", (int) written, q->flags);
     if (q->first && q->first->flags & HTTP_PACKET_END) {
+        LOG(6, "sendConnector: end of stream. Finalize connector");
         httpFinalizeConnector(conn);
     } else {
         HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);

@@ -103,13 +103,14 @@ static void netOutgoingService(HttpQueue *q)
         written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
         if (written < 0) {
             errCode = mprGetError(q);
+            LOG(6, "netConnector: wrote %d, errno %d, qflags %x", (int) written, errCode, q->flags);
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
                 /*  Socket full, wait for an I/O event */
                 httpSocketBlocked(conn);
                 break;
             }
             if (errCode != EPIPE && errCode != ECONNRESET && errCode != ENOTCONN) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Write error %d", errCode);
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Write response error %d", errCode);
             } else {
                 httpDisconnect(conn);
             }
@@ -117,13 +118,14 @@ static void netOutgoingService(HttpQueue *q)
             break;
 
         } else if (written > 0) {
+            LOG(6, "netConnector: wrote %d, ask %d, qflags %x", (int) written, q->ioCount, q->flags);
             tx->bytesWritten += written;
             freeNetPackets(q, written);
             adjustNetVec(q, written);
         }
     }
-    LOG(6, "netConnector wrote %d, qflags %x", (int) written, q->flags);
     if (q->first && q->first->flags & HTTP_PACKET_END) {
+        LOG(6, "netConnector: end of stream. Finalize connector");
         httpFinalizeConnector(conn);
     } else {
         HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);

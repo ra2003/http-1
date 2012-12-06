@@ -220,7 +220,7 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
         The final chunk trailer will be in a packet->prefix with no other data content.
         Must leave this routine with the end packet still on the queue and all bytes accounted for.
      */
-    while ((packet = q->first) != 0 && !(packet->flags & HTTP_PACKET_END)) {
+    while ((packet = q->first) != 0 && !(packet->flags & HTTP_PACKET_END) && bytes > 0) {
         if (packet->prefix) {
             len = mprGetBufLength(packet->prefix);
             len = min(len, bytes);

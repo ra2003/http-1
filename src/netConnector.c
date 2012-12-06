@@ -138,7 +138,7 @@ static MprOff buildNetVec(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpTx      *tx;
-    HttpPacket  *packet;
+    HttpPacket  *packet, *prev;
 
     conn = q->conn;
     tx = conn->tx;
@@ -147,7 +147,7 @@ static MprOff buildNetVec(HttpQueue *q)
         Examine each packet and accumulate as many packets into the I/O vector as possible. Leave the packets on the queue 
         for now, they are removed after the IO is complete for the entire packet.
      */
-    for (packet = q->first; packet; packet = packet->next) {
+    for (packet = prev = q->first; packet && !(packet->flags & HTTP_PACKET_END); packet = packet->next) {
         if (packet->flags & HTTP_PACKET_HEADER) {
             if (tx->chunkSize <= 0 && q->count > 0 && tx->length < 0) {
                 /* Incase no chunking filter and we've not seen all the data yet */
@@ -158,7 +158,14 @@ static MprOff buildNetVec(HttpQueue *q)
         if (q->ioIndex >= (HTTP_MAX_IOVEC - 2)) {
             break;
         }
-        addPacketForNet(q, packet);
+        if (httpGetPacketLength(packet) > 0 || packet->prefix) {
+            addPacketForNet(q, packet);
+        } else {
+            /* Remove empty packets */
+            prev->next = packet->next;
+            continue;
+        }
+        prev = packet;
     }
     return q->ioCount;
 }

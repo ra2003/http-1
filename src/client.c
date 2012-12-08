@@ -136,7 +136,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
     httpSetState(conn, HTTP_STATE_CONNECTED);
     conn->authRequested = 0;
     conn->tx->method = supper(method);
-    conn->tx->parsedUri = httpCreateUri(uri, 0);
+    conn->tx->parsedUri = httpCreateUri(uri, HTTP_COMPLETE_URI_PATH);
 #if BIT_DEBUG
     conn->startMark = mprGetHiResTime();
 #endif

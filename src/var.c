@@ -33,19 +33,22 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     sock = conn->sock;
 
     mprAddKey(svars, "ROUTE_HOME", rx->route->home);
-    //  DEPRECATED
-    mprAddKey(svars, "SERVER_ROOT", rx->route->home);
 
     mprAddKey(svars, "AUTH_TYPE", conn->authType);
     mprAddKey(svars, "AUTH_USER", conn->username);
     mprAddKey(svars, "AUTH_ACL", MPR->emptyString);
     mprAddKey(svars, "CONTENT_LENGTH", rx->contentLength);
     mprAddKey(svars, "CONTENT_TYPE", rx->mimeType);
-    mprAddKey(svars, "DOCUMENT_ROOT", rx->route->dir);
+    mprAddKey(svars, "DOCUMENTS", rx->route->dir);
     mprAddKey(svars, "GATEWAY_INTERFACE", sclone("CGI/1.1"));
     mprAddKey(svars, "QUERY_STRING", rx->parsedUri->query);
     mprAddKey(svars, "REMOTE_ADDR", conn->ip);
     mprAddKeyFmt(svars, "REMOTE_PORT", "%d", conn->port);
+
+    //  DEPRECATE
+    mprAddKey(svars, "DOCUMENT_ROOT", rx->route->dir);
+    //  DEPRECATE
+    mprAddKey(svars, "SERVER_ROOT", rx->route->home);
 
     /* Set to the same as AUTH_USER */
     mprAddKey(svars, "REMOTE_USER", conn->username);

@@ -442,6 +442,7 @@ PUBLIC void httpMatchHost(HttpConn *conn)
     }
     if (conn->rx->traceLevel >= 0) {
         mprLog(conn->rx->traceLevel, "Use endpoint: %s:%d", endpoint->ip, endpoint->port);
+        mprLog(conn->rx->traceLevel, "Use host %s", host->name);
     }
     conn->host = host;
 }

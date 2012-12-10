@@ -526,7 +526,7 @@ static bool isIdle()
         if (conn->state != HTTP_STATE_BEGIN) {
             if (lastTrace < now) {
                 if (conn->rx) {
-                    mprLog(1, "Waiting for request %s to complete", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
+                    mprLog(1, "  Request %s is still active", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
                 } else {
                     mprLog(1, "Waiting for connection to close");
                     conn->started = 0;
@@ -541,7 +541,7 @@ static bool isIdle()
     unlock(http->connections);
     if (!mprServicesAreIdle()) {
         if (lastTrace < now) {
-            mprLog(4, "Waiting for MPR services complete");
+            mprLog(3, "Waiting for MPR services complete");
             lastTrace = now;
         }
         return 0;

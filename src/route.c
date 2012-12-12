@@ -71,8 +71,8 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->errorDocuments = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
     route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->flags = HTTP_ROUTE_GZIP;
-    route->handlers = mprCreateList(-1, 0);
-    route->handlersWithMatch = mprCreateList(-1, 0);
+    route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
+    route->handlersWithMatch = mprCreateList(-1, MPR_LIST_STABLE);
     route->host = host;
     route->http = MPR->httpService;
     route->indicies = mprCreateList(-1, 0);
@@ -601,7 +601,7 @@ static int selectHandler(HttpConn *conn, HttpRoute *route)
     /*
         Handlers with match routines are examined first (in-order)
      */
-    for (next = 0; (tx->handler = mprGetNextItem(route->handlersWithMatch, &next)) != 0; ) {
+    for (next = 0; (tx->handler = mprGetNextStableItem(route->handlersWithMatch, &next)) != 0; ) {
         rc = tx->handler->match(conn, route, 0);
         if (rc == HTTP_ROUTE_OK || rc == HTTP_ROUTE_REROUTE) {
             return rc;

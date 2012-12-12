@@ -560,7 +560,7 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 
     //  OPT - use a less contentions mutex
     lock(http);
-    conn->seqno = http->connCount++;
+    conn->seqno = (int) http->totalConnections++;
     if (!http->timer) {
         http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
             MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
@@ -686,6 +686,98 @@ static void updateCurrentDate(Http *http)
         http->currentDate = httpGetDateString(NULL);
     }
 }
+
+
+PUBLIC void httpGetStats(HttpStats *sp)
+{
+    MprMemStats         *ap;
+    MprWorkerService    *ws;
+    Http                *http;
+    HttpEndpoint        *ep;
+    int                 next;
+
+    memset(sp, 0, sizeof(*sp));
+    http = MPR->httpService;
+    ap = mprGetMemStats();
+    ws = MPR->workerService;
+
+    sp->cpus = ap->numCpu;
+    sp->regions = ap->regions;
+    sp->pendingRequests = MPR->eventService->pendingCount;
+
+    sp->mem = ap->rss;
+    sp->memRedline = ap->redLine;
+    sp->memMax = ap->maxMemory;
+
+    sp->heap = ap->bytesAllocated + ap->bytesFree;
+    sp->heapUsed = ap->bytesAllocated;
+    sp->heapFree = ap->bytesFree;
+
+    sp->workersBusy = ws->busyThreads->length;
+    sp->workersIdle = ws->idleThreads->length;
+    sp->workersMax = ws->maxThreads;
+
+    sp->activeConnections = mprGetListLength(http->connections);
+    sp->activeProcesses = http->activeProcesses;
+    sp->activeSessions = http->activeSessions;
+    for (ITERATE_ITEMS(http->endpoints, ep, next)) {
+        sp->activeRequests += ep->activeRequests;
+        sp->activeClients += ep->activeClients;
+    }
+
+    sp->totalRequests = http->totalRequests;
+    sp->totalConnections = http->totalConnections;
+    sp->totalSweeps = MPR->heap->iteration;
+}
+
+
+PUBLIC char *httpStatsReport(int flags)
+{
+    MprTime             now;
+    MprBuf              *buf;
+    HttpStats           s;
+    double              elapsed;
+    static MprTime      lastTime;
+    static HttpStats    last;
+    double              mb;
+
+    mb = 1024.0 * 1024;
+    now = mprGetTime();
+    elapsed = (now - lastTime) / 1000.0;
+    httpGetStats(&s);
+    buf = mprCreateBuf(0, 0);
+
+    mprPutFmtToBuf(buf, "\nHttp Report: at %s\n\n", mprGetDate("%D %T"));
+    mprPutFmtToBuf(buf, "Memory      %8.1f MB, %2.1f%% mem\n", s.mem / mb, s.mem / (double) s.memMax);
+    mprPutFmtToBuf(buf, "Heap        %8.1f MB, %2.1f%% mem\n", s.heap / mb, s.heap / (double) s.mem);
+    mprPutFmtToBuf(buf, "Heap-used   %8.1f MB, %2.1f%% mem\n", s.heapUsed / mb, s.heapUsed / (double) s.heap);
+    mprPutFmtToBuf(buf, "Heap-free   %8.1f MB, %2.1f%% mem\n", s.heapFree / mb, s.heapFree / (double) s.heap);
+
+    mprPutCharToBuf(buf, '\n');
+    mprPutFmtToBuf(buf, "Regions     %8d\n", s.regions);
+    mprPutFmtToBuf(buf, "CPUs        %8d\n", s.cpus);
+    mprPutCharToBuf(buf, '\n');
+
+    mprPutFmtToBuf(buf, "Connections %8.1f per/sec\n", (s.totalConnections - last.totalConnections) / elapsed);
+    mprPutFmtToBuf(buf, "Requests    %8.1f per/sec\n", (s.totalRequests - last.totalRequests) / elapsed);
+    mprPutFmtToBuf(buf, "Sweeps      %8.1f per/sec\n", (s.totalSweeps - last.totalSweeps) / elapsed);
+    mprPutCharToBuf(buf, '\n');
+
+    mprPutFmtToBuf(buf, "Clients     %8d active\n", s.activeClients);
+    mprPutFmtToBuf(buf, "Connections %8d active\n", s.activeConnections);
+    mprPutFmtToBuf(buf, "Processes   %8d active\n", s.activeProcesses);
+    mprPutFmtToBuf(buf, "Requests    %8d active\n", s.activeRequests);
+    mprPutFmtToBuf(buf, "Sessions    %8d active\n", s.activeSessions);
+    mprPutFmtToBuf(buf, "Pending     %8d\n", s.pendingRequests);
+    mprPutFmtToBuf(buf, "Workers     %8d, %d, %d  (busy/idle/max)\n", s.workersBusy, s.workersIdle, s.workersMax);
+    mprPutCharToBuf(buf, '\n');
+    mprAddNullToBuf(buf);
+
+    last = s;
+    lastTime = now;
+    return sclone(mprGetBufStart(buf));
+}
+
 
 
 /*

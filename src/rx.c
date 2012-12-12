@@ -427,6 +427,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
         return 0;
     }
     rx->originalUri = rx->uri = sclone(uri);
+    conn->http->totalRequests++;
     httpSetState(conn, HTTP_STATE_FIRST);
     return 1;
 }

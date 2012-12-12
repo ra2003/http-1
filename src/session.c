@@ -27,13 +27,13 @@ PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTicks lifespa
 
     //  OPT less contentions mutex
     lock(http);
-    if (http->sessionCount >= conn->limits->sessionMax) {
+    if (http->activeSessions >= conn->limits->sessionMax) {
         httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE,
-            "Too many sessions %d/%d", http->sessionCount, conn->limits->sessionMax);
+            "Too many sessions %d/%d", http->activeSessions, conn->limits->sessionMax);
         unlock(http);
         return 0;
     }
-    http->sessionCount++;
+    http->activeSessions++;
     unlock(http);
 #endif
 
@@ -61,8 +61,8 @@ PUBLIC void httpDestroySession(HttpSession *sp)
     assure(sp);
     //  OPT less contentions mutex
     lock(http);
-    http->sessionCount--;
-    assure(http->sessionCount >= 0);
+    http->activeSessions--;
+    assure(http->activeSessions >= 0);
     unlock(http);
     sp->id = 0;
 }

@@ -533,7 +533,7 @@ typedef struct HttpStats {
 
 /** 
     Get an Http performance report
-    @params flags reserved
+    @param flags reserved
     @return String containing the report
     @ingroup HttpStats
     @stability Internal
@@ -542,7 +542,7 @@ PUBLIC char *httpStatsReport(int flags);
 
 /** 
     Get the Http performance statistics
-    @params Reference to a HttpStats structure
+    @param sp Reference to a HttpStats structure
     @ingroup HttpStats
     @stability Internal
  */

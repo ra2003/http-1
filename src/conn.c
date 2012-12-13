@@ -368,36 +368,31 @@ PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
 static void readEvent(HttpConn *conn)
 {
     HttpPacket  *packet;
-    HttpQueue   *q;
     ssize       nbytes, size;
 
-    do {
-        if ((packet = getPacket(conn, &size)) == 0) {
+    if ((packet = getPacket(conn, &size)) == 0) {
+        return;
+    }
+    assure(conn->input == packet);
+
+    nbytes = mprReadSocket(conn->sock, mprGetBufEnd(packet->content), size);
+    LOG(7, "http: read event. Got %d", nbytes);
+
+    if (nbytes > 0) {
+        mprAdjustBufEnd(packet->content, nbytes);
+    } else if (nbytes == 0) {
+        return;
+    } else if (nbytes < 0 && mprIsSocketEof(conn->sock)) {
+        conn->keepAliveCount = -1;
+        if (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE) {
             return;
         }
-        assure(conn->input == packet);
-
-        nbytes = mprReadSocket(conn->sock, mprGetBufEnd(packet->content), size);
-        LOG(7, "http: read event. Got %d", nbytes);
-
-        if (nbytes > 0) {
-            mprAdjustBufEnd(packet->content, nbytes);
-        } else if (nbytes == 0) {
+    }
+    do {
+        if (!httpPumpRequest(conn, conn->input)) {
             break;
-        } else if (nbytes < 0 && mprIsSocketEof(conn->sock)) {
-            conn->keepAliveCount = -1;
-            if (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE) {
-                break;
-            }
         }
-        do {
-            if (!httpPumpRequest(conn, conn->input)) {
-                break;
-            }
-        } while (conn->endpoint && prepForNext(conn));
-
-        q = conn->readq;
-    } while (nbytes > 0 && !mprGetSocketBlockingMode(conn->sock) && (!q || q->count < q->max));
+    } while (conn->endpoint && prepForNext(conn));
 }
 
 

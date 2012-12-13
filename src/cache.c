@@ -193,7 +193,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
         } else if (packet->flags & HTTP_PACKET_END) {
             if (cachedData && !foundDataPacket) {
                 /*
-                    Using X-SendCache but there was no data packet to replace. So do the write here
+                    Using X-SendCache but there was no data packet to replace. So do the write here.
                  */
                 data = httpCreateDataPacket((ssize) tx->length);
                 mprPutBlockToBuf(data->content, cachedData, (ssize) tx->length);

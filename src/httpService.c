@@ -463,8 +463,14 @@ static void httpTimer(Http *http, MprEvent *event)
         mprRemoveEvent(event);
         http->timer = 0;
     }
-    //  OPT - run GC here
     unlock(http->connections);
+
+#if KEEP
+    /*
+        This will trigger a GC if worthwhile
+     */
+    mprRequestGC(0);
+#endif
 }
 
 
@@ -692,6 +698,7 @@ PUBLIC void httpGetStats(HttpStats *sp)
 {
     MprMemStats         *ap;
     MprWorkerService    *ws;
+    MprWorkerStats      wstats;
     Http                *http;
     HttpEndpoint        *ep;
     int                 next;
@@ -713,9 +720,11 @@ PUBLIC void httpGetStats(HttpStats *sp)
     sp->heapUsed = ap->bytesAllocated;
     sp->heapFree = ap->bytesFree;
 
-    sp->workersBusy = ws->busyThreads->length;
-    sp->workersIdle = ws->idleThreads->length;
-    sp->workersMax = ws->maxThreads;
+    mprGetWorkerStats(&wstats);
+    sp->workersBusy = wstats.busy;
+    sp->workersIdle = wstats.idle;
+    sp->workersYielded = wstats.yielded;
+    sp->workersMax = wstats.max;
 
     sp->activeConnections = mprGetListLength(http->connections);
     sp->activeProcesses = http->activeProcesses;
@@ -748,10 +757,10 @@ PUBLIC char *httpStatsReport(int flags)
     buf = mprCreateBuf(0, 0);
 
     mprPutFmtToBuf(buf, "\nHttp Report: at %s\n\n", mprGetDate("%D %T"));
-    mprPutFmtToBuf(buf, "Memory      %8.1f MB, %2.1f%% mem\n", s.mem / mb, s.mem / (double) s.memMax);
-    mprPutFmtToBuf(buf, "Heap        %8.1f MB, %2.1f%% mem\n", s.heap / mb, s.heap / (double) s.mem);
-    mprPutFmtToBuf(buf, "Heap-used   %8.1f MB, %2.1f%% mem\n", s.heapUsed / mb, s.heapUsed / (double) s.heap);
-    mprPutFmtToBuf(buf, "Heap-free   %8.1f MB, %2.1f%% mem\n", s.heapFree / mb, s.heapFree / (double) s.heap);
+    mprPutFmtToBuf(buf, "Memory      %8.1f MB, %5.1f%% max\n", s.mem / mb, s.mem / (double) s.memMax * 100.0);
+    mprPutFmtToBuf(buf, "Heap        %8.1f MB, %5.1f%% mem\n", s.heap / mb, s.heap / (double) s.mem * 100.0);
+    mprPutFmtToBuf(buf, "Heap-used   %8.1f MB, %5.1f%% used\n", s.heapUsed / mb, s.heapUsed / (double) s.heap * 100.0);
+    mprPutFmtToBuf(buf, "Heap-free   %8.1f MB, %5.1f%% free\n", s.heapFree / mb, s.heapFree / (double) s.heap * 100.0);
 
     mprPutCharToBuf(buf, '\n');
     mprPutFmtToBuf(buf, "Regions     %8d\n", s.regions);
@@ -769,7 +778,10 @@ PUBLIC char *httpStatsReport(int flags)
     mprPutFmtToBuf(buf, "Requests    %8d active\n", s.activeRequests);
     mprPutFmtToBuf(buf, "Sessions    %8d active\n", s.activeSessions);
     mprPutFmtToBuf(buf, "Pending     %8d\n", s.pendingRequests);
-    mprPutFmtToBuf(buf, "Workers     %8d, %d, %d  (busy/idle/max)\n", s.workersBusy, s.workersIdle, s.workersMax);
+    mprPutCharToBuf(buf, '\n');
+
+    mprPutFmtToBuf(buf, "Workers     %8d busy - %d yielded, %d idle, %d max\n", 
+        s.workersBusy, s.workersYielded, s.workersIdle, s.workersMax);
     mprPutCharToBuf(buf, '\n');
     mprAddNullToBuf(buf);
 

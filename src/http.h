@@ -4361,7 +4361,7 @@ typedef struct HttpSession {
     @param lifespan Session lifespan in ticks
     @return A session state object
     @ingroup HttpSession
-    @stabilility Internal
+    @stability Internal
  */
 PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTicks lifespan);
 
@@ -4372,7 +4372,7 @@ PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTicks lifespa
     @param conn Http connection object
     @return A session state object
     @ingroup HttpSession
-    @stabilility Internal
+    @stability Internal
  */
 PUBLIC HttpSession *httpCreateSession(HttpConn *conn);
 
@@ -4381,7 +4381,7 @@ PUBLIC HttpSession *httpCreateSession(HttpConn *conn);
     @description
     @param sp Session state object allocated with #httpAllocSession
     @ingroup HttpSession
-    @stabilility Internal
+    @stability Internal
  */
 PUBLIC void httpDestroySession(HttpSession *sp);
 
@@ -4392,7 +4392,7 @@ PUBLIC void httpDestroySession(HttpSession *sp);
     @param create Set to "true" to create a session state object if one does not already exist for this client
     @return A session state object
     @ingroup HttpSession
-    @stabilility Evolving
+    @stability Evolving
  */
 PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create);
 
@@ -4402,7 +4402,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create);
     @param conn Http connection object
     @param key Session state key
     @ingroup HttpSession
-    @stabilility Evolving
+    @stability Evolving
  */
 PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key);
 
@@ -4413,7 +4413,7 @@ PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key);
     @param defaultValue If the variable does not exist, return the defaultValue.
     @return The variable value or defaultValue if it does not exist.
     @ingroup HttpSession
-    @stabilility Evolving
+    @stability Evolving
  */
 PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *name, cchar *defaultValue);
 
@@ -4423,7 +4423,7 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *name, cchar *defaultValue
     @param name Variable name to remove
     @return Zero if successful, otherwise a negative MPR error code.
     @ingroup HttpSession
-    @stabilility Evolving
+    @stability Evolving
  */
 PUBLIC int httpRemoveSessionVar(HttpConn *conn, cchar *name);
 
@@ -4435,7 +4435,7 @@ PUBLIC int httpRemoveSessionVar(HttpConn *conn, cchar *name);
     @param value Variable value to use
     @return A session state object
     @ingroup HttpSession
-    @stabilility Evolving
+    @stability Evolving
  */
 PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *name, cchar *value);
 
@@ -4445,7 +4445,7 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *name, cchar *value);
     @param conn Http connection object
     @return The session ID string
     @ingroup HttpSession
-    @stabilility Evolving
+    @stability Evolving
  */
 PUBLIC char *httpGetSessionID(HttpConn *conn);
 
@@ -4456,7 +4456,7 @@ PUBLIC char *httpGetSessionID(HttpConn *conn);
     @param key Session state key
     @param value Object to serialize
     @ingroup HttpSession
-    @stabilility Evolving
+    @stability Evolving
  */
 PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *value);
 
@@ -4467,7 +4467,7 @@ PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *value);
     @stability Evolving
     @defgroup HttpUploadFile HttpUploadFile
     @see httpAddUploadFile httpRemoveAllUploadedFiles httpRemoveUploadFile
-    @stabilility Stable
+    @stability Stable
  */
 typedef struct HttpUploadFile {
     cchar           *filename;              /**< Local (temp) name of the file */
@@ -4483,7 +4483,7 @@ typedef struct HttpUploadFile {
     @param id Unique identifier for the file  
     @param file Instance of HttpUploadFile
     @ingroup HttpUploadFile
-    @stabilility Internal
+    @stability Internal
     @internal
  */
 PUBLIC void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *file);
@@ -4493,7 +4493,7 @@ PUBLIC void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *file);
     @description Remove all uploaded files from the temporary file store
     @param conn HttpConn connection object created via #httpCreateConn
     @ingroup HttpUploadFile
-    @stabilility Internal
+    @stability Internal
     @internal
  */
 PUBLIC void httpRemoveAllUploadedFiles(HttpConn *conn);
@@ -4504,7 +4504,7 @@ PUBLIC void httpRemoveAllUploadedFiles(HttpConn *conn);
     @param conn HttpConn connection object created via #httpCreateConn
     @param id Identifier used with #httpAddUploadFile for the file
     @ingroup HttpUploadFile
-    @stabilility Internal
+    @stability Internal
     @internal
  */
 PUBLIC void httpRemoveUploadFile(HttpConn *conn, cchar *id);
@@ -6154,7 +6154,6 @@ PUBLIC void *httpGetOption(MprHash *options, cchar *field, cchar *defaultValue);
     @param options Options object to examine.
     @param field Property to return.
     @return An MprHash instance for the given field. This will contain option sub-properties.
-    @ingroup HttpRoute
     @ingroup Http
     @stability Evolving
  */

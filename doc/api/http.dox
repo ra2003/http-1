@@ -187,8 +187,8 @@ ALIASES                = "reminder=\xrefitem reminders \"Reminder\" \"Reminders\
                          "library=\par \b Library:\n" \
                          "options=\par \b Configure options:\n" \
                          "description=\par \b Description:\n" \
-                         "elements=\par \b Elements:\n" \
                          "stability=\par \b API Stability:\n" \
+                         "elements=\par \b Elements:\n" \
                          "l=\link" \
                          "el=\endlink"
 

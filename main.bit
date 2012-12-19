@@ -5,8 +5,9 @@
 Bit.load({
     blend: [
         "${BITS}/embedthis.bit",
-        "src/deps/mpr/mpr.bit",
+        "src/deps/est/est.bit",
         "src/deps/pcre/pcre.bit",
+        "src/deps/mpr/mpr.bit",
         "doc/doc.bit",
     ],
 
@@ -22,15 +23,14 @@ Bit.load({
         product: 'http',
         title: 'Http Library',
         company: 'Embedthis',
-        version: '1.2.0',
+        version: '1.3.0',
         buildNumber: '0',
         manager: '',
         ciphers: "HIGH:MEDIUM",
-        sync: [ 'mpr', 'pcre' ],
+        sync: [ 'est', 'mpr', 'pcre' ],
         '+required': [ 'pcre' ],
-        '+optional': [ 'doxygen', 'dsi', 'ejs', 'man', 'man2html', 'openssl', 'matrixssl', 'ssl', 'utest' ],
+        '+optional': [ 'doxygen', 'dsi', 'ejs', 'man', 'man2html', 'openssl', 'ssl', 'utest' ],
         'without-all': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'matrixssl', 'ssl', 'openssl' ],
-        'without-own': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'matrixssl', ],
         pam: true,
     },
 
@@ -99,4 +99,10 @@ Bit.load({
             ",
         },
     },
+
+    packs: {
+        matrixssl: {},
+        est: {},
+    },
+
 })

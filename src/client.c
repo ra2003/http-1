@@ -209,7 +209,7 @@ PUBLIC void httpEnableUpload(HttpConn *conn)
 static int blockingFileCopy(HttpConn *conn, cchar *path)
 {
     MprFile     *file;
-    char        buf[MPR_BUFSIZE];
+    char        buf[BIT_MAX_BUFFER];
     ssize       bytes, nbytes, offset;
 
     file = mprOpenFile(path, O_RDONLY | O_BINARY, 0);

@@ -27,7 +27,7 @@ PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *disp
     }
     http = MPR->httpService;
     endpoint->http = http;
-    endpoint->clientLoad = mprCreateHash(HTTP_CLIENTS_HASH, MPR_HASH_STATIC_VALUES);
+    endpoint->clientLoad = mprCreateHash(BIT_MAX_CLIENTS_HASH, MPR_HASH_STATIC_VALUES);
     endpoint->async = 1;
     endpoint->http = MPR->httpService;
     endpoint->port = port;
@@ -94,7 +94,7 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents,
         } else {
             ip = "localhost";
             if (port <= 0) {
-                port = HTTP_DEFAULT_PORT;
+                port = BIT_HTTP_PORT;
             }
             if ((endpoint = httpCreateEndpoint(ip, port, NULL)) == 0) {
                 return 0;

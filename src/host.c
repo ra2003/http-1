@@ -33,7 +33,7 @@ PUBLIC HttpHost *httpCreateHost()
     if ((host->responseCache = mprCreateCache(MPR_CACHE_SHARED)) == 0) {
         return 0;
     }
-    mprSetCacheLimits(host->responseCache, 0, HTTP_CACHE_LIFESPAN, 0, 0);
+    mprSetCacheLimits(host->responseCache, 0, BIT_MAX_CACHE_DURATION, 0, 0);
 
     host->mutex = mprCreateLock();
     host->routes = mprCreateList(-1, 0);

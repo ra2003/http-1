@@ -548,7 +548,7 @@ static int processContentData(HttpQueue *q)
             httpSetParam(conn, key, data);
 
             if (packet == 0) {
-                packet = httpCreatePacket(HTTP_BUFSIZE);
+                packet = httpCreatePacket(BIT_MAX_BUFFER);
             }
             if (httpGetPacketLength(packet) > 0) {
                 /*

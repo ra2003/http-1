@@ -77,7 +77,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->http = MPR->httpService;
     route->indicies = mprCreateList(-1, 0);
     route->inputStages = mprCreateList(-1, 0);
-    route->lifespan = HTTP_CACHE_LIFESPAN;
+    route->lifespan = BIT_MAX_CACHE_DURATION;
     route->outputStages = mprCreateList(-1, 0);
     route->vars = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->pattern = MPR->emptyString;
@@ -362,7 +362,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     tx = conn->tx;
     route = 0;
 
-    for (next = rewrites = 0; rewrites < HTTP_MAX_REWRITE; ) {
+    for (next = rewrites = 0; rewrites < BIT_MAX_REWRITE; ) {
         if (next >= conn->host->routes->length) {
             break;
         }
@@ -401,7 +401,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     conn->trace[0] = route->trace[0];
     conn->trace[1] = route->trace[1];
 
-    if (rewrites >= HTTP_MAX_REWRITE) {
+    if (rewrites >= BIT_MAX_REWRITE) {
         httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
     }
     if (tx->finalized) {
@@ -494,7 +494,7 @@ static int testRoute(HttpConn *conn, HttpRoute *route)
     HttpRx          *rx;
     HttpTx          *tx;
     cchar           *token, *value, *header, *field;
-    int             next, rc, matched[HTTP_MAX_ROUTE_MATCHES * 2], count, result;
+    int             next, rc, matched[BIT_MAX_ROUTE_MATCHES * 2], count, result;
 
     assure(conn);
     assure(route);
@@ -1747,7 +1747,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *tplate, MprHash *options)
     MprBuf      *buf;
     HttpRoute   *route;
     cchar       *cp, *ep, *value;
-    char        key[MPR_MAX_STRING];
+    char        key[BIT_MAX_BUFFER];
 
     route = conn->rx->route;
     if (tplate == 0 || *tplate == '\0') {
@@ -2044,7 +2044,7 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 static int matchCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
     char    *str;
-    int     matched[HTTP_MAX_ROUTE_MATCHES * 2], count;
+    int     matched[BIT_MAX_ROUTE_MATCHES * 2], count;
 
     assure(conn);
     assure(route);

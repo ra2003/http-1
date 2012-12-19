@@ -7,6 +7,10 @@
 
 #include    "http.h"
 
+/********************************** Defines ***********************************/
+
+#define HTTP_RANGE_BUFSIZE 128              /* Packet size to hold range boundary */
+
 /********************************** Forwards **********************************/
 
 static bool applyRange(HttpQueue *q, HttpPacket *packet);

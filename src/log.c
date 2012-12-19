@@ -19,7 +19,7 @@ PUBLIC int httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup
     assure(format);
     
     if (format == NULL || *format == '\0') {
-        format = HTTP_LOG_FORMAT;
+        format = BIT_HTTP_LOG_FORMAT;
     }
     route->logFlags = flags;
     route->logSize = size;
@@ -124,9 +124,9 @@ PUBLIC void httpLogRequest(HttpConn *conn)
     }
     fmt = route->logFormat;
     if (fmt == 0) {
-        fmt = HTTP_LOG_FORMAT;
+        fmt = BIT_HTTP_LOG_FORMAT;
     }
-    len = MPR_MAX_URL + 256;
+    len = BIT_MAX_URI + 256;
     buf = mprCreateBuf(len, len);
 
     while ((c = *fmt++) != '\0') {

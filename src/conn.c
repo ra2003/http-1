@@ -544,12 +544,12 @@ static HttpPacket *getPacket(HttpConn *conn, ssize *size)
     MprBuf      *content;
 
     if ((packet = conn->input) == NULL) {
-        conn->input = packet = httpCreateDataPacket(HTTP_BUFSIZE);
+        conn->input = packet = httpCreateDataPacket(BIT_MAX_BUFFER);
     } else {
         content = packet->content;
         mprResetBufIfEmpty(content);
         mprAddNullToBuf(content);
-        if (mprGetBufSpace(content) < HTTP_BUFSIZE && mprGrowBuf(content, HTTP_BUFSIZE) < 0) {
+        if (mprGetBufSpace(content) < BIT_MAX_BUFFER && mprGrowBuf(content, BIT_MAX_BUFFER) < 0) {
             return 0;
         }
     }

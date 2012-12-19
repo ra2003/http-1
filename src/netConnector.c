@@ -157,7 +157,7 @@ static MprOff buildNetVec(HttpQueue *q)
             }
             httpWriteHeaders(q, packet);
         }
-        if (q->ioIndex >= (HTTP_MAX_IOVEC - 2)) {
+        if (q->ioIndex >= (BIT_MAX_IOVEC - 2)) {
             break;
         }
         if (httpGetPacketLength(packet) > 0 || packet->prefix) {
@@ -200,7 +200,7 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     tx = conn->tx;
 
     assure(q->count >= 0);
-    assure(q->ioIndex < (HTTP_MAX_IOVEC - 2));
+    assure(q->ioIndex < (BIT_MAX_IOVEC - 2));
 
     if (packet->prefix) {
         addToNetVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));

@@ -7,6 +7,10 @@
 
 #include    "http.h"
 
+/********************************** Defines ***********************************/
+
+#define HTTP_VAR_HASH_SIZE  61           /* Hash size for vars and params */
+
 /*********************************** Code *************************************/
 /*
     Define standard CGI variables
@@ -27,7 +31,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         /* Do only once */
         return;
     }
-    svars = rx->svars = mprCreateHash(HTTP_MED_HASH_SIZE, 0);
+    svars = rx->svars = mprCreateHash(HTTP_VAR_HASH_SIZE, 0);
     tx = conn->tx;
     host = conn->host;
     sock = conn->sock;
@@ -200,7 +204,7 @@ PUBLIC void httpAddParams(HttpConn *conn)
 PUBLIC MprHash *httpGetParams(HttpConn *conn)
 { 
     if (conn->rx->params == 0) {
-        conn->rx->params = mprCreateHash(HTTP_MED_HASH_SIZE, 0);
+        conn->rx->params = mprCreateHash(HTTP_VAR_HASH_SIZE, 0);
     }
     return conn->rx->params;
 }

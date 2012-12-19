@@ -1144,7 +1144,7 @@ static void createErrorRequest(HttpConn *conn)
     conn->upgraded = 0;
     conn->worker = 0;
 
-    packet = httpCreateDataPacket(HTTP_BUFSIZE);
+    packet = httpCreateDataPacket(BIT_MAX_BUFFER);
     mprPutFmtToBuf(packet->content, "%s %s %s\r\n", rx->method, tx->errorDocument, conn->protocol);
     buf = rx->headerPacket->content;
     /*

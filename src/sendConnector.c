@@ -169,7 +169,7 @@ static MprOff buildSendVec(HttpQueue *q)
         if (packet->flags & HTTP_PACKET_HEADER) {
             httpWriteHeaders(q, packet);
         }
-        if (q->ioFile || q->ioIndex >= (HTTP_MAX_IOVEC - 2)) {
+        if (q->ioFile || q->ioIndex >= (BIT_MAX_IOVEC - 2)) {
             /* Only one file entry allowed */
             break;
         }
@@ -214,7 +214,7 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
     tx = conn->tx;
     
     assure(q->count >= 0);
-    assure(q->ioIndex < (HTTP_MAX_IOVEC - 2));
+    assure(q->ioIndex < (BIT_MAX_IOVEC - 2));
 
     if (packet->prefix) {
         addToSendVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));

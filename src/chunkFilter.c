@@ -111,7 +111,7 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
             return (ssize) min(rx->remainingContent, mprGetBufLength(buf));
         }
         /* End of chunk - prep for the next chunk */
-        rx->remainingContent = HTTP_BUFSIZE;
+        rx->remainingContent = BIT_MAX_BUFFER;
         rx->chunkState = HTTP_CHUNK_START;
         /* Fall through */
 

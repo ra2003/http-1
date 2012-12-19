@@ -26,7 +26,7 @@ PUBLIC HttpPacket *httpCreatePacket(ssize size)
         return 0;
     }
     if (size != 0) {
-        if ((packet->content = mprCreateBuf(size < 0 ? HTTP_BUFSIZE: (ssize) size, -1)) == 0) {
+        if ((packet->content = mprCreateBuf(size < 0 ? BIT_MAX_BUFFER: (ssize) size, -1)) == 0) {
             return 0;
         }
     }
@@ -87,7 +87,7 @@ PUBLIC HttpPacket *httpCreateHeaderPacket()
 {
     HttpPacket    *packet;
 
-    if ((packet = httpCreatePacket(HTTP_BUFSIZE)) == 0) {
+    if ((packet = httpCreatePacket(BIT_MAX_BUFFER)) == 0) {
         return 0;
     }
     packet->flags = HTTP_PACKET_HEADER;
@@ -416,7 +416,7 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
                 Adjust the content->start
          */
         count = httpGetPacketLength(orig) - offset;
-        size = max(count, HTTP_BUFSIZE);
+        size = max(count, BIT_MAX_BUFFER);
         size = HTTP_PACKET_ALIGN(size);
         if ((packet = httpCreateDataPacket(size)) == 0) {
             return 0;

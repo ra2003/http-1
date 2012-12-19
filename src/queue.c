@@ -394,17 +394,17 @@ PUBLIC char *httpReadString(HttpConn *conn)
             remaining -= nbytes;
         }
     } else {
-        content = mprAlloc(HTTP_BUFSIZE);
+        content = mprAlloc(BIT_MAX_BUFFER);
         sofar = 0;
         while (1) {
-            nbytes = httpRead(conn, &content[sofar], HTTP_BUFSIZE);
+            nbytes = httpRead(conn, &content[sofar], BIT_MAX_BUFFER);
             if (nbytes < 0) {
                 return 0;
             } else if (nbytes == 0) {
                 break;
             }
             sofar += nbytes;
-            content = mprRealloc(content, sofar + HTTP_BUFSIZE);
+            content = mprRealloc(content, sofar + BIT_MAX_BUFFER);
         }
     }
     content[sofar] = '\0';

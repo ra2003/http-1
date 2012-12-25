@@ -27,7 +27,7 @@ Bit.load({
         buildNumber: '0',
         manager: '',
         ciphers: "HIGH:MEDIUM",
-        sync: [ 'est', 'mpr', 'pcre' ],
+        sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
         '+required': [ 'pcre' ],
         '+optional': [ 'doxygen', 'dsi', 'ejs', 'man', 'man2html', 'openssl', 'ssl', 'utest' ],
         'without-all': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'matrixssl', 'ssl', 'openssl' ],

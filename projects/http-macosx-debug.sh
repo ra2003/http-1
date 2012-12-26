@@ -3,7 +3,7 @@
 #
 
 ARCH="x64"
-ARCH="`uname -m | sed 's/i.86/x86/;s/x86_64/x64/'`"
+ARCH="`uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/'`"
 OS="macosx"
 PROFILE="debug"
 CONFIG="${OS}-${ARCH}-${PROFILE}"
@@ -23,27 +23,33 @@ if ! diff ${CONFIG}/inc/bit.h projects/http-${OS}-${PROFILE}-bit.h >/dev/null ; 
 	cp projects/http-${OS}-${PROFILE}-bit.h ${CONFIG}/inc/bit.h
 fi
 
-rm -rf ${CONFIG}/inc/mpr.h
-cp -r src/deps/mpr/mpr.h ${CONFIG}/inc/mpr.h
-
-${CC} -c -o ${CONFIG}/obj/mprLib.o -arch x86_64 -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprLib.c
-
-${CC} -dynamiclib -o ${CONFIG}/bin/libmpr.dylib -arch x86_64 ${LDFLAGS} -compatibility_version 1.2.0 -current_version 1.2.0 ${LIBPATHS} -install_name @rpath/libmpr.dylib ${CONFIG}/obj/mprLib.o ${LIBS}
-
-${CC} -c -o ${CONFIG}/obj/mprSsl.o -arch x86_64 -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprSsl.c
-
-${CC} -dynamiclib -o ${CONFIG}/bin/libmprssl.dylib -arch x86_64 ${LDFLAGS} -compatibility_version 1.2.0 -current_version 1.2.0 ${LIBPATHS} -install_name @rpath/libmprssl.dylib ${CONFIG}/obj/mprSsl.o -lmpr ${LIBS}
-
-${CC} -c -o ${CONFIG}/obj/makerom.o -arch x86_64 -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/makerom.c
-
-${CC} -o ${CONFIG}/bin/makerom -arch x86_64 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/makerom.o -lmpr ${LIBS}
-
 rm -rf ${CONFIG}/inc/pcre.h
 cp -r src/deps/pcre/pcre.h ${CONFIG}/inc/pcre.h
 
 ${CC} -c -o ${CONFIG}/obj/pcre.o -arch x86_64 -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/pcre/pcre.c
 
 ${CC} -dynamiclib -o ${CONFIG}/bin/libpcre.dylib -arch x86_64 ${LDFLAGS} ${LIBPATHS} -install_name @rpath/libpcre.dylib ${CONFIG}/obj/pcre.o ${LIBS}
+
+rm -rf ${CONFIG}/inc/bitos.h
+cp -r src/bitos.h ${CONFIG}/inc/bitos.h
+
+rm -rf ${CONFIG}/inc/mpr.h
+cp -r src/deps/mpr/mpr.h ${CONFIG}/inc/mpr.h
+
+${CC} -c -o ${CONFIG}/obj/mprLib.o -arch x86_64 -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprLib.c
+
+${CC} -dynamiclib -o ${CONFIG}/bin/libmpr.dylib -arch x86_64 ${LDFLAGS} -compatibility_version 1.3.0 -current_version 1.3.0 ${LIBPATHS} -install_name @rpath/libmpr.dylib ${CONFIG}/obj/mprLib.o ${LIBS}
+
+rm -rf ${CONFIG}/inc/est.h
+cp -r src/deps/est/est.h ${CONFIG}/inc/est.h
+
+${CC} -c -o ${CONFIG}/obj/mprSsl.o -arch x86_64 -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprSsl.c
+
+${CC} -dynamiclib -o ${CONFIG}/bin/libmprssl.dylib -arch x86_64 ${LDFLAGS} -compatibility_version 1.3.0 -current_version 1.3.0 ${LIBPATHS} -install_name @rpath/libmprssl.dylib ${CONFIG}/obj/mprSsl.o -lmpr ${LIBS}
+
+${CC} -c -o ${CONFIG}/obj/makerom.o -arch x86_64 -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/makerom.c
+
+${CC} -o ${CONFIG}/bin/makerom -arch x86_64 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/makerom.o -lmpr ${LIBS}
 
 rm -rf ${CONFIG}/inc/http.h
 cp -r src/http.h ${CONFIG}/inc/http.h

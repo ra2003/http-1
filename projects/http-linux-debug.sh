@@ -3,18 +3,18 @@
 #
 
 ARCH="x86"
-ARCH="`uname -m | sed 's/i.86/x86/;s/x86_64/x64/'`"
+ARCH="`uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/'`"
 OS="linux"
 PROFILE="debug"
 CONFIG="${OS}-${ARCH}-${PROFILE}"
-CC="gcc"
+CC="/usr/bin/gcc"
 LD="/usr/bin/ld"
-CFLAGS="-Wall -fPIC -g -Wno-unused-result"
+CFLAGS="-Wall -fPIC -g -Wshorten-64-to-32"
 DFLAGS="-D_REENTRANT -DPIC -DBIT_DEBUG"
 IFLAGS="-I${CONFIG}/inc -Isrc"
 LDFLAGS="-Wl,--enable-new-dtags -Wl,-rpath,\$ORIGIN/ -Wl,-rpath,\$ORIGIN/../bin -rdynamic -g"
 LIBPATHS="-L${CONFIG}/bin"
-LIBS="-lpthread -lm -lrt -ldl"
+LIBS="-lpthread -lm -ldl"
 
 [ ! -x ${CONFIG}/inc ] && mkdir -p ${CONFIG}/inc ${CONFIG}/obj ${CONFIG}/lib ${CONFIG}/bin
 
@@ -23,12 +23,25 @@ if ! diff ${CONFIG}/inc/bit.h projects/http-${OS}-${PROFILE}-bit.h >/dev/null ; 
 	cp projects/http-${OS}-${PROFILE}-bit.h ${CONFIG}/inc/bit.h
 fi
 
+rm -rf ${CONFIG}/inc/pcre.h
+cp -r src/deps/pcre/pcre.h ${CONFIG}/inc/pcre.h
+
+${CC} -c -o ${CONFIG}/obj/pcre.o -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/pcre/pcre.c
+
+${CC} -shared -o ${CONFIG}/bin/libpcre.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/pcre.o ${LIBS}
+
+rm -rf ${CONFIG}/inc/bitos.h
+cp -r src/bitos.h ${CONFIG}/inc/bitos.h
+
 rm -rf ${CONFIG}/inc/mpr.h
 cp -r src/deps/mpr/mpr.h ${CONFIG}/inc/mpr.h
 
 ${CC} -c -o ${CONFIG}/obj/mprLib.o -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprLib.c
 
 ${CC} -shared -o ${CONFIG}/bin/libmpr.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/mprLib.o ${LIBS}
+
+rm -rf ${CONFIG}/inc/est.h
+cp -r src/deps/est/est.h ${CONFIG}/inc/est.h
 
 ${CC} -c -o ${CONFIG}/obj/mprSsl.o -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprSsl.c
 
@@ -37,13 +50,6 @@ ${CC} -shared -o ${CONFIG}/bin/libmprssl.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj
 ${CC} -c -o ${CONFIG}/obj/makerom.o -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/makerom.c
 
 ${CC} -o ${CONFIG}/bin/makerom ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/makerom.o -lmpr ${LIBS} ${LDFLAGS}
-
-rm -rf ${CONFIG}/inc/pcre.h
-cp -r src/deps/pcre/pcre.h ${CONFIG}/inc/pcre.h
-
-${CC} -c -o ${CONFIG}/obj/pcre.o -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/pcre/pcre.c
-
-${CC} -shared -o ${CONFIG}/bin/libpcre.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/pcre.o ${LIBS}
 
 rm -rf ${CONFIG}/inc/http.h
 cp -r src/http.h ${CONFIG}/inc/http.h
@@ -110,7 +116,7 @@ ${CC} -c -o ${CONFIG}/obj/var.o -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/i
 
 ${CC} -c -o ${CONFIG}/obj/webSock.o -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/webSock.c
 
-${CC} -shared -o ${CONFIG}/bin/libhttp.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/actionHandler.o ${CONFIG}/obj/auth.o ${CONFIG}/obj/basic.o ${CONFIG}/obj/cache.o ${CONFIG}/obj/chunkFilter.o ${CONFIG}/obj/client.o ${CONFIG}/obj/conn.o ${CONFIG}/obj/digest.o ${CONFIG}/obj/endpoint.o ${CONFIG}/obj/error.o ${CONFIG}/obj/host.o ${CONFIG}/obj/httpService.o ${CONFIG}/obj/log.o ${CONFIG}/obj/netConnector.o ${CONFIG}/obj/packet.o ${CONFIG}/obj/pam.o ${CONFIG}/obj/passHandler.o ${CONFIG}/obj/pipeline.o ${CONFIG}/obj/queue.o ${CONFIG}/obj/rangeFilter.o ${CONFIG}/obj/route.o ${CONFIG}/obj/rx.o ${CONFIG}/obj/sendConnector.o ${CONFIG}/obj/session.o ${CONFIG}/obj/stage.o ${CONFIG}/obj/trace.o ${CONFIG}/obj/tx.o ${CONFIG}/obj/uploadFilter.o ${CONFIG}/obj/uri.o ${CONFIG}/obj/var.o ${CONFIG}/obj/webSock.o -lpcre -lmpr ${LIBS}
+${CC} -shared -o ${CONFIG}/bin/libhttp.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/actionHandler.o ${CONFIG}/obj/auth.o ${CONFIG}/obj/basic.o ${CONFIG}/obj/cache.o ${CONFIG}/obj/chunkFilter.o ${CONFIG}/obj/client.o ${CONFIG}/obj/conn.o ${CONFIG}/obj/digest.o ${CONFIG}/obj/endpoint.o ${CONFIG}/obj/error.o ${CONFIG}/obj/host.o ${CONFIG}/obj/httpService.o ${CONFIG}/obj/log.o ${CONFIG}/obj/netConnector.o ${CONFIG}/obj/packet.o ${CONFIG}/obj/pam.o ${CONFIG}/obj/passHandler.o ${CONFIG}/obj/pipeline.o ${CONFIG}/obj/queue.o ${CONFIG}/obj/rangeFilter.o ${CONFIG}/obj/route.o ${CONFIG}/obj/rx.o ${CONFIG}/obj/sendConnector.o ${CONFIG}/obj/session.o ${CONFIG}/obj/stage.o ${CONFIG}/obj/trace.o ${CONFIG}/obj/tx.o ${CONFIG}/obj/uploadFilter.o ${CONFIG}/obj/uri.o ${CONFIG}/obj/var.o ${CONFIG}/obj/webSock.o -lpcre -lmpr ${LIBS} -lpam
 
 ${CC} -c -o ${CONFIG}/obj/http.o -mtune=generic ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/http.c
 

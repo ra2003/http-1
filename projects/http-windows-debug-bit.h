@@ -37,7 +37,7 @@
     #define BIT_MANAGER ""
 #endif
 #ifndef BIT_OPTIONAL
-    #define BIT_OPTIONAL "doxygen,dsi,ejs,man,man2html,openssl,matrixssl,ssl,utest"
+    #define BIT_OPTIONAL "doxygen,dsi,ejs,man,man2html,openssl,ssl,utest"
 #endif
 #ifndef BIT_PAM
     #define BIT_PAM 1
@@ -49,19 +49,16 @@
     #define BIT_REQUIRED "winsdk,compiler,lib,link,dumpbin,rc,pcre"
 #endif
 #ifndef BIT_SYNC
-    #define BIT_SYNC "mpr,pcre"
+    #define BIT_SYNC "bitos,est,mpr,pcre"
 #endif
 #ifndef BIT_TITLE
     #define BIT_TITLE "Http Library"
 #endif
 #ifndef BIT_VERSION
-    #define BIT_VERSION "1.2.0"
+    #define BIT_VERSION "1.3.0"
 #endif
 #ifndef BIT_WITHOUT_ALL
     #define BIT_WITHOUT_ALL "doxygen,dsi,man,man2html,pmaker,matrixssl,ssl,openssl"
-#endif
-#ifndef BIT_WITHOUT_OWN
-    #define BIT_WITHOUT_OWN "doxygen,dsi,man,man2html,pmaker,matrixssl"
 #endif
 
 /* Prefixes */
@@ -126,13 +123,13 @@
     #define BIT_MAJOR_VERSION 1
 #endif
 #ifndef BIT_MINOR_VERSION
-    #define BIT_MINOR_VERSION 2
+    #define BIT_MINOR_VERSION 3
 #endif
 #ifndef BIT_PATCH_VERSION
     #define BIT_PATCH_VERSION 0
 #endif
 #ifndef BIT_VNUM
-    #define BIT_VNUM 100020000
+    #define BIT_VNUM 100030000
 #endif
 
 /* Packs */
@@ -150,6 +147,9 @@
 #endif
 #ifndef BIT_PACK_EJS
     #define BIT_PACK_EJS 1
+#endif
+#ifndef BIT_PACK_EST
+    #define BIT_PACK_EST 0
 #endif
 #ifndef BIT_PACK_LIB
     #define BIT_PACK_LIB 1
@@ -186,4 +186,28 @@
 #endif
 #ifndef BIT_PACK_WINSDK
     #define BIT_PACK_WINSDK 1
+#endif
+#ifndef BIT_PACK_COMPILER_PATH
+    #define BIT_PACK_COMPILER_PATH "cl.exe"
+#endif
+#ifndef BIT_PACK_EJS_PATH
+    #define BIT_PACK_EJS_PATH "/Users/mob/git/ejs/macosx-x64-debug/bin/ejs"
+#endif
+#ifndef BIT_PACK_LIB_PATH
+    #define BIT_PACK_LIB_PATH "lib.exe"
+#endif
+#ifndef BIT_PACK_LINK_PATH
+    #define BIT_PACK_LINK_PATH "link.exe"
+#endif
+#ifndef BIT_PACK_PCRE_PATH
+    #define BIT_PACK_PCRE_PATH "/Users/mob/git/http/src/deps/pcre"
+#endif
+#ifndef BIT_PACK_RC_PATH
+    #define BIT_PACK_RC_PATH "rc.exe"
+#endif
+#ifndef BIT_PACK_UTEST_PATH
+    #define BIT_PACK_UTEST_PATH "/Users/mob/git/ejs/macosx-x64-debug/bin/utest"
+#endif
+#ifndef BIT_PACK_WINSDK_PATH
+    #define BIT_PACK_WINSDK_PATH "$(SDK)"
 #endif

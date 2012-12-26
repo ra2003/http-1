@@ -134,6 +134,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(IncDir)\bitos.h" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ClInclude Include="$(IncDir)\http.h" />
   </ItemGroup>
 
@@ -145,6 +149,7 @@
 
   <CustomBuildStep>
     <Command>cd ..\..
+copy /Y src\bitos.h $(IncDir)
 copy /Y src\http.h $(IncDir)
 cd projects\http-windows-vs</Command>
     <Outputs>$(BinDir)\libhttp.dll</Outputs>

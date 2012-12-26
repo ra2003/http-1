@@ -2783,8 +2783,8 @@ PUBLIC void mprSetBufRefillProc(MprBuf *buf, MprBufProc fn, void *arg);
  */
 PUBLIC int mprSetBufSize(MprBuf *buf, ssize size, ssize maxSize);
 
-#if KEEP
 #if DOXYGEN || BIT_CHAR_LEN > 1
+#if KEEP
 /**
     Add a wide null character to the buffer contents.
     @description Add a null character but do not change the buffer content lengths. The null is added outside the
@@ -2830,6 +2830,7 @@ PUBLIC ssize mprPutStringToWideBuf(MprBuf *buf, cchar *str);
  */
 PUBLIC ssize mprPutFmtToWideBuf(MprBuf *buf, cchar *fmt, ...);
 
+#endif /* KEEP */
 #else /* BIT_CHAR_LEN == 1 */
 
 #define mprAddNullToWideBuf     mprAddNullToBuf
@@ -2837,7 +2838,6 @@ PUBLIC ssize mprPutFmtToWideBuf(MprBuf *buf, cchar *fmt, ...);
 #define mprPutStringToWideBuf   mprPutStringToBuf
 #define mprPutFmtToWideBuf      mprPutFmtToBuf
 #endif
-#endif /* KEEP */
 
 /*
     Macros for speed

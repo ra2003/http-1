@@ -13,7 +13,7 @@ PROFILE="debug"
 CONFIG="${OS}-${ARCH}-${PROFILE}"
 CC="cl.exe"
 LD="link.exe"
-CFLAGS="-nologo -GR- -W3 -Zi -Od -MDd"
+CFLAGS="-nologo -GR- -W3 -Zi -Od -MDd -w"
 DFLAGS="-D_REENTRANT -D_MT -DBIT_DEBUG"
 IFLAGS="-I${CONFIG}/inc -Isrc"
 LDFLAGS="-nologo -nodefaultlib -incremental:no -debug -machine:x86"
@@ -23,6 +23,7 @@ LIBS="ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib sh
 [ ! -x ${CONFIG}/inc ] && mkdir -p ${CONFIG}/inc ${CONFIG}/obj ${CONFIG}/lib ${CONFIG}/bin
 
 [ ! -f ${CONFIG}/inc/bit.h ] && cp projects/http-${OS}-${PROFILE}-bit.h ${CONFIG}/inc/bit.h
+[ ! -f ${CONFIG}/inc/bitos.h ] && cp src/bitos.h ${CONFIG}/inc/bitos.h
 if ! diff ${CONFIG}/inc/bit.h projects/http-${OS}-${PROFILE}-bit.h >/dev/null ; then
 	cp projects/http-${OS}-${PROFILE}-bit.h ${CONFIG}/inc/bit.h
 fi
@@ -33,9 +34,6 @@ cp -r src/deps/pcre/pcre.h ${CONFIG}/inc/pcre.h
 "${CC}" -c -Fo${CONFIG}/obj/pcre.obj -Fd${CONFIG}/obj/pcre.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/pcre/pcre.c
 
 "${LD}" -dll -out:${CONFIG}/bin/libpcre.dll -entry:_DllMainCRTStartup@12 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/pcre.obj ${LIBS}
-
-rm -rf ${CONFIG}/inc/bitos.h
-cp -r src/bitos.h ${CONFIG}/inc/bitos.h
 
 rm -rf ${CONFIG}/inc/mpr.h
 cp -r src/deps/mpr/mpr.h ${CONFIG}/inc/mpr.h
@@ -54,6 +52,9 @@ cp -r src/deps/est/est.h ${CONFIG}/inc/est.h
 "${CC}" -c -Fo${CONFIG}/obj/makerom.obj -Fd${CONFIG}/obj/makerom.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/makerom.c
 
 "${LD}" -out:${CONFIG}/bin/makerom.exe -entry:mainCRTStartup -subsystem:console ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/makerom.obj libmpr.lib ${LIBS}
+
+rm -rf ${CONFIG}/inc/bitos.h
+cp -r src/bitos.h ${CONFIG}/inc/bitos.h
 
 rm -rf ${CONFIG}/inc/http.h
 cp -r src/http.h ${CONFIG}/inc/http.h

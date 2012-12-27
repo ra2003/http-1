@@ -37,6 +37,7 @@ prep:
 	@if [ "$(CONFIG)" = "" ] ; then echo WARNING: CONFIG not set ; exit 255 ; fi
 	@[ ! -x $(CONFIG)/inc ] && mkdir -p $(CONFIG)/inc $(CONFIG)/obj $(CONFIG)/lib $(CONFIG)/bin ; true
 	@[ ! -f $(CONFIG)/inc/bit.h ] && cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h ; true
+	@[ ! -f $(CONFIG)/inc/bitos.h ] && cp src/bitos.h $(CONFIG)/inc/bitos.h ; true
 	@if ! diff $(CONFIG)/inc/bit.h projects/http-$(OS)-$(PROFILE)-bit.h >/dev/null ; then\
 		echo cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h  ; \
 		cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h  ; \
@@ -107,13 +108,9 @@ $(CONFIG)/bin/libpcre.so:  \
         $(CONFIG)/obj/pcre.o
 	$(CC) -shared -o $(CONFIG)/bin/libpcre.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/pcre.o $(LIBS)
 
-$(CONFIG)/inc/bitos.h: 
-	rm -fr $(CONFIG)/inc/bitos.h
-	cp -r src/bitos.h $(CONFIG)/inc/bitos.h
-
 $(CONFIG)/inc/mpr.h:  \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/bitos.h
+        src/bitos.h
 	rm -fr $(CONFIG)/inc/mpr.h
 	cp -r src/deps/mpr/mpr.h $(CONFIG)/inc/mpr.h
 
@@ -130,7 +127,7 @@ $(CONFIG)/bin/libmpr.so:  \
 
 $(CONFIG)/inc/est.h:  \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/bitos.h
+        src/bitos.h
 	rm -fr $(CONFIG)/inc/est.h
 	cp -r src/deps/est/est.h $(CONFIG)/inc/est.h
 
@@ -157,197 +154,199 @@ $(CONFIG)/bin/makerom:  \
         $(CONFIG)/obj/makerom.o
 	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS) $(LDFLAGS)
 
-$(CONFIG)/inc/http.h:  \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/mpr.h
+$(CONFIG)/inc/bitos.h: 
+	rm -fr $(CONFIG)/inc/bitos.h
+	cp -r src/bitos.h $(CONFIG)/inc/bitos.h
+
+$(CONFIG)/inc/http.h: 
 	rm -fr $(CONFIG)/inc/http.h
 	cp -r src/http.h $(CONFIG)/inc/http.h
 
 $(CONFIG)/obj/actionHandler.o: \
         src/actionHandler.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/actionHandler.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/actionHandler.c
 
 $(CONFIG)/obj/auth.o: \
         src/auth.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/auth.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/auth.c
 
 $(CONFIG)/obj/basic.o: \
         src/basic.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/basic.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/basic.c
 
 $(CONFIG)/obj/cache.o: \
         src/cache.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/cache.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/cache.c
 
 $(CONFIG)/obj/chunkFilter.o: \
         src/chunkFilter.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/chunkFilter.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/chunkFilter.c
 
 $(CONFIG)/obj/client.o: \
         src/client.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/client.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/client.c
 
 $(CONFIG)/obj/conn.o: \
         src/conn.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/conn.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/conn.c
 
 $(CONFIG)/obj/digest.o: \
         src/digest.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/digest.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/digest.c
 
 $(CONFIG)/obj/endpoint.o: \
         src/endpoint.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/endpoint.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/endpoint.c
 
 $(CONFIG)/obj/error.o: \
         src/error.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/error.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/error.c
 
 $(CONFIG)/obj/host.o: \
         src/host.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/host.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/host.c
 
 $(CONFIG)/obj/httpService.o: \
         src/httpService.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/httpService.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/httpService.c
 
 $(CONFIG)/obj/log.o: \
         src/log.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/log.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/log.c
 
 $(CONFIG)/obj/netConnector.o: \
         src/netConnector.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/netConnector.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/netConnector.c
 
 $(CONFIG)/obj/packet.o: \
         src/packet.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/packet.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/packet.c
 
 $(CONFIG)/obj/pam.o: \
         src/pam.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/pam.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/pam.c
 
 $(CONFIG)/obj/passHandler.o: \
         src/passHandler.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/passHandler.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/passHandler.c
 
 $(CONFIG)/obj/pipeline.o: \
         src/pipeline.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/pipeline.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/pipeline.c
 
 $(CONFIG)/obj/queue.o: \
         src/queue.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/queue.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/queue.c
 
 $(CONFIG)/obj/rangeFilter.o: \
         src/rangeFilter.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/rangeFilter.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/rangeFilter.c
 
 $(CONFIG)/obj/route.o: \
         src/route.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h \
+        src/http.h \
         $(CONFIG)/inc/pcre.h
 	$(CC) -c -o $(CONFIG)/obj/route.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/route.c
 
 $(CONFIG)/obj/rx.o: \
         src/rx.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/rx.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/rx.c
 
 $(CONFIG)/obj/sendConnector.o: \
         src/sendConnector.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/sendConnector.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/sendConnector.c
 
 $(CONFIG)/obj/session.o: \
         src/session.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/session.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/session.c
 
 $(CONFIG)/obj/stage.o: \
         src/stage.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/stage.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/stage.c
 
 $(CONFIG)/obj/trace.o: \
         src/trace.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/trace.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/trace.c
 
 $(CONFIG)/obj/tx.o: \
         src/tx.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/tx.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/tx.c
 
 $(CONFIG)/obj/uploadFilter.o: \
         src/uploadFilter.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/uploadFilter.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/uploadFilter.c
 
 $(CONFIG)/obj/uri.o: \
         src/uri.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/uri.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/uri.c
 
 $(CONFIG)/obj/var.o: \
         src/var.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/var.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/var.c
 
 $(CONFIG)/obj/webSock.o: \
         src/webSock.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/webSock.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/webSock.c
 
 $(CONFIG)/bin/libhttp.so:  \
@@ -391,7 +390,7 @@ $(CONFIG)/bin/libhttp.so:  \
 $(CONFIG)/obj/http.o: \
         src/http.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/http.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/http.c
 
 $(CONFIG)/bin/http:  \

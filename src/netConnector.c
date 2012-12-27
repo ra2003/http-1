@@ -109,7 +109,7 @@ static void netOutgoingService(HttpQueue *q)
                 httpSocketBlocked(conn);
                 break;
             }
-            if (errCode != EPIPE && errCode != ECONNRESET && errCode != ENOTCONN) {
+            if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Write response error %d", errCode);
             } else {
                 httpDisconnect(conn);

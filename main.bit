@@ -16,8 +16,6 @@ Bit.load({
         'custom.bit',
     ],
 
-    '+modules': [ ],
-
     settings: {
         /* Default settings overridden by build.bit */
         product: 'http',
@@ -25,17 +23,19 @@ Bit.load({
         company: 'Embedthis',
         version: '1.3.0',
         buildNumber: '0',
-        manager: '',
-        ciphers: "HIGH:MEDIUM",
         sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
         '+required': [ 'pcre' ],
         '+optional': [ 'doxygen', 'dsi', 'ejs', 'man', 'man2html', 'openssl', 'ssl', 'utest' ],
         'without-all': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'matrixssl', 'ssl', 'openssl' ],
-        pam: true,
+        http: {
+            pam: true,
+        },
     },
 
     usage: {
         assert: 'Enable program assertions',
+        static: 'Build with static linking (true|false)',                                                  
+        'http.pam': 'Enable Unix Pluggable Auth Module (true|false)',                              
     },
 
     profiles: {
@@ -62,7 +62,7 @@ Bit.load({
             depends: [ 'libmpr', 'libpcre' ],
             scripts: {
                 prebuild: "
-                    if (bit.settings.hasPam && bit.settings.pam) {
+                    if (bit.settings.hasPam && bit.settings.http.pam) {
                         bit.target.libraries.push('pam')
                     }
                 ",

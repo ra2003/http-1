@@ -8,7 +8,7 @@
 
 #include    "http.h"
 
-#if BIT_HAS_PAM && BIT_PAM
+#if BIT_HAS_PAM && BIT_HTTP_PAM
  #include    <security/pam_appl.h>
 
 /********************************* Defines ************************************/

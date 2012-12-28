@@ -120,12 +120,12 @@
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_rx_1ga88695d5677cbd4f42889c09fa7d43a65" class="nameRef">httpCreateCGIParams</a>(<a href="#group___http_conn" class="ref">HttpConn</a> *conn)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create CGI parameters.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_endpoint" class="ref">HttpEndpoint*</a></td><td><a href="#group___http_endpoint_1ga68cc44b20078010230e96f874493db32" class="nameRef">httpCreateConfiguredEndpoint</a>(<a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *home, <a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *documents, <a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *ip, int port)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create and configure a new endpoint.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_route" class="ref">HttpRoute*</a></td><td><a href="#group___http_route_1gaacfd904666b9112759be6399e8e72f72" class="nameRef">httpCreateConfiguredRoute</a>(struct HttpHost *host, int serverSide)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create a configured route.</td></tr>
-<tr class="apiDef"><td class="apiType"><a href="#group___http_conn" class="ref">HttpConn*</a></td><td><a href="#group___http_conn_1ga0523a9be63f479ce193073c1de0b1cfa" class="nameRef">httpCreateConn</a>(<a href="#group___http" class="ref">Http</a> *http, struct HttpEndpoint *endpoint, <a href="mprBare.html#struct_mpr_dispatcher" class="ref">MprDispatcher</a> *dispatcher)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create a connection object.</td></tr>
+<tr class="apiDef"><td class="apiType"><a href="#group___http_conn" class="ref">HttpConn*</a></td><td><a href="#group___http_conn_1ga0523a9be63f479ce193073c1de0b1cfa" class="nameRef">httpCreateConn</a>(<a href="#group___http" class="ref">Http</a> *http, struct HttpEndpoint *endpoint, <a href="mprBare.html#group___mpr_dispatcher" class="ref">MprDispatcher</a> *dispatcher)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create a connection object.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_stage" class="ref">HttpStage*</a></td><td><a href="#group___http_stage_1ga5a62ae78862a15a0ca8c192f7d5a048c" class="nameRef">httpCreateConnector</a>(<a href="#group___http" class="ref">Http</a> *http, <a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *name, <a href="mprBare.html#group___mpr_module" class="ref">MprModule</a> *module)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create a connector stage.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_packet" class="ref">HttpPacket*</a></td><td><a href="#group___http_packet_1gad491733e89bee8b1b64b47fa0e798931" class="nameRef">httpCreateDataPacket</a>(<a href="mprBare.html#mpr_8h_1a7d08ccc1e981eb4d5a238641ac4ccfc1" class="ref">ssize</a> size)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create a data packet.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_route" class="ref">HttpRoute*</a></td><td><a href="#group___http_route_1gaf28d21e91958f2d73f6cf7d485291171" class="nameRef">httpCreateDefaultRoute</a>(struct HttpHost *host)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create a default route for a host.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_packet" class="ref">HttpPacket*</a></td><td><a href="#group___http_packet_1ga5dd04a1c7f834f9acb5aa74488da5aad" class="nameRef">httpCreateEndPacket</a>()</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create an end-of-stream packet.</td></tr>
-<tr class="apiDef"><td class="apiType"><a href="#group___http_endpoint" class="ref">HttpEndpoint*</a></td><td><a href="#group___http_endpoint_1gad5bb2a3a29df9b1191c484a56fcf642c" class="nameRef">httpCreateEndpoint</a>(<a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *ip, int port, <a href="mprBare.html#struct_mpr_dispatcher" class="ref">MprDispatcher</a> *dispatcher)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create an endpoint object.</td></tr>
+<tr class="apiDef"><td class="apiType"><a href="#group___http_endpoint" class="ref">HttpEndpoint*</a></td><td><a href="#group___http_endpoint_1gad5bb2a3a29df9b1191c484a56fcf642c" class="nameRef">httpCreateEndpoint</a>(<a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *ip, int port, <a href="mprBare.html#group___mpr_dispatcher" class="ref">MprDispatcher</a> *dispatcher)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create an endpoint object.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_packet" class="ref">HttpPacket*</a></td><td><a href="#group___http_packet_1ga5af4bd1a1d534e61d11ed1753c5f4a67" class="nameRef">httpCreateEntityPacket</a>(<a href="mprBare.html#mpr_8h_1aa6887458d0a070b3665166af590089d8" class="ref">MprOff</a> pos, <a href="mprBare.html#mpr_8h_1aa6887458d0a070b3665166af590089d8" class="ref">MprOff</a> size, <a href="#group___http_packet_1gab3ccaf14fc20ba8e592a2ea3a54ab900" class="ref">HttpFillProc</a> fill)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create an entity data packet.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_stage" class="ref">HttpStage*</a></td><td><a href="#group___http_stage_1gab1e3174087a5e78598b66abe7ac5887e" class="nameRef">httpCreateFilter</a>(<a href="#group___http" class="ref">Http</a> *http, <a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *name, <a href="mprBare.html#group___mpr_module" class="ref">MprModule</a> *module)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create a filter stage.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="#group___http_stage" class="ref">HttpStage*</a></td><td><a href="#group___http_stage_1ga238f5fb9f76203fdcb07fd6227ae383f" class="nameRef">httpCreateHandler</a>(<a href="#group___http" class="ref">Http</a> *http, <a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *name, <a href="mprBare.html#group___mpr_module" class="ref">MprModule</a> *module)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Create a request handler stage.</td></tr>
@@ -456,6 +456,118 @@
 <a name="Defines"></a><h1>Defines</h1>
 <table class="apiIndex" title="Defines">
 <tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1aaa85b59f92a2c0d651a9ec75041c6140" class="nameRef">BIT_HTTP_SOFTWARE</a>&nbsp;&nbsp;&nbsp;&quot;Embedthis-http&quot;</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default Http protocol name used in Http Server header.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ac5eb79f1c913512d6367f4694b805912" class="nameRef">BIT_MAX_CACHE_DURATION</a>&nbsp;&nbsp;&nbsp;(86400 * 1000)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default cache lifespan to 1 day.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1aef717516020333eee1726821f42d3ae7" class="nameRef">BIT_MAX_CACHE_ITEM</a>&nbsp;&nbsp;&nbsp;(256 * 1024)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum cachable item size.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a7f38bf4869b90a1e755d2713afbe393b" class="nameRef">BIT_MAX_CHUNK</a>&nbsp;&nbsp;&nbsp;(8 * 1024)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum chunk size for transfer chunk encoding.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a4d5d7162df13b4f7d77ad0551e55c849" class="nameRef">BIT_MAX_CLIENTS</a>&nbsp;&nbsp;&nbsp;10</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum concurrent client endpoints.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ad695d4b2ab041bdec0c6ca76f9d84e2f" class="nameRef">BIT_MAX_CLIENTS_HASH</a>&nbsp;&nbsp;&nbsp;131</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Hash table for client IP addresses.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a4b704626005da6c3954085c0bc8eb170" class="nameRef">BIT_MAX_HEADERS</a>&nbsp;&nbsp;&nbsp;4096</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum size of the headers.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ad5e69938e7410d19412fe6daf2443f32" class="nameRef">BIT_MAX_INACTIVITY_DURATION</a>&nbsp;&nbsp;&nbsp;(60  * 1000)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default keep connection alive between requests timeout.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a087819ab843430646499b3dcbf4897a1" class="nameRef">BIT_MAX_IOVEC</a>&nbsp;&nbsp;&nbsp;16</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Number of fragments in a single socket write.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a1d08f8775263f04b74525507a6ea1bc5" class="nameRef">BIT_MAX_KEEP_ALIVE</a>&nbsp;&nbsp;&nbsp;200</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum requests per connection.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1aac2895bb1386aa76519056281d75a39b" class="nameRef">BIT_MAX_NUM_HEADERS</a>&nbsp;&nbsp;&nbsp;20</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum number of header lines.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1aba8f1002f68ab8354d1cbde9202b194b" class="nameRef">BIT_MAX_PARSE_DURATION</a>&nbsp;&nbsp;&nbsp;(30  * 1000)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default request parse header timeout.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ae325911f074aabf361f92ae2b66d0337" class="nameRef">BIT_MAX_PING_DURATION</a>&nbsp;&nbsp;&nbsp;(30 * 1000)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>WSS ping defeat Keep-Alive timeouts (30 sec).</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ab63406108093a699f4a3337d0284cb20" class="nameRef">BIT_MAX_QBUFFER</a>&nbsp;&nbsp;&nbsp;(32 * 1024)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum buffer for any pipeline queue.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ad8f5fc10a7c50e12cdb8f5116df36b48" class="nameRef">BIT_MAX_RECEIVE_BODY</a>&nbsp;&nbsp;&nbsp;(128 * 1024 * 1024)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum incoming body size.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1afaa990c4b4db3a090c03ff3aea37e7fb" class="nameRef">BIT_MAX_RECEIVE_FORM</a>&nbsp;&nbsp;&nbsp;(1024 * 1024)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum incoming form size.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ae9ea242cd9fa92e9e4e4135a3b23934f" class="nameRef">BIT_MAX_REQUEST_DURATION</a>&nbsp;&nbsp;&nbsp;MAXINT</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default request timeout (unlimited).</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a0778bd3e10bfc762ad051928e9bd519b" class="nameRef">BIT_MAX_REQUESTS</a>&nbsp;&nbsp;&nbsp;20</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum concurrent requests.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a72342ee098a236df2986f70a3d97b4b7" class="nameRef">BIT_MAX_REQUESTS_PER_CLIENT</a>&nbsp;&nbsp;&nbsp;20</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum concurrent requests.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a7a96367876ac1a7f360a5c8978b12cd6" class="nameRef">BIT_MAX_REWRITE</a>&nbsp;&nbsp;&nbsp;20</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum URI rewrites.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a696e0e5210851d7496cd3f6f5d64d6de" class="nameRef">BIT_MAX_ROUTE_MATCHES</a>&nbsp;&nbsp;&nbsp;32</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum number of submatches in routes.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ab4c1168e636b72ba712d8d4e704bf968" class="nameRef">BIT_MAX_SESSION_DURATION</a>&nbsp;&nbsp;&nbsp;(3600 * 1000)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default session timeout (one hour).</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a6a124ff5d2230d8731be6cbae1bdde6d" class="nameRef">BIT_MAX_SESSIONS</a>&nbsp;&nbsp;&nbsp;100</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum concurrent sessions.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1ae1f1b8de2c039da27783373b09207f52" class="nameRef">BIT_MAX_TX_BODY</a>&nbsp;&nbsp;&nbsp;(INT_MAX)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Maximum buffer for response data.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a8bc351dd350b34f013c790b130b44164" class="nameRef">BIT_MAX_URI</a>&nbsp;&nbsp;&nbsp;256</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Reasonable filename size.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a8bdb02b0bedb262faf95f6cc40ae0feb" class="nameRef">BIT_MAX_WSS_FRAME</a>&nbsp;&nbsp;&nbsp;(8 * 1024)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default max WebSockets message frame size.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a112bc9d317b6dd9262bcbedfe74c51bc" class="nameRef">BIT_MAX_WSS_PACKET</a>&nbsp;&nbsp;&nbsp;(8 * 1024)</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default size to provide to application in one packet.</td></tr>
+<tr class="apiDef">
+<td>#define</td><td><a href="#http_8h_1a05494f49fb897f33c387682a1ee233c9" class="nameRef">BIT_MAX_WSS_SOCKETS</a>&nbsp;&nbsp;&nbsp;200</td>
+</tr>
+<tr class="apiBrief"><td>&nbsp;</td><td>Default max WebSockets.</td></tr>
+<tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1ab78ab3f994a782f9a7432a9854b94db3" class="nameRef">HTTP_ADDED_FORM_PARAMS</a>&nbsp;&nbsp;&nbsp;0x800</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Form body data added to params.</td></tr>
@@ -484,10 +596,6 @@
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Flag for httpSendBlock and httpWriteBlock to always absorb the data without blocking.</td></tr>
 <tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a4746a2f3fba9db1c97bb406f26d604e1" class="nameRef">HTTP_BUFSIZE</a>&nbsp;&nbsp;&nbsp;(4 * 1024)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default I/O buffer size.</td></tr>
-<tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a36200550bd4cfd821cd46a4dac9c3f45" class="nameRef">HTTP_CACHE_ALL</a>&nbsp;&nbsp;&nbsp;0x10</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Cache the same pathInfo together regardless of the request params.</td></tr>
@@ -495,10 +603,6 @@
 <td>#define</td><td><a href="#http_8h_1a45783139025a72ff9f488d170b202bb5" class="nameRef">HTTP_CACHE_CLIENT</a>&nbsp;&nbsp;&nbsp;0x1</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Cache on the client side.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1aa716ba25b4128a5b367f64ed388ed576" class="nameRef">HTTP_CACHE_LIFESPAN</a>&nbsp;&nbsp;&nbsp;(86400 * 1000)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default cache lifespan to 1 day.</td></tr>
 <tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1ae8e22b4ed7d644e44c20dab57e43316b" class="nameRef">HTTP_CACHE_MANUAL</a>&nbsp;&nbsp;&nbsp;0x4</td>
 </tr>
@@ -543,10 +647,6 @@
 <td>#define</td><td><a href="#http_8h_1af6b606159004cca9ed83f7897e39acf0" class="nameRef">HTTP_CLIENT_SIDE</a>&nbsp;&nbsp;&nbsp;0x1</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Initialize the client-side support.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a5f1bc59fc801fe41fdf247287325169a" class="nameRef">HTTP_CLIENTS_HASH</a>&nbsp;&nbsp;&nbsp;(131)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Hash table for client IP addresses.</td></tr>
 <tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a1efdfd58d322aa536b75deecf922f1c8" class="nameRef">HTTP_CODE_ACCEPTED</a>&nbsp;&nbsp;&nbsp;202</td>
 </tr>
@@ -736,10 +836,6 @@
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Must create env for this request.</td></tr>
 <tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a625defebfc2bd79f650a5ac060633b71" class="nameRef">HTTP_DEFAULT_MAX_THREADS</a>&nbsp;&nbsp;&nbsp;10</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default number of threads.</td></tr>
-<tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1ac706e99193bc479c8e9127ebbf8bb42f" class="nameRef">HTTP_DELAY_SERVICE</a>&nbsp;&nbsp;&nbsp;0</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Delay servicing the queue.</td></tr>
@@ -808,10 +904,6 @@
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>If-[un]modified-since supplied.</td></tr>
 <tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a2d6e73f1389f0fb721e1197f8f03d7f2" class="nameRef">HTTP_INACTIVITY_TIMEOUT</a>&nbsp;&nbsp;&nbsp;(60  * 1000)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default keep connection alive between requests timeout.</td></tr>
-<tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a1276a2317ea0340ba5037989946f1173" class="nameRef">HTTP_LANG_AFTER</a>&nbsp;&nbsp;&nbsp;0x2</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Insert suffix after extension.</td></tr>
@@ -824,105 +916,21 @@
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Request limits opened.</td></tr>
 <tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a111774d0592404732f601909ad75dc2b" class="nameRef">HTTP_MAX_CACHE_ITEM</a>&nbsp;&nbsp;&nbsp;(256 * 1024)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum cachable item size.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a3cdb3b386b3de37db11ad040e5f38bb7" class="nameRef">HTTP_MAX_CHUNK</a>&nbsp;&nbsp;&nbsp;(8 * 1024)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum chunk size for transfer chunk encoding.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a9dc96e5840351ab1b3922c86cd2b64a0" class="nameRef">HTTP_MAX_CLIENTS</a>&nbsp;&nbsp;&nbsp;10</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum concurrent client endpoints.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1ae25acc386a279de3461e5881633c1402" class="nameRef">HTTP_MAX_HEADERS</a>&nbsp;&nbsp;&nbsp;4096</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum size of the headers.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1aff17fc6ac7fbf40b2721d00b997ee625" class="nameRef">HTTP_MAX_IOVEC</a>&nbsp;&nbsp;&nbsp;16</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Number of fragments in a single socket write.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1af35504cb1d031f05507b5fa5cd21d123" class="nameRef">HTTP_MAX_KEEP_ALIVE</a>&nbsp;&nbsp;&nbsp;200</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum requests per connection.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a735a9632ea95414401ab5ae39fe9eaa9" class="nameRef">HTTP_MAX_NUM_HEADERS</a>&nbsp;&nbsp;&nbsp;20</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum number of header lines.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1ae85248b156c72de8609b797214f9c4aa" class="nameRef">HTTP_MAX_PASS</a>&nbsp;&nbsp;&nbsp;64</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Size of password.</td></tr>
-<tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a929ac76ed6b382bd092cd0a9696b380f" class="nameRef">HTTP_MAX_QUEUE</a>&nbsp;&nbsp;&nbsp;2</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Number of queue types.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1af96fddf2ccd356ff0d6c9d0c6aa0a732" class="nameRef">HTTP_MAX_RECEIVE_BODY</a>&nbsp;&nbsp;&nbsp;(128 * 1024 * 1024)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum incoming body size.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a317a1cd9a866f3e40088ca5846e43e57" class="nameRef">HTTP_MAX_RECEIVE_FORM</a>&nbsp;&nbsp;&nbsp;(1024 * 1024)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum incoming form size.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a8377e1e78d5c721678bef6225dd0e138" class="nameRef">HTTP_MAX_REQUESTS</a>&nbsp;&nbsp;&nbsp;20</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum concurrent requests.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a44748c1423e408739b671e5641f64066" class="nameRef">HTTP_MAX_REQUESTS_PER_CLIENT</a>&nbsp;&nbsp;&nbsp;20</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum concurrent requests.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a576b8b319bb825896a72a6444cff391e" class="nameRef">HTTP_MAX_REWRITE</a>&nbsp;&nbsp;&nbsp;20</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum URI rewrites.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a3d6cb973fe2291e8bf227b946a12b593" class="nameRef">HTTP_MAX_ROUTE_MATCHES</a>&nbsp;&nbsp;&nbsp;32</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum number of submatches in routes.</td></tr>
 <tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a312321f82b42737f6d9b00b2be8bc410" class="nameRef">HTTP_MAX_SECRET</a>&nbsp;&nbsp;&nbsp;16</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Size of secret data for auth.</td></tr>
 <tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a25b13d84dc42a3afe1ebc39e582f816b" class="nameRef">HTTP_MAX_SESSIONS</a>&nbsp;&nbsp;&nbsp;100</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum concurrent sessions.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a886c83d8873edaaa053ee0d1811e2cb2" class="nameRef">HTTP_MAX_STAGE_BUFFER</a>&nbsp;&nbsp;&nbsp;(32 * 1024)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum buffer for any stage.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1af014e9611dc91a1680b0298d220f0428" class="nameRef">HTTP_MAX_TX_BODY</a>&nbsp;&nbsp;&nbsp;(INT_MAX)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Maximum buffer for response data.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a13bd6f0b4330b918fcc73255c1f8982c" class="nameRef">HTTP_MAX_WSS_FRAME</a>&nbsp;&nbsp;&nbsp;(8 * 1024)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default max WebSockets message frame size.</td></tr>
-<tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a56b89d504e7a5dae4663bf0962a0c3a4" class="nameRef">HTTP_MAX_WSS_MESSAGE</a>&nbsp;&nbsp;&nbsp;(2147483647)</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Default max WebSockets message size (2GB).</td></tr>
 <tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a1aa56a701ed6682a57cca877b0fe1409" class="nameRef">HTTP_MAX_WSS_PACKET</a>&nbsp;&nbsp;&nbsp;(8 * 1024)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default size to provide to application in one packet.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1adf1bc88a650ea324586e720b7153095f" class="nameRef">HTTP_MAX_WSS_SOCKETS</a>&nbsp;&nbsp;&nbsp;200</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default max WebSockets.</td></tr>
-<tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1ad78d16ca673a37f6bde41e9b7b0c7c26" class="nameRef">HTTP_MORE</a>&nbsp;&nbsp;&nbsp;0x1000</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Flag for <a class="ref" href="#group___http_web_socket_1ga139827d860ee64824f15ebfeb15478cc">httpSendBlock</a> to indicate there are more frames for this message.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a2e012ddf800b3e5136dcd051fd2f5beb" class="nameRef">HTTP_NAME</a>&nbsp;&nbsp;&nbsp;&quot;Embedthis-http&quot;</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default Http protocol name used in Http Server header.</td></tr>
 <tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a89e5dca37a7c4514c0a8f540b67246cf" class="nameRef">HTTP_NAMED_VHOST</a>&nbsp;&nbsp;&nbsp;0x1</td>
 </tr>
@@ -959,10 +967,6 @@
 <td>#define</td><td><a href="#http_8h_1a410f580b04318940eaeca8bd5ab560bb" class="nameRef">HTTP_PACKET_SOLO</a>&nbsp;&nbsp;&nbsp;0x10</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Don&apos;t join this packet.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1ae4c6ae05a5219571e64826cf43c78d81" class="nameRef">HTTP_PARSE_TIMEOUT</a>&nbsp;&nbsp;&nbsp;(30  * 1000)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default request parse header timeout.</td></tr>
 <tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1ad786c274cc31d7193adba110054555b7" class="nameRef">HTTP_POST</a>&nbsp;&nbsp;&nbsp;0x10</td>
 </tr>
@@ -1011,14 +1015,6 @@
 <td>#define</td><td><a href="#http_8h_1a4a52f5378152be620bf4aa560552912c" class="nameRef">HTTP_QUEUE_TX</a>&nbsp;&nbsp;&nbsp;0</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Send (transmit to client) queue.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a4a1ed2734b5c9e3635baf490688a5e7b" class="nameRef">HTTP_RANGE_BUFSIZE</a>&nbsp;&nbsp;&nbsp;128</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Size of a range boundary.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a8a43d39903bea9a3f2ec7fc04ec9e22f" class="nameRef">HTTP_REQUEST_TIMEOUT</a>&nbsp;&nbsp;&nbsp;MAXINT</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default request timeout (unlimited).</td></tr>
 <tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1acd6efa58a46c2fe19174be8d10ca8b4b" class="nameRef">HTTP_RETRIES</a>&nbsp;&nbsp;&nbsp;3</td>
 </tr>
@@ -1083,10 +1079,6 @@
 <td>#define</td><td><a href="#http_8h_1afa015063559e8beaa3913b83b3dd8f31" class="nameRef">HTTP_SESSION_COOKIE</a>&nbsp;&nbsp;&nbsp;&quot;-http-session-&quot;</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Session cookie name.</td></tr>
-<tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a83cdfdfa76a817c610ddb004effda881" class="nameRef">HTTP_SESSION_TIMEOUT</a>&nbsp;&nbsp;&nbsp;(3600 * 1000)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Default session timeout (one hour).</td></tr>
 <tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a1cf4f68d5938635284573c13e4deee86" class="nameRef">HTTP_SESSION_USERNAME</a>&nbsp;&nbsp;&nbsp;&quot;_:USERNAME:_&quot;</td>
 </tr>
@@ -1248,10 +1240,6 @@
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>Open a new request.</td></tr>
 <tr class="apiDef">
-<td>#define</td><td><a href="#http_8h_1a37e4f253c26350e89f5d3dd9260d95bd" class="nameRef">HTTP_WSS_PING_PERIOD</a>&nbsp;&nbsp;&nbsp;(30 * 1000)</td>
-</tr>
-<tr class="apiBrief"><td>&nbsp;</td><td>Ping defeat Keep-Alive timeouts (30 sec).</td></tr>
-<tr class="apiDef">
 <td>#define</td><td><a href="#http_8h_1a2d7f585a9fdca9b08e3fd35ce78b5b05" class="nameRef">WS_MSG_BINARY</a>&nbsp;&nbsp;&nbsp;0x2</td>
 </tr>
 <tr class="apiBrief"><td>&nbsp;</td><td>httpSendBlock type for binary messages.</td></tr>
@@ -1377,6 +1365,9 @@ Count of active external processes.
 </td>
     <tr><td class="param">int</td><td><td>activeSessions</td><td>
 Count of active sessions.
+</td>
+    <tr><td class="param">int</td><td><td>activeVMs</td><td>
+Number of ejs VMs.
 </td>
     <tr><td class="param"><a class="ref" href="#struct_mpr_hash" external="mpr.dtags">MprHash</a> *</td><td><td>authStores</td><td>
 Available password stores.
@@ -2858,7 +2849,7 @@ Start of the write pipeline.
   <div class="prototype">
     <a href="#group___http_conn" class="ref">HttpConn</a> *
     httpCreateConn
-(<a href="#group___http" class="ref">Http</a> *http, struct HttpEndpoint *endpoint, <a href="mprBare.html#struct_mpr_dispatcher" class="ref">MprDispatcher</a> *dispatcher)
+(<a href="#group___http" class="ref">Http</a> *http, struct HttpEndpoint *endpoint, <a href="mprBare.html#group___mpr_dispatcher" class="ref">MprDispatcher</a> *dispatcher)
   </div>
   <div class="apiDetail">
 <p>Create a connection object.</p>
@@ -4084,7 +4075,7 @@ Accept a new client connection on a new socket. If multithreaded, this will come
   <div class="prototype">
     <a href="#group___http_endpoint" class="ref">HttpEndpoint</a> *
     httpCreateEndpoint
-(<a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *ip, int port, <a href="mprBare.html#struct_mpr_dispatcher" class="ref">MprDispatcher</a> *dispatcher)
+(<a href="mprBare.html#mpr_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *ip, int port, <a href="mprBare.html#group___mpr_dispatcher" class="ref">MprDispatcher</a> *dispatcher)
   </div>
   <div class="apiDetail">
 <p>Create an endpoint object.</p>
@@ -8916,6 +8907,9 @@ Current active requests.
 </td>
     <tr><td class="param">int</td><td><td>activeSessions</td><td>
 Current active sessions.
+</td>
+    <tr><td class="param">int</td><td><td>activeVMs</td><td>
+Current ejs VMs.
 </td>
     <tr><td class="param">uint64</td><td><td>heap</td><td>
 Current application heap memory.

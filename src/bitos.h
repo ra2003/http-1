@@ -581,6 +581,7 @@
 typedef int64 Offset;
 
 #if DOXYGEN
+    /** Size to hold the length of a socket address */
     typedef int Socklen;
 #elif VXWORKS
     typedef int Socklen;

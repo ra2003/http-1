@@ -6361,6 +6361,9 @@ typedef struct MprSocketService {
     int             hasIPv6;                    /**< System has supoprt for IPv6 */
 } MprSocketService;
 
+#if DOXYGEN
+typedef int Socklen;
+#endif
 
 /*
     Internal

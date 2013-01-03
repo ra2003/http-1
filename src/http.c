@@ -597,6 +597,7 @@ static void showUsage()
         "  --ca file             # Certificate bundle to use when validating the server certificate.\n"
         "  --cert file           # Certificate to send to the server to identify the client.\n"
         "  --chunk size          # Request response data to use this chunk size.\n"
+        "  --ciphers cipher,...  # List of suitable ciphers.\n"
         "  --continue            # Continue on errors.\n"
         "  --cookie CookieString # Define a cookie header. Multiple uses okay.\n"
         "  --data bodyData       # Body data to send with PUT or POST.\n"

@@ -469,11 +469,13 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     HttpRx      *rx;
     HttpQueue   *q;
     MprEvent    *event;
+    MprSocket   *sp;
     int         eventMask;
 
     mprLog(7, "EnableConnEvents");
 
-    if (!conn->async || !conn->sock) {
+    sp = conn->sock;
+    if (!conn->async || !sp) {
         return;
     }
     tx = conn->tx;
@@ -489,18 +491,23 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     } else {
         if (tx) {
             /*
-                Can be blocked with data in the iovec and none in the queue
+                Three cases for writable:
+                - Connector is blocked on a write
+                - The connector queue has data and is not doing a SSL handshake
+                - The SSL stack has buffered write data that needs to be sent
              */
-            if (tx->writeBlocked || (conn->connectorq && conn->connectorq->count > 0) || 
-                    mprSocketHasBufferedWrite(conn->sock)) {
+            if (tx->writeBlocked || (conn->connectorq && conn->connectorq->count > 0 && !mprSocketHandshaking(sp)) || 
+                    mprSocketHasBufferedWrite(sp)) {
                 eventMask |= MPR_WRITABLE;
             }
             /*
-                Enable read events if the read queue is not full. 
-                If request is a form, then must read and buffer all the input regardless
+                Cases for readable: (Not eof) and ...
+                - Room in the read queue
+                - Reading a form 
+                - Buffered data in the SSL stack
              */
             q = conn->readq;
-            if (!rx->eof && (q->count < q->max || rx->form || mprSocketHasBufferedRead(conn->sock))) {
+            if (!rx->eof && (q->count < q->max || rx->form || mprSocketHasBufferedRead(sp))) {
                 eventMask |= MPR_READABLE;
             }
         } else {
@@ -516,21 +523,21 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 
 PUBLIC void httpSetupWaitHandler(HttpConn *conn, int eventMask)
 {
-    MprSocket   *sock;
+    MprSocket   *sp;
 
-    sock = conn->sock;
-    if (sock == 0) {
+    sp = conn->sock;
+    if (sp == 0) {
         return;
     }
     if (eventMask) {
-        if (sock->handler == 0) {
-            mprAddSocketHandler(sock, eventMask, conn->dispatcher, conn->ioCallback, conn, 0);
+        if (sp->handler == 0) {
+            mprAddSocketHandler(sp, eventMask, conn->dispatcher, conn->ioCallback, conn, 0);
         } else {
-            sock->handler->dispatcher = conn->dispatcher;
-            mprWaitOn(sock->handler, eventMask);
+            sp->handler->dispatcher = conn->dispatcher;
+            mprWaitOn(sp->handler, eventMask);
         }
-    } else if (sock->handler) {
-        mprWaitOn(sock->handler, eventMask);
+    } else if (sp->handler) {
+        mprWaitOn(sp->handler, eventMask);
     }
 }
 

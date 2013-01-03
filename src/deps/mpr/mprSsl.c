@@ -735,6 +735,8 @@ static ssize flushMss(MprSocket *sp)
 /*
     est.c - Embedded Secure Transport
 
+    Individual sockets are not thread-safe. Must only be used by a single thread.
+
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
 
@@ -969,6 +971,7 @@ static int estHandshake(MprSocket *sp)
 
     est = (EstSocket*) sp->sslSocket;
     trusted = 1;
+    sp->flags |= MPR_SOCKET_HANDSHAKING;
 
     while (est->ctx.state != SSL_HANDSHAKE_OVER && (rc = ssl_handshake(&est->ctx)) != 0) {
         if (rc == EST_ERR_NET_TRY_AGAIN) {
@@ -979,6 +982,8 @@ static int estHandshake(MprSocket *sp)
         }
         break;
     }
+    sp->flags &= ~MPR_SOCKET_HANDSHAKING;
+
     /*
         Analyze the handshake result
      */
@@ -1156,7 +1161,7 @@ static void traceCert(MprSocket *sp)
             }
         }
         if (cp) {
-            mprLog(4, "EST connected using cipher: %s, %x", cp->name, est->ctx.session->cipher);
+            mprLog(3, "EST connected using cipher: %s, (0x%x)", cp->name, est->ctx.session->cipher);
         }
     }
     if (sp->ssl->caFile) {

@@ -6426,6 +6426,7 @@ PUBLIC void mprAddSocketProvider(cchar *name, MprSocketProvider *provider);
 #define MPR_SOCKET_BUFFERED_WRITE   0x1000  /**< Socket has buffered write data (in SSL stack) */
 #define MPR_SOCKET_TRACED           0x2000  /**< Socket has been traced to the log */
 #define MPR_SOCKET_DISCONNECTED     0x4000  /**< The mprDisconnectSocket has been called */
+#define MPR_SOCKET_HANDSHAKING      0x8000  /**< Doing an SSL handshake */
 
 /**
     Socket Service
@@ -6443,7 +6444,8 @@ PUBLIC void mprAddSocketProvider(cchar *name, MprSocketProvider *provider);
         mprIsSocketSecure mprListenOnSocket mprLoadSsl mprParseIp mprReadSocket mprSendFileToSocket mprSetSecureProvider
         mprSetSocketBlockingMode mprSetSocketCallback mprSetSocketEof mprSetSocketNoDelay mprSetSslCaFile mprSetSslCaPath
         mprSetSslCertFile mprSetSslCiphers mprSetSslKeyFile mprSetSslSslProtocols mprSetSslVerifySslClients mprWriteSocket
-        mprWriteSocketString mprWriteSocketVector mprSocketHasBufferedRead mprSocketHasBufferedWrite mprUpgradeSocket
+        mprWriteSocketString mprWriteSocketVector mprSocketHandshaking mprSocketHasBufferedRead mprSocketHasBufferedWrite
+        mprUpgradeSocket 
     @defgroup MprSocket MprSocket
     @stability Stable
  */
@@ -6807,6 +6809,15 @@ PUBLIC void mprSetSocketEof(MprSocket *sp, bool eof);
     @stability Stable
  */
 PUBLIC int mprSetSocketNoDelay(MprSocket *sp, bool on);
+
+/**
+    Test if the socket is doing an SSL handshake
+    @param sp Socket object returned from #mprCreateSocket
+    @return True if the SSL stack is handshaking
+    @ingroup MprSocket
+    @stability Stable
+ */
+PUBLIC bool mprSocketHandshaking(MprSocket *sp);
 
 /**
     Test if the socket has buffered read data.

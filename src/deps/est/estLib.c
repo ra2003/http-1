@@ -8943,7 +8943,7 @@ static int ssl_parse_client_hello(ssl_context * ssl)
     SSL_DEBUG_MSG(2, ("=> parse client hello"));
 
     if ((ret = ssl_fetch_input(ssl, 5)) != 0) {
-        SSL_DEBUG_RET(1, "ssl_fetch_input", ret);
+        SSL_DEBUG_RET(3, "ssl_fetch_input", ret);
         return (ret);
     }
 
@@ -8989,7 +8989,7 @@ static int ssl_parse_client_hello(ssl_context * ssl)
             ? buf[4] : SSL_MINOR_VERSION_1;
 
         if ((ret = ssl_fetch_input(ssl, 2 + n)) != 0) {
-            SSL_DEBUG_RET(1, "ssl_fetch_input", ret);
+            SSL_DEBUG_RET(3, "ssl_fetch_input", ret);
             return (ret);
         }
 
@@ -9092,7 +9092,8 @@ static int ssl_parse_client_hello(ssl_context * ssl)
         }
 
         if ((ret = ssl_fetch_input(ssl, 5 + n)) != 0) {
-            SSL_DEBUG_RET(1, "ssl_fetch_input", ret);
+            //  MOB - move all this trace into fetch_input
+            SSL_DEBUG_RET(3, "ssl_fetch_input", ret);
             return (ret);
         }
 
@@ -9502,6 +9503,7 @@ static int ssl_parse_client_key_exchange(ssl_context * ssl)
     SSL_DEBUG_MSG(2, ("=> parse client key exchange"));
 
     if ((ret = ssl_read_record(ssl)) != 0) {
+        //  MOB - move all this trace into ssl_read_record
         SSL_DEBUG_RET(3, "ssl_read_record", ret);
         return (ret);
     }

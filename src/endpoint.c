@@ -84,7 +84,7 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents,
 
     http = MPR->httpService;
 
-    if (ip == 0) {
+    if (ip == 0 && port <= 0) {
         /*  
             If no IP:PORT specified, find the first endpoint
          */
@@ -353,7 +353,8 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
     http = endpoint->http;
 
     if (endpoint->ssl) {
-        if (mprUpgradeSocket(sock, endpoint->ssl, 1) < 0) {
+        if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
+            mprError("Cannot upgrade socket for SSL: %s", sock->errorMsg);
             mprCloseSocket(sock, 0);
             return 0;
         }
@@ -515,7 +516,7 @@ PUBLIC void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier notifie
 
 PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 {
-#if BIT_PACK_SSL
+#if BIT_SSL
     endpoint->ssl = ssl;
     return 0;
 #else
@@ -532,7 +533,7 @@ PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
     int             port, next, count;
 
     http = MPR->httpService;
-    mprParseSocketAddress(name, &ip, &port, -1);
+    mprParseSocketAddress(name, &ip, &port, NULL, -1);
     if (ip == 0) {
         ip = "";
     }

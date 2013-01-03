@@ -25,8 +25,8 @@ Bit.load({
         buildNumber: '0',
         sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
         '+required': [ 'pcre' ],
-        '+optional': [ 'doxygen', 'dsi', 'ejs', 'man', 'man2html', 'openssl', 'ssl', 'utest' ],
-        'without-all': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'matrixssl', 'ssl', 'openssl' ],
+        '+optional': [ 'doxygen', 'dsi', 'ejs', 'est', 'man', 'man2html', 'utest' ],
+        'without-all': ['doxygen', 'dsi', 'est', 'man', 'man2html', 'pmaker', 'matrixssl', 'openssl' ],
         http: {
             pam: true,
         },
@@ -101,8 +101,9 @@ Bit.load({
     },
 
     packs: {
-        matrixssl: {},
         est: {},
+        matrixssl: {},
+        openssl: {},
     },
 
 })

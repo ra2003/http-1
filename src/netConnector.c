@@ -109,8 +109,11 @@ static void netOutgoingService(HttpQueue *q)
                 httpSocketBlocked(conn);
                 break;
             }
-            if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Write response error %d", errCode);
+            if (errCode == EPROTO && conn->secure) {
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Can't negotiate SSL with server: %s",
+                    conn->sock->errorMsg);
+            } else if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Can't write. errno %d", errCode);
             } else {
                 httpDisconnect(conn);
             }
@@ -122,6 +125,9 @@ static void netOutgoingService(HttpQueue *q)
             tx->bytesWritten += written;
             freeNetPackets(q, written);
             adjustNetVec(q, written);
+
+        } else {
+            break;
         }
     }
     if (q->first && q->first->flags & HTTP_PACKET_END) {

@@ -19,7 +19,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     Http        *http;
     HttpUri     *uri;
     MprSocket   *sp;
-    char        *ip;
+    char        *ip, *peerName;
     int         port, rc, level;
 
     assure(conn);
@@ -62,17 +62,18 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     conn->secure = uri->secure;
     conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : -1;
 
-#if BIT_PACK_SSL
+#if BIT_SSL
     /* Must be done even if using keep alive for repeat SSL requests */
     if (uri->secure) {
         if (ssl == 0) {
             ssl = mprCreateSsl(0);
         }
-        if (mprUpgradeSocket(sp, ssl, 0) < 0) {
+        peerName = isdigit(uri->host[0]) ? 0 : uri->host;
+        if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
+            mprError("Cannot upgrade socket for SSL: %s", conn->errorMsg);
             return 0;
         }
-        mprLog(4, "Http: upgrade socket to TLS");
     }
 #endif
     if (uri->webSockets && httpUpgradeWebSocket(conn) < 0) {

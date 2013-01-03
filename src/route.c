@@ -2508,7 +2508,7 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
     HttpRoute   *route;
     MprBuf      *buf;
     HttpLang    *lang;
-    char        *tok, *cp, *key, *value, *field, *header, *defaultValue;
+    char        *tok, *cp, *key, *value, *field, *header, *defaultValue, *state, *v;
 
     assure(conn);
     assure(str);
@@ -2526,7 +2526,7 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
         if (tok > cp) {
             mprPutBlockToBuf(buf, cp, tok - cp);
         }
-        if ((key = stok(&tok[2], ":", &value)) == 0) {
+        if ((key = stok(&tok[2], ":}", &value)) == 0) {
             continue;
         }
         stok(value, "}", &cp);
@@ -2629,6 +2629,17 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
             } else if (smatch(value, "uri")) {
                 mprPutStringToBuf(buf, rx->uri);
             }
+        } else if (smatch(key, "ssl")) {
+            value = stok(value, "=", &defaultValue);
+            if (smatch(value, "state")) {
+                mprPutStringToBuf(buf, mprGetSocketState(conn->sock));
+            } else {
+                state = mprGetSocketState(conn->sock);
+                if ((cp = scontains(state, value)) != 0) {
+                    stok(cp, "=", &v);
+                    mprPutStringToBuf(buf, stok(v, ", ", NULL));
+                }
+            }
         }
     }
     if (tok) {
@@ -2662,9 +2673,11 @@ static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, i
     assure(replacement);
     assure(matches);
 
+#if UNUSED
     if (matchCount <= 0) {
         return MPR->emptyString;
     }
+#endif
     result = mprCreateBuf(-1, -1);
     lastReplace = replacement;
     end = &replacement[slen(replacement)];
@@ -2680,15 +2693,21 @@ static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, i
                 break;
             case '&':
                 /* Replace the matched string */
-                mprPutSubStringToBuf(result, &str[matches[0]], matches[1] - matches[0]);
+                if (matchCount > 0) {
+                    mprPutSubStringToBuf(result, &str[matches[0]], matches[1] - matches[0]);
+                }
                 break;
             case '`':
                 /* Insert the portion that preceeds the matched string */
-                mprPutSubStringToBuf(result, str, matches[0]);
+                if (matchCount > 0) {
+                    mprPutSubStringToBuf(result, str, matches[0]);
+                }
                 break;
             case '\'':
                 /* Insert the portion that follows the matched string */
-                mprPutSubStringToBuf(result, &str[matches[1]], slen(str) - matches[1]);
+                if (matchCount > 0) {
+                    mprPutSubStringToBuf(result, &str[matches[1]], slen(str) - matches[1]);
+                }
                 break;
             default:
                 /* Insert the nth submatch */

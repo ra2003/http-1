@@ -336,6 +336,8 @@ PUBLIC void httpPostEvent(HttpConn *conn)
         } else if (conn->state == HTTP_STATE_COMPLETE) {
             prepForNext(conn);
         }
+    } else if (mprIsSocketEof(conn->sock)) {
+        return;
     }
     if (!conn->state != HTTP_STATE_RUNNING) {
         httpEnableConnEvents(conn);
@@ -380,9 +382,12 @@ static void readEvent(HttpConn *conn)
 
     if (nbytes > 0) {
         mprAdjustBufEnd(packet->content, nbytes);
+
     } else if (nbytes == 0) {
         return;
+
     } else if (nbytes < 0 && mprIsSocketEof(conn->sock)) {
+        conn->errorMsg = conn->sock->errorMsg;
         conn->keepAliveCount = -1;
         if (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE) {
             return;
@@ -486,7 +491,8 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
             /*
                 Can be blocked with data in the iovec and none in the queue
              */
-            if (tx->writeBlocked || (conn->connectorq && conn->connectorq->count > 0)) {
+            if (tx->writeBlocked || (conn->connectorq && conn->connectorq->count > 0) || 
+                    mprSocketHasBufferedWrite(conn->sock)) {
                 eventMask |= MPR_WRITABLE;
             }
             /*
@@ -494,7 +500,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
                 If request is a form, then must read and buffer all the input regardless
              */
             q = conn->readq;
-            if (!rx->eof && (q->count < q->max || rx->form)) {
+            if (!rx->eof && (q->count < q->max || rx->form || mprSocketHasBufferedRead(conn->sock))) {
                 eventMask |= MPR_READABLE;
             }
         } else {

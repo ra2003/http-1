@@ -90,7 +90,7 @@ PUBLIC int httpOpenWebSockFilter(Http *http)
 
     assure(http);
 
-    mprLog(5, "Open WebSock filter");
+    mprLog(5, "Open webSock filter");
     if ((filter = httpCreateFilter(http, "webSocketFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }

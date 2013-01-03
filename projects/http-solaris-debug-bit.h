@@ -5,12 +5,10 @@
     configure or define variables in your Makefile to override these default values.
  */
 
+
 /* Settings */
 #ifndef BIT_BUILD_NUMBER
     #define BIT_BUILD_NUMBER "0"
-#endif
-#ifndef BIT_CIPHERS
-    #define BIT_CIPHERS "HIGH:MEDIUM"
 #endif
 #ifndef BIT_COMPANY
     #define BIT_COMPANY "Embedthis"
@@ -51,14 +49,11 @@
 #ifndef BIT_HAS_UNNAMED_UNIONS
     #define BIT_HAS_UNNAMED_UNIONS 1
 #endif
-#ifndef BIT_MANAGER
-    #define BIT_MANAGER ""
+#ifndef BIT_HTTP_PAM
+    #define BIT_HTTP_PAM 1
 #endif
 #ifndef BIT_OPTIONAL
-    #define BIT_OPTIONAL "doxygen,dsi,ejs,man,man2html,openssl,ssl,utest"
-#endif
-#ifndef BIT_PAM
-    #define BIT_PAM 1
+    #define BIT_OPTIONAL "doxygen,dsi,ejs,est,man,man2html,utest"
 #endif
 #ifndef BIT_PRODUCT
     #define BIT_PRODUCT "http"
@@ -82,7 +77,7 @@
     #define BIT_WARN_UNUSED 0
 #endif
 #ifndef BIT_WITHOUT_ALL
-    #define BIT_WITHOUT_ALL "doxygen,dsi,man,man2html,pmaker,matrixssl,ssl,openssl"
+    #define BIT_WITHOUT_ALL "doxygen,dsi,est,man,man2html,pmaker,matrixssl,openssl"
 #endif
 
 /* Prefixes */
@@ -187,6 +182,9 @@
 #ifndef BIT_PACK_MATRIXSSL
     #define BIT_PACK_MATRIXSSL 0
 #endif
+#ifndef BIT_PACK_MOCANA
+    #define BIT_PACK_MOCANA 0
+#endif
 #ifndef BIT_PACK_OPENSSL
     #define BIT_PACK_OPENSSL 0
 #endif
@@ -195,9 +193,6 @@
 #endif
 #ifndef BIT_PACK_PMAKER
     #define BIT_PACK_PMAKER 0
-#endif
-#ifndef BIT_PACK_SSL
-    #define BIT_PACK_SSL 0
 #endif
 #ifndef BIT_PACK_UTEST
     #define BIT_PACK_UTEST 1

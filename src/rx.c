@@ -1439,7 +1439,7 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
 PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
 {
     MprTicks    mark, remaining, inactivityTimeout;
-    int         eventMask, saveAsync, justOne, workDone;
+    int         saveAsync, justOne, workDone;
 
     if (state == 0) {
         state = HTTP_STATE_FINALIZED;
@@ -1470,12 +1470,15 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     saveAsync = conn->async;
     conn->async = 1;
 
-    eventMask = MPR_READABLE;
-    if (!conn->tx->finalizedConnector) {
-        eventMask |= MPR_WRITABLE;
-    }
     if (conn->state < state) {
+        httpEnableConnEvents(conn);
+#if UNUSED
+        eventMask = MPR_READABLE;
+        if (!conn->tx->finalizedConnector && ) {
+            eventMask |= MPR_WRITABLE;
+        }
         httpSetupWaitHandler(conn, eventMask);
+#endif
     }
     remaining = timeout;
     do {

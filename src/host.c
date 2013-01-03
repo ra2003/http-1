@@ -194,7 +194,7 @@ PUBLIC void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
     char    *pip;
 
     if (port < 0 && schr(ip, ':')) {
-        mprParseSocketAddress(ip, &pip, &port, -1);
+        mprParseSocketAddress(ip, &pip, &port, NULL, -1);
         ip = pip;
     }
     host->ip = sclone(ip);

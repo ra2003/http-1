@@ -85,7 +85,7 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
     len = strlen(pat);
     if (sncaselesscmp(rx->mimeType, pat, len) == 0) {
         rx->upload = 1;
-        mprLog(5, "matchUpload for %s", rx->uri);
+        mprTrace(5, "matchUpload for %s", rx->uri);
         return HTTP_ROUTE_OK;
     }
     return HTTP_ROUTE_REJECT;
@@ -105,7 +105,7 @@ static void openUpload(HttpQueue *q)
     conn = q->conn;
     rx = conn->rx;
 
-    mprLog(5, "Open upload filter");
+    mprTrace(5, "Open upload filter");
     if ((up = mprAllocObj(Upload, manageUpload)) == 0) {
         return;
     }
@@ -119,7 +119,7 @@ static void openUpload(HttpQueue *q)
         rx->uploadDir = sclone("/tmp");
 #endif
     }
-    mprLog(5, "Upload directory is %s", rx->uploadDir);
+    mprTrace(5, "Upload directory is %s", rx->uploadDir);
 
     if ((boundary = strstr(rx->mimeType, "boundary=")) != 0) {
         boundary += 9;
@@ -183,7 +183,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
     ssize       count;
     int         done, rc;
     
-    assure(packet);
+    assert(packet);
     
     conn = q->conn;
     rx = conn->rx;
@@ -196,7 +196,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
         httpPutPacketToNext(q, packet);
         return;
     }
-    mprLog(7, "uploadIncomingData: %d bytes", httpGetPacketLength(packet));
+    mprTrace(7, "uploadIncomingData: %d bytes", httpGetPacketLength(packet));
     
     /*  
         Put the packet data onto the service queue for buffering. This aggregates input data incase we don't have
@@ -260,14 +260,14 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
         mprCompactBuf(content);
     }
     q->count -= (count - httpGetPacketLength(packet));
-    assure(q->count >= 0);
+    assert(q->count >= 0);
 
     if (httpGetPacketLength(packet) == 0) {
         /* 
            Quicker to remove the buffer so the packets don't have to be joined the next time 
          */
         httpGetPacket(q);
-        assure(q->count >= 0);
+        assert(q->count >= 0);
     }
 }
 
@@ -322,7 +322,7 @@ static int processContentHeader(HttpQueue *q, char *line)
         up->contentState = HTTP_UPLOAD_CONTENT_DATA;
         return 0;
     }
-    mprLog(7, "Header line: %s", line);
+    mprTrace(7, "Header line: %s", line);
 
     headerTok = line;
     stok(line, ": ", &rest);
@@ -373,7 +373,7 @@ static int processContentHeader(HttpQueue *q, char *line)
                         "Cannot create upload temp file %s. Check upload temp dir %s", up->tmpPath, rx->uploadDir);
                     return MPR_ERR_CANT_OPEN;
                 }
-                mprLog(5, "File upload of: %s stored as %s", up->clientFilename, up->tmpPath);
+                mprTrace(5, "File upload of: %s stored as %s", up->clientFilename, up->tmpPath);
 
                 up->file = mprOpenFile(up->tmpPath, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
                 if (up->file == 0) {
@@ -392,7 +392,7 @@ static int processContentHeader(HttpQueue *q, char *line)
 
     } else if (scaselesscmp(headerTok, "Content-Type") == 0) {
         if (up->clientFilename) {
-            mprLog(5, "Set files[%s][CONTENT_TYPE] = %s", up->id, rest);
+            mprTrace(5, "Set files[%s][CONTENT_TYPE] = %s", up->id, rest);
             up->currentFile->contentType = sclone(rest);
         }
     }
@@ -467,7 +467,7 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
             return MPR_ERR_CANT_WRITE;
         }
         file->size += len;
-        mprLog(7, "uploadFilter: Wrote %d bytes to %s", len, up->tmpPath);
+        mprTrace(7, "uploadFilter: Wrote %d bytes to %s", len, up->tmpPath);
     }
     return 0;
 }
@@ -502,7 +502,7 @@ static int processContentData(HttpQueue *q)
     }
     bp = getBoundary(mprGetBufStart(content), size, up->boundary, up->boundaryLen);
     if (bp == 0) {
-        mprLog(7, "uploadFilter: Got boundary filename %x", up->clientFilename);
+        mprTrace(7, "uploadFilter: Got boundary filename %x", up->clientFilename);
         if (up->clientFilename) {
             /*  
                 No signature found yet. probably more data to come. Must handle split boundaries.
@@ -542,7 +542,7 @@ static int processContentData(HttpQueue *q)
                 Normal string form data variables
              */
             data[dataLen] = '\0'; 
-            mprLog(5, "uploadFilter: form[%s] = %s", up->id, data);
+            mprLog(3, "uploadFilter: form[%s] = %s", up->id, data);
             key = mprUriDecode(up->id);
             data = mprUriDecode(data);
             httpSetParam(conn, key, data);
@@ -586,9 +586,9 @@ static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundary
     char    *cp, *endp;
     char    first;
 
-    assure(buf);
-    assure(boundary);
-    assure(boundaryLen > 0);
+    assert(buf);
+    assert(boundary);
+    assert(boundaryLen > 0);
 
     first = *((char*) boundary);
     cp = (char*) buf;

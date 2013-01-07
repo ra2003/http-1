@@ -229,7 +229,7 @@ PUBLIC HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
     }
     for (next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
         if (endpoint->port <= 0 || port <= 0 || endpoint->port == port) {
-            assure(endpoint->ip);
+            assert(endpoint->ip);
             if (*endpoint->ip == '\0' || *ip == '\0' || scmp(endpoint->ip, ip) == 0) {
                 return endpoint;
             }
@@ -406,7 +406,7 @@ static void httpTimer(Http *http, MprEvent *event)
     MprModule   *module;
     int         next, active, abort;
 
-    assure(event);
+    assert(event);
     
     updateCurrentDate(http);
     if (mprGetDebugMode()) {
@@ -417,7 +417,7 @@ static void httpTimer(Http *http, MprEvent *event)
        OPT - could check for expired connections every 10 seconds.
      */
     lock(http->connections);
-    mprLog(7, "httpTimer: %d active connections", mprGetListLength(http->connections));
+    mprTrace(7, "httpTimer: %d active connections", mprGetListLength(http->connections));
     for (active = 0, next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; active++) {
         limits = conn->limits;
         if (!conn->timeoutEvent) {
@@ -557,7 +557,7 @@ static bool isIdle()
 PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 {
     http->now = mprGetTicks();
-    assure(http->now >= 0);
+    assert(http->now >= 0);
     conn->started = http->now;
     mprAddItem(http->connections, conn);
     updateCurrentDate(http);
@@ -602,7 +602,7 @@ PUBLIC int httpCreateSecret(Http *http)
         for (i = 0; i < sizeof(pid) && bp < &bytes[HTTP_MAX_SECRET]; i++) {
             *bp++ = *cp++;
         }
-        assure(0);
+        assert(0);
         return MPR_ERR_CANT_INITIALIZE;
     }
     ap = ascii;
@@ -681,7 +681,7 @@ PUBLIC void httpSetProxy(Http *http, cchar *host, int port)
 static void updateCurrentDate(Http *http)
 {
     http->now = mprGetTicks();
-    assure(http->now >= 0);
+    assert(http->now >= 0);
     if (http->now > (http->currentTime + MPR_TICKS_PER_SEC - 1)) {
         /*
             Optimize and only update the string date representation once per second

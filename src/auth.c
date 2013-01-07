@@ -52,7 +52,7 @@ PUBLIC int httpAuthenticate(HttpConn *conn)
 
     route = rx->route;
     auth = route->auth;
-    assure(auth);
+    assert(auth);
     mprLog(5, "Checking user authentication user %s on route %s", conn->username, route->name);
 
     cached = 0;
@@ -135,7 +135,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
 
     auth = conn->rx->route->auth;
     if (!username || !*username) {
-        mprLog(5, "httpLogin missing username");
+        mprTrace(5, "httpLogin missing username");
         return 0;
     }
     conn->username = sclone(username);

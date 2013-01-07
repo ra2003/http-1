@@ -79,13 +79,13 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         /*  
             Only set PATH_TRANSLATED if extraPath is set (CGI spec) 
          */
-        assure(rx->extraPath[0] == '/');
+        assert(rx->extraPath[0] == '/');
         mprAddKey(svars, "PATH_TRANSLATED", mprNormalizePath(sfmt("%s%s", rx->route->dir, rx->extraPath)));
     }
 
     if (rx->files) {
         vars = httpGetParams(conn);
-        assure(vars);
+        assert(vars);
         for (index = 0, kp = 0; (kp = mprGetNextKey(conn->rx->files, kp)) != 0; index++) {
             up = (HttpUploadFile*) kp->data;
             mprAddKey(vars, sfmt("FILE_%d_FILENAME", index), up->filename);
@@ -112,7 +112,7 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
     cchar       *oldValue;
     char        *newValue, *decoded, *keyword, *value, *tok;
 
-    assure(conn);
+    assert(conn);
     vars = httpGetParams(conn);
     decoded = mprAlloc(len + 1);
     decoded[len] = '\0';
@@ -153,7 +153,7 @@ static void addParamsFromQueue(HttpQueue *q)
     HttpRx      *rx;
     MprBuf      *content;
 
-    assure(q);
+    assert(q);
     
     conn = q->conn;
     rx = conn->rx;
@@ -162,7 +162,7 @@ static void addParamsFromQueue(HttpQueue *q)
         httpJoinPackets(q, -1);
         content = q->first->content;
         mprAddNullToBuf(content);
-        mprLog(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
+        mprTrace(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
         addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
     }
 }
@@ -261,7 +261,7 @@ PUBLIC char *httpGetParamsString(HttpConn *conn)
     ssize       len;
     int         next;
 
-    assure(conn);
+    assert(conn);
 
     rx = conn->rx;
 

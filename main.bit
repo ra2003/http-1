@@ -26,7 +26,7 @@ Bit.load({
         sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
         '+required': [ 'pcre' ],
         '+optional': [ 'doxygen', 'dsi', 'ejs', 'est', 'man', 'man2html', 'utest' ],
-        'without-all': ['doxygen', 'dsi', 'est', 'man', 'man2html', 'pmaker', 'matrixssl', 'openssl' ],
+        'without-all': ['doxygen', 'dsi', 'est', 'man', 'man2html', 'pmaker' ],
         http: {
             pam: true,
         },

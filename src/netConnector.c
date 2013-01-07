@@ -28,7 +28,7 @@ PUBLIC int httpOpenNetConnector(Http *http)
 {
     HttpStage     *stage;
 
-    mprLog(5, "Open net connector");
+    mprTrace(5, "Open net connector");
     if ((stage = httpCreateConnector(http, "netConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -61,7 +61,7 @@ static void netOutgoingService(HttpQueue *q)
     conn = q->conn;
     tx = conn->tx;
     conn->lastActivity = conn->http->now;
-    assure(conn->sock);
+    assert(conn->sock);
     
     if (!conn->sock || tx->finalizedConnector) {
         return;
@@ -99,11 +99,11 @@ static void netOutgoingService(HttpQueue *q)
         /*  
             Issue a single I/O request to write all the blocks in the I/O vector
          */
-        assure(q->ioIndex > 0);
+        assert(q->ioIndex > 0);
         written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
         if (written < 0) {
             errCode = mprGetError(q);
-            LOG(6, "netConnector: wrote %d, errno %d, qflags %x", (int) written, errCode, q->flags);
+            mprTrace(6, "netConnector: wrote %d, errno %d, qflags %x", (int) written, errCode, q->flags);
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
                 /*  Socket full, wait for an I/O event */
                 httpSocketBlocked(conn);
@@ -121,7 +121,7 @@ static void netOutgoingService(HttpQueue *q)
             break;
 
         } else if (written > 0) {
-            LOG(6, "netConnector: wrote %d, ask %d, qflags %x", (int) written, q->ioCount, q->flags);
+            mprTrace(6, "netConnector: wrote %d, ask %d, qflags %x", (int) written, q->ioCount, q->flags);
             tx->bytesWritten += written;
             freeNetPackets(q, written);
             adjustNetVec(q, written);
@@ -131,7 +131,7 @@ static void netOutgoingService(HttpQueue *q)
         }
     }
     if (q->first && q->first->flags & HTTP_PACKET_END) {
-        LOG(6, "netConnector: end of stream. Finalize connector");
+        mprTrace(6, "netConnector: end of stream. Finalize connector");
         httpFinalizeConnector(conn);
     } else {
         HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
@@ -184,7 +184,7 @@ static MprOff buildNetVec(HttpQueue *q)
  */
 static void addToNetVector(HttpQueue *q, char *ptr, ssize bytes)
 {
-    assure(bytes > 0);
+    assert(bytes > 0);
 
     q->iovec[q->ioIndex].start = ptr;
     q->iovec[q->ioIndex].len = bytes;
@@ -205,8 +205,8 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     conn = q->conn;
     tx = conn->tx;
 
-    assure(q->count >= 0);
-    assure(q->ioIndex < (BIT_MAX_IOVEC - 2));
+    assert(q->count >= 0);
+    assert(q->ioIndex < (BIT_MAX_IOVEC - 2));
 
     if (packet->prefix) {
         addToNetVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));
@@ -226,8 +226,8 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
     HttpPacket  *packet;
     ssize       len;
 
-    assure(q->count >= 0);
-    assure(bytes > 0);
+    assert(q->count >= 0);
+    assert(bytes > 0);
 
     /*
         Loop while data to be accounted for and we have not hit the end of data packet.
@@ -252,17 +252,17 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
             mprAdjustBufStart(packet->content, len);
             bytes -= len;
             q->count -= len;
-            assure(q->count >= 0);
+            assert(q->count >= 0);
         }
         if (httpGetPacketLength(packet) == 0) {
             /* Done with this packet - consume it */
-            assure(!(packet->flags & HTTP_PACKET_END));
+            assert(!(packet->flags & HTTP_PACKET_END));
             httpGetPacket(q);
         } else {
             break;
         }
     }
-    assure(bytes == 0);
+    assert(bytes == 0);
 }
 
 
@@ -290,7 +290,7 @@ static void adjustNetVec(HttpQueue *q, ssize written)
             Partial write of an vector entry. Need to copy down the unwritten vector entries.
          */
         q->ioCount -= written;
-        assure(q->ioCount >= 0);
+        assert(q->ioCount >= 0);
         iovec = q->iovec;
         for (i = 0; i < q->ioIndex; i++) {
             len = iovec[i].len;

@@ -61,7 +61,7 @@ PUBLIC void httpInitTrace(HttpTrace *trace)
 {
     int     dir;
 
-    assure(trace);
+    assert(trace);
 
     for (dir = 0; dir < HTTP_TRACE_MAX_DIR; dir++) {
         trace[dir].levels[HTTP_TRACE_CONN] = 3;
@@ -82,8 +82,8 @@ PUBLIC int httpShouldTrace(HttpConn *conn, int dir, int item, cchar *ext)
 {
     HttpTrace   *trace;
 
-    assure(0 <= dir && dir < HTTP_TRACE_MAX_DIR);
-    assure(0 <= item && item < HTTP_TRACE_MAX_ITEM);
+    assert(0 <= dir && dir < HTTP_TRACE_MAX_DIR);
+    assert(0 <= item && item < HTTP_TRACE_MAX_ITEM);
 
     trace = &conn->trace[dir];
     if (trace->disable || trace->levels[item] > MPR->logLevel) {

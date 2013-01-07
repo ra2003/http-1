@@ -22,7 +22,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     char        *ip, *peerName;
     int         port, rc, level;
 
-    assure(conn);
+    assert(conn);
 
     http = conn->http;
     uri = conn->tx->parsedUri;
@@ -92,7 +92,7 @@ static void setDefaultHeaders(HttpConn *conn)
 {
     HttpAuthType    *ap;
 
-    assure(conn);
+    assert(conn);
 
     if (smatch(conn->protocol, "HTTP/1.0")) {
         conn->http10 = 1;
@@ -119,9 +119,9 @@ static void setDefaultHeaders(HttpConn *conn)
 
 PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl *ssl)
 {
-    assure(conn);
-    assure(method && *method);
-    assure(uri && *uri);
+    assert(conn);
+    assert(method && *method);
+    assert(uri && *uri);
 
     if (conn->endpoint) {
         httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
@@ -133,13 +133,13 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         /* WARNING: this will erase headers */
         httpPrepClientConn(conn, 0);
     }
-    assure(conn->state == HTTP_STATE_BEGIN);
+    assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
     conn->authRequested = 0;
     conn->tx->method = supper(method);
     conn->tx->parsedUri = httpCreateUri(uri, HTTP_COMPLETE_URI_PATH);
 #if BIT_DEBUG
-    conn->startMark = mprGetHiResTime();
+    conn->startMark = mprGetHiResTicks();
 #endif
     /*
         The receive pipeline is created when parsing the response in parseIncoming()
@@ -165,7 +165,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
     HttpAuthType    *authType;
     HttpRx          *rx;
 
-    assure(conn->rx);
+    assert(conn->rx);
 
     *url = 0;
     rx = conn->rx;
@@ -229,7 +229,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
             }
             bytes -= nbytes;
             offset += nbytes;
-            assure(bytes >= 0);
+            assert(bytes >= 0);
         }
         mprYield(0);
     }

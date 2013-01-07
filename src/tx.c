@@ -93,8 +93,8 @@ static void manageTx(HttpTx *tx, int flags)
 */
 static void addHdr(HttpConn *conn, cchar *key, cchar *value)
 {
-    assure(key && *key);
-    assure(value);
+    assert(key && *key);
+    assert(value);
 
     mprAddKey(conn->tx->headers, key, value);
 }
@@ -102,7 +102,7 @@ static void addHdr(HttpConn *conn, cchar *key, cchar *value)
 
 PUBLIC int httpRemoveHeader(HttpConn *conn, cchar *key)
 {
-    assure(key && *key);
+    assert(key && *key);
     if (conn->tx == 0) {
         return MPR_ERR_CANT_ACCESS;
     }
@@ -118,8 +118,8 @@ PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     char        *value;
     va_list     vargs;
 
-    assure(key && *key);
-    assure(fmt && *fmt);
+    assert(key && *key);
+    assert(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -136,8 +136,8 @@ PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
  */
 PUBLIC void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
-    assure(key && *key);
-    assure(value);
+    assert(key && *key);
+    assert(value);
 
     if (!mprLookupKey(conn->tx->headers, key)) {
         addHdr(conn, key, sclone(value));
@@ -155,8 +155,8 @@ PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     char        *value;
     cchar       *oldValue;
 
-    assure(key && *key);
-    assure(fmt && *fmt);
+    assert(key && *key);
+    assert(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -186,8 +186,8 @@ PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
     cchar   *oldValue;
 
-    assure(key && *key);
-    assure(value && *value);
+    assert(key && *key);
+    assert(value && *value);
 
     oldValue = mprLookupKey(conn->tx->headers, key);
     if (oldValue) {
@@ -210,8 +210,8 @@ PUBLIC void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     char        *value;
     va_list     vargs;
 
-    assure(key && *key);
-    assure(fmt && *fmt);
+    assert(key && *key);
+    assert(fmt && *fmt);
 
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
@@ -222,8 +222,8 @@ PUBLIC void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 
 PUBLIC void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 {
-    assure(key && *key);
-    assure(value);
+    assert(key && *key);
+    assert(value);
 
     addHdr(conn, key, sclone(value));
 }
@@ -276,13 +276,13 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
     }
     tx->responded = 1;
     tx->finalizedOutput = 1;
-    assure(conn->writeq);
+    assert(conn->writeq);
     if (conn->writeq == tx->queue[HTTP_QUEUE_TX]) {
         /* Tx Pipeline not yet created */
         tx->pendingFinalize = 1;
         return;
     }
-    assure(conn->state >= HTTP_STATE_CONNECTED);
+    assert(conn->state >= HTTP_STATE_CONNECTED);
     /*
         This may be called from httpError when the connection fails.
      */
@@ -414,7 +414,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     cchar           *msg;
     char            *dir, *cp;
 
-    assure(targetUri);
+    assert(targetUri);
     rx = conn->rx;
     tx = conn->tx;
 
@@ -548,7 +548,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     MprOff      length;
     cchar       *mimeType;
 
-    assure(packet->flags == HTTP_PACKET_HEADER);
+    assert(packet->flags == HTTP_PACKET_HEADER);
 
     rx = conn->rx;
     tx = conn->tx;
@@ -660,7 +660,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
     MprBuf      *buf;
     int         level;
 
-    assure(packet->flags == HTTP_PACKET_HEADER);
+    assert(packet->flags == HTTP_PACKET_HEADER);
 
     conn = q->conn;
     http = conn->http;

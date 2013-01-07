@@ -39,9 +39,9 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn)
     struct group        *gp;
     int                 res, i;
    
-    assure(conn->username);
-    assure(conn->password);
-    assure(!conn->encoded);
+    assert(conn->username);
+    assert(conn->password);
+    assert(!conn->encoded);
 
     info.name = (char*) conn->username;
     info.password = (char*) conn->password;
@@ -51,11 +51,11 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn)
     }
     if ((res = pam_authenticate(pamh, PAM_DISALLOW_NULL_AUTHTOK)) != PAM_SUCCESS) {
         pam_end(pamh, PAM_SUCCESS);
-        mprLog(5, "httpPamVerifyUser failed to verify %s", conn->username);
+        mprTrace(5, "httpPamVerifyUser failed to verify %s", conn->username);
         return 0;
     }
     pam_end(pamh, PAM_SUCCESS);
-    mprLog(5, "httpPamVerifyUser verified %s", conn->username);
+    mprTrace(5, "httpPamVerifyUser verified %s", conn->username);
 
     if (!conn->user) {
         conn->user = mprLookupKey(conn->rx->route->auth->users, conn->username);
@@ -75,7 +75,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn)
                 }
             }
             mprAddNullToBuf(abilities);
-            mprLog(5, "Create temp user \"%s\" with abilities: %s", conn->username, mprGetBufStart(abilities));
+            mprTrace(5, "Create temp user \"%s\" with abilities: %s", conn->username, mprGetBufStart(abilities));
             /*
                 Create a user and map groups to roles and expand to abilities
              */

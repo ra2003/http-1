@@ -217,7 +217,7 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
 
     limits = conn->limits;
     dir = HTTP_TRACE_RX;
-    assure(conn->endpoint == endpoint);
+    assert(conn->endpoint == endpoint);
     http = endpoint->http;
 
     lock(endpoint);
@@ -235,7 +235,7 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
             return 0;
         }
         count = (int) PTOL(mprLookupKey(endpoint->clientLoad, conn->ip));
-        mprLog(7, "Connection count for client %s, count %d limit %d\n", conn->ip, count, limits->requestsPerClientMax);
+        mprTrace(7, "Connection count for client %s, count %d limit %d\n", conn->ip, count, limits->requestsPerClientMax);
         if (count >= limits->requestsPerClientMax) {
             unlock(endpoint);
             /*  Abort connection */
@@ -260,7 +260,7 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
         break;
     
     case HTTP_VALIDATE_OPEN_REQUEST:
-        assure(conn->rx);
+        assert(conn->rx);
         if (endpoint->activeRequests >= limits->requestMax) {
             unlock(endpoint);
             httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Server overloaded");
@@ -276,7 +276,7 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
         if (conn->rx && conn->rx->flags & HTTP_LIMITS_OPENED) {
             /* Requests incremented only when conn->rx is assigned */
             endpoint->activeRequests--;
-            assure(endpoint->activeRequests >= 0);
+            assert(endpoint->activeRequests >= 0);
             dir = HTTP_TRACE_TX;
             conn->rx->flags &= ~HTTP_LIMITS_OPENED;
         }
@@ -295,18 +295,18 @@ PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn
 
     case HTTP_VALIDATE_CLOSE_PROCESS:
         http->activeProcesses--;
-        assure(http->activeProcesses >= 0);
+        assert(http->activeProcesses >= 0);
         break;
     }
     if (event == HTTP_VALIDATE_CLOSE_CONN || event == HTTP_VALIDATE_CLOSE_REQUEST) {
         if ((level = httpShouldTrace(conn, dir, HTTP_TRACE_LIMITS, NULL)) >= 0) {
-            LOG(4, "Validate request for %d. Active connections %d, active requests: %d/%d, active client IP %d/%d", 
+            mprTrace(4, "Validate request for %d. Active connections %d, active requests: %d/%d, active client IP %d/%d", 
                 event, mprGetListLength(http->connections), endpoint->activeRequests, limits->requestMax, 
                 endpoint->activeClients, limits->clientMax);
         }
     }
 #if KEEP
-    LOG(0, "Validate Active connections %d, requests: %d/%d, IP %d/%d, Processes %d/%d", 
+    mprTrace(0, "Validate Active connections %d, requests: %d/%d, IP %d/%d, Processes %d/%d", 
         mprGetListLength(http->connections), endpoint->activeRequests, limits->requestMax, 
         endpoint->activeClients, limits->clientMax, http->activeProcesses, limits->processMax);
 #endif
@@ -348,8 +348,8 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
     MprEvent    e;
     int         level;
 
-    assure(dispatcher);
-    assure(endpoint);
+    assert(dispatcher);
+    assert(endpoint);
     http = endpoint->http;
 
     if (endpoint->ssl) {
@@ -398,7 +398,7 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
         httpDestroyConn(conn);
         return 0;
     }
-    assure(conn->state == HTTP_STATE_BEGIN);
+    assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 
     if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
@@ -451,7 +451,7 @@ PUBLIC void httpMatchHost(HttpConn *conn)
 
 PUBLIC void *httpGetEndpointContext(HttpEndpoint *endpoint)
 {
-    assure(endpoint);
+    assert(endpoint);
     if (endpoint) {
         return endpoint->context;
     }
@@ -461,7 +461,7 @@ PUBLIC void *httpGetEndpointContext(HttpEndpoint *endpoint)
 
 PUBLIC int httpIsEndpointAsync(HttpEndpoint *endpoint) 
 {
-    assure(endpoint);
+    assert(endpoint);
     if (endpoint) {
         return endpoint->async;
     }
@@ -471,7 +471,7 @@ PUBLIC int httpIsEndpointAsync(HttpEndpoint *endpoint)
 
 PUBLIC void httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
 {
-    assure(endpoint);
+    assert(endpoint);
 
     if (ip) {
         endpoint->ip = sclone(ip);
@@ -502,14 +502,14 @@ PUBLIC void httpSetEndpointAsync(HttpEndpoint *endpoint, int async)
 
 PUBLIC void httpSetEndpointContext(HttpEndpoint *endpoint, void *context)
 {
-    assure(endpoint);
+    assert(endpoint);
     endpoint->context = context;
 }
 
 
 PUBLIC void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier notifier)
 {
-    assure(endpoint);
+    assert(endpoint);
     endpoint->notifier = notifier;
 }
 
@@ -539,7 +539,7 @@ PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
     }
     for (count = 0, next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
         if (endpoint->port <= 0 || port <= 0 || endpoint->port == port) {
-            assure(endpoint->ip);
+            assert(endpoint->ip);
             if (*endpoint->ip == '\0' || *ip == '\0' || scmp(endpoint->ip, ip) == 0) {
                 httpSecureEndpoint(endpoint, ssl);
                 count++;
@@ -613,7 +613,7 @@ PUBLIC int httpConfigureNamedVirtualEndpoints(Http *http, cchar *ip, int port)
     }
     for (count = 0, next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
         if (endpoint->port <= 0 || port <= 0 || endpoint->port == port) {
-            assure(endpoint->ip);
+            assert(endpoint->ip);
             if (*endpoint->ip == '\0' || *ip == '\0' || scmp(endpoint->ip, ip) == 0) {
                 httpSetHasNamedVirtualHosts(endpoint, 1);
                 count++;

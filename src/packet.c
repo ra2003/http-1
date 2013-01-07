@@ -149,13 +149,13 @@ PUBLIC HttpPacket *httpGetPacket(HttpQueue *q)
             q->first = packet->next;
             packet->next = 0;
             q->count -= httpGetPacketLength(packet);
-            assure(q->count >= 0);
+            assert(q->count >= 0);
             if (packet == q->last) {
                 q->last = 0;
-                assure(q->first == 0);
+                assert(q->first == 0);
             }
             if (q->first == 0) {
-                assure(q->last == 0);
+                assert(q->last == 0);
             }
         }
         if (q->count < q->low) {
@@ -220,14 +220,14 @@ PUBLIC int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
 {
     ssize   len;
 
-    assure(packet->esize == 0);
-    assure(p->esize == 0);
-    assure(!(packet->flags & HTTP_PACKET_SOLO));
-    assure(!(p->flags & HTTP_PACKET_SOLO));
+    assert(packet->esize == 0);
+    assert(p->esize == 0);
+    assert(!(packet->flags & HTTP_PACKET_SOLO));
+    assert(!(p->flags & HTTP_PACKET_SOLO));
 
     len = httpGetPacketLength(p);
     if (mprPutBlockToBuf(packet->content, mprGetBufStart(p->content), (ssize) len) != len) {
-        assure(0);
+        assert(0);
         return MPR_ERR_MEMORY;
     }
     return 0;
@@ -255,7 +255,7 @@ PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
             if (packet->content == 0 || (len = httpGetPacketLength(packet)) == 0) {
                 break;
             }
-            assure(!(packet->flags & HTTP_PACKET_END));
+            assert(!(packet->flags & HTTP_PACKET_END));
             httpJoinPacket(first, packet);
             /* Unlink the packet */
             first->next = packet->next;
@@ -269,8 +269,8 @@ PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
 
 PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
 {
-    assure(packet);
-    assure(q->put);
+    assert(packet);
+    assert(q->put);
 
     q->put(q, packet);
 }
@@ -281,8 +281,8 @@ PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
  */
 PUBLIC void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
 {
-    assure(packet);
-    assure(q->nextQ->put);
+    assert(packet);
+    assert(q->nextQ->put);
 
     q->nextQ->put(q->nextQ, packet);
 }
@@ -303,9 +303,9 @@ PUBLIC void httpPutPackets(HttpQueue *q)
  */
 PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
 {
-    assure(packet);
-    assure(packet->next == 0);
-    assure(q->count >= 0);
+    assert(packet);
+    assert(packet->next == 0);
+    assert(q->count >= 0);
     
     if (packet) {
         packet->next = q->first;
@@ -323,7 +323,7 @@ PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
  */
 PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
-    assure(packet);
+    assert(packet);
    
     q->count += httpGetPacketLength(packet);
     packet->next = 0;
@@ -388,7 +388,7 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
     ssize       count, size;
 
     /* Must not be in a queue */
-    assure(orig->next == 0);
+    assert(orig->next == 0);
 
     if (orig->esize) {
         if ((packet = httpCreateEntityPacket(orig->epos + offset, orig->esize - offset, orig->fill)) == 0) {
@@ -398,7 +398,7 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 
     } else {
         if (offset >= httpGetPacketLength(orig)) {
-            assure(offset < httpGetPacketLength(orig));
+            assert(offset < httpGetPacketLength(orig));
             return 0;
         }
         /*

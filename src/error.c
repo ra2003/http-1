@@ -55,7 +55,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     cchar       *uri, *statusMsg;
     int         status;
 
-    assure(fmt);
+    assert(fmt);
     rx = conn->rx;
     tx = conn->tx;
 

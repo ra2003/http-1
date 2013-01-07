@@ -28,7 +28,7 @@ PUBLIC int httpOpenRangeFilter(Http *http)
 {
     HttpStage     *filter;
 
-    mprLog(5, "Open range filter");
+    mprTrace(5, "Open range filter");
     if ((filter = httpCreateFilter(http, "rangeFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -45,7 +45,7 @@ PUBLIC int httpOpenRangeFilter(Http *http)
  */
 static int matchRange(HttpConn *conn, HttpRoute *route, int dir)
 {
-    assure(conn->rx);
+    assert(conn->rx);
 
     httpSetHeader(conn, "Accept-Ranges", "bytes");
     if ((dir & HTTP_STAGE_TX) && conn->tx->outputRanges) {
@@ -146,10 +146,10 @@ static bool applyRange(HttpQueue *q, HttpPacket *packet)
 
         } else {
             /* In range */
-            assure(range->start <= tx->rangePos && tx->rangePos < range->end);
+            assert(range->start <= tx->rangePos && tx->rangePos < range->end);
             span = min(length, (range->end - tx->rangePos));
             count = (ssize) min(span, q->nextQ->packetSize);
-            assure(count > 0);
+            assert(count > 0);
             if (!httpWillNextQueueAcceptSize(q, count)) {
                 httpPutBackPacket(q, packet);
                 return 0;
@@ -224,7 +224,7 @@ static void createRangeBoundary(HttpConn *conn)
     int         when;
 
     tx = conn->tx;
-    assure(tx->rangeBoundary == 0);
+    assert(tx->rangeBoundary == 0);
     when = (int) conn->http->now;
     tx->rangeBoundary = sfmt("%08X%08X", PTOI(tx) + PTOI(conn) * when, when);
 }

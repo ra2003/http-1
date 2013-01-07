@@ -189,19 +189,20 @@ PUBLIC int httpDigestParse(HttpConn *conn)
         parseDigestNonce(dp->nonce, &secret, &realm, &when);
         if (!smatch(secret, secret)) {
             //  How should this be reported
-            mprLog(2, "Access denied: Nonce mismatch\n");
+            //  MOB - could this set conn->errorMsg?
+            mprTrace(2, "Access denied: Nonce mismatch\n");
             return MPR_ERR_BAD_STATE;
 
         } else if (!smatch(realm, rx->route->auth->realm)) {
-            mprLog(2, "Access denied: Realm mismatch\n");
+            mprTrace(2, "Access denied: Realm mismatch\n");
             return MPR_ERR_BAD_STATE;
 
         } else if (dp->qop && !smatch(dp->qop, "auth")) {
-            mprLog(2, "Access denied: Bad qop\n");
+            mprTrace(2, "Access denied: Bad qop\n");
             return MPR_ERR_BAD_STATE;
 
         } else if ((when + (5 * 60)) < time(0)) {
-            mprLog(2, "Access denied: Nonce is stale\n");
+            mprTrace(2, "Access denied: Nonce is stale\n");
             return MPR_ERR_BAD_STATE;
         }
         rx->passDigest = calcDigest(conn, dp);
@@ -299,7 +300,7 @@ static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm)
 {
     static int64 next = 0;
 
-    assure(realm && *realm);
+    assert(realm && *realm);
     return mprEncode64(sfmt("%s:%s:%Lx:%Lx", secret, realm, mprGetTime(), next++));
 }
 
@@ -331,7 +332,7 @@ static char *calcDigest(HttpConn *conn, DigestData *dp)
     if (!conn->user) {
         conn->user = mprLookupKey(auth->users, conn->username);
     }
-    assure(conn->user && conn->user->password);
+    assert(conn->user && conn->user->password);
     if (conn->user == 0 || conn->user->password == 0) {
         return 0;
     }

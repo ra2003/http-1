@@ -62,7 +62,7 @@ static int matchCacheHandler(HttpConn *conn, HttpRoute *route, int dir)
 {
     HttpCache   *cache;
 
-    assure(route->caching);
+    assert(route->caching);
 
     if ((cache = conn->tx->cache = lookupCacheControl(conn)) == 0) {
         /* Caching not configured for this route */
@@ -95,7 +95,7 @@ static void readyCacheHandler(HttpQueue *q)
     tx = conn->tx;
 
     if (tx->cachedContent) {
-        mprLog(3, "cacheHandler: write cached content for '%s'", conn->rx->uri);
+        mprTrace(3, "cacheHandler: write cached content for '%s'", conn->rx->uri);
         if ((data = setHeadersFromCache(conn, tx->cachedContent)) != 0) {
             tx->length = slen(data);
             httpWriteString(q, data);
@@ -108,7 +108,7 @@ static void readyCacheHandler(HttpQueue *q)
 static int matchCacheFilter(HttpConn *conn, HttpRoute *route, int dir)
 {
     if ((dir & HTTP_STAGE_TX) && conn->tx->cacheBuffer) {
-        mprLog(3, "cacheFilter: Cache response content for '%s'", conn->rx->uri);
+        mprTrace(3, "cacheFilter: Cache response content for '%s'", conn->rx->uri);
         return HTTP_ROUTE_OK;
     }
     return HTTP_ROUTE_REJECT;
@@ -353,7 +353,7 @@ static void saveCachedResponse(HttpConn *conn)
     MprTime     modified;
 
     tx = conn->tx;
-    assure(tx->finalizedOutput && tx->cacheBuffer);
+    assert(tx->finalizedOutput && tx->cacheBuffer);
 
     buf = tx->cacheBuffer;
     mprAddNullToBuf(buf);
@@ -496,7 +496,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
     mprAddItem(route->caching, cache);
 
 #if KEEP
-    mprLog(3, "Caching route %s for methods %s, URIs %s, extensions %s, types %s, client lifespan %d, server lifespan %d", 
+    mprTrace(3, "Caching route %s for methods %s, URIs %s, extensions %s, types %s, client lifespan %d, server lifespan %d", 
         route->name,
         (methods) ? methods: "*",
         (uris) ? uris: "*",

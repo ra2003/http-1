@@ -25,8 +25,8 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     HttpStage   *stage, *filter;
     int         next, hasOutputFilters;
 
-    assure(conn);
-    assure(route);
+    assert(conn);
+    assert(route);
 
     http = conn->http;
     rx = conn->rx;
@@ -107,8 +107,8 @@ PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
     HttpStage   *stage, *filter;
     int         next;
 
-    assure(conn);
-    assure(route);
+    assert(conn);
+    assert(route);
 
     rx = conn->rx;
     tx = conn->tx;
@@ -341,7 +341,7 @@ PUBLIC bool httpServiceQueues(HttpConn *conn)
         if (q->servicing) {
             q->flags |= HTTP_QUEUE_RESERVICE;
         } else {
-            assure(q->schedulePrev == q->scheduleNext);
+            assert(q->schedulePrev == q->scheduleNext);
             httpServiceQueue(q);
             workDone = 1;
         }

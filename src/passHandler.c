@@ -15,7 +15,7 @@
 
 static void startPass(HttpQueue *q)
 {
-    mprLog(5, "Start passHandler");
+    mprTrace(5, "Start passHandler");
     if (q->conn->rx->flags & (HTTP_OPTIONS | HTTP_TRACE)) {
         httpHandleOptionsTrace(q->conn, "");
     }
@@ -75,7 +75,7 @@ PUBLIC void httpHandleOptionsTrace(HttpConn *conn, cchar *methods)
             traceData = httpCreateDataPacket(httpGetPacketLength(headers) + 128);
             tx->flags &= ~(HTTP_TX_NO_LENGTH | HTTP_TX_HEADERS_CREATED);
             q->count -= httpGetPacketLength(headers);
-            assure(q->count == 0);
+            assert(q->count == 0);
             mprFlushBuf(headers->content);
             mprPutFmtToBuf(traceData->content, mprGetBufStart(q->first->content));
             httpSetContentType(conn, "message/http");
@@ -92,7 +92,7 @@ PUBLIC void httpHandleOptionsTrace(HttpConn *conn, cchar *methods)
         } else {
             httpSetHeader(conn, "Allow", "OPTIONS,%s%s", (route->flags & HTTP_ROUTE_TRACE_METHOD) ? "TRACE," : "", methods);
         }
-        assure(tx->length <= 0);
+        assert(tx->length <= 0);
     }
     httpFinalize(conn);
 }

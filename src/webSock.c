@@ -17,10 +17,12 @@
 #define WS_MSG         2
 #define WS_CLOSED      3
 
+#if BIT_MPR_TRACING
 static char *codetxt[16] = {
     "continuation", "text", "binary", "reserved", "reserved", "reserved", "reserved", "reserved",
     "close", "ping", "pong", "reserved", "reserved", "reserved", "reserved", "reserved",
 };
+#endif
 
 /*
     Frame format
@@ -88,9 +90,9 @@ PUBLIC int httpOpenWebSockFilter(Http *http)
 {
     HttpStage     *filter;
 
-    assure(http);
+    assert(http);
 
-    mprLog(5, "Open webSock filter");
+    mprTrace(5, "Open webSock filter");
     if ((filter = httpCreateFilter(http, "webSocketFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -117,12 +119,12 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
     cchar           *key, *protocols;
     int             version;
 
-    assure(conn);
-    assure(route);
+    assert(conn);
+    assert(route);
     rx = conn->rx;
     tx = conn->tx;
-    assure(rx);
-    assure(tx);
+    assert(rx);
+    assert(tx);
 
     if (!conn->endpoint) {
         if (rx->webSocket) {
@@ -216,18 +218,18 @@ static void openWebSock(HttpQueue *q)
     HttpWebSocket   *ws;
     HttpPacket      *packet;
 
-    assure(q);
+    assert(q);
     conn = q->conn;
     ws = conn->rx->webSocket;
-    assure(ws);
+    assert(ws);
 
-    mprLog(5, "webSocketFilter: Opening a new request ");
+    mprTrace(5, "webSocketFilter: Opening a new request ");
     q->packetSize = min(conn->limits->bufferSize, q->max);
     ws->closeStatus = WS_STATUS_NO_STATUS;
     conn->timeoutCallback = webSockTimeout;
 
     if ((packet = httpGetPacket(conn->writeq)) != 0) {
-        assure(packet->flags & HTTP_PACKET_HEADER);
+        assert(packet->flags & HTTP_PACKET_HEADER);
         httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
     }
     conn->tx->responded = 0;
@@ -252,7 +254,7 @@ static void closeWebSock(HttpQueue *q)
 
     if (q->conn && q->conn->rx) {
         ws = q->conn->rx->webSocket;
-        assure(ws);
+        assert(ws);
         if (ws && ws->pingEvent) {
             mprRemoveEvent(ws->pingEvent);
             ws->pingEvent = 0;
@@ -282,13 +284,13 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
     conn = q->conn;
     limits = conn->limits;
     ws = conn->rx->webSocket;
-    assure(ws);
+    assert(ws);
     rx = conn->rx;
-    assure(packet);
+    assert(packet);
     content = packet->content;
-    assure(content);
+    assert(content);
 
-    mprLog(4, "webSocketFilter: Process packet type %d, \"%s\", data length %d", packet->type, 
+    mprTrace(4, "webSocketFilter: Process packet type %d, \"%s\", data length %d", packet->type, 
         codetxt[packet->type], mprGetBufLength(content));
 
     switch (packet->type) {
@@ -304,7 +306,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             }
         }
         if (packet->type == WS_MSG_TEXT) {
-            mprLog(5, "webSocketFilter: Text packet \"%s\"", content->start);
+            mprTrace(5, "webSocketFilter: Text packet \"%s\"", content->start);
         }
         if (ws->currentMessage) {
             httpJoinPacket(ws->currentMessage, packet);
@@ -314,7 +316,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         for (tail = 0; packet; packet = tail, tail = 0) {
             if (httpGetPacketLength(packet) > limits->webSocketsPacketSize) {
                 tail = httpSplitPacket(packet, limits->webSocketsPacketSize);
-                assure(tail);
+                assert(tail);
                 packet->last = 0;
             }
             if (packet->last || tail) {
@@ -343,7 +345,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
                 ws->closeReason = sclone(&content->start[2]);
             }
         }
-        mprLog(5, "webSocketFilter: close status %d, reason \"%s\", closing %d", ws->closeStatus, 
+        mprTrace(5, "webSocketFilter: close status %d, reason \"%s\", closing %d", ws->closeStatus, 
                 ws->closeReason, ws->closing);
         if (ws->closing) {
             httpDisconnect(conn);
@@ -387,11 +389,11 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     ssize           len, currentFrameLen, offset, frameLen;
     int             i, error, mask, lenBytes, opcode;
 
-    assure(packet);
+    assert(packet);
     conn = q->conn;
-    assure(conn->rx);
+    assert(conn->rx);
     ws = conn->rx->webSocket;
-    assure(ws);
+    assert(ws);
     limits = conn->limits;
     VERIFY_QUEUE(q);
 
@@ -402,7 +404,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
          */
         httpJoinPacketForService(q, packet, 0);
     }
-    mprLog(4, "webSocketFilter: incoming data. State %d, Frame state %d, Length: %d", 
+    mprTrace(4, "webSocketFilter: incoming data. State %d, Frame state %d, Length: %d", 
         ws->state, ws->frameState, httpGetPacketLength(packet));
 
     if (packet->flags & HTTP_PACKET_END) {
@@ -419,11 +421,11 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     while ((packet = httpGetPacket(q)) != 0) {
         content = packet->content;
         error = 0;
-        mprLog(5, "webSocketFilter: incoming data, frame state %d", ws->frameState);
+        mprTrace(5, "webSocketFilter: incoming data, frame state %d", ws->frameState);
         switch (ws->frameState) {
         case WS_CLOSED:
             if (httpGetPacketLength(packet) > 0) {
-                mprLog(5, "webSocketFilter: closed, ignore incoming packet");
+                mprTrace(5, "webSocketFilter: closed, ignore incoming packet");
             }
             httpFinalize(conn);
             break;
@@ -482,12 +484,12 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                     ws->dataMask[i] = *fp++;
                 }
             }
-            assure(content);
-            assure(fp >= content->start);
+            assert(content);
+            assert(fp >= content->start);
             mprAdjustBufStart(content, fp - content->start);
-            assure(q->count >= 0);
+            assert(q->count >= 0);
             ws->frameState = WS_MSG;
-            mprLog(5, "webSocketFilter: Begin new packet \"%s\", last %d, mask %d, length %d", codetxt[opcode & 0xf],
+            mprTrace(5, "webSocketFilter: Begin new packet \"%s\", last %d, mask %d, length %d", codetxt[opcode & 0xf],
                 packet->last, mask, len);
             /* Keep packet on queue as we need the packet->type */
             httpPutBackPacket(q, packet);
@@ -508,7 +510,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                     tail->last = 0;
                     tail->type = 0;
                     httpPutBackPacket(q, tail);
-                    mprLog(6, "webSocketFilter: Split data packet, %d/%d", ws->frameLength, httpGetPacketLength(tail));
+                    mprTrace(6, "webSocketFilter: Split data packet, %d/%d", ws->frameLength, httpGetPacketLength(tail));
                     len = httpGetPacketLength(packet);
                 }
             }
@@ -518,18 +520,18 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 break;
             }
             if (packet->type == WS_MSG_CONT && ws->currentFrame) {
-                mprLog(6, "webSocketFilter: Joining data packet %d/%d", currentFrameLen, len);
+                mprTrace(6, "webSocketFilter: Joining data packet %d/%d", currentFrameLen, len);
                 httpJoinPacket(ws->currentFrame, packet);
                 packet = ws->currentFrame;
                 content = packet->content;
             }
             frameLen = httpGetPacketLength(packet);
-            assure(frameLen <= ws->frameLength);
+            assert(frameLen <= ws->frameLength);
             if (frameLen == ws->frameLength) {
                 /*
                     Got a cmplete frame 
                  */
-                assure(packet->type);
+                assert(packet->type);
                 if (ws->maskOffset >= 0) {
                     for (cp = content->start; cp < content->end; cp++) {
                         *cp = *cp ^ ws->dataMask[ws->maskOffset++ & 0x3];
@@ -553,8 +555,8 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
 
 #if KEEP
         case WS_EXT_DATA:
-            assure(packet);
-            mprLog(5, "webSocketFilter: EXT DATA - RESERVED");
+            assert(packet);
+            mprTrace(5, "webSocketFilter: EXT DATA - RESERVED");
             ws->frameState = WS_MSG;
             break;
 #endif
@@ -605,14 +607,14 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     HttpQueue   *q;
     ssize       thisWrite, totalWritten;
 
-    assure(conn);
-    assure(buf);
+    assert(conn);
+    assert(buf);
 
     /*
         Note: we can come here before the handshake is complete. The data is queued and if the connection handshake 
         succeeds, then the data is sent.
      */
-    assure(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED);
+    assert(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED);
     if (!(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED) || !conn->upgraded) {
         return MPR_ERR_BAD_STATE;
     }
@@ -631,7 +633,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         mprError("webSocketFilter: Outgoing message is too large %d/%d", len, conn->limits->webSocketsMessageSize);
         return MPR_ERR_WONT_FIT;
     }
-    mprLog(5, "webSocketFilter: Sending message type \"%s\", len %d", codetxt[type & 0xf], len);
+    mprTrace(5, "webSocketFilter: Sending message type \"%s\", len %d", codetxt[type & 0xf], len);
     totalWritten = 0;
     do {
         /*
@@ -665,7 +667,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
                     break;
                 } else if (flags & HTTP_BLOCK) {
                     while (q->count >= q->max) {
-                        assure(conn->limits->inactivityTimeout > 10);
+                        assert(conn->limits->inactivityTimeout > 10);
                         mprWaitForEvent(conn->dispatcher, conn->limits->inactivityTimeout);
                     }
                 }
@@ -686,9 +688,9 @@ PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
     char            msg[128];
     ssize           len;
 
-    assure(0 <= status && status <= WS_STATUS_MAX);
+    assert(0 <= status && status <= WS_STATUS_MAX);
     ws = conn->rx->webSocket;
-    assure(ws);
+    assert(ws);
     if (ws->closing) {
         return;
     }
@@ -712,7 +714,7 @@ PUBLIC void httpSendClose(HttpConn *conn, int status, cchar *reason)
     if (reason) {
         scopy(&msg[2], len - 2, reason);
     }
-    mprLog(5, "webSocketFilter: sendClose, status %d reason \"%s\"", status, reason);
+    mprTrace(5, "webSocketFilter: sendClose, status %d reason \"%s\"", status, reason);
     httpSendBlock(conn, WS_MSG_CLOSE, msg, len, HTTP_BUFFER);
 }
 
@@ -730,7 +732,7 @@ static void outgoingWebSockService(HttpQueue *q)
     int         i, mask;
 
     conn = q->conn;
-    mprLog(6, "webSocketFilter: outgoing service");
+    mprTrace(6, "webSocketFilter: outgoing service");
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (!(packet->flags & (HTTP_PACKET_END | HTTP_PACKET_HEADER))) {
@@ -776,7 +778,7 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            mprLog(6, "webSocketFilter: outgoing service, data packet len %d", httpGetPacketLength(packet));
+            mprTrace(6, "webSocketFilter: outgoing service, data packet len %d", httpGetPacketLength(packet));
         }
         httpPutPacketToNext(q, packet);
     }
@@ -793,7 +795,7 @@ PUBLIC char *httpGetWebSocketCloseReason(HttpConn *conn)
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
-    assure(ws);
+    assert(ws);
     return ws->closeReason;
 }
 
@@ -808,7 +810,7 @@ PUBLIC ssize httpGetWebSocketMessageLength(HttpConn *conn)
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
-    assure(ws);
+    assert(ws);
     return ws->messageLength;
 }
 
@@ -823,7 +825,7 @@ PUBLIC char *httpGetWebSocketProtocol(HttpConn *conn)
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
-    assure(ws);
+    assert(ws);
     return ws->subProtocol;
 }
 
@@ -838,7 +840,7 @@ PUBLIC ssize httpGetWebSocketState(HttpConn *conn)
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
-    assure(ws);
+    assert(ws);
     return ws->state;
 }
 
@@ -853,15 +855,15 @@ PUBLIC bool httpWebSocketOrderlyClosed(HttpConn *conn)
     if ((ws = conn->rx->webSocket) == 0) {
         return 0;
     }
-    assure(ws);
+    assert(ws);
     return ws->closeStatus != WS_STATUS_COMMS_ERROR;
 }
 
 
 PUBLIC void httpSetWebSocketProtocols(HttpConn *conn, cchar *protocols)
 {
-    assure(conn);
-    assure(protocols && *protocols);
+    assert(conn);
+    assert(protocols && *protocols);
     conn->protocols = sclone(protocols);
 }
 
@@ -871,7 +873,7 @@ static bool validUTF8(cchar *str, ssize len)
     cuchar      *cp, *end;
     int         nbytes, i;
   
-    assure(str);
+    assert(str);
     cp = (cuchar*) str;
     end = (cuchar*) &str[len];
     for (; cp < end && *cp; cp += nbytes) {
@@ -897,7 +899,7 @@ static bool validUTF8(cchar *str, ssize len)
                 return 0;
             }
         }
-        assure(nbytes >= 1);
+        assert(nbytes >= 1);
     } 
     return 1;
 }
@@ -905,8 +907,8 @@ static bool validUTF8(cchar *str, ssize len)
 
 static void webSockPing(HttpConn *conn)
 {
-    assure(conn);
-    assure(conn->rx);
+    assert(conn);
+    assert(conn->rx);
     /*
         Send a ping. Optimze by sending no data message with it.
      */
@@ -916,7 +918,7 @@ static void webSockPing(HttpConn *conn)
 
 static void webSockTimeout(HttpConn *conn)
 {
-    assure(conn);
+    assert(conn);
     httpSendClose(conn, WS_STATUS_POLICY_VIOLATION, "Request timeout");
 }
 
@@ -929,9 +931,9 @@ PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
     HttpTx  *tx;
     char    num[16];
 
-    assure(!conn->endpoint);
+    assert(!conn->endpoint);
     tx = conn->tx;
-    mprLog(5, "webSocketFilter: Upgrade socket");
+    mprLog(3, "webSocketFilter: Upgrade socket");
     httpSetStatus(conn, HTTP_CODE_SWITCHING);
     httpSetHeader(conn, "Upgrade", "websocket");
     httpSetHeader(conn, "Connection", "Upgrade");
@@ -958,12 +960,12 @@ PUBLIC bool httpVerifyWebSocketsHandshake(HttpConn *conn)
     HttpTx          *tx;
     cchar           *key, *expected;
 
-    assure(!conn->endpoint);
+    assert(!conn->endpoint);
     rx = conn->rx;
     tx = conn->tx;
-    assure(rx);
-    assure(rx->webSocket);
-    assure(conn->upgraded);
+    assert(rx);
+    assert(rx->webSocket);
+    assert(conn->upgraded);
 
     rx->webSocket->state = WS_STATE_CLOSED;
 

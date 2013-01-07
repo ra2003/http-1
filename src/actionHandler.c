@@ -20,8 +20,8 @@ static void startAction(HttpQueue *q)
 
     mprLog(5, "Start actionHandler");
     conn = q->conn;
-    assure(!conn->error);
-    assure(!conn->tx->finalized);
+    assert(!conn->error);
+    assert(!conn->tx->finalized);
 
     name = conn->rx->pathInfo;
     if ((action = mprLookupKey(conn->tx->handler->stageData, name)) == 0) {

@@ -4,7 +4,7 @@
     This file is a catenation of all the source code. Amalgamating into a
     single file makes embedding simpler and the resulting application faster.
 
-    Prepared by: magnetar.local
+    Prepared by: voyager.local
  */
 
 #include "est.h"
@@ -11570,7 +11570,7 @@ char *ssl_get_cipher(ssl_context * ssl)
 
 
 //  MOB - move to top
-int ssl_default_ciphers[] = {
+PUBLIC int ssl_default_ciphers[] = {
 #if BIT_EST_DHM
 #if BIT_EST_AES
     TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
@@ -11604,7 +11604,7 @@ int ssl_default_ciphers[] = {
 /*
    Perform the SSL handshake
  */
-int ssl_handshake(ssl_context * ssl)
+PUBLIC int ssl_handshake(ssl_context * ssl)
 {
     char    cbuf[4096];
 

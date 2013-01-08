@@ -4,7 +4,7 @@
     This file is a catenation of all the source code. Amalgamating into a
     single file makes embedding simpler and the resulting application faster.
 
-    Prepared by: magnetar.local
+    Prepared by: voyager.local
  */
 
 #include "mpr.h"
@@ -40,12 +40,14 @@
     #define VALLOC 0
 #endif
 
+#if BIT_MEMORY_DEBUG
 /*
     Set this address to break when this address is allocated or freed
     Only used for debug, but defined regardless so we can have constant exports.
  */
-PUBLIC MprMem *stopAlloc = 0;
-PUBLIC int stopSeqno = -1;
+static MprMem *stopAlloc = 0;
+static int stopSeqno = -1;
+#endif
 
 #define GET_MEM(ptr)                ((MprMem*) (((char*) (ptr)) - sizeof(MprMem)))
 #define GET_PTR(mp)                 ((char*) (((char*) mp) + sizeof(MprMem)))
@@ -4215,7 +4217,7 @@ PUBLIC ssize mprPutPadToBuf(MprBuf *bp, int c, ssize count)
 }
 
 
-PUBLIC ssize mprPutFmtToBuf(MprBuf *bp, cchar *fmt, ...)
+PUBLIC ssize mprPutToBuf(MprBuf *bp, cchar *fmt, ...)
 {
     va_list     ap;
     char        *buf;
@@ -17324,7 +17326,7 @@ PUBLIC void mprSetFilesLimit(int limit)
 #define STATE_TYPE      7               /* Data type */
 #define STATE_COUNT     8
 
-PUBLIC char stateMap[] = {
+static char stateMap[] = {
     /*     STATES:  Normal Percent Modifier Width  Dot  Prec Bits Type */
     /* CLASS           0      1       2       3     4     5    6    7  */
     /* Normal   0 */   0,     0,      0,      0,    0,    0,   0,   0,
@@ -17343,7 +17345,7 @@ PUBLIC char stateMap[] = {
   
     The Class map will map from a specifier letter to a state.
  */
-PUBLIC char classMap[] = {
+static char classMap[] = {
     /*   0  ' '    !     "     #     $     %     &     ' */
              2,    0,    0,    2,    0,    1,    0,    0,
     /*  07   (     )     *     +     ,     -     .     / */
@@ -25477,7 +25479,7 @@ PUBLIC char *mprFormatTm(cchar *format, struct tm *tp)
             break;
 
         case 's':                                       /* seconds since epoch */
-            mprPutFmtToBuf(buf, "%d", mprMakeTime(tp) / MS_PER_SEC);
+            mprPutToBuf(buf, "%d", mprMakeTime(tp) / MS_PER_SEC);
             break;
 
         case 'T':

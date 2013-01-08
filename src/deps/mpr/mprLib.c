@@ -4,7 +4,7 @@
     This file is a catenation of all the source code. Amalgamating into a
     single file makes embedding simpler and the resulting application faster.
 
-    Prepared by: voyager.local
+    Prepared by: magnetar.local
  */
 
 #include "mpr.h"
@@ -21088,19 +21088,17 @@ PUBLIC int mprUpgradeSocket(MprSocket *sp, MprSsl *ssl, cchar *peerName)
         }
         ssl->providerName = providerName;
     }
-    mprLog(4, "Using %s SSL provider", ssl->providerName);
+    mprLog(4, "Using SSL provider: %s", ssl->providerName);
     sp->provider = ssl->provider;
 #if FUTURE
     /* session resumption can cause problems with Nagle. However, appweb opens sockets with nodelay by default */
     sp->flags |= MPR_SOCKET_NODELAY;
     mprSetSocketNoDelay(sp, 1);
 #endif
-    mprLog(4, "Start upgrade socket to TLS");
     return sp->provider->upgradeSocket(sp, ssl, peerName);
 }
 
 
-//  MOB - is this supported in Est?
 PUBLIC void mprAddSslCiphers(MprSsl *ssl, cchar *ciphers)
 {
     assert(ssl);
@@ -23862,8 +23860,9 @@ PUBLIC void mprSetMinWorkers(int n)
     ws = MPR->workerService;
     lock(ws);
     ws->minThreads = n; 
-    mprTrace(4, "Pre-start %d workers", ws->minThreads);
-    
+    if (n > 0) {
+        mprTrace(4, "Pre-start %d workers", ws->minThreads);
+    }
     while (ws->numThreads < ws->minThreads) {
         worker = createWorker(ws, ws->stackSize);
         ws->numThreads++;

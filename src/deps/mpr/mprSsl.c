@@ -4,7 +4,7 @@
     This file is a catenation of all the source code. Amalgamating into a
     single file makes embedding simpler and the resulting application faster.
 
-    Prepared by: voyager.local
+    Prepared by: magnetar.local
  */
 
 
@@ -308,6 +308,7 @@ static int upgradeMss(MprSocket *sp, MprSsl *ssl, cchar *peerName)
             return MPR_ERR_CANT_CREATE;
         }
     } else {
+        msp->peerName = sclone(peerName);
         if (matrixSslLoadRsaKeys(cfg->keys, NULL, NULL, password, ssl->caFile) < 0) {
             mprError("MatrixSSL: Could not read or decode certificate or key file."); 
             unlock(sp);
@@ -318,7 +319,6 @@ static int upgradeMss(MprSocket *sp, MprSsl *ssl, cchar *peerName)
             unlock(sp);
             return MPR_ERR_CANT_CONNECT;
         }
-        msp->peerName = sclone(peerName);
         if (mssHandshake(sp, 0) < 0) {
             unlock(sp);
             return MPR_ERR_CANT_CONNECT;
@@ -473,7 +473,7 @@ static int verifyCert(ssl_t *ssl, psX509Cert_t *cert, int32 alert)
     }
 #if FUTURE
     msp = sp->sslSocket;
-    if (!smatch(msp->peerName, cert->subject.commonName)) {
+    if (msp->peerName && !smatch(msp->peerName, cert->subject.commonName)) {
         mprError("SSL certificate Common name mismatch");
         return PS_FAILURE;
     }
@@ -819,6 +819,14 @@ static ssize flushMss(MprSocket *sp)
     return blockingWrite(sp, 0, 0);
 }
 
+
+/*
+    Cleanup for all-in-one distributions
+ */
+#undef SSL_RSA_WITH_3DES_EDE_CBC_SHA
+#undef TLS_RSA_WITH_AES_128_CBC_SHA
+#undef TLS_RSA_WITH_AES_256_CBC_SHA
+
 #endif /* BIT_PACK_MATRIXSSL */
 
 /*
@@ -1049,7 +1057,9 @@ static int upgradeEst(MprSocket *sp, MprSsl *ssl, cchar *peerName)
         }
         est->cfg = ssl->config = cfg;
         if (ssl->certFile) {
-            //  MOB - openssl uses encrypted and/not 
+            //  MOB - encrypted and/not?
+            //  MOB PEM/DER?
+            //  MOB catenated with key file?
             if (x509parse_crtfile(&cfg->cert, ssl->certFile) != 0) {
                 sp->errorMsg = sfmt("Unable to parse certificate %s", ssl->certFile); 
                 unlock(ssl);
@@ -1101,7 +1111,7 @@ static int upgradeEst(MprSocket *sp, MprSsl *ssl, cchar *peerName)
 	ssl_set_session(&est->ctx, 1, 0, &est->session);
 	memset(&est->session, 0, sizeof(ssl_session));
 
-	ssl_set_ca_chain(&est->ctx, &cfg->cabundle, (char*) peerName);
+    ssl_set_ca_chain(&est->ctx, &cfg->cabundle, (char*) peerName);
 	ssl_set_own_cert(&est->ctx, &cfg->cert, &cfg->rsa);
 	ssl_set_dh_param(&est->ctx, dhKey, dhG);
 
@@ -1154,28 +1164,28 @@ static int estHandshake(MprSocket *sp)
        
     } else if ((vrc = ssl_get_verify_result(&est->ctx)) != 0) {
         if (vrc & BADCERT_EXPIRED) {
-            sp->errorMsg = sfmt("Certificate expired");
+            sp->errorMsg = sclone("Certificate expired");
 
         } else if (vrc & BADCERT_REVOKED) {
-            sp->errorMsg = sfmt("Certificate revoked");
+            sp->errorMsg = sclone("Certificate revoked");
 
         } else if (vrc & BADCERT_CN_MISMATCH) {
-            sp->errorMsg = sfmt("Certificate common name mismatch");
+            sp->errorMsg = sclone("Certificate common name mismatch");
 
         } else if (vrc & BADCERT_NOT_TRUSTED) {
             if (est->ctx.peer_cert->next && est->ctx.peer_cert->next->version == 0) {
                 //  MOB - est should have dedicated EST error code for this.
-                sp->errorMsg = sfmt("Self-signed certificate");
+                sp->errorMsg = sclone("Self-signed certificate");
             } else {
-                sp->errorMsg = sfmt("Certificate not trusted");
+                sp->errorMsg = sclone("Certificate not trusted");
             }
             trusted = 0;
 
         } else {
             if (est->ctx.client_auth && !sp->ssl->certFile) {
-                sp->errorMsg = sfmt("Server requires a client certificate");
+                sp->errorMsg = sclone("Server requires a client certificate");
             } else if (rc == EST_ERR_NET_CONN_RESET) {
-                sp->errorMsg = sfmt("Peer disconnected");
+                sp->errorMsg = sclone("Peer disconnected");
             } else {
                 sp->errorMsg = sfmt("Cannot handshake: error -0x%x", -rc);
             }
@@ -1379,7 +1389,7 @@ static void estTrace(void *fp, int level, char *str)
 {
     level += 3;
     if (level <= MPR->logLevel) {
-        mprLog(level, "EST: %s", str);
+        mprLog(level | MPR_RAW_MSG, "EST: %s", str);
     }
 }
 
@@ -1850,19 +1860,24 @@ static int upgradeOss(MprSocket *sp, MprSsl *ssl, cchar *peerName)
     if (sp->flags & MPR_SOCKET_SERVER) {
         SSL_set_accept_state(osp->handle);
     } else {
+        if (peerName) {
+            osp->peerName = sclone(peerName);
+        }
         /* Block while connecting */
         mprSetSocketBlockingMode(sp, 1);
+        sp->errorMsg = 0;
         if ((rc = SSL_connect(osp->handle)) < 1) {
-            error = ERR_get_error();
-            ERR_error_string_n(error, ebuf, sizeof(ebuf) - 1);
-            sp->errorMsg = sclone(ebuf);
-            mprLog(4, "SSL_read error %s", ebuf);
+            if (sp->errorMsg) {
+                mprLog(4, "%s", sp->errorMsg);
+            } else {
+                error = ERR_get_error();
+                ERR_error_string_n(error, ebuf, sizeof(ebuf) - 1);
+                sp->errorMsg = sclone(ebuf);
+                mprLog(4, "SSL_read error %s", ebuf);
+            }
             return MPR_ERR_CANT_CONNECT;
         }
         mprSetSocketBlockingMode(sp, 0);
-    }
-    if (peerName) {
-        osp->peerName = sclone(peerName);
     }
     return 0;
 }
@@ -2089,6 +2104,7 @@ static int verifyX509Certificate(int ok, X509_STORE_CTX *xContext)
     X509            *cert;
     SSL             *handle;
     OpenSocket      *osp;
+    MprSocket       *sp;
     MprSsl          *ssl;
     char            subject[260], issuer[260], peer[260];
     int             error, depth;
@@ -2097,7 +2113,8 @@ static int verifyX509Certificate(int ok, X509_STORE_CTX *xContext)
 
     handle = (SSL*) X509_STORE_CTX_get_app_data(xContext);
     osp = (OpenSocket*) SSL_get_app_data(handle);
-    ssl = osp->sock->ssl;
+    sp = osp->sock;
+    ssl = sp->ssl;
 
     cert = X509_STORE_CTX_get_current_cert(xContext);
     depth = X509_STORE_CTX_get_error_depth(xContext);
@@ -2105,16 +2122,20 @@ static int verifyX509Certificate(int ok, X509_STORE_CTX *xContext)
 
     ok = 1;
     if (X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject) - 1) < 0) {
+        sp->errorMsg = sclone("Cannot get subject name");
         ok = 0;
     }
     if (X509_NAME_oneline(X509_get_issuer_name(xContext->current_cert), issuer, sizeof(issuer) - 1) < 0) {
+        sp->errorMsg = sclone("Cannot get issuer name");
         ok = 0;
     }
     if (X509_NAME_get_text_by_NID(X509_get_subject_name(xContext->current_cert), NID_commonName, peer, 
             sizeof(peer) - 1) < 0) {
+        sp->errorMsg = sclone("Cannot get peer name");
         ok = 0;
     }
-    if (ok && ssl->verifyPeer && osp->peerName && smatch(peer, osp->peerName)) {
+    if (ok && ssl->verifyPeer && osp->peerName && !smatch(peer, osp->peerName)) {
+        sp->errorMsg = sclone("Certificate common name mismatch");
         ok = 0;
     }
     if (ok && ssl->verifyDepth < depth) {
@@ -2124,12 +2145,19 @@ static int verifyX509Certificate(int ok, X509_STORE_CTX *xContext)
     }
     switch (error) {
     case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-        /* Normal self signed certificate */
     case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+        /* Normal self signed certificate */
+        if (ssl->verifyIssuer) {
+            sp->errorMsg = sclone("Self-signed certificate");
+            ok = 0;
+        }
+        break;
+
     case X509_V_ERR_CERT_UNTRUSTED:
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
         if (ssl->verifyIssuer) {
             /* Issuer can't be verified */
+            sp->errorMsg = sclone("Certificate not trusted");
             ok = 0;
         }
         break;
@@ -2145,6 +2173,7 @@ static int verifyX509Certificate(int ok, X509_STORE_CTX *xContext)
     case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
     case X509_V_ERR_INVALID_CA:
     default:
+        sp->errorMsg = sfmt("Certificate verification error %d", error);
         ok = 0;
         break;
     }
@@ -2153,7 +2182,7 @@ static int verifyX509Certificate(int ok, X509_STORE_CTX *xContext)
         mprLog(4, "OpenSSL: Issuer: %s", issuer);
         mprLog(4, "OpenSSL: Peer: %s", peer);
     } else {
-        mprLog(1, "OpenSSL: Certification failed: subject %s (more trace at level 4)", subject);
+        mprLog(3, "OpenSSL: Certificate cannot be verified: subject %s (more trace at level 4)", subject);
         mprLog(4, "OpenSSL: Issuer: %s", issuer);
         mprLog(4, "OpenSSL: Peer: %s", peer);
         mprLog(4, "OpenSSL: Error: %d: %s", error, X509_verify_cert_error_string(error));

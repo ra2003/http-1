@@ -7029,7 +7029,7 @@ typedef struct MprSsl {
     char            *keyFile;           /**< Alternatively, locate the key in a file */
     char            *certFile;          /**< Alternatively, locate the cert in a file */
     char            *caFile;            /**< Certificate verification cert file or bundle */
-    char            *caPath;            /**< Certificate verification cert directory */
+    char            *caPath;            /**< Certificate verification cert directory (OpenSSL only) */
     char            *ciphers;           /**< Candidate ciphers to use */
     int             configured;         /**< Set if this SSL configuration has been processed */
     void            *config;            /**< Extended provider SSL configuration */
@@ -7111,6 +7111,7 @@ PUBLIC void mprSetSslCaFile(struct MprSsl *ssl, cchar *caFile);
 
 /**
     Set the path for the client certificate directory
+    @description This is supported for OpenSSL only.
     @param ssl SSL instance returned from #mprCreateSsl
     @param caPath Path to the SSL client certificate directory
     @ingroup MprSsl

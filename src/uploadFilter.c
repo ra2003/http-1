@@ -559,7 +559,7 @@ static int processContentData(HttpQueue *q)
                 conn->rx->mimeType = sclone("application/x-www-form-urlencoded");
 
             }
-            mprPutFmtToBuf(packet->content, "%s=%s", up->id, data);
+            mprPutToBuf(packet->content, "%s=%s", up->id, data);
         }
     }
     if (up->clientFilename) {

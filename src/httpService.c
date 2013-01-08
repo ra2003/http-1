@@ -754,32 +754,32 @@ PUBLIC char *httpStatsReport(int flags)
     httpGetStats(&s);
     buf = mprCreateBuf(0, 0);
 
-    mprPutFmtToBuf(buf, "\nHttp Report: at %s\n\n", mprGetDate("%D %T"));
-    mprPutFmtToBuf(buf, "Memory      %8.1f MB, %5.1f%% max\n", s.mem / mb, s.mem / (double) s.memMax * 100.0);
-    mprPutFmtToBuf(buf, "Heap        %8.1f MB, %5.1f%% mem\n", s.heap / mb, s.heap / (double) s.mem * 100.0);
-    mprPutFmtToBuf(buf, "Heap-used   %8.1f MB, %5.1f%% used\n", s.heapUsed / mb, s.heapUsed / (double) s.heap * 100.0);
-    mprPutFmtToBuf(buf, "Heap-free   %8.1f MB, %5.1f%% free\n", s.heapFree / mb, s.heapFree / (double) s.heap * 100.0);
+    mprPutToBuf(buf, "\nHttp Report: at %s\n\n", mprGetDate("%D %T"));
+    mprPutToBuf(buf, "Memory      %8.1f MB, %5.1f%% max\n", s.mem / mb, s.mem / (double) s.memMax * 100.0);
+    mprPutToBuf(buf, "Heap        %8.1f MB, %5.1f%% mem\n", s.heap / mb, s.heap / (double) s.mem * 100.0);
+    mprPutToBuf(buf, "Heap-used   %8.1f MB, %5.1f%% used\n", s.heapUsed / mb, s.heapUsed / (double) s.heap * 100.0);
+    mprPutToBuf(buf, "Heap-free   %8.1f MB, %5.1f%% free\n", s.heapFree / mb, s.heapFree / (double) s.heap * 100.0);
 
     mprPutCharToBuf(buf, '\n');
-    mprPutFmtToBuf(buf, "Regions     %8d\n", s.regions);
-    mprPutFmtToBuf(buf, "CPUs        %8d\n", s.cpus);
+    mprPutToBuf(buf, "Regions     %8d\n", s.regions);
+    mprPutToBuf(buf, "CPUs        %8d\n", s.cpus);
     mprPutCharToBuf(buf, '\n');
 
-    mprPutFmtToBuf(buf, "Connections %8.1f per/sec\n", (s.totalConnections - last.totalConnections) / elapsed);
-    mprPutFmtToBuf(buf, "Requests    %8.1f per/sec\n", (s.totalRequests - last.totalRequests) / elapsed);
-    mprPutFmtToBuf(buf, "Sweeps      %8.1f per/sec\n", (s.totalSweeps - last.totalSweeps) / elapsed);
+    mprPutToBuf(buf, "Connections %8.1f per/sec\n", (s.totalConnections - last.totalConnections) / elapsed);
+    mprPutToBuf(buf, "Requests    %8.1f per/sec\n", (s.totalRequests - last.totalRequests) / elapsed);
+    mprPutToBuf(buf, "Sweeps      %8.1f per/sec\n", (s.totalSweeps - last.totalSweeps) / elapsed);
     mprPutCharToBuf(buf, '\n');
 
-    mprPutFmtToBuf(buf, "Clients     %8d active\n", s.activeClients);
-    mprPutFmtToBuf(buf, "Connections %8d active\n", s.activeConnections);
-    mprPutFmtToBuf(buf, "Processes   %8d active\n", s.activeProcesses);
-    mprPutFmtToBuf(buf, "Requests    %8d active\n", s.activeRequests);
-    mprPutFmtToBuf(buf, "Sessions    %8d active\n", s.activeSessions);
-    mprPutFmtToBuf(buf, "VMs         %8d active\n", s.activeVMs);
-    mprPutFmtToBuf(buf, "Pending     %8d requests\n", s.pendingRequests);
+    mprPutToBuf(buf, "Clients     %8d active\n", s.activeClients);
+    mprPutToBuf(buf, "Connections %8d active\n", s.activeConnections);
+    mprPutToBuf(buf, "Processes   %8d active\n", s.activeProcesses);
+    mprPutToBuf(buf, "Requests    %8d active\n", s.activeRequests);
+    mprPutToBuf(buf, "Sessions    %8d active\n", s.activeSessions);
+    mprPutToBuf(buf, "VMs         %8d active\n", s.activeVMs);
+    mprPutToBuf(buf, "Pending     %8d requests\n", s.pendingRequests);
     mprPutCharToBuf(buf, '\n');
 
-    mprPutFmtToBuf(buf, "Workers     %8d busy - %d yielded, %d idle, %d max\n", 
+    mprPutToBuf(buf, "Workers     %8d busy - %d yielded, %d idle, %d max\n", 
         s.workersBusy, s.workersYielded, s.workersIdle, s.workersMax);
     mprPutCharToBuf(buf, '\n');
     mprAddNullToBuf(buf);

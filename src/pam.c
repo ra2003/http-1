@@ -71,7 +71,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn)
             abilities = mprCreateBuf(0, 0);
             for (i = 0; i < ngroups; i++) {
                 if ((gp = getgrgid(groups[i])) != 0) {
-                    mprPutFmtToBuf(abilities, "%s ", gp->gr_name);
+                    mprPutToBuf(abilities, "%s ", gp->gr_name);
                 }
             }
             mprAddNullToBuf(abilities);

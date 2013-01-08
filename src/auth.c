@@ -662,7 +662,7 @@ PUBLIC void httpComputeUserAbilities(HttpAuth *auth, HttpUser *user)
         MprBuf *buf = mprCreateBuf(0, 0);
         MprKey *ap;
         for (ITERATE_KEYS(user->abilities, ap)) {
-            mprPutFmtToBuf(buf, "%s ", ap->key);
+            mprPutToBuf(buf, "%s ", ap->key);
         }
         mprAddNullToBuf(buf);
         mprLog(5, "User \"%s\" has abilities: %s", user->name, mprGetBufStart(buf));

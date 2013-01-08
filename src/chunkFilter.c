@@ -239,7 +239,7 @@ static void setChunkPrefix(HttpQueue *q, HttpPacket *packet)
         NOTE: prefixes don't count in the queue length. No need to adjust q->count
      */
     if (httpGetPacketLength(packet)) {
-        mprPutFmtToBuf(packet->prefix, "\r\n%x\r\n", httpGetPacketLength(packet));
+        mprPutToBuf(packet->prefix, "\r\n%x\r\n", httpGetPacketLength(packet));
     } else {
         mprPutStringToBuf(packet->prefix, "\r\n0\r\n\r\n");
     }

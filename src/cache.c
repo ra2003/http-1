@@ -159,9 +159,9 @@ static void outgoingCacheFilterService(HttpQueue *q)
                 /*
                     Add defined headers to the start of the cache buffer. Separate with a double newline.
                  */
-                mprPutFmtToBuf(tx->cacheBuffer, "X-Status: %d\n", tx->status);
+                mprPutToBuf(tx->cacheBuffer, "X-Status: %d\n", tx->status);
                 for (kp = 0; (kp = mprGetNextKey(tx->headers, kp)) != 0; ) {
-                    mprPutFmtToBuf(tx->cacheBuffer, "%s: %s\n", kp->key, kp->data);
+                    mprPutToBuf(tx->cacheBuffer, "%s: %s\n", kp->key, kp->data);
                 }
                 mprPutCharToBuf(tx->cacheBuffer, '\n');
             }

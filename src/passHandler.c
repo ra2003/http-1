@@ -77,7 +77,7 @@ PUBLIC void httpHandleOptionsTrace(HttpConn *conn, cchar *methods)
             q->count -= httpGetPacketLength(headers);
             assert(q->count == 0);
             mprFlushBuf(headers->content);
-            mprPutFmtToBuf(traceData->content, mprGetBufStart(q->first->content));
+            mprPutToBuf(traceData->content, mprGetBufStart(q->first->content));
             httpSetContentType(conn, "message/http");
             httpPutForService(q, traceData, HTTP_DELAY_SERVICE);
         }

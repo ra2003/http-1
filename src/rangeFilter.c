@@ -190,7 +190,7 @@ static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range)
     length = (tx->entityLength >= 0) ? itos(tx->entityLength) : "*";
     packet = httpCreatePacket(HTTP_RANGE_BUFSIZE);
     packet->flags |= HTTP_PACKET_RANGE;
-    mprPutFmtToBuf(packet->content, 
+    mprPutToBuf(packet->content, 
         "\r\n--%s\r\n"
         "Content-Range: bytes %Ld-%Ld/%s\r\n\r\n",
         tx->rangeBoundary, range->start, range->end - 1, length);
@@ -210,7 +210,7 @@ static HttpPacket *createFinalRangePacket(HttpConn *conn)
 
     packet = httpCreatePacket(HTTP_RANGE_BUFSIZE);
     packet->flags |= HTTP_PACKET_RANGE;
-    mprPutFmtToBuf(packet->content, "\r\n--%s--\r\n", tx->rangeBoundary);
+    mprPutToBuf(packet->content, "\r\n--%s--\r\n", tx->rangeBoundary);
     return packet;
 }
 

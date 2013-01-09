@@ -75,7 +75,7 @@ Bit.load({
             sources: [ 'src/http.c' ],
         },
 
-        ca: {
+        'http-ca': {
             type: 'file',
             files: [ 'src/ca.crt' ],
             path: '${LIB}/http-ca.crt',

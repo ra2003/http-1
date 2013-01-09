@@ -878,7 +878,7 @@ static ssize flushMss(MprSocket *sp)
 typedef struct EstConfig {
     rsa_context     rsa;                /* RSA context */
     x509_cert       cert;               /* Certificate (own) */
-    x509_cert       cabundle;           /* Certificate bundle to veryify peery */
+    x509_cert       ca;                 /* Certificate authority bundle to verify peer */
     int             *ciphers;           /* Set of acceptable ciphers */
     char            *dhKey;             /* DH keys */
 } EstConfig;
@@ -953,7 +953,7 @@ PUBLIC int mprCreateEstModule()
     estProvider->writeSocket = writeEst;
     estProvider->socketState = getEstState;
     mprAddSocketProvider("est", estProvider);
-    sessions = mprCreateList(-1, -1);
+    sessions = mprCreateList(0, 0);
 
     if ((defaultEstConfig = mprAllocObj(EstConfig, manageEstConfig)) == 0) {
         return MPR_ERR_MEMORY;
@@ -968,6 +968,9 @@ static void manageEstProvider(MprSocketProvider *provider, int flags)
     if (flags & MPR_MANAGE_MARK) {
         mprMark(defaultEstConfig);
         mprMark(sessions);
+    } else if (flags & MPR_MANAGE_FREE) {
+        defaultEstConfig = 0;
+        sessions = 0;
     }
 }
 
@@ -975,11 +978,12 @@ static void manageEstProvider(MprSocketProvider *provider, int flags)
 static void manageEstConfig(EstConfig *cfg, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
+        ;
 
     } else if (flags & MPR_MANAGE_FREE) {
         rsa_free(&cfg->rsa);
         x509_free(&cfg->cert);
-        x509_free(&cfg->cabundle);
+        x509_free(&cfg->ca);
         free(cfg->ciphers);
     }
 }
@@ -1045,9 +1049,11 @@ static int upgradeEst(MprSocket *sp, MprSsl *ssl, cchar *peerName)
     sp->ssl = ssl;
 
     lock(ssl);
-    if (ssl->config) {
+    if (ssl->config && !ssl->changed) {
         est->cfg = cfg = ssl->config;
     } else {
+        ssl->changed = 0;
+
         /*
             One time setup for the SSL configuration for this MprSsl
          */
@@ -1060,6 +1066,7 @@ static int upgradeEst(MprSocket *sp, MprSsl *ssl, cchar *peerName)
             //  MOB - encrypted and/not?
             //  MOB PEM/DER?
             //  MOB catenated with key file?
+            //  MOB - must check that a keyFile is provided
             if (x509parse_crtfile(&cfg->cert, ssl->certFile) != 0) {
                 sp->errorMsg = sfmt("Unable to parse certificate %s", ssl->certFile); 
                 unlock(ssl);
@@ -1068,6 +1075,7 @@ static int upgradeEst(MprSocket *sp, MprSsl *ssl, cchar *peerName)
         }
         if (ssl->keyFile) {
             //  MOB - last arg is password
+            //  MOB - must check that a certFile is provided
             if (x509parse_keyfile(&cfg->rsa, ssl->keyFile, 0) != 0) {
                 sp->errorMsg = sfmt("Unable to parse key file %s", ssl->keyFile); 
                 unlock(ssl);
@@ -1075,8 +1083,8 @@ static int upgradeEst(MprSocket *sp, MprSsl *ssl, cchar *peerName)
             }
         }
         if (ssl->caFile) {
-            if (x509parse_crtfile(&cfg->cabundle, ssl->caFile) != 0) {
-                sp->errorMsg = sfmt("Unable to parse certificate bundle %s", ssl->caFile); 
+            if (x509parse_crtfile(&cfg->ca, ssl->caFile) != 0) {
+                sp->errorMsg = sfmt("Unable to parse certificate authority bundle %s", ssl->caFile); 
                 unlock(ssl);
                 return MPR_ERR_CANT_READ;
             }
@@ -1111,8 +1119,10 @@ static int upgradeEst(MprSocket *sp, MprSsl *ssl, cchar *peerName)
 	ssl_set_session(&est->ctx, 1, 0, &est->session);
 	memset(&est->session, 0, sizeof(ssl_session));
 
-    ssl_set_ca_chain(&est->ctx, &cfg->cabundle, (char*) peerName);
-	ssl_set_own_cert(&est->ctx, &cfg->cert, &cfg->rsa);
+    ssl_set_ca_chain(&est->ctx, ssl->caFile ? &cfg->ca : NULL, (char*) peerName);
+    if (ssl->keyFile && ssl->certFile) {
+        ssl_set_own_cert(&est->ctx, &cfg->cert, &cfg->rsa);
+    }
 	ssl_set_dh_param(&est->ctx, dhKey, dhG);
 
     if (estHandshake(sp) < 0) {
@@ -1156,7 +1166,12 @@ static int estHandshake(MprSocket *sp)
         Analyze the handshake result
      */
     if (rc < 0) {
-        sp->errorMsg = sfmt("Cannot handshake: error -0x%x", -rc);
+        //  MOB - more codes here or have est set a textual message (better)
+        if (rc == EST_ERR_SSL_PRIVATE_KEY_REQUIRED && !(sp->ssl->keyFile || sp->ssl->certFile)) {
+            sp->errorMsg = sclone("Missing required certificate and key");
+        } else {
+            sp->errorMsg = sfmt("Cannot handshake: error -0x%x", -rc);
+        }
         mprLog(4, "%s", sp->errorMsg);
         sp->flags |= MPR_SOCKET_EOF;
         errno = EPROTO;
@@ -1173,8 +1188,7 @@ static int estHandshake(MprSocket *sp)
             sp->errorMsg = sclone("Certificate common name mismatch");
 
         } else if (vrc & BADCERT_NOT_TRUSTED) {
-            if (est->ctx.peer_cert->next && est->ctx.peer_cert->next->version == 0) {
-                //  MOB - est should have dedicated EST error code for this.
+            if (vrc & BADCERT_SELF_SIGNED) {
                 sp->errorMsg = sclone("Self-signed certificate");
             } else {
                 sp->errorMsg = sclone("Certificate not trusted");
@@ -1204,6 +1218,8 @@ static int estHandshake(MprSocket *sp)
                 return -1;
             }
         }
+    } else {
+        mprLog(4, "Certificate validated");
     }
     return 1;
 }
@@ -1309,20 +1325,26 @@ static char *getEstState(MprSocket *sp)
     ssl_context     *ctx;
     MprBuf          *buf;
     char            *own, *peer;
-    char            cbuf[5120];
+    char            cbuf[5120];         //  MOB - must not be a static buffer
 
-    est = sp->sslSocket;
+    if ((est = sp->sslSocket) == 0) {
+        return 0;
+    }
     ctx = &est->ctx;
     buf = mprCreateBuf(0, 0);
-    mprPutToBuf(buf, "CIPHER=%s, ", ssl_get_cipher(ctx));
+    mprPutToBuf(buf, "PROVIDER=est,CIPHER=%s,", ssl_get_cipher(ctx));
 
     own =  sp->acceptIp ? "SERVER_" : "CLIENT_";
     peer = sp->acceptIp ? "CLIENT_" : "SERVER_";
-    x509parse_cert_info(peer, cbuf, sizeof(cbuf), ctx->peer_cert);
-    mprPutStringToBuf(buf, cbuf);
-    x509parse_cert_info(own, cbuf, sizeof(cbuf), ctx->own_cert);
-    mprPutStringToBuf(buf, cbuf);
-    mprTrace(4, "EST state: %s", mprGetBufStart(buf));
+    if (ctx->peer_cert) {
+        x509parse_cert_info(peer, cbuf, sizeof(cbuf), ctx->peer_cert);
+        mprPutStringToBuf(buf, cbuf);
+    }
+    if (ctx->own_cert) {
+        x509parse_cert_info(own, cbuf, sizeof(cbuf), ctx->own_cert);
+        mprPutStringToBuf(buf, cbuf);
+    }
+    mprTrace(5, "EST state: %s", mprGetBufStart(buf));
     return mprGetBufStart(buf);
 }
 
@@ -1389,7 +1411,7 @@ static void estTrace(void *fp, int level, char *str)
 {
     level += 3;
     if (level <= MPR->logLevel) {
-        mprLog(level | MPR_RAW_MSG, "EST: %s", str);
+        mprRawLog(level, "%s: %d: EST: %s", MPR->name, level, str);
     }
 }
 
@@ -1840,9 +1862,13 @@ static int upgradeOss(MprSocket *sp, MprSsl *ssl, cchar *peerName)
     sp->sslSocket = osp;
     sp->ssl = ssl;
 
-    if (!ssl->config && (ssl->config = createOpenSslConfig(sp)) == 0) {
-        return MPR_ERR_CANT_INITIALIZE;
+    if (!ssl->config || ssl->changed) {
+        if ((ssl->config = createOpenSslConfig(sp)) == 0) {
+            return MPR_ERR_CANT_INITIALIZE;
+        }
+        ssl->changed = 0;
     }
+
     /*
         Create and configure the SSL struct
      */
@@ -1883,19 +1909,28 @@ static int upgradeOss(MprSocket *sp, MprSsl *ssl, cchar *peerName)
 }
 
 
+/*
+    Parse the cert info and write properties to the buffer
+    Modifies the info argument
+ */
 static void parseCertFields(MprBuf *buf, char *prefix, char *prefix2, char *info)
 {
-    char    *cp, *term;
+    char    c, *cp, *term, *key, *value;
 
-    for (term = cp = info; *cp; cp++) {
-        if (*cp == '/') {
+    term = cp = info;
+    do {
+        c = *cp;
+        if (c == '/' || c == '\0') {
             *cp = '\0';
-            mprPutToBuf(buf, "%s%s%s, ", prefix, prefix2, term);
-            *cp = '/';
+            key = stok(term, "=", &value);
+            if (smatch(key, "emailAddress")) {
+                key = "EMAIL";
+            }
+            mprPutToBuf(buf, "%s%s%s=%s,", prefix, prefix2, key, value);
             term = &cp[1];
+            *cp = c;
         }
-    }
-    mprPutToBuf(buf, "%s%s%s, ", prefix, prefix2, term);
+    } while (*cp++ != '\0');
 }
 
 
@@ -1909,7 +1944,7 @@ static char *getOssState(MprSocket *sp)
 
     osp = sp->sslSocket;
     buf = mprCreateBuf(0, 0);
-    mprPutToBuf(buf, "CIPHER=%s, ", SSL_get_cipher(osp->handle));
+    mprPutToBuf(buf, "PROVIDER=openssl,CIPHER=%s,", SSL_get_cipher(osp->handle));
 
     if ((cert = SSL_get_peer_certificate(osp->handle)) != 0) {
         prefix = sp->acceptIp ? "CLIENT_" : "SERVER_";
@@ -1918,7 +1953,7 @@ static char *getOssState(MprSocket *sp)
         parseCertFields(buf, prefix, "S_", &subject[1]);
 
         X509_NAME_oneline(X509_get_issuer_name(cert), issuer, sizeof(issuer) -1);
-        parseCertFields(buf, prefix, "I_", &subject[1]);
+        parseCertFields(buf, prefix, "I_", &issuer[1]);
         X509_free(cert);
     }
     if ((cert = SSL_get_certificate(osp->handle)) != 0) {
@@ -1927,10 +1962,10 @@ static char *getOssState(MprSocket *sp)
         parseCertFields(buf, prefix, "S_", &subject[1]);
 
         X509_NAME_oneline(X509_get_issuer_name(cert), issuer, sizeof(issuer) -1);
-        parseCertFields(buf, prefix, "I_", &subject[1]);
-        X509_free(cert);
+        parseCertFields(buf, prefix, "I_", &issuer[1]);
+        /* Don't call X509_free on own cert */
     }
-    mprTrace(4, "OpenSSL state: %s", mprGetBufStart(buf));
+    mprTrace(5, "OpenSSL state: %s", mprGetBufStart(buf));
     return mprGetBufStart(buf);
 }
 
@@ -2144,6 +2179,8 @@ static int verifyX509Certificate(int ok, X509_STORE_CTX *xContext)
         }
     }
     switch (error) {
+    case X509_V_OK:
+        break;
     case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
     case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
         /* Normal self signed certificate */

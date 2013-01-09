@@ -56,7 +56,7 @@
     #define BIT_EST_CAMELLIA 0
 #endif
 #ifndef BIT_EST_DES
-    #define BIT_EST_DES 1
+    #define BIT_EST_DES 0
 #endif
 #ifndef BIT_EST_DHM
     #define BIT_EST_DHM 1
@@ -108,8 +108,12 @@
 #endif
 #ifndef BIT_EST_CLIENT
     #define BIT_EST_CLIENT 1
+    #undef BIT_EST_MD5
+    #define BIT_EST_MD5 1
 #endif
 #ifndef BIT_EST_SERVER
+    #undef BIT_EST_MD5
+    #define BIT_EST_MD5 1
     #define BIT_EST_SERVER 1
 #endif
 #ifndef BIT_EST_TEST_CERTS
@@ -1496,6 +1500,7 @@ extern "C" {
 #define BADCERT_REVOKED                 2
 #define BADCERT_CN_MISMATCH             4
 #define BADCERT_NOT_TRUSTED             8
+#define BADCERT_SELF_SIGNED             0x10
 
 /*
  * DER constants
@@ -1708,7 +1713,8 @@ extern "C" {
      *                      BADCERT_EXPIRED --
      *                      BADCERT_REVOKED --
      *                      BADCERT_CN_MISMATCH --
-     *                      BADCERT_NOT_TRUSTED
+     *                      BADCERT_NOT_TRUSTED --
+     *                      BADCERT_SELF_SIGNED
      *
      * \note           TODO: add two arguments, depth and crl
      */
@@ -2171,6 +2177,7 @@ extern "C" {
      *                      BADCERT_REVOKED
      *                      BADCERT_CN_MISMATCH
      *                      BADCERT_NOT_TRUSTED
+     *                      BADCERT_SELF_SIGNED
      */
     PUBLIC int ssl_get_verify_result(ssl_context * ssl);
 
@@ -3439,13 +3446,11 @@ extern "C" {
     #define LOG(l, ...) if (1) ; else
     #define RET(l, ...) if (1) ; else
 #endif
-
     #define SSL_DEBUG_MSG(level, args)              debug_print_msg(ssl, level, debug_fmt args);
     #define SSL_DEBUG_RET(level, text, ret)         debug_print_ret(ssl, level, text, ret);
     #define SSL_DEBUG_BUF(level, text, buf, len)    debug_print_buf(ssl, level, text, buf, len);
     #define SSL_DEBUG_MPI(level, text, X)           debug_print_mpi(ssl, level, text, X);
     #define SSL_DEBUG_CRT(level, text, crt)         debug_print_crt(ssl, level, text, crt);
-
 #endif
 
 #if BIT_EST_LOGGING
@@ -3455,7 +3460,6 @@ extern "C" {
     #define SSL_DEBUG_MPI(level, text, X)           debug_print_mpi(ssl, level, text, X);
     #define SSL_DEBUG_CRT(level, text, crt)         debug_print_crt(ssl, level, text, crt);
 #else
-
     #define SSL_DEBUG_MSG(level, args)            do {} while(0)
     #define SSL_DEBUG_RET(level, text, ret)       do {} while(0)
     #define SSL_DEBUG_BUF(level, text, buf, len)  do {} while(0)

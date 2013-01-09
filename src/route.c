@@ -2508,7 +2508,7 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
     HttpRoute   *route;
     MprBuf      *buf;
     HttpLang    *lang;
-    char        *tok, *cp, *key, *value, *field, *header, *defaultValue, *state, *v;
+    char        *tok, *cp, *key, *value, *field, *header, *defaultValue, *state, *v, *p;
 
     assert(conn);
     assert(str);
@@ -2635,13 +2635,14 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
                 mprPutStringToBuf(buf, mprGetSocketState(conn->sock));
             } else {
                 state = mprGetSocketState(conn->sock);
-                if ((cp = scontains(state, value)) != 0) {
-                    stok(cp, "=", &v);
+                if ((p = scontains(state, value)) != 0) {
+                    stok(p, "=", &v);
                     mprPutStringToBuf(buf, stok(v, ", ", NULL));
                 }
             }
         }
     }
+    assert(cp);
     if (tok) {
         if (tok > cp) {
             mprPutBlockToBuf(buf, tok, tok - cp);

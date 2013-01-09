@@ -354,7 +354,7 @@ struct  MprXml;
 #elif BIT_WIN_LIKE
     #define MAIN(name, _argc, _argv, _envp)  \
         APIENTRY WinMain(HINSTANCE inst, HINSTANCE junk, char *command, int junk2) { \
-            extern int main(); \
+            PUBLIC int main(); \
             char *largv[BIT_MAX_ARGC]; \
             int largc; \
             largc = mprParseArgs(command, &largv[1], BIT_MAX_ARGC - 1); \
@@ -6439,6 +6439,7 @@ typedef int (*MprSocketProc)(void *data, int mask);
     @stability Stable
  */
 typedef struct MprSocketProvider {
+    char    *name;
     void    *data;
     //  MOB - document these APIs
     void    (*closeSocket)(struct MprSocket *socket, bool gracefully);
@@ -7037,6 +7038,7 @@ typedef struct MprSsl {
     int             verifyIssuer;       /**< Set if the certificate issuer should be also verified */
     int             verifyDepth;        /**< Set if the cert chain depth should be verified */
     int             protocols;          /**< SSL protocols */
+    int             changed;            /**< Set if there is a change in the SSL config. Reset by providers */
     MprMutex        *mutex;             /**< Multithread sync */
 } MprSsl;
 
@@ -8381,7 +8383,7 @@ PUBLIC void mprNop(void *ptr);
     #define MPR mprGetMpr()
 #else
     #define mprGetMpr() MPR
-    PUBLIC Mpr *MPR;
+    PUBLIC_DATA Mpr *MPR;
 #endif
 
 #define MPR_DISABLE_GC          0x1         /**< Disable GC */

@@ -24,13 +24,13 @@ CFLAGS          += $(CFLAGS-$(PROFILE))
 LDFLAGS         += $(LDFLAGS-$(PROFILE))
 
 all: prep \
+        $(CONFIG)/bin/ca.crt \
         $(CONFIG)/bin/libpcre.so \
         $(CONFIG)/bin/libmpr.so \
         $(CONFIG)/bin/libmprssl.so \
         $(CONFIG)/bin/makerom \
         $(CONFIG)/bin/libhttp.so \
-        $(CONFIG)/bin/http \
-        $(CONFIG)/bin/http-ca.crt
+        $(CONFIG)/bin/http
 
 .PHONY: prep
 
@@ -45,13 +45,13 @@ prep:
 	fi; true
 
 clean:
+	rm -rf $(CONFIG)/bin/ca.crt
 	rm -rf $(CONFIG)/bin/libpcre.so
 	rm -rf $(CONFIG)/bin/libmpr.so
 	rm -rf $(CONFIG)/bin/libmprssl.so
 	rm -rf $(CONFIG)/bin/makerom
 	rm -rf $(CONFIG)/bin/libhttp.so
 	rm -rf $(CONFIG)/bin/http
-	rm -rf $(CONFIG)/bin/http-ca.crt
 	rm -rf $(CONFIG)/obj/estLib.o
 	rm -rf $(CONFIG)/obj/pcre.o
 	rm -rf $(CONFIG)/obj/mprLib.o
@@ -93,6 +93,10 @@ clean:
 
 clobber: clean
 	rm -fr ./$(CONFIG)
+
+$(CONFIG)/bin/ca.crt: 
+	rm -fr $(CONFIG)/bin/ca.crt
+	cp -r src/deps/est/ca.crt $(CONFIG)/bin/ca.crt
 
 $(CONFIG)/inc/pcre.h:  \
         $(CONFIG)/inc/bit.h
@@ -399,8 +403,4 @@ $(CONFIG)/bin/http:  \
         $(CONFIG)/bin/libhttp.so \
         $(CONFIG)/obj/http.o
 	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lhttp $(LIBS) -lpcre -lmpr $(LDFLAGS)
-
-$(CONFIG)/bin/http-ca.crt: 
-	rm -fr $(CONFIG)/bin/http-ca.crt
-	cp -r src/ca.crt $(CONFIG)/bin/http-ca.crt
 

@@ -28,6 +28,9 @@ if ! diff ${CONFIG}/inc/bit.h projects/http-${OS}-${PROFILE}-bit.h >/dev/null ; 
 	cp projects/http-${OS}-${PROFILE}-bit.h ${CONFIG}/inc/bit.h
 fi
 
+rm -rf ${CONFIG}/bin/ca.crt
+cp -r src/deps/est/ca.crt ${CONFIG}/bin/ca.crt
+
 rm -rf ${CONFIG}/inc/pcre.h
 cp -r src/deps/pcre/pcre.h ${CONFIG}/inc/pcre.h
 
@@ -126,7 +129,4 @@ cp -r src/http.h ${CONFIG}/inc/http.h
 "${CC}" -c -Fo${CONFIG}/obj/http.obj -Fd${CONFIG}/obj/http.pdb ${CFLAGS} -DEMBEDTHIS=1 ${DFLAGS} -I${CONFIG}/inc -Isrc src/http.c
 
 "${LD}" -out:${CONFIG}/bin/http.exe -entry:mainCRTStartup -subsystem:console ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/http.obj libhttp.lib ${LIBS} libpcre.lib libmpr.lib
-
-rm -rf ${CONFIG}/bin/http-ca.crt
-cp -r src/ca.crt ${CONFIG}/bin/http-ca.crt
 

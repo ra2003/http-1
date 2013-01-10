@@ -75,12 +75,6 @@ Bit.load({
             sources: [ 'src/http.c' ],
         },
 
-        'http-ca': {
-            type: 'file',
-            files: [ 'src/ca.crt' ],
-            path: '${LIB}/http-ca.crt',
-        },
-
         package: {
             depends: ['packageCombo'],
         },
@@ -94,7 +88,6 @@ Bit.load({
                 install(['doc/api/httpBare.html', 'doc/api/http*.tags', 'doc/api/http.dtags'], d.join('doc/api'))
                 install('doc/man/http.1', d.join('doc/man/http.1'))
                 install(['src/http.h', 'src/http.c'], d.join('src/deps/http'))
-                install('src/ca.crt', d.join('src/deps/http/http-ca.crt'))
                 install('src/*.c', d.join('src/deps/http/httpLib.c'), {
                     cat: true,
                     exclude: /http.c/,

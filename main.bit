@@ -30,6 +30,16 @@ Bit.load({
         http: {
             pam: true,
         },
+        est: {
+            camellia: false,
+            padlock: false,
+            sslServer: false,
+            des: false,
+            testCerts: false,
+            xtea: false,
+            romTables: false,
+            genPrime: false,
+        },
     },
 
     usage: {

@@ -12849,10 +12849,11 @@ static void x509_des3_decrypt(uchar des3_iv[8], uchar *buf, int buflen, uchar *p
  */
 int x509parse_key(rsa_context * rsa, uchar *buf, int buflen, uchar *pwd, int pwdlen)
 {
-    int ret, len, enc;
-    uchar *s1, *s2;
-    uchar *p, *end;
-    uchar des3_iv[8];
+    int     ret, len, enc;
+    uchar   *s1, *s2, *p, *end;
+#if BIT_EST_DES
+    uchar   des3_iv[8];
+#endif
 
     s1 = (uchar *)strstr((char *)buf, "-----BEGIN RSA PRIVATE KEY-----");
 

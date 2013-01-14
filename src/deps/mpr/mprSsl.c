@@ -568,6 +568,12 @@ static ssize blockingWrite(MprSocket *sp, cvoid *buf, ssize len)
 }
 
 
+static int32 matrixSslHandshakeIsComplete(ssl_t *ssl)
+{	
+	return (ssl->hsState == SSL_HS_DONE) ? PS_TRUE : PS_FALSE;
+}
+
+
 /*
     Construct the initial HELLO message to send to the server and initiate
     the SSL handshake. Can be used in the re-handshake scenario as well.
@@ -1704,7 +1710,7 @@ static OpenConfig *createOpenSslConfig(MprSocket *sp)
         if (!(ssl->caFile || ssl->caPath)) {
             sp->errorMsg = sclone("No defined certificate authority file");
             SSL_CTX_free(context);
-            return MPR_ERR_CANT_READ;
+            return 0;
         }
         if ((!SSL_CTX_load_verify_locations(context, ssl->caFile, ssl->caPath)) ||
                 (!SSL_CTX_set_default_verify_paths(context))) {

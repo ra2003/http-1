@@ -568,7 +568,7 @@ static ssize blockingWrite(MprSocket *sp, cvoid *buf, ssize len)
 }
 
 
-static int32 matrixSslHandshakeIsComplete(ssl_t *ssl)
+static int32 handshakeIsComplete(ssl_t *ssl)
 {	
 	return (ssl->hsState == SSL_HS_DONE) ? PS_TRUE : PS_FALSE;
 }
@@ -605,7 +605,7 @@ static int handshakeMss(MprSocket *sp, short cipherSuite)
                 mprSetSocketBlockingMode(sp, mode);
                 return MPR_ERR_CANT_INITIALIZE;
             }
-            if (matrixSslHandshakeIsComplete(msp->ctx)) {
+            if (handshakeIsComplete(msp->ctx)) {
                 break;
             }
         } else {

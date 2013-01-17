@@ -516,7 +516,11 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     }
     domainAtt = domain ? "; domain=" : "";
     if (domain && !strchr(domain, '.')) {
-        domain = sjoin(".", domain, NULL);
+        if (smatch(domain, "localhost")) {
+            domainAtt = domain = "";
+        } else {
+            domain = sjoin(".", domain, NULL);
+        }
     }
     if (lifespan > 0) {
         expiresAtt = "; expires=";

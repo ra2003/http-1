@@ -25,7 +25,7 @@ Bit.load({
         buildNumber: '0',
         sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
         '+required': [ 'pcre' ],
-        '+discover': [ 'doxygen', 'dsi', 'ejs', 'est', 'man', 'man2html', 'utest' ],
+        '+discover': [ 'doxygen', 'dsi', 'est', 'man', 'man2html', 'utest' ],
         'without-all': ['doxygen', 'dsi', 'est', 'man', 'man2html', 'pmaker' ],
         'without-default': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker' ],
         http: {

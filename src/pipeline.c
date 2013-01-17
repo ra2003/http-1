@@ -52,10 +52,13 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         }
     }
     if (tx->connector == 0) {
+#if !BIT_ROM
         if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !hasOutputFilters && 
                 !conn->secure && httpShouldTrace(conn, HTTP_TRACE_TX, HTTP_TRACE_BODY, tx->ext) < 0) {
             tx->connector = http->sendConnector;
-        } else if (route && route->connector) {
+        } else 
+#endif
+        if (route && route->connector) {
             tx->connector = route->connector;
         } else {
             tx->connector = http->netConnector;

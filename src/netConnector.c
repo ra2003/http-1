@@ -77,6 +77,7 @@ static void netOutgoingService(HttpQueue *q)
             return;
         }
     }
+#if !BIT_ROM
     if (tx->flags & HTTP_TX_SENDFILE) {
         /* Relay via the send connector */
         if (tx->file == 0) {
@@ -92,6 +93,7 @@ static void netOutgoingService(HttpQueue *q)
             return;
         }
     }
+#endif
     while (q->first || q->ioIndex) {
         if (q->ioIndex == 0 && buildNetVec(q) <= 0) {
             break;

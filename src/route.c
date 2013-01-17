@@ -642,6 +642,9 @@ PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route)
         tx->filename = mprJoinPath(lang->path, tx->filename);
     }
     tx->filename = mprJoinPath(route->dir, tx->filename);
+#if BIT_ROM
+    tx->filename = mprGetRelPath(tx->filename, NULL);
+#endif
     tx->ext = httpGetExt(conn);
     info = &tx->fileInfo;
     mprGetPathInfo(tx->filename, info);

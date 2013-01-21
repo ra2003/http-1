@@ -24,11 +24,11 @@ CFLAGS          += $(CFLAGS-$(PROFILE))
 LDFLAGS         += $(LDFLAGS-$(PROFILE))
 
 all: prep \
+        $(CONFIG)/bin/libest.dylib \
         $(CONFIG)/bin/ca.crt \
         $(CONFIG)/bin/libpcre.dylib \
         $(CONFIG)/bin/libmpr.dylib \
         $(CONFIG)/bin/libmprssl.dylib \
-        $(CONFIG)/bin/makerom \
         $(CONFIG)/bin/libhttp.dylib \
         $(CONFIG)/bin/http
 
@@ -45,11 +45,11 @@ prep:
 	fi; true
 
 clean:
+	rm -rf $(CONFIG)/bin/libest.dylib
 	rm -rf $(CONFIG)/bin/ca.crt
 	rm -rf $(CONFIG)/bin/libpcre.dylib
 	rm -rf $(CONFIG)/bin/libmpr.dylib
 	rm -rf $(CONFIG)/bin/libmprssl.dylib
-	rm -rf $(CONFIG)/bin/makerom
 	rm -rf $(CONFIG)/bin/libhttp.dylib
 	rm -rf $(CONFIG)/bin/http
 	rm -rf $(CONFIG)/obj/estLib.o
@@ -94,6 +94,27 @@ clean:
 clobber: clean
 	rm -fr ./$(CONFIG)
 
+$(CONFIG)/inc/bitos.h: 
+	rm -fr $(CONFIG)/inc/bitos.h
+	cp -r src/bitos.h $(CONFIG)/inc/bitos.h
+
+$(CONFIG)/inc/est.h:  \
+        $(CONFIG)/inc/bit.h \
+        $(CONFIG)/inc/bitos.h
+	rm -fr $(CONFIG)/inc/est.h
+	cp -r src/deps/est/est.h $(CONFIG)/inc/est.h
+
+$(CONFIG)/obj/estLib.o: \
+        src/deps/est/estLib.c \
+        $(CONFIG)/inc/bit.h \
+        $(CONFIG)/inc/est.h
+	$(CC) -c -o $(CONFIG)/obj/estLib.o -arch x86_64 $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/est/estLib.c
+
+$(CONFIG)/bin/libest.dylib:  \
+        $(CONFIG)/inc/est.h \
+        $(CONFIG)/obj/estLib.o
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libest.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libest.dylib $(CONFIG)/obj/estLib.o $(LIBS)
+
 $(CONFIG)/bin/ca.crt: 
 	rm -fr $(CONFIG)/bin/ca.crt
 	cp -r src/deps/est/ca.crt $(CONFIG)/bin/ca.crt
@@ -112,11 +133,7 @@ $(CONFIG)/obj/pcre.o: \
 $(CONFIG)/bin/libpcre.dylib:  \
         $(CONFIG)/inc/pcre.h \
         $(CONFIG)/obj/pcre.o
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libpcre.dylib -arch x86_64 $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libpcre.dylib $(CONFIG)/obj/pcre.o $(LIBS)
-
-$(CONFIG)/inc/bitos.h: 
-	rm -fr $(CONFIG)/inc/bitos.h
-	cp -r src/bitos.h $(CONFIG)/inc/bitos.h
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libpcre.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libpcre.dylib $(CONFIG)/obj/pcre.o $(LIBS)
 
 $(CONFIG)/inc/mpr.h:  \
         $(CONFIG)/inc/bit.h \
@@ -135,12 +152,6 @@ $(CONFIG)/bin/libmpr.dylib:  \
         $(CONFIG)/obj/mprLib.o
 	$(CC) -dynamiclib -o $(CONFIG)/bin/libmpr.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libmpr.dylib $(CONFIG)/obj/mprLib.o $(LIBS)
 
-$(CONFIG)/inc/est.h:  \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/bitos.h
-	rm -fr $(CONFIG)/inc/est.h
-	cp -r src/deps/est/est.h $(CONFIG)/inc/est.h
-
 $(CONFIG)/obj/mprSsl.o: \
         src/deps/mpr/mprSsl.c \
         $(CONFIG)/inc/bit.h \
@@ -150,19 +161,9 @@ $(CONFIG)/obj/mprSsl.o: \
 
 $(CONFIG)/bin/libmprssl.dylib:  \
         $(CONFIG)/bin/libmpr.dylib \
+        $(CONFIG)/bin/libest.dylib \
         $(CONFIG)/obj/mprSsl.o
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libmprssl.dylib $(CONFIG)/obj/mprSsl.o -lmpr $(LIBS)
-
-$(CONFIG)/obj/makerom.o: \
-        src/deps/mpr/makerom.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/mpr.h
-	$(CC) -c -o $(CONFIG)/obj/makerom.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/mpr/makerom.c
-
-$(CONFIG)/bin/makerom:  \
-        $(CONFIG)/bin/libmpr.dylib \
-        $(CONFIG)/obj/makerom.o
-	$(CC) -o $(CONFIG)/bin/makerom -arch x86_64 $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS)
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libmprssl.dylib $(CONFIG)/obj/mprSsl.o -lest -lmpr $(LIBS)
 
 $(CONFIG)/inc/http.h:  \
         $(CONFIG)/inc/bit.h \

@@ -24,11 +24,11 @@ CFLAGS          += $(CFLAGS-$(PROFILE))
 LDFLAGS         += $(LDFLAGS-$(PROFILE))
 
 all: prep \
+        $(CONFIG)/bin/libest.so \
         $(CONFIG)/bin/ca.crt \
         $(CONFIG)/bin/libpcre.so \
         $(CONFIG)/bin/libmpr.so \
         $(CONFIG)/bin/libmprssl.so \
-        $(CONFIG)/bin/makerom \
         $(CONFIG)/bin/libhttp.so \
         $(CONFIG)/bin/http
 
@@ -45,11 +45,11 @@ prep:
 	fi; true
 
 clean:
+	rm -rf $(CONFIG)/bin/libest.so
 	rm -rf $(CONFIG)/bin/ca.crt
 	rm -rf $(CONFIG)/bin/libpcre.so
 	rm -rf $(CONFIG)/bin/libmpr.so
 	rm -rf $(CONFIG)/bin/libmprssl.so
-	rm -rf $(CONFIG)/bin/makerom
 	rm -rf $(CONFIG)/bin/libhttp.so
 	rm -rf $(CONFIG)/bin/http
 	rm -rf $(CONFIG)/obj/estLib.o
@@ -94,6 +94,23 @@ clean:
 clobber: clean
 	rm -fr ./$(CONFIG)
 
+$(CONFIG)/inc/est.h:  \
+        $(CONFIG)/inc/bit.h \
+        src/bitos.h
+	rm -fr $(CONFIG)/inc/est.h
+	cp -r src/deps/est/est.h $(CONFIG)/inc/est.h
+
+$(CONFIG)/obj/estLib.o: \
+        src/deps/est/estLib.c \
+        $(CONFIG)/inc/bit.h \
+        $(CONFIG)/inc/est.h
+	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC $(LDFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/est/estLib.c
+
+$(CONFIG)/bin/libest.so:  \
+        $(CONFIG)/inc/est.h \
+        $(CONFIG)/obj/estLib.o
+	$(CC) -shared -o $(CONFIG)/bin/libest.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/estLib.o $(LIBS)
+
 $(CONFIG)/bin/ca.crt: 
 	rm -fr $(CONFIG)/bin/ca.crt
 	cp -r src/deps/est/ca.crt $(CONFIG)/bin/ca.crt
@@ -131,12 +148,6 @@ $(CONFIG)/bin/libmpr.so:  \
         $(CONFIG)/obj/mprLib.o
 	$(CC) -shared -o $(CONFIG)/bin/libmpr.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprLib.o $(LIBS)
 
-$(CONFIG)/inc/est.h:  \
-        $(CONFIG)/inc/bit.h \
-        src/bitos.h
-	rm -fr $(CONFIG)/inc/est.h
-	cp -r src/deps/est/est.h $(CONFIG)/inc/est.h
-
 $(CONFIG)/obj/mprSsl.o: \
         src/deps/mpr/mprSsl.c \
         $(CONFIG)/inc/bit.h \
@@ -146,19 +157,9 @@ $(CONFIG)/obj/mprSsl.o: \
 
 $(CONFIG)/bin/libmprssl.so:  \
         $(CONFIG)/bin/libmpr.so \
+        $(CONFIG)/bin/libest.so \
         $(CONFIG)/obj/mprSsl.o
-	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprSsl.o -lmpr $(LIBS)
-
-$(CONFIG)/obj/makerom.o: \
-        src/deps/mpr/makerom.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/mpr.h
-	$(CC) -c -o $(CONFIG)/obj/makerom.o -fPIC $(LDFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/mpr/makerom.c
-
-$(CONFIG)/bin/makerom:  \
-        $(CONFIG)/bin/libmpr.so \
-        $(CONFIG)/obj/makerom.o
-	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS) $(LDFLAGS)
+	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprSsl.o -lest -lmpr $(LIBS)
 
 $(CONFIG)/inc/bitos.h: 
 	rm -fr $(CONFIG)/inc/bitos.h
@@ -402,5 +403,5 @@ $(CONFIG)/obj/http.o: \
 $(CONFIG)/bin/http:  \
         $(CONFIG)/bin/libhttp.so \
         $(CONFIG)/obj/http.o
-	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lhttp $(LIBS) -lpcre -lmpr $(LDFLAGS)
+	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lhttp $(LIBS) -lpcre -lmpr -lhttp -llxnet -lrt -lsocket -lpthread -lm -ldl -lpcre -lmpr $(LDFLAGS)
 

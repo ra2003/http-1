@@ -25,11 +25,11 @@ LIBPATHS = -libpath:$(CONFIG)\bin
 LIBS     = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
 
 all: prep \
+        $(CONFIG)\bin\libest.dll \
         $(CONFIG)\bin\ca.crt \
         $(CONFIG)\bin\libpcre.dll \
         $(CONFIG)\bin\libmpr.dll \
         $(CONFIG)\bin\libmprssl.dll \
-        $(CONFIG)\bin\makerom.exe \
         $(CONFIG)\bin\libhttp.dll \
         $(CONFIG)\bin\http.exe
 
@@ -45,11 +45,11 @@ prep:
 	@if not exist $(CONFIG)\bin md $(CONFIG)\bin
 	@if not exist $(CONFIG)\inc\bit.h copy projects\http-$(OS)-$(PROFILE)-bit.h $(CONFIG)\inc\bit.h
 clean:
+	-if exist $(CONFIG)\bin\libest.dll del /Q $(CONFIG)\bin\libest.dll
 	-if exist $(CONFIG)\bin\ca.crt del /Q $(CONFIG)\bin\ca.crt
 	-if exist $(CONFIG)\bin\libpcre.dll del /Q $(CONFIG)\bin\libpcre.dll
 	-if exist $(CONFIG)\bin\libmpr.dll del /Q $(CONFIG)\bin\libmpr.dll
 	-if exist $(CONFIG)\bin\libmprssl.dll del /Q $(CONFIG)\bin\libmprssl.dll
-	-if exist $(CONFIG)\bin\makerom.exe del /Q $(CONFIG)\bin\makerom.exe
 	-if exist $(CONFIG)\bin\libhttp.dll del /Q $(CONFIG)\bin\libhttp.dll
 	-if exist $(CONFIG)\bin\http.exe del /Q $(CONFIG)\bin\http.exe
 	-if exist $(CONFIG)\obj\estLib.obj del /Q $(CONFIG)\obj\estLib.obj
@@ -91,6 +91,23 @@ clean:
 	-if exist $(CONFIG)\obj\webSock.obj del /Q $(CONFIG)\obj\webSock.obj
 	-if exist $(CONFIG)\obj\http.obj del /Q $(CONFIG)\obj\http.obj
 
+$(CONFIG)\inc\est.h:  \
+        $(CONFIG)\inc\bit.h \
+        src\bitos.h
+	-if exist $(CONFIG)\inc\est.h del /Q $(CONFIG)\inc\est.h
+	copy /Y src\deps\est\est.h $(CONFIG)\inc\est.h
+
+$(CONFIG)\obj\estLib.obj: \
+        src\deps\est\estLib.c \
+        $(CONFIG)\inc\bit.h \
+        $(CONFIG)\inc\est.h
+	"$(CC)" -c -Fo$(CONFIG)\obj\estLib.obj -Fd$(CONFIG)\obj\estLib.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\deps\est\estLib.c
+
+$(CONFIG)\bin\libest.dll:  \
+        $(CONFIG)\inc\est.h \
+        $(CONFIG)\obj\estLib.obj
+	"$(LD)" -dll -out:$(CONFIG)\bin\libest.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\estLib.obj $(LIBS)
+
 $(CONFIG)\bin\ca.crt: 
 	-if exist $(CONFIG)\bin\ca.crt del /Q $(CONFIG)\bin\ca.crt
 	copy /Y src\deps\est\ca.crt $(CONFIG)\bin\ca.crt
@@ -128,12 +145,6 @@ $(CONFIG)\bin\libmpr.dll:  \
         $(CONFIG)\obj\mprLib.obj
 	"$(LD)" -dll -out:$(CONFIG)\bin\libmpr.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprLib.obj $(LIBS)
 
-$(CONFIG)\inc\est.h:  \
-        $(CONFIG)\inc\bit.h \
-        src\bitos.h
-	-if exist $(CONFIG)\inc\est.h del /Q $(CONFIG)\inc\est.h
-	copy /Y src\deps\est\est.h $(CONFIG)\inc\est.h
-
 $(CONFIG)\obj\mprSsl.obj: \
         src\deps\mpr\mprSsl.c \
         $(CONFIG)\inc\bit.h \
@@ -143,19 +154,9 @@ $(CONFIG)\obj\mprSsl.obj: \
 
 $(CONFIG)\bin\libmprssl.dll:  \
         $(CONFIG)\bin\libmpr.dll \
+        $(CONFIG)\bin\libest.dll \
         $(CONFIG)\obj\mprSsl.obj
-	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj libmpr.lib $(LIBS)
-
-$(CONFIG)\obj\makerom.obj: \
-        src\deps\mpr\makerom.c \
-        $(CONFIG)\inc\bit.h \
-        $(CONFIG)\inc\mpr.h
-	"$(CC)" -c -Fo$(CONFIG)\obj\makerom.obj -Fd$(CONFIG)\obj\makerom.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\deps\mpr\makerom.c
-
-$(CONFIG)\bin\makerom.exe:  \
-        $(CONFIG)\bin\libmpr.dll \
-        $(CONFIG)\obj\makerom.obj
-	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj libmpr.lib $(LIBS)
+	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj libest.lib libmpr.lib $(LIBS)
 
 $(CONFIG)\inc\bitos.h: 
 	-if exist $(CONFIG)\inc\bitos.h del /Q $(CONFIG)\inc\bitos.h

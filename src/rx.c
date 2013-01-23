@@ -1472,13 +1472,6 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
 
     if (conn->state < state) {
         httpEnableConnEvents(conn);
-#if UNUSED
-        eventMask = MPR_READABLE;
-        if (!conn->tx->finalizedConnector && ) {
-            eventMask |= MPR_WRITABLE;
-        }
-        httpSetupWaitHandler(conn, eventMask);
-#endif
     }
     remaining = timeout;
     do {

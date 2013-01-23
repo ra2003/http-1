@@ -2677,11 +2677,6 @@ static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, i
     assert(replacement);
     assert(matches);
 
-#if UNUSED
-    if (matchCount <= 0) {
-        return MPR->emptyString;
-    }
-#endif
     result = mprCreateBuf(-1, -1);
     lastReplace = replacement;
     end = &replacement[slen(replacement)];

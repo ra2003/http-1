@@ -326,8 +326,7 @@ PUBLIC void httpCallEvent(HttpConn *conn, int mask)
 }
 
 
-//  MOB - rename
-PUBLIC void httpPostEvent(HttpConn *conn)
+PUBLIC void httpAfterEvent(HttpConn *conn)
 {
     if (conn->endpoint) {
         if (conn->keepAliveCount < 0 && (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE)) {
@@ -363,7 +362,7 @@ PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
     if (event->mask & MPR_READABLE) {
         readEvent(conn);
     }
-    httpPostEvent(conn);
+    httpAfterEvent(conn);
 }
 
 

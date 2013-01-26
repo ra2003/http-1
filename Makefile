@@ -1,5 +1,5 @@
 #
-#   Makefile - Embedthis Appweb Makefile wrapper for per-platform makefiles
+#   Makefile - Embedthis Http Makefile wrapper for per-platform makefiles
 #
 #	This Makefile is for Unix/Linux and Cygwin. Use WinMake for windows.
 #
@@ -27,7 +27,7 @@
 #	environment variables. For example: make BIT_PACK_SQLITE=0. These are converted to DFLAGS and 
 #	will then override the bit.h default values.
 #
-NAME    := appweb
+NAME    := http
 OS      := $(shell uname | sed 's/CYGWIN.*/windows/;s/Darwin/macosx/' | tr '[A-Z]' '[a-z]')
 MAKE    := $(shell if which gmake >/dev/null 2>&1; then echo gmake ; else echo make ; fi)
 PROFILE := default
@@ -51,8 +51,6 @@ BIN 	:= $(OS)-$(ARCH)-$(PROFILE)/bin
 
 all compile:
 	$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
-	@echo ; echo 'You can now run Appweb via: "make run"'
-	@echo ; echo "To run manually, put $(OS)-$(ARCH)-$(PROFILE)/bin in your path" ; echo
 
 clean clobber install uninstall run:
 	$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
@@ -62,23 +60,14 @@ help:
 	@echo 'With make, the default configuration can be modified by setting make' >&2
 	@echo 'variables. Set to 0 to disable and 1 to enable:' >&2
 	@echo '' >&2
-	@echo '      PROFILE            # Select default or static for static linking'
-	@echo '      BIT_ESP_MDB        # Enable ESP MDB database support'
-	@echo '      BIT_ESP_SDB        # Enable ESP SQLite database support'
-	@echo '      BIT_MPR_LOGGING    # Enable application logging'
-	@echo '      BIT_MPR_TRACING    # Enable debug tracing'
-	@echo '      BIT_PACK_CGI       # Enable the CGI handler'
-	@echo '      BIT_PACK_DIR       # Enable the directory listing handler'
-	@echo '      BIT_PACK_EJSCRIPT  # Enable the Ejscript handler'
-	@echo '      BIT_PACK_ESP       # Enable the ESP web framework'
-	@echo '      BIT_PACK_EST       # Enable the EST SSL stack'
-	@echo '      BIT_PACK_MOCANA    # Enable the Mocana NanoSSL stack'
-	@echo '      BIT_PACK_MATRIXSSL # Enable the MatrixSSL SSL stack'
-	@echo '      BIT_PACK_OPENSSL   # Enable the OpenSSL SSL stack'
-	@echo '      BIT_PACK_PHP       # Enable the PHP framework'
-	@echo '      BIT_PACK_SQLITE    # Enable the SQLite database'
-	@echo '      BIT_ROM            # Build for ROM without a file system'
-	@echo ''
+	@echo '      PROFILE            # Select default or static for static linking' >&2
+	@echo '      BIT_ESP_MDB        # Enable ESP MDB database support' >&2
+	@echo '      BIT_ESP_SDB        # Enable ESP SQLite database support' >&2
+	@echo '      BIT_MPR_LOGGING    # Enable application logging' >&2
+	@echo '      BIT_MPR_TRACING    # Enable debug tracing' >&2
+	@echo '      BIT_HTTP_PAM       # Enable PAM storage for passwords' >&2
+	@echo '      BIT_ROM            # Build for ROM without a file system' >&2
+	@echo '' >&2
 	@echo 'For example, to disable CGI:' >&2
 	@echo '' >&2
 	@echo '      make BIT_PACK_CGI=0' >&2

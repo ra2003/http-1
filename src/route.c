@@ -7,7 +7,10 @@
 /********************************* Includes ***********************************/
 
 #include    "http.h"
-#include    "pcre.h"
+
+#if BIT_PACK_PCRE
+ #include    "pcre.h"
+#endif
 
 /********************************** Forwards **********************************/
 
@@ -24,6 +27,12 @@
         route->field = mprCloneHash(route->parent->field); \
     }
 
+//MOB temp
+#if !BIT_PACK_PCRE
+    int pcre_exec(void *a, void *b, cchar *c, int d, int e, int f, int *g, int h) { return -1; }
+    void *pcre_compile2(cchar *a, int b, int *c, cchar **d, int *e, const unsigned char *f) { return 0; }
+#endif
+     
 /********************************** Forwards **********************************/
 
 static void addUniqueItem(MprList *list, HttpRouteOp *op);
@@ -3093,6 +3102,7 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
     }
     return route->limits;
 }
+
 
 /*
     @copy   default

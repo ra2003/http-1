@@ -1,32 +1,38 @@
 #
-#   http-linux-debug.mk -- Makefile to build Http Library for linux
+#   http-linux-default.mk -- Makefile to build Http Library for linux
 #
 
-ARCH     ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
-OS       ?= linux
-CC       ?= /usr/bin/gcc
-LD       ?= /usr/bin/ld
-PROFILE  ?= debug
-CONFIG   ?= $(OS)-$(ARCH)-$(PROFILE)
+PRODUCT         ?= http
+VERSION         ?= 1.3.0
+BUILD_NUMBER    ?= 0
+PROFILE         ?= default
+ARCH            ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
+OS              ?= linux
+CC              ?= /usr/bin/gcc
+LD              ?= /usr/bin/ld
+CONFIG          ?= $(OS)-$(ARCH)-$(PROFILE)
 
-CFLAGS   += -fPIC   -w
-DFLAGS   += -D_REENTRANT -DPIC 
-IFLAGS   += -I$(CONFIG)/inc -Isrc
-LDFLAGS  += '-Wl,--enable-new-dtags' '-Wl,-rpath,$$ORIGIN/' '-Wl,-rpath,$$ORIGIN/../bin' '-rdynamic'
-LIBPATHS += -L$(CONFIG)/bin
-LIBS     += -lpthread -lm -lrt -ldl
+CFLAGS          += -fPIC -O2  -w
+DFLAGS          += -D_REENTRANT -DPIC$(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
+IFLAGS          += -I$(CONFIG)/inc -Isrc
+LDFLAGS         += '-Wl,--enable-new-dtags' '-Wl,-rpath,$$ORIGIN/' '-Wl,-rpath,$$ORIGIN/../bin' '-rdynamic'
+LIBPATHS        += -L$(CONFIG)/bin
+LIBS            += -lpthread -lm -lrt -ldl
 
-CFLAGS-debug    := -DBIT_DEBUG -g
+DEBUG           ?= release
+CFLAGS-debug    := -g
 CFLAGS-release  := -O2
+DFLAGS-debug    := -DBIT_DEBUG
+DFLAGS-release  := 
 LDFLAGS-debug   := -g
 LDFLAGS-release := 
 CFLAGS          += $(CFLAGS-$(PROFILE))
+DFLAGS          += $(DFLAGS-$(PROFILE))
 LDFLAGS         += $(LDFLAGS-$(PROFILE))
 
-all: prep \
+all compile: prep \
         $(CONFIG)/bin/libest.so \
         $(CONFIG)/bin/ca.crt \
-        $(CONFIG)/bin/libpcre.so \
         $(CONFIG)/bin/libmpr.so \
         $(CONFIG)/bin/libmprssl.so \
         $(CONFIG)/bin/libhttp.so \
@@ -43,11 +49,11 @@ prep:
 		echo cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h  ; \
 		cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h  ; \
 	fi; true
+	@echo $(DFLAGS) $(CFLAGS) >projects/.flags
 
 clean:
 	rm -rf $(CONFIG)/bin/libest.so
 	rm -rf $(CONFIG)/bin/ca.crt
-	rm -rf $(CONFIG)/bin/libpcre.so
 	rm -rf $(CONFIG)/bin/libmpr.so
 	rm -rf $(CONFIG)/bin/libmprssl.so
 	rm -rf $(CONFIG)/bin/libhttp.so
@@ -104,7 +110,7 @@ $(CONFIG)/obj/estLib.o: \
         src/deps/est/estLib.c \
         $(CONFIG)/inc/bit.h \
         $(CONFIG)/inc/est.h
-	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/est/estLib.c
+	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC -O2 $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/est/estLib.c
 
 $(CONFIG)/bin/libest.so:  \
         $(CONFIG)/inc/est.h \
@@ -114,22 +120,6 @@ $(CONFIG)/bin/libest.so:  \
 $(CONFIG)/bin/ca.crt: 
 	rm -fr $(CONFIG)/bin/ca.crt
 	cp -r src/deps/est/ca.crt $(CONFIG)/bin/ca.crt
-
-$(CONFIG)/inc/pcre.h:  \
-        $(CONFIG)/inc/bit.h
-	rm -fr $(CONFIG)/inc/pcre.h
-	cp -r src/deps/pcre/pcre.h $(CONFIG)/inc/pcre.h
-
-$(CONFIG)/obj/pcre.o: \
-        src/deps/pcre/pcre.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/pcre.h
-	$(CC) -c -o $(CONFIG)/obj/pcre.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/pcre/pcre.c
-
-$(CONFIG)/bin/libpcre.so:  \
-        $(CONFIG)/inc/pcre.h \
-        $(CONFIG)/obj/pcre.o
-	$(CC) -shared -o $(CONFIG)/bin/libpcre.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/pcre.o $(LIBS)
 
 $(CONFIG)/inc/mpr.h:  \
         $(CONFIG)/inc/bit.h \
@@ -292,8 +282,7 @@ $(CONFIG)/obj/rangeFilter.o: \
 $(CONFIG)/obj/route.o: \
         src/route.c \
         $(CONFIG)/inc/bit.h \
-        src/http.h \
-        $(CONFIG)/inc/pcre.h
+        src/http.h
 	$(CC) -c -o $(CONFIG)/obj/route.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/route.c
 
 $(CONFIG)/obj/rx.o: \
@@ -358,7 +347,6 @@ $(CONFIG)/obj/webSock.o: \
 
 $(CONFIG)/bin/libhttp.so:  \
         $(CONFIG)/bin/libmpr.so \
-        $(CONFIG)/bin/libpcre.so \
         $(CONFIG)/inc/bitos.h \
         $(CONFIG)/inc/http.h \
         $(CONFIG)/obj/actionHandler.o \
@@ -392,7 +380,7 @@ $(CONFIG)/bin/libhttp.so:  \
         $(CONFIG)/obj/uri.o \
         $(CONFIG)/obj/var.o \
         $(CONFIG)/obj/webSock.o
-	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lpcre -lmpr $(LIBS)
+	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lmpr $(LIBS)
 
 $(CONFIG)/obj/http.o: \
         src/http.c \
@@ -403,5 +391,8 @@ $(CONFIG)/obj/http.o: \
 $(CONFIG)/bin/http:  \
         $(CONFIG)/bin/libhttp.so \
         $(CONFIG)/obj/http.o
-	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lhttp $(LIBS) -lpcre -lmpr -lhttp -lpthread -lm -lrt -ldl -lpcre -lmpr $(LDFLAGS)
+	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lhttp $(LIBS) -lmpr -lhttp -lpthread -lm -lrt -ldl -lmpr $(LDFLAGS)
+
+version: 
+	@echo 1.3.0-0 
 

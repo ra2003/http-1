@@ -24,7 +24,7 @@ Bit.load({
         version: '1.3.0',
         buildNumber: '0',
         sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
-        '+required': [ 'pcre' ],
+        //'+required': [ 'pcre' ],
         '+discover': [ 'doxygen', 'dsi', 'est', 'man', 'man2html', 'utest' ],
         'without-all': ['doxygen', 'dsi', 'est', 'man', 'man2html', 'pmaker' ],
         'without-default': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker' ],
@@ -44,8 +44,6 @@ Bit.load({
     },
 
     usage: {
-        assert: 'Enable program assertions',
-        static: 'Build with static linking (true|false)',                                                  
         'http.pam': 'Enable Unix Pluggable Auth Module (true|false)',                              
     },
 

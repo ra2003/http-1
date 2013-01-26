@@ -1,28 +1,23 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prep", "http-windows-vs\prep.vcxproj", "{744B8495-7101-4C77-ACC2-59FC4DDE27C7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prep", "http-windows-default\prep.vcxproj", "{744B8495-7101-4C77-ACC2-59FC4DDE27C7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libest", "http-windows-vs\libest.vcxproj", "{94CE5C90-4A3C-4291-B87D-5A6A992A3E32}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libest", "http-windows-default\libest.vcxproj", "{94CE5C90-4A3C-4291-B87D-5A6A992A3E32}"
 	ProjectSection(ProjectDependencies) = postProject
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ca-crt", "http-windows-vs\ca-crt.vcxproj", "{89511D25-5928-4D2B-A159-8326ABBBBE82}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ca-crt", "http-windows-default\ca-crt.vcxproj", "{89511D25-5928-4D2B-A159-8326ABBBBE82}"
 	ProjectSection(ProjectDependencies) = postProject
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpcre", "http-windows-vs\libpcre.vcxproj", "{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmpr", "http-windows-default\libmpr.vcxproj", "{898E2C1E-65BB-4CE6-8505-1D107E18B50F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmpr", "http-windows-vs\libmpr.vcxproj", "{898E2C1E-65BB-4CE6-8505-1D107E18B50F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmprssl", "http-windows-vs\libmprssl.vcxproj", "{2E9536A1-2AD1-4EE1-AF03-10E9C06EC4E1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmprssl", "http-windows-default\libmprssl.vcxproj", "{2E9536A1-2AD1-4EE1-AF03-10E9C06EC4E1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
 	EndProjectSection
@@ -33,18 +28,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmprssl", "http-windows-v
 		{94CE5C90-4A3C-4291-B87D-5A6A992A3E32} = {94CE5C90-4A3C-4291-B87D-5A6A992A3E32}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "http-windows-vs\libhttp.vcxproj", "{37A646F7-44CD-4E2C-BBC1-4589BAD01502}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "http-windows-default\libhttp.vcxproj", "{37A646F7-44CD-4E2C-BBC1-4589BAD01502}"
 	ProjectSection(ProjectDependencies) = postProject
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{898E2C1E-65BB-4CE6-8505-1D107E18B50F} = {898E2C1E-65BB-4CE6-8505-1D107E18B50F}
 	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9} = {42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}
-	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http", "http-windows-vs\http.vcxproj", "{D547BDE7-ED8E-4C5C-9A84-85D77BEB805A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http", "http-windows-default\http.vcxproj", "{D547BDE7-ED8E-4C5C-9A84-85D77BEB805A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
 	EndProjectSection
@@ -85,14 +77,6 @@ Global
 {89511D25-5928-4D2B-A159-8326ABBBBE82}.Release|Win32.Build.0 = Release|Win32
 {89511D25-5928-4D2B-A159-8326ABBBBE82}.Release|x64.ActiveCfg = Release|x64
 {89511D25-5928-4D2B-A159-8326ABBBBE82}.Release|x64.Build.0 = Release|x64
-{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Debug|Win32.ActiveCfg = Debug|Win32
-{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Debug|Win32.Build.0 = Debug|Win32
-{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Debug|x64.ActiveCfg = Debug|x64
-{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Debug|x64.Build.0 = Debug|x64
-{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Release|Win32.ActiveCfg = Release|Win32
-{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Release|Win32.Build.0 = Release|Win32
-{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Release|x64.ActiveCfg = Release|x64
-{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Release|x64.Build.0 = Release|x64
 {898E2C1E-65BB-4CE6-8505-1D107E18B50F}.Debug|Win32.ActiveCfg = Debug|Win32
 {898E2C1E-65BB-4CE6-8505-1D107E18B50F}.Debug|Win32.Build.0 = Debug|Win32
 {898E2C1E-65BB-4CE6-8505-1D107E18B50F}.Debug|x64.ActiveCfg = Debug|x64

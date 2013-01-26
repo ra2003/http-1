@@ -1,18 +1,21 @@
 #
-#   http-linux-debug.sh -- Build It Shell Script to build Http Library
+#   http-linux-static.sh -- Build It Shell Script to build Http Library
 #
 
+PRODUCT="http"
+VERSION="1.3.0"
+BUILD_NUMBER="0"
+PROFILE="static"
 ARCH="x86"
 ARCH="`uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/'`"
 OS="linux"
-PROFILE="debug"
 CONFIG="${OS}-${ARCH}-${PROFILE}"
 CC="/usr/bin/gcc"
 LD="/usr/bin/ld"
-CFLAGS="-fPIC   -w"
-DFLAGS="-D_REENTRANT -DPIC -DBIT_DEBUG"
+CFLAGS="-fPIC -O2  -w"
+DFLAGS="-D_REENTRANT -DPIC"
 IFLAGS="-I${CONFIG}/inc -Isrc"
-LDFLAGS="-Wl,--enable-new-dtags -Wl,-rpath,\$ORIGIN/ -Wl,-rpath,\$ORIGIN/../bin -rdynamic -g"
+LDFLAGS="-Wl,--enable-new-dtags -Wl,-rpath,\$ORIGIN/ -Wl,-rpath,\$ORIGIN/../bin -rdynamic"
 LIBPATHS="-L${CONFIG}/bin"
 LIBS="-lpthread -lm -lrt -ldl"
 
@@ -27,30 +30,23 @@ fi
 rm -rf ${CONFIG}/inc/est.h
 cp -r src/deps/est/est.h ${CONFIG}/inc/est.h
 
-${CC} -c -o ${CONFIG}/obj/estLib.o -fPIC ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/est/estLib.c
+${CC} -c -o ${CONFIG}/obj/estLib.o -fPIC -O2 ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/est/estLib.c
 
-${CC} -shared -o ${CONFIG}/bin/libest.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/estLib.o ${LIBS}
+/usr/bin/ar -cr ${CONFIG}/bin/libest.a ${CONFIG}/obj/estLib.o
 
 rm -rf ${CONFIG}/bin/ca.crt
 cp -r src/deps/est/ca.crt ${CONFIG}/bin/ca.crt
-
-rm -rf ${CONFIG}/inc/pcre.h
-cp -r src/deps/pcre/pcre.h ${CONFIG}/inc/pcre.h
-
-${CC} -c -o ${CONFIG}/obj/pcre.o ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/pcre/pcre.c
-
-${CC} -shared -o ${CONFIG}/bin/libpcre.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/pcre.o ${LIBS}
 
 rm -rf ${CONFIG}/inc/mpr.h
 cp -r src/deps/mpr/mpr.h ${CONFIG}/inc/mpr.h
 
 ${CC} -c -o ${CONFIG}/obj/mprLib.o ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprLib.c
 
-${CC} -shared -o ${CONFIG}/bin/libmpr.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/mprLib.o ${LIBS}
+/usr/bin/ar -cr ${CONFIG}/bin/libmpr.a ${CONFIG}/obj/mprLib.o
 
 ${CC} -c -o ${CONFIG}/obj/mprSsl.o ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprSsl.c
 
-${CC} -shared -o ${CONFIG}/bin/libmprssl.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/mprSsl.o -lest -lmpr ${LIBS}
+/usr/bin/ar -cr ${CONFIG}/bin/libmprssl.a ${CONFIG}/obj/mprSsl.o
 
 rm -rf ${CONFIG}/inc/bitos.h
 cp -r src/bitos.h ${CONFIG}/inc/bitos.h
@@ -120,9 +116,10 @@ ${CC} -c -o ${CONFIG}/obj/var.o ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/va
 
 ${CC} -c -o ${CONFIG}/obj/webSock.o ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/webSock.c
 
-${CC} -shared -o ${CONFIG}/bin/libhttp.so ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/actionHandler.o ${CONFIG}/obj/auth.o ${CONFIG}/obj/basic.o ${CONFIG}/obj/cache.o ${CONFIG}/obj/chunkFilter.o ${CONFIG}/obj/client.o ${CONFIG}/obj/conn.o ${CONFIG}/obj/digest.o ${CONFIG}/obj/endpoint.o ${CONFIG}/obj/error.o ${CONFIG}/obj/host.o ${CONFIG}/obj/httpService.o ${CONFIG}/obj/log.o ${CONFIG}/obj/netConnector.o ${CONFIG}/obj/packet.o ${CONFIG}/obj/pam.o ${CONFIG}/obj/passHandler.o ${CONFIG}/obj/pipeline.o ${CONFIG}/obj/queue.o ${CONFIG}/obj/rangeFilter.o ${CONFIG}/obj/route.o ${CONFIG}/obj/rx.o ${CONFIG}/obj/sendConnector.o ${CONFIG}/obj/session.o ${CONFIG}/obj/stage.o ${CONFIG}/obj/trace.o ${CONFIG}/obj/tx.o ${CONFIG}/obj/uploadFilter.o ${CONFIG}/obj/uri.o ${CONFIG}/obj/var.o ${CONFIG}/obj/webSock.o -lpcre -lmpr ${LIBS}
+/usr/bin/ar -cr ${CONFIG}/bin/libhttp.a ${CONFIG}/obj/actionHandler.o ${CONFIG}/obj/auth.o ${CONFIG}/obj/basic.o ${CONFIG}/obj/cache.o ${CONFIG}/obj/chunkFilter.o ${CONFIG}/obj/client.o ${CONFIG}/obj/conn.o ${CONFIG}/obj/digest.o ${CONFIG}/obj/endpoint.o ${CONFIG}/obj/error.o ${CONFIG}/obj/host.o ${CONFIG}/obj/httpService.o ${CONFIG}/obj/log.o ${CONFIG}/obj/netConnector.o ${CONFIG}/obj/packet.o ${CONFIG}/obj/pam.o ${CONFIG}/obj/passHandler.o ${CONFIG}/obj/pipeline.o ${CONFIG}/obj/queue.o ${CONFIG}/obj/rangeFilter.o ${CONFIG}/obj/route.o ${CONFIG}/obj/rx.o ${CONFIG}/obj/sendConnector.o ${CONFIG}/obj/session.o ${CONFIG}/obj/stage.o ${CONFIG}/obj/trace.o ${CONFIG}/obj/tx.o ${CONFIG}/obj/uploadFilter.o ${CONFIG}/obj/uri.o ${CONFIG}/obj/var.o ${CONFIG}/obj/webSock.o
 
 ${CC} -c -o ${CONFIG}/obj/http.o ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/http.c
 
-${CC} -o ${CONFIG}/bin/http ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/http.o -lhttp ${LIBS} -lpcre -lmpr -lhttp -lpthread -lm -lrt -ldl -lpcre -lmpr ${LDFLAGS}
+${CC} -o ${CONFIG}/bin/http ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/http.o -lhttp ${LIBS} -lmpr -lhttp -lpthread -lm -lrt -ldl -lmpr ${LDFLAGS}
 
+#  Omit build script undefined

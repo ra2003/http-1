@@ -1,22 +1,25 @@
 #
-#   http-windows-debug.sh -- Build It Shell Script to build Http Library
+#   http-windows-static.sh -- Build It Shell Script to build Http Library
 #
 
 export PATH="$(SDK)/Bin:$(VS)/VC/Bin:$(VS)/Common7/IDE:$(VS)/Common7/Tools:$(VS)/SDK/v3.5/bin:$(VS)/VC/VCPackages;$(PATH)"
 export INCLUDE="$(INCLUDE);$(SDK)/Include:$(VS)/VC/INCLUDE"
 export LIB="$(LIB);$(SDK)/Lib:$(VS)/VC/lib"
 
+PRODUCT="http"
+VERSION="1.3.0"
+BUILD_NUMBER="0"
+PROFILE="static"
 ARCH="x86"
 ARCH="`uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/'`"
 OS="windows"
-PROFILE="debug"
 CONFIG="${OS}-${ARCH}-${PROFILE}"
 CC="cl.exe"
 LD="link.exe"
-CFLAGS="-nologo -GR- -W3 -Zi -Od -MDd -w"
-DFLAGS="-D_REENTRANT -D_MT -DBIT_DEBUG"
+CFLAGS="-nologo -GR- -W3 -O2 -MD -w"
+DFLAGS="-D_REENTRANT -D_MT"
 IFLAGS="-I${CONFIG}/inc -Isrc"
-LDFLAGS="-nologo -nodefaultlib -incremental:no -debug -machine:x86"
+LDFLAGS="-nologo -nodefaultlib -incremental:no -machine:x86"
 LIBPATHS="-libpath:${CONFIG}/bin"
 LIBS="ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib"
 
@@ -33,28 +36,21 @@ cp -r src/deps/est/est.h ${CONFIG}/inc/est.h
 
 "${CC}" -c -Fo${CONFIG}/obj/estLib.obj -Fd${CONFIG}/obj/estLib.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/est/estLib.c
 
-"${LD}" -dll -out:${CONFIG}/bin/libest.dll -entry:_DllMainCRTStartup@12 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/estLib.obj ${LIBS}
+"lib.exe" -nologo -out:${CONFIG}/bin/libest.lib ${CONFIG}/obj/estLib.obj
 
 rm -rf ${CONFIG}/bin/ca.crt
 cp -r src/deps/est/ca.crt ${CONFIG}/bin/ca.crt
-
-rm -rf ${CONFIG}/inc/pcre.h
-cp -r src/deps/pcre/pcre.h ${CONFIG}/inc/pcre.h
-
-"${CC}" -c -Fo${CONFIG}/obj/pcre.obj -Fd${CONFIG}/obj/pcre.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/pcre/pcre.c
-
-"${LD}" -dll -out:${CONFIG}/bin/libpcre.dll -entry:_DllMainCRTStartup@12 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/pcre.obj ${LIBS}
 
 rm -rf ${CONFIG}/inc/mpr.h
 cp -r src/deps/mpr/mpr.h ${CONFIG}/inc/mpr.h
 
 "${CC}" -c -Fo${CONFIG}/obj/mprLib.obj -Fd${CONFIG}/obj/mprLib.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprLib.c
 
-"${LD}" -dll -out:${CONFIG}/bin/libmpr.dll -entry:_DllMainCRTStartup@12 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/mprLib.obj ${LIBS}
+"lib.exe" -nologo -out:${CONFIG}/bin/libmpr.lib ${CONFIG}/obj/mprLib.obj
 
 "${CC}" -c -Fo${CONFIG}/obj/mprSsl.obj -Fd${CONFIG}/obj/mprSsl.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprSsl.c
 
-"${LD}" -dll -out:${CONFIG}/bin/libmprssl.dll -entry:_DllMainCRTStartup@12 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/mprSsl.obj libest.lib libmpr.lib ${LIBS}
+"lib.exe" -nologo -out:${CONFIG}/bin/libmprssl.lib ${CONFIG}/obj/mprSsl.obj
 
 rm -rf ${CONFIG}/inc/bitos.h
 cp -r src/bitos.h ${CONFIG}/inc/bitos.h
@@ -124,9 +120,10 @@ cp -r src/http.h ${CONFIG}/inc/http.h
 
 "${CC}" -c -Fo${CONFIG}/obj/webSock.obj -Fd${CONFIG}/obj/webSock.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/webSock.c
 
-"${LD}" -dll -out:${CONFIG}/bin/libhttp.dll -entry:_DllMainCRTStartup@12 ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/actionHandler.obj ${CONFIG}/obj/auth.obj ${CONFIG}/obj/basic.obj ${CONFIG}/obj/cache.obj ${CONFIG}/obj/chunkFilter.obj ${CONFIG}/obj/client.obj ${CONFIG}/obj/conn.obj ${CONFIG}/obj/digest.obj ${CONFIG}/obj/endpoint.obj ${CONFIG}/obj/error.obj ${CONFIG}/obj/host.obj ${CONFIG}/obj/httpService.obj ${CONFIG}/obj/log.obj ${CONFIG}/obj/netConnector.obj ${CONFIG}/obj/packet.obj ${CONFIG}/obj/pam.obj ${CONFIG}/obj/passHandler.obj ${CONFIG}/obj/pipeline.obj ${CONFIG}/obj/queue.obj ${CONFIG}/obj/rangeFilter.obj ${CONFIG}/obj/route.obj ${CONFIG}/obj/rx.obj ${CONFIG}/obj/sendConnector.obj ${CONFIG}/obj/session.obj ${CONFIG}/obj/stage.obj ${CONFIG}/obj/trace.obj ${CONFIG}/obj/tx.obj ${CONFIG}/obj/uploadFilter.obj ${CONFIG}/obj/uri.obj ${CONFIG}/obj/var.obj ${CONFIG}/obj/webSock.obj libpcre.lib libmpr.lib ${LIBS}
+"lib.exe" -nologo -out:${CONFIG}/bin/libhttp.lib ${CONFIG}/obj/actionHandler.obj ${CONFIG}/obj/auth.obj ${CONFIG}/obj/basic.obj ${CONFIG}/obj/cache.obj ${CONFIG}/obj/chunkFilter.obj ${CONFIG}/obj/client.obj ${CONFIG}/obj/conn.obj ${CONFIG}/obj/digest.obj ${CONFIG}/obj/endpoint.obj ${CONFIG}/obj/error.obj ${CONFIG}/obj/host.obj ${CONFIG}/obj/httpService.obj ${CONFIG}/obj/log.obj ${CONFIG}/obj/netConnector.obj ${CONFIG}/obj/packet.obj ${CONFIG}/obj/pam.obj ${CONFIG}/obj/passHandler.obj ${CONFIG}/obj/pipeline.obj ${CONFIG}/obj/queue.obj ${CONFIG}/obj/rangeFilter.obj ${CONFIG}/obj/route.obj ${CONFIG}/obj/rx.obj ${CONFIG}/obj/sendConnector.obj ${CONFIG}/obj/session.obj ${CONFIG}/obj/stage.obj ${CONFIG}/obj/trace.obj ${CONFIG}/obj/tx.obj ${CONFIG}/obj/uploadFilter.obj ${CONFIG}/obj/uri.obj ${CONFIG}/obj/var.obj ${CONFIG}/obj/webSock.obj
 
 "${CC}" -c -Fo${CONFIG}/obj/http.obj -Fd${CONFIG}/obj/http.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/http.c
 
-"${LD}" -out:${CONFIG}/bin/http.exe -entry:mainCRTStartup -subsystem:console ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/http.obj libhttp.lib ${LIBS} libpcre.lib libmpr.lib
+"${LD}" -out:${CONFIG}/bin/http.exe -entry:mainCRTStartup -subsystem:console ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/http.obj libhttp.lib ${LIBS} libmpr.lib
 
+#  Omit build script undefined

@@ -1,1 +1,1 @@
-projects\windows x86 -f projects/http-windows-debug.nmake all
+projects\windows x86 -f projects/http-windows-default.nmake all

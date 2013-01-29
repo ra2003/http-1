@@ -12,29 +12,30 @@ CC              ?= /usr/bin/gcc
 LD              ?= /usr/bin/ld
 CONFIG          ?= $(OS)-$(ARCH)-$(PROFILE)
 
-CFLAGS          += -fPIC -O2  -w
-DFLAGS          += -D_REENTRANT -DPIC$(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
+CFLAGS          += -fPIC   -w
+DFLAGS          += -D_REENTRANT -DPIC $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
 IFLAGS          += -I$(CONFIG)/inc -Isrc
 LDFLAGS         += '-Wl,--enable-new-dtags' '-Wl,-rpath,$$ORIGIN/' '-Wl,-rpath,$$ORIGIN/../bin' '-rdynamic'
 LIBPATHS        += -L$(CONFIG)/bin
 LIBS            += -lpthread -lm -lrt -ldl
 
-DEBUG           ?= release
+DEBUG           ?= debug
 CFLAGS-debug    := -g
-CFLAGS-release  := -O2
 DFLAGS-debug    := -DBIT_DEBUG
-DFLAGS-release  := 
 LDFLAGS-debug   := -g
+DFLAGS-release  := 
+CFLAGS-release  := -O2
 LDFLAGS-release := 
-CFLAGS          += $(CFLAGS-$(PROFILE))
-DFLAGS          += $(DFLAGS-$(PROFILE))
-LDFLAGS         += $(LDFLAGS-$(PROFILE))
+CFLAGS          += $(CFLAGS-$(DEBUG))
+DFLAGS          += $(DFLAGS-$(DEBUG))
+LDFLAGS         += $(LDFLAGS-$(DEBUG))
 
 all compile: prep \
         $(CONFIG)/bin/libest.so \
         $(CONFIG)/bin/ca.crt \
         $(CONFIG)/bin/libmpr.so \
         $(CONFIG)/bin/libmprssl.so \
+        $(CONFIG)/bin/makerom \
         $(CONFIG)/bin/libhttp.so \
         $(CONFIG)/bin/http
 
@@ -56,6 +57,7 @@ clean:
 	rm -rf $(CONFIG)/bin/ca.crt
 	rm -rf $(CONFIG)/bin/libmpr.so
 	rm -rf $(CONFIG)/bin/libmprssl.so
+	rm -rf $(CONFIG)/bin/makerom
 	rm -rf $(CONFIG)/bin/libhttp.so
 	rm -rf $(CONFIG)/bin/http
 	rm -rf $(CONFIG)/obj/estLib.o
@@ -110,7 +112,7 @@ $(CONFIG)/obj/estLib.o: \
         src/deps/est/estLib.c \
         $(CONFIG)/inc/bit.h \
         $(CONFIG)/inc/est.h
-	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC -O2 $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/est/estLib.c
+	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/est/estLib.c
 
 $(CONFIG)/bin/libest.so:  \
         $(CONFIG)/inc/est.h \
@@ -150,6 +152,17 @@ $(CONFIG)/bin/libmprssl.so:  \
         $(CONFIG)/bin/libest.so \
         $(CONFIG)/obj/mprSsl.o
 	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprSsl.o -lest -lmpr $(LIBS)
+
+$(CONFIG)/obj/makerom.o: \
+        src/deps/mpr/makerom.c \
+        $(CONFIG)/inc/bit.h \
+        $(CONFIG)/inc/mpr.h
+	$(CC) -c -o $(CONFIG)/obj/makerom.o $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/mpr/makerom.c
+
+$(CONFIG)/bin/makerom:  \
+        $(CONFIG)/bin/libmpr.so \
+        $(CONFIG)/obj/makerom.o
+	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS) -lmpr -lpthread -lm -lrt -ldl $(LDFLAGS)
 
 $(CONFIG)/inc/bitos.h: 
 	rm -fr $(CONFIG)/inc/bitos.h

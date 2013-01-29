@@ -16,10 +16,10 @@ OS="windows"
 CONFIG="${OS}-${ARCH}-${PROFILE}"
 CC="cl.exe"
 LD="link.exe"
-CFLAGS="-nologo -GR- -W3 -O2 -MD -w"
-DFLAGS="-D_REENTRANT -D_MT"
+CFLAGS="-nologo -GR- -W3 -Zi -Od -MDd -w"
+DFLAGS="-D_REENTRANT -D_MT -DBIT_DEBUG"
 IFLAGS="-I${CONFIG}/inc -Isrc"
-LDFLAGS="-nologo -nodefaultlib -incremental:no -machine:x86"
+LDFLAGS="-nologo -nodefaultlib -incremental:no -debug -machine:x86"
 LIBPATHS="-libpath:${CONFIG}/bin"
 LIBS="ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib"
 
@@ -51,6 +51,10 @@ cp -r src/deps/mpr/mpr.h ${CONFIG}/inc/mpr.h
 "${CC}" -c -Fo${CONFIG}/obj/mprSsl.obj -Fd${CONFIG}/obj/mprSsl.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/mprSsl.c
 
 "lib.exe" -nologo -out:${CONFIG}/bin/libmprssl.lib ${CONFIG}/obj/mprSsl.obj
+
+"${CC}" -c -Fo${CONFIG}/obj/makerom.obj -Fd${CONFIG}/obj/makerom.pdb ${CFLAGS} ${DFLAGS} -I${CONFIG}/inc -Isrc src/deps/mpr/makerom.c
+
+"${LD}" -out:${CONFIG}/bin/makerom.exe -entry:mainCRTStartup -subsystem:console ${LDFLAGS} ${LIBPATHS} ${CONFIG}/obj/makerom.obj libmpr.lib ${LIBS}
 
 rm -rf ${CONFIG}/inc/bitos.h
 cp -r src/bitos.h ${CONFIG}/inc/bitos.h

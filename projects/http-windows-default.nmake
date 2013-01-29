@@ -2,16 +2,16 @@
 #   http-windows-default.nmake -- Makefile to build Http Library for windows
 #
 
-PRODUCT         =http
-VERSION         =1.3.0
-BUILD_NUMBER    =0
-PROFILE  = default
+PRODUCT         = http
+VERSION         = 1.3.0
+BUILD_NUMBER    = 0
+PROFILE   = default
 PA        = $(PROCESSOR_ARCHITECTURE)
 !IF "$(PA)" == "AMD64"
 ARCH     = x64
 ENTRY    = _DllMainCRTStartup
 !ELSE
-ARCH  = x86
+ARCH     = x86
 ENTRY    = _DllMainCRTStartup@12
 !ENDIF
 
@@ -20,18 +20,23 @@ CONFIG   = $(OS)-$(ARCH)-$(PROFILE)
 CC       = cl
 LD       = link
 RC       = rc
-CFLAGS   = -nologo -GR- -W3 -O2 -MD
-DFLAGS   = -D_REENTRANT -D_MT
+CFLAGS   = -nologo -GR- -W3 -Zi -Od -MDd
+DFLAGS   = -D_REENTRANT -D_MT -DBIT_DEBUG
 IFLAGS   = -I$(CONFIG)\inc -Isrc
-LDFLAGS  = -nologo -nodefaultlib -incremental:no -machine:$(ARCH)
+LDFLAGS  = -nologo -nodefaultlib -incremental:no -debug -machine:$(ARCH)
 LIBPATHS = -libpath:$(CONFIG)\bin
 LIBS     = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
+
+!IF EXISTS(.prefixes)
+!INCLUDE .prefixes
+!ENDIF
 
 all compile: prep \
         $(CONFIG)\bin\libest.dll \
         $(CONFIG)\bin\ca.crt \
         $(CONFIG)\bin\libmpr.dll \
         $(CONFIG)\bin\libmprssl.dll \
+        $(CONFIG)\bin\makerom.exe \
         $(CONFIG)\bin\libhttp.dll \
         $(CONFIG)\bin\http.exe
 
@@ -53,6 +58,7 @@ clean:
 	-if exist $(CONFIG)\bin\ca.crt del /Q $(CONFIG)\bin\ca.crt
 	-if exist $(CONFIG)\bin\libmpr.dll del /Q $(CONFIG)\bin\libmpr.dll
 	-if exist $(CONFIG)\bin\libmprssl.dll del /Q $(CONFIG)\bin\libmprssl.dll
+	-if exist $(CONFIG)\bin\makerom.exe del /Q $(CONFIG)\bin\makerom.exe
 	-if exist $(CONFIG)\bin\libhttp.dll del /Q $(CONFIG)\bin\libhttp.dll
 	-if exist $(CONFIG)\bin\http.exe del /Q $(CONFIG)\bin\http.exe
 	-if exist $(CONFIG)\obj\estLib.obj del /Q $(CONFIG)\obj\estLib.obj
@@ -144,6 +150,17 @@ $(CONFIG)\bin\libmprssl.dll:  \
         $(CONFIG)\bin\libest.dll \
         $(CONFIG)\obj\mprSsl.obj
 	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj libest.lib libmpr.lib $(LIBS)
+
+$(CONFIG)\obj\makerom.obj: \
+        src\deps\mpr\makerom.c \
+        $(CONFIG)\inc\bit.h \
+        $(CONFIG)\inc\mpr.h
+	"$(CC)" -c -Fo$(CONFIG)\obj\makerom.obj -Fd$(CONFIG)\obj\makerom.pdb $(CFLAGS) $(DFLAGS) -I$(CONFIG)\inc -Isrc src\deps\mpr\makerom.c
+
+$(CONFIG)\bin\makerom.exe:  \
+        $(CONFIG)\bin\libmpr.dll \
+        $(CONFIG)\obj\makerom.obj
+	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj libmpr.lib $(LIBS)
 
 $(CONFIG)\inc\bitos.h: 
 	-if exist $(CONFIG)\inc\bitos.h del /Q $(CONFIG)\inc\bitos.h

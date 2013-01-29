@@ -144,6 +144,9 @@
 #ifndef BIT_UBIN_PREFIX
     #define BIT_UBIN_PREFIX "/usr/local/bin"
 #endif
+#ifndef BIT_MAN_PREFIX
+    #define BIT_MAN_PREFIX "/usr/local/share/man/man1"
+#endif
 
 /* Suffixes */
 #ifndef BIT_EXE

@@ -50,10 +50,13 @@ BIN 	:= $(OS)-$(ARCH)-$(PROFILE)/bin
 .EXPORT_ALL_VARIABLES:
 
 all compile:
-	$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
+	$(MAKE) --no-print-directory -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
 
 clean clobber install uninstall run:
-	$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
+	$(MAKE) --no-print-directory -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
+
+version:
+	@$(MAKE) --no-print-directory -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
 
 help:
 	@echo '' >&2
@@ -68,9 +71,9 @@ help:
 	@echo '      BIT_HTTP_PAM       # Enable PAM storage for passwords' >&2
 	@echo '      BIT_ROM            # Build for ROM without a file system' >&2
 	@echo '' >&2
-	@echo 'For example, to disable CGI:' >&2
+	@echo 'For example, to disable logging:' >&2
 	@echo '' >&2
-	@echo '      make BIT_PACK_CGI=0' >&2
+	@echo '      make BIT_MPR_LOGGING=0' >&2
 	@echo '' >&2
 	@echo 'Other make variables include:' >&2
 	@echo '' >&2

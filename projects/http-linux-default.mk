@@ -12,6 +12,18 @@ CC              ?= /usr/bin/gcc
 LD              ?= /usr/bin/ld
 CONFIG          ?= $(OS)-$(ARCH)-$(PROFILE)
 
+BIT_CFG_PREFIX  ?= /etc/http
+BIT_PRD_PREFIX  ?= /usr/lib/http
+BIT_VER_PREFIX  ?= $(BIT_PRD_PREFIX)/1.3.0
+BIT_BIN_PREFIX  ?= $(BIT_VER_PREFIX)/bin
+BIT_INC_PREFIX  ?= $(BIT_VER_PREFIX)/inc
+BIT_LOG_PREFIX  ?= /var/log/http
+BIT_SPL_PREFIX  ?= /var/spool/http
+BIT_SRC_PREFIX  ?= /usr/src/http-1.3.0
+BIT_WEB_PREFIX  ?= /var/www/http-default
+BIT_UBIN_PREFIX ?= /usr/local/bin
+BIT_MAN_PREFIX  ?= /usr/local/share/man/man1
+
 CFLAGS          += -fPIC   -w
 DFLAGS          += -D_REENTRANT -DPIC $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
 IFLAGS          += -I$(CONFIG)/inc -Isrc
@@ -30,9 +42,7 @@ CFLAGS          += $(CFLAGS-$(DEBUG))
 DFLAGS          += $(DFLAGS-$(DEBUG))
 LDFLAGS         += $(LDFLAGS-$(DEBUG))
 
-ifeq ($(wildcard $(CONFIG)/inc/.prefixes*),$(CONFIG)/inc/.prefixes)
-    include $(CONFIG)/inc/.prefixes
-endif
+unexport CDPATH
 
 all compile: prep \
         $(CONFIG)/bin/libest.so \
@@ -47,7 +57,10 @@ all compile: prep \
 
 prep:
 	@if [ "$(CONFIG)" = "" ] ; then echo WARNING: CONFIG not set ; exit 255 ; fi
-	@[ ! -x $(CONFIG)/inc ] && mkdir -p $(CONFIG)/inc $(CONFIG)/obj $(CONFIG)/lib $(CONFIG)/bin ; true
+	@if [ "$(BIT_PRD_PREFIX)" = "" ] ; then echo WARNING: BIT_PRD_PREFIX not set ; exit 255 ; fi
+	@[ ! -x $(CONFIG)/bin ] && mkdir -p $(CONFIG)/bin; true
+	@[ ! -x $(CONFIG)/inc ] && mkdir -p $(CONFIG)/inc; true
+	@[ ! -x $(CONFIG)/obj ] && mkdir -p $(CONFIG)/obj; true
 	@[ ! -f $(CONFIG)/inc/bit.h ] && cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h ; true
 	@[ ! -f $(CONFIG)/inc/bitos.h ] && cp src/bitos.h $(CONFIG)/inc/bitos.h ; true
 	@if ! diff $(CONFIG)/inc/bit.h projects/http-$(OS)-$(PROFILE)-bit.h >/dev/null ; then\

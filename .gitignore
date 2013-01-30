@@ -59,3 +59,5 @@ xcode
 projects/*macosx-full.xcodeproj
 *-mine*
 src/firefox.crt
+/*-*-*/
+.flags

@@ -119,16 +119,15 @@ clean:
 clobber: clean
 	rm -fr ./$(CONFIG)
 
-$(CONFIG)/inc/est.h:  \
-        $(CONFIG)/inc/bit.h \
-        src/bitos.h
+$(CONFIG)/inc/est.h: 
 	rm -fr $(CONFIG)/inc/est.h
 	cp -r src/deps/est/est.h $(CONFIG)/inc/est.h
 
 $(CONFIG)/obj/estLib.o: \
         src/deps/est/estLib.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/est.h
+        $(CONFIG)/inc/est.h \
+        src/bitos.h
 	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC $(LDFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/est/estLib.c
 
 $(CONFIG)/bin/libest.so:  \
@@ -140,16 +139,15 @@ $(CONFIG)/bin/ca.crt: src/deps/est/ca.crt
 	rm -fr $(CONFIG)/bin/ca.crt
 	cp -r src/deps/est/ca.crt $(CONFIG)/bin/ca.crt
 
-$(CONFIG)/inc/mpr.h:  \
-        $(CONFIG)/inc/bit.h \
-        src/bitos.h
+$(CONFIG)/inc/mpr.h: 
 	rm -fr $(CONFIG)/inc/mpr.h
 	cp -r src/deps/mpr/mpr.h $(CONFIG)/inc/mpr.h
 
 $(CONFIG)/obj/mprLib.o: \
         src/deps/mpr/mprLib.c \
         $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/mpr.h
+        $(CONFIG)/inc/mpr.h \
+        src/bitos.h
 	$(CC) -c -o $(CONFIG)/obj/mprLib.o -fPIC $(LDFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/mpr/mprLib.c
 
 $(CONFIG)/bin/libmpr.so:  \
@@ -192,7 +190,8 @@ $(CONFIG)/inc/http.h:
 $(CONFIG)/obj/actionHandler.o: \
         src/actionHandler.c \
         $(CONFIG)/inc/bit.h \
-        src/http.h
+        src/http.h \
+        $(CONFIG)/inc/mpr.h
 	$(CC) -c -o $(CONFIG)/obj/actionHandler.o -fPIC $(LDFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/actionHandler.c
 
 $(CONFIG)/obj/auth.o: \

@@ -425,7 +425,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     tx->status = status;
 
     if (schr(targetUri, '$')) {
-        targetUri = httpExpandRouteVars(conn, targetUri);
+        targetUri = httpExpandUri(conn, targetUri);
     }
     mprLog(3, "redirect %d %s", status, targetUri);
     msg = httpLookupStatus(conn->http, status);

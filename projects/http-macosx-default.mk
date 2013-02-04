@@ -2,36 +2,37 @@
 #   http-macosx-default.mk -- Makefile to build Http Library for macosx
 #
 
-PRODUCT         ?= http
-VERSION         ?= 1.3.0
-BUILD_NUMBER    ?= 0
-PROFILE         ?= default
-ARCH            ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
-OS              ?= macosx
-CC              ?= /usr/bin/clang
-LD              ?= /usr/bin/ld
-CONFIG          ?= $(OS)-$(ARCH)-$(PROFILE)
+PRODUCT         := http
+VERSION         := 1.3.0
+BUILD_NUMBER    := 0
+PROFILE         := default
+ARCH            := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
+OS              := macosx
+CC              := /usr/bin/clang
+LD              := /usr/bin/ld
+CONFIG          := $(OS)-$(ARCH)-$(PROFILE)
 
-BIT_CFG_PREFIX  ?= /etc/http
-BIT_PRD_PREFIX  ?= /usr/lib/http
-BIT_VER_PREFIX  ?= $(BIT_PRD_PREFIX)/1.3.0
-BIT_BIN_PREFIX  ?= $(BIT_VER_PREFIX)/bin
-BIT_INC_PREFIX  ?= $(BIT_VER_PREFIX)/inc
-BIT_LOG_PREFIX  ?= /var/log/http
-BIT_SPL_PREFIX  ?= /var/spool/http
-BIT_SRC_PREFIX  ?= /usr/src/http-1.3.0
-BIT_WEB_PREFIX  ?= /var/www/http-default
-BIT_UBIN_PREFIX ?= /usr/local/bin
-BIT_MAN_PREFIX  ?= /usr/local/share/man/man1
+BIT_ROOT_PREFIX := /
+BIT_CFG_PREFIX  := $(BIT_ROOT_PREFIX)etc/http
+BIT_PRD_PREFIX  := $(BIT_ROOT_PREFIX)usr/lib/http
+BIT_VER_PREFIX  := $(BIT_ROOT_PREFIX)usr/lib/http/1.3.0
+BIT_BIN_PREFIX  := $(BIT_VER_PREFIX)/bin
+BIT_INC_PREFIX  := $(BIT_VER_PREFIX)/inc
+BIT_LOG_PREFIX  := $(BIT_ROOT_PREFIX)var/log/http
+BIT_SPL_PREFIX  := $(BIT_ROOT_PREFIX)var/spool/http
+BIT_SRC_PREFIX  := $(BIT_ROOT_PREFIX)usr/src/http-1.3.0
+BIT_WEB_PREFIX  := $(BIT_ROOT_PREFIX)var/www/http-default
+BIT_UBIN_PREFIX := $(BIT_ROOT_PREFIX)usr/local/bin
+BIT_MAN_PREFIX  := $(BIT_ROOT_PREFIX)usr/local/share/man/man1
 
 CFLAGS          += -w
-DFLAGS          += $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
+DFLAGS          +=  $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
 IFLAGS          += -I$(CONFIG)/inc -Isrc
 LDFLAGS         += '-Wl,-rpath,@executable_path/' '-Wl,-rpath,@loader_path/'
 LIBPATHS        += -L$(CONFIG)/bin
 LIBS            += -lpthread -lm -ldl
 
-DEBUG           ?= debug
+DEBUG           := debug
 CFLAGS-debug    := -g
 DFLAGS-debug    := -DBIT_DEBUG
 LDFLAGS-debug   := -g
@@ -61,14 +62,12 @@ prep:
 	@[ ! -x $(CONFIG)/bin ] && mkdir -p $(CONFIG)/bin; true
 	@[ ! -x $(CONFIG)/inc ] && mkdir -p $(CONFIG)/inc; true
 	@[ ! -x $(CONFIG)/obj ] && mkdir -p $(CONFIG)/obj; true
-	@[ ! -f $(CONFIG)/inc/bit.h ] && cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h ; true
+	@[ ! -f $(CONFIG)/inc/bit.h ] && cp projects/http-macosx-default-bit.h $(CONFIG)/inc/bit.h ; true
 	@[ ! -f $(CONFIG)/inc/bitos.h ] && cp src/bitos.h $(CONFIG)/inc/bitos.h ; true
-	@if ! diff $(CONFIG)/inc/bit.h projects/http-$(OS)-$(PROFILE)-bit.h >/dev/null ; then\
-		echo cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h  ; \
-		cp projects/http-$(OS)-$(PROFILE)-bit.h $(CONFIG)/inc/bit.h  ; \
+	@if ! diff $(CONFIG)/inc/bit.h projects/http-macosx-default-bit.h >/dev/null ; then\
+		echo cp projects/http-macosx-default-bit.h $(CONFIG)/inc/bit.h  ; \
+		cp projects/http-macosx-default-bit.h $(CONFIG)/inc/bit.h  ; \
 	fi; true
-	@echo $(DFLAGS) $(CFLAGS) >projects/.flags
-
 clean:
 	rm -rf $(CONFIG)/bin/libest.dylib
 	rm -rf $(CONFIG)/bin/ca.crt
@@ -123,20 +122,16 @@ $(CONFIG)/inc/est.h:
 	rm -fr $(CONFIG)/inc/est.h
 	cp -r src/deps/est/est.h $(CONFIG)/inc/est.h
 
-$(CONFIG)/inc/bitos.h: 
-	rm -fr $(CONFIG)/inc/bitos.h
-	cp -r src/bitos.h $(CONFIG)/inc/bitos.h
-
 $(CONFIG)/obj/estLib.o: \
-        src/deps/est/estLib.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/est.h \
-        $(CONFIG)/inc/bitos.h
+    src/deps/est/estLib.c\
+    $(CONFIG)/inc/bit.h \
+    $(CONFIG)/inc/est.h \
+    src/bitos.h
 	$(CC) -c -o $(CONFIG)/obj/estLib.o -arch x86_64 $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/est/estLib.c
 
-$(CONFIG)/bin/libest.dylib:  \
-        $(CONFIG)/inc/est.h \
-        $(CONFIG)/obj/estLib.o
+$(CONFIG)/bin/libest.dylib: \
+    $(CONFIG)/inc/est.h \
+    $(CONFIG)/obj/estLib.o
 	$(CC) -dynamiclib -o $(CONFIG)/bin/libest.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libest.dylib $(CONFIG)/obj/estLib.o $(LIBS)
 
 $(CONFIG)/bin/ca.crt: src/deps/est/ca.crt
@@ -148,278 +143,282 @@ $(CONFIG)/inc/mpr.h:
 	cp -r src/deps/mpr/mpr.h $(CONFIG)/inc/mpr.h
 
 $(CONFIG)/obj/mprLib.o: \
-        src/deps/mpr/mprLib.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/mpr.h \
-        $(CONFIG)/inc/bitos.h
+    src/deps/mpr/mprLib.c\
+    $(CONFIG)/inc/bit.h \
+    $(CONFIG)/inc/mpr.h \
+    src/bitos.h
 	$(CC) -c -o $(CONFIG)/obj/mprLib.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/mpr/mprLib.c
 
-$(CONFIG)/bin/libmpr.dylib:  \
-        $(CONFIG)/inc/mpr.h \
-        $(CONFIG)/obj/mprLib.o
+$(CONFIG)/bin/libmpr.dylib: \
+    $(CONFIG)/inc/mpr.h \
+    $(CONFIG)/obj/mprLib.o
 	$(CC) -dynamiclib -o $(CONFIG)/bin/libmpr.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libmpr.dylib $(CONFIG)/obj/mprLib.o $(LIBS)
 
 $(CONFIG)/obj/mprSsl.o: \
-        src/deps/mpr/mprSsl.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/mpr.h \
-        $(CONFIG)/inc/est.h
+    src/deps/mpr/mprSsl.c\
+    $(CONFIG)/inc/bit.h \
+    $(CONFIG)/inc/mpr.h \
+    $(CONFIG)/inc/est.h
 	$(CC) -c -o $(CONFIG)/obj/mprSsl.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/mpr/mprSsl.c
 
-$(CONFIG)/bin/libmprssl.dylib:  \
-        $(CONFIG)/bin/libmpr.dylib \
-        $(CONFIG)/bin/libest.dylib \
-        $(CONFIG)/obj/mprSsl.o
+$(CONFIG)/bin/libmprssl.dylib: \
+    $(CONFIG)/bin/libmpr.dylib \
+    $(CONFIG)/bin/libest.dylib \
+    $(CONFIG)/obj/mprSsl.o
 	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch x86_64 $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libmprssl.dylib $(CONFIG)/obj/mprSsl.o -lest -lmpr $(LIBS)
 
 $(CONFIG)/obj/makerom.o: \
-        src/deps/mpr/makerom.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/mpr.h
+    src/deps/mpr/makerom.c\
+    $(CONFIG)/inc/bit.h \
+    $(CONFIG)/inc/mpr.h
 	$(CC) -c -o $(CONFIG)/obj/makerom.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/deps/mpr/makerom.c
 
-$(CONFIG)/bin/makerom:  \
-        $(CONFIG)/bin/libmpr.dylib \
-        $(CONFIG)/obj/makerom.o
+$(CONFIG)/bin/makerom: \
+    $(CONFIG)/bin/libmpr.dylib \
+    $(CONFIG)/obj/makerom.o
 	$(CC) -o $(CONFIG)/bin/makerom -arch x86_64 $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS)
+
+$(CONFIG)/inc/bitos.h: 
+	rm -fr $(CONFIG)/inc/bitos.h
+	cp -r src/bitos.h $(CONFIG)/inc/bitos.h
 
 $(CONFIG)/inc/http.h: 
 	rm -fr $(CONFIG)/inc/http.h
 	cp -r src/http.h $(CONFIG)/inc/http.h
 
 $(CONFIG)/obj/actionHandler.o: \
-        src/actionHandler.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h \
-        $(CONFIG)/inc/mpr.h
+    src/actionHandler.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h \
+    $(CONFIG)/inc/mpr.h
 	$(CC) -c -o $(CONFIG)/obj/actionHandler.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/actionHandler.c
 
 $(CONFIG)/obj/auth.o: \
-        src/auth.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/auth.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/auth.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/auth.c
 
 $(CONFIG)/obj/basic.o: \
-        src/basic.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/basic.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/basic.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/basic.c
 
 $(CONFIG)/obj/cache.o: \
-        src/cache.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/cache.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/cache.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/cache.c
 
 $(CONFIG)/obj/chunkFilter.o: \
-        src/chunkFilter.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/chunkFilter.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/chunkFilter.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/chunkFilter.c
 
 $(CONFIG)/obj/client.o: \
-        src/client.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/client.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/client.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/client.c
 
 $(CONFIG)/obj/conn.o: \
-        src/conn.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/conn.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/conn.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/conn.c
 
 $(CONFIG)/obj/digest.o: \
-        src/digest.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/digest.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/digest.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/digest.c
 
 $(CONFIG)/obj/endpoint.o: \
-        src/endpoint.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/endpoint.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/endpoint.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/endpoint.c
 
 $(CONFIG)/obj/error.o: \
-        src/error.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/error.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/error.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/error.c
 
 $(CONFIG)/obj/host.o: \
-        src/host.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/host.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/host.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/host.c
 
 $(CONFIG)/obj/httpService.o: \
-        src/httpService.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/httpService.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/httpService.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/httpService.c
 
 $(CONFIG)/obj/log.o: \
-        src/log.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/log.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/log.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/log.c
 
 $(CONFIG)/obj/netConnector.o: \
-        src/netConnector.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/netConnector.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/netConnector.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/netConnector.c
 
 $(CONFIG)/obj/packet.o: \
-        src/packet.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/packet.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/packet.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/packet.c
 
 $(CONFIG)/obj/pam.o: \
-        src/pam.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/pam.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/pam.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/pam.c
 
 $(CONFIG)/obj/passHandler.o: \
-        src/passHandler.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/passHandler.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/passHandler.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/passHandler.c
 
 $(CONFIG)/obj/pipeline.o: \
-        src/pipeline.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/pipeline.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/pipeline.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/pipeline.c
 
 $(CONFIG)/obj/queue.o: \
-        src/queue.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/queue.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/queue.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/queue.c
 
 $(CONFIG)/obj/rangeFilter.o: \
-        src/rangeFilter.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/rangeFilter.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/rangeFilter.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/rangeFilter.c
 
 $(CONFIG)/obj/route.o: \
-        src/route.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/route.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/route.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/route.c
 
 $(CONFIG)/obj/rx.o: \
-        src/rx.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/rx.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/rx.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/rx.c
 
 $(CONFIG)/obj/sendConnector.o: \
-        src/sendConnector.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/sendConnector.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/sendConnector.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/sendConnector.c
 
 $(CONFIG)/obj/session.o: \
-        src/session.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/session.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/session.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/session.c
 
 $(CONFIG)/obj/stage.o: \
-        src/stage.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/stage.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/stage.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/stage.c
 
 $(CONFIG)/obj/trace.o: \
-        src/trace.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/trace.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/trace.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/trace.c
 
 $(CONFIG)/obj/tx.o: \
-        src/tx.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/tx.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/tx.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/tx.c
 
 $(CONFIG)/obj/uploadFilter.o: \
-        src/uploadFilter.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/uploadFilter.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/uploadFilter.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/uploadFilter.c
 
 $(CONFIG)/obj/uri.o: \
-        src/uri.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/uri.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/uri.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/uri.c
 
 $(CONFIG)/obj/var.o: \
-        src/var.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/var.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/var.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/var.c
 
 $(CONFIG)/obj/webSock.o: \
-        src/webSock.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/webSock.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/webSock.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/webSock.c
 
-$(CONFIG)/bin/libhttp.dylib:  \
-        $(CONFIG)/bin/libmpr.dylib \
-        $(CONFIG)/inc/bitos.h \
-        $(CONFIG)/inc/http.h \
-        $(CONFIG)/obj/actionHandler.o \
-        $(CONFIG)/obj/auth.o \
-        $(CONFIG)/obj/basic.o \
-        $(CONFIG)/obj/cache.o \
-        $(CONFIG)/obj/chunkFilter.o \
-        $(CONFIG)/obj/client.o \
-        $(CONFIG)/obj/conn.o \
-        $(CONFIG)/obj/digest.o \
-        $(CONFIG)/obj/endpoint.o \
-        $(CONFIG)/obj/error.o \
-        $(CONFIG)/obj/host.o \
-        $(CONFIG)/obj/httpService.o \
-        $(CONFIG)/obj/log.o \
-        $(CONFIG)/obj/netConnector.o \
-        $(CONFIG)/obj/packet.o \
-        $(CONFIG)/obj/pam.o \
-        $(CONFIG)/obj/passHandler.o \
-        $(CONFIG)/obj/pipeline.o \
-        $(CONFIG)/obj/queue.o \
-        $(CONFIG)/obj/rangeFilter.o \
-        $(CONFIG)/obj/route.o \
-        $(CONFIG)/obj/rx.o \
-        $(CONFIG)/obj/sendConnector.o \
-        $(CONFIG)/obj/session.o \
-        $(CONFIG)/obj/stage.o \
-        $(CONFIG)/obj/trace.o \
-        $(CONFIG)/obj/tx.o \
-        $(CONFIG)/obj/uploadFilter.o \
-        $(CONFIG)/obj/uri.o \
-        $(CONFIG)/obj/var.o \
-        $(CONFIG)/obj/webSock.o
+$(CONFIG)/bin/libhttp.dylib: \
+    $(CONFIG)/bin/libmpr.dylib \
+    $(CONFIG)/inc/bitos.h \
+    $(CONFIG)/inc/http.h \
+    $(CONFIG)/obj/actionHandler.o \
+    $(CONFIG)/obj/auth.o \
+    $(CONFIG)/obj/basic.o \
+    $(CONFIG)/obj/cache.o \
+    $(CONFIG)/obj/chunkFilter.o \
+    $(CONFIG)/obj/client.o \
+    $(CONFIG)/obj/conn.o \
+    $(CONFIG)/obj/digest.o \
+    $(CONFIG)/obj/endpoint.o \
+    $(CONFIG)/obj/error.o \
+    $(CONFIG)/obj/host.o \
+    $(CONFIG)/obj/httpService.o \
+    $(CONFIG)/obj/log.o \
+    $(CONFIG)/obj/netConnector.o \
+    $(CONFIG)/obj/packet.o \
+    $(CONFIG)/obj/pam.o \
+    $(CONFIG)/obj/passHandler.o \
+    $(CONFIG)/obj/pipeline.o \
+    $(CONFIG)/obj/queue.o \
+    $(CONFIG)/obj/rangeFilter.o \
+    $(CONFIG)/obj/route.o \
+    $(CONFIG)/obj/rx.o \
+    $(CONFIG)/obj/sendConnector.o \
+    $(CONFIG)/obj/session.o \
+    $(CONFIG)/obj/stage.o \
+    $(CONFIG)/obj/trace.o \
+    $(CONFIG)/obj/tx.o \
+    $(CONFIG)/obj/uploadFilter.o \
+    $(CONFIG)/obj/uri.o \
+    $(CONFIG)/obj/var.o \
+    $(CONFIG)/obj/webSock.o
 	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib -arch x86_64 $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lmpr $(LIBS) -lpam
 
 $(CONFIG)/obj/http.o: \
-        src/http.c \
-        $(CONFIG)/inc/bit.h \
-        $(CONFIG)/inc/http.h
+    src/http.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
 	$(CC) -c -o $(CONFIG)/obj/http.o -arch x86_64 $(CFLAGS) $(DFLAGS) -I$(CONFIG)/inc -Isrc src/http.c
 
-$(CONFIG)/bin/http:  \
-        $(CONFIG)/bin/libhttp.dylib \
-        $(CONFIG)/obj/http.o
+$(CONFIG)/bin/http: \
+    $(CONFIG)/bin/libhttp.dylib \
+    $(CONFIG)/obj/http.o
 	$(CC) -o $(CONFIG)/bin/http -arch x86_64 $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lhttp $(LIBS) -lmpr
 
 version: 

@@ -1,7 +1,7 @@
 #
 #   Makefile - Embedthis Http Makefile wrapper for per-platform makefiles
 #
-#	This Makefile is for Unix/Linux and Cygwin. Use WinMake for windows.
+#   This Makefile is for Unix/Linux and Cygwin. On windows, it can be invoked via make.bat.
 #
 #   You can use this Makefile and build via "make" with a pre-selected configuration. Alternatively,
 #	you can build using the "bit" tool for for a fully configurable build. If you wish to 

@@ -156,7 +156,7 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
 {
     HttpHost    *host;
     cchar       *proto, *ip;
-    int         next;
+    int         next, rc;
 
     if (!validateEndpoint(endpoint)) {
         return MPR_ERR_BAD_ARGS;
@@ -167,8 +167,12 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
     if ((endpoint->sock = mprCreateSocket()) == 0) {
         return MPR_ERR_MEMORY;
     }
-    if (mprListenOnSocket(endpoint->sock, endpoint->ip, endpoint->port, MPR_SOCKET_NODELAY | MPR_SOCKET_THREAD) < 0) {
-        mprError("Cannot open a socket on %s:%d", *endpoint->ip ? endpoint->ip : "*", endpoint->port);
+    if ((rc = mprListenOnSocket(endpoint->sock, endpoint->ip, endpoint->port, MPR_SOCKET_NODELAY | MPR_SOCKET_THREAD)) < 0) {
+        if (rc == MPR_ERR_ALREADY_EXISTS) {
+            mprError("Cannot open a socket on %s:%d, socket already bound.", *endpoint->ip ? endpoint->ip : "*", endpoint->port);
+        } else {
+            mprError("Cannot open a socket on %s:%d", *endpoint->ip ? endpoint->ip : "*", endpoint->port);
+        }
         return MPR_ERR_CANT_OPEN;
     }
     if (endpoint->http->listenCallback && (endpoint->http->listenCallback)(endpoint) < 0) {

@@ -143,7 +143,7 @@
 
 /* Profile */
 #ifndef BIT_CONFIG_CMD
-    #define BIT_CONFIG_CMD "bit -d -q -platform windows-x86-default -without default -configure . -gen vs"
+    #define BIT_CONFIG_CMD "bit -d -q -platform windows-x86-default --without default -configure . -gen vs"
 #endif
 #ifndef BIT_HTTP_PRODUCT
     #define BIT_HTTP_PRODUCT 1

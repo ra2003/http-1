@@ -2361,7 +2361,7 @@ PUBLIC void httpAddResource(HttpRoute *parent, cchar *resource)
 }
 
 
-PUBLIC void httpAddStaticRoute(HttpRoute *parent)
+PUBLIC void httpAddHomeRoute(HttpRoute *parent)
 {
     cchar   *source, *name, *path, *pattern, *prefix;
 
@@ -2370,21 +2370,22 @@ PUBLIC void httpAddStaticRoute(HttpRoute *parent)
     name = qualifyName(parent, NULL, "home");
     path = stemplate("${STATIC_DIR}/index.esp", parent->vars);
     pattern = sfmt("^%s%s", prefix, "(/)*$");
-    httpDefineRoute(parent, name, "GET,POST,PUT", pattern, path, source);
+    httpDefineRoute(parent, name, "GET,POST", pattern, path, source);
 }
 
 
-PUBLIC void httpAddHomeRoute(HttpRoute *parent)
+PUBLIC void httpAddStaticRoute(HttpRoute *parent)
 {
-    cchar   *source, *name, *path, *pattern, *prefix;
+    HttpRoute   *route;
+    cchar       *source, *name, *path, *pattern, *prefix;
 
     prefix = parent->prefix ? parent->prefix : "";
     source = parent->sourceName;
-
     name = qualifyName(parent, NULL, "static");
     path = stemplate("${STATIC_DIR}/$1", parent->vars);
     pattern = sfmt("^%s%s", prefix, "/static/(.*)");
-    httpDefineRoute(parent, name, "GET", pattern, path, source);
+    route = httpDefineRoute(parent, name, "GET", pattern, path, source);
+    httpAddRouteHandler(route, "fileHandler", "");
 }
 
 

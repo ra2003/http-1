@@ -34,7 +34,7 @@ BIT_BASE_PREFIX       = $(BIT_ROOT_PREFIX)usr/local
 BIT_DATA_PREFIX       = $(BIT_ROOT_PREFIX)
 BIT_STATE_PREFIX      = $(BIT_ROOT_PREFIX)var
 BIT_APP_PREFIX        = $(BIT_BASE_PREFIX)/lib/$(PRODUCT)
-BIT_VAPP_PREFIX       = $(BIT_PRODUCT_PREFIX)/$(VERSION)
+BIT_VAPP_PREFIX       = $(BIT_APP_PREFIX)/$(VERSION)
 BIT_BIN_PREFIX        = $(BIT_ROOT_PREFIX)usr/local/bin
 BIT_INC_PREFIX        = $(BIT_ROOT_PREFIX)usr/local/include
 BIT_LIB_PREFIX        = $(BIT_ROOT_PREFIX)usr/local/lib
@@ -63,8 +63,8 @@ prep:
 	echo "Visual Studio vars not set. Run vcvars.bat."
 	exit 255
 !ENDIF
-!IF "$(BIT_PRODUCT_PREFIX)" == ""
-	echo "BIT_PRODUCT_PREFIX not set."
+!IF "$(BIT_APP_PREFIX)" == ""
+	echo "BIT_APP_PREFIX not set."
 	exit 255
 !ENDIF
 	@if not exist $(CONFIG)\bin md $(CONFIG)\bin

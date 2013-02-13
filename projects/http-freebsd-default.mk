@@ -18,7 +18,7 @@ BIT_BASE_PREFIX       := $(BIT_ROOT_PREFIX)usr/local
 BIT_DATA_PREFIX       := $(BIT_ROOT_PREFIX)
 BIT_STATE_PREFIX      := $(BIT_ROOT_PREFIX)var
 BIT_APP_PREFIX        := $(BIT_BASE_PREFIX)/lib/$(PRODUCT)
-BIT_VAPP_PREFIX       := $(BIT_PRODUCT_PREFIX)/$(VERSION)
+BIT_VAPP_PREFIX       := $(BIT_APP_PREFIX)/$(VERSION)
 BIT_BIN_PREFIX        := $(BIT_ROOT_PREFIX)usr/local/bin
 BIT_INC_PREFIX        := $(BIT_ROOT_PREFIX)usr/local/include
 BIT_LIB_PREFIX        := $(BIT_ROOT_PREFIX)usr/local/lib
@@ -64,7 +64,7 @@ all compile: prep \
 
 prep:
 	@if [ "$(CONFIG)" = "" ] ; then echo WARNING: CONFIG not set ; exit 255 ; fi
-	@if [ "$(BIT_PRODUCT_PREFIX)" = "" ] ; then echo WARNING: BIT_PRODUCT_PREFIX not set ; exit 255 ; fi
+	@if [ "$(BIT_APP_PREFIX)" = "" ] ; then echo WARNING: BIT_APP_PREFIX not set ; exit 255 ; fi
 	@[ ! -x $(CONFIG)/bin ] && mkdir -p $(CONFIG)/bin; true
 	@[ ! -x $(CONFIG)/inc ] && mkdir -p $(CONFIG)/inc; true
 	@[ ! -x $(CONFIG)/obj ] && mkdir -p $(CONFIG)/obj; true

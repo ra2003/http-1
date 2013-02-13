@@ -19,20 +19,20 @@ LBIN            := $(CONFIG)/bin
 
 BIT_ROOT_PREFIX       := deploy
 BIT_BASE_PREFIX       := $(BIT_ROOT_PREFIX)
-BIT_DATA_PREFIX       := $(BIT_PRODUCTVER_PREFIX)
-BIT_STATE_PREFIX      := $(BIT_PRODUCTVER_PREFIX)
-BIT_BIN_PREFIX        := $(BIT_PRODUCTVER_PREFIX)
-BIT_INC_PREFIX        := $(BIT_PRODUCTVER_PREFIX)/inc
-BIT_LIB_PREFIX        := $(BIT_PRODUCTVER_PREFIX)
-BIT_MAN_PREFIX        := $(BIT_PRODUCTVER_PREFIX)
-BIT_SBIN_PREFIX       := $(BIT_PRODUCTVER_PREFIX)
-BIT_ETC_PREFIX        := $(BIT_PRODUCTVER_PREFIX)
-BIT_WEB_PREFIX        := $(BIT_PRODUCTVER_PREFIX)/web
-BIT_LOG_PREFIX        := $(BIT_PRODUCTVER_PREFIX)
-BIT_SPOOL_PREFIX      := $(BIT_PRODUCTVER_PREFIX)
-BIT_CACHE_PREFIX      := $(BIT_PRODUCTVER_PREFIX)
+BIT_DATA_PREFIX       := $(BIT_VAPP_PREFIX)
+BIT_STATE_PREFIX      := $(BIT_VAPP_PREFIX)
+BIT_BIN_PREFIX        := $(BIT_VAPP_PREFIX)
+BIT_INC_PREFIX        := $(BIT_VAPP_PREFIX)/inc
+BIT_LIB_PREFIX        := $(BIT_VAPP_PREFIX)
+BIT_MAN_PREFIX        := $(BIT_VAPP_PREFIX)
+BIT_SBIN_PREFIX       := $(BIT_VAPP_PREFIX)
+BIT_ETC_PREFIX        := $(BIT_VAPP_PREFIX)
+BIT_WEB_PREFIX        := $(BIT_VAPP_PREFIX)/web
+BIT_LOG_PREFIX        := $(BIT_VAPP_PREFIX)
+BIT_SPOOL_PREFIX      := $(BIT_VAPP_PREFIX)
+BIT_CACHE_PREFIX      := $(BIT_VAPP_PREFIX)
 BIT_APP_PREFIX        := $(BIT_BASE_PREFIX)
-BIT_VAPP_PREFIX       := $(BIT_PRODUCT_PREFIX)
+BIT_VAPP_PREFIX       := $(BIT_APP_PREFIX)
 BIT_SRC_PREFIX        := $(BIT_ROOT_PREFIX)usr/src/$(PRODUCT)-$(VERSION)
 
 CFLAGS          += -fno-builtin -fno-defer-pop -fvolatile -w
@@ -68,7 +68,7 @@ all compile: prep \
 
 prep:
 	@if [ "$(CONFIG)" = "" ] ; then echo WARNING: CONFIG not set ; exit 255 ; fi
-	@if [ "$(BIT_PRODUCT_PREFIX)" = "" ] ; then echo WARNING: BIT_PRODUCT_PREFIX not set ; exit 255 ; fi
+	@if [ "$(BIT_APP_PREFIX)" = "" ] ; then echo WARNING: BIT_APP_PREFIX not set ; exit 255 ; fi
 	@[ ! -x $(CONFIG)/bin ] && mkdir -p $(CONFIG)/bin; true
 	@[ ! -x $(CONFIG)/inc ] && mkdir -p $(CONFIG)/inc; true
 	@[ ! -x $(CONFIG)/obj ] && mkdir -p $(CONFIG)/obj; true

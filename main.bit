@@ -23,6 +23,7 @@ Bit.load({
         company: 'Embedthis',
         version: '1.3.0',
         buildNumber: '0',
+        prefixes: 'embedthis-prefixes',
         sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
         //'+required': [ 'pcre' ],
         '+discover': [ 'doxygen', 'dsi', 'est', 'man', 'man2html', 'utest' ],

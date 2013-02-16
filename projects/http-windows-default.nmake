@@ -29,25 +29,25 @@ LDFLAGS         = -nologo -nodefaultlib -incremental:no -debug -machine:$(ARCH)
 LIBPATHS        = -libpath:$(CONFIG)\bin
 LIBS            = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
 
-BIT_ROOT_PREFIX       = /
-BIT_BASE_PREFIX       = $(BIT_ROOT_PREFIX)usr/local
-BIT_DATA_PREFIX       = $(BIT_ROOT_PREFIX)
-BIT_STATE_PREFIX      = $(BIT_ROOT_PREFIX)var
-BIT_APP_PREFIX        = $(BIT_BASE_PREFIX)/lib/$(PRODUCT)
-BIT_VAPP_PREFIX       = $(BIT_APP_PREFIX)/$(VERSION)
-BIT_BIN_PREFIX        = $(BIT_ROOT_PREFIX)usr/local/bin
-BIT_INC_PREFIX        = $(BIT_ROOT_PREFIX)usr/local/include
-BIT_LIB_PREFIX        = $(BIT_ROOT_PREFIX)usr/local/lib
-BIT_MAN_PREFIX        = $(BIT_ROOT_PREFIX)usr/local/share/man
-BIT_SBIN_PREFIX       = $(BIT_ROOT_PREFIX)usr/local/sbin
-BIT_ETC_PREFIX        = $(BIT_ROOT_PREFIX)etc/$(PRODUCT)
-BIT_WEB_PREFIX        = $(BIT_ROOT_PREFIX)var/www/$(PRODUCT)-default
-BIT_LOG_PREFIX        = $(BIT_ROOT_PREFIX)var/log/$(PRODUCT)
-BIT_SPOOL_PREFIX      = $(BIT_ROOT_PREFIX)var/spool/$(PRODUCT)
-BIT_CACHE_PREFIX      = $(BIT_ROOT_PREFIX)var/cache/$(PRODUCT)
-BIT_SRC_PREFIX        = $(BIT_ROOT_PREFIX)usr/local/src/$(PRODUCT)-$(VERSION)
+BIT_ROOT_PREFIX       = C:
+BIT_BASE_PREFIX       = $(BIT_ROOT_PREFIX)\Program Files
+BIT_APP_PREFIX        = $(BIT_BASE_PREFIX)\Http Library
+BIT_VAPP_PREFIX       = $(BIT_APP_PREFIX)
+BIT_DATA_PREFIX       = $(BIT_VAPP_PREFIX)
+BIT_STATE_PREFIX      = $(BIT_VAPP_PREFIX)
+BIT_BIN_PREFIX        = $(BIT_VAPP_PREFIX)\bin
+BIT_INC_PREFIX        = $(BIT_VAPP_PREFIX)\inc
+BIT_LIB_PREFIX        = $(BIT_VAPP_PREFIX)\lib
+BIT_MAN_PREFIX        = $(BIT_VAPP_PREFIX)\man
+BIT_ETC_PREFIX        = $(BIT_VAPP_PREFIX)
+BIT_WEB_PREFIX        = $(BIT_VAPP_PREFIX)\web
+BIT_LOG_PREFIX        = $(BIT_VAPP_PREFIX)\log
+BIT_SPOOL_PREFIX      = $(BIT_VAPP_PREFIX)\tmp
+BIT_CACHE_PREFIX      = $(BIT_VAPP_PREFIX)\cache
+BIT_SRC_PREFIX        = $(BIT_VAPP_PREFIX)\src
 
 all compile: prep \
+        $(CONFIG)\bin\removeFiles.exe \
         $(CONFIG)\bin\libest.dll \
         $(CONFIG)\bin\ca.crt \
         $(CONFIG)\bin\libmpr.dll \
@@ -72,6 +72,7 @@ prep:
 	@if not exist $(CONFIG)\obj md $(CONFIG)\obj
 	@if not exist $(CONFIG)\inc\bit.h copy projects\http-windows-default-bit.h $(CONFIG)\inc\bit.h
 clean:
+	-if exist $(CONFIG)\bin\removeFiles.exe del /Q $(CONFIG)\bin\removeFiles.exe
 	-if exist $(CONFIG)\bin\libest.dll del /Q $(CONFIG)\bin\libest.dll
 	-if exist $(CONFIG)\bin\ca.crt del /Q $(CONFIG)\bin\ca.crt
 	-if exist $(CONFIG)\bin\libmpr.dll del /Q $(CONFIG)\bin\libmpr.dll
@@ -79,6 +80,7 @@ clean:
 	-if exist $(CONFIG)\bin\makerom.exe del /Q $(CONFIG)\bin\makerom.exe
 	-if exist $(CONFIG)\bin\libhttp.dll del /Q $(CONFIG)\bin\libhttp.dll
 	-if exist $(CONFIG)\bin\http.exe del /Q $(CONFIG)\bin\http.exe
+	-if exist $(CONFIG)\obj\removeFiles.obj del /Q $(CONFIG)\obj\removeFiles.obj
 	-if exist $(CONFIG)\obj\estLib.obj del /Q $(CONFIG)\obj\estLib.obj
 	-if exist $(CONFIG)\obj\pcre.obj del /Q $(CONFIG)\obj\pcre.obj
 	-if exist $(CONFIG)\obj\mprLib.obj del /Q $(CONFIG)\obj\mprLib.obj
@@ -117,6 +119,15 @@ clean:
 	-if exist $(CONFIG)\obj\var.obj del /Q $(CONFIG)\obj\var.obj
 	-if exist $(CONFIG)\obj\webSock.obj del /Q $(CONFIG)\obj\webSock.obj
 	-if exist $(CONFIG)\obj\http.obj del /Q $(CONFIG)\obj\http.obj
+
+$(CONFIG)\obj\removeFiles.obj: \
+    ..\bit\macosx-x64-release\bin\package\windows\removeFiles.c\
+    $(CONFIG)\inc\bit.h
+	"$(CC)" -c -Fo$(CONFIG)\obj\removeFiles.obj -Fd$(CONFIG)\obj\removeFiles.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) ..\bit\macosx-x64-release\bin\package\windows\removeFiles.c
+
+$(CONFIG)\bin\removeFiles.exe: \
+    $(CONFIG)\obj\removeFiles.obj
+	"$(LD)" -out:$(CONFIG)\bin\removeFiles.exe -entry:WinMainCRTStartup -subsystem:Windows $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\removeFiles.obj $(LIBS)
 
 $(CONFIG)\inc\est.h: 
 	-if exist $(CONFIG)\inc\est.h del /Q $(CONFIG)\inc\est.h
@@ -423,4 +434,21 @@ $(CONFIG)\bin\http.exe: \
 
 version: 
 	@echo 1.3.0-0
+
+stop: 
+
+
+installBinary: stop
+	
+
+
+start: 
+
+
+install: stop installBinary start
+
+
+uninstall: stop
+	
+
 

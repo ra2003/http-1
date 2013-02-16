@@ -2,6 +2,11 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prep", "http-windows-default\prep.vcxproj", "{744B8495-7101-4C77-ACC2-59FC4DDE27C7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "removeFiles", "http-windows-default\removeFiles.vcxproj", "{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libest", "http-windows-default\libest.vcxproj", "{94CE5C90-4A3C-4291-B87D-5A6A992A3E32}"
 	ProjectSection(ProjectDependencies) = postProject
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
@@ -69,6 +74,14 @@ Global
 {744B8495-7101-4C77-ACC2-59FC4DDE27C7}.Release|Win32.Build.0 = Release|Win32
 {744B8495-7101-4C77-ACC2-59FC4DDE27C7}.Release|x64.ActiveCfg = Release|x64
 {744B8495-7101-4C77-ACC2-59FC4DDE27C7}.Release|x64.Build.0 = Release|x64
+{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}.Debug|Win32.ActiveCfg = Debug|Win32
+{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}.Debug|Win32.Build.0 = Debug|Win32
+{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}.Debug|x64.ActiveCfg = Debug|x64
+{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}.Debug|x64.Build.0 = Debug|x64
+{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}.Release|Win32.ActiveCfg = Release|Win32
+{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}.Release|Win32.Build.0 = Release|Win32
+{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}.Release|x64.ActiveCfg = Release|x64
+{6DF5C4DB-E2DA-48AF-B070-9D3C577ADBB3}.Release|x64.Build.0 = Release|x64
 {94CE5C90-4A3C-4291-B87D-5A6A992A3E32}.Debug|Win32.ActiveCfg = Debug|Win32
 {94CE5C90-4A3C-4291-B87D-5A6A992A3E32}.Debug|Win32.Build.0 = Debug|Win32
 {94CE5C90-4A3C-4291-B87D-5A6A992A3E32}.Debug|x64.ActiveCfg = Debug|x64

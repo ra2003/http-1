@@ -7,6 +7,9 @@
 
 
 /* Settings */
+#ifndef BIT_BIT
+    #define BIT_BIT "0.8.1"
+#endif
 #ifndef BIT_BUILD_NUMBER
     #define BIT_BUILD_NUMBER "0"
 #endif
@@ -163,10 +166,10 @@
     #define BIT_SPOOL_PREFIX "/var/spool/http"
 #endif
 #ifndef BIT_CACHE_PREFIX
-    #define BIT_CACHE_PREFIX "/var/cache/http"
+    #define BIT_CACHE_PREFIX "/var/spool/http/cache"
 #endif
 #ifndef BIT_SRC_PREFIX
-    #define BIT_SRC_PREFIX "/usr/local/src/http-1.3.0"
+    #define BIT_SRC_PREFIX "http-1.3.0"
 #endif
 
 /* Suffixes */

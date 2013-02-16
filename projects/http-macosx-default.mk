@@ -14,22 +14,22 @@ CONFIG          := $(OS)-$(ARCH)-$(PROFILE)
 LBIN            := $(CONFIG)/bin
 
 BIT_ROOT_PREFIX       := /
-BIT_BASE_PREFIX       := $(BIT_ROOT_PREFIX)usr/local
-BIT_DATA_PREFIX       := $(BIT_ROOT_PREFIX)
-BIT_STATE_PREFIX      := $(BIT_ROOT_PREFIX)var
+BIT_BASE_PREFIX       := $(BIT_ROOT_PREFIX)/usr/local
+BIT_DATA_PREFIX       := $(BIT_ROOT_PREFIX)/
+BIT_STATE_PREFIX      := $(BIT_ROOT_PREFIX)/var
 BIT_APP_PREFIX        := $(BIT_BASE_PREFIX)/lib/$(PRODUCT)
 BIT_VAPP_PREFIX       := $(BIT_APP_PREFIX)/$(VERSION)
-BIT_BIN_PREFIX        := $(BIT_ROOT_PREFIX)usr/local/bin
-BIT_INC_PREFIX        := $(BIT_ROOT_PREFIX)usr/local/include
-BIT_LIB_PREFIX        := $(BIT_ROOT_PREFIX)usr/local/lib
-BIT_MAN_PREFIX        := $(BIT_ROOT_PREFIX)usr/local/share/man
-BIT_SBIN_PREFIX       := $(BIT_ROOT_PREFIX)usr/local/sbin
-BIT_ETC_PREFIX        := $(BIT_ROOT_PREFIX)etc/$(PRODUCT)
-BIT_WEB_PREFIX        := $(BIT_ROOT_PREFIX)var/www/$(PRODUCT)-default
-BIT_LOG_PREFIX        := $(BIT_ROOT_PREFIX)var/log/$(PRODUCT)
-BIT_SPOOL_PREFIX      := $(BIT_ROOT_PREFIX)var/spool/$(PRODUCT)
-BIT_CACHE_PREFIX      := $(BIT_ROOT_PREFIX)var/cache/$(PRODUCT)
-BIT_SRC_PREFIX        := $(BIT_ROOT_PREFIX)usr/local/src/$(PRODUCT)-$(VERSION)
+BIT_BIN_PREFIX        := $(BIT_ROOT_PREFIX)/usr/local/bin
+BIT_INC_PREFIX        := $(BIT_ROOT_PREFIX)/usr/local/include
+BIT_LIB_PREFIX        := $(BIT_ROOT_PREFIX)/usr/local/lib
+BIT_MAN_PREFIX        := $(BIT_ROOT_PREFIX)/usr/local/share/man
+BIT_SBIN_PREFIX       := $(BIT_ROOT_PREFIX)/usr/local/sbin
+BIT_ETC_PREFIX        := $(BIT_ROOT_PREFIX)/etc/$(PRODUCT)
+BIT_WEB_PREFIX        := $(BIT_ROOT_PREFIX)/var/www/$(PRODUCT)-default
+BIT_LOG_PREFIX        := $(BIT_ROOT_PREFIX)/var/log/$(PRODUCT)
+BIT_SPOOL_PREFIX      := $(BIT_ROOT_PREFIX)/var/spool/$(PRODUCT)
+BIT_CACHE_PREFIX      := $(BIT_ROOT_PREFIX)/var/spool/$(PRODUCT)/cache
+BIT_SRC_PREFIX        := $(BIT_ROOT_PREFIX)$(PRODUCT)-$(VERSION)
 
 CFLAGS          += -w
 DFLAGS          +=  $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
@@ -82,6 +82,7 @@ clean:
 	rm -rf $(CONFIG)/bin/makerom
 	rm -rf $(CONFIG)/bin/libhttp.dylib
 	rm -rf $(CONFIG)/bin/http
+	rm -rf $(CONFIG)/obj/removeFiles.o
 	rm -rf $(CONFIG)/obj/estLib.o
 	rm -rf $(CONFIG)/obj/pcre.o
 	rm -rf $(CONFIG)/obj/mprLib.o
@@ -429,4 +430,21 @@ $(CONFIG)/bin/http: \
 
 version: 
 	@echo 1.3.0-0
+
+stop: 
+	
+
+installBinary: stop
+	
+
+
+start: 
+	
+
+install: stop installBinary start
+	
+
+uninstall: stop
+	
+
 

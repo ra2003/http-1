@@ -33,7 +33,7 @@ BIT_SPOOL_PREFIX      := $(BIT_VAPP_PREFIX)
 BIT_CACHE_PREFIX      := $(BIT_VAPP_PREFIX)
 BIT_APP_PREFIX        := $(BIT_BASE_PREFIX)
 BIT_VAPP_PREFIX       := $(BIT_APP_PREFIX)
-BIT_SRC_PREFIX        := $(BIT_ROOT_PREFIX)usr/src/$(PRODUCT)-$(VERSION)
+BIT_SRC_PREFIX        := $(BIT_ROOT_PREFIX)/usr/src/$(PRODUCT)-$(VERSION)
 
 CFLAGS          += -fno-builtin -fno-defer-pop -fvolatile -w
 DFLAGS          += -D_REENTRANT -DVXWORKS -DRW_MULTI_THREAD -D_GNU_TOOL -DCPU=PENTIUM $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
@@ -86,6 +86,7 @@ clean:
 	rm -rf $(CONFIG)/bin/makerom.out
 	rm -rf $(CONFIG)/bin/libhttp.out
 	rm -rf $(CONFIG)/bin/http.out
+	rm -rf $(CONFIG)/obj/removeFiles.o
 	rm -rf $(CONFIG)/obj/estLib.o
 	rm -rf $(CONFIG)/obj/pcre.o
 	rm -rf $(CONFIG)/obj/mprLib.o
@@ -433,4 +434,21 @@ $(CONFIG)/bin/http.out: \
 
 version: 
 	@echo 1.3.0-0
+
+stop: 
+	
+
+installBinary: stop
+	
+
+
+start: 
+	
+
+install: stop installBinary start
+	
+
+uninstall: stop
+	
+
 

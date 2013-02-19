@@ -260,21 +260,3 @@
 #ifndef BIT_PACK_VXWORKS
     #define BIT_PACK_VXWORKS 1
 #endif
-#ifndef BIT_PACK_COMPILER_PATH
-    #define BIT_PACK_COMPILER_PATH "ccpentium"
-#endif
-#ifndef BIT_PACK_EST_PATH
-    #define BIT_PACK_EST_PATH "/Users/mob/git/http/src/deps/est"
-#endif
-#ifndef BIT_PACK_LIB_PATH
-    #define BIT_PACK_LIB_PATH "/usr/bin/ar"
-#endif
-#ifndef BIT_PACK_LINK_PATH
-    #define BIT_PACK_LINK_PATH "/usr/bin/ld"
-#endif
-#ifndef BIT_PACK_UTEST_PATH
-    #define BIT_PACK_UTEST_PATH "/Users/mob/git/ejs/macosx-x64-debug/bin/utest"
-#endif
-#ifndef BIT_PACK_VXWORKS_PATH
-    #define BIT_PACK_VXWORKS_PATH "$(WIND_BASE)"
-#endif

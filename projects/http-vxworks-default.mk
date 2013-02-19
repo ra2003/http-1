@@ -130,8 +130,8 @@ clobber: clean
 	rm -fr ./$(CONFIG)
 
 $(CONFIG)/inc/est.h: 
-	mkdir -p "/Users/mob/git/http/vxworks-x86-default/inc"
-	cp "src/deps/est/est.h" "/Users/mob/git/http/vxworks-x86-default/inc/est.h"
+	mkdir -p "vxworks-x86-default/inc"
+	cp "src/deps/est/est.h" "vxworks-x86-default/inc/est.h"
 
 $(CONFIG)/inc/bit.h: 
 
@@ -152,12 +152,12 @@ $(CONFIG)/bin/libest.out: \
 
 $(CONFIG)/bin/ca.crt: \
     src/deps/est/ca.crt
-	mkdir -p "/Users/mob/git/http/vxworks-x86-default/bin"
-	cp "src/deps/est/ca.crt" "/Users/mob/git/http/vxworks-x86-default/bin/ca.crt"
+	mkdir -p "vxworks-x86-default/bin"
+	cp "src/deps/est/ca.crt" "vxworks-x86-default/bin/ca.crt"
 
 $(CONFIG)/inc/mpr.h: 
-	mkdir -p "/Users/mob/git/http/vxworks-x86-default/inc"
-	cp "src/deps/mpr/mpr.h" "/Users/mob/git/http/vxworks-x86-default/inc/mpr.h"
+	mkdir -p "vxworks-x86-default/inc"
+	cp "src/deps/mpr/mpr.h" "vxworks-x86-default/inc/mpr.h"
 
 $(CONFIG)/obj/mprLib.o: \
     src/deps/mpr/mprLib.c\
@@ -196,12 +196,12 @@ $(CONFIG)/bin/makerom.out: \
 	$(CC) -o $(CONFIG)/bin/makerom.out $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LDFLAGS)
 
 $(CONFIG)/inc/bitos.h: 
-	mkdir -p "/Users/mob/git/http/vxworks-x86-default/inc"
-	cp "src/bitos.h" "/Users/mob/git/http/vxworks-x86-default/inc/bitos.h"
+	mkdir -p "vxworks-x86-default/inc"
+	cp "src/bitos.h" "vxworks-x86-default/inc/bitos.h"
 
 $(CONFIG)/inc/http.h: 
-	mkdir -p "/Users/mob/git/http/vxworks-x86-default/inc"
-	cp "src/http.h" "/Users/mob/git/http/vxworks-x86-default/inc/http.h"
+	mkdir -p "vxworks-x86-default/inc"
+	cp "src/http.h" "vxworks-x86-default/inc/http.h"
 
 src/http.h: 
 

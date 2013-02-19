@@ -620,9 +620,6 @@ fi
 if [ ../src/deps/est/est.h -nt ${OUT_DIR}/inc/est.h ] ; then
 cp ../src/deps/est/est.h ${OUT_DIR}/inc/est.h
 fi
-if [ ../src/deps/pcre/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
-cp ../src/deps/pcre/pcre.h ${OUT_DIR}/inc/pcre.h
-fi
 if [ ../src/deps/mpr/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
 cp ../src/deps/mpr/mpr.h ${OUT_DIR}/inc/mpr.h
 fi

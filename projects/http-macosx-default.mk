@@ -74,6 +74,7 @@ prep:
 		echo cp projects/http-macosx-default-bit.h $(CONFIG)/inc/bit.h  ; \
 		cp projects/http-macosx-default-bit.h $(CONFIG)/inc/bit.h  ; \
 	fi; true
+
 clean:
 	rm -rf $(CONFIG)/bin/libest.dylib
 	rm -rf $(CONFIG)/bin/ca.crt
@@ -82,12 +83,9 @@ clean:
 	rm -rf $(CONFIG)/bin/makerom
 	rm -rf $(CONFIG)/bin/libhttp.dylib
 	rm -rf $(CONFIG)/bin/http
-	rm -rf $(CONFIG)/obj/removeFiles.o
 	rm -rf $(CONFIG)/obj/estLib.o
-	rm -rf $(CONFIG)/obj/pcre.o
 	rm -rf $(CONFIG)/obj/mprLib.o
 	rm -rf $(CONFIG)/obj/mprSsl.o
-	rm -rf $(CONFIG)/obj/manager.o
 	rm -rf $(CONFIG)/obj/makerom.o
 	rm -rf $(CONFIG)/obj/actionHandler.o
 	rm -rf $(CONFIG)/obj/auth.o

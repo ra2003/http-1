@@ -123,15 +123,17 @@ clean:
 $(CONFIG)\inc\bit.h: 
 
 $(CONFIG)\obj\removeFiles.obj: \
-    ..\bit\macosx-x64-debug\bin\package\windows\removeFiles.c\
+    ..\bit\macosx-x64-release\bin\package\windows\removeFiles.c\
     $(CONFIG)\inc\bit.h
-	"$(CC)" -c -Fo$(CONFIG)\obj\removeFiles.obj -Fd$(CONFIG)\obj\removeFiles.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) ..\bit\macosx-x64-debug\bin\package\windows\removeFiles.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\removeFiles.obj -Fd$(CONFIG)\obj\removeFiles.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) ..\bit\macosx-x64-release\bin\package\windows\removeFiles.c
 
 $(CONFIG)\bin\removeFiles.exe: \
     $(CONFIG)\obj\removeFiles.obj
 	"$(LD)" -out:$(CONFIG)\bin\removeFiles.exe -entry:WinMainCRTStartup -subsystem:Windows $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\removeFiles.obj $(LIBS)
 
 $(CONFIG)\inc\est.h: 
+	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
+	copy /Y "src\deps\est\est.h" "$(CONFIG)\inc\est.h"
 
 src\bitos.h: \
     $(CONFIG)\inc\bit.h
@@ -150,8 +152,12 @@ $(CONFIG)\bin\libest.dll: \
 
 $(CONFIG)\bin\ca.crt: \
     src\deps\est\ca.crt
+	if not exist "$(CONFIG)\bin" md "$(CONFIG)\bin"
+	copy /Y "src\deps\est\ca.crt" "$(CONFIG)\bin\ca.crt"
 
 $(CONFIG)\inc\mpr.h: 
+	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
+	copy /Y "src\deps\mpr\mpr.h" "$(CONFIG)\inc\mpr.h"
 
 $(CONFIG)\obj\mprLib.obj: \
     src\deps\mpr\mprLib.c\
@@ -190,8 +196,12 @@ $(CONFIG)\bin\makerom.exe: \
 	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj libmpr.lib $(LIBS)
 
 $(CONFIG)\inc\bitos.h: 
+	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
+	copy /Y "src\bitos.h" "$(CONFIG)\inc\bitos.h"
 
 $(CONFIG)\inc\http.h: 
+	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
+	copy /Y "src\http.h" "$(CONFIG)\inc\http.h"
 
 src\http.h: 
 

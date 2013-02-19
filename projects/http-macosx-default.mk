@@ -126,8 +126,8 @@ clobber: clean
 	rm -fr ./$(CONFIG)
 
 $(CONFIG)/inc/est.h: 
-	mkdir -p "macosx-x64-default/inc"
-	cp "src/deps/est/est.h" "macosx-x64-default/inc/est.h"
+	mkdir -p "$(CONFIG)/inc"
+	cp "src/deps/est/est.h" "$(CONFIG)/inc/est.h"
 
 $(CONFIG)/inc/bit.h: 
 
@@ -148,12 +148,12 @@ $(CONFIG)/bin/libest.dylib: \
 
 $(CONFIG)/bin/ca.crt: \
     src/deps/est/ca.crt
-	mkdir -p "macosx-x64-default/bin"
-	cp "src/deps/est/ca.crt" "macosx-x64-default/bin/ca.crt"
+	mkdir -p "$(CONFIG)/bin"
+	cp "src/deps/est/ca.crt" "$(CONFIG)/bin/ca.crt"
 
 $(CONFIG)/inc/mpr.h: 
-	mkdir -p "macosx-x64-default/inc"
-	cp "src/deps/mpr/mpr.h" "macosx-x64-default/inc/mpr.h"
+	mkdir -p "$(CONFIG)/inc"
+	cp "src/deps/mpr/mpr.h" "$(CONFIG)/inc/mpr.h"
 
 $(CONFIG)/obj/mprLib.o: \
     src/deps/mpr/mprLib.c\
@@ -192,12 +192,12 @@ $(CONFIG)/bin/makerom: \
 	$(CC) -o $(CONFIG)/bin/makerom -arch x86_64 $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS)
 
 $(CONFIG)/inc/bitos.h: 
-	mkdir -p "macosx-x64-default/inc"
-	cp "src/bitos.h" "macosx-x64-default/inc/bitos.h"
+	mkdir -p "$(CONFIG)/inc"
+	cp "src/bitos.h" "$(CONFIG)/inc/bitos.h"
 
 $(CONFIG)/inc/http.h: 
-	mkdir -p "macosx-x64-default/inc"
-	cp "src/http.h" "macosx-x64-default/inc/http.h"
+	mkdir -p "$(CONFIG)/inc"
+	cp "src/http.h" "$(CONFIG)/inc/http.h"
 
 src/http.h: 
 

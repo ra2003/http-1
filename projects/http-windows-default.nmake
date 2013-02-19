@@ -132,8 +132,6 @@ $(CONFIG)\bin\removeFiles.exe: \
 	"$(LD)" -out:$(CONFIG)\bin\removeFiles.exe -entry:WinMainCRTStartup -subsystem:Windows $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\removeFiles.obj $(LIBS)
 
 $(CONFIG)\inc\est.h: 
-	if not exist "windows-x86-default\inc" md "windows-x86-default\inc"
-	copy /Y "src\deps\est\est.h" "windows-x86-default\inc\est.h"
 
 src\bitos.h: \
     $(CONFIG)\inc\bit.h
@@ -152,12 +150,8 @@ $(CONFIG)\bin\libest.dll: \
 
 $(CONFIG)\bin\ca.crt: \
     src\deps\est\ca.crt
-	if not exist "windows-x86-default\bin" md "windows-x86-default\bin"
-	copy /Y "src\deps\est\ca.crt" "windows-x86-default\bin\ca.crt"
 
 $(CONFIG)\inc\mpr.h: 
-	if not exist "windows-x86-default\inc" md "windows-x86-default\inc"
-	copy /Y "src\deps\mpr\mpr.h" "windows-x86-default\inc\mpr.h"
 
 $(CONFIG)\obj\mprLib.obj: \
     src\deps\mpr\mprLib.c\
@@ -196,12 +190,8 @@ $(CONFIG)\bin\makerom.exe: \
 	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj libmpr.lib $(LIBS)
 
 $(CONFIG)\inc\bitos.h: 
-	if not exist "windows-x86-default\inc" md "windows-x86-default\inc"
-	copy /Y "src\bitos.h" "windows-x86-default\inc\bitos.h"
 
 $(CONFIG)\inc\http.h: 
-	if not exist "windows-x86-default\inc" md "windows-x86-default\inc"
-	copy /Y "src\http.h" "windows-x86-default\inc\http.h"
 
 src\http.h: 
 

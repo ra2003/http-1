@@ -98,6 +98,7 @@ clean:
 	-if exist $(CONFIG)\obj\endpoint.obj del /Q $(CONFIG)\obj\endpoint.obj
 	-if exist $(CONFIG)\obj\error.obj del /Q $(CONFIG)\obj\error.obj
 	-if exist $(CONFIG)\obj\host.obj del /Q $(CONFIG)\obj\host.obj
+	-if exist $(CONFIG)\obj\http.obj del /Q $(CONFIG)\obj\http.obj
 	-if exist $(CONFIG)\obj\httpService.obj del /Q $(CONFIG)\obj\httpService.obj
 	-if exist $(CONFIG)\obj\log.obj del /Q $(CONFIG)\obj\log.obj
 	-if exist $(CONFIG)\obj\netConnector.obj del /Q $(CONFIG)\obj\netConnector.obj
@@ -118,20 +119,24 @@ clean:
 	-if exist $(CONFIG)\obj\uri.obj del /Q $(CONFIG)\obj\uri.obj
 	-if exist $(CONFIG)\obj\var.obj del /Q $(CONFIG)\obj\var.obj
 	-if exist $(CONFIG)\obj\webSock.obj del /Q $(CONFIG)\obj\webSock.obj
-	-if exist $(CONFIG)\obj\http.obj del /Q $(CONFIG)\obj\http.obj
+
+$(CONFIG)\inc\bit.h: 
 
 $(CONFIG)\obj\removeFiles.obj: \
-    ..\bit\macosx-x64-release\bin\package\windows\removeFiles.c\
+    ..\bit\macosx-x64-debug\bin\package\windows\removeFiles.c\
     $(CONFIG)\inc\bit.h
-	"$(CC)" -c -Fo$(CONFIG)\obj\removeFiles.obj -Fd$(CONFIG)\obj\removeFiles.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) ..\bit\macosx-x64-release\bin\package\windows\removeFiles.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\removeFiles.obj -Fd$(CONFIG)\obj\removeFiles.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) ..\bit\macosx-x64-debug\bin\package\windows\removeFiles.c
 
 $(CONFIG)\bin\removeFiles.exe: \
     $(CONFIG)\obj\removeFiles.obj
 	"$(LD)" -out:$(CONFIG)\bin\removeFiles.exe -entry:WinMainCRTStartup -subsystem:Windows $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\removeFiles.obj $(LIBS)
 
 $(CONFIG)\inc\est.h: 
-	-if exist $(CONFIG)\inc\est.h del /Q $(CONFIG)\inc\est.h
-	copy /Y src\deps\est\est.h $(CONFIG)\inc\est.h
+	if not exist "\Users\mob\git\http\windows-x86-default\inc" md "\Users\mob\git\http\windows-x86-default\inc"
+	copy /Y "src\deps\est\est.h" "\Users\mob\git\http\windows-x86-default\inc\est.h"
+
+src\bitos.h: \
+    $(CONFIG)\inc\bit.h
 
 $(CONFIG)\obj\estLib.obj: \
     src\deps\est\estLib.c\
@@ -145,13 +150,14 @@ $(CONFIG)\bin\libest.dll: \
     $(CONFIG)\obj\estLib.obj
 	"$(LD)" -dll -out:$(CONFIG)\bin\libest.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\estLib.obj $(LIBS)
 
-$(CONFIG)\bin\ca.crt: src/deps/est/ca.crt
-	-if exist $(CONFIG)\bin\ca.crt del /Q $(CONFIG)\bin\ca.crt
-	copy /Y src\deps\est\ca.crt $(CONFIG)\bin\ca.crt
+$(CONFIG)\bin\ca.crt: \
+    src\deps\est\ca.crt
+	if not exist "\Users\mob\git\http\windows-x86-default\bin" md "\Users\mob\git\http\windows-x86-default\bin"
+	copy /Y "src\deps\est\ca.crt" "\Users\mob\git\http\windows-x86-default\bin\ca.crt"
 
 $(CONFIG)\inc\mpr.h: 
-	-if exist $(CONFIG)\inc\mpr.h del /Q $(CONFIG)\inc\mpr.h
-	copy /Y src\deps\mpr\mpr.h $(CONFIG)\inc\mpr.h
+	if not exist "\Users\mob\git\http\windows-x86-default\inc" md "\Users\mob\git\http\windows-x86-default\inc"
+	copy /Y "src\deps\mpr\mpr.h" "\Users\mob\git\http\windows-x86-default\inc\mpr.h"
 
 $(CONFIG)\obj\mprLib.obj: \
     src\deps\mpr\mprLib.c\
@@ -190,12 +196,14 @@ $(CONFIG)\bin\makerom.exe: \
 	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj libmpr.lib $(LIBS)
 
 $(CONFIG)\inc\bitos.h: 
-	-if exist $(CONFIG)\inc\bitos.h del /Q $(CONFIG)\inc\bitos.h
-	copy /Y src\bitos.h $(CONFIG)\inc\bitos.h
+	if not exist "\Users\mob\git\http\windows-x86-default\inc" md "\Users\mob\git\http\windows-x86-default\inc"
+	copy /Y "src\bitos.h" "\Users\mob\git\http\windows-x86-default\inc\bitos.h"
 
 $(CONFIG)\inc\http.h: 
-	-if exist $(CONFIG)\inc\http.h del /Q $(CONFIG)\inc\http.h
-	copy /Y src\http.h $(CONFIG)\inc\http.h
+	if not exist "\Users\mob\git\http\windows-x86-default\inc" md "\Users\mob\git\http\windows-x86-default\inc"
+	copy /Y "src\http.h" "\Users\mob\git\http\windows-x86-default\inc\http.h"
+
+src\http.h: 
 
 $(CONFIG)\obj\actionHandler.obj: \
     src\actionHandler.c\
@@ -263,6 +271,12 @@ $(CONFIG)\obj\host.obj: \
     $(CONFIG)\inc\bit.h \
     src\http.h
 	"$(CC)" -c -Fo$(CONFIG)\obj\host.obj -Fd$(CONFIG)\obj\host.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\host.c
+
+$(CONFIG)\obj\http.obj: \
+    src\http.c\
+    $(CONFIG)\inc\bit.h \
+    src\http.h
+	"$(CC)" -c -Fo$(CONFIG)\obj\http.obj -Fd$(CONFIG)\obj\http.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\http.c
 
 $(CONFIG)\obj\httpService.obj: \
     src\httpService.c\
@@ -399,6 +413,7 @@ $(CONFIG)\bin\libhttp.dll: \
     $(CONFIG)\obj\endpoint.obj \
     $(CONFIG)\obj\error.obj \
     $(CONFIG)\obj\host.obj \
+    $(CONFIG)\obj\http.obj \
     $(CONFIG)\obj\httpService.obj \
     $(CONFIG)\obj\log.obj \
     $(CONFIG)\obj\netConnector.obj \
@@ -419,13 +434,7 @@ $(CONFIG)\bin\libhttp.dll: \
     $(CONFIG)\obj\uri.obj \
     $(CONFIG)\obj\var.obj \
     $(CONFIG)\obj\webSock.obj
-	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\actionHandler.obj $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(CONFIG)\obj\webSock.obj libmpr.lib $(LIBS)
-
-$(CONFIG)\obj\http.obj: \
-    src\http.c\
-    $(CONFIG)\inc\bit.h \
-    src\http.h
-	"$(CC)" -c -Fo$(CONFIG)\obj\http.obj -Fd$(CONFIG)\obj\http.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\http.c
+	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\actionHandler.obj $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\http.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(CONFIG)\obj\webSock.obj libmpr.lib $(LIBS)
 
 $(CONFIG)\bin\http.exe: \
     $(CONFIG)\bin\libhttp.dll \
@@ -439,7 +448,6 @@ stop:
 
 
 installBinary: stop
-	
 
 
 start: 
@@ -449,6 +457,5 @@ install: stop installBinary start
 
 
 uninstall: stop
-	
 
 

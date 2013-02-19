@@ -66,27 +66,28 @@
 		C9BB56D3C9BB6BB30000002D /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000002E /* endpoint.c */; };
 		C9BB56D3C9BB6BB30000002F /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000030 /* error.c */; };
 		C9BB56D3C9BB6BB300000031 /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000032 /* host.c */; };
-		C9BB56D3C9BB6BB300000033 /* httpService.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000034 /* httpService.c */; };
-		C9BB56D3C9BB6BB300000035 /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000036 /* log.c */; };
-		C9BB56D3C9BB6BB300000037 /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000038 /* netConnector.c */; };
-		C9BB56D3C9BB6BB300000039 /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000003A /* packet.c */; };
-		C9BB56D3C9BB6BB30000003B /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000003C /* pam.c */; };
-		C9BB56D3C9BB6BB30000003D /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000003E /* passHandler.c */; };
-		C9BB56D3C9BB6BB30000003F /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000040 /* pipeline.c */; };
-		C9BB56D3C9BB6BB300000041 /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000042 /* queue.c */; };
-		C9BB56D3C9BB6BB300000043 /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000044 /* rangeFilter.c */; };
-		C9BB56D3C9BB6BB300000045 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000046 /* route.c */; };
-		C9BB56D3C9BB6BB300000047 /* rx.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000048 /* rx.c */; };
-		C9BB56D3C9BB6BB300000049 /* sendConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000004A /* sendConnector.c */; };
-		C9BB56D3C9BB6BB30000004B /* session.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000004C /* session.c */; };
-		C9BB56D3C9BB6BB30000004D /* stage.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000004E /* stage.c */; };
-		C9BB56D3C9BB6BB30000004F /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000050 /* trace.c */; };
-		C9BB56D3C9BB6BB300000051 /* tx.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000052 /* tx.c */; };
-		C9BB56D3C9BB6BB300000053 /* uploadFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000054 /* uploadFilter.c */; };
-		C9BB56D3C9BB6BB300000055 /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000056 /* uri.c */; };
-		C9BB56D3C9BB6BB300000057 /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000058 /* var.c */; };
-		C9BB56D3C9BB6BB300000059 /* webSock.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000005A /* webSock.c */; };
-		C9BB56D3C9BB6BB30000005B /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000005C /* http.c */; };
+		C9BB56D3C9BB6BB300000033 /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000034 /* http.c */; };
+		C9BB56D3C9BB6BB300000035 /* httpService.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000036 /* httpService.c */; };
+		C9BB56D3C9BB6BB300000037 /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000038 /* log.c */; };
+		C9BB56D3C9BB6BB300000039 /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000003A /* netConnector.c */; };
+		C9BB56D3C9BB6BB30000003B /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000003C /* packet.c */; };
+		C9BB56D3C9BB6BB30000003D /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000003E /* pam.c */; };
+		C9BB56D3C9BB6BB30000003F /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000040 /* passHandler.c */; };
+		C9BB56D3C9BB6BB300000041 /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000042 /* pipeline.c */; };
+		C9BB56D3C9BB6BB300000043 /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000044 /* queue.c */; };
+		C9BB56D3C9BB6BB300000045 /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000046 /* rangeFilter.c */; };
+		C9BB56D3C9BB6BB300000047 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000048 /* route.c */; };
+		C9BB56D3C9BB6BB300000049 /* rx.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000004A /* rx.c */; };
+		C9BB56D3C9BB6BB30000004B /* sendConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000004C /* sendConnector.c */; };
+		C9BB56D3C9BB6BB30000004D /* session.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000004E /* session.c */; };
+		C9BB56D3C9BB6BB30000004F /* stage.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000050 /* stage.c */; };
+		C9BB56D3C9BB6BB300000051 /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000052 /* trace.c */; };
+		C9BB56D3C9BB6BB300000053 /* tx.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000054 /* tx.c */; };
+		C9BB56D3C9BB6BB300000055 /* uploadFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000056 /* uploadFilter.c */; };
+		C9BB56D3C9BB6BB300000057 /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000058 /* uri.c */; };
+		C9BB56D3C9BB6BB300000059 /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000005A /* var.c */; };
+		C9BB56D3C9BB6BB30000005B /* webSock.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000005C /* webSock.c */; };
+		C9BB56D3C9BB6BB300000033 /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000034 /* http.c */; };
 		C9BB56D3C9BB6BB30000005D /* libest.dylib for libmprssl */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000005E; };
 		C9BB56D3C9BB6BB30000005F /* libmpr.dylib for libmprssl */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000060; };
 		C9BB56D3C9BB6BB300000061 /* libmpr.dylib for makerom */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000060; };
@@ -235,7 +236,7 @@
 		C9BB56D3C9BB6BB300000016 /* estLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = estLib.c; path = src/deps/est/estLib.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000007F /* bit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bit.h; path = macosx-x64-default/inc/bit.h; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000080 /* est.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = est.h; path = macosx-x64-default/inc/est.h; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000081 /* bitos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitos.h; path = src/bitos.h; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000081 /* bitos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitos.h; path = macosx-x64-default/inc/bitos.h; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000005E /* libest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libest.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB300000018 /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/deps/mpr/mprLib.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000082 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = macosx-x64-default/inc/mpr.h; sourceTree = "<group>"; };
@@ -245,7 +246,7 @@
 		C9BB56D3C9BB6BB30000001C /* makerom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = makerom.c; path = src/deps/mpr/makerom.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000084 /* makerom */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = makerom; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB30000001E /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000085 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = src/http.h; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000085 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = macosx-x64-default/inc/http.h; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000020 /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000022 /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000024 /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
@@ -256,28 +257,29 @@
 		C9BB56D3C9BB6BB30000002E /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000030 /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000032 /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000034 /* httpService.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = httpService.c; path = src/httpService.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000036 /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = log.c; path = src/log.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000038 /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000003A /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000003C /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000003E /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000040 /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000042 /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000044 /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000046 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000048 /* rx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rx.c; path = src/rx.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000004A /* sendConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sendConnector.c; path = src/sendConnector.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000004C /* session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = session.c; path = src/session.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000004E /* stage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stage.c; path = src/stage.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000050 /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000052 /* tx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tx.c; path = src/tx.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000054 /* uploadFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uploadFilter.c; path = src/uploadFilter.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000056 /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = src/uri.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000058 /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000005A /* webSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSock.c; path = src/webSock.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000034 /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000036 /* httpService.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = httpService.c; path = src/httpService.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000038 /* log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = log.c; path = src/log.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000003A /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000003C /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000003E /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000040 /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000042 /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000044 /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000046 /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000048 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000004A /* rx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rx.c; path = src/rx.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000004C /* sendConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sendConnector.c; path = src/sendConnector.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000004E /* session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = session.c; path = src/session.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000050 /* stage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stage.c; path = src/stage.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000052 /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000054 /* tx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tx.c; path = src/tx.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000056 /* uploadFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uploadFilter.c; path = src/uploadFilter.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000058 /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = src/uri.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000005A /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000005C /* webSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSock.c; path = src/webSock.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000064 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		C9BB56D3C9BB6BB30000005C /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000034 /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000086 /* http */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -412,26 +414,27 @@
 				C9BB56D3C9BB6BB30000002E /* endpoint.c */,
 				C9BB56D3C9BB6BB300000030 /* error.c */,
 				C9BB56D3C9BB6BB300000032 /* host.c */,
-				C9BB56D3C9BB6BB300000034 /* httpService.c */,
-				C9BB56D3C9BB6BB300000036 /* log.c */,
-				C9BB56D3C9BB6BB300000038 /* netConnector.c */,
-				C9BB56D3C9BB6BB30000003A /* packet.c */,
-				C9BB56D3C9BB6BB30000003C /* pam.c */,
-				C9BB56D3C9BB6BB30000003E /* passHandler.c */,
-				C9BB56D3C9BB6BB300000040 /* pipeline.c */,
-				C9BB56D3C9BB6BB300000042 /* queue.c */,
-				C9BB56D3C9BB6BB300000044 /* rangeFilter.c */,
-				C9BB56D3C9BB6BB300000046 /* route.c */,
-				C9BB56D3C9BB6BB300000048 /* rx.c */,
-				C9BB56D3C9BB6BB30000004A /* sendConnector.c */,
-				C9BB56D3C9BB6BB30000004C /* session.c */,
-				C9BB56D3C9BB6BB30000004E /* stage.c */,
-				C9BB56D3C9BB6BB300000050 /* trace.c */,
-				C9BB56D3C9BB6BB300000052 /* tx.c */,
-				C9BB56D3C9BB6BB300000054 /* uploadFilter.c */,
-				C9BB56D3C9BB6BB300000056 /* uri.c */,
-				C9BB56D3C9BB6BB300000058 /* var.c */,
-				C9BB56D3C9BB6BB30000005A /* webSock.c */,
+				C9BB56D3C9BB6BB300000034 /* http.c */,
+				C9BB56D3C9BB6BB300000036 /* httpService.c */,
+				C9BB56D3C9BB6BB300000038 /* log.c */,
+				C9BB56D3C9BB6BB30000003A /* netConnector.c */,
+				C9BB56D3C9BB6BB30000003C /* packet.c */,
+				C9BB56D3C9BB6BB30000003E /* pam.c */,
+				C9BB56D3C9BB6BB300000040 /* passHandler.c */,
+				C9BB56D3C9BB6BB300000042 /* pipeline.c */,
+				C9BB56D3C9BB6BB300000044 /* queue.c */,
+				C9BB56D3C9BB6BB300000046 /* rangeFilter.c */,
+				C9BB56D3C9BB6BB300000048 /* route.c */,
+				C9BB56D3C9BB6BB30000004A /* rx.c */,
+				C9BB56D3C9BB6BB30000004C /* sendConnector.c */,
+				C9BB56D3C9BB6BB30000004E /* session.c */,
+				C9BB56D3C9BB6BB300000050 /* stage.c */,
+				C9BB56D3C9BB6BB300000052 /* trace.c */,
+				C9BB56D3C9BB6BB300000054 /* tx.c */,
+				C9BB56D3C9BB6BB300000056 /* uploadFilter.c */,
+				C9BB56D3C9BB6BB300000058 /* uri.c */,
+				C9BB56D3C9BB6BB30000005A /* var.c */,
+				C9BB56D3C9BB6BB30000005C /* webSock.c */,
 			);
             name = "libhttp";
             path = ..;
@@ -442,7 +445,7 @@
             children = (
 				C9BB56D3C9BB6BB30000007F /* bit.h */,
 				C9BB56D3C9BB6BB300000085 /* http.h */,
-				C9BB56D3C9BB6BB30000005C /* http.c */,
+				C9BB56D3C9BB6BB300000034 /* http.c */,
 			);
             name = "http";
             path = ..;
@@ -712,26 +715,27 @@ fi";
 				C9BB56D3C9BB6BB30000002D /* endpoint.c in Sources */,
 				C9BB56D3C9BB6BB30000002F /* error.c in Sources */,
 				C9BB56D3C9BB6BB300000031 /* host.c in Sources */,
-				C9BB56D3C9BB6BB300000033 /* httpService.c in Sources */,
-				C9BB56D3C9BB6BB300000035 /* log.c in Sources */,
-				C9BB56D3C9BB6BB300000037 /* netConnector.c in Sources */,
-				C9BB56D3C9BB6BB300000039 /* packet.c in Sources */,
-				C9BB56D3C9BB6BB30000003B /* pam.c in Sources */,
-				C9BB56D3C9BB6BB30000003D /* passHandler.c in Sources */,
-				C9BB56D3C9BB6BB30000003F /* pipeline.c in Sources */,
-				C9BB56D3C9BB6BB300000041 /* queue.c in Sources */,
-				C9BB56D3C9BB6BB300000043 /* rangeFilter.c in Sources */,
-				C9BB56D3C9BB6BB300000045 /* route.c in Sources */,
-				C9BB56D3C9BB6BB300000047 /* rx.c in Sources */,
-				C9BB56D3C9BB6BB300000049 /* sendConnector.c in Sources */,
-				C9BB56D3C9BB6BB30000004B /* session.c in Sources */,
-				C9BB56D3C9BB6BB30000004D /* stage.c in Sources */,
-				C9BB56D3C9BB6BB30000004F /* trace.c in Sources */,
-				C9BB56D3C9BB6BB300000051 /* tx.c in Sources */,
-				C9BB56D3C9BB6BB300000053 /* uploadFilter.c in Sources */,
-				C9BB56D3C9BB6BB300000055 /* uri.c in Sources */,
-				C9BB56D3C9BB6BB300000057 /* var.c in Sources */,
-				C9BB56D3C9BB6BB300000059 /* webSock.c in Sources */,
+				C9BB56D3C9BB6BB300000033 /* http.c in Sources */,
+				C9BB56D3C9BB6BB300000035 /* httpService.c in Sources */,
+				C9BB56D3C9BB6BB300000037 /* log.c in Sources */,
+				C9BB56D3C9BB6BB300000039 /* netConnector.c in Sources */,
+				C9BB56D3C9BB6BB30000003B /* packet.c in Sources */,
+				C9BB56D3C9BB6BB30000003D /* pam.c in Sources */,
+				C9BB56D3C9BB6BB30000003F /* passHandler.c in Sources */,
+				C9BB56D3C9BB6BB300000041 /* pipeline.c in Sources */,
+				C9BB56D3C9BB6BB300000043 /* queue.c in Sources */,
+				C9BB56D3C9BB6BB300000045 /* rangeFilter.c in Sources */,
+				C9BB56D3C9BB6BB300000047 /* route.c in Sources */,
+				C9BB56D3C9BB6BB300000049 /* rx.c in Sources */,
+				C9BB56D3C9BB6BB30000004B /* sendConnector.c in Sources */,
+				C9BB56D3C9BB6BB30000004D /* session.c in Sources */,
+				C9BB56D3C9BB6BB30000004F /* stage.c in Sources */,
+				C9BB56D3C9BB6BB300000051 /* trace.c in Sources */,
+				C9BB56D3C9BB6BB300000053 /* tx.c in Sources */,
+				C9BB56D3C9BB6BB300000055 /* uploadFilter.c in Sources */,
+				C9BB56D3C9BB6BB300000057 /* uri.c in Sources */,
+				C9BB56D3C9BB6BB300000059 /* var.c in Sources */,
+				C9BB56D3C9BB6BB30000005B /* webSock.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -739,7 +743,7 @@ fi";
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C9BB56D3C9BB6BB30000005B /* http.c in Sources */,
+				C9BB56D3C9BB6BB300000033 /* http.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

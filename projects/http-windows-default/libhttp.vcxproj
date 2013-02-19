@@ -111,6 +111,7 @@
     <ClCompile Include="..\..\src\endpoint.c" />
     <ClCompile Include="..\..\src\error.c" />
     <ClCompile Include="..\..\src\host.c" />
+    <ClCompile Include="..\..\src\http.c" />
     <ClCompile Include="..\..\src\httpService.c" />
     <ClCompile Include="..\..\src\log.c" />
     <ClCompile Include="..\..\src\netConnector.c" />

@@ -100,6 +100,7 @@ clean:
 	rm -rf $(CONFIG)/obj/endpoint.o
 	rm -rf $(CONFIG)/obj/error.o
 	rm -rf $(CONFIG)/obj/host.o
+	rm -rf $(CONFIG)/obj/http.o
 	rm -rf $(CONFIG)/obj/httpService.o
 	rm -rf $(CONFIG)/obj/log.o
 	rm -rf $(CONFIG)/obj/netConnector.o
@@ -120,14 +121,18 @@ clean:
 	rm -rf $(CONFIG)/obj/uri.o
 	rm -rf $(CONFIG)/obj/var.o
 	rm -rf $(CONFIG)/obj/webSock.o
-	rm -rf $(CONFIG)/obj/http.o
 
 clobber: clean
 	rm -fr ./$(CONFIG)
 
 $(CONFIG)/inc/est.h: 
-	rm -fr $(CONFIG)/inc/est.h
-	cp -r src/deps/est/est.h $(CONFIG)/inc/est.h
+	mkdir -p "/Users/mob/git/http/linux-x86-default/inc"
+	cp "src/deps/est/est.h" "/Users/mob/git/http/linux-x86-default/inc/est.h"
+
+$(CONFIG)/inc/bit.h: 
+
+src/bitos.h: \
+    $(CONFIG)/inc/bit.h
 
 $(CONFIG)/obj/estLib.o: \
     src/deps/est/estLib.c\
@@ -141,13 +146,14 @@ $(CONFIG)/bin/libest.so: \
     $(CONFIG)/obj/estLib.o
 	$(CC) -shared -o $(CONFIG)/bin/libest.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/estLib.o $(LIBS)
 
-$(CONFIG)/bin/ca.crt: src/deps/est/ca.crt
-	rm -fr $(CONFIG)/bin/ca.crt
-	cp -r src/deps/est/ca.crt $(CONFIG)/bin/ca.crt
+$(CONFIG)/bin/ca.crt: \
+    src/deps/est/ca.crt
+	mkdir -p "/Users/mob/git/http/linux-x86-default/bin"
+	cp "src/deps/est/ca.crt" "/Users/mob/git/http/linux-x86-default/bin/ca.crt"
 
 $(CONFIG)/inc/mpr.h: 
-	rm -fr $(CONFIG)/inc/mpr.h
-	cp -r src/deps/mpr/mpr.h $(CONFIG)/inc/mpr.h
+	mkdir -p "/Users/mob/git/http/linux-x86-default/inc"
+	cp "src/deps/mpr/mpr.h" "/Users/mob/git/http/linux-x86-default/inc/mpr.h"
 
 $(CONFIG)/obj/mprLib.o: \
     src/deps/mpr/mprLib.c\
@@ -186,12 +192,14 @@ $(CONFIG)/bin/makerom: \
 	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS) -lmpr -lpthread -lm -lrt -ldl $(LDFLAGS)
 
 $(CONFIG)/inc/bitos.h: 
-	rm -fr $(CONFIG)/inc/bitos.h
-	cp -r src/bitos.h $(CONFIG)/inc/bitos.h
+	mkdir -p "/Users/mob/git/http/linux-x86-default/inc"
+	cp "src/bitos.h" "/Users/mob/git/http/linux-x86-default/inc/bitos.h"
 
 $(CONFIG)/inc/http.h: 
-	rm -fr $(CONFIG)/inc/http.h
-	cp -r src/http.h $(CONFIG)/inc/http.h
+	mkdir -p "/Users/mob/git/http/linux-x86-default/inc"
+	cp "src/http.h" "/Users/mob/git/http/linux-x86-default/inc/http.h"
+
+src/http.h: 
 
 $(CONFIG)/obj/actionHandler.o: \
     src/actionHandler.c\
@@ -259,6 +267,12 @@ $(CONFIG)/obj/host.o: \
     $(CONFIG)/inc/bit.h \
     src/http.h
 	$(CC) -c -o $(CONFIG)/obj/host.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/host.c
+
+$(CONFIG)/obj/http.o: \
+    src/http.c\
+    $(CONFIG)/inc/bit.h \
+    src/http.h
+	$(CC) -c -o $(CONFIG)/obj/http.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/http.c
 
 $(CONFIG)/obj/httpService.o: \
     src/httpService.c\
@@ -395,6 +409,7 @@ $(CONFIG)/bin/libhttp.so: \
     $(CONFIG)/obj/endpoint.o \
     $(CONFIG)/obj/error.o \
     $(CONFIG)/obj/host.o \
+    $(CONFIG)/obj/http.o \
     $(CONFIG)/obj/httpService.o \
     $(CONFIG)/obj/log.o \
     $(CONFIG)/obj/netConnector.o \
@@ -415,13 +430,7 @@ $(CONFIG)/bin/libhttp.so: \
     $(CONFIG)/obj/uri.o \
     $(CONFIG)/obj/var.o \
     $(CONFIG)/obj/webSock.o
-	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lmpr $(LIBS)
-
-$(CONFIG)/obj/http.o: \
-    src/http.c\
-    $(CONFIG)/inc/bit.h \
-    src/http.h
-	$(CC) -c -o $(CONFIG)/obj/http.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/http.c
+	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/http.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o -lmpr $(LIBS)
 
 $(CONFIG)/bin/http: \
     $(CONFIG)/bin/libhttp.so \
@@ -435,7 +444,6 @@ stop:
 	
 
 installBinary: stop
-	
 
 
 start: 
@@ -445,6 +453,5 @@ install: stop installBinary start
 	
 
 uninstall: stop
-	
 
 

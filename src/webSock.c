@@ -529,7 +529,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             assert(frameLen <= ws->frameLength);
             if (frameLen == ws->frameLength) {
                 /*
-                    Got a cmplete frame 
+                    Got a complete frame 
                  */
                 assert(packet->type);
                 if (ws->maskOffset >= 0) {

@@ -142,7 +142,7 @@ clobber: clean
 #   est.h
 #
 $(CONFIG)/inc/est.h: $(DEPS_1)
-	@echo '      [File] vxworks-x86-default/inc/est.h'
+	@echo '      [File] $(CONFIG)/inc/est.h'
 	mkdir -p "$(CONFIG)/inc"
 	cp "src/deps/est/est.h" "$(CONFIG)/inc/est.h"
 
@@ -188,7 +188,7 @@ endif
 DEPS_6 += src/deps/est/ca.crt
 
 $(CONFIG)/bin/ca.crt: $(DEPS_6)
-	@echo '      [File] vxworks-x86-default/bin/ca.crt'
+	@echo '      [File] $(CONFIG)/bin/ca.crt'
 	mkdir -p "$(CONFIG)/bin"
 	cp "src/deps/est/ca.crt" "$(CONFIG)/bin/ca.crt"
 
@@ -196,7 +196,7 @@ $(CONFIG)/bin/ca.crt: $(DEPS_6)
 #   mpr.h
 #
 $(CONFIG)/inc/mpr.h: $(DEPS_7)
-	@echo '      [File] vxworks-x86-default/inc/mpr.h'
+	@echo '      [File] $(CONFIG)/inc/mpr.h'
 	mkdir -p "$(CONFIG)/inc"
 	cp "src/deps/mpr/mpr.h" "$(CONFIG)/inc/mpr.h"
 
@@ -279,7 +279,7 @@ $(CONFIG)/bin/makerom.out: $(DEPS_13)
 #   bitos.h
 #
 $(CONFIG)/inc/bitos.h: $(DEPS_14)
-	@echo '      [File] vxworks-x86-default/inc/bitos.h'
+	@echo '      [File] $(CONFIG)/inc/bitos.h'
 	mkdir -p "$(CONFIG)/inc"
 	cp "src/bitos.h" "$(CONFIG)/inc/bitos.h"
 
@@ -287,7 +287,7 @@ $(CONFIG)/inc/bitos.h: $(DEPS_14)
 #   http.h
 #
 $(CONFIG)/inc/http.h: $(DEPS_15)
-	@echo '      [File] vxworks-x86-default/inc/http.h'
+	@echo '      [File] $(CONFIG)/inc/http.h'
 	mkdir -p "$(CONFIG)/inc"
 	cp "src/http.h" "$(CONFIG)/inc/http.h"
 

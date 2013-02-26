@@ -130,7 +130,7 @@ clean:
 #   est.h
 #
 $(CONFIG)\inc\est.h: $(DEPS_1)
-	@echo '      [File] windows-x86-default/inc/est.h'
+	@echo '      [File] $(CONFIG)/inc/est.h'
 	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
 	copy /Y "src\deps\est\est.h" "$(CONFIG)\inc\est.h"
 
@@ -176,7 +176,7 @@ $(CONFIG)\bin\libest.dll: $(DEPS_5)
 DEPS_6 = $(DEPS_6) src\deps\est\ca.crt
 
 $(CONFIG)\bin\ca.crt: $(DEPS_6)
-	@echo '      [File] windows-x86-default/bin/ca.crt'
+	@echo '      [File] $(CONFIG)/bin/ca.crt'
 	if not exist "$(CONFIG)\bin" md "$(CONFIG)\bin"
 	copy /Y "src\deps\est\ca.crt" "$(CONFIG)\bin\ca.crt"
 
@@ -184,7 +184,7 @@ $(CONFIG)\bin\ca.crt: $(DEPS_6)
 #   mpr.h
 #
 $(CONFIG)\inc\mpr.h: $(DEPS_7)
-	@echo '      [File] windows-x86-default/inc/mpr.h'
+	@echo '      [File] $(CONFIG)/inc/mpr.h'
 	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
 	copy /Y "src\deps\mpr\mpr.h" "$(CONFIG)\inc\mpr.h"
 
@@ -267,7 +267,7 @@ $(CONFIG)\bin\makerom.exe: $(DEPS_13)
 #   bitos.h
 #
 $(CONFIG)\inc\bitos.h: $(DEPS_14)
-	@echo '      [File] windows-x86-default/inc/bitos.h'
+	@echo '      [File] $(CONFIG)/inc/bitos.h'
 	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
 	copy /Y "src\bitos.h" "$(CONFIG)\inc\bitos.h"
 
@@ -275,7 +275,7 @@ $(CONFIG)\inc\bitos.h: $(DEPS_14)
 #   http.h
 #
 $(CONFIG)\inc\http.h: $(DEPS_15)
-	@echo '      [File] windows-x86-default/inc/http.h'
+	@echo '      [File] $(CONFIG)/inc/http.h'
 	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
 	copy /Y "src\http.h" "$(CONFIG)\inc\http.h"
 

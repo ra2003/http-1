@@ -68,7 +68,7 @@ ifndef SHOW
 .SILENT:
 endif
 
-all compile: prep $(TARGETS)
+all build compile: prep $(TARGETS)
 
 .PHONY: prep
 

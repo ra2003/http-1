@@ -191,7 +191,7 @@
 
 /* Profile */
 #ifndef BIT_CONFIG_CMD
-    #define BIT_CONFIG_CMD "bit -d -q -platform freebsd-x86-default --without default -configure . -gen make"
+    #define BIT_CONFIG_CMD "bit -d -q -platform freebsd-x86-default -configure . --without default -gen make"
 #endif
 #ifndef BIT_HTTP_PRODUCT
     #define BIT_HTTP_PRODUCT 1

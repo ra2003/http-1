@@ -809,6 +809,15 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
     }
+    if (!conn->error) {
+        if (rx->form) {
+            if (rx->length >= conn->limits->receiveFormSize) {
+                httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+                    "Request form of %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveFormSize);
+            } else {
+            }
+        }
+    }
     if (!keepAlive) {
         conn->keepAliveCount = 0;
     }
@@ -888,6 +897,7 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
     HttpRx      *rx;
     HttpTx      *tx;
     HttpQueue   *q;
+    HttpPacket  *p2;
     MprBuf      *content;
     ssize       nbytes;
 
@@ -944,11 +954,17 @@ static bool processContent(HttpConn *conn, HttpPacket *packet)
                     "Request form of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveFormSize);
             }
         }
-        /*
-            Send packet upstream toward the handler
-         */
         if (packet == rx->headerPacket && nbytes > 0) {
+            /*
+                Split the content from the header as we save the header packet separately.
+                If this is a form with a content length, preallocate the data packet with room for a null.
+             */
             packet = httpSplitPacket(packet, 0);
+            if (rx->form && !(rx->flags & HTTP_CHUNKED) && rx->length) {
+                p2 = httpCreateDataPacket(rx->length + 1);
+                httpJoinPacket(p2, packet);
+                packet = p2;
+            }
         }
         if (httpGetPacketLength(packet) > nbytes) {
             /*  Split excess data belonging to the next chunk or pipelined request */

@@ -32,6 +32,7 @@ DFLAGS          += $(DFLAGS-$(DEBUG))
 LDFLAGS         += $(LDFLAGS-$(DEBUG))
 
 BIT_PACK_EST          := 1
+BIT_PACK_SSL          := 1
 
 BIT_ROOT_PREFIX       := 
 BIT_BASE_PREFIX       := $(BIT_ROOT_PREFIX)/usr/local
@@ -57,7 +58,9 @@ TARGETS += $(CONFIG)/bin/libest.dylib
 endif
 TARGETS     += $(CONFIG)/bin/ca.crt
 TARGETS     += $(CONFIG)/bin/libmpr.dylib
-TARGETS     += $(CONFIG)/bin/libmprssl.dylib
+ifeq ($(BIT_PACK_SSL),1)
+TARGETS += $(CONFIG)/bin/libmprssl.dylib
+endif
 TARGETS     += $(CONFIG)/bin/makerom
 TARGETS     += $(CONFIG)/bin/libhttp.dylib
 TARGETS     += $(CONFIG)/bin/http
@@ -230,6 +233,7 @@ $(CONFIG)/obj/mprSsl.o: \
 	@echo '   [Compile] src/deps/mpr/mprSsl.c'
 	$(CC) -c -o $(CONFIG)/obj/mprSsl.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/deps/mpr/mprSsl.c
 
+ifeq ($(BIT_PACK_SSL),1)
 #
 #   libmprssl
 #
@@ -247,6 +251,7 @@ LIBS_11 += -lmpr
 $(CONFIG)/bin/libmprssl.dylib: $(DEPS_11)
 	@echo '      [Link] libmprssl'
 	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib $(LDFLAGS) -compatibility_version 1.3.0 -current_version 1.3.0 $(LIBPATHS) -install_name @rpath/libmprssl.dylib $(CONFIG)/obj/mprSsl.o $(LIBS_11) $(LIBS_11) $(LIBS)
+endif
 
 #
 #   makerom.o

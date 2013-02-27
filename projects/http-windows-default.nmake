@@ -23,13 +23,14 @@ CC              = cl
 LD              = link
 RC              = rc
 CFLAGS          = -nologo -GR- -W3 -Zi -Od -MDd
-DFLAGS          = -D_REENTRANT -D_MT -DBIT_DEBUG -DBIT_PACK_EST=$(BIT_PACK_EST) 
+DFLAGS          = -D_REENTRANT -D_MT -DBIT_DEBUG -DBIT_PACK_EST=$(BIT_PACK_EST) -DBIT_PACK_SSL=$(BIT_PACK_SSL) 
 IFLAGS          = -I$(CONFIG)\inc -Isrc
 LDFLAGS         = -nologo -nodefaultlib -incremental:no -debug -machine:$(ARCH)
 LIBPATHS        = -libpath:$(CONFIG)\bin
 LIBS            = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
 
 BIT_PACK_EST          = 1
+BIT_PACK_SSL          = 1
 
 BIT_ROOT_PREFIX       = C:
 BIT_BASE_PREFIX       = $(BIT_ROOT_PREFIX)\Program Files
@@ -54,7 +55,9 @@ TARGETS = $(TARGETS) $(CONFIG)\bin\libest.dll
 !ENDIF
 TARGETS     = $(TARGETS) $(CONFIG)\bin\ca.crt
 TARGETS     = $(TARGETS) $(CONFIG)\bin\libmpr.dll
-TARGETS     = $(TARGETS) $(CONFIG)\bin\libmprssl.dll
+!IF "$(BIT_PACK_SSL)" == "1"
+TARGETS = $(TARGETS) $(CONFIG)\bin\libmprssl.dll
+!ENDIF
 TARGETS     = $(TARGETS) $(CONFIG)\bin\makerom.exe
 TARGETS     = $(TARGETS) $(CONFIG)\bin\libhttp.dll
 TARGETS     = $(TARGETS) $(CONFIG)\bin\http.exe
@@ -222,6 +225,7 @@ $(CONFIG)\obj\mprSsl.obj: \
 	@echo '   [Compile] src/deps/mpr/mprSsl.c'
 	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\deps\mpr\mprSsl.c
 
+!IF "$(BIT_PACK_SSL)" == "1"
 #
 #   libmprssl
 #
@@ -239,6 +243,7 @@ LIBS_11 = $(LIBS_11) libmpr.lib
 $(CONFIG)\bin\libmprssl.dll: $(DEPS_11)
 	@echo '      [Link] libmprssl'
 	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj $(LIBS_11) $(LIBS_11) $(LIBS)
+!ENDIF
 
 #
 #   makerom.obj

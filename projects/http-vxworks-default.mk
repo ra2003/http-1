@@ -36,6 +36,7 @@ DFLAGS          += $(DFLAGS-$(DEBUG))
 LDFLAGS         += $(LDFLAGS-$(DEBUG))
 
 BIT_PACK_EST          := 1
+BIT_PACK_SSL          := 1
 
 BIT_ROOT_PREFIX       := deploy
 BIT_BASE_PREFIX       := $(BIT_ROOT_PREFIX)
@@ -61,7 +62,9 @@ TARGETS += $(CONFIG)/bin/libest.out
 endif
 TARGETS     += $(CONFIG)/bin/ca.crt
 TARGETS     += $(CONFIG)/bin/libmpr.out
-TARGETS     += $(CONFIG)/bin/libmprssl.out
+ifeq ($(BIT_PACK_SSL),1)
+TARGETS += $(CONFIG)/bin/libmprssl.out
+endif
 TARGETS     += $(CONFIG)/bin/makerom.out
 TARGETS     += $(CONFIG)/bin/libhttp.out
 TARGETS     += $(CONFIG)/bin/http.out
@@ -234,6 +237,7 @@ $(CONFIG)/obj/mprSsl.o: \
 	@echo '   [Compile] src/deps/mpr/mprSsl.c'
 	$(CC) -c -o $(CONFIG)/obj/mprSsl.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/deps/mpr/mprSsl.c
 
+ifeq ($(BIT_PACK_SSL),1)
 #
 #   libmprssl
 #
@@ -251,6 +255,7 @@ LIBS_11 += -lmpr
 $(CONFIG)/bin/libmprssl.out: $(DEPS_11)
 	@echo '      [Link] libmprssl'
 	$(CC) -r -o $(CONFIG)/bin/libmprssl.out $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprSsl.o 
+endif
 
 #
 #   makerom.o

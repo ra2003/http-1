@@ -1,10 +1,7 @@
-Embedthis Http Library GPL License Agreement
+Embedthis Open Source Software License
 ===
 
-This software is distributed under commercial and open source licenses. You may use the GPLv2 License below License or
-you may acquire a commercial license from Embedthis Software. You agree to be fully bound by the terms of either
-license. The GPLv2 License does NOT generally permit incorporating this software into non-open source programs. If you
-are unable to comply with the GPLv2, you must acquire a commercial license to use this software.
+This software is distributed under commercial and open source licenses. You may use the GPLv2 License below License or you may acquire a commercial license from Embedthis Software. You agree to be fully bound by the terms of either license. The GPLv2 License does NOT generally permit incorporating this software into non-open source programs. If you are unable to comply with the GPLv2, you must acquire a commercial license to use this software.
 
 Commercial licenses for this software and support services are available from Embedthis Software at: http://embedthis.com/licensing/index.html
 
@@ -103,12 +100,71 @@ NO WARRANTY
 Trademarks and Copyrights
 ---
 Copyright (c) 2003-2013 Embedthis Software, LLC. All Rights Reserved.
-Embedthis, Appweb, Ejscript, ESP and Embedthis GoAhead are trademarks of Embedthis Software, LLC. Other brands and their products are trademarks of their respective holders.
+Embedthis, Appweb, Ejscript, ESP, EST, Embedthis GoAhead and Embedthis Bit are trademarks of Embedthis Software, LLC. Other brands and their products are trademarks of their respective holders.
 
 Third Party Licenses
 ---
 
-The Software contains licensed third party software components whoes licenses are compatible with the Appweb commercial and
-open source licenses. See [doc/licenses](https://github.com/embedthis/http/tree/master/doc/licenses) for the licenses. Contributors have provided portions of the software that are covered by the Embedthis Contributor license that grants Embedthis sufficient rights to execute this license Agreement.
+The Software contains licensed third party software under the agreements that follow.
+Perl Regular Expressions License
+===
 
--END-
+The Perl regular expression library is used in the the Http router and Ejscript language
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+* Neither the name of the University of Cambridge nor the name of Google Inc. nor the names of their contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Qsort Routine License
+===
+
+The MprList qsort uses this algorithm.
+
+(c) Michael Ringgaard. BSD license.
+
+RSA MD5 License
+===
+
+Used in the MPR MD5 algorithm.
+
+Copyright (C) 1991-2, RSA Data Security, Inc. All rights reserved. Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+RSA License Details
+
+License to copy and use this software is granted provided that it is identified as the "RSA Data Security, Inc. MD5 Message-Digest Algorithm" in all material mentioning or referencing this software or this function.
+
+License is also granted to make and use derivative works provided that such works are identified as "derived from the RSA Data Security, Inc. MD5 Message-Digest Algorithm" in all material mentioning or referencing the derived work.
+
+RSA Data Security, Inc. makes no representations concerning either the merchantability of this software or the suitability of this software for any particular purpose. It is provided "as is" without express or implied warranty of any kind. 
+
+These notices must be retained in any copies of any part of this documentation and/or software. 
+
+TropicSSL License
+===
+
+The Embedthis EST SSL stack includes code from TropicSSL.
+
+Copyright (c) 2009, StackFoundry LLC
+Copyright (c) 2009, Paul Bakker
+Copyright (c) 2006-2008, Christophe Devine
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+* Neither the names of PolarSSL or XySSL nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+

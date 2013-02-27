@@ -6,68 +6,68 @@ export WIND_BASE := $(WIND_BASE)
 export WIND_HOME := $(WIND_BASE)/..
 export WIND_PLATFORM := $(WIND_PLATFORM)
 
-PRODUCT         := http
-VERSION         := 1.3.0
-BUILD_NUMBER    := 0
-PROFILE         := default
-ARCH            := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
-OS              := vxworks
-CC              := ccpentium
-LD              := /usr/bin/ld
-CONFIG          := $(OS)-$(ARCH)-$(PROFILE)
-LBIN            := $(CONFIG)/bin
+PRODUCT           := http
+VERSION           := 1.3.0
+BUILD_NUMBER      := 0
+PROFILE           := default
+ARCH              := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
+OS                := vxworks
+CC                := ccpentium
+LD                := /usr/bin/ld
+CONFIG            := $(OS)-$(ARCH)-$(PROFILE)
+LBIN              := $(CONFIG)/bin
 
-CFLAGS          += -fno-builtin -fno-defer-pop -fvolatile -w
-DFLAGS          += -D_REENTRANT -DVXWORKS -DRW_MULTI_THREAD -D_GNU_TOOL -DCPU=PENTIUM $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS)))
-IFLAGS          += -I$(CONFIG)/inc -Isrc -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip
-LDFLAGS         += '-Wl,-r'
-LIBPATHS        += -L$(CONFIG)/bin
-LIBS            += 
+BIT_PACK_EST      := 1
+BIT_PACK_SSL      := 1
 
-DEBUG           := debug
-CFLAGS-debug    := -g
-DFLAGS-debug    := -DBIT_DEBUG
-LDFLAGS-debug   := -g
-DFLAGS-release  := 
-CFLAGS-release  := -O2
-LDFLAGS-release := 
-CFLAGS          += $(CFLAGS-$(DEBUG))
-DFLAGS          += $(DFLAGS-$(DEBUG))
-LDFLAGS         += $(LDFLAGS-$(DEBUG))
+CFLAGS            += -fno-builtin -fno-defer-pop -fvolatile -w
+DFLAGS            += -D_REENTRANT -DVXWORKS -DRW_MULTI_THREAD -D_GNU_TOOL -DCPU=PENTIUM $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS))) -DBIT_PACK_EST=$(BIT_PACK_EST) -DBIT_PACK_SSL=$(BIT_PACK_SSL) 
+IFLAGS            += -I$(CONFIG)/inc -Isrc -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip
+LDFLAGS           += '-Wl,-r'
+LIBPATHS          += -L$(CONFIG)/bin
+LIBS              += 
 
-BIT_PACK_EST          := 1
-BIT_PACK_SSL          := 1
+DEBUG             := debug
+CFLAGS-debug      := -g
+DFLAGS-debug      := -DBIT_DEBUG
+LDFLAGS-debug     := -g
+DFLAGS-release    := 
+CFLAGS-release    := -O2
+LDFLAGS-release   := 
+CFLAGS            += $(CFLAGS-$(DEBUG))
+DFLAGS            += $(DFLAGS-$(DEBUG))
+LDFLAGS           += $(LDFLAGS-$(DEBUG))
 
-BIT_ROOT_PREFIX       := deploy
-BIT_BASE_PREFIX       := $(BIT_ROOT_PREFIX)
-BIT_DATA_PREFIX       := $(BIT_VAPP_PREFIX)
-BIT_STATE_PREFIX      := $(BIT_VAPP_PREFIX)
-BIT_BIN_PREFIX        := $(BIT_VAPP_PREFIX)
-BIT_INC_PREFIX        := $(BIT_VAPP_PREFIX)/inc
-BIT_LIB_PREFIX        := $(BIT_VAPP_PREFIX)
-BIT_MAN_PREFIX        := $(BIT_VAPP_PREFIX)
-BIT_SBIN_PREFIX       := $(BIT_VAPP_PREFIX)
-BIT_ETC_PREFIX        := $(BIT_VAPP_PREFIX)
-BIT_WEB_PREFIX        := $(BIT_VAPP_PREFIX)/web
-BIT_LOG_PREFIX        := $(BIT_VAPP_PREFIX)
-BIT_SPOOL_PREFIX      := $(BIT_VAPP_PREFIX)
-BIT_CACHE_PREFIX      := $(BIT_VAPP_PREFIX)
-BIT_APP_PREFIX        := $(BIT_BASE_PREFIX)
-BIT_VAPP_PREFIX       := $(BIT_APP_PREFIX)
-BIT_SRC_PREFIX        := $(BIT_ROOT_PREFIX)/usr/src/$(PRODUCT)-$(VERSION)
+BIT_ROOT_PREFIX   := deploy
+BIT_BASE_PREFIX   := $(BIT_ROOT_PREFIX)
+BIT_DATA_PREFIX   := $(BIT_VAPP_PREFIX)
+BIT_STATE_PREFIX  := $(BIT_VAPP_PREFIX)
+BIT_BIN_PREFIX    := $(BIT_VAPP_PREFIX)
+BIT_INC_PREFIX    := $(BIT_VAPP_PREFIX)/inc
+BIT_LIB_PREFIX    := $(BIT_VAPP_PREFIX)
+BIT_MAN_PREFIX    := $(BIT_VAPP_PREFIX)
+BIT_SBIN_PREFIX   := $(BIT_VAPP_PREFIX)
+BIT_ETC_PREFIX    := $(BIT_VAPP_PREFIX)
+BIT_WEB_PREFIX    := $(BIT_VAPP_PREFIX)/web
+BIT_LOG_PREFIX    := $(BIT_VAPP_PREFIX)
+BIT_SPOOL_PREFIX  := $(BIT_VAPP_PREFIX)
+BIT_CACHE_PREFIX  := $(BIT_VAPP_PREFIX)
+BIT_APP_PREFIX    := $(BIT_BASE_PREFIX)
+BIT_VAPP_PREFIX   := $(BIT_APP_PREFIX)
+BIT_SRC_PREFIX    := $(BIT_ROOT_PREFIX)/usr/src/$(PRODUCT)-$(VERSION)
 
 
 ifeq ($(BIT_PACK_EST),1)
-TARGETS += $(CONFIG)/bin/libest.out
+TARGETS           += $(CONFIG)/bin/libest.out
 endif
-TARGETS     += $(CONFIG)/bin/ca.crt
-TARGETS     += $(CONFIG)/bin/libmpr.out
+TARGETS           += $(CONFIG)/bin/ca.crt
+TARGETS           += $(CONFIG)/bin/libmpr.out
 ifeq ($(BIT_PACK_SSL),1)
-TARGETS += $(CONFIG)/bin/libmprssl.out
+TARGETS           += $(CONFIG)/bin/libmprssl.out
 endif
-TARGETS     += $(CONFIG)/bin/makerom.out
-TARGETS     += $(CONFIG)/bin/libhttp.out
-TARGETS     += $(CONFIG)/bin/http.out
+TARGETS           += $(CONFIG)/bin/makerom.out
+TARGETS           += $(CONFIG)/bin/libhttp.out
+TARGETS           += $(CONFIG)/bin/http.out
 
 unexport CDPATH
 

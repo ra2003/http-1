@@ -94,16 +94,18 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
     char        *start, *cp;
     int         bad;
 
+    if (!packet) {
+        return 0;
+    }
     conn = q->conn;
     rx = conn->rx;
-    assert(packet);
     buf = packet->content;
     assert(buf);
 
     switch (rx->chunkState) {
     case HTTP_CHUNK_UNCHUNKED:
         assert(0);
-        return -1;
+        return 0;
 
     case HTTP_CHUNK_DATA:
         mprTrace(7, "chunkFilter: data %d bytes, rx->remainingContent %d", 
@@ -121,13 +123,13 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
             Validate:  "\r\nSIZE.*\r\n"
          */
         if (mprGetBufLength(buf) < 5) {
-            return MPR_ERR_NOT_READY;
+            return 0;
         }
         start = mprGetBufStart(buf);
         bad = (start[0] != '\r' || start[1] != '\n');
         for (cp = &start[2]; cp < buf->end && *cp != '\n'; cp++) {}
         if (*cp != '\n' && (cp - start) < 80) {
-            return MPR_ERR_NOT_READY;
+            return 0;
         }
         bad += (cp[-1] != '\r' || cp[0] != '\n');
         if (bad) {
@@ -144,7 +146,7 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
                 Last chunk. Consume the final "\r\n".
              */
             if ((cp + 2) >= buf->end) {
-                return MPR_ERR_NOT_READY;
+                return 0;
             }
             cp += 2;
             bad += (cp[-1] != '\r' || cp[0] != '\n');

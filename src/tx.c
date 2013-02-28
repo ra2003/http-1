@@ -121,10 +121,13 @@ PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     assert(key && *key);
     assert(fmt && *fmt);
 
-    va_start(vargs, fmt);
-    value = sfmtv(fmt, vargs);
-    va_end(vargs);
-
+    if (fmt) {
+        va_start(vargs, fmt);
+        value = sfmtv(fmt, vargs);
+        va_end(vargs);
+    } else {
+        value = MPR->emptyString;
+    }
     if (!mprLookupKey(conn->tx->headers, key)) {
         addHdr(conn, key, value);
     }

@@ -213,6 +213,7 @@ PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serv
 
 
 //  MOB - this is really just a packet copy
+//  MOB - better to return packet
 /*  
     Join two packets by pulling the content from the second into the first.
     WARNING: this will not update the queue count. Assumes the either both are on the queue or neither. 
@@ -227,7 +228,7 @@ PUBLIC int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
     assert(!(p->flags & HTTP_PACKET_SOLO));
 
     len = httpGetPacketLength(p);
-    if (mprPutBlockToBuf(packet->content, mprGetBufStart(p->content), (ssize) len) != len) {
+    if (mprPutBlockToBuf(packet->content, mprGetBufStart(p->content), len) != len) {
         assert(0);
         return MPR_ERR_MEMORY;
     }
@@ -458,7 +459,6 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 
     } else {
         if (offset >= httpGetPacketLength(orig)) {
-            assert(offset < httpGetPacketLength(orig));
             return 0;
         }
         /*

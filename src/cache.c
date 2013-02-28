@@ -534,7 +534,7 @@ static char *makeCacheKey(HttpConn *conn)
 
 /*
     Parse cached content of the form:  headers \n\n data
-    Set headers in the current requeset and return a reference to the data portion
+    Set headers in the current request and return a reference to the data portion
  */
 static cchar *setHeadersFromCache(HttpConn *conn, cchar *content)
 {
@@ -551,7 +551,7 @@ static cchar *setHeadersFromCache(HttpConn *conn, cchar *content)
             if (smatch(key, "X-Status")) {
                 conn->tx->status = (int) stoi(value);
             } else {
-                httpAddHeader(conn, key, value);
+                httpAddHeaderString(conn, key, value);
             }
         }
     }

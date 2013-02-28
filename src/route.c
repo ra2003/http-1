@@ -155,10 +155,10 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->pattern = parent->pattern;
     route->patternCompiled = parent->patternCompiled;
     route->optimizedPattern = parent->optimizedPattern;
-    route->responseStatus = parent->responseStatus;
-    route->script = parent->script;
     route->prefix = parent->prefix;
     route->prefixLen = parent->prefixLen;
+    route->responseStatus = parent->responseStatus;
+    route->script = parent->script;
     route->scriptPath = parent->scriptPath;
     route->sourceName = parent->sourceName;
     route->sourcePath = parent->sourcePath;

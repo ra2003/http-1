@@ -124,9 +124,52 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
             *value++ = '\0';
             value = mprUriDecode(value);
         } else {
-            value = "";
+            value = MPR->emptyString;
         }
         keyword = mprUriDecode(keyword);
+
+        if (*keyword) {
+            /*  
+                Append to existing keywords
+             */
+            oldValue = mprLookupKey(vars, keyword);
+            if (oldValue != 0 && *oldValue) {
+                if (*value) {
+                    newValue = sjoin(oldValue, " ", value, NULL);
+                    mprAddKey(vars, keyword, newValue);
+                }
+            } else {
+                /* No need to clone value as mprUriDecode already does this */
+                mprAddKey(vars, keyword, value);
+            }
+        }
+        keyword = stok(0, "&", &tok);
+    }
+}
+
+
+#if KEEP
+/*
+    This operates without copying the buffer. It modifies the buffer.
+ */
+static void addParamsFromBufInsitu(HttpConn *conn, char *buf, ssize len)
+{
+    MprHash     *vars;
+    cchar       *oldValue;
+    char        *newValue, *keyword, *value, *tok;
+
+    assert(conn);
+    vars = httpGetParams(conn);
+
+    keyword = stok(buf, "&", &tok);
+    while (keyword != 0) {
+        if ((value = strchr(keyword, '=')) != 0) {
+            *value++ = '\0';
+            mprUriDecodeBuf(value);
+        } else {
+            value = MPR->emptyString;
+        }
+        mprUriDecode(keyword);
 
         if (*keyword) {
             /*  
@@ -145,6 +188,7 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
         keyword = stok(0, "&", &tok);
     }
 }
+#endif
 
 
 static void addParamsFromQueue(HttpQueue *q)

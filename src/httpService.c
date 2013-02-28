@@ -462,13 +462,15 @@ static void httpTimer(Http *http, MprEvent *event)
     if (active == 0) {
         mprRemoveEvent(event);
         http->timer = 0;
+        /*
+            Going to sleep now, so schedule a GC to free as much as possible.
+         */
+        mprRequestGC(MPR_GC_FORCE | MPR_GC_NO_YIELD);
+    } else {
+        mprRequestGC(MPR_GC_NO_YIELD);
     }
     unlock(http->connections);
 
-    /*
-        This will trigger a GC if worthwhile, but will defer yielding
-     */
-    mprRequestGC(MPR_GC_NO_YIELD);
 }
 
 

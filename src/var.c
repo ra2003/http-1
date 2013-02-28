@@ -229,11 +229,9 @@ static void addBodyParams(HttpConn *conn)
     HttpRx      *rx;
 
     rx = conn->rx;
-    if (rx->form) {
-        if (!(rx->flags & HTTP_ADDED_FORM_PARAMS)) {
-            addParamsFromQueue(conn->readq);
-            rx->flags |= HTTP_ADDED_FORM_PARAMS;
-        }
+    if (rx->form && !(rx->flags & HTTP_ADDED_FORM_PARAMS)) {
+        addParamsFromQueue(conn->readq);
+        rx->flags |= HTTP_ADDED_FORM_PARAMS;
     }
 }
 

@@ -369,18 +369,20 @@ PUBLIC void httpEvent(HttpConn *conn, MprEvent *event)
 static void readEvent(HttpConn *conn)
 {
     HttpPacket  *packet;
-    ssize       nbytes, size;
+    ssize       size, nbytes;
 
     if ((packet = getPacket(conn, &size)) == 0) {
         return;
     }
     assert(conn->input == packet);
+    conn->newData = 0;
 
     nbytes = mprReadSocket(conn->sock, mprGetBufEnd(packet->content), size);
     mprTrace(7, "http: read event. Got %d", nbytes);
 
     if (nbytes > 0) {
         mprAdjustBufEnd(packet->content, nbytes);
+        conn->newData = nbytes;
 
     } else if (nbytes == 0) {
         return;

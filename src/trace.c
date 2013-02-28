@@ -178,15 +178,17 @@ PUBLIC void httpTraceContent(HttpConn *conn, int dir, int item, HttpPacket *pack
     if (len <= 0) {
         len = MAXINT;
     }
-    if (packet->prefix) {
-        size = mprGetBufLength(packet->prefix);
-        size = min(size, len);
-        traceBuf(conn, dir, level, "prefix", mprGetBufStart(packet->prefix), size);
-    }
-    if (packet->content) {
-        size = httpGetPacketLength(packet);
-        size = min(size, len);
-        traceBuf(conn, dir, level, "content", mprGetBufStart(packet->content), size);
+    if (packet) {
+        if (packet->prefix) {
+            size = mprGetBufLength(packet->prefix);
+            size = min(size, len);
+            traceBuf(conn, dir, level, "prefix", mprGetBufStart(packet->prefix), size);
+        }
+        if (packet->content) {
+            size = httpGetPacketLength(packet);
+            size = min(size, len);
+            traceBuf(conn, dir, level, "content", mprGetBufStart(packet->content), size);
+        }
     }
 }
 

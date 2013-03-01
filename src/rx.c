@@ -1033,10 +1033,12 @@ static bool processContent(HttpConn *conn)
     /* Packet may be null */
 
     if ((nbytes = filterPacket(conn, packet, &more)) > 0) {
-        if (rx->form) {
-            httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-        } else {
-            httpPutPacketToNext(q, packet);
+        if (!(tx->finalized && conn->endpoint)) {                                                          
+            if (rx->form) {
+                httpPutForService(q, packet, HTTP_DELAY_SERVICE);
+            } else {
+                httpPutPacketToNext(q, packet);
+            }
         }
         if (packet == conn->input) {
             conn->input = 0;

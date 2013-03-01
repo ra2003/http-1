@@ -5504,6 +5504,26 @@ PUBLIC ssize mprWriteCmd(MprCmd *cmd, int channel, char *buf, ssize bufsize)
 }
 
 
+/*
+    Do blocking I/O
+ */
+PUBLIC ssize mprWriteCmdBlock(MprCmd *cmd, int channel, char *buf, ssize bufsize)
+{
+#if BIT_UNIX_LIKE
+    MprCmdFile  *file;
+    ssize       wrote;
+
+    file = &cmd->files[channel];
+    fcntl(file->fd, F_SETFL, fcntl(file->fd, F_GETFL) & ~O_NONBLOCK);
+    wrote = mprWriteCmd(cmd, channel, buf, bufsize);
+    fcntl(file->fd, F_SETFL, fcntl(file->fd, F_GETFL) | O_NONBLOCK);
+    return wrote;
+#else
+    return mprWriteCmd(cmd, channel, buf, bufsize);
+#endif
+}
+
+
 PUBLIC bool mprAreCmdEventsEnabled(MprCmd *cmd, int channel)
 {
     MprWaitHandler  *wp;

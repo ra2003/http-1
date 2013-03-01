@@ -824,7 +824,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
     }
-    rx->streaming = rx->streaming || !(rx->form || rx->upload);
+    rx->streaming = rx->streaming || !rx->form;
 
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
         httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
@@ -916,7 +916,7 @@ static bool processParsed(HttpConn *conn)
     }
     httpSetState(conn, HTTP_STATE_CONTENT);
 
-    if (rx->streaming) {
+    if (rx->streaming && !rx->upload) {
         if (rx->remainingContent == 0) {
             rx->eof = 1;
         }
@@ -1047,9 +1047,9 @@ static bool processContent(HttpConn *conn)
     if (rx->eof) {
         if (!rx->streaming) {
             routeRequest(conn);
-            while ((packet = httpGetPacket(q)) != 0) {
-                httpPutPacketToNext(q, packet);
-            }
+        }
+        while ((packet = httpGetPacket(q)) != 0) {
+            httpPutPacketToNext(q, packet);
         }
         httpPutPacketToNext(q, httpCreateEndPacket());
         if (!tx->started) {

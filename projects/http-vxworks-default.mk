@@ -145,7 +145,7 @@ clobber: clean
 #   est.h
 #
 $(CONFIG)/inc/est.h: $(DEPS_1)
-	@echo '      [File] $(CONFIG)/inc/est.h'
+	@echo '      [Copy] $(CONFIG)/inc/est.h'
 	mkdir -p "$(CONFIG)/inc"
 	cp "src/deps/est/est.h" "$(CONFIG)/inc/est.h"
 
@@ -153,6 +153,7 @@ $(CONFIG)/inc/est.h: $(DEPS_1)
 #   bit.h
 #
 $(CONFIG)/inc/bit.h: $(DEPS_2)
+	@echo '      [Copy] $(CONFIG)/inc/bit.h'
 
 #
 #   bitos.h
@@ -160,6 +161,7 @@ $(CONFIG)/inc/bit.h: $(DEPS_2)
 DEPS_3 += $(CONFIG)/inc/bit.h
 
 src/bitos.h: $(DEPS_3)
+	@echo '      [Copy] src/bitos.h'
 
 #
 #   estLib.o
@@ -191,7 +193,7 @@ endif
 DEPS_6 += src/deps/est/ca.crt
 
 $(CONFIG)/bin/ca.crt: $(DEPS_6)
-	@echo '      [File] $(CONFIG)/bin/ca.crt'
+	@echo '      [Copy] $(CONFIG)/bin/ca.crt'
 	mkdir -p "$(CONFIG)/bin"
 	cp "src/deps/est/ca.crt" "$(CONFIG)/bin/ca.crt"
 
@@ -199,7 +201,7 @@ $(CONFIG)/bin/ca.crt: $(DEPS_6)
 #   mpr.h
 #
 $(CONFIG)/inc/mpr.h: $(DEPS_7)
-	@echo '      [File] $(CONFIG)/inc/mpr.h'
+	@echo '      [Copy] $(CONFIG)/inc/mpr.h'
 	mkdir -p "$(CONFIG)/inc"
 	cp "src/deps/mpr/mpr.h" "$(CONFIG)/inc/mpr.h"
 
@@ -284,7 +286,7 @@ $(CONFIG)/bin/makerom.out: $(DEPS_13)
 #   bitos.h
 #
 $(CONFIG)/inc/bitos.h: $(DEPS_14)
-	@echo '      [File] $(CONFIG)/inc/bitos.h'
+	@echo '      [Copy] $(CONFIG)/inc/bitos.h'
 	mkdir -p "$(CONFIG)/inc"
 	cp "src/bitos.h" "$(CONFIG)/inc/bitos.h"
 
@@ -292,7 +294,7 @@ $(CONFIG)/inc/bitos.h: $(DEPS_14)
 #   http.h
 #
 $(CONFIG)/inc/http.h: $(DEPS_15)
-	@echo '      [File] $(CONFIG)/inc/http.h'
+	@echo '      [Copy] $(CONFIG)/inc/http.h'
 	mkdir -p "$(CONFIG)/inc"
 	cp "src/http.h" "$(CONFIG)/inc/http.h"
 
@@ -300,6 +302,7 @@ $(CONFIG)/inc/http.h: $(DEPS_15)
 #   http.h
 #
 src/http.h: $(DEPS_16)
+	@echo '      [Copy] src/http.h'
 
 #
 #   actionHandler.o

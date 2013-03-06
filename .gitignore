@@ -61,3 +61,5 @@ projects/*macosx-full.xcodeproj
 src/firefox.crt
 /*-*-*/
 .flags
+TODO.md
+http.sublime-*

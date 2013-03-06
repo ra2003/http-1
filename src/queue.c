@@ -222,7 +222,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, bool blocking)
         if (blocking) {
             httpGetMoreOutput(conn);
         }
-    } while (blocking && q->count > 0);
+    } while (blocking && q->count > 0 && !conn->tx->finalizedConnector);
     return (q->count < q->max) ? 1 : 0;
 }
 

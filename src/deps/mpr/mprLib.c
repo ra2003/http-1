@@ -1361,7 +1361,7 @@ void *palloc(ssize size)
     Normal free. Note: this must not be called with a block allocated via "malloc"
     No harm in calling this on a block allocated with mprAlloc and not "palloc"
  */
-void nfree(void *ptr)
+void pfree(void *ptr)
 {
     mprRelease(ptr);
 }

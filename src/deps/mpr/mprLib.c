@@ -19519,7 +19519,7 @@ PUBLIC MprSocketService *mprCreateSocketService()
         ss->hasIPv6 = 1;
         closesocket(fd);
     } else {
-        mprInfo("System has only IPv4 support");
+        mprLog(2, "System has only IPv4 support");
     }
     return ss;
 }

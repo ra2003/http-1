@@ -236,7 +236,7 @@ PUBLIC int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
 }
 
 
-#if OLD
+#if OLD && UNUSED
 /*
     Join queue packets up to the maximum of the given size and the downstream queue packet size.
     WARNING: this will not update the queue count.
@@ -272,8 +272,8 @@ PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
 
 
 /*
-    Join queue packets up to the maximum of the given size
-    WARNING: this will not update the queue count.
+    Join queue packets. Packets will not be split so the maximum size is advisory and may be exceeded.
+    NOTE: this will not update the queue count.
  */
 PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
 {
@@ -289,7 +289,9 @@ PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
          */
         count = 0;
         for (p = q->first; p; p = p->next) {
-            count += httpGetPacketLength(p);
+            if (!(p->flags & HTTP_PACKET_HEADER)) {
+                count += httpGetPacketLength(p);
+            }
         }
         size = min(count, size);
         if ((packet = httpCreateDataPacket(size)) == 0) {
@@ -309,11 +311,8 @@ PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
         /*
             Copy the data and free all other packets
          */
-        for (p = packet->next; p; p = p->next) {
+        for (p = packet->next; p && size > 0; p = p->next) {
             if (p->content == 0 || (len = httpGetPacketLength(p)) == 0) {
-                break;
-            }
-            if (size < len) {
                 break;
             }
             httpJoinPacket(packet, p);

@@ -85,7 +85,6 @@ prep:
 	@[ ! -f $(CONFIG)/inc/bit.h ] && cp projects/http-freebsd-default-bit.h $(CONFIG)/inc/bit.h ; true
 	@[ ! -f $(CONFIG)/inc/bitos.h ] && cp src/bitos.h $(CONFIG)/inc/bitos.h ; true
 	@if ! diff $(CONFIG)/inc/bit.h projects/http-freebsd-default-bit.h >/dev/null ; then\
-		echo cp projects/http-freebsd-default-bit.h $(CONFIG)/inc/bit.h  ; \
 		cp projects/http-freebsd-default-bit.h $(CONFIG)/inc/bit.h  ; \
 	fi; true
 

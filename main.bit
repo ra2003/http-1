@@ -43,6 +43,15 @@ Bit.load({
             romTables: false,
             genPrime: false,
         },
+        /*
+            Pack settings for when generating projects
+         */
+        projects: {
+            est: true,
+            matrixssl: false,
+            openssl: false,
+            ssl: true,
+        },
     },
 
     usage: {

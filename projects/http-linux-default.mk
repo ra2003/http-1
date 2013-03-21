@@ -2,62 +2,70 @@
 #   http-linux-default.mk -- Makefile to build Http Library for linux
 #
 
-PRODUCT           := http
-VERSION           := 1.3.0
-BUILD_NUMBER      := 0
-PROFILE           := default
-ARCH              := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
-OS                := linux
-CC                := /usr/bin/gcc
-LD                := /usr/bin/ld
-CONFIG            := $(OS)-$(ARCH)-$(PROFILE)
-LBIN              := $(CONFIG)/bin
+PRODUCT            := http
+VERSION            := 1.3.0
+BUILD_NUMBER       := 0
+PROFILE            := default
+ARCH               := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
+OS                 := linux
+CC                 := /usr/bin/gcc
+LD                 := /usr/bin/ld
+CONFIG             := $(OS)-$(ARCH)-$(PROFILE)
+LBIN               := $(CONFIG)/bin
+
+BIT_PACK_EST       := 1
+BIT_PACK_MATRIXSSL := 0
+BIT_PACK_OPENSSL   := 0
+BIT_PACK_SSL       := 1
+
+CFLAGS             += -fPIC   -w
+DFLAGS             += -D_REENTRANT -DPIC  $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS))) -DBIT_PACK_EST=$(BIT_PACK_EST) -DBIT_PACK_MATRIXSSL=$(BIT_PACK_MATRIXSSL) -DBIT_PACK_OPENSSL=$(BIT_PACK_OPENSSL) -DBIT_PACK_SSL=$(BIT_PACK_SSL) 
+IFLAGS             += -I$(CONFIG)/inc -Isrc
+LDFLAGS            += '-Wl,--enable-new-dtags' '-Wl,-rpath,$$ORIGIN/' '-rdynamic'
+LIBPATHS           += -L$(CONFIG)/bin
+LIBS               += -lpthread -lm -lrt -ldl
+
+DEBUG              := debug
+CFLAGS-debug       := -g
+DFLAGS-debug       := -DBIT_DEBUG
+LDFLAGS-debug      := -g
+DFLAGS-release     := 
+CFLAGS-release     := -O2
+LDFLAGS-release    := 
+CFLAGS             += $(CFLAGS-$(DEBUG))
+DFLAGS             += $(DFLAGS-$(DEBUG))
+LDFLAGS            += $(LDFLAGS-$(DEBUG))
+
+BIT_ROOT_PREFIX    := 
+BIT_BASE_PREFIX    := $(BIT_ROOT_PREFIX)/usr/local
+BIT_DATA_PREFIX    := $(BIT_ROOT_PREFIX)/
+BIT_STATE_PREFIX   := $(BIT_ROOT_PREFIX)/var
+BIT_APP_PREFIX     := $(BIT_BASE_PREFIX)/lib/$(PRODUCT)
+BIT_VAPP_PREFIX    := $(BIT_APP_PREFIX)/$(VERSION)
+BIT_BIN_PREFIX     := $(BIT_ROOT_PREFIX)/usr/local/bin
+BIT_INC_PREFIX     := $(BIT_ROOT_PREFIX)/usr/local/include
+BIT_LIB_PREFIX     := $(BIT_ROOT_PREFIX)/usr/local/lib
+BIT_MAN_PREFIX     := $(BIT_ROOT_PREFIX)/usr/local/share/man
+BIT_SBIN_PREFIX    := $(BIT_ROOT_PREFIX)/usr/local/sbin
+BIT_ETC_PREFIX     := $(BIT_ROOT_PREFIX)/etc/$(PRODUCT)
+BIT_WEB_PREFIX     := $(BIT_ROOT_PREFIX)/var/www/$(PRODUCT)-default
+BIT_LOG_PREFIX     := $(BIT_ROOT_PREFIX)/var/log/$(PRODUCT)
+BIT_SPOOL_PREFIX   := $(BIT_ROOT_PREFIX)/var/spool/$(PRODUCT)
+BIT_CACHE_PREFIX   := $(BIT_ROOT_PREFIX)/var/spool/$(PRODUCT)/cache
+BIT_SRC_PREFIX     := $(BIT_ROOT_PREFIX)$(PRODUCT)-$(VERSION)
 
 
-CFLAGS            += -fPIC   -w
-DFLAGS            += -D_REENTRANT -DPIC  $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS))) 
-IFLAGS            += -I$(CONFIG)/inc -Isrc
-LDFLAGS           += '-Wl,--enable-new-dtags' '-Wl,-rpath,$$ORIGIN/' '-rdynamic'
-LIBPATHS          += -L$(CONFIG)/bin
-LIBS              += -lpthread -lm -lrt -ldl
-
-DEBUG             := debug
-CFLAGS-debug      := -g
-DFLAGS-debug      := -DBIT_DEBUG
-LDFLAGS-debug     := -g
-DFLAGS-release    := 
-CFLAGS-release    := -O2
-LDFLAGS-release   := 
-CFLAGS            += $(CFLAGS-$(DEBUG))
-DFLAGS            += $(DFLAGS-$(DEBUG))
-LDFLAGS           += $(LDFLAGS-$(DEBUG))
-
-BIT_ROOT_PREFIX   := 
-BIT_BASE_PREFIX   := $(BIT_ROOT_PREFIX)/usr/local
-BIT_DATA_PREFIX   := $(BIT_ROOT_PREFIX)/
-BIT_STATE_PREFIX  := $(BIT_ROOT_PREFIX)/var
-BIT_APP_PREFIX    := $(BIT_BASE_PREFIX)/lib/$(PRODUCT)
-BIT_VAPP_PREFIX   := $(BIT_APP_PREFIX)/$(VERSION)
-BIT_BIN_PREFIX    := $(BIT_ROOT_PREFIX)/usr/local/bin
-BIT_INC_PREFIX    := $(BIT_ROOT_PREFIX)/usr/local/include
-BIT_LIB_PREFIX    := $(BIT_ROOT_PREFIX)/usr/local/lib
-BIT_MAN_PREFIX    := $(BIT_ROOT_PREFIX)/usr/local/share/man
-BIT_SBIN_PREFIX   := $(BIT_ROOT_PREFIX)/usr/local/sbin
-BIT_ETC_PREFIX    := $(BIT_ROOT_PREFIX)/etc/$(PRODUCT)
-BIT_WEB_PREFIX    := $(BIT_ROOT_PREFIX)/var/www/$(PRODUCT)-default
-BIT_LOG_PREFIX    := $(BIT_ROOT_PREFIX)/var/log/$(PRODUCT)
-BIT_SPOOL_PREFIX  := $(BIT_ROOT_PREFIX)/var/spool/$(PRODUCT)
-BIT_CACHE_PREFIX  := $(BIT_ROOT_PREFIX)/var/spool/$(PRODUCT)/cache
-BIT_SRC_PREFIX    := $(BIT_ROOT_PREFIX)$(PRODUCT)-$(VERSION)
-
-
-TARGETS           += $(CONFIG)/bin/libest.so
-TARGETS           += $(CONFIG)/bin/ca.crt
-TARGETS           += $(CONFIG)/bin/libmpr.so
-TARGETS           += $(CONFIG)/bin/libmprssl.so
-TARGETS           += $(CONFIG)/bin/makerom
-TARGETS           += $(CONFIG)/bin/libhttp.so
-TARGETS           += $(CONFIG)/bin/http
+ifeq ($(BIT_PACK_EST),1)
+TARGETS            += $(CONFIG)/bin/libest.so
+endif
+TARGETS            += $(CONFIG)/bin/ca.crt
+TARGETS            += $(CONFIG)/bin/libmpr.so
+ifeq ($(BIT_PACK_SSL),1)
+TARGETS            += $(CONFIG)/bin/libmprssl.so
+endif
+TARGETS            += $(CONFIG)/bin/makerom
+TARGETS            += $(CONFIG)/bin/libhttp.so
+TARGETS            += $(CONFIG)/bin/http
 
 unexport CDPATH
 
@@ -172,6 +180,7 @@ $(CONFIG)/obj/estLib.o: \
 	@echo '   [Compile] src/deps/est/estLib.c'
 	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC $(DFLAGS) $(IFLAGS) src/deps/est/estLib.c
 
+ifeq ($(BIT_PACK_EST),1)
 #
 #   libest
 #
@@ -180,7 +189,8 @@ DEPS_6 += $(CONFIG)/obj/estLib.o
 
 $(CONFIG)/bin/libest.so: $(DEPS_6)
 	@echo '      [Link] libest'
-	$(CC) -shared -o $(CONFIG)/bin/libest.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/estLib.o $(LIBS)
+	$(CC) -shared -o $(CONFIG)/bin/libest.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/estLib.o $(LIBS) 
+endif
 
 #
 #   ca-crt
@@ -220,7 +230,7 @@ DEPS_10 += $(CONFIG)/obj/mprLib.o
 
 $(CONFIG)/bin/libmpr.so: $(DEPS_10)
 	@echo '      [Link] libmpr'
-	$(CC) -shared -o $(CONFIG)/bin/libmpr.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprLib.o $(LIBS)
+	$(CC) -shared -o $(CONFIG)/bin/libmpr.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprLib.o $(LIBS) 
 
 #
 #   mprSsl.o
@@ -234,19 +244,25 @@ $(CONFIG)/obj/mprSsl.o: \
 	@echo '   [Compile] src/deps/mpr/mprSsl.c'
 	$(CC) -c -o $(CONFIG)/obj/mprSsl.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/deps/mpr/mprSsl.c
 
+ifeq ($(BIT_PACK_SSL),1)
 #
 #   libmprssl
 #
 DEPS_12 += $(CONFIG)/bin/libmpr.so
-DEPS_12 += $(CONFIG)/bin/libest.so
+ifeq ($(BIT_PACK_EST),1)
+    DEPS_12 += $(CONFIG)/bin/libest.so
+endif
 DEPS_12 += $(CONFIG)/obj/mprSsl.o
 
-LIBS_12 += -lest
+ifeq ($(BIT_PACK_EST),1)
+    LIBS_12 += -lest
+endif
 LIBS_12 += -lmpr
 
 $(CONFIG)/bin/libmprssl.so: $(DEPS_12)
 	@echo '      [Link] libmprssl'
-	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprSsl.o $(LIBS_12) $(LIBS_12) $(LIBS)
+	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprSsl.o $(LIBS_12) $(LIBS_12) $(LIBS) 
+endif
 
 #
 #   makerom.o
@@ -269,7 +285,7 @@ LIBS_14 += -lmpr
 
 $(CONFIG)/bin/makerom: $(DEPS_14)
 	@echo '      [Link] makerom'
-	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBS_14) $(LIBS_14) $(LIBS) $(LDFLAGS)
+	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBS_14) $(LIBS_14) $(LIBS) $(LDFLAGS) 
 
 #
 #   bitos.h
@@ -689,7 +705,7 @@ LIBS_50 += -lmpr
 
 $(CONFIG)/bin/libhttp.so: $(DEPS_50)
 	@echo '      [Link] libhttp'
-	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/http.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o $(LIBS_50) $(LIBS_50) $(LIBS)
+	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/http.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o $(LIBS_50) $(LIBS_50) $(LIBS) 
 
 #
 #   http
@@ -702,7 +718,7 @@ LIBS_51 += -lmpr
 
 $(CONFIG)/bin/http: $(DEPS_51)
 	@echo '      [Link] http'
-	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBS_51) $(LIBS_51) $(LIBS) -lmpr $(LDFLAGS)
+	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBS_51) $(LIBS_51) $(LIBS) -lmpr $(LDFLAGS) 
 
 #
 #   stop
@@ -737,5 +753,4 @@ install: $(DEPS_55)
 DEPS_56 += stop
 
 uninstall: $(DEPS_56)
-	
 

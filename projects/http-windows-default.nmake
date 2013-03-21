@@ -19,12 +19,16 @@ ENTRY             = _DllMainCRTStartup@12
 OS                = windows
 CONFIG            = $(OS)-$(ARCH)-$(PROFILE)
 LBIN              = $(CONFIG)\bin
+BIT_PACK_EST       = 1
+BIT_PACK_MATRIXSSL = 0
+BIT_PACK_OPENSSL   = 0
+BIT_PACK_SSL       = 1
 
 CC                = cl
 LD                = link
 RC                = rc
 CFLAGS            = -nologo -GR- -W3 -Zi -Od -MDd
-DFLAGS            = -D_REENTRANT -D_MT -DBIT_DEBUG 
+DFLAGS            = -D_REENTRANT -D_MT -DBIT_DEBUG -DBIT_PACK_EST=$(BIT_PACK_EST) -DBIT_PACK_MATRIXSSL=$(BIT_PACK_MATRIXSSL) -DBIT_PACK_OPENSSL=$(BIT_PACK_OPENSSL) -DBIT_PACK_SSL=$(BIT_PACK_SSL) 
 IFLAGS            = -I$(CONFIG)\inc -Isrc
 LDFLAGS           = -nologo -nodefaultlib -incremental:no -debug -machine:$(ARCH)
 LIBPATHS          = -libpath:$(CONFIG)\bin
@@ -48,13 +52,17 @@ BIT_CACHE_PREFIX  = $(BIT_VAPP_PREFIX)\cache
 BIT_SRC_PREFIX    = $(BIT_VAPP_PREFIX)\src
 
 
-TARGETS           = $(TARGETS) $(CONFIG)\bin\libest.dll
-TARGETS           = $(TARGETS) $(CONFIG)\bin\ca.crt
-TARGETS           = $(TARGETS) $(CONFIG)\bin\libmpr.dll
-TARGETS           = $(TARGETS) $(CONFIG)\bin\libmprssl.dll
-TARGETS           = $(TARGETS) $(CONFIG)\bin\makerom.exe
-TARGETS           = $(TARGETS) $(CONFIG)\bin\libhttp.dll
-TARGETS           = $(TARGETS) $(CONFIG)\bin\http.exe
+!IF "$(BIT_PACK_EST)" == "1"
+TARGETS            = $(TARGETS) $(CONFIG)\bin\libest.dll
+!ENDIF
+TARGETS            = $(TARGETS) $(CONFIG)\bin\ca.crt
+TARGETS            = $(TARGETS) $(CONFIG)\bin\libmpr.dll
+!IF "$(BIT_PACK_SSL)" == "1"
+TARGETS            = $(TARGETS) $(CONFIG)\bin\libmprssl.dll
+!ENDIF
+TARGETS            = $(TARGETS) $(CONFIG)\bin\makerom.exe
+TARGETS            = $(TARGETS) $(CONFIG)\bin\libhttp.dll
+TARGETS            = $(TARGETS) $(CONFIG)\bin\http.exe
 
 !IFNDEF SHOW
 .SILENT:
@@ -165,6 +173,7 @@ $(CONFIG)\obj\estLib.obj: \
 	@echo '   [Compile] src/deps/est/estLib.c'
 	"$(CC)" -c -Fo$(CONFIG)\obj\estLib.obj -Fd$(CONFIG)\obj\estLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\deps\est\estLib.c
 
+!IF "$(BIT_PACK_EST)" == "1"
 #
 #   libest
 #
@@ -173,7 +182,8 @@ DEPS_6 = $(DEPS_6) $(CONFIG)\obj\estLib.obj
 
 $(CONFIG)\bin\libest.dll: $(DEPS_6)
 	@echo '      [Link] libest'
-	"$(LD)" -dll -out:$(CONFIG)\bin\libest.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\estLib.obj $(LIBS)
+	"$(LD)" -dll -out:$(CONFIG)\bin\libest.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\estLib.obj $(LIBS) 
+!ENDIF
 
 #
 #   ca-crt
@@ -213,7 +223,7 @@ DEPS_10 = $(DEPS_10) $(CONFIG)\obj\mprLib.obj
 
 $(CONFIG)\bin\libmpr.dll: $(DEPS_10)
 	@echo '      [Link] libmpr'
-	"$(LD)" -dll -out:$(CONFIG)\bin\libmpr.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprLib.obj $(LIBS)
+	"$(LD)" -dll -out:$(CONFIG)\bin\libmpr.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprLib.obj $(LIBS) 
 
 #
 #   mprSsl.obj
@@ -227,19 +237,25 @@ $(CONFIG)\obj\mprSsl.obj: \
 	@echo '   [Compile] src/deps/mpr/mprSsl.c'
 	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\deps\mpr\mprSsl.c
 
+!IF "$(BIT_PACK_SSL)" == "1"
 #
 #   libmprssl
 #
 DEPS_12 = $(DEPS_12) $(CONFIG)\bin\libmpr.dll
+!IF "$(BIT_PACK_EST)" == "1"
 DEPS_12 = $(DEPS_12) $(CONFIG)\bin\libest.dll
+!ENDIF
 DEPS_12 = $(DEPS_12) $(CONFIG)\obj\mprSsl.obj
 
+!IF "$(BIT_PACK_EST)" == "1"
 LIBS_12 = $(LIBS_12) libest.lib
+!ENDIF
 LIBS_12 = $(LIBS_12) libmpr.lib
 
 $(CONFIG)\bin\libmprssl.dll: $(DEPS_12)
 	@echo '      [Link] libmprssl'
-	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj $(LIBS_12) $(LIBS_12) $(LIBS)
+	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\mprSsl.obj $(LIBS_12) $(LIBS_12) $(LIBS) 
+!ENDIF
 
 #
 #   makerom.obj
@@ -262,7 +278,7 @@ LIBS_14 = $(LIBS_14) libmpr.lib
 
 $(CONFIG)\bin\makerom.exe: $(DEPS_14)
 	@echo '      [Link] makerom'
-	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj $(LIBS_14) $(LIBS_14) $(LIBS)
+	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj $(LIBS_14) $(LIBS_14) $(LIBS) 
 
 #
 #   bitos.h
@@ -682,7 +698,7 @@ LIBS_50 = $(LIBS_50) libmpr.lib
 
 $(CONFIG)\bin\libhttp.dll: $(DEPS_50)
 	@echo '      [Link] libhttp'
-	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\actionHandler.obj $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\http.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(CONFIG)\obj\webSock.obj $(LIBS_50) $(LIBS_50) $(LIBS)
+	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\actionHandler.obj $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\http.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(CONFIG)\obj\webSock.obj $(LIBS_50) $(LIBS_50) $(LIBS) 
 
 #
 #   http
@@ -695,7 +711,7 @@ LIBS_51 = $(LIBS_51) libmpr.lib
 
 $(CONFIG)\bin\http.exe: $(DEPS_51)
 	@echo '      [Link] http'
-	"$(LD)" -out:$(CONFIG)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\http.obj $(LIBS_51) $(LIBS_51) $(LIBS) libmpr.lib
+	"$(LD)" -out:$(CONFIG)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\http.obj $(LIBS_51) $(LIBS_51) $(LIBS) 
 
 #
 #   stop
@@ -708,7 +724,6 @@ stop: $(DEPS_52)
 DEPS_53 = $(DEPS_53) stop
 
 installBinary: $(DEPS_53)
-#  Omit build script installBinary
 
 #
 #   start
@@ -731,5 +746,4 @@ install: $(DEPS_55)
 DEPS_56 = $(DEPS_56) stop
 
 uninstall: $(DEPS_56)
-
 

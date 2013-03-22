@@ -736,6 +736,7 @@ $(CONFIG)\bin\http.exe: $(DEPS_51)
 #   stop
 #
 stop: $(DEPS_52)
+#  Omit build script stop
 
 #
 #   installBinary
@@ -748,6 +749,7 @@ installBinary: $(DEPS_53)
 #   start
 #
 start: $(DEPS_54)
+#  Omit build script start
 
 #
 #   install

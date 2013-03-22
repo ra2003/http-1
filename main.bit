@@ -29,7 +29,6 @@ Bit.load({
         '+requires': [ 'compiler' ],
         '+discover': [ 'doxygen', 'dsi', 'man', 'man2html', 'ssl', 'utest' ],
         'without-all': [ 'doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'ssl' ],
-        'without-default': ['doxygen', 'dsi', 'man', 'man2html', 'pmaker' ],
         http: {
             pam: true,
         },

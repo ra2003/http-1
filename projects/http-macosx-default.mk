@@ -18,6 +18,22 @@ BIT_PACK_MATRIXSSL := 0
 BIT_PACK_OPENSSL   := 0
 BIT_PACK_SSL       := 1
 
+ifeq ($(BIT_PACK_EST),1)
+    BIT_PACK_SSL := 1
+endif
+ifeq ($(BIT_PACK_LIB),1)
+    BIT_PACK_COMPILER := 1
+endif
+ifeq ($(BIT_PACK_MATRIXSSL),1)
+    BIT_PACK_SSL := 1
+endif
+ifeq ($(BIT_PACK_NANOSSL),1)
+    BIT_PACK_SSL := 1
+endif
+ifeq ($(BIT_PACK_OPENSSL),1)
+    BIT_PACK_SSL := 1
+endif
+
 CFLAGS             += -w
 DFLAGS             +=  $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS))) -DBIT_PACK_EST=$(BIT_PACK_EST) -DBIT_PACK_MATRIXSSL=$(BIT_PACK_MATRIXSSL) -DBIT_PACK_OPENSSL=$(BIT_PACK_OPENSSL) -DBIT_PACK_SSL=$(BIT_PACK_SSL) 
 IFLAGS             += -I$(CONFIG)/inc -Isrc
@@ -91,49 +107,49 @@ prep:
 	fi; true
 
 clean:
-	rm -f "$(CONFIG)/bin/libest.dylib"
-	rm -f "$(CONFIG)/bin/ca.crt"
-	rm -f "$(CONFIG)/bin/libmpr.dylib"
-	rm -f "$(CONFIG)/bin/libmprssl.dylib"
-	rm -f "$(CONFIG)/bin/makerom"
-	rm -f "$(CONFIG)/bin/libhttp.dylib"
-	rm -f "$(CONFIG)/bin/http"
-	rm -f "$(CONFIG)/obj/estLib.o"
-	rm -f "$(CONFIG)/obj/mprLib.o"
-	rm -f "$(CONFIG)/obj/mprSsl.o"
-	rm -f "$(CONFIG)/obj/makerom.o"
-	rm -f "$(CONFIG)/obj/actionHandler.o"
-	rm -f "$(CONFIG)/obj/auth.o"
-	rm -f "$(CONFIG)/obj/basic.o"
-	rm -f "$(CONFIG)/obj/cache.o"
-	rm -f "$(CONFIG)/obj/chunkFilter.o"
-	rm -f "$(CONFIG)/obj/client.o"
-	rm -f "$(CONFIG)/obj/conn.o"
-	rm -f "$(CONFIG)/obj/digest.o"
-	rm -f "$(CONFIG)/obj/endpoint.o"
-	rm -f "$(CONFIG)/obj/error.o"
-	rm -f "$(CONFIG)/obj/host.o"
-	rm -f "$(CONFIG)/obj/http.o"
-	rm -f "$(CONFIG)/obj/httpService.o"
-	rm -f "$(CONFIG)/obj/log.o"
-	rm -f "$(CONFIG)/obj/netConnector.o"
-	rm -f "$(CONFIG)/obj/packet.o"
-	rm -f "$(CONFIG)/obj/pam.o"
-	rm -f "$(CONFIG)/obj/passHandler.o"
-	rm -f "$(CONFIG)/obj/pipeline.o"
-	rm -f "$(CONFIG)/obj/queue.o"
-	rm -f "$(CONFIG)/obj/rangeFilter.o"
-	rm -f "$(CONFIG)/obj/route.o"
-	rm -f "$(CONFIG)/obj/rx.o"
-	rm -f "$(CONFIG)/obj/sendConnector.o"
-	rm -f "$(CONFIG)/obj/session.o"
-	rm -f "$(CONFIG)/obj/stage.o"
-	rm -f "$(CONFIG)/obj/trace.o"
-	rm -f "$(CONFIG)/obj/tx.o"
-	rm -f "$(CONFIG)/obj/uploadFilter.o"
-	rm -f "$(CONFIG)/obj/uri.o"
-	rm -f "$(CONFIG)/obj/var.o"
-	rm -f "$(CONFIG)/obj/webSock.o"
+	rm -fr "$(CONFIG)/bin/libest.dylib"
+	rm -fr "$(CONFIG)/bin/ca.crt"
+	rm -fr "$(CONFIG)/bin/libmpr.dylib"
+	rm -fr "$(CONFIG)/bin/libmprssl.dylib"
+	rm -fr "$(CONFIG)/bin/makerom"
+	rm -fr "$(CONFIG)/bin/libhttp.dylib"
+	rm -fr "$(CONFIG)/bin/http"
+	rm -fr "$(CONFIG)/obj/estLib.o"
+	rm -fr "$(CONFIG)/obj/mprLib.o"
+	rm -fr "$(CONFIG)/obj/mprSsl.o"
+	rm -fr "$(CONFIG)/obj/makerom.o"
+	rm -fr "$(CONFIG)/obj/actionHandler.o"
+	rm -fr "$(CONFIG)/obj/auth.o"
+	rm -fr "$(CONFIG)/obj/basic.o"
+	rm -fr "$(CONFIG)/obj/cache.o"
+	rm -fr "$(CONFIG)/obj/chunkFilter.o"
+	rm -fr "$(CONFIG)/obj/client.o"
+	rm -fr "$(CONFIG)/obj/conn.o"
+	rm -fr "$(CONFIG)/obj/digest.o"
+	rm -fr "$(CONFIG)/obj/endpoint.o"
+	rm -fr "$(CONFIG)/obj/error.o"
+	rm -fr "$(CONFIG)/obj/host.o"
+	rm -fr "$(CONFIG)/obj/http.o"
+	rm -fr "$(CONFIG)/obj/httpService.o"
+	rm -fr "$(CONFIG)/obj/log.o"
+	rm -fr "$(CONFIG)/obj/netConnector.o"
+	rm -fr "$(CONFIG)/obj/packet.o"
+	rm -fr "$(CONFIG)/obj/pam.o"
+	rm -fr "$(CONFIG)/obj/passHandler.o"
+	rm -fr "$(CONFIG)/obj/pipeline.o"
+	rm -fr "$(CONFIG)/obj/queue.o"
+	rm -fr "$(CONFIG)/obj/rangeFilter.o"
+	rm -fr "$(CONFIG)/obj/route.o"
+	rm -fr "$(CONFIG)/obj/rx.o"
+	rm -fr "$(CONFIG)/obj/sendConnector.o"
+	rm -fr "$(CONFIG)/obj/session.o"
+	rm -fr "$(CONFIG)/obj/stage.o"
+	rm -fr "$(CONFIG)/obj/trace.o"
+	rm -fr "$(CONFIG)/obj/tx.o"
+	rm -fr "$(CONFIG)/obj/uploadFilter.o"
+	rm -fr "$(CONFIG)/obj/uri.o"
+	rm -fr "$(CONFIG)/obj/var.o"
+	rm -fr "$(CONFIG)/obj/webSock.o"
 
 clobber: clean
 	rm -fr ./$(CONFIG)
@@ -705,7 +721,7 @@ LIBS_50 += -lmpr
 
 $(CONFIG)/bin/libhttp.dylib: $(DEPS_50)
 	@echo '      [Link] libhttp'
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 1.3.0 -current_version 1.3.0 $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/http.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o $(LIBS_50) $(LIBS_50) $(LIBS) 
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 1.3.0 -current_version 1.3.0 $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/http.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o $(LIBS_50) $(LIBS_50) $(LIBS) -lpam 
 
 #
 #   http

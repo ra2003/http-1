@@ -18,6 +18,22 @@ BIT_PACK_MATRIXSSL := 0
 BIT_PACK_OPENSSL   := 0
 BIT_PACK_SSL       := 1
 
+ifeq ($(BIT_PACK_EST),1)
+    BIT_PACK_SSL := 1
+endif
+ifeq ($(BIT_PACK_LIB),1)
+    BIT_PACK_COMPILER := 1
+endif
+ifeq ($(BIT_PACK_MATRIXSSL),1)
+    BIT_PACK_SSL := 1
+endif
+ifeq ($(BIT_PACK_NANOSSL),1)
+    BIT_PACK_SSL := 1
+endif
+ifeq ($(BIT_PACK_OPENSSL),1)
+    BIT_PACK_SSL := 1
+endif
+
 CFLAGS             += -fPIC   -w
 DFLAGS             += -D_REENTRANT -DPIC  $(patsubst %,-D%,$(filter BIT_%,$(MAKEFLAGS))) -DBIT_PACK_EST=$(BIT_PACK_EST) -DBIT_PACK_MATRIXSSL=$(BIT_PACK_MATRIXSSL) -DBIT_PACK_OPENSSL=$(BIT_PACK_OPENSSL) -DBIT_PACK_SSL=$(BIT_PACK_SSL) 
 IFLAGS             += -I$(CONFIG)/inc -Isrc
@@ -91,49 +107,49 @@ prep:
 	fi; true
 
 clean:
-	rm -f "$(CONFIG)/bin/libest.so"
-	rm -f "$(CONFIG)/bin/ca.crt"
-	rm -f "$(CONFIG)/bin/libmpr.so"
-	rm -f "$(CONFIG)/bin/libmprssl.so"
-	rm -f "$(CONFIG)/bin/makerom"
-	rm -f "$(CONFIG)/bin/libhttp.so"
-	rm -f "$(CONFIG)/bin/http"
-	rm -f "$(CONFIG)/obj/estLib.o"
-	rm -f "$(CONFIG)/obj/mprLib.o"
-	rm -f "$(CONFIG)/obj/mprSsl.o"
-	rm -f "$(CONFIG)/obj/makerom.o"
-	rm -f "$(CONFIG)/obj/actionHandler.o"
-	rm -f "$(CONFIG)/obj/auth.o"
-	rm -f "$(CONFIG)/obj/basic.o"
-	rm -f "$(CONFIG)/obj/cache.o"
-	rm -f "$(CONFIG)/obj/chunkFilter.o"
-	rm -f "$(CONFIG)/obj/client.o"
-	rm -f "$(CONFIG)/obj/conn.o"
-	rm -f "$(CONFIG)/obj/digest.o"
-	rm -f "$(CONFIG)/obj/endpoint.o"
-	rm -f "$(CONFIG)/obj/error.o"
-	rm -f "$(CONFIG)/obj/host.o"
-	rm -f "$(CONFIG)/obj/http.o"
-	rm -f "$(CONFIG)/obj/httpService.o"
-	rm -f "$(CONFIG)/obj/log.o"
-	rm -f "$(CONFIG)/obj/netConnector.o"
-	rm -f "$(CONFIG)/obj/packet.o"
-	rm -f "$(CONFIG)/obj/pam.o"
-	rm -f "$(CONFIG)/obj/passHandler.o"
-	rm -f "$(CONFIG)/obj/pipeline.o"
-	rm -f "$(CONFIG)/obj/queue.o"
-	rm -f "$(CONFIG)/obj/rangeFilter.o"
-	rm -f "$(CONFIG)/obj/route.o"
-	rm -f "$(CONFIG)/obj/rx.o"
-	rm -f "$(CONFIG)/obj/sendConnector.o"
-	rm -f "$(CONFIG)/obj/session.o"
-	rm -f "$(CONFIG)/obj/stage.o"
-	rm -f "$(CONFIG)/obj/trace.o"
-	rm -f "$(CONFIG)/obj/tx.o"
-	rm -f "$(CONFIG)/obj/uploadFilter.o"
-	rm -f "$(CONFIG)/obj/uri.o"
-	rm -f "$(CONFIG)/obj/var.o"
-	rm -f "$(CONFIG)/obj/webSock.o"
+	rm -fr "$(CONFIG)/bin/libest.so"
+	rm -fr "$(CONFIG)/bin/ca.crt"
+	rm -fr "$(CONFIG)/bin/libmpr.so"
+	rm -fr "$(CONFIG)/bin/libmprssl.so"
+	rm -fr "$(CONFIG)/bin/makerom"
+	rm -fr "$(CONFIG)/bin/libhttp.so"
+	rm -fr "$(CONFIG)/bin/http"
+	rm -fr "$(CONFIG)/obj/estLib.o"
+	rm -fr "$(CONFIG)/obj/mprLib.o"
+	rm -fr "$(CONFIG)/obj/mprSsl.o"
+	rm -fr "$(CONFIG)/obj/makerom.o"
+	rm -fr "$(CONFIG)/obj/actionHandler.o"
+	rm -fr "$(CONFIG)/obj/auth.o"
+	rm -fr "$(CONFIG)/obj/basic.o"
+	rm -fr "$(CONFIG)/obj/cache.o"
+	rm -fr "$(CONFIG)/obj/chunkFilter.o"
+	rm -fr "$(CONFIG)/obj/client.o"
+	rm -fr "$(CONFIG)/obj/conn.o"
+	rm -fr "$(CONFIG)/obj/digest.o"
+	rm -fr "$(CONFIG)/obj/endpoint.o"
+	rm -fr "$(CONFIG)/obj/error.o"
+	rm -fr "$(CONFIG)/obj/host.o"
+	rm -fr "$(CONFIG)/obj/http.o"
+	rm -fr "$(CONFIG)/obj/httpService.o"
+	rm -fr "$(CONFIG)/obj/log.o"
+	rm -fr "$(CONFIG)/obj/netConnector.o"
+	rm -fr "$(CONFIG)/obj/packet.o"
+	rm -fr "$(CONFIG)/obj/pam.o"
+	rm -fr "$(CONFIG)/obj/passHandler.o"
+	rm -fr "$(CONFIG)/obj/pipeline.o"
+	rm -fr "$(CONFIG)/obj/queue.o"
+	rm -fr "$(CONFIG)/obj/rangeFilter.o"
+	rm -fr "$(CONFIG)/obj/route.o"
+	rm -fr "$(CONFIG)/obj/rx.o"
+	rm -fr "$(CONFIG)/obj/sendConnector.o"
+	rm -fr "$(CONFIG)/obj/session.o"
+	rm -fr "$(CONFIG)/obj/stage.o"
+	rm -fr "$(CONFIG)/obj/trace.o"
+	rm -fr "$(CONFIG)/obj/tx.o"
+	rm -fr "$(CONFIG)/obj/uploadFilter.o"
+	rm -fr "$(CONFIG)/obj/uri.o"
+	rm -fr "$(CONFIG)/obj/var.o"
+	rm -fr "$(CONFIG)/obj/webSock.o"
 
 clobber: clean
 	rm -fr ./$(CONFIG)
@@ -285,7 +301,7 @@ LIBS_14 += -lmpr
 
 $(CONFIG)/bin/makerom: $(DEPS_14)
 	@echo '      [Link] makerom'
-	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBS_14) $(LIBS_14) $(LIBS) $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBS_14) $(LIBS_14) $(LIBS) -lpthread -lm -lrt -ldl $(LDFLAGS) 
 
 #
 #   bitos.h
@@ -718,7 +734,7 @@ LIBS_51 += -lmpr
 
 $(CONFIG)/bin/http: $(DEPS_51)
 	@echo '      [Link] http'
-	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBS_51) $(LIBS_51) $(LIBS) -lmpr $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBS_51) $(LIBS_51) $(LIBS) -lpthread -lm -lrt -ldl $(LDFLAGS) 
 
 #
 #   stop

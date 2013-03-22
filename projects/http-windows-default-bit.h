@@ -179,7 +179,7 @@
 
 /* Profile */
 #ifndef BIT_CONFIG_CMD
-    #define BIT_CONFIG_CMD "bit -d -q -platform windows-x86-default -configure . --without default -gen vs"
+    #define BIT_CONFIG_CMD "bit -d -q -platform windows-x86-default -configure . -gen vs"
 #endif
 #ifndef BIT_HTTP_PRODUCT
     #define BIT_HTTP_PRODUCT 1
@@ -206,14 +206,11 @@
 #ifndef BIT_PACK_CC
     #define BIT_PACK_CC 1
 #endif
-#ifndef BIT_PACK_DEFAULT
-    #define BIT_PACK_DEFAULT 0
-#endif
 #ifndef BIT_PACK_DOXYGEN
-    #define BIT_PACK_DOXYGEN 0
+    #define BIT_PACK_DOXYGEN 1
 #endif
 #ifndef BIT_PACK_DSI
-    #define BIT_PACK_DSI 0
+    #define BIT_PACK_DSI 1
 #endif
 #ifndef BIT_PACK_EST
     #define BIT_PACK_EST 1
@@ -225,10 +222,10 @@
     #define BIT_PACK_LINK 1
 #endif
 #ifndef BIT_PACK_MAN
-    #define BIT_PACK_MAN 0
+    #define BIT_PACK_MAN 1
 #endif
 #ifndef BIT_PACK_MAN2HTML
-    #define BIT_PACK_MAN2HTML 0
+    #define BIT_PACK_MAN2HTML 1
 #endif
 #ifndef BIT_PACK_MATRIXSSL
     #define BIT_PACK_MATRIXSSL 0
@@ -238,9 +235,6 @@
 #endif
 #ifndef BIT_PACK_OPENSSL
     #define BIT_PACK_OPENSSL 0
-#endif
-#ifndef BIT_PACK_PMAKER
-    #define BIT_PACK_PMAKER 0
 #endif
 #ifndef BIT_PACK_RC
     #define BIT_PACK_RC 0

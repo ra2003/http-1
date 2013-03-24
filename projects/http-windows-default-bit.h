@@ -234,7 +234,7 @@
     #define BIT_PACK_OPENSSL 0
 #endif
 #ifndef BIT_PACK_RC
-    #define BIT_PACK_RC 0
+    #define BIT_PACK_RC 1
 #endif
 #ifndef BIT_PACK_SSL
     #define BIT_PACK_SSL 1
@@ -246,5 +246,5 @@
     #define BIT_PACK_VXWORKS 0
 #endif
 #ifndef BIT_PACK_WINSDK
-    #define BIT_PACK_WINSDK 0
+    #define BIT_PACK_WINSDK 1
 #endif

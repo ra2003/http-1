@@ -12,6 +12,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ca-crt", "http-windows-stat
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpcre", "http-windows-static\libpcre.vcxproj", "{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmpr", "http-windows-static\libmpr.vcxproj", "{898E2C1E-65BB-4CE6-8505-1D107E18B50F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{744B8495-7101-4C77-ACC2-59FC4DDE27C7} = {744B8495-7101-4C77-ACC2-59FC4DDE27C7}
@@ -42,6 +47,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "http-windows-sta
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{898E2C1E-65BB-4CE6-8505-1D107E18B50F} = {898E2C1E-65BB-4CE6-8505-1D107E18B50F}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9} = {42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http", "http-windows-static\http.vcxproj", "{D547BDE7-ED8E-4C5C-9A84-85D77BEB805A}"
@@ -85,6 +93,14 @@ Global
 {89511D25-5928-4D2B-A159-8326ABBBBE82}.Release|Win32.Build.0 = Release|Win32
 {89511D25-5928-4D2B-A159-8326ABBBBE82}.Release|x64.ActiveCfg = Release|x64
 {89511D25-5928-4D2B-A159-8326ABBBBE82}.Release|x64.Build.0 = Release|x64
+{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Debug|Win32.ActiveCfg = Debug|Win32
+{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Debug|Win32.Build.0 = Debug|Win32
+{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Debug|x64.ActiveCfg = Debug|x64
+{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Debug|x64.Build.0 = Debug|x64
+{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Release|Win32.ActiveCfg = Release|Win32
+{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Release|Win32.Build.0 = Release|Win32
+{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Release|x64.ActiveCfg = Release|x64
+{42D2A7DF-906E-4BAF-9432-CE3A9124CFD9}.Release|x64.Build.0 = Release|x64
 {898E2C1E-65BB-4CE6-8505-1D107E18B50F}.Debug|Win32.ActiveCfg = Debug|Win32
 {898E2C1E-65BB-4CE6-8505-1D107E18B50F}.Debug|Win32.Build.0 = Debug|Win32
 {898E2C1E-65BB-4CE6-8505-1D107E18B50F}.Debug|x64.ActiveCfg = Debug|x64

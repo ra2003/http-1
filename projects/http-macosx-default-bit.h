@@ -254,6 +254,9 @@
 #ifndef BIT_PACK_OPENSSL
     #define BIT_PACK_OPENSSL 0
 #endif
+#ifndef BIT_PACK_PCRE
+    #define BIT_PACK_PCRE 1
+#endif
 #ifndef BIT_PACK_SSL
     #define BIT_PACK_SSL 1
 #endif

@@ -163,6 +163,13 @@ cd projects\http-windows-static</Command>
   </ProjectReference>
 </ItemGroup>
 
+<ItemGroup>
+  <ProjectReference Include="libpcre.vcxproj">
+  <Project>42d2a7df-906e-4baf-9432-ce3a9124cfd9</Project>
+  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+  </ProjectReference>
+</ItemGroup>
+
   <Import Project="$(VCTargetsPath)Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

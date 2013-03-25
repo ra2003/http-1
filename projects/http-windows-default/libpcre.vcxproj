@@ -13,7 +13,7 @@
   </ItemDefinitionGroup>
 
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{37a646f7-44cd-4e2c-bbc1-4589bad01502}</ProjectGuid>
+    <ProjectGuid>{42d2a7df-906e-4baf-9432-ce3a9124cfd9}</ProjectGuid>
     <RootNamespace />
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -83,92 +83,43 @@
     <_ProjectFileVersion>10</_ProjectFileVersion>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\libhttp\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\libpcre\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\libhttp\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\libpcre\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\libhttp\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\libpcre\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\libhttp\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\libpcre\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PreBuildEvent</CustomBuildBeforeTargets>
   </PropertyGroup>
   
   <ItemGroup>
-    <ClCompile Include="..\..\src\actionHandler.c" />
-    <ClCompile Include="..\..\src\auth.c" />
-    <ClCompile Include="..\..\src\basic.c" />
-    <ClCompile Include="..\..\src\cache.c" />
-    <ClCompile Include="..\..\src\chunkFilter.c" />
-    <ClCompile Include="..\..\src\client.c" />
-    <ClCompile Include="..\..\src\conn.c" />
-    <ClCompile Include="..\..\src\digest.c" />
-    <ClCompile Include="..\..\src\endpoint.c" />
-    <ClCompile Include="..\..\src\error.c" />
-    <ClCompile Include="..\..\src\host.c" />
-    <ClCompile Include="..\..\src\httpService.c" />
-    <ClCompile Include="..\..\src\log.c" />
-    <ClCompile Include="..\..\src\netConnector.c" />
-    <ClCompile Include="..\..\src\packet.c" />
-    <ClCompile Include="..\..\src\pam.c" />
-    <ClCompile Include="..\..\src\passHandler.c" />
-    <ClCompile Include="..\..\src\pipeline.c" />
-    <ClCompile Include="..\..\src\queue.c" />
-    <ClCompile Include="..\..\src\rangeFilter.c" />
-    <ClCompile Include="..\..\src\route.c" />
-    <ClCompile Include="..\..\src\rx.c" />
-    <ClCompile Include="..\..\src\sendConnector.c" />
-    <ClCompile Include="..\..\src\session.c" />
-    <ClCompile Include="..\..\src\stage.c" />
-    <ClCompile Include="..\..\src\trace.c" />
-    <ClCompile Include="..\..\src\tx.c" />
-    <ClCompile Include="..\..\src\uploadFilter.c" />
-    <ClCompile Include="..\..\src\uri.c" />
-    <ClCompile Include="..\..\src\var.c" />
-    <ClCompile Include="..\..\src\webSock.c" />
+    <ClCompile Include="..\..\src\deps\pcre\pcre.c" />
   </ItemGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(IncDir)\bitos.h" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ClInclude Include="$(IncDir)\http.h" />
+    <ClInclude Include="$(IncDir)\pcre.h" />
   </ItemGroup>
 
   <ItemDefinitionGroup>
   <Link>
-    <AdditionalDependencies>libpcre.lib;libmpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    <AdditionalDependencies>;%(AdditionalDependencies)</AdditionalDependencies>
     <AdditionalLibraryDirectories>$(OutDir);$(Cfg)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
   </Link>
 
   <CustomBuildStep>
-    <Command>cd ..\..
-copy /Y src\bitos.h $(IncDir)
-copy /Y src\http.h $(IncDir)
-cd projects\http-windows-default</Command>
-    <Outputs>$(BinDir)\libhttp.dll</Outputs>
+    <Command>cd ..\..\src\deps\pcre
+copy /Y pcre.h $(IncDir)
+cd ..\..\..\projects\http-windows-default</Command>
+    <Outputs>$(BinDir)\libpcre.dll</Outputs>
   </CustomBuildStep>
   </ItemDefinitionGroup>
-
-<ItemGroup>
-  <ProjectReference Include="libmpr.vcxproj">
-  <Project>898e2c1e-65bb-4ce6-8505-1d107e18b50f</Project>
-  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-  </ProjectReference>
-</ItemGroup>
-
-<ItemGroup>
-  <ProjectReference Include="libpcre.vcxproj">
-  <Project>42d2a7df-906e-4baf-9432-ce3a9124cfd9</Project>
-  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-  </ProjectReference>
-</ItemGroup>
 
   <Import Project="$(VCTargetsPath)Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

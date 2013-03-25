@@ -1,11 +1,11 @@
 #
-#   http-linux-default.mk -- Makefile to build Http Library for linux
+#   http-linux-static.mk -- Makefile to build Http Library for linux
 #
 
 PRODUCT            := http
 VERSION            := 1.3.0
 BUILD_NUMBER       := 0
-PROFILE            := default
+PROFILE            := static
 ARCH               := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
 OS                 := linux
 CC                 := gcc
@@ -86,15 +86,15 @@ BIT_SRC_PREFIX     := $(BIT_ROOT_PREFIX)$(PRODUCT)-$(VERSION)
 
 
 ifeq ($(BIT_PACK_EST),1)
-TARGETS            += $(CONFIG)/bin/libest.so
+TARGETS            += $(CONFIG)/bin/libest.a
 endif
 TARGETS            += $(CONFIG)/bin/ca.crt
-TARGETS            += $(CONFIG)/bin/libmpr.so
+TARGETS            += $(CONFIG)/bin/libmpr.a
 ifeq ($(BIT_PACK_SSL),1)
-TARGETS            += $(CONFIG)/bin/libmprssl.so
+TARGETS            += $(CONFIG)/bin/libmprssl.a
 endif
 TARGETS            += $(CONFIG)/bin/makerom
-TARGETS            += $(CONFIG)/bin/libhttp.so
+TARGETS            += $(CONFIG)/bin/libhttp.a
 TARGETS            += $(CONFIG)/bin/http
 
 unexport CDPATH
@@ -114,13 +114,13 @@ prep:
 	@[ ! -x $(CONFIG)/bin ] && mkdir -p $(CONFIG)/bin; true
 	@[ ! -x $(CONFIG)/inc ] && mkdir -p $(CONFIG)/inc; true
 	@[ ! -x $(CONFIG)/obj ] && mkdir -p $(CONFIG)/obj; true
-	@[ ! -f $(CONFIG)/inc/bit.h ] && cp projects/http-linux-default-bit.h $(CONFIG)/inc/bit.h ; true
+	@[ ! -f $(CONFIG)/inc/bit.h ] && cp projects/http-linux-static-bit.h $(CONFIG)/inc/bit.h ; true
 	@[ ! -f $(CONFIG)/inc/bitos.h ] && cp src/bitos.h $(CONFIG)/inc/bitos.h ; true
 	@if ! diff $(CONFIG)/inc/bitos.h src/bitos.h >/dev/null ; then\
 		cp src/bitos.h $(CONFIG)/inc/bitos.h  ; \
 	fi; true
-	@if ! diff $(CONFIG)/inc/bit.h projects/http-linux-default-bit.h >/dev/null ; then\
-		cp projects/http-linux-default-bit.h $(CONFIG)/inc/bit.h  ; \
+	@if ! diff $(CONFIG)/inc/bit.h projects/http-linux-static-bit.h >/dev/null ; then\
+		cp projects/http-linux-static-bit.h $(CONFIG)/inc/bit.h  ; \
 	fi; true
 	@if [ -f "$(CONFIG)/.makeflags" ] ; then \
 		if [ "$(MAKEFLAGS)" != " ` cat $(CONFIG)/.makeflags`" ] ; then \
@@ -129,12 +129,12 @@ prep:
 	fi
 	@echo $(MAKEFLAGS) >$(CONFIG)/.makeflags
 clean:
-	rm -fr "$(CONFIG)/bin/libest.so"
+	rm -fr "$(CONFIG)/bin/libest.a"
 	rm -fr "$(CONFIG)/bin/ca.crt"
-	rm -fr "$(CONFIG)/bin/libmpr.so"
-	rm -fr "$(CONFIG)/bin/libmprssl.so"
+	rm -fr "$(CONFIG)/bin/libmpr.a"
+	rm -fr "$(CONFIG)/bin/libmprssl.a"
 	rm -fr "$(CONFIG)/bin/makerom"
-	rm -fr "$(CONFIG)/bin/libhttp.so"
+	rm -fr "$(CONFIG)/bin/libhttp.a"
 	rm -fr "$(CONFIG)/bin/http"
 	rm -fr "$(CONFIG)/obj/estLib.o"
 	rm -fr "$(CONFIG)/obj/mprLib.o"
@@ -225,9 +225,9 @@ ifeq ($(BIT_PACK_EST),1)
 DEPS_6 += $(CONFIG)/inc/est.h
 DEPS_6 += $(CONFIG)/obj/estLib.o
 
-$(CONFIG)/bin/libest.so: $(DEPS_6)
+$(CONFIG)/bin/libest.a: $(DEPS_6)
 	@echo '      [Link] libest'
-	$(CC) -shared -o $(CONFIG)/bin/libest.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/estLib.o $(LIBS) 
+	ar -cr $(CONFIG)/bin/libest.a $(CONFIG)/obj/estLib.o
 endif
 
 #
@@ -266,9 +266,9 @@ $(CONFIG)/obj/mprLib.o: \
 DEPS_10 += $(CONFIG)/inc/mpr.h
 DEPS_10 += $(CONFIG)/obj/mprLib.o
 
-$(CONFIG)/bin/libmpr.so: $(DEPS_10)
+$(CONFIG)/bin/libmpr.a: $(DEPS_10)
 	@echo '      [Link] libmpr'
-	$(CC) -shared -o $(CONFIG)/bin/libmpr.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/mprLib.o $(LIBS) 
+	ar -cr $(CONFIG)/bin/libmpr.a $(CONFIG)/obj/mprLib.o
 
 #
 #   mprSsl.o
@@ -286,40 +286,15 @@ ifeq ($(BIT_PACK_SSL),1)
 #
 #   libmprssl
 #
-DEPS_12 += $(CONFIG)/bin/libmpr.so
+DEPS_12 += $(CONFIG)/bin/libmpr.a
 ifeq ($(BIT_PACK_EST),1)
-    DEPS_12 += $(CONFIG)/bin/libest.so
+    DEPS_12 += $(CONFIG)/bin/libest.a
 endif
 DEPS_12 += $(CONFIG)/obj/mprSsl.o
 
-ifeq ($(BIT_PACK_SSL),1)
-ifeq ($(BIT_PACK_NANOSSL),1)
-    LIBS_12 += -lssls
-endif
-endif
-ifeq ($(BIT_PACK_SSL),1)
-ifeq ($(BIT_PACK_MATRIXSSL),1)
-    LIBS_12 += -lmatrixssl
-endif
-endif
-ifeq ($(BIT_PACK_SSL),1)
-ifeq ($(BIT_PACK_OPENSSL),1)
-    LIBS_12 += -lcrypto
-endif
-endif
-ifeq ($(BIT_PACK_SSL),1)
-ifeq ($(BIT_PACK_OPENSSL),1)
-    LIBS_12 += -lssl
-endif
-endif
-ifeq ($(BIT_PACK_EST),1)
-    LIBS_12 += -lest
-endif
-LIBS_12 += -lmpr
-
-$(CONFIG)/bin/libmprssl.so: $(DEPS_12)
+$(CONFIG)/bin/libmprssl.a: $(DEPS_12)
 	@echo '      [Link] libmprssl'
-	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) -L$(BIT_PACK_OPENSSL_PATH) -L$(BIT_PACK_MATRIXSSL_PATH) -L$(BIT_PACK_NANOSSL_PATH)/bin $(CONFIG)/obj/mprSsl.o $(LIBS_12) $(LIBS_12) $(LIBS) 
+	ar -cr $(CONFIG)/bin/libmprssl.a $(CONFIG)/obj/mprSsl.o
 endif
 
 #
@@ -336,7 +311,7 @@ $(CONFIG)/obj/makerom.o: \
 #
 #   makerom
 #
-DEPS_14 += $(CONFIG)/bin/libmpr.so
+DEPS_14 += $(CONFIG)/bin/libmpr.a
 DEPS_14 += $(CONFIG)/obj/makerom.o
 
 LIBS_14 += -lmpr
@@ -712,7 +687,7 @@ $(CONFIG)/obj/webSock.o: \
 #
 #   libhttp
 #
-DEPS_49 += $(CONFIG)/bin/libmpr.so
+DEPS_49 += $(CONFIG)/bin/libmpr.a
 DEPS_49 += $(CONFIG)/inc/bitos.h
 DEPS_49 += $(CONFIG)/inc/http.h
 DEPS_49 += $(CONFIG)/obj/actionHandler.o
@@ -747,12 +722,9 @@ DEPS_49 += $(CONFIG)/obj/uri.o
 DEPS_49 += $(CONFIG)/obj/var.o
 DEPS_49 += $(CONFIG)/obj/webSock.o
 
-LIBS_49 += -lpcre
-LIBS_49 += -lmpr
-
-$(CONFIG)/bin/libhttp.so: $(DEPS_49)
+$(CONFIG)/bin/libhttp.a: $(DEPS_49)
 	@echo '      [Link] libhttp'
-	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o $(LIBS_49) $(LIBS_49) $(LIBS) 
+	ar -cr $(CONFIG)/bin/libhttp.a $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o
 
 #
 #   http.o
@@ -768,7 +740,7 @@ $(CONFIG)/obj/http.o: \
 #
 #   http
 #
-DEPS_51 += $(CONFIG)/bin/libhttp.so
+DEPS_51 += $(CONFIG)/bin/libhttp.a
 DEPS_51 += $(CONFIG)/obj/http.o
 
 LIBS_51 += -lmpr

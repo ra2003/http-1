@@ -3,7 +3,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(IncDir);..\..\src;..\..\$(BIT_PACK_OPENSSL_PATH)\include;..\..\$(BIT_PACK_MATRIXSSL_PATH);..\..\$(BIT_PACK_MATRIXSSL_PATH)\matrixssl;..\..\$(BIT_PACK_NANOSSL_PATH)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IncDir);..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -13,7 +13,7 @@
   </ItemDefinitionGroup>
 
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2e9536a1-2ad1-4ee1-af03-10e9c06ec4e1}</ProjectGuid>
+    <ProjectGuid>{37a646f7-44cd-4e2c-bbc1-4589bad01502}</ProjectGuid>
     <RootNamespace />
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -83,43 +83,82 @@
     <_ProjectFileVersion>10</_ProjectFileVersion>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\libmprssl\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\libhttp\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\libmprssl\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\libhttp\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\libmprssl\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\libhttp\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\libmprssl\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\libhttp\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PreBuildEvent</CustomBuildBeforeTargets>
   </PropertyGroup>
   
   <ItemGroup>
-    <ClCompile Include="..\..\src\deps\mpr\mprSsl.c" />
+    <ClCompile Include="..\..\src\actionHandler.c" />
+    <ClCompile Include="..\..\src\auth.c" />
+    <ClCompile Include="..\..\src\basic.c" />
+    <ClCompile Include="..\..\src\cache.c" />
+    <ClCompile Include="..\..\src\chunkFilter.c" />
+    <ClCompile Include="..\..\src\client.c" />
+    <ClCompile Include="..\..\src\conn.c" />
+    <ClCompile Include="..\..\src\digest.c" />
+    <ClCompile Include="..\..\src\endpoint.c" />
+    <ClCompile Include="..\..\src\error.c" />
+    <ClCompile Include="..\..\src\host.c" />
+    <ClCompile Include="..\..\src\httpService.c" />
+    <ClCompile Include="..\..\src\log.c" />
+    <ClCompile Include="..\..\src\netConnector.c" />
+    <ClCompile Include="..\..\src\packet.c" />
+    <ClCompile Include="..\..\src\pam.c" />
+    <ClCompile Include="..\..\src\passHandler.c" />
+    <ClCompile Include="..\..\src\pipeline.c" />
+    <ClCompile Include="..\..\src\queue.c" />
+    <ClCompile Include="..\..\src\rangeFilter.c" />
+    <ClCompile Include="..\..\src\route.c" />
+    <ClCompile Include="..\..\src\rx.c" />
+    <ClCompile Include="..\..\src\sendConnector.c" />
+    <ClCompile Include="..\..\src\session.c" />
+    <ClCompile Include="..\..\src\stage.c" />
+    <ClCompile Include="..\..\src\trace.c" />
+    <ClCompile Include="..\..\src\tx.c" />
+    <ClCompile Include="..\..\src\uploadFilter.c" />
+    <ClCompile Include="..\..\src\uri.c" />
+    <ClCompile Include="..\..\src\var.c" />
+    <ClCompile Include="..\..\src\webSock.c" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="$(IncDir)\bitos.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="$(IncDir)\http.h" />
   </ItemGroup>
 
   <ItemDefinitionGroup>
   <Link>
-    <AdditionalDependencies>ssls;matrixssl.lib;ssleay32.lib;libeay32.lib;libest.lib;libmpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    <AdditionalLibraryDirectories>$(OutDir);$(Cfg)\bin;$(BIT_PACK_OPENSSL_PATH);$(BIT_PACK_MATRIXSSL_PATH);$(BIT_PACK_NANOSSL_PATH)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    <AdditionalDependencies>libpcre.lib;libmpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    <AdditionalLibraryDirectories>$(OutDir);$(Cfg)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
   </Link>
+
+  <CustomBuildStep>
+    <Command>cd ..\..
+copy /Y src\bitos.h $(IncDir)
+copy /Y src\http.h $(IncDir)
+cd projects\http-windows-static</Command>
+    <Outputs>$(BinDir)\libhttp.lib</Outputs>
+  </CustomBuildStep>
   </ItemDefinitionGroup>
 
 <ItemGroup>
   <ProjectReference Include="libmpr.vcxproj">
   <Project>898e2c1e-65bb-4ce6-8505-1d107e18b50f</Project>
-  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-  </ProjectReference>
-</ItemGroup>
-
-<ItemGroup>
-  <ProjectReference Include="libest.vcxproj">
-  <Project>94ce5c90-4a3c-4291-b87d-5a6a992a3e32</Project>
   <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
   </ProjectReference>
 </ItemGroup>

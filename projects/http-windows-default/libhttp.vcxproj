@@ -111,7 +111,6 @@
     <ClCompile Include="..\..\src\endpoint.c" />
     <ClCompile Include="..\..\src\error.c" />
     <ClCompile Include="..\..\src\host.c" />
-    <ClCompile Include="..\..\src\http.c" />
     <ClCompile Include="..\..\src\httpService.c" />
     <ClCompile Include="..\..\src\log.c" />
     <ClCompile Include="..\..\src\netConnector.c" />
@@ -144,7 +143,7 @@
 
   <ItemDefinitionGroup>
   <Link>
-    <AdditionalDependencies>libmpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    <AdditionalDependencies>libpcre.lib;libmpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <AdditionalLibraryDirectories>$(OutDir);$(Cfg)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
   </Link>
 

@@ -1,19 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(IncDir);..\..\src;..\..\$(BIT_PACK_OPENSSL_PATH)\include;..\..\$(BIT_PACK_MATRIXSSL_PATH);..\..\$(BIT_PACK_MATRIXSSL_PATH)\matrixssl;..\..\$(BIT_PACK_NANOSSL_PATH)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <SubSystem>Console</SubSystem>
-    </Link>
-  </ItemDefinitionGroup>
-
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2e9536a1-2ad1-4ee1-af03-10e9c06ec4e1}</ProjectGuid>
+    <ProjectGuid>{744b8495-7101-4c77-acc2-59fc4dde27c7}</ProjectGuid>
     <RootNamespace />
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -83,46 +72,37 @@
     <_ProjectFileVersion>10</_ProjectFileVersion>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\libmprssl\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\prep\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\libmprssl\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\prep\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\libmprssl\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\prep\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\libmprssl\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\prep\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PreBuildEvent</CustomBuildBeforeTargets>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <ClCompile Include="..\..\src\deps\mpr\mprSsl.c" />
-  </ItemGroup>
 
   <ItemDefinitionGroup>
   <Link>
-    <AdditionalDependencies>ssls;matrixssl.lib;ssleay32.lib;libeay32.lib;libest.lib;libmpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    <AdditionalLibraryDirectories>$(OutDir);$(Cfg)\bin;$(BIT_PACK_OPENSSL_PATH);$(BIT_PACK_MATRIXSSL_PATH);$(BIT_PACK_NANOSSL_PATH)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    <AdditionalDependencies>;%(AdditionalDependencies)</AdditionalDependencies>
+    <AdditionalLibraryDirectories>$(OutDir);;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
   </Link>
+
+  <CustomBuildStep>
+    <Command>if not exist "$(ObjDir)" md "$(ObjDir)"
+if not exist "$(BinDir)" md "$(BinDir)"
+if not exist "$(IncDir)" md "$(IncDir)"
+if not exist "$(IncDir)\bitos.h" copy "..\..\src\bitos.h" "$(IncDir)\bitos.h"
+if not exist "$(IncDir)\bit.h" copy "..\http-windows-static-bit.h" "$(IncDir)\bit.h"</Command>
+    <Outputs>..\..\always</Outputs>
+  </CustomBuildStep>
   </ItemDefinitionGroup>
-
-<ItemGroup>
-  <ProjectReference Include="libmpr.vcxproj">
-  <Project>898e2c1e-65bb-4ce6-8505-1d107e18b50f</Project>
-  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-  </ProjectReference>
-</ItemGroup>
-
-<ItemGroup>
-  <ProjectReference Include="libest.vcxproj">
-  <Project>94ce5c90-4a3c-4291-b87d-5a6a992a3e32</Project>
-  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-  </ProjectReference>
-</ItemGroup>
 
   <Import Project="$(VCTargetsPath)Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

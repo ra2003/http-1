@@ -260,7 +260,7 @@
 		C9BB56D3C9BB6BB300000017 /* estLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = estLib.c; path = src/deps/est/estLib.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000089 /* bit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bit.h; path = macosx-x64-default/inc/bit.h; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000008A /* est.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = est.h; path = macosx-x64-default/inc/est.h; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000008B /* bitos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitos.h; path = macosx-x64-default/inc/bitos.h; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB30000008B /* bitos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitos.h; path = src/bitos.h; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000061 /* libest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libest.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB300000019 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/deps/pcre/pcre.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000008C /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = macosx-x64-default/inc/pcre.h; sourceTree = "<group>"; };
@@ -273,7 +273,7 @@
 		C9BB56D3C9BB6BB30000001F /* makerom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = makerom.c; path = src/deps/mpr/makerom.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000008F /* makerom */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = makerom; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB300000021 /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000090 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = macosx-x64-default/inc/http.h; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000090 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = src/http.h; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000023 /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000025 /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000027 /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };

@@ -86,7 +86,7 @@
     #define BIT_PROJECTS_SSL 1
 #endif
 #ifndef BIT_REQUIRES
-    #define BIT_REQUIRES "winsdk,compiler,lib,link,rc"
+    #define BIT_REQUIRES "winsdk,compiler,lib,link,rc,pcre"
 #endif
 #ifndef BIT_SYNC
     #define BIT_SYNC "bitos,est,mpr,pcre"

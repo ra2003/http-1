@@ -46,6 +46,7 @@ BIT_PACK_MAN2HTML_PATH    := man2html
 BIT_PACK_MATRIXSSL_PATH   := /usr/src/matrixssl
 BIT_PACK_NANOSSL_PATH     := /usr/src/nanossl
 BIT_PACK_OPENSSL_PATH     := /usr/src/openssl
+BIT_PACK_PCRE_PATH        := pcre
 BIT_PACK_SSL_PATH         := ssl
 BIT_PACK_UTEST_PATH       := utest
 
@@ -330,21 +331,25 @@ DEPS_15 += $(CONFIG)/obj/mprSsl.o
 ifeq ($(BIT_PACK_SSL),1)
 ifeq ($(BIT_PACK_NANOSSL),1)
     LIBS_15 += -lssls
+    LIBPATHS_15 += -L$(BIT_PACK_NANOSSL_PATH)/bin
 endif
 endif
 ifeq ($(BIT_PACK_SSL),1)
 ifeq ($(BIT_PACK_MATRIXSSL),1)
     LIBS_15 += -lmatrixssl
+    LIBPATHS_15 += -L$(BIT_PACK_MATRIXSSL_PATH)
 endif
 endif
 ifeq ($(BIT_PACK_SSL),1)
 ifeq ($(BIT_PACK_OPENSSL),1)
     LIBS_15 += -lcrypto
+    LIBPATHS_15 += -L$(BIT_PACK_OPENSSL_PATH)
 endif
 endif
 ifeq ($(BIT_PACK_SSL),1)
 ifeq ($(BIT_PACK_OPENSSL),1)
     LIBS_15 += -lssl
+    LIBPATHS_15 += -L$(BIT_PACK_OPENSSL_PATH)
 endif
 endif
 ifeq ($(BIT_PACK_EST),1)
@@ -354,7 +359,7 @@ LIBS_15 += -lmpr
 
 $(CONFIG)/bin/libmprssl.so: $(DEPS_15)
 	@echo '      [Link] libmprssl'
-	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS) -L$(BIT_PACK_OPENSSL_PATH) -L$(BIT_PACK_MATRIXSSL_PATH) -L$(BIT_PACK_NANOSSL_PATH)/bin $(CONFIG)/obj/mprSsl.o $(LIBS_15) $(LIBS_15) $(LIBS) 
+	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS)    $(CONFIG)/obj/mprSsl.o $(LIBPATHS_15) $(LIBS_15) $(LIBS_15) $(LIBS) 
 endif
 
 #
@@ -378,7 +383,7 @@ LIBS_17 += -lmpr
 
 $(CONFIG)/bin/makerom: $(DEPS_17)
 	@echo '      [Link] makerom'
-	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBS_17) $(LIBS_17) $(LIBS) -lpthread -lm -ldl $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBPATHS_17) $(LIBS_17) $(LIBS_17) $(LIBS) -lpthread -lm -ldl $(LDFLAGS) 
 
 #
 #   bitos.h
@@ -789,7 +794,7 @@ LIBS_52 += -lmpr
 
 $(CONFIG)/bin/libhttp.so: $(DEPS_52)
 	@echo '      [Link] libhttp'
-	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o $(LIBS_52) $(LIBS_52) $(LIBS) 
+	$(CC) -shared -o $(CONFIG)/bin/libhttp.so $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/actionHandler.o $(CONFIG)/obj/auth.o $(CONFIG)/obj/basic.o $(CONFIG)/obj/cache.o $(CONFIG)/obj/chunkFilter.o $(CONFIG)/obj/client.o $(CONFIG)/obj/conn.o $(CONFIG)/obj/digest.o $(CONFIG)/obj/endpoint.o $(CONFIG)/obj/error.o $(CONFIG)/obj/host.o $(CONFIG)/obj/httpService.o $(CONFIG)/obj/log.o $(CONFIG)/obj/netConnector.o $(CONFIG)/obj/packet.o $(CONFIG)/obj/pam.o $(CONFIG)/obj/passHandler.o $(CONFIG)/obj/pipeline.o $(CONFIG)/obj/queue.o $(CONFIG)/obj/rangeFilter.o $(CONFIG)/obj/route.o $(CONFIG)/obj/rx.o $(CONFIG)/obj/sendConnector.o $(CONFIG)/obj/session.o $(CONFIG)/obj/stage.o $(CONFIG)/obj/trace.o $(CONFIG)/obj/tx.o $(CONFIG)/obj/uploadFilter.o $(CONFIG)/obj/uri.o $(CONFIG)/obj/var.o $(CONFIG)/obj/webSock.o $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS) 
 endif
 
 #
@@ -819,7 +824,7 @@ endif
 
 $(CONFIG)/bin/http: $(DEPS_54)
 	@echo '      [Link] http'
-	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBS_54) $(LIBS_54) $(LIBS) -lpthread -lm -ldl $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) -lpthread -lm -ldl $(LDFLAGS) 
 
 #
 #   stop

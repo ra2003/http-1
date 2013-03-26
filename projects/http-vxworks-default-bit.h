@@ -104,7 +104,7 @@
     #define BIT_PROJECTS_SSL 1
 #endif
 #ifndef BIT_REQUIRES
-    #define BIT_REQUIRES "vxworks,compiler,lib,link"
+    #define BIT_REQUIRES "vxworks,compiler,lib,link,pcre"
 #endif
 #ifndef BIT_SYNC
     #define BIT_SYNC "bitos,est,mpr,pcre"

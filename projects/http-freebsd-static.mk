@@ -46,6 +46,7 @@ BIT_PACK_MAN2HTML_PATH    := man2html
 BIT_PACK_MATRIXSSL_PATH   := /usr/src/matrixssl
 BIT_PACK_NANOSSL_PATH     := /usr/src/nanossl
 BIT_PACK_OPENSSL_PATH     := /usr/src/openssl
+BIT_PACK_PCRE_PATH        := pcre
 BIT_PACK_SSL_PATH         := ssl
 BIT_PACK_UTEST_PATH       := utest
 
@@ -353,7 +354,7 @@ LIBS_17 += -lmpr
 
 $(CONFIG)/bin/makerom: $(DEPS_17)
 	@echo '      [Link] makerom'
-	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBS_17) $(LIBS_17) $(LIBS) -lpthread -lm -ldl $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/makerom $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBPATHS_17) $(LIBS_17) $(LIBS_17) $(LIBS) -lpthread -lm -ldl $(LDFLAGS) 
 
 #
 #   bitos.h
@@ -791,7 +792,7 @@ endif
 
 $(CONFIG)/bin/http: $(DEPS_54)
 	@echo '      [Link] http'
-	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBS_54) $(LIBS_54) $(LIBS) -lpthread -lm -ldl $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) -lpthread -lm -ldl $(LDFLAGS) 
 
 #
 #   stop

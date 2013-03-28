@@ -817,7 +817,7 @@ DEPS_54 += $(CONFIG)/obj/http.o
 
 $(CONFIG)/bin/http.out: $(DEPS_54)
 	@echo '      [Link] http'
-	$(CC) -o $(CONFIG)/bin/http.out $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lhttp $(LIBS) $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/http.out $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBS) $(LDFLAGS) 
 
 #
 #   stop

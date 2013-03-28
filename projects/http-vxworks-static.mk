@@ -358,9 +358,11 @@ $(CONFIG)/obj/makerom.o: \
 DEPS_17 += $(CONFIG)/bin/libmpr.a
 DEPS_17 += $(CONFIG)/obj/makerom.o
 
+LIBS_17 += -lmpr
+
 $(CONFIG)/bin/makerom.out: $(DEPS_17)
 	@echo '      [Link] makerom'
-	$(CC) -o $(CONFIG)/bin/makerom.out $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o -lmpr $(LIBS) $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/makerom.out $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/makerom.o $(LIBPATHS_17) $(LIBS_17) $(LIBS_17) $(LIBS) $(LDFLAGS) 
 
 #
 #   bitos.h
@@ -790,9 +792,15 @@ ifeq ($(BIT_PACK_PCRE),1)
 endif
 DEPS_54 += $(CONFIG)/obj/http.o
 
+LIBS_54 += -lmpr
+LIBS_54 += -lpcre
+ifeq ($(BIT_PACK_PCRE),1)
+    LIBS_54 += -lhttp
+endif
+
 $(CONFIG)/bin/http.out: $(DEPS_54)
 	@echo '      [Link] http'
-	$(CC) -o $(CONFIG)/bin/http.out $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o -lmpr -lpcre -lhttp $(LIBS) $(LDFLAGS) 
+	$(CC) -o $(CONFIG)/bin/http.out $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) $(LDFLAGS) 
 
 #
 #   stop

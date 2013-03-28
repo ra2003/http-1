@@ -80,7 +80,8 @@ Bit.load({
             },
         },
 
-        http: {
+        httpcmd: {
+            path: '${BIN}/http',
             type: 'exe',
             depends: [ 'libhttp' ],
             sources: [ 'src/http.c' ],

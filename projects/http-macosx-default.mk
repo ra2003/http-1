@@ -809,7 +809,7 @@ $(CONFIG)/obj/http.o: \
 	$(CC) -c -o $(CONFIG)/obj/http.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/http.c
 
 #
-#   http
+#   httpcmd
 #
 ifeq ($(BIT_PACK_PCRE),1)
     DEPS_54 += $(CONFIG)/bin/libhttp.dylib
@@ -823,7 +823,7 @@ ifeq ($(BIT_PACK_PCRE),1)
 endif
 
 $(CONFIG)/bin/http: $(DEPS_54)
-	@echo '      [Link] http'
+	@echo '      [Link] httpcmd'
 	$(CC) -o $(CONFIG)/bin/http -arch x86_64 $(LDFLAGS) $(LIBPATHS) $(CONFIG)/obj/http.o $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) 
 
 #

@@ -33,7 +33,7 @@
 				F553274CF553395E0000000F /* PBXTargetDependency libmprssl */,
 				F553274CF553395E00000010 /* PBXTargetDependency makerom */,
 				F553274CF553395E00000011 /* PBXTargetDependency libhttp */,
-				F553274CF553395E00000012 /* PBXTargetDependency http */,
+				F553274CF553395E00000012 /* PBXTargetDependency httpcmd */,
 			);
 			name = All;
 			productName = All;
@@ -94,9 +94,9 @@
 		F553274CF553395E00000064 /* libmpr.a for makerom */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000063; };
 		F553274CF553395E00000065 /* libpcre.a for libhttp */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000066; };
 		F553274CF553395E00000067 /* libmpr.a for libhttp */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000063; };
-		F553274CF553395E00000068 /* libmpr.a for http */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000063; };
-		F553274CF553395E00000069 /* libpcre.a for http */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000066; };
-		F553274CF553395E0000006A /* libhttp.a for http */ = {isa = PBXBuildFile; fileRef = F553274CF553395E0000006B; };
+		F553274CF553395E00000068 /* libmpr.a for httpcmd */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000063; };
+		F553274CF553395E00000069 /* libpcre.a for httpcmd */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000066; };
+		F553274CF553395E0000006A /* libhttp.a for httpcmd */ = {isa = PBXBuildFile; fileRef = F553274CF553395E0000006B; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -184,14 +184,14 @@
 			remoteGlobalIDString = F553274CF553395E00000014;
 			remoteInfo = Prep;
 		};
-		F553274CF553395E0000007B /* PBXContainerItemProxy libhttp from http */ = {
+		F553274CF553395E0000007B /* PBXContainerItemProxy libhttp from httpcmd */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F553274CF553395E00000001 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = F553274CF553395E0000007C;
 			remoteInfo = libhttp;
 		};
-		F553274CF553395E0000007D /* PBXContainerItemProxy Prep from http */ = {
+		F553274CF553395E0000007D /* PBXContainerItemProxy Prep from httpcmd */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F553274CF553395E00000001 /* Project object */;
 			proxyType = 1;
@@ -247,12 +247,12 @@
 			remoteGlobalIDString = F553274CF553395E0000007C;
 			remoteInfo = libhttp;
 		};
-		F553274CF553395E00000087 /* PBXContainerItemProxy http from All */ = {
+		F553274CF553395E00000087 /* PBXContainerItemProxy httpcmd from All */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F553274CF553395E00000001 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = F553274CF553395E00000088;
-			remoteInfo = http;
+			remoteInfo = httpcmd;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -306,7 +306,7 @@
 		F553274CF553395E0000005D /* webSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSock.c; path = src/webSock.c; sourceTree = "<group>"; };
 		F553274CF553395E0000006B /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		F553274CF553395E0000005F /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
-		F553274CF553395E00000091 /* http */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
+		F553274CF553395E00000091 /* httpcmd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -360,7 +360,7 @@
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
-		F553274CF553395E00000098 /* Frameworks and Libraries for http */ = {
+		F553274CF553395E00000098 /* Frameworks and Libraries for httpcmd */ = {
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
@@ -381,7 +381,7 @@
 				F553274CF553395E0000009C /* libmpr */,
 				F553274CF553395E0000009D /* libmprssl */,
 				F553274CF553395E0000009E /* libpcre */,
-				F553274CF553395E0000009F /* http */,
+				F553274CF553395E0000009F /* httpcmd */,
 				F553274CF553395E000000A0 /* makerom */,
 				F553274CF553395E000000A1 /* Products */,
 			);
@@ -487,14 +487,14 @@
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
-		F553274CF553395E0000009F /* http */ = {
+		F553274CF553395E0000009F /* httpcmd */ = {
             isa = PBXGroup;
             children = (
 				F553274CF553395E00000089 /* bit.h */,
 				F553274CF553395E00000090 /* http.h */,
 				F553274CF553395E0000005F /* http.c */,
 			);
-            name = "http";
+            name = "httpcmd";
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
@@ -507,7 +507,7 @@
 				F553274CF553395E0000008E /* libmprssl */,
 				F553274CF553395E0000008F /* makerom */,
 				F553274CF553395E0000006B /* libhttp */,
-				F553274CF553395E00000091 /* http */,
+				F553274CF553395E00000091 /* httpcmd */,
 			);
             name = "Products";
             path = ..;
@@ -623,9 +623,9 @@
 			productReference = F553274CF553395E0000006B /* libhttp */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		F553274CF553395E00000088 /* http */ = {
+		F553274CF553395E00000088 /* httpcmd */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F553274CF553395E000000BA /* Build configuration list for PBXNativeTarget "http" */;
+			buildConfigurationList = F553274CF553395E000000BA /* Build configuration list for PBXNativeTarget "httpcmd" */;
 			buildPhases = (
 				F553274CF553395E000000B9 /* Sources */,
 				F553274CF553395E00000098 /* Frameworks */,
@@ -636,9 +636,9 @@
 				F553274CF553395E000000BB /* libhttp */,
 				F553274CF553395E000000BC /* Prep */,				
 			);
-			name = http;
+			name = httpcmd;
 			productName = http;
-			productReference = F553274CF553395E00000091 /* http */;
+			productReference = F553274CF553395E00000091 /* httpcmd */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -727,7 +727,7 @@ fi";
 				F553274CF553395E00000071 /* libmpr */,
 				F553274CF553395E00000083 /* libmprssl */,
 				F553274CF553395E00000079 /* libpcre */,
-				F553274CF553395E00000088 /* http */,
+				F553274CF553395E00000088 /* httpcmd */,
 				F553274CF553395E00000085 /* makerom */,
 				F553274CF553395E00000006 /* ca-crt */,
 			);
@@ -813,7 +813,7 @@ fi";
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F553274CF553395E000000B9 /* http Sources */ = {
+		F553274CF553395E000000B9 /* httpcmd Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -884,12 +884,12 @@ fi";
 			target = F553274CF553395E00000014 /* Prep */;
 			targetProxy = F553274CF553395E0000007A /* PBXContainerItemProxy */;
 		};
-		F553274CF553395E000000BB /* PBXTargetDependency http depends on libhttp */ = {
+		F553274CF553395E000000BB /* PBXTargetDependency httpcmd depends on libhttp */ = {
 			isa = PBXTargetDependency;
 			target = F553274CF553395E0000007C /* libhttp */;
 			targetProxy = F553274CF553395E0000007B /* PBXContainerItemProxy */;
 		};
-		F553274CF553395E000000BC /* PBXTargetDependency http depends on Prep */ = {
+		F553274CF553395E000000BC /* PBXTargetDependency httpcmd depends on Prep */ = {
 			isa = PBXTargetDependency;
 			target = F553274CF553395E00000014 /* Prep */;
 			targetProxy = F553274CF553395E0000007D /* PBXContainerItemProxy */;
@@ -929,9 +929,9 @@ fi";
 			target = F553274CF553395E0000007C /* libhttp */;
 			targetProxy = F553274CF553395E00000086 /* PBXContainerItemProxy */;
 		};
-		F553274CF553395E00000012 /* PBXTargetDependency All depends on http */ = {
+		F553274CF553395E00000012 /* PBXTargetDependency All depends on httpcmd */ = {
 			isa = PBXTargetDependency;
-			target = F553274CF553395E00000088 /* http */;
+			target = F553274CF553395E00000088 /* httpcmd */;
 			targetProxy = F553274CF553395E00000087 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -1297,7 +1297,7 @@ fi";
 		F553274CF553395E000000CB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = http;
+				PRODUCT_NAME = httpcmd;
 
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
@@ -1313,7 +1313,7 @@ fi";
 		F553274CF553395E000000CC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = http;
+				PRODUCT_NAME = httpcmd;
 
 				OTHER_LDFLAGS = ();
 
@@ -1439,7 +1439,7 @@ fi";
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F553274CF553395E000000BA /* Build configuration list for PBXNativeTarget "http" */ = {
+		F553274CF553395E000000BA /* Build configuration list for PBXNativeTarget "httpcmd" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F553274CF553395E000000CB /* Debug */,

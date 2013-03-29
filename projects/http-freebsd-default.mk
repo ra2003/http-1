@@ -134,14 +134,14 @@ prep:
 	fi
 	@echo $(MAKEFLAGS) >$(CONFIG)/.makeflags
 clean:
-	rm -fr "$(CONFIG)/bin/libest.so"
+	rm -f "$(CONFIG)/bin/libest.so"
 	rm -fr "$(CONFIG)/bin/ca.crt"
-	rm -fr "$(CONFIG)/bin/libpcre.so"
-	rm -fr "$(CONFIG)/bin/libmpr.so"
-	rm -fr "$(CONFIG)/bin/libmprssl.so"
-	rm -fr "$(CONFIG)/bin/makerom"
-	rm -fr "$(CONFIG)/bin/libhttp.so"
-	rm -fr "$(CONFIG)/bin/http"
+	rm -f "$(CONFIG)/bin/libpcre.so"
+	rm -f "$(CONFIG)/bin/libmpr.so"
+	rm -f "$(CONFIG)/bin/libmprssl.so"
+	rm -f "$(CONFIG)/bin/makerom"
+	rm -f "$(CONFIG)/bin/libhttp.so"
+	rm -f "$(CONFIG)/bin/http"
 	rm -fr "$(CONFIG)/obj/estLib.o"
 	rm -fr "$(CONFIG)/obj/pcre.o"
 	rm -fr "$(CONFIG)/obj/mprLib.o"

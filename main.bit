@@ -70,7 +70,7 @@ Bit.load({
             sources: [ 'src/*.c' ],
             exclude: /http.c/,
             depends: [ 'libmpr', 'libpcre' ],
-            requires: [ 'pcre' ],
+            packs: [ 'pcre' ],
             scripts: {
                 prebuild: "
                     if (bit.settings.hasPam && bit.settings.http.pam) {

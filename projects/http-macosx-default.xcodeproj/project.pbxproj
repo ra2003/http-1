@@ -89,14 +89,14 @@
 		C9BB56D3C9BB6BB30000005A /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000005B /* var.c */; };
 		C9BB56D3C9BB6BB30000005C /* webSock.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000005D /* webSock.c */; };
 		C9BB56D3C9BB6BB30000005E /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000005F /* http.c */; };
-		C9BB56D3C9BB6BB300000060 /* libest.dylib for libmprssl */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000061; };
-		C9BB56D3C9BB6BB300000062 /* libmpr.dylib for libmprssl */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000063; };
-		C9BB56D3C9BB6BB300000064 /* libmpr.dylib for makerom */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000063; };
-		C9BB56D3C9BB6BB300000065 /* libpcre.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000066; };
-		C9BB56D3C9BB6BB300000067 /* libmpr.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000063; };
-		C9BB56D3C9BB6BB300000068 /* libmpr.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000063; };
-		C9BB56D3C9BB6BB300000069 /* libpcre.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000066; };
-		C9BB56D3C9BB6BB30000006A /* libhttp.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB30000006B; };
+		C9BB56D3C9BB6BB300000060 /* libmpr.dylib for libmprssl */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000061; };
+		C9BB56D3C9BB6BB300000062 /* libest.dylib for libmprssl */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000063; };
+		C9BB56D3C9BB6BB300000064 /* libmpr.dylib for makerom */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000061; };
+		C9BB56D3C9BB6BB300000065 /* libmpr.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000061; };
+		C9BB56D3C9BB6BB300000066 /* libpcre.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000067; };
+		C9BB56D3C9BB6BB300000068 /* libhttp.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000069; };
+		C9BB56D3C9BB6BB30000006A /* libmpr.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000061; };
+		C9BB56D3C9BB6BB30000006B /* libpcre.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = C9BB56D3C9BB6BB300000067; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -281,20 +281,20 @@
 		C9BB56D3C9BB6BB300000017 /* estLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = estLib.c; path = src/deps/est/estLib.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000008C /* bit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bit.h; path = macosx-x64-default/inc/bit.h; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000008D /* est.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = est.h; path = macosx-x64-default/inc/est.h; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000008E /* bitos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitos.h; path = src/bitos.h; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000061 /* libest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libest.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9BB56D3C9BB6BB30000008E /* bitos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitos.h; path = macosx-x64-default/inc/bitos.h; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000063 /* libest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libest.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB300000019 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/deps/pcre/pcre.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000008F /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = macosx-x64-default/inc/pcre.h; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000066 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9BB56D3C9BB6BB300000067 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB30000001B /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/deps/mpr/mprLib.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000090 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = macosx-x64-default/inc/mpr.h; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000063 /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9BB56D3C9BB6BB300000061 /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB30000001D /* mprSsl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprSsl.c; path = src/deps/mpr/mprSsl.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000091 /* libmprssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmprssl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB30000001F /* makerom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = makerom.c; path = src/deps/mpr/makerom.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000092 /* makerom */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = makerom; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB300000021 /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB300000093 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = src/http.h; sourceTree = "<group>"; };
+		C9BB56D3C9BB6BB300000093 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = macosx-x64-default/inc/http.h; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000023 /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000025 /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000027 /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
@@ -325,7 +325,7 @@
 		C9BB56D3C9BB6BB300000059 /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = src/uri.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000005B /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB30000005D /* webSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSock.c; path = src/webSock.c; sourceTree = "<group>"; };
-		C9BB56D3C9BB6BB30000006B /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9BB56D3C9BB6BB300000069 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BB56D3C9BB6BB30000005F /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
 		C9BB56D3C9BB6BB300000094 /* httpcmd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -359,8 +359,8 @@
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
-				C9BB56D3C9BB6BB300000060 /* libest */,
-				C9BB56D3C9BB6BB300000062 /* libmpr */,				
+				C9BB56D3C9BB6BB300000060 /* libmpr */,
+				C9BB56D3C9BB6BB300000062 /* libest */,				
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
@@ -376,8 +376,8 @@
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
-				C9BB56D3C9BB6BB300000065 /* libpcre */,
-				C9BB56D3C9BB6BB300000067 /* libmpr */,				
+				C9BB56D3C9BB6BB300000065 /* libmpr */,
+				C9BB56D3C9BB6BB300000066 /* libpcre */,				
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
@@ -385,9 +385,9 @@
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
-				C9BB56D3C9BB6BB300000068 /* libmpr */,
-				C9BB56D3C9BB6BB300000069 /* libpcre */,
-				C9BB56D3C9BB6BB30000006A /* libhttp */,				
+				C9BB56D3C9BB6BB300000068 /* libhttp */,
+				C9BB56D3C9BB6BB30000006A /* libmpr */,
+				C9BB56D3C9BB6BB30000006B /* libpcre */,				
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
@@ -522,12 +522,12 @@
 		C9BB56D3C9BB6BB3000000A4 /* Products */ = {
             isa = PBXGroup;
             children = (
-				C9BB56D3C9BB6BB300000061 /* libest */,
-				C9BB56D3C9BB6BB300000066 /* libpcre */,
-				C9BB56D3C9BB6BB300000063 /* libmpr */,
+				C9BB56D3C9BB6BB300000063 /* libest */,
+				C9BB56D3C9BB6BB300000067 /* libpcre */,
+				C9BB56D3C9BB6BB300000061 /* libmpr */,
 				C9BB56D3C9BB6BB300000091 /* libmprssl */,
 				C9BB56D3C9BB6BB300000092 /* makerom */,
-				C9BB56D3C9BB6BB30000006B /* libhttp */,
+				C9BB56D3C9BB6BB300000069 /* libhttp */,
 				C9BB56D3C9BB6BB300000094 /* httpcmd */,
 			);
             name = "Products";
@@ -551,7 +551,7 @@
 			);
 			name = libest;
 			productName = http;
-			productReference = C9BB56D3C9BB6BB300000061 /* libest */;
+			productReference = C9BB56D3C9BB6BB300000063 /* libest */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
 		C9BB56D3C9BB6BB30000007A /* libpcre */ = {
@@ -568,7 +568,7 @@
 			);
 			name = libpcre;
 			productName = http;
-			productReference = C9BB56D3C9BB6BB300000066 /* libpcre */;
+			productReference = C9BB56D3C9BB6BB300000067 /* libpcre */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
 		C9BB56D3C9BB6BB300000072 /* libmpr */ = {
@@ -585,7 +585,7 @@
 			);
 			name = libmpr;
 			productName = http;
-			productReference = C9BB56D3C9BB6BB300000063 /* libmpr */;
+			productReference = C9BB56D3C9BB6BB300000061 /* libmpr */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
 		C9BB56D3C9BB6BB300000086 /* libmprssl */ = {
@@ -641,7 +641,7 @@
 			);
 			name = libhttp;
 			productName = http;
-			productReference = C9BB56D3C9BB6BB30000006B /* libhttp */;
+			productReference = C9BB56D3C9BB6BB300000069 /* libhttp */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
 		C9BB56D3C9BB6BB30000008B /* httpcmd */ = {
@@ -982,7 +982,7 @@ fi";
                 /* Common Settings */
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-                CURRENT_PROJECT_VERSION = 1.3.0;
+                CURRENT_PROJECT_VERSION = 1.3.1;
                 DYLIB_COMPATIBILITY_VERSION = "$(CURRENT_PROJECT_VERSION)";
                 DYLIB_CURRENT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1022,7 +1022,6 @@ fi";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
 					"../macosx-x64-default/inc",
-					"../src",
 					"$(inherited)"
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1037,9 +1036,9 @@ fi";
 				OTHER_LDFLAGS = (
 					"-Wl,-rpath,@executable_path/",
 					"-Wl,-rpath,@loader_path/",
+					"-ldl",
 					"-lpthread",
 					"-lm",
-					"-ldl",
 					"$(inherited)"
 				);
 
@@ -1053,7 +1052,7 @@ fi";
                 /* Common Settings */
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-                CURRENT_PROJECT_VERSION = 1.3.0;
+                CURRENT_PROJECT_VERSION = 1.3.1;
                 DYLIB_COMPATIBILITY_VERSION = "$(CURRENT_PROJECT_VERSION)";
                 DYLIB_CURRENT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1094,7 +1093,6 @@ fi";
                 GCC_WARN_UNINITIALIZED_AUTOS = NO;
 				HEADER_SEARCH_PATHS = (
 					"../macosx-x64-default/inc",
-					"../src",
 					"$(inherited)"
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1108,9 +1106,9 @@ fi";
 				OTHER_LDFLAGS = (
 					"-Wl,-rpath,@executable_path/",
 					"-Wl,-rpath,@loader_path/",
+					"-ldl",
 					"-lpthread",
 					"-lm",
-					"-ldl",
 					"$(inherited)"
 				);
 

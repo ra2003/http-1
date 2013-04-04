@@ -76,7 +76,7 @@ DFLAGS             = -DBIT_DEBUG -D_REENTRANT -D_MT -DBIT_PACK_EST=$(BIT_PACK_ES
 IFLAGS             = -I$(CONFIG)\inc
 LDFLAGS            = -nologo -nodefaultlib -incremental:no -debug -machine:$(ARCH)
 LIBPATHS           = -libpath:$(CONFIG)\bin
-LIBS               = dl ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
+LIBS               = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
 
 BIT_ROOT_PREFIX    = C:
 BIT_BASE_PREFIX    = $(BIT_ROOT_PREFIX)\Program Files
@@ -369,7 +369,7 @@ LIBS_17 = $(LIBS_17) libmpr.lib
 
 $(CONFIG)\bin\makerom.exe: $(DEPS_17)
 	@echo '      [Link] $(CONFIG)/bin/makerom.exe'
-	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry: -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj $(LIBPATHS_17) $(LIBS_17) $(LIBS_17) $(LIBS) 
+	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj $(LIBPATHS_17) $(LIBS_17) $(LIBS_17) $(LIBS) 
 
 #
 #   http.h
@@ -842,7 +842,7 @@ LIBS_52 = $(LIBS_52) libpcre.lib
 
 $(CONFIG)\bin\http: $(DEPS_52)
 	@echo '      [Link] $(CONFIG)/bin/http'
-	"$(LD)" -out:$(CONFIG)\bin\http -entry: -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\http.obj $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS) 
+	"$(LD)" -out:$(CONFIG)\bin\http -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\http.obj $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS) 
 
 #
 #   stop

@@ -281,7 +281,7 @@
 		F553274CF553395E00000017 /* estLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = estLib.c; path = src/deps/est/estLib.c; sourceTree = "<group>"; };
 		F553274CF553395E0000008C /* bit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bit.h; path = macosx-x64-static/inc/bit.h; sourceTree = "<group>"; };
 		F553274CF553395E0000008D /* est.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = est.h; path = macosx-x64-static/inc/est.h; sourceTree = "<group>"; };
-		F553274CF553395E0000008E /* bitos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitos.h; path = macosx-x64-static/inc/bitos.h; sourceTree = "<group>"; };
+		F553274CF553395E0000008E /* bitos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitos.h; path = src/bitos.h; sourceTree = "<group>"; };
 		F553274CF553395E00000063 /* libest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libest.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		F553274CF553395E00000019 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/deps/pcre/pcre.c; sourceTree = "<group>"; };
 		F553274CF553395E0000008F /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = macosx-x64-static/inc/pcre.h; sourceTree = "<group>"; };
@@ -294,7 +294,7 @@
 		F553274CF553395E0000001F /* makerom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = makerom.c; path = src/deps/mpr/makerom.c; sourceTree = "<group>"; };
 		F553274CF553395E00000092 /* makerom */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = makerom; sourceTree = BUILT_PRODUCTS_DIR; };
 		F553274CF553395E00000021 /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
-		F553274CF553395E00000093 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = macosx-x64-static/inc/http.h; sourceTree = "<group>"; };
+		F553274CF553395E00000093 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = src/http.h; sourceTree = "<group>"; };
 		F553274CF553395E00000023 /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
 		F553274CF553395E00000025 /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
 		F553274CF553395E00000027 /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
@@ -1121,6 +1121,10 @@ fi";
 				PRODUCT_NAME = libest;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
 					"$(inherited)"
@@ -1138,6 +1142,11 @@ fi";
 				PRODUCT_NAME = libest;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
+
 				OTHER_LDFLAGS = ();
 
 				MACH_O_TYPE = staticlib;
@@ -1150,6 +1159,10 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = ca-crt;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
 					"$(inherited)"
@@ -1166,6 +1179,11 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = ca-crt;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
+
 				OTHER_LDFLAGS = ();
 
 				MACH_O_TYPE = staticlib;
@@ -1179,6 +1197,10 @@ fi";
 				PRODUCT_NAME = libpcre;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"PCRE_CHAR=char",
 					"BIT_DEBUG",
@@ -1197,6 +1219,10 @@ fi";
 				PRODUCT_NAME = libpcre;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"PCRE_CHAR=char",
 					"$(inherited)"
@@ -1214,6 +1240,10 @@ fi";
 				PRODUCT_NAME = libmpr;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
 					"$(inherited)"
@@ -1231,6 +1261,11 @@ fi";
 				PRODUCT_NAME = libmpr;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
+
 				OTHER_LDFLAGS = ();
 
 				MACH_O_TYPE = staticlib;
@@ -1244,6 +1279,10 @@ fi";
 				PRODUCT_NAME = libmprssl;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
 					"$(inherited)"
@@ -1261,6 +1300,11 @@ fi";
 				PRODUCT_NAME = libmprssl;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
+
 				OTHER_LDFLAGS = ();
 
 				MACH_O_TYPE = staticlib;
@@ -1273,6 +1317,10 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = makerom;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
 					"$(inherited)"
@@ -1289,6 +1337,11 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = makerom;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
+
 				OTHER_LDFLAGS = ();
 
 				MACH_O_TYPE = staticlib;
@@ -1302,6 +1355,10 @@ fi";
 				PRODUCT_NAME = libhttp;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
 					"$(inherited)"
@@ -1321,6 +1378,11 @@ fi";
 				PRODUCT_NAME = libhttp;
 				EXECUTABLE_EXTENSION = a;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
+
 				OTHER_LDFLAGS = (
 					"",
 					);
@@ -1335,6 +1397,10 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = httpcmd;
 
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BIT_DEBUG",
 					"$(inherited)"
@@ -1350,6 +1416,11 @@ fi";
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = httpcmd;
+
+				HEADER_SEARCH_PATHS = (
+					"../src",
+					"$(inherited)"
+				);
 
 				OTHER_LDFLAGS = ();
 

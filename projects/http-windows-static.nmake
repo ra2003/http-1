@@ -75,7 +75,7 @@ CFLAGS             = -nologo -GR- -W3 -Zi -Od -MDd
 DFLAGS             = -DBIT_DEBUG -D_REENTRANT -D_MT -DBIT_PACK_EST=$(BIT_PACK_EST) -DBIT_PACK_MATRIXSSL=$(BIT_PACK_MATRIXSSL) -DBIT_PACK_OPENSSL=$(BIT_PACK_OPENSSL) -DBIT_PACK_PCRE=$(BIT_PACK_PCRE) -DBIT_PACK_SSL=$(BIT_PACK_SSL) 
 IFLAGS             = -I$(CONFIG)\inc
 LDFLAGS            = -nologo -nodefaultlib -incremental:no -debug -machine:$(ARCH)
-LIBPATHS           = -libpath:$(CONFIG)\bin
+LIBPATHS           = "-libpath:$(CONFIG)\bin"
 LIBS               = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
 
 BIT_ROOT_PREFIX    = C:
@@ -223,7 +223,7 @@ DEPS_5 = $(DEPS_5) src\bitos.h
 $(CONFIG)\obj\estLib.obj: \
     src\deps\est\estLib.c $(DEPS_5)
 	@echo '   [Compile] $(CONFIG)/obj/estLib.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\estLib.obj -Fd$(CONFIG)\obj\estLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\deps\est\estLib.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\estLib.obj -Fd$(CONFIG)\obj\estLib.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\deps\est\estLib.c
 
 !IF "$(BIT_PACK_EST)" == "1"
 #
@@ -236,7 +236,7 @@ DEPS_6 = $(DEPS_6) $(CONFIG)\obj\estLib.obj
 
 $(CONFIG)\bin\libest.lib: $(DEPS_6)
 	@echo '      [Link] $(CONFIG)/bin/libest.lib'
-	"lib.exe" -nologo -out:$(CONFIG)\bin\libest.lib $(CONFIG)\obj\estLib.obj
+	"lib.exe" -nologo -out:$(CONFIG)\bin\libest.lib "$(CONFIG)\obj\estLib.obj"
 !ENDIF
 
 #
@@ -266,7 +266,7 @@ DEPS_9 = $(DEPS_9) $(CONFIG)\inc\pcre.h
 $(CONFIG)\obj\pcre.obj: \
     src\deps\pcre\pcre.c $(DEPS_9)
 	@echo '   [Compile] $(CONFIG)/obj/pcre.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\pcre.obj -Fd$(CONFIG)\obj\pcre.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\deps\pcre\pcre.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\pcre.obj -Fd$(CONFIG)\obj\pcre.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\deps\pcre\pcre.c
 
 !IF "$(BIT_PACK_PCRE)" == "1"
 #
@@ -278,7 +278,7 @@ DEPS_10 = $(DEPS_10) $(CONFIG)\obj\pcre.obj
 
 $(CONFIG)\bin\libpcre.lib: $(DEPS_10)
 	@echo '      [Link] $(CONFIG)/bin/libpcre.lib'
-	"lib.exe" -nologo -out:$(CONFIG)\bin\libpcre.lib $(CONFIG)\obj\pcre.obj
+	"lib.exe" -nologo -out:$(CONFIG)\bin\libpcre.lib "$(CONFIG)\obj\pcre.obj"
 !ENDIF
 
 #
@@ -299,7 +299,7 @@ DEPS_12 = $(DEPS_12) src\bitos.h
 $(CONFIG)\obj\mprLib.obj: \
     src\deps\mpr\mprLib.c $(DEPS_12)
 	@echo '   [Compile] $(CONFIG)/obj/mprLib.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\mprLib.obj -Fd$(CONFIG)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\deps\mpr\mprLib.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\mprLib.obj -Fd$(CONFIG)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\deps\mpr\mprLib.c
 
 #
 #   libmpr
@@ -311,7 +311,7 @@ DEPS_13 = $(DEPS_13) $(CONFIG)\obj\mprLib.obj
 
 $(CONFIG)\bin\libmpr.lib: $(DEPS_13)
 	@echo '      [Link] $(CONFIG)/bin/libmpr.lib'
-	"lib.exe" -nologo -out:$(CONFIG)\bin\libmpr.lib $(CONFIG)\obj\mprLib.obj
+	"lib.exe" -nologo -out:$(CONFIG)\bin\libmpr.lib "$(CONFIG)\obj\mprLib.obj"
 
 #
 #   mprSsl.obj
@@ -323,7 +323,7 @@ DEPS_14 = $(DEPS_14) $(CONFIG)\inc\est.h
 $(CONFIG)\obj\mprSsl.obj: \
     src\deps\mpr\mprSsl.c $(DEPS_14)
 	@echo '   [Compile] $(CONFIG)/obj/mprSsl.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc -I$(BIT_PACK_MATRIXSSL_PATH) -I$(BIT_PACK_MATRIXSSL_PATH)\matrixssl -I$(BIT_PACK_NANOSSL_PATH)\src -I$(BIT_PACK_OPENSSL_PATH)\include src\deps\mpr\mprSsl.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" "-I$(BIT_PACK_MATRIXSSL_PATH)" "-I$(BIT_PACK_MATRIXSSL_PATH)\matrixssl" "-I$(BIT_PACK_NANOSSL_PATH)\src" "-I$(BIT_PACK_OPENSSL_PATH)\include" src\deps\mpr\mprSsl.c
 
 #
 #   libmprssl
@@ -342,7 +342,7 @@ DEPS_15 = $(DEPS_15) $(CONFIG)\obj\mprSsl.obj
 
 $(CONFIG)\bin\libmprssl.lib: $(DEPS_15)
 	@echo '      [Link] $(CONFIG)/bin/libmprssl.lib'
-	"lib.exe" -nologo -out:$(CONFIG)\bin\libmprssl.lib $(CONFIG)\obj\mprSsl.obj
+	"lib.exe" -nologo -out:$(CONFIG)\bin\libmprssl.lib "$(CONFIG)\obj\mprSsl.obj"
 
 #
 #   makerom.obj
@@ -353,7 +353,7 @@ DEPS_16 = $(DEPS_16) $(CONFIG)\inc\mpr.h
 $(CONFIG)\obj\makerom.obj: \
     src\deps\mpr\makerom.c $(DEPS_16)
 	@echo '   [Compile] $(CONFIG)/obj/makerom.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\makerom.obj -Fd$(CONFIG)\obj\makerom.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\deps\mpr\makerom.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\makerom.obj -Fd$(CONFIG)\obj\makerom.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\deps\mpr\makerom.c
 
 #
 #   makerom
@@ -369,7 +369,7 @@ LIBS_17 = $(LIBS_17) libmpr.lib
 
 $(CONFIG)\bin\makerom.exe: $(DEPS_17)
 	@echo '      [Link] $(CONFIG)/bin/makerom.exe'
-	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\makerom.obj $(LIBPATHS_17) $(LIBS_17) $(LIBS_17) $(LIBS) 
+	"$(LD)" -out:$(CONFIG)\bin\makerom.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\makerom.obj" $(LIBPATHS_17) $(LIBS_17) $(LIBS_17) $(LIBS) 
 
 #
 #   bitos.h
@@ -403,7 +403,7 @@ DEPS_21 = $(DEPS_21) $(CONFIG)\inc\mpr.h
 $(CONFIG)\obj\actionHandler.obj: \
     src\actionHandler.c $(DEPS_21)
 	@echo '   [Compile] $(CONFIG)/obj/actionHandler.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\actionHandler.obj -Fd$(CONFIG)\obj\actionHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\actionHandler.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\actionHandler.obj -Fd$(CONFIG)\obj\actionHandler.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\actionHandler.c
 
 #
 #   auth.obj
@@ -414,7 +414,7 @@ DEPS_22 = $(DEPS_22) src\http.h
 $(CONFIG)\obj\auth.obj: \
     src\auth.c $(DEPS_22)
 	@echo '   [Compile] $(CONFIG)/obj/auth.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\auth.obj -Fd$(CONFIG)\obj\auth.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\auth.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\auth.obj -Fd$(CONFIG)\obj\auth.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\auth.c
 
 #
 #   basic.obj
@@ -425,7 +425,7 @@ DEPS_23 = $(DEPS_23) src\http.h
 $(CONFIG)\obj\basic.obj: \
     src\basic.c $(DEPS_23)
 	@echo '   [Compile] $(CONFIG)/obj/basic.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\basic.obj -Fd$(CONFIG)\obj\basic.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\basic.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\basic.obj -Fd$(CONFIG)\obj\basic.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\basic.c
 
 #
 #   cache.obj
@@ -436,7 +436,7 @@ DEPS_24 = $(DEPS_24) src\http.h
 $(CONFIG)\obj\cache.obj: \
     src\cache.c $(DEPS_24)
 	@echo '   [Compile] $(CONFIG)/obj/cache.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\cache.obj -Fd$(CONFIG)\obj\cache.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\cache.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\cache.obj -Fd$(CONFIG)\obj\cache.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\cache.c
 
 #
 #   chunkFilter.obj
@@ -447,7 +447,7 @@ DEPS_25 = $(DEPS_25) src\http.h
 $(CONFIG)\obj\chunkFilter.obj: \
     src\chunkFilter.c $(DEPS_25)
 	@echo '   [Compile] $(CONFIG)/obj/chunkFilter.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\chunkFilter.obj -Fd$(CONFIG)\obj\chunkFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\chunkFilter.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\chunkFilter.obj -Fd$(CONFIG)\obj\chunkFilter.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\chunkFilter.c
 
 #
 #   client.obj
@@ -458,7 +458,7 @@ DEPS_26 = $(DEPS_26) src\http.h
 $(CONFIG)\obj\client.obj: \
     src\client.c $(DEPS_26)
 	@echo '   [Compile] $(CONFIG)/obj/client.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\client.obj -Fd$(CONFIG)\obj\client.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\client.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\client.obj -Fd$(CONFIG)\obj\client.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\client.c
 
 #
 #   conn.obj
@@ -469,7 +469,7 @@ DEPS_27 = $(DEPS_27) src\http.h
 $(CONFIG)\obj\conn.obj: \
     src\conn.c $(DEPS_27)
 	@echo '   [Compile] $(CONFIG)/obj/conn.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\conn.obj -Fd$(CONFIG)\obj\conn.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\conn.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\conn.obj -Fd$(CONFIG)\obj\conn.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\conn.c
 
 #
 #   digest.obj
@@ -480,7 +480,7 @@ DEPS_28 = $(DEPS_28) src\http.h
 $(CONFIG)\obj\digest.obj: \
     src\digest.c $(DEPS_28)
 	@echo '   [Compile] $(CONFIG)/obj/digest.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\digest.obj -Fd$(CONFIG)\obj\digest.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\digest.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\digest.obj -Fd$(CONFIG)\obj\digest.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\digest.c
 
 #
 #   endpoint.obj
@@ -491,7 +491,7 @@ DEPS_29 = $(DEPS_29) src\http.h
 $(CONFIG)\obj\endpoint.obj: \
     src\endpoint.c $(DEPS_29)
 	@echo '   [Compile] $(CONFIG)/obj/endpoint.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\endpoint.obj -Fd$(CONFIG)\obj\endpoint.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\endpoint.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\endpoint.obj -Fd$(CONFIG)\obj\endpoint.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\endpoint.c
 
 #
 #   error.obj
@@ -502,7 +502,7 @@ DEPS_30 = $(DEPS_30) src\http.h
 $(CONFIG)\obj\error.obj: \
     src\error.c $(DEPS_30)
 	@echo '   [Compile] $(CONFIG)/obj/error.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\error.obj -Fd$(CONFIG)\obj\error.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\error.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\error.obj -Fd$(CONFIG)\obj\error.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\error.c
 
 #
 #   host.obj
@@ -513,7 +513,7 @@ DEPS_31 = $(DEPS_31) src\http.h
 $(CONFIG)\obj\host.obj: \
     src\host.c $(DEPS_31)
 	@echo '   [Compile] $(CONFIG)/obj/host.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\host.obj -Fd$(CONFIG)\obj\host.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\host.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\host.obj -Fd$(CONFIG)\obj\host.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\host.c
 
 #
 #   httpService.obj
@@ -524,7 +524,7 @@ DEPS_32 = $(DEPS_32) src\http.h
 $(CONFIG)\obj\httpService.obj: \
     src\httpService.c $(DEPS_32)
 	@echo '   [Compile] $(CONFIG)/obj/httpService.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\httpService.obj -Fd$(CONFIG)\obj\httpService.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\httpService.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\httpService.obj -Fd$(CONFIG)\obj\httpService.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\httpService.c
 
 #
 #   log.obj
@@ -535,7 +535,7 @@ DEPS_33 = $(DEPS_33) src\http.h
 $(CONFIG)\obj\log.obj: \
     src\log.c $(DEPS_33)
 	@echo '   [Compile] $(CONFIG)/obj/log.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\log.obj -Fd$(CONFIG)\obj\log.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\log.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\log.obj -Fd$(CONFIG)\obj\log.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\log.c
 
 #
 #   netConnector.obj
@@ -546,7 +546,7 @@ DEPS_34 = $(DEPS_34) src\http.h
 $(CONFIG)\obj\netConnector.obj: \
     src\netConnector.c $(DEPS_34)
 	@echo '   [Compile] $(CONFIG)/obj/netConnector.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\netConnector.obj -Fd$(CONFIG)\obj\netConnector.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\netConnector.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\netConnector.obj -Fd$(CONFIG)\obj\netConnector.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\netConnector.c
 
 #
 #   packet.obj
@@ -557,7 +557,7 @@ DEPS_35 = $(DEPS_35) src\http.h
 $(CONFIG)\obj\packet.obj: \
     src\packet.c $(DEPS_35)
 	@echo '   [Compile] $(CONFIG)/obj/packet.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\packet.obj -Fd$(CONFIG)\obj\packet.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\packet.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\packet.obj -Fd$(CONFIG)\obj\packet.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\packet.c
 
 #
 #   pam.obj
@@ -568,7 +568,7 @@ DEPS_36 = $(DEPS_36) src\http.h
 $(CONFIG)\obj\pam.obj: \
     src\pam.c $(DEPS_36)
 	@echo '   [Compile] $(CONFIG)/obj/pam.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\pam.obj -Fd$(CONFIG)\obj\pam.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\pam.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\pam.obj -Fd$(CONFIG)\obj\pam.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\pam.c
 
 #
 #   passHandler.obj
@@ -579,7 +579,7 @@ DEPS_37 = $(DEPS_37) src\http.h
 $(CONFIG)\obj\passHandler.obj: \
     src\passHandler.c $(DEPS_37)
 	@echo '   [Compile] $(CONFIG)/obj/passHandler.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\passHandler.obj -Fd$(CONFIG)\obj\passHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\passHandler.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\passHandler.obj -Fd$(CONFIG)\obj\passHandler.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\passHandler.c
 
 #
 #   pipeline.obj
@@ -590,7 +590,7 @@ DEPS_38 = $(DEPS_38) src\http.h
 $(CONFIG)\obj\pipeline.obj: \
     src\pipeline.c $(DEPS_38)
 	@echo '   [Compile] $(CONFIG)/obj/pipeline.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\pipeline.obj -Fd$(CONFIG)\obj\pipeline.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\pipeline.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\pipeline.obj -Fd$(CONFIG)\obj\pipeline.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\pipeline.c
 
 #
 #   queue.obj
@@ -601,7 +601,7 @@ DEPS_39 = $(DEPS_39) src\http.h
 $(CONFIG)\obj\queue.obj: \
     src\queue.c $(DEPS_39)
 	@echo '   [Compile] $(CONFIG)/obj/queue.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\queue.obj -Fd$(CONFIG)\obj\queue.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\queue.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\queue.obj -Fd$(CONFIG)\obj\queue.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\queue.c
 
 #
 #   rangeFilter.obj
@@ -612,7 +612,7 @@ DEPS_40 = $(DEPS_40) src\http.h
 $(CONFIG)\obj\rangeFilter.obj: \
     src\rangeFilter.c $(DEPS_40)
 	@echo '   [Compile] $(CONFIG)/obj/rangeFilter.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\rangeFilter.obj -Fd$(CONFIG)\obj\rangeFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\rangeFilter.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\rangeFilter.obj -Fd$(CONFIG)\obj\rangeFilter.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\rangeFilter.c
 
 #
 #   route.obj
@@ -623,7 +623,7 @@ DEPS_41 = $(DEPS_41) src\http.h
 $(CONFIG)\obj\route.obj: \
     src\route.c $(DEPS_41)
 	@echo '   [Compile] $(CONFIG)/obj/route.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\route.obj -Fd$(CONFIG)\obj\route.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\route.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\route.obj -Fd$(CONFIG)\obj\route.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\route.c
 
 #
 #   rx.obj
@@ -634,7 +634,7 @@ DEPS_42 = $(DEPS_42) src\http.h
 $(CONFIG)\obj\rx.obj: \
     src\rx.c $(DEPS_42)
 	@echo '   [Compile] $(CONFIG)/obj/rx.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\rx.obj -Fd$(CONFIG)\obj\rx.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\rx.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\rx.obj -Fd$(CONFIG)\obj\rx.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\rx.c
 
 #
 #   sendConnector.obj
@@ -645,7 +645,7 @@ DEPS_43 = $(DEPS_43) src\http.h
 $(CONFIG)\obj\sendConnector.obj: \
     src\sendConnector.c $(DEPS_43)
 	@echo '   [Compile] $(CONFIG)/obj/sendConnector.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\sendConnector.obj -Fd$(CONFIG)\obj\sendConnector.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\sendConnector.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\sendConnector.obj -Fd$(CONFIG)\obj\sendConnector.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\sendConnector.c
 
 #
 #   session.obj
@@ -656,7 +656,7 @@ DEPS_44 = $(DEPS_44) src\http.h
 $(CONFIG)\obj\session.obj: \
     src\session.c $(DEPS_44)
 	@echo '   [Compile] $(CONFIG)/obj/session.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\session.obj -Fd$(CONFIG)\obj\session.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\session.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\session.obj -Fd$(CONFIG)\obj\session.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\session.c
 
 #
 #   stage.obj
@@ -667,7 +667,7 @@ DEPS_45 = $(DEPS_45) src\http.h
 $(CONFIG)\obj\stage.obj: \
     src\stage.c $(DEPS_45)
 	@echo '   [Compile] $(CONFIG)/obj/stage.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\stage.obj -Fd$(CONFIG)\obj\stage.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\stage.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\stage.obj -Fd$(CONFIG)\obj\stage.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\stage.c
 
 #
 #   trace.obj
@@ -678,7 +678,7 @@ DEPS_46 = $(DEPS_46) src\http.h
 $(CONFIG)\obj\trace.obj: \
     src\trace.c $(DEPS_46)
 	@echo '   [Compile] $(CONFIG)/obj/trace.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\trace.obj -Fd$(CONFIG)\obj\trace.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\trace.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\trace.obj -Fd$(CONFIG)\obj\trace.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\trace.c
 
 #
 #   tx.obj
@@ -689,7 +689,7 @@ DEPS_47 = $(DEPS_47) src\http.h
 $(CONFIG)\obj\tx.obj: \
     src\tx.c $(DEPS_47)
 	@echo '   [Compile] $(CONFIG)/obj/tx.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\tx.obj -Fd$(CONFIG)\obj\tx.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\tx.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\tx.obj -Fd$(CONFIG)\obj\tx.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\tx.c
 
 #
 #   uploadFilter.obj
@@ -700,7 +700,7 @@ DEPS_48 = $(DEPS_48) src\http.h
 $(CONFIG)\obj\uploadFilter.obj: \
     src\uploadFilter.c $(DEPS_48)
 	@echo '   [Compile] $(CONFIG)/obj/uploadFilter.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\uploadFilter.obj -Fd$(CONFIG)\obj\uploadFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\uploadFilter.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\uploadFilter.obj -Fd$(CONFIG)\obj\uploadFilter.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\uploadFilter.c
 
 #
 #   uri.obj
@@ -711,7 +711,7 @@ DEPS_49 = $(DEPS_49) src\http.h
 $(CONFIG)\obj\uri.obj: \
     src\uri.c $(DEPS_49)
 	@echo '   [Compile] $(CONFIG)/obj/uri.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\uri.obj -Fd$(CONFIG)\obj\uri.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\uri.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\uri.obj -Fd$(CONFIG)\obj\uri.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\uri.c
 
 #
 #   var.obj
@@ -722,7 +722,7 @@ DEPS_50 = $(DEPS_50) src\http.h
 $(CONFIG)\obj\var.obj: \
     src\var.c $(DEPS_50)
 	@echo '   [Compile] $(CONFIG)/obj/var.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\var.obj -Fd$(CONFIG)\obj\var.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\var.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\var.obj -Fd$(CONFIG)\obj\var.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\var.c
 
 #
 #   webSock.obj
@@ -733,7 +733,7 @@ DEPS_51 = $(DEPS_51) src\http.h
 $(CONFIG)\obj\webSock.obj: \
     src\webSock.c $(DEPS_51)
 	@echo '   [Compile] $(CONFIG)/obj/webSock.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\webSock.obj -Fd$(CONFIG)\obj\webSock.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\webSock.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\webSock.obj -Fd$(CONFIG)\obj\webSock.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\webSock.c
 
 !IF "$(BIT_PACK_PCRE)" == "1"
 #
@@ -784,7 +784,7 @@ DEPS_52 = $(DEPS_52) $(CONFIG)\obj\webSock.obj
 
 $(CONFIG)\bin\libhttp.lib: $(DEPS_52)
 	@echo '      [Link] $(CONFIG)/bin/libhttp.lib'
-	"lib.exe" -nologo -out:$(CONFIG)\bin\libhttp.lib $(CONFIG)\obj\actionHandler.obj $(CONFIG)\obj\auth.obj $(CONFIG)\obj\basic.obj $(CONFIG)\obj\cache.obj $(CONFIG)\obj\chunkFilter.obj $(CONFIG)\obj\client.obj $(CONFIG)\obj\conn.obj $(CONFIG)\obj\digest.obj $(CONFIG)\obj\endpoint.obj $(CONFIG)\obj\error.obj $(CONFIG)\obj\host.obj $(CONFIG)\obj\httpService.obj $(CONFIG)\obj\log.obj $(CONFIG)\obj\netConnector.obj $(CONFIG)\obj\packet.obj $(CONFIG)\obj\pam.obj $(CONFIG)\obj\passHandler.obj $(CONFIG)\obj\pipeline.obj $(CONFIG)\obj\queue.obj $(CONFIG)\obj\rangeFilter.obj $(CONFIG)\obj\route.obj $(CONFIG)\obj\rx.obj $(CONFIG)\obj\sendConnector.obj $(CONFIG)\obj\session.obj $(CONFIG)\obj\stage.obj $(CONFIG)\obj\trace.obj $(CONFIG)\obj\tx.obj $(CONFIG)\obj\uploadFilter.obj $(CONFIG)\obj\uri.obj $(CONFIG)\obj\var.obj $(CONFIG)\obj\webSock.obj
+	"lib.exe" -nologo -out:$(CONFIG)\bin\libhttp.lib "$(CONFIG)\obj\actionHandler.obj" "$(CONFIG)\obj\auth.obj" "$(CONFIG)\obj\basic.obj" "$(CONFIG)\obj\cache.obj" "$(CONFIG)\obj\chunkFilter.obj" "$(CONFIG)\obj\client.obj" "$(CONFIG)\obj\conn.obj" "$(CONFIG)\obj\digest.obj" "$(CONFIG)\obj\endpoint.obj" "$(CONFIG)\obj\error.obj" "$(CONFIG)\obj\host.obj" "$(CONFIG)\obj\httpService.obj" "$(CONFIG)\obj\log.obj" "$(CONFIG)\obj\netConnector.obj" "$(CONFIG)\obj\packet.obj" "$(CONFIG)\obj\pam.obj" "$(CONFIG)\obj\passHandler.obj" "$(CONFIG)\obj\pipeline.obj" "$(CONFIG)\obj\queue.obj" "$(CONFIG)\obj\rangeFilter.obj" "$(CONFIG)\obj\route.obj" "$(CONFIG)\obj\rx.obj" "$(CONFIG)\obj\sendConnector.obj" "$(CONFIG)\obj\session.obj" "$(CONFIG)\obj\stage.obj" "$(CONFIG)\obj\trace.obj" "$(CONFIG)\obj\tx.obj" "$(CONFIG)\obj\uploadFilter.obj" "$(CONFIG)\obj\uri.obj" "$(CONFIG)\obj\var.obj" "$(CONFIG)\obj\webSock.obj"
 !ENDIF
 
 #
@@ -796,7 +796,7 @@ DEPS_53 = $(DEPS_53) src\http.h
 $(CONFIG)\obj\http.obj: \
     src\http.c $(DEPS_53)
 	@echo '   [Compile] $(CONFIG)/obj/http.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\http.obj -Fd$(CONFIG)\obj\http.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) -Isrc src\http.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\http.obj -Fd$(CONFIG)\obj\http.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\http.c
 
 #
 #   httpcmd
@@ -860,7 +860,7 @@ LIBS_54 = $(LIBS_54) libpcre.lib
 
 $(CONFIG)\bin\http: $(DEPS_54)
 	@echo '      [Link] $(CONFIG)/bin/http'
-	"$(LD)" -out:$(CONFIG)\bin\http -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) $(CONFIG)\obj\http.obj $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) 
+	"$(LD)" -out:$(CONFIG)\bin\http -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\http.obj" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) 
 
 #
 #   stop

@@ -2106,7 +2106,11 @@ static int secureCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!conn->secure) {
+        return HTTP_ROUTE_REJECT;
+#if UNUSED
         httpError(conn, HTTP_CODE_UNAUTHORIZED, "SSL required for this route");
+        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, );
+#endif
     }
     return HTTP_ROUTE_OK;
 }

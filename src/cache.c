@@ -62,8 +62,6 @@ static int matchCacheHandler(HttpConn *conn, HttpRoute *route, int dir)
 {
     HttpCache   *cache;
 
-    assert(route->caching);
-
     if ((cache = conn->tx->cache = lookupCacheControl(conn)) == 0) {
         /* Caching not configured for this route */
         return HTTP_ROUTE_REJECT;

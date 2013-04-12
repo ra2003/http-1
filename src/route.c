@@ -161,7 +161,9 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->script = parent->script;
     route->scriptPath = parent->scriptPath;
     route->sourceName = parent->sourceName;
+#if UNUSED
     route->sourcePath = parent->sourcePath;
+#endif
     route->ssl = parent->ssl;
     route->target = parent->target;
     route->targetRule = parent->targetRule;
@@ -228,7 +230,9 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->conditions);
         mprMark(route->updates);
         mprMark(route->sourceName);
+#if UNUSED
         mprMark(route->sourcePath);
+#endif
         mprMark(route->tokens);
         mprMark(route->ssl);
         mprMark(route->limits);

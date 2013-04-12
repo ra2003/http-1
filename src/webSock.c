@@ -322,6 +322,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             if (packet->last || tail) {
                 packet->flags |= HTTP_PACKET_SOLO;
                 ws->messageLength += httpGetPacketLength(packet);
+                mprAddNullToBuf(packet->content);
                 httpPutPacketToNext(q, packet);
                 ws->currentMessage = 0;
             } else {
@@ -346,7 +347,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             }
         }
         mprTrace(5, "webSocketFilter: close status %d, reason \"%s\", closing %d", ws->closeStatus, 
-                ws->closeReason, ws->closing);
+            ws->closeReason, ws->closing);
         if (ws->closing) {
             httpDisconnect(conn);
         } else {

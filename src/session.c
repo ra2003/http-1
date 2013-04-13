@@ -15,27 +15,27 @@ static char *makeSessionID(HttpConn *conn);
 static void manageSession(HttpSession *sp, int flags);
 
 /************************************* Code ***********************************/
-
+/*
+    Allocate a http session state object. This manages an underlying session state store which
+    exists independently from this session object.
+ */
 PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTicks lifespan)
 {
     HttpSession *sp;
+    Http        *http;
 
     assert(conn);
-#if UNUSED && FUTURE
-    Http        *http;
     http = conn->http;
 
-    //  OPT less contentions mutex
     lock(http);
+    http->activeSessions++;
     if (http->activeSessions >= conn->limits->sessionMax) {
         httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE,
             "Too many sessions %d/%d", http->activeSessions, conn->limits->sessionMax);
         unlock(http);
         return 0;
     }
-    http->activeSessions++;
     unlock(http);
-#endif
 
     if ((sp = mprAllocObj(HttpSession, manageSession)) == 0) {
         return 0;
@@ -52,19 +52,38 @@ PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTicks lifespa
 }
 
 
-PUBLIC void httpDestroySession(HttpSession *sp)
+/*
+    This creates or re-creates a session. Always returns with a new session store.
+ */
+PUBLIC HttpSession *httpCreateSession(HttpConn *conn)
 {
-    Http    *http;
+    httpDestroySession(conn);
+    return httpGetSession(conn, 1);
+}
 
-    http = MPR->httpService;
 
-    assert(sp);
-    //  OPT less contentions mutex
+/*
+    Destroy the session
+ */
+PUBLIC void httpDestroySession(HttpConn *conn)
+{
+    Http        *http;
+    HttpSession *sp;
+
+    http = conn->http;
     lock(http);
-    http->activeSessions--;
-    assert(http->activeSessions >= 0);
+    if ((sp = httpGetSession(conn, 0)) != 0) {
+        httpSetCookie(conn, HTTP_SESSION_COOKIE, conn->rx->session->id, "/", NULL, -1, 0);
+#if UNUSED
+        /* Can't do this as we can only expire individual items in the cache as the cache is shared */
+        mprExpireCache(sp->cache, makeKey(sp, key), 0);
+#endif
+        http->activeSessions--;
+        assert(http->activeSessions >= 0);
+        sp->id = 0;
+        conn->rx->session = 0;
+    }
     unlock(http);
-    sp->id = 0;
 }
 
 
@@ -77,12 +96,9 @@ static void manageSession(HttpSession *sp, int flags)
 }
 
 
-PUBLIC HttpSession *httpCreateSession(HttpConn *conn)
-{
-    return httpGetSession(conn, 1);
-}
-
-
+/*
+    Get the session. Optionally create if "create" is true. Will not re-create.
+ */
 PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 {
     HttpRx      *rx;
@@ -96,8 +112,15 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
     }
     id = httpGetSessionID(conn);
     if (id || create) {
+        /*
+            If forced create or we have a session-state cookie, then allocate a session object to manage the state.
+            NOTE: the session state for this ID may already exist if data has been written to the session.
+         */
         rx->session = httpAllocSession(conn, id, conn->limits->sessionTimeout);
         if (rx->session && !id) {
+            /*
+                Define the cookie in the browser if creating a new session
+             */
             httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, 0, 0);
         }
     }
@@ -140,6 +163,11 @@ PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
 }
 
 
+/*
+    Set a session variable. This will create the session store if it does not already exist
+    Note: If the headers have been emitted, the chance to set a cookie header has passed. So this value will go
+    into a session that will be lost. Solution is for apps to create the session first.
+ */
 PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
 {
     HttpSession  *sp;
@@ -224,7 +252,6 @@ static char *makeSessionID(HttpConn *conn)
     static int  nextSession = 0;
 
     assert(conn);
-
     /* Thread race here on nextSession++ not critical */
     fmt(idBuf, sizeof(idBuf), "%08x%08x%d", PTOI(conn->data) + PTOI(conn), (int) mprGetTime(), nextSession++);
     return mprGetMD5WithPrefix(idBuf, sizeof(idBuf), "::http.session::");

@@ -150,13 +150,14 @@ PUBLIC void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
 
 /* 
    Append a header. If already defined, the value is catenated to the pre-existing value after a ", " separator.
-   As per the HTTP/1.1 spec.
+   As per the HTTP/1.1 spec. Except for Set-Cookie which HTTP permits multiple headers but not of the same cookie. Ugh!
  */
 PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 {
     va_list     vargs;
+    MprKey      *kp;
     char        *value;
-    cchar       *oldValue;
+    cchar       *cookie;
 
     assert(key && *key);
     assert(fmt && *fmt);
@@ -165,15 +166,28 @@ PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     value = sfmtv(fmt, vargs);
     va_end(vargs);
 
-    oldValue = mprLookupKey(conn->tx->headers, key);
-    if (oldValue) {
-        /*
-            Set-Cookie has legacy behavior and some browsers require separate headers
-         */
+    /*
+        HTTP permits Set-Cookie to have multiple cookies. Other headers must comma separate multiple values.
+        For Set-Cookie, must allow duplicates but not of the same cookie.
+     */
+    kp = mprLookupKeyEntry(conn->tx->headers, key);
+    if (kp) {
         if (scaselessmatch(key, "Set-Cookie")) {
-            mprAddDuplicateKey(conn->tx->headers, key, value);
+            cookie = stok(sclone(value), "=", NULL);
+            while (kp) {
+                if (scaselessmatch(kp->key, "Set-Cookie")) {
+                    if (sstarts(kp->data, cookie)) {
+                        kp->data = value;
+                        break;
+                    }
+                }
+                kp = kp->next;
+            }
+            if (!kp) {
+                mprAddDuplicateKey(conn->tx->headers, key, value);
+            }
         } else {
-            addHdr(conn, key, sfmt("%s, %s", oldValue, value));
+            addHdr(conn, key, sfmt("%s, %s", kp->data, value));
         }
     } else {
         addHdr(conn, key, value);
@@ -497,8 +511,11 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
 }
 
 
+/*
+    Set lifespan < 0 to delete the cookie in the clinet
+ */
 PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, 
-        MprTicks lifespan, int flags)
+    MprTicks lifespan, int flags)
 {
     HttpRx      *rx;
     char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *secure, *httponly;
@@ -525,7 +542,7 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
             domain = sjoin(".", domain, NULL);
         }
     }
-    if (lifespan > 0) {
+    if (lifespan) {
         expiresAtt = "; expires=";
         expires = mprFormatUniversalTime(MPR_HTTP_DATE, mprGetTime() + lifespan);
 

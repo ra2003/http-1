@@ -426,7 +426,11 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
 
     cache = 0;
     if (!route->caching) {
-        httpAddRouteHandler(route, "cacheHandler", "");
+        if (route->handler) {
+            mprError("Caching handler disabled because SetHandler used in route %s. Use AddHandler instead", 
+                route->name);
+        }
+        httpAddRouteHandler(route, "cacheHandler", NULL);
         httpAddRouteFilter(route, "cacheFilter", "", HTTP_STAGE_TX);
         route->caching = mprCreateList(0, 0);
 

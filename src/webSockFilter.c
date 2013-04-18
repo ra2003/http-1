@@ -1,5 +1,5 @@
 /*
-    webSock.c - WebSockets support
+    webSock.c - WebSockets filter support
 
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */

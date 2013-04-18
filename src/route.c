@@ -81,7 +81,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->flags = HTTP_ROUTE_GZIP;
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
-    route->handlersByMatch = mprCreateList(-1, MPR_LIST_STABLE);
     route->host = host;
     route->http = MPR->httpService;
     route->indicies = mprCreateList(-1, 0);
@@ -138,7 +137,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->extensions = parent->extensions;
     route->handler = parent->handler;
     route->handlers = parent->handlers;
-    route->handlersByMatch = parent->handlersByMatch;
     route->headers = parent->headers;
     route->http = MPR->httpService;
     route->host = parent->host;
@@ -161,9 +159,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->script = parent->script;
     route->scriptPath = parent->scriptPath;
     route->sourceName = parent->sourceName;
-#if UNUSED
-    route->sourcePath = parent->sourcePath;
-#endif
     route->ssl = parent->ssl;
     route->target = parent->target;
     route->targetRule = parent->targetRule;
@@ -211,7 +206,6 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->defaultLanguage);
         mprMark(route->extensions);
         mprMark(route->handlers);
-        mprMark(route->handlersByMatch);
         mprMark(route->connector);
         mprMark(route->data);
         mprMark(route->eroute);
@@ -230,9 +224,6 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->conditions);
         mprMark(route->updates);
         mprMark(route->sourceName);
-#if UNUSED
-        mprMark(route->sourcePath);
-#endif
         mprMark(route->tokens);
         mprMark(route->ssl);
         mprMark(route->limits);
@@ -589,11 +580,8 @@ static int testRoute(HttpConn *conn, HttpRoute *route)
     if ((rc = (*proc)(conn, route, 0)) != HTTP_ROUTE_OK) {
         return rc;
     }
-    if (tx->handler->match && !(tx->flags & HTTP_TX_MATCHED)) {
-        if ((rc = tx->handler->match(conn, route, HTTP_QUEUE_TX)) != HTTP_ROUTE_OK) {
-            return rc;
-        }
-        tx->flags |= HTTP_TX_MATCHED;
+    if (tx->handler->rewrite) {
+        rc = tx->handler->rewrite(conn);
     }
     return rc;
 }
@@ -609,16 +597,13 @@ static int selectHandler(HttpConn *conn, HttpRoute *route)
 
     tx = conn->tx;
     if (route->handler) {
+//MOB - SetHandler stops caching working
         tx->handler = route->handler;
         return HTTP_ROUTE_OK;
     }
-    /*
-        Handlers that match solely by their match routine are examined first (in-order)
-     */
-    for (next = 0; (tx->handler = mprGetNextStableItem(route->handlersByMatch, &next)) != 0; ) {
+    for (next = 0; (tx->handler = mprGetNextStableItem(route->handlers, &next)) != 0; ) {
         rc = tx->handler->match(conn, route, 0);
         if (rc == HTTP_ROUTE_OK || rc == HTTP_ROUTE_REROUTE) {
-            tx->flags |= HTTP_TX_MATCHED;
             return rc;
         }
     }
@@ -776,51 +761,54 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
 PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
 {
     Http            *http;
-    HttpStage       *handler;
+    HttpStage       *handler, *prior;
     char            *extlist, *word, *tok;
 
     assert(route);
 
     http = route->http;
+    if (route->handler) {
+        mprError("Cannot add handlers to route \"%s\" once SetHandler used");
+    }
     if ((handler = httpLookupStage(http, name)) == 0) {
         mprError("Cannot find stage %s", name); 
         return MPR_ERR_CANT_FIND;
     }
-    GRADUATE_HASH(route, extensions);
-
-    if (extensions && *extensions) {
+    if (extensions) {
         /*
             Add to the handler extension hash. Skip over "*." and "."
          */ 
+        GRADUATE_HASH(route, extensions);
         extlist = sclone(extensions);
-        word = stok(extlist, " \t\r\n", &tok);
-        while (word) {
-            if (*word == '*' && word[1] == '.') {
-                word += 2;
-            } else if (*word == '.') {
-                word++;
-            } else if (*word == '\"' && word[1] == '\"') {
-                word = "";
-            }
-            mprAddKey(route->extensions, word, handler);
-            word = stok(0, " \t\r\n", &tok);
-        }
-
-    } else {
-        if (mprLookupItem(route->handlers, handler) < 0) {
-            GRADUATE_LIST(route, handlers);
-            mprAddItem(route->handlers, handler);
-        }
-        if (handler->match) {
-            if (mprLookupItem(route->handlersByMatch, handler) < 0) {
-                GRADUATE_LIST(route, handlersByMatch);
-                mprAddItem(route->handlersByMatch, handler);
-            }
-        } else {
-            /*
-                Match all extensions if no-match routine provided
-             */
+        if ((word = stok(extlist, " \t\r\n", &tok)) == 0) {
             mprAddKey(route->extensions, "", handler);
+        } else {
+            while (word) {
+                if (*word == '*' && word[1] == '.') {
+                    word += 2;
+                } else if (*word == '.') {
+                    word++;
+                } else if (*word == '\"' && word[1] == '\"') {
+                    word = "";
+                }
+                prior = mprLookupKey(route->extensions, word);
+                if (prior && prior != handler) {
+                    mprError("Route \"%s\" has two or more handlers defined for extension \"%s\"."
+                            "Handlers: \"%s\", \"%s\"", route->name, word, handler->name, 
+                            ((HttpStage*) mprLookupKey(route->extensions, word))->name);
+                } else {
+                    mprAddKey(route->extensions, word, handler);
+                }
+                word = stok(0, " \t\r\n", &tok);
+            }
+        }
+    }
+    if (handler->match && mprLookupItem(route->handlers, handler) < 0) {
+        GRADUATE_LIST(route, handlers);
+        if (smatch(name, "cacheHandler")) {
+            mprInsertItemAtPos(route->handlers, 0, handler);
+        } else {
+            mprAddItem(route->handlers, handler);
         }
     }
     return 0;
@@ -1007,7 +995,6 @@ PUBLIC void httpResetRoutePipeline(HttpRoute *route)
         route->caching = 0;
         route->extensions = 0;
         route->handlers = mprCreateList(-1, 0);
-        route->handlersByMatch = mprCreateList(-1, 0);
         route->inputStages = mprCreateList(-1, 0);
         route->indicies = mprCreateList(-1, 0);
     }
@@ -1019,7 +1006,6 @@ PUBLIC void httpResetHandlers(HttpRoute *route)
 {
     assert(route);
     route->handlers = mprCreateList(-1, 0);
-    route->handlersByMatch = mprCreateList(-1, 0);
 }
 
 
@@ -2112,10 +2098,6 @@ static int secureCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     }
     if (!conn->secure) {
         return HTTP_ROUTE_REJECT;
-#if UNUSED
-        httpError(conn, HTTP_CODE_UNAUTHORIZED, "SSL required for this route");
-        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, );
-#endif
     }
     return HTTP_ROUTE_OK;
 }

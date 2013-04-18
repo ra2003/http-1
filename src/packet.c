@@ -212,8 +212,6 @@ PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serv
 }
 
 
-//  MOB - this is really just a packet copy
-//  MOB - better to return packet
 /*  
     Join two packets by pulling the content from the second into the first.
     WARNING: this will not update the queue count. Assumes the either both are on the queue or neither. 
@@ -234,41 +232,6 @@ PUBLIC int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
     }
     return 0;
 }
-
-
-#if OLD && UNUSED
-/*
-    Join queue packets up to the maximum of the given size and the downstream queue packet size.
-    WARNING: this will not update the queue count.
- */
-PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
-{
-    HttpPacket  *packet, *first;
-    ssize       len;
-
-    if (size < 0) {
-        size = MAXINT;
-    }
-    if ((first = q->first) != 0 && first->next) {
-        if (first->flags & HTTP_PACKET_HEADER) {
-            /* Step over a header packet */
-            first = first->next;
-        }
-        for (packet = first->next; packet; packet = packet->next) {
-            if (packet->content == 0 || (len = httpGetPacketLength(packet)) == 0) {
-                break;
-            }
-            assert(!(packet->flags & HTTP_PACKET_END));
-            httpJoinPacket(first, packet);
-            /* Unlink the packet */
-            first->next = packet->next;
-            if (q->last == packet) {
-                q->last = first;
-            }
-        }
-    }
-}
-#endif
 
 
 /*

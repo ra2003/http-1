@@ -130,7 +130,7 @@
     <ClCompile Include="..\..\src\uploadFilter.c" />
     <ClCompile Include="..\..\src\uri.c" />
     <ClCompile Include="..\..\src\var.c" />
-    <ClCompile Include="..\..\src\webSock.c" />
+    <ClCompile Include="..\..\src\webSockFilter.c" />
   </ItemGroup>
 
   <ItemGroup>

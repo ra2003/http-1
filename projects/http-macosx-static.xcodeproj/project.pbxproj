@@ -87,7 +87,7 @@
 		F553274CF553395E00000056 /* uploadFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000057 /* uploadFilter.c */; };
 		F553274CF553395E00000058 /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000059 /* uri.c */; };
 		F553274CF553395E0000005A /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = F553274CF553395E0000005B /* var.c */; };
-		F553274CF553395E0000005C /* webSock.c in Sources */ = {isa = PBXBuildFile; fileRef = F553274CF553395E0000005D /* webSock.c */; };
+		F553274CF553395E0000005C /* webSockFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = F553274CF553395E0000005D /* webSockFilter.c */; };
 		F553274CF553395E0000005E /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = F553274CF553395E0000005F /* http.c */; };
 		F553274CF553395E00000060 /* libmpr.a for libmprssl */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000061; };
 		F553274CF553395E00000062 /* libest.a for libmprssl */ = {isa = PBXBuildFile; fileRef = F553274CF553395E00000063; };
@@ -324,7 +324,7 @@
 		F553274CF553395E00000057 /* uploadFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uploadFilter.c; path = src/uploadFilter.c; sourceTree = "<group>"; };
 		F553274CF553395E00000059 /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = src/uri.c; sourceTree = "<group>"; };
 		F553274CF553395E0000005B /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
-		F553274CF553395E0000005D /* webSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSock.c; path = src/webSock.c; sourceTree = "<group>"; };
+		F553274CF553395E0000005D /* webSockFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSockFilter.c; path = src/webSockFilter.c; sourceTree = "<group>"; };
 		F553274CF553395E00000069 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		F553274CF553395E0000005F /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
 		F553274CF553395E00000094 /* httpcmd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -502,7 +502,7 @@
 				F553274CF553395E00000057 /* uploadFilter.c */,
 				F553274CF553395E00000059 /* uri.c */,
 				F553274CF553395E0000005B /* var.c */,
-				F553274CF553395E0000005D /* webSock.c */,
+				F553274CF553395E0000005D /* webSockFilter.c */,
 			);
             name = "libhttp";
             path = ..;
@@ -832,7 +832,7 @@ fi";
 				F553274CF553395E00000056 /* uploadFilter.c in Sources */,
 				F553274CF553395E00000058 /* uri.c in Sources */,
 				F553274CF553395E0000005A /* var.c in Sources */,
-				F553274CF553395E0000005C /* webSock.c in Sources */,
+				F553274CF553395E0000005C /* webSockFilter.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -110,6 +110,7 @@ static void setDefaultHeaders(HttpConn *conn)
     } else {
         httpAddHeaderString(conn, "Host", conn->ip);
     }
+    httpAddHeaderString(conn, "Accept", "*/*");
     if (conn->keepAliveCount > 0) {
         httpSetHeaderString(conn, "Connection", "Keep-Alive");
     } else {

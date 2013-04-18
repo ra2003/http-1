@@ -180,7 +180,7 @@ clean:
 	if exist "$(CONFIG)\obj\uploadFilter.obj" del /Q "$(CONFIG)\obj\uploadFilter.obj"
 	if exist "$(CONFIG)\obj\uri.obj" del /Q "$(CONFIG)\obj\uri.obj"
 	if exist "$(CONFIG)\obj\var.obj" del /Q "$(CONFIG)\obj\var.obj"
-	if exist "$(CONFIG)\obj\webSock.obj" del /Q "$(CONFIG)\obj\webSock.obj"
+	if exist "$(CONFIG)\obj\webSockFilter.obj" del /Q "$(CONFIG)\obj\webSockFilter.obj"
 	if exist "$(CONFIG)\obj\http.obj" del /Q "$(CONFIG)\obj\http.obj"
 
 
@@ -725,15 +725,15 @@ $(CONFIG)\obj\var.obj: \
 	"$(CC)" -c -Fo$(CONFIG)\obj\var.obj -Fd$(CONFIG)\obj\var.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\var.c
 
 #
-#   webSock.obj
+#   webSockFilter.obj
 #
 DEPS_51 = $(DEPS_51) $(CONFIG)\inc\bit.h
 DEPS_51 = $(DEPS_51) src\http.h
 
-$(CONFIG)\obj\webSock.obj: \
-    src\webSock.c $(DEPS_51)
-	@echo '   [Compile] $(CONFIG)/obj/webSock.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\webSock.obj -Fd$(CONFIG)\obj\webSock.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\webSock.c
+$(CONFIG)\obj\webSockFilter.obj: \
+    src\webSockFilter.c $(DEPS_51)
+	@echo '   [Compile] $(CONFIG)/obj/webSockFilter.obj'
+	"$(CC)" -c -Fo$(CONFIG)\obj\webSockFilter.obj -Fd$(CONFIG)\obj\webSockFilter.pdb $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src\webSockFilter.c
 
 !IF "$(BIT_PACK_PCRE)" == "1"
 #
@@ -780,11 +780,11 @@ DEPS_52 = $(DEPS_52) $(CONFIG)\obj\tx.obj
 DEPS_52 = $(DEPS_52) $(CONFIG)\obj\uploadFilter.obj
 DEPS_52 = $(DEPS_52) $(CONFIG)\obj\uri.obj
 DEPS_52 = $(DEPS_52) $(CONFIG)\obj\var.obj
-DEPS_52 = $(DEPS_52) $(CONFIG)\obj\webSock.obj
+DEPS_52 = $(DEPS_52) $(CONFIG)\obj\webSockFilter.obj
 
 $(CONFIG)\bin\libhttp.lib: $(DEPS_52)
 	@echo '      [Link] $(CONFIG)/bin/libhttp.lib'
-	"lib.exe" -nologo -out:$(CONFIG)\bin\libhttp.lib "$(CONFIG)\obj\actionHandler.obj" "$(CONFIG)\obj\auth.obj" "$(CONFIG)\obj\basic.obj" "$(CONFIG)\obj\cache.obj" "$(CONFIG)\obj\chunkFilter.obj" "$(CONFIG)\obj\client.obj" "$(CONFIG)\obj\conn.obj" "$(CONFIG)\obj\digest.obj" "$(CONFIG)\obj\endpoint.obj" "$(CONFIG)\obj\error.obj" "$(CONFIG)\obj\host.obj" "$(CONFIG)\obj\httpService.obj" "$(CONFIG)\obj\log.obj" "$(CONFIG)\obj\netConnector.obj" "$(CONFIG)\obj\packet.obj" "$(CONFIG)\obj\pam.obj" "$(CONFIG)\obj\passHandler.obj" "$(CONFIG)\obj\pipeline.obj" "$(CONFIG)\obj\queue.obj" "$(CONFIG)\obj\rangeFilter.obj" "$(CONFIG)\obj\route.obj" "$(CONFIG)\obj\rx.obj" "$(CONFIG)\obj\sendConnector.obj" "$(CONFIG)\obj\session.obj" "$(CONFIG)\obj\stage.obj" "$(CONFIG)\obj\trace.obj" "$(CONFIG)\obj\tx.obj" "$(CONFIG)\obj\uploadFilter.obj" "$(CONFIG)\obj\uri.obj" "$(CONFIG)\obj\var.obj" "$(CONFIG)\obj\webSock.obj"
+	"lib.exe" -nologo -out:$(CONFIG)\bin\libhttp.lib "$(CONFIG)\obj\actionHandler.obj" "$(CONFIG)\obj\auth.obj" "$(CONFIG)\obj\basic.obj" "$(CONFIG)\obj\cache.obj" "$(CONFIG)\obj\chunkFilter.obj" "$(CONFIG)\obj\client.obj" "$(CONFIG)\obj\conn.obj" "$(CONFIG)\obj\digest.obj" "$(CONFIG)\obj\endpoint.obj" "$(CONFIG)\obj\error.obj" "$(CONFIG)\obj\host.obj" "$(CONFIG)\obj\httpService.obj" "$(CONFIG)\obj\log.obj" "$(CONFIG)\obj\netConnector.obj" "$(CONFIG)\obj\packet.obj" "$(CONFIG)\obj\pam.obj" "$(CONFIG)\obj\passHandler.obj" "$(CONFIG)\obj\pipeline.obj" "$(CONFIG)\obj\queue.obj" "$(CONFIG)\obj\rangeFilter.obj" "$(CONFIG)\obj\route.obj" "$(CONFIG)\obj\rx.obj" "$(CONFIG)\obj\sendConnector.obj" "$(CONFIG)\obj\session.obj" "$(CONFIG)\obj\stage.obj" "$(CONFIG)\obj\trace.obj" "$(CONFIG)\obj\tx.obj" "$(CONFIG)\obj\uploadFilter.obj" "$(CONFIG)\obj\uri.obj" "$(CONFIG)\obj\var.obj" "$(CONFIG)\obj\webSockFilter.obj"
 !ENDIF
 
 #
@@ -844,7 +844,7 @@ DEPS_54 = $(DEPS_54) $(CONFIG)\obj\tx.obj
 DEPS_54 = $(DEPS_54) $(CONFIG)\obj\uploadFilter.obj
 DEPS_54 = $(DEPS_54) $(CONFIG)\obj\uri.obj
 DEPS_54 = $(DEPS_54) $(CONFIG)\obj\var.obj
-DEPS_54 = $(DEPS_54) $(CONFIG)\obj\webSock.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\webSockFilter.obj
 !IF "$(BIT_PACK_PCRE)" == "1"
 DEPS_54 = $(DEPS_54) $(CONFIG)\bin\libhttp.lib
 !ENDIF

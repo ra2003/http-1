@@ -186,7 +186,7 @@ clean:
 	rm -f "$(CONFIG)/obj/uploadFilter.o"
 	rm -f "$(CONFIG)/obj/uri.o"
 	rm -f "$(CONFIG)/obj/var.o"
-	rm -f "$(CONFIG)/obj/webSock.o"
+	rm -f "$(CONFIG)/obj/webSockFilter.o"
 	rm -f "$(CONFIG)/obj/http.o"
 
 clobber: clean
@@ -734,15 +734,15 @@ $(CONFIG)/obj/var.o: \
 	$(CC) -c -o $(CONFIG)/obj/var.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/var.c
 
 #
-#   webSock.o
+#   webSockFilter.o
 #
 DEPS_51 += $(CONFIG)/inc/bit.h
 DEPS_51 += src/http.h
 
-$(CONFIG)/obj/webSock.o: \
-    src/webSock.c $(DEPS_51)
-	@echo '   [Compile] $(CONFIG)/obj/webSock.o'
-	$(CC) -c -o $(CONFIG)/obj/webSock.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/webSock.c
+$(CONFIG)/obj/webSockFilter.o: \
+    src/webSockFilter.c $(DEPS_51)
+	@echo '   [Compile] $(CONFIG)/obj/webSockFilter.o'
+	$(CC) -c -o $(CONFIG)/obj/webSockFilter.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/webSockFilter.c
 
 ifeq ($(BIT_PACK_PCRE),1)
 #
@@ -789,11 +789,11 @@ DEPS_52 += $(CONFIG)/obj/tx.o
 DEPS_52 += $(CONFIG)/obj/uploadFilter.o
 DEPS_52 += $(CONFIG)/obj/uri.o
 DEPS_52 += $(CONFIG)/obj/var.o
-DEPS_52 += $(CONFIG)/obj/webSock.o
+DEPS_52 += $(CONFIG)/obj/webSockFilter.o
 
 $(CONFIG)/bin/libhttp.a: $(DEPS_52)
 	@echo '      [Link] $(CONFIG)/bin/libhttp.a'
-	ar -cr $(CONFIG)/bin/libhttp.a "$(CONFIG)/obj/actionHandler.o" "$(CONFIG)/obj/auth.o" "$(CONFIG)/obj/basic.o" "$(CONFIG)/obj/cache.o" "$(CONFIG)/obj/chunkFilter.o" "$(CONFIG)/obj/client.o" "$(CONFIG)/obj/conn.o" "$(CONFIG)/obj/digest.o" "$(CONFIG)/obj/endpoint.o" "$(CONFIG)/obj/error.o" "$(CONFIG)/obj/host.o" "$(CONFIG)/obj/httpService.o" "$(CONFIG)/obj/log.o" "$(CONFIG)/obj/netConnector.o" "$(CONFIG)/obj/packet.o" "$(CONFIG)/obj/pam.o" "$(CONFIG)/obj/passHandler.o" "$(CONFIG)/obj/pipeline.o" "$(CONFIG)/obj/queue.o" "$(CONFIG)/obj/rangeFilter.o" "$(CONFIG)/obj/route.o" "$(CONFIG)/obj/rx.o" "$(CONFIG)/obj/sendConnector.o" "$(CONFIG)/obj/session.o" "$(CONFIG)/obj/stage.o" "$(CONFIG)/obj/trace.o" "$(CONFIG)/obj/tx.o" "$(CONFIG)/obj/uploadFilter.o" "$(CONFIG)/obj/uri.o" "$(CONFIG)/obj/var.o" "$(CONFIG)/obj/webSock.o"
+	ar -cr $(CONFIG)/bin/libhttp.a "$(CONFIG)/obj/actionHandler.o" "$(CONFIG)/obj/auth.o" "$(CONFIG)/obj/basic.o" "$(CONFIG)/obj/cache.o" "$(CONFIG)/obj/chunkFilter.o" "$(CONFIG)/obj/client.o" "$(CONFIG)/obj/conn.o" "$(CONFIG)/obj/digest.o" "$(CONFIG)/obj/endpoint.o" "$(CONFIG)/obj/error.o" "$(CONFIG)/obj/host.o" "$(CONFIG)/obj/httpService.o" "$(CONFIG)/obj/log.o" "$(CONFIG)/obj/netConnector.o" "$(CONFIG)/obj/packet.o" "$(CONFIG)/obj/pam.o" "$(CONFIG)/obj/passHandler.o" "$(CONFIG)/obj/pipeline.o" "$(CONFIG)/obj/queue.o" "$(CONFIG)/obj/rangeFilter.o" "$(CONFIG)/obj/route.o" "$(CONFIG)/obj/rx.o" "$(CONFIG)/obj/sendConnector.o" "$(CONFIG)/obj/session.o" "$(CONFIG)/obj/stage.o" "$(CONFIG)/obj/trace.o" "$(CONFIG)/obj/tx.o" "$(CONFIG)/obj/uploadFilter.o" "$(CONFIG)/obj/uri.o" "$(CONFIG)/obj/var.o" "$(CONFIG)/obj/webSockFilter.o"
 endif
 
 #
@@ -853,7 +853,7 @@ DEPS_54 += $(CONFIG)/obj/tx.o
 DEPS_54 += $(CONFIG)/obj/uploadFilter.o
 DEPS_54 += $(CONFIG)/obj/uri.o
 DEPS_54 += $(CONFIG)/obj/var.o
-DEPS_54 += $(CONFIG)/obj/webSock.o
+DEPS_54 += $(CONFIG)/obj/webSockFilter.o
 ifeq ($(BIT_PACK_PCRE),1)
     DEPS_54 += $(CONFIG)/bin/libhttp.a
 endif

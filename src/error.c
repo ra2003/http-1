@@ -110,7 +110,10 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                         tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, conn->errorMsg);
                     } else {
                         tx->altBody = sfmt("<!DOCTYPE html>\r\n"
-                            "<html><head><title>%s</title></head>\r\n"
+                            "<head>\r\n"
+                            "    <title>%s</title>\r\n"
+                            "    <link rel=\"shortcut icon\" href=\"data:image/x-icon;,\" type=\"image/x-icon\">\r\n"
+                            "</head>\r\n"
                             "<body>\r\n<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n</body>\r\n</html>\r\n",
                             statusMsg, status, statusMsg, mprEscapeHtml(conn->errorMsg));
                     }

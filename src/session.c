@@ -158,8 +158,7 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 
 PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
 {
-    httpSetSessionVar(conn, key, mprSerialize(obj, 0));
-    return 0;
+    return httpSetSessionVar(conn, key, mprSerialize(obj, 0));
 }
 
 
@@ -167,6 +166,7 @@ PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
     Set a session variable. This will create the session store if it does not already exist
     Note: If the headers have been emitted, the chance to set a cookie header has passed. So this value will go
     into a session that will be lost. Solution is for apps to create the session first.
+    Value of null means remove the session.
  */
 PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
 {
@@ -174,12 +174,13 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
 
     assert(conn);
     assert(key && *key);
-    assert(value);
 
     if ((sp = httpGetSession(conn, 1)) == 0) {
         return 0;
     }
-    if (mprWriteCache(sp->cache, makeKey(sp, key), value, 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
+    if (value == 0) {
+        httpRemoveSessionVar(conn, key);
+    } else if (mprWriteCache(sp->cache, makeKey(sp, key), value, 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
         return MPR_ERR_CANT_WRITE;
     }
     return 0;

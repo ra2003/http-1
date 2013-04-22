@@ -597,7 +597,6 @@ static int selectHandler(HttpConn *conn, HttpRoute *route)
 
     tx = conn->tx;
     if (route->handler) {
-//MOB - SetHandler stops caching working
         tx->handler = route->handler;
         return HTTP_ROUTE_OK;
     }
@@ -773,6 +772,10 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
     }
     if (route->handler) {
         mprError("Cannot add handler \"%s\" to route \"%s\" once SetHandler used.", handler->name, route->name);
+    }
+    if (!extensions && !handler->match) {
+        mprError("Adding handler \"%s\" without extensions to match", handler->name);
+        //  MOB - could add extensions to ""
     }
     if (extensions) {
         /*
@@ -1166,7 +1169,7 @@ PUBLIC void httpSetRouteName(HttpRoute *route, cchar *name)
 PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags)
 {
     assert(route);
-    assert(pattern && *pattern);
+    assert(pattern);
     
     route->flags |= (flags & HTTP_ROUTE_NOT);
     route->pattern = sclone(pattern);
@@ -1174,13 +1177,19 @@ PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags)
 }
 
 
+/*
+    Set the prefix to null if no prefix
+ */
 PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
 {
     assert(route);
-    assert(prefix && *prefix);
     
-    route->prefix = sclone(prefix);
-    route->prefixLen = slen(prefix);
+    if (prefix && *prefix) {
+        route->prefix = sclone(prefix);
+        route->prefixLen = slen(prefix);
+    } else {
+        route->prefix = 0;
+    }
     if (route->pattern) {
         finalizePattern(route);
     }
@@ -1702,10 +1711,10 @@ PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
                 lroute = 0;
             }
             if (lroute == 0) {
-                if ((lroute = httpLookupRoute(conn->host, qualifyName(route, "{controller}", action))) == 0) {
-                    if ((lroute = httpLookupRoute(conn->host, qualifyName(route, controller, action))) == 0) {
-                        if ((lroute = httpLookupRoute(conn->host, qualifyName(route, "{controller}", "default"))) == 0) {
-                            lroute = httpLookupRoute(conn->host, qualifyName(route, controller, "default"));
+                if ((lroute = httpLookupRoute(conn->host, qualifyName(route, controller, action))) == 0) {
+                    if ((lroute = httpLookupRoute(conn->host, qualifyName(route, "{controller}", action))) == 0) {
+                        if ((lroute = httpLookupRoute(conn->host, qualifyName(route, controller, "default"))) == 0) {
+                            lroute = httpLookupRoute(conn->host, qualifyName(route, "{controller}", "default"));
                         }
                     }
                 }
@@ -2305,7 +2314,11 @@ static void addRestful(HttpRoute *parent, cchar *action, cchar *methods, cchar *
         pattern = sfmt("^%s/%s%s", parent->prefix, resource, pattern);
     } else {
         name = sfmt("/%s/%s", nameResource, action);
-        pattern = sfmt("^/%s%s", resource, pattern);
+        if (*resource == '{') {
+            pattern = sfmt("^/%s%s", resource, pattern);
+        } else {
+            pattern = sfmt("^/{controller=%s}%s", resource, pattern);
+        }
     }
     if (*resource == '{') {
         target = sfmt("$%s-%s", resource, target);
@@ -2343,9 +2356,9 @@ PUBLIC void httpAddResource(HttpRoute *parent, cchar *resource)
     addRestful(parent, "init",      "GET",    "/init$",       "init",          resource);
     addRestful(parent, "create",    "POST",   "(/)*$",        "create",        resource);
     addRestful(parent, "edit",      "GET",    "/edit$",       "edit",          resource);
-    addRestful(parent, "show",      "GET",    "$",            "show",          resource);
-    addRestful(parent, "update",    "PUT",    "$",            "update",        resource);
-    addRestful(parent, "destroy",   "DELETE", "$",            "destroy",       resource);
+    addRestful(parent, "show",      "GET",    "(/)*$",        "show",          resource);
+    addRestful(parent, "update",    "PUT",    "(/)*$",        "update",        resource);
+    addRestful(parent, "destroy",   "DELETE", "(/)*$",        "destroy",       resource);
     addRestful(parent, "default",   "*",      "/{action}$",   "cmd-${action}", resource);
 }
 
@@ -2382,6 +2395,12 @@ PUBLIC void httpAddRouteSet(HttpRoute *parent, cchar *set)
 {
     if (scaselessmatch(set, "simple")) {
         httpAddHomeRoute(parent);
+
+    } else if (scaselessmatch(set, "mvc-simple")) {
+        httpAddHomeRoute(parent);
+        httpAddStaticRoute(parent);
+        httpDefineRoute(parent, "default", NULL, "^/{controller}(~/{action}~)", "${controller}-${action}", 
+            "${controller}.c");
 
     } else if (scaselessmatch(set, "mvc")) {
         httpAddHomeRoute(parent);

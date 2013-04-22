@@ -146,6 +146,7 @@ static void printRoute(HttpRoute *route, int next, bool full)
         mprRawLog(0, "    Prefix:       %s\n", route->prefix);
         mprRawLog(0, "    Target:       %s\n", target);
         mprRawLog(0, "    Directory:    %s\n", route->dir);
+        mprRawLog(0, "    Template:     %s\n", route->tplate);
         if (route->indicies) {
             mprRawLog(0, "    Indicies      ");
             for (ITERATE_ITEMS(route->indicies, index, nextIndex)) {
@@ -252,8 +253,9 @@ PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)
         host->routes = mprCloneList(host->parent->routes);
     }
     if (mprLookupItem(host->routes, route) < 0) {
-        if ((lastRoute = mprGetLastItem(host->routes)) && lastRoute->pattern[0] == '\0') {
-            /* Insert before default route */
+        if (route->pattern[0] && (lastRoute = mprGetLastItem(host->routes)) && lastRoute->pattern[0] == '\0') {
+            /* Insert non-default route before last default route */
+mprLog(0, "httpAddRoute UNUSED");
             thisRoute = mprInsertItemAtPos(host->routes, mprGetListLength(host->routes) - 1, route);
         } else {
             thisRoute = mprAddItem(host->routes, route);

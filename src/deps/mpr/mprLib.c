@@ -19831,7 +19831,7 @@ static Socket listenSocket(MprSocket *sp, cchar *ip, int port, int initialFlags)
 
     if (!(sp->flags & MPR_SOCKET_NOREUSE)) {
         rc = 1;
-#if BIT_UNIX_LIKE
+#if BIT_UNIX_LIKE || VXWORKS
         setsockopt(sp->fd, SOL_SOCKET, SO_REUSEADDR, (char*) &rc, sizeof(rc));
 #elif BIT_WIN_LIKE && defined(SO_EXCLUSIVEADDRUSE)
         setsockopt(sp->fd, SOL_SOCKET, SO_REUSEADDR | SO_EXCLUSIVEADDRUSE, (char*) &rc, sizeof(rc));
@@ -24246,7 +24246,7 @@ static void pruneWorkers(MprWorkerService *ws, MprEvent *timer)
         }
     }
     if (pruned) {
-        mprLog(2, "Pruned %d workers, pool has %d workers. Limits %d-%d.", 
+        mprLog(4, "Pruned %d workers, pool has %d workers. Limits %d-%d.", 
             pruned, ws->numThreads - pruned, ws->minThreads, ws->maxThreads);
     }
     unlock(ws);

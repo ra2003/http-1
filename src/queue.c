@@ -412,6 +412,28 @@ PUBLIC char *httpReadString(HttpConn *conn)
 }
 
 
+PUBLIC cchar *httpGetBodyInput(HttpConn *conn)
+{
+    HttpQueue   *q;
+    HttpRx      *rx;
+    MprBuf      *content;
+    
+    rx = conn->rx;
+    if (rx->streaming && !rx->eof) {
+        return 0;
+    }
+    q = conn->readq;
+    if (q->first) {
+        httpJoinPackets(q, -1);
+        if ((content = q->first->content) != 0) {
+            mprAddNullToBuf(content); 
+            return mprGetBufStart(content);
+        }
+    }
+    return 0;
+}
+
+
 PUBLIC void httpRemoveQueue(HttpQueue *q)
 {
     q->prevQ->nextQ = q->nextQ;

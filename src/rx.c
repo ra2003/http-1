@@ -534,6 +534,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         }
         mprAddKey(rx->headers, key, hvalue);
 
+        //  MOB - should all these comparisions be caseless?
         switch (tolower((uchar) key[0])) {
         case 'a':
             if (strcasecmp(key, "authorization") == 0) {
@@ -622,6 +623,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 rx->inputRange = httpCreateRange(conn, start, end);
 
             } else if (strcasecmp(key, "content-type") == 0) {
+                //  MOB - should this be tolower?
                 rx->mimeType = sclone(value);
                 if (rx->flags & (HTTP_POST | HTTP_PUT)) {
                     if (conn->endpoint) {
@@ -631,7 +633,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 } else { 
                     rx->form = rx->upload = 0;
                 }
-
             } else if (strcasecmp(key, "cookie") == 0) {
                 if (rx->cookie && *rx->cookie) {
                     rx->cookie = sjoin(rx->cookie, "; ", value, NULL);
@@ -824,8 +825,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
     }
-    rx->streaming = rx->streaming || !rx->form;
-
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
         httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
             "Request form of %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveFormSize);
@@ -898,8 +897,9 @@ static bool processParsed(HttpConn *conn)
     HttpRx      *rx;
 
     rx = conn->rx;
-    if (conn->endpoint && rx->streaming) {
+    if (conn->endpoint) {
         routeRequest(conn);
+        rx->streaming = rx->streaming || httpGetRouteStreaming(rx->route, rx->mimeType);
     }
     /*
         Send a 100 (Continue) response if the client has requested it. If the connection has an error, that takes
@@ -1045,9 +1045,6 @@ static bool processContent(HttpConn *conn)
         }
     }
     if (rx->eof) {
-        if (!rx->streaming) {
-            routeRequest(conn);
-        }
         while ((packet = httpGetPacket(q)) != 0) {
             httpPutPacketToNext(q, packet);
         }

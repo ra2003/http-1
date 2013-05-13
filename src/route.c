@@ -77,7 +77,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->defaultLanguage = sclone("en");
     route->dir = mprGetCurrentPath(".");
     route->home = route->dir;
-    route->errorDocuments = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
+    route->streaming = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES);
     route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->flags = HTTP_ROUTE_GZIP;
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
@@ -104,6 +104,9 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
         route->mimeTypes = MPR->mimeTypes;
     }  
     definePathVars(route);
+    mprAddKey(route->streaming, "application/x-www-form-urlencoded", "0");
+    mprAddKey(route->streaming, "application/json", "0");
+    mprAddKey(route->streaming, "*", "1");
     return route;
 }
 
@@ -134,6 +137,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->data = parent->data;
     route->eroute = parent->eroute;
     route->errorDocuments = parent->errorDocuments;
+    route->streaming = parent->streaming;
     route->extensions = parent->extensions;
     route->handler = parent->handler;
     route->handlers = parent->handlers;
@@ -214,6 +218,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->inputStages);
         mprMark(route->outputStages);
         mprMark(route->errorDocuments);
+        mprMark(route->streaming);
         mprMark(route->context);
         mprMark(route->uploadDir);
         mprMark(route->script);
@@ -569,8 +574,11 @@ static int testRoute(HttpConn *conn, HttpRoute *route)
     }
     if (route->tokens) {
         for (next = 0; (token = mprGetNextItem(route->tokens, &next)) != 0; ) {
-            value = snclone(&rx->pathInfo[rx->matches[next * 2]], rx->matches[(next * 2) + 1] - rx->matches[(next * 2)]);
-            httpSetParam(conn, token, value);
+            int index = rx->matches[next * 2];
+            if (index >= 0 && rx->pathInfo[index]) {
+                value = snclone(&rx->pathInfo[index], rx->matches[(next * 2) + 1] - index);
+                httpSetParam(conn, token, value);
+            }
         }
     }
     if ((proc = mprLookupKey(conn->http->routeTargets, route->targetRule)) == 0) {
@@ -1312,6 +1320,31 @@ PUBLIC cchar *httpLookupRouteErrorDocument(HttpRoute *route, int code)
     return (cchar*) mprLookupKey(route->errorDocuments, num);
 }
 
+
+PUBLIC void httpSetRouteStreaming(HttpRoute *route, cchar *mimeType, bool enable)
+{
+    assert(route);
+    GRADUATE_HASH(route, streaming);
+    mprAddKey(route->streaming, mimeType, enable ? "1" : "0");
+}
+
+
+PUBLIC bool httpGetRouteStreaming(HttpRoute *route, cchar *mimeType)
+{
+    cchar   *enable;
+
+    assert(route);
+    assert(route->streaming);
+
+    if (schr(mimeType, ';')) {
+        mimeType = stok(sclone(mimeType), ";", 0);
+    }
+    if ((enable = mprLookupKey(route->streaming, mimeType)) == 0) {
+        enable = mprLookupKey(route->streaming, "*");
+    }
+    return (enable && *enable == '1');
+}
+
 /********************************* Route Finalization *************************/
 
 static void finalizeMethods(HttpRoute *route)
@@ -1776,6 +1809,8 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *tplate, MprHash *options)
         if (*cp == '~' && (cp == tplate || cp[-1] != '\\')) {
             if (route->prefix) {
                 mprPutStringToBuf(buf, route->prefix);
+            } else {
+                mprPutStringToBuf(buf, "/");
             }
 
         } else if (*cp == '$' && cp[1] == '{' && (cp == tplate || cp[-1] != '\\')) {
@@ -2331,6 +2366,17 @@ static void addRestful(HttpRoute *parent, cchar *action, cchar *methods, cchar *
 }
 
 
+PUBLIC void httpAddAngularResourceGroup(HttpRoute *parent, cchar *resource)
+{
+    addRestful(parent, "get",       "GET",    "/{id=[0-9]+}$",           "get",           resource);
+    addRestful(parent, "destroy",   "DELETE", "/{id=[0-9]+}$",           "remove",        resource);
+    addRestful(parent, "query",     "GET",    "(/)*$",                   "query",         resource);
+    addRestful(parent, "save",      "POST",   "(/{id=[0-9]+})*$",        "save",          resource);
+    addRestful(parent, "custom",    "POST",   "/{action}/{id=[0-9]+}$",  "${action}",     resource);
+    addRestful(parent, "default",   "*",      "/{action}$",              "cmd-${action}", resource);
+}
+
+
 /*
     httpAddResourceGroup(parent, "{controller}")
  */
@@ -2376,17 +2422,17 @@ PUBLIC void httpAddHomeRoute(HttpRoute *parent)
 }
 
 
-PUBLIC void httpAddStaticRoute(HttpRoute *parent)
+PUBLIC void httpAddStaticRoute(HttpRoute *parent, cchar *name)
 {
     HttpRoute   *route;
-    cchar       *source, *name, *path, *pattern, *prefix;
+    cchar       *source, *qname, *path, *pattern, *prefix;
 
     prefix = parent->prefix ? parent->prefix : "";
     source = parent->sourceName;
-    name = qualifyName(parent, NULL, "static");
+    qname = qualifyName(parent, NULL, name);
     path = stemplate("${STATIC_DIR}/$1", parent->vars);
-    pattern = sfmt("^%s%s", prefix, "/static/(.*)");
-    route = httpDefineRoute(parent, name, "GET", pattern, path, source);
+    pattern = sfmt("^%s/%s/(.*)", prefix, name);
+    route = httpDefineRoute(parent, qname, "GET", pattern, path, source);
     httpAddRouteHandler(route, "fileHandler", "");
 }
 
@@ -2396,20 +2442,26 @@ PUBLIC void httpAddRouteSet(HttpRoute *parent, cchar *set)
     if (scaselessmatch(set, "simple")) {
         httpAddHomeRoute(parent);
 
-    } else if (scaselessmatch(set, "mvc-simple")) {
-        httpAddHomeRoute(parent);
-        httpAddStaticRoute(parent);
-
     } else if (scaselessmatch(set, "mvc")) {
         httpAddHomeRoute(parent);
-        httpAddStaticRoute(parent);
+        httpAddStaticRoute(parent, "static");
+
+    } else if (scaselessmatch(set, "mvc-fixed")) {
+        httpAddHomeRoute(parent);
+        httpAddStaticRoute(parent, "static");
         httpDefineRoute(parent, "default", NULL, "^/{controller}(~/{action}~)", "${controller}-${action}", 
             "${controller}.c");
 
     } else if (scaselessmatch(set, "restful")) {
         httpAddHomeRoute(parent);
-        httpAddStaticRoute(parent);
+        httpAddStaticRoute(parent, "static");
         httpAddResourceGroup(parent, "{controller}");
+
+    } else if (scaselessmatch(set, "angular")) {
+        //  MOB - these two need prefixes
+        httpAddHomeRoute(parent);
+        httpAddStaticRoute(parent, "client");
+        httpAddAngularResourceGroup(parent, "{controller}");
 
     } else if (!scaselessmatch(set, "none")) {
         mprError("Unknown route set %s", set);
@@ -2906,7 +2958,8 @@ PUBLIC bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list arg
                 }
                 break;
             case 'B':
-                if (scaselesscmp(tok, "on") == 0 || scaselesscmp(tok, "true") == 0 || scaselesscmp(tok, "yes") == 0) {
+                if (scaselessmatch(tok, "on") || scaselessmatch(tok, "true") || scaselessmatch(tok, "yes") ||
+                        smatch(tok, "1")) {
                     *va_arg(args, bool*) = 1;
                 } else {
                     *va_arg(args, bool*) = 0;

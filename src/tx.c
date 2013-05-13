@@ -670,7 +670,7 @@ PUBLIC void httpSetStatus(HttpConn *conn, int status)
 
 PUBLIC void httpSetContentType(HttpConn *conn, cchar *mimeType)
 {
-    httpSetHeaderString(conn, "Content-Type", sclone(mimeType));
+    httpSetHeaderString(conn, "Content-Type", mimeType);
 }
 
 

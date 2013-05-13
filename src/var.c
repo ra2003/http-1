@@ -243,6 +243,17 @@ PUBLIC void httpAddParams(HttpConn *conn)
 }
 
 
+PUBLIC void httpAddParamsFromJsonBody(HttpConn *conn)
+{
+    HttpRx      *rx;
+
+    rx = conn->rx;
+    if (rx->eof && sstarts(rx->mimeType, "application/json")) {
+        mprDeserializeInto(httpGetBodyInput(conn), httpGetParams(conn));
+    }
+}
+
+
 PUBLIC MprHash *httpGetParams(HttpConn *conn)
 { 
     if (conn->rx->params == 0) {

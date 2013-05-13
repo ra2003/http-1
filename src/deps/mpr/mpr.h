@@ -3858,12 +3858,12 @@ PUBLIC void mprWarn(cchar *fmt, ...);
 #endif
 
 #if DEPRECATED
-#define LOG mprTrace
-#define mprFatalError mprError
-#define mprUserError mprError
-#define mprMemoryError mprError
-#define mprPrintfError mprEprintf
-#define assure assert
+    #define LOG mprTrace
+    #define mprFatalError mprError
+    #define mprUserError mprError
+    #define mprMemoryError mprError
+    #define mprPrintfError mprEprintf
+    #define assure assert
 #endif
 
 /************************************ Hash ************************************/
@@ -5860,6 +5860,7 @@ PUBLIC void mprXmlSetParserHandler(MprXml *xp, MprXmlHandler h);
     Flags for mprSerialize
  */
 #define MPR_JSON_PRETTY     0x1         /**< Serialize output in a more human readable, multiline "pretty" format */
+#define MPR_JSON_QUOTES     0x2         /**< Serialize output quoting keys */
 
 /*
     Data types for obj property values (must fit into MprKey.type)
@@ -5940,12 +5941,13 @@ PUBLIC cchar *mprSerialize(MprObj *obj, int flags);
     @param str JSON string to deserialize.
     @param callback Callback functions. This is an instance of the #MprJsonCallback structure.
     @param data Opaque object to pass to the given callbacks
+    @param obj Object to serialize into.
     @return Returns a serialized JSON character string.
     @ingroup MprJson
     @stability Internal
     @internal
  */
-PUBLIC MprObj *mprDeserializeCustom(cchar *str, MprJsonCallback callback, void *data);
+PUBLIC MprObj *mprDeserializeCustom(cchar *str, MprJsonCallback callback, void *data, MprObj *obj);
 
 /**
     Deserialize a JSON string into an object tree.
@@ -5958,6 +5960,9 @@ PUBLIC MprObj *mprDeserializeCustom(cchar *str, MprJsonCallback callback, void *
     @stability Stable
  */
 PUBLIC MprObj *mprDeserialize(cchar *str);
+
+//  MOB DOC
+PUBLIC MprObj *mprDeserializeInto(cchar *str, MprObj *obj);
 
 /**
     Signal a parse error in the JSON input stream.

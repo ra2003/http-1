@@ -21,22 +21,23 @@ static bool fileVerifyUser(HttpConn *conn);
 
 PUBLIC void httpInitAuth(Http *http)
 {
-    httpAddAuthType(http, "basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
-    httpAddAuthType(http, "digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
-    httpAddAuthType(http, "form", formLogin, NULL, NULL);
+    httpAddAuthType("basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
+    httpAddAuthType("digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
+    httpAddAuthType("form", formLogin, NULL, NULL);
 
 #if BIT_HAS_PAM && BIT_HTTP_PAM
     /*
         Pam must be actively selected during configuration
         TODO - should support Windows ActiveDirectory
      */
-    httpAddAuthStore(http, "system", httpPamVerifyUser);
+    httpAddAuthStore("system", httpPamVerifyUser);
     //  DEPRECATED
-    httpAddAuthStore(http, "pam", httpPamVerifyUser);
+    httpAddAuthStore("pam", httpPamVerifyUser);
 #endif
+    httpAddAuthStore("internal", fileVerifyUser);
     //  DEPRECATED
-    httpAddAuthStore(http, "file", fileVerifyUser);
-    httpAddAuthStore(http, "internal", fileVerifyUser);
+    httpAddAuthStore("file", fileVerifyUser);
+    httpAddAuthStore("app", NULL);
 }
 
 
@@ -98,9 +99,10 @@ PUBLIC int httpAuthenticate(HttpConn *conn)
 }
 
 
-PUBLIC bool httpCanUser(HttpConn *conn)
+PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
 {
     HttpAuth    *auth;
+    char        *ability, *tok;
     MprKey      *kp;
 
     auth = conn->rx->route->auth;
@@ -122,11 +124,21 @@ PUBLIC bool httpCanUser(HttpConn *conn)
             return 0;
         }
     }
-    for (ITERATE_KEYS(auth->requiredAbilities, kp)) {
-        if (!mprLookupKey(conn->user->abilities, kp->key)) {
-            mprLog(2, "User \"%s\" does not possess the required ability: \"%s\" to access %s", 
-                conn->username, kp->key, conn->rx->pathInfo);
-            return 0;
+    if (abilities) {
+        for (ability = stok(sclone(abilities), " \t,", &tok); abilities; abilities = stok(NULL, " \t,", &tok)) {
+            if (!mprLookupKey(conn->user->abilities, ability)) {
+                mprLog(2, "User \"%s\" does not possess the required ability: \"%s\" to access %s", 
+                    conn->username, ability, conn->rx->pathInfo);
+                return 0;
+            }
+        }
+    } else {
+        for (ITERATE_KEYS(auth->requiredAbilities, kp)) {
+            if (!mprLookupKey(conn->user->abilities, kp->key)) {
+                mprLog(2, "User \"%s\" does not possess the required ability: \"%s\" to access %s", 
+                    conn->username, kp->key, conn->rx->pathInfo);
+                return 0;
+            }
         }
     }
     return 1;
@@ -156,6 +168,13 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         httpSetSessionVar(conn, HTTP_SESSION_USERNAME, conn->username);
     }
     return 1;
+}
+
+
+PUBLIC void httpLogout(HttpConn *conn) 
+{
+    httpRemoveSessionVar(conn, HTTP_SESSION_USERNAME);
+    httpRemoveSessionVar(conn, HTTP_SESSION_AUTHVER);
 }
 
 
@@ -233,10 +252,12 @@ static void manageAuthType(HttpAuthType *type, int flags)
 }
 
 
-PUBLIC int httpAddAuthType(Http *http, cchar *name, HttpAskLogin askLogin, HttpParseAuth parseAuth, HttpSetAuth setAuth)
+PUBLIC int httpAddAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth parseAuth, HttpSetAuth setAuth)
 {
+    Http            *http;
     HttpAuthType    *type;
 
+    http = MPR->httpService;
     if ((type = mprAllocObj(HttpAuthType, manageAuthType)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -263,18 +284,34 @@ static void manageAuthStore(HttpAuthStore *store, int flags)
 /*
     Add a password store backend
  */
-PUBLIC int httpAddAuthStore(Http *http, cchar *name, HttpVerifyUser verifyUser)
+PUBLIC int httpAddAuthStore(cchar *name, HttpVerifyUser verifyUser)
 {
-    HttpAuthStore    *store;
+    Http            *http;
+    HttpAuthStore   *store;
 
     if ((store = mprAllocObj(HttpAuthStore, manageAuthStore)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     store->name = sclone(name);
     store->verifyUser = verifyUser;
+    http = MPR->httpService;
     if (mprAddKey(http->authStores, name, store) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
+    return 0;
+}
+
+
+PUBLIC int httpSetAuthStoreVerify(cchar *name, HttpVerifyUser verifyUser)
+{
+    Http            *http;
+    HttpAuthStore   *store;
+
+    http = MPR->httpService;
+    if ((store = mprLookupKey(http->authStores, name)) == 0) {
+        return MPR_ERR_CANT_FIND;
+    }
+    store->verifyUser = verifyUser;
     return 0;
 }
 
@@ -332,7 +369,8 @@ PUBLIC void httpSetAuthOrder(HttpAuth *auth, int order)
 
 
 /*
-    Internal login service routine. Called in response to a form-based login request.
+    Form login service routine. Called in response to a form-based login request.
+    The password is clear-text so this must be used over SSL to be secure.
  */
 static void loginServiceProc(HttpConn *conn)
 {
@@ -367,11 +405,8 @@ static void loginServiceProc(HttpConn *conn)
 
 static void logoutServiceProc(HttpConn *conn)
 {
-    HttpAuth    *auth;
-
-    auth = conn->rx->route->auth;
     httpRemoveSessionVar(conn, HTTP_SESSION_USERNAME);
-    httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
+    httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, conn->rx->route->auth->loginPage);
 }
 
 
@@ -641,12 +676,12 @@ static void computeAbilities(HttpAuth *auth, MprHash *abilities, cchar *role)
         /* Interpret as a role */
         for (ITERATE_KEYS(rp->abilities, ap)) {
             if (!mprLookupKey(abilities, ap->key)) {
-                mprAddKey(abilities, ap->key, MPR->emptyString);
+                mprAddKey(abilities, ap->key, MPR->oneString);
             }
         }
     } else {
         /* Not found as a role: Interpret role as an ability */
-        mprAddKey(abilities, role, MPR->emptyString);
+        mprAddKey(abilities, role, MPR->oneString);
     }
 }
 
@@ -707,9 +742,9 @@ static bool fileVerifyUser(HttpConn *conn)
         mprLog(5, "fileVerifyUser: Unknown user \"%s\" for route %s", conn->username, rx->route->name);
         return 0;
     }
-    if (rx->passDigest) {
+    if (rx->passwordDigest) {
         /* Digest authentication computes a digest using the password as one ingredient */
-        success = smatch(conn->password, rx->passDigest);
+        success = smatch(conn->password, rx->passwordDigest);
     } else {
         success = smatch(conn->password, conn->user->password);
     }

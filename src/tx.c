@@ -512,7 +512,8 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
 
 
 /*
-    Set lifespan < 0 to delete the cookie in the clinet
+    Set lifespan < 0 to delete the cookie in the client
+    Set lifespan == 0 to get a session cookie in the client.
  */
 PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, 
     MprTicks lifespan, int flags)
@@ -550,13 +551,19 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
         expires = expiresAtt = "";
     }
     /* 
-       Allow multiple cookie headers. Even if the same name. Later definitions take precedence
+       Allow multiple cookie headers. Even if the same name. Later definitions take precedence.
      */
     secure = (flags & HTTP_COOKIE_SECURE) ? "; secure" : "";
     httponly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
     httpAppendHeader(conn, "Set-Cookie", 
         sjoin(name, "=", value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
     httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
+}
+
+
+PUBLIC void httpRemoveCookie(HttpConn *conn, cchar *name)
+{
+    httpSetCookie(conn, name, "", NULL, NULL, -1, 0);
 }
 
 

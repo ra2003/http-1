@@ -1,5 +1,5 @@
 /**
-    httpSession.c - Session data storage
+    session.c - Session data storage
 
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
@@ -22,29 +22,29 @@ static void manageSession(HttpSession *sp, int flags);
 PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTicks lifespan)
 {
     HttpSession *sp;
-    Http        *http;
 
     assert(conn);
-    http = conn->http;
 
-    lock(http);
-    http->activeSessions++;
-    if (http->activeSessions >= conn->limits->sessionMax) {
-        httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE,
-            "Too many sessions %d/%d", http->activeSessions, conn->limits->sessionMax);
+    if (id == 0) {
+        id = makeSessionID(conn);
+#if UNUSED
+        Http        *http;
+        http = conn->http;
+        lock(http);
+        http->activeSessions++;
+        if (http->activeSessions >= conn->limits->sessionMax) {
+            httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Too many sessions %d/%d", http->activeSessions, conn->limits->sessionMax);
+            unlock(http);
+            return 0;
+        }
         unlock(http);
-        return 0;
+#endif
     }
-    unlock(http);
-
     if ((sp = mprAllocObj(HttpSession, manageSession)) == 0) {
         return 0;
     }
     mprSetName(sp, "session");
     sp->lifespan = lifespan;
-    if (id == 0) {
-        id = makeSessionID(conn);
-    }
     sp->id = sclone(id);
     sp->cache = conn->http->sessionCache;
     sp->conn = conn;
@@ -73,13 +73,19 @@ PUBLIC void httpDestroySession(HttpConn *conn)
     http = conn->http;
     lock(http);
     if ((sp = httpGetSession(conn, 0)) != 0) {
+#if UNUSED
         httpSetCookie(conn, HTTP_SESSION_COOKIE, conn->rx->session->id, "/", NULL, -1, 0);
+#else
+        httpRemoveCookie(conn, HTTP_SESSION_COOKIE);
+#endif
 #if UNUSED
         /* Can't do this as we can only expire individual items in the cache as the cache is shared */
         mprExpireCache(sp->cache, makeKey(sp, key), 0);
 #endif
+#if UNUSED
         http->activeSessions--;
         assert(http->activeSessions >= 0);
+#endif
         sp->id = 0;
         conn->rx->session = 0;
     }
@@ -121,7 +127,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             /*
                 Define the cookie in the browser if creating a new session
              */
-            httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, 0, 0);
+            httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, conn->limits->sessionTimeout, 0);
         }
     }
     return rx->session;

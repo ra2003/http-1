@@ -87,7 +87,7 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->params);
         mprMark(rx->svars);
         mprMark(rx->inputRange);
-        mprMark(rx->passDigest);
+        mprMark(rx->passwordDigest);
         mprMark(rx->files);
         mprMark(rx->uploadDir);
         mprMark(rx->paramString);
@@ -984,13 +984,10 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
         httpTraceContent(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, packet, nbytes, rx->bytesRead);
     }
     if (rx->eof) {
+#if OLD
         if (rx->length > 0) {
             conn->input = httpSplitPacket(packet, (ssize) rx->length);
             *more = 1;
-        }
-#if HTTP_DIRECT_INPUT
-        if (rx->flags & HTTP_DIRECT_INPUT) {
-            rx->flags &= ~HTTP_DIRECT_INPUT;
         }
 #endif
         if (rx->remainingContent > 0 && !conn->http10) {
@@ -998,6 +995,15 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
             return 0;
         }
+        if (nbytes > 0 && httpGetPacketLength(packet) > nbytes) {
+            conn->input = httpSplitPacket(packet, nbytes);
+            *more = 1;
+        }
+#if HTTP_DIRECT_INPUT
+        if (rx->flags & HTTP_DIRECT_INPUT) {
+            rx->flags &= ~HTTP_DIRECT_INPUT;
+        }
+#endif
     } else {
         if (rx->chunkState && nbytes > 0 && httpGetPacketLength(packet) > nbytes) {
             /* Split data for next chunk */
@@ -1049,6 +1055,9 @@ static bool processContent(HttpConn *conn)
             httpPutPacketToNext(q, packet);
         }
         httpPutPacketToNext(q, httpCreateEndPacket());
+        if (conn->endpoint) {
+            httpAddParams(conn);
+        }
         if (!tx->started) {
             httpStartPipeline(conn);
         }

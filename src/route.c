@@ -2032,7 +2032,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         /* Request has been denied and fully handled */
         return HTTP_ROUTE_OK;
     }
-    if (!httpCanUser(conn)) {
+    if (!httpCanUser(conn, NULL)) {
         httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
     }
     return HTTP_ROUTE_OK;

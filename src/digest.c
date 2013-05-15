@@ -205,7 +205,7 @@ PUBLIC int httpDigestParse(HttpConn *conn)
             mprTrace(2, "Access denied: Nonce is stale\n");
             return MPR_ERR_BAD_STATE;
         }
-        rx->passDigest = calcDigest(conn, dp);
+        rx->passwordDigest = calcDigest(conn, dp);
     } else {
         if (dp->domain == 0 || dp->opaque == 0 || dp->algorithm == 0 || dp->stale == 0) {
             return MPR_ERR_BAD_FORMAT;

@@ -191,25 +191,6 @@ static void addParamsFromBufInsitu(HttpConn *conn, char *buf, ssize len)
 #endif
 
 
-static void addParamsFromQueue(HttpQueue *q)
-{
-    HttpConn    *conn;
-    HttpRx      *rx;
-    MprBuf      *content;
-
-    assert(q);
-    
-    conn = q->conn;
-    rx = conn->rx;
-
-    if ((rx->form || rx->upload) && q->first && q->first->content) {
-        httpJoinPackets(q, -1);
-        content = q->first->content;
-        mprAddNullToBuf(content);
-        mprTrace(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
-        addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
-    }
-}
 
 
 static void addQueryParams(HttpConn *conn) 
@@ -227,11 +208,21 @@ static void addQueryParams(HttpConn *conn)
 static void addBodyParams(HttpConn *conn)
 {
     HttpRx      *rx;
+    HttpQueue   *q;
+    MprBuf      *content;
 
     rx = conn->rx;
-    if (rx->form && !(rx->flags & HTTP_ADDED_FORM_PARAMS)) {
-        addParamsFromQueue(conn->readq);
-        rx->flags |= HTTP_ADDED_FORM_PARAMS;
+    q = conn->readq;
+
+    if ((rx->form || rx->upload) && !(rx->flags & HTTP_ADDED_FORM_PARAMS)) {
+        if (q->first && q->first->content) {
+            httpJoinPackets(q, -1);
+            content = q->first->content;
+            mprAddNullToBuf(content);
+            mprTrace(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
+            addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
+            rx->flags |= HTTP_ADDED_FORM_PARAMS;
+        }
     }
 }
 

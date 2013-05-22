@@ -214,15 +214,19 @@ static void addBodyParams(HttpConn *conn)
     rx = conn->rx;
     q = conn->readq;
 
-    if ((rx->form || rx->upload) && !(rx->flags & HTTP_ADDED_FORM_PARAMS)) {
+    if (rx->eof && !(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
         if (q->first && q->first->content) {
             httpJoinPackets(q, -1);
             content = q->first->content;
             mprAddNullToBuf(content);
-            mprTrace(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
-            addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
-            rx->flags |= HTTP_ADDED_FORM_PARAMS;
+            if (rx->form || rx->upload) {
+                mprTrace(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
+                addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
+            } else if (rx->route->flags & HTTP_ROUTE_JSON && sstarts(rx->mimeType, "application/json")) {
+                mprDeserializeInto(httpGetBodyInput(conn), httpGetParams(conn));
+            }
         }
+        rx->flags |= HTTP_ADDED_BODY_PARAMS;
     }
 }
 
@@ -234,13 +238,16 @@ PUBLIC void httpAddParams(HttpConn *conn)
 }
 
 
-PUBLIC void httpAddParamsFromJsonBody(HttpConn *conn)
+PUBLIC void httpAddJsonParams(HttpConn *conn)
 {
     HttpRx      *rx;
 
     rx = conn->rx;
     if (rx->eof && sstarts(rx->mimeType, "application/json")) {
-        mprDeserializeInto(httpGetBodyInput(conn), httpGetParams(conn));
+        if (!(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
+            mprDeserializeInto(httpGetBodyInput(conn), httpGetParams(conn));
+            rx->flags |= HTTP_ADDED_BODY_PARAMS;
+        }
     }
 }
 

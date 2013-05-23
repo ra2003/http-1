@@ -253,8 +253,13 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
     HttpRx      *rx;
     
     tx = conn->tx;
-    tx->started = 1;
     rx = conn->rx;
+
+    if (conn->endpoint) {
+        httpCreateRxPipeline(conn, rx->route);
+        httpCreateTxPipeline(conn, rx->route);
+    }
+    tx->started = 1;
     if (rx->needInputPipeline) {
         qhead = tx->queue[HTTP_QUEUE_RX];
         for (q = qhead->nextQ; !tx->finalized && q->nextQ != qhead; q = nextQ) {

@@ -83,6 +83,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
     route->host = host;
     route->http = MPR->httpService;
+    route->errorDocuments = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
     route->indicies = mprCreateList(-1, 0);
     route->inputStages = mprCreateList(-1, 0);
     route->lifespan = BIT_MAX_CACHE_DURATION;
@@ -2294,10 +2295,14 @@ static int writeTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
 /************************************************** Route Convenience ****************************************************/
 
-PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods, cchar *pattern, cchar *target, cchar *source)
+PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods, cchar *pattern, cchar *target, 
+        cchar *source)
 {
     HttpRoute   *route;
 
+    if (name == NULL || *name == '\0') {
+        name = "/";
+    }
     if ((route = httpCreateInheritedRoute(parent)) == 0) {
         return 0;
     }
@@ -2338,13 +2343,14 @@ static char *qualifyName(HttpRoute *route, cchar *service, cchar *action)
 /*
     Add a restful route. The parent route may supply a route prefix. If defined, the route name will prepend the prefix.
  */
-static HttpRoute *addRestful(HttpRoute *parent, cchar *action, cchar *methods, cchar *pattern, cchar *target, cchar *resource, int flags)
+static HttpRoute *addRestful(HttpRoute *parent, cchar *action, cchar *methods, cchar *pattern, cchar *target, 
+        cchar *resource, int flags)
 {
     HttpRoute   *route;
     cchar       *name, *nameResource, *prefix, *source;
 
-    nameResource = smatch(resource, "{service}") ? "*" : resource;
     if (parent->flags & HTTP_ROUTE_ANGULAR) {
+        nameResource = smatch(resource, "{service}") ? "*" : resource;
         if (parent->prefix) {
             prefix = sfmt("/service/%s", parent->prefix);
         } else {
@@ -2357,6 +2363,7 @@ static HttpRoute *addRestful(HttpRoute *parent, cchar *action, cchar *methods, c
             pattern = sfmt("^%s/{service=%s}%s", prefix, resource, pattern);
         }
     } else {
+        nameResource = smatch(resource, "{controller}") ? "*" : resource;
         if (parent->prefix) {
             name = sfmt("%s/%s/%s", parent->prefix, nameResource, action);
             pattern = sfmt("^%s/%s%s", parent->prefix, resource, pattern);
@@ -2401,9 +2408,6 @@ PUBLIC void httpAddAngularResourceGroup(HttpRoute *parent, cchar *resource)
 }
 
 
-/*
-    httpAddResourceGroup(parent, "{service}")
- */
 PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *resource)
 {
     addRestful(parent, "list",      "GET",    "(/)*$",                   "list",          resource, 0);
@@ -2418,9 +2422,6 @@ PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *resource)
 }
 
 
-/*
-    httpAddResource(parent, "{service}")
- */
 PUBLIC void httpAddResource(HttpRoute *parent, cchar *resource)
 {
     addRestful(parent, "init",      "GET",    "/init$",       "init",          resource, 0);
@@ -2441,29 +2442,22 @@ PUBLIC void httpAddHomeRoute(HttpRoute *parent)
     source = parent->sourceName;
     name = qualifyName(parent, NULL, "home");
     path = stemplate("${CLIENT_DIR}/index.esp", parent->vars);
-    pattern = sfmt("^%s/$", prefix);
+    pattern = sfmt("^%s(/)$", prefix);
     httpDefineRoute(parent, name, "GET,POST", pattern, path, source);
 }
 
 
-PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *name)
+PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *prefix)
 {
     HttpRoute   *route;
-    cchar       *source, *qname, *path, *pattern, *prefix;
+    cchar       *path, *pattern;
 
-    prefix = parent->prefix ? parent->prefix : "";
-    source = parent->sourceName;
-    qname = (prefix && *prefix) ? prefix : "/";
-    path = stemplate("${CLIENT_DIR}/$1", parent->vars);
-    pattern = sfmt("^%s/(.*)", prefix);
-#if UNUSED
-    if (!(parent->flags & HTTP_ROUTE_ANGULAR)) {
-        qname = qualifyName(parent, NULL, name);
-        path = stemplate("${CLIENT_DIR}/$1", parent->vars);
-        pattern = sfmt("^%s/%s/(.*)", prefix, name);
+    if (parent->prefix) {
+        prefix = sjoin(parent->prefix, prefix, NULL);
     }
-#endif
-    route = httpDefineRoute(parent, qname, "GET", pattern, path, source);
+    pattern = sfmt("^%s/(.*)", prefix);
+    path = stemplate("${CLIENT_DIR}/$1", parent->vars);
+    route = httpDefineRoute(parent, prefix, "GET", pattern, path, parent->sourceName);
     httpAddRouteHandler(route, "fileHandler", "");
 }
 
@@ -2475,24 +2469,24 @@ PUBLIC void httpAddRouteSet(HttpRoute *parent, cchar *set)
 
     } else if (scaselessmatch(set, "angular")) {
         httpAddAngularResourceGroup(parent, "{service}");
-        httpAddClientRoute(parent, "client");
+        httpAddClientRoute(parent, NULL);
 
 #if DEPRECATE || 1
     } else if (scaselessmatch(set, "mvc")) {
         httpAddHomeRoute(parent);
-        httpAddClientRoute(parent, "static");
+        httpAddClientRoute(parent, "/static");
 
     } else if (scaselessmatch(set, "restful")) {
         httpAddHomeRoute(parent);
-        httpAddClientRoute(parent, "static");
-        httpAddResourceGroup(parent, "{service}");
+        httpAddClientRoute(parent, "/static");
+        httpAddResourceGroup(parent, "{controller}");
 #endif
 #if UNUSED
     } else if (scaselessmatch(set, "mvc-fixed")) {
         httpAddHomeRoute(parent);
-        httpAddClientRoute(parent, "static");
-        httpDefineRoute(parent, "default", NULL, "^/{service}(~/{action}~)", "${service}-${action}", 
-            "${service}.c");
+        httpAddClientRoute(parent, "/static");
+        httpDefineRoute(parent, "default", NULL, "^/{controller}(~/{action}~)", "${controller}-${action}", 
+            "${controller}.c");
 #endif
     } else if (!scaselessmatch(set, "none")) {
         mprError("Unknown route set %s", set);

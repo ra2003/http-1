@@ -24,7 +24,6 @@ static void parseMethod(HttpConn *conn);
 static bool processParsed(HttpConn *conn);
 static bool processReady(HttpConn *conn);
 static bool processRunning(HttpConn *conn);
-static void routeRequest(HttpConn *conn);
 static int setParsedUri(HttpConn *conn);
 
 /*********************************** Code *************************************/
@@ -257,29 +256,12 @@ static void mapMethod(HttpConn *conn)
     cchar       *method;
 
     rx = conn->rx;
-    if (rx->flags & HTTP_POST) {
-        if ((method = httpGetParam(conn, "-http-method-", 0)) != 0) {
-            if (!scaselessmatch(method, rx->method)) {
-                mprLog(3, "Change method from %s to %s for %s", rx->method, method, rx->uri);
-                httpSetMethod(conn, method);
-            }
+    if (rx->flags & HTTP_POST && (method = httpGetParam(conn, "-http-method-", 0)) != 0) {
+        if (!scaselessmatch(method, rx->method)) {
+            mprLog(3, "Change method from %s to %s for %s", rx->method, method, rx->uri);
+            httpSetMethod(conn, method);
         }
     }
-}
-
-
-static void routeRequest(HttpConn *conn)
-{
-    HttpRx  *rx;
-
-    assert(conn->endpoint);
-
-    rx = conn->rx;
-    httpAddParams(conn);
-    mapMethod(conn);
-    httpRouteRequest(conn);  
-    httpCreateRxPipeline(conn, rx->route);
-    httpCreateTxPipeline(conn, rx->route);
 }
 
 
@@ -898,7 +880,8 @@ static bool processParsed(HttpConn *conn)
 
     rx = conn->rx;
     if (conn->endpoint) {
-        routeRequest(conn);
+        httpAddParams(conn);
+        httpRouteRequest(conn);  
         rx->streaming = rx->streaming || httpGetRouteStreaming(rx->route, rx->mimeType);
     }
     /*
@@ -984,12 +967,6 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
         httpTraceContent(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, packet, nbytes, rx->bytesRead);
     }
     if (rx->eof) {
-#if OLD
-        if (rx->length > 0) {
-            conn->input = httpSplitPacket(packet, (ssize) rx->length);
-            *more = 1;
-        }
-#endif
         if (rx->remainingContent > 0 && !conn->http10) {
             /* Closing is the only way for HTTP/1.0 to signify the end of data */
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
@@ -1051,16 +1028,24 @@ static bool processContent(HttpConn *conn)
         }
     }
     if (rx->eof) {
-        while ((packet = httpGetPacket(q)) != 0) {
-            httpPutPacketToNext(q, packet);
-        }
-        httpPutPacketToNext(q, httpCreateEndPacket());
         if (conn->endpoint) {
             httpAddParams(conn);
+            if (rx->form && !rx->streaming) {
+                /* Re-route to enable routing on body parameters */
+                if (rx->scriptName && rx->scriptName) {
+                    rx->pathInfo = sjoin(rx->scriptName, rx->pathInfo, NULL);
+                }
+                mapMethod(conn);
+                httpRouteRequest(conn);
+            }
         }
         if (!tx->started) {
             httpStartPipeline(conn);
         }
+        while ((packet = httpGetPacket(q)) != 0) {
+            httpPutPacketToNext(q, packet);
+        }
+        httpPutPacketToNext(q, httpCreateEndPacket());
         httpSetState(conn, HTTP_STATE_READY);
         return conn->workerEvent ? 0 : 1;
     }

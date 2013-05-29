@@ -863,7 +863,9 @@ static bool processParsed(HttpConn *conn)
     if (conn->endpoint) {
         httpAddParams(conn);
         httpRouteRequest(conn);  
-        rx->streaming = rx->streaming || httpGetRouteStreaming(rx->route, rx->mimeType);
+        rx->streaming = !rx->upload && (rx->streaming || httpGetRouteStreaming(rx->route, rx->mimeType));
+    } else {
+        rx->streaming = 1;
     }
     /*
         Send a 100 (Continue) response if the client has requested it. If the connection has an error, that takes
@@ -881,7 +883,7 @@ static bool processParsed(HttpConn *conn)
     httpSetState(conn, HTTP_STATE_CONTENT);
 
     //  TODO - remove special case for upload
-    if (rx->streaming && !rx->upload) {
+    if (rx->streaming) {
         if (rx->remainingContent == 0) {
             rx->eof = 1;
         }
@@ -1002,7 +1004,7 @@ static bool processContent(HttpConn *conn)
     if (rx->eof) {
         if (conn->endpoint) {
             httpAddParams(conn);
-            if (rx->form && !rx->streaming) {
+            if ((rx->form || rx->upload) && !rx->streaming) {
                 /* Re-route to enable routing on body parameters */
                 if (rx->scriptName && rx->scriptName) {
                     rx->pathInfo = sjoin(rx->scriptName, rx->pathInfo, NULL);

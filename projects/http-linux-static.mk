@@ -3,7 +3,7 @@
 #
 
 PRODUCT            := http
-VERSION            := 1.3.1
+VERSION            := 1.4.0
 BUILD_NUMBER       := 0
 PROFILE            := static
 ARCH               := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
@@ -191,7 +191,7 @@ clobber: clean
 #   version
 #
 version: $(DEPS_1)
-	@echo 1.3.1-0
+	@echo 1.4.0-0
 
 #
 #   est.h

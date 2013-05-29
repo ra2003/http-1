@@ -3,7 +3,7 @@
 #
 
 PRODUCT            := http
-VERSION            := 1.3.1
+VERSION            := 1.4.0
 BUILD_NUMBER       := 0
 PROFILE            := default
 ARCH               := $(shell echo $(WIND_HOST_TYPE) | sed 's/-.*//')
@@ -198,7 +198,7 @@ clobber: clean
 #   version
 #
 version: $(DEPS_1)
-	@echo 1.3.1-0
+	@echo 1.4.0-0
 
 #
 #   est.h

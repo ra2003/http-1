@@ -110,7 +110,7 @@ PUBLIC void httpDestroySession(HttpConn *conn)
     lock(http);
     if ((sp = httpGetSession(conn, 0)) != 0) {
         httpRemoveCookie(conn, HTTP_SESSION_COOKIE);
-        mprExpireCache(sp->cache, sp->id, 0);
+        mprExpireCacheItem(sp->cache, sp->id, 0);
         sp->id = 0;
         http->activeSessions--;
         assert(http->activeSessions >= 0);

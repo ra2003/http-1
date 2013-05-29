@@ -10,50 +10,86 @@
 
 /********************************** Forwards  *********************************/
 
-static char *makeKey(HttpSession *sp, cchar *key);
-static char *makeSessionID(HttpConn *conn);
 static void manageSession(HttpSession *sp, int flags);
 
 /************************************* Code ***********************************/
 /*
-    Allocate a http session state object. This manages an underlying session state store which
-    exists independently from this session object.
+    Allocate a http session state object. This keeps a local hash for session state items.
+    This is written via httpWriteSession to the backend session state store.
  */
-PUBLIC HttpSession *httpAllocSession(HttpConn *conn, cchar *id, MprTicks lifespan)
+static HttpSession *allocSession(HttpConn *conn, cchar *id, cchar *data)
 {
     HttpSession *sp;
 
     assert(conn);
+    assert(id && *id);
 
-    if (id == 0) {
-        id = makeSessionID(conn);
-#if UNUSED
-        Http        *http;
-        http = conn->http;
-        lock(http);
-        http->activeSessions++;
-        if (http->activeSessions >= conn->limits->sessionMax) {
-            httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Too many sessions %d/%d", http->activeSessions, conn->limits->sessionMax);
-            unlock(http);
-            return 0;
-        }
-        unlock(http);
-#endif
-    }
     if ((sp = mprAllocObj(HttpSession, manageSession)) == 0) {
         return 0;
     }
-    mprSetName(sp, "session");
-    sp->lifespan = lifespan;
+    sp->lifespan = conn->limits->sessionTimeout;
     sp->id = sclone(id);
     sp->cache = conn->http->sessionCache;
+#if UNUSED
     sp->conn = conn;
+#endif
+    if (data) {
+        sp->data = mprDeserialize(data);
+    } else {
+        sp->data = mprCreateHash(BIT_MAX_SESSION_HASH, 0);
+    }
     return sp;
 }
 
 
 /*
-    This creates or re-creates a session. Always returns with a new session store.
+    Create a new session. This generates a new session ID.
+ */
+static HttpSession *createSession(HttpConn *conn)
+{
+    Http            *http;
+    char            *id;
+    static int      nextSession = 0;
+
+    assert(conn);
+    http = conn->http;
+
+    /* 
+        Thread race here on nextSession++ not critical 
+     */
+    id = sfmt("%08x%08x%d", PTOI(conn->data) + PTOI(conn), (int) mprGetTicks(), nextSession++);
+    id = mprGetMD5WithPrefix(id, slen(id), "::http.session::");
+
+    lock(http);
+    mprGetCacheStats(conn->http->sessionCache, &http->activeSessions, NULL);
+    if (http->activeSessions >= conn->limits->sessionMax) {
+        unlock(http);
+        httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Too many sessions %d/%d", http->activeSessions, 
+            conn->limits->sessionMax);
+        return 0;
+    }
+    unlock(http);
+
+    return allocSession(conn, id, NULL);
+}
+
+
+static HttpSession *lookupSession(HttpConn *conn)
+{
+    cchar   *data, *id;
+
+    if ((id = httpGetSessionID(conn)) == 0) {
+        return 0;
+    }
+    if ((data = mprReadCache(conn->http->sessionCache, id, 0, 0)) == 0) {
+        return 0;
+    }
+    return allocSession(conn, id, data);
+}
+
+
+/*
+    Public API to create or re-create a session. Always returns with a new session store.
  */
 PUBLIC HttpSession *httpCreateSession(HttpConn *conn)
 {
@@ -73,22 +109,14 @@ PUBLIC void httpDestroySession(HttpConn *conn)
     http = conn->http;
     lock(http);
     if ((sp = httpGetSession(conn, 0)) != 0) {
-#if UNUSED
-        httpSetCookie(conn, HTTP_SESSION_COOKIE, conn->rx->session->id, "/", NULL, -1, 0);
-#else
         httpRemoveCookie(conn, HTTP_SESSION_COOKIE);
-#endif
-#if UNUSED
-        /* Can't do this as we can only expire individual items in the cache as the cache is shared */
-        mprExpireCache(sp->cache, makeKey(sp, key), 0);
-#endif
-#if UNUSED
+        mprExpireCache(sp->cache, sp->id, 0);
+        sp->id = 0;
         http->activeSessions--;
         assert(http->activeSessions >= 0);
-#endif
-        sp->id = 0;
         conn->rx->session = 0;
     }
+    conn->rx->sessionProbed = 0;
     unlock(http);
 }
 
@@ -98,6 +126,7 @@ static void manageSession(HttpSession *sp, int flags)
     if (flags & MPR_MANAGE_MARK) {
         mprMark(sp->id);
         mprMark(sp->cache);
+        mprMark(sp->data);
     }
 }
 
@@ -108,26 +137,20 @@ static void manageSession(HttpSession *sp, int flags)
 PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 {
     HttpRx      *rx;
-    char        *id;
 
     assert(conn);
     rx = conn->rx;
     assert(rx);
-    if (rx->session || !conn) {
-        return rx->session;
-    }
-    id = httpGetSessionID(conn);
-    if (id || create) {
-        /*
-            If forced create or we have a session-state cookie, then allocate a session object to manage the state.
-            NOTE: the session state for this ID may already exist if data has been written to the session.
-         */
-        rx->session = httpAllocSession(conn, id, conn->limits->sessionTimeout);
-        if (rx->session && !id) {
+
+    if (!rx->session) {
+        if ((rx->session = lookupSession(conn)) == 0 && create) {
             /*
-                Define the cookie in the browser if creating a new session
+                If forced create or we have a session-state cookie, then allocate a session object to manage the state.
+                NOTE: the session state for this ID may already exist if data has been written to the session.
              */
-            httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, conn->limits->sessionTimeout, 0);
+            if ((rx->session = createSession(conn)) != 0) {
+                httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, 0, 0);
+            }
         }
     }
     return rx->session;
@@ -156,7 +179,7 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 
     result = 0;
     if ((sp = httpGetSession(conn, 0)) != 0) {
-        result = mprReadCache(sp->cache, makeKey(sp, key), 0, 0);
+        result = mprLookupKey(sp->data, key);
     }
     return result ? result : defaultValue;
 }
@@ -169,7 +192,7 @@ PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
 
 
 /*
-    Set a session variable. This will create the session store if it does not already exist
+    Set a session variable. This will create the session store if it does not already exist.
     Note: If the headers have been emitted, the chance to set a cookie header has passed. So this value will go
     into a session that will be lost. Solution is for apps to create the session first.
     Value of null means remove the session.
@@ -186,8 +209,8 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
     }
     if (value == 0) {
         httpRemoveSessionVar(conn, key);
-    } else if (mprWriteCache(sp->cache, makeKey(sp, key), value, 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
-        return MPR_ERR_CANT_WRITE;
+    } else {
+        mprAddKey(sp->data, key, value);
     }
     return 0;
 }
@@ -200,10 +223,24 @@ PUBLIC int httpRemoveSessionVar(HttpConn *conn, cchar *key)
     assert(conn);
     assert(key && *key);
 
-    if ((sp = httpGetSession(conn, 1)) == 0) {
+    if ((sp = httpGetSession(conn, 0)) == 0) {
         return 0;
     }
-    return mprRemoveCache(sp->cache, makeKey(sp, key)) ? 0 : MPR_ERR_CANT_FIND;
+    return mprRemoveKey(sp->data, key);
+}
+
+
+PUBLIC int httpWriteSession(HttpConn *conn)
+{
+    HttpSession     *sp;
+
+    if ((sp = conn->rx->session) != 0) {
+        if (mprWriteCache(sp->cache, sp->id, mprSerialize(sp->data, 0), 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
+            mprError("Cannot persist session cache");
+            return MPR_ERR_CANT_WRITE;
+        }
+    }
+    return 0;
 }
 
 
@@ -250,33 +287,6 @@ PUBLIC char *httpGetSessionID(HttpConn *conn)
         return snclone(value, cp - value);
     }
     return 0;
-}
-
-
-static char *makeSessionID(HttpConn *conn)
-{
-    char        idBuf[64];
-    static int  nextSession = 0;
-
-    assert(conn);
-    /* Thread race here on nextSession++ not critical */
-    fmt(idBuf, sizeof(idBuf), "%08x%08x%d", PTOI(conn->data) + PTOI(conn), (int) mprGetTime(), nextSession++);
-    return mprGetMD5WithPrefix(idBuf, sizeof(idBuf), "::http.session::");
-}
-
-
-/*
-    Make a session cache key. This includes the session cookie, the connection IP address and the variable key
-    The IP address is added to prevent hijacking.
-    Use ./configure --set sessionWithoutIp=true to create sessions without encoding the client IP
- */
-static char *makeKey(HttpSession *sp, cchar *key)
-{
-#if BIT_SESSION_WITHOUT_IP
-    return sfmt("session-%s-%s", sp->id, key);
-#else
-    return sfmt("session-%s-%s-%s", sp->id, sp->conn->ip, key);
-#endif
 }
 
 /*

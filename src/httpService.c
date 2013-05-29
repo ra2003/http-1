@@ -100,13 +100,13 @@ PUBLIC Http *httpCreate(int flags)
     http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE);
     http->booted = mprGetTime();
     http->flags = flags;
+    http->secret = mprGetRandomString(HTTP_MAX_SECRET);
 
     updateCurrentDate(http);
     http->statusCodes = mprCreateHash(41, MPR_HASH_STATIC_VALUES | MPR_HASH_STATIC_KEYS);
     for (code = HttpStatusCodes; code->code; code++) {
         mprAddKey(http->statusCodes, code->codeString, code);
     }
-    httpCreateSecret(http);
     httpInitAuth(http);
     httpOpenNetConnector(http);
     httpOpenSendConnector(http);
@@ -579,43 +579,6 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 PUBLIC void httpRemoveConn(Http *http, HttpConn *conn)
 {
     mprRemoveItem(http->connections, conn);
-}
-
-
-/*  
-    Create a random secret for use in authentication. Create once for the entire http service. Created on demand.
-    Users can recall as required to update.
- */
-PUBLIC int httpCreateSecret(Http *http)
-{
-    MprTicks    now;
-    char        *hex = "0123456789abcdef";
-    char        bytes[HTTP_MAX_SECRET], ascii[HTTP_MAX_SECRET * 2 + 1], *ap, *cp, *bp;
-    int         i, pid;
-
-    if (mprGetRandomBytes(bytes, sizeof(bytes), 0) < 0) {
-        now = http->now;
-        pid = (int) getpid();
-        cp = (char*) &now;
-        bp = bytes;
-        for (i = 0; i < sizeof(now) && bp < &bytes[HTTP_MAX_SECRET]; i++) {
-            *bp++= *cp++;
-        }
-        cp = (char*) &now;
-        for (i = 0; i < sizeof(pid) && bp < &bytes[HTTP_MAX_SECRET]; i++) {
-            *bp++ = *cp++;
-        }
-        assert(0);
-        return MPR_ERR_CANT_INITIALIZE;
-    }
-    ap = ascii;
-    for (i = 0; i < (int) sizeof(bytes); i++) {
-        *ap++ = hex[((uchar) bytes[i]) >> 4];
-        *ap++ = hex[((uchar) bytes[i]) & 0xf];
-    }
-    *ap = '\0';
-    http->secret = sclone(ascii);
-    return 0;
 }
 
 

@@ -454,7 +454,7 @@ PUBLIC void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginSer
             logoutService = &logoutService[8];
             secure = 1;
         }
-        //  MOB - should be only POST
+        //  TODO - should be only POST
         httpSetRouteMethods(route, "GET, POST");
         route = httpCreateActionRoute(parent, logoutService, logoutServiceProc);
         route->auth->type = 0;

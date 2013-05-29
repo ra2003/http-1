@@ -158,6 +158,9 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
             break;
 
         case HTTP_STATE_COMPLETE:
+            if (conn->rx->session) {
+                httpWriteSession(conn);
+            }
             conn->pumping = 0;
             return !conn->connError;
 
@@ -166,6 +169,9 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
             break;
         }
         packet = conn->input;
+    }
+    if (conn->rx->session) {
+        httpWriteSession(conn);
     }
     conn->pumping = 0;
     return 0;
@@ -516,7 +522,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         }
         mprAddKey(rx->headers, key, hvalue);
 
-        //  MOB - should all these comparisions be caseless?
         switch (tolower((uchar) key[0])) {
         case 'a':
             if (strcasecmp(key, "authorization") == 0) {
@@ -605,8 +610,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 rx->inputRange = httpCreateRange(conn, start, end);
 
             } else if (strcasecmp(key, "content-type") == 0) {
-                //  MOB - should this be tolower?
-                rx->mimeType = sclone(value);
+                rx->mimeType = slower(value);
                 if (rx->flags & (HTTP_POST | HTTP_PUT)) {
                     if (conn->endpoint) {
                         rx->form = scontains(rx->mimeType, "application/x-www-form-urlencoded") != 0;
@@ -821,34 +825,11 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
          */
         mprAdjustBufStart(content, 2);
     }
-#if DIRECT_INPUT
-    if (rx->form && rx->length > 0 && !rx->streaming && !(rx->flags & HTTP_CHUNKED)) {
-        ssize   len;
-        /*
-            Can optimize for forms with a known content length. Do direct input into a single packet.
-            Preallocate the data packet with room for a null.
-         */
-        rx->flags |= HTTP_DIRECT_INPUT;
-        conn->input = httpCreateDataPacket(rx->length + 1);
-        if ((len = mprGetBufLength(content)) > 0) {
-            mprPutBlockToBuf(conn->input->content, mprGetBufStart(content), len);
-            mprAdjustBufEnd(content, -len);
-        }
-        conn->newData = len;
-    } else {
-        /*
-            Split the headers and retain the data in conn->input. Set newData to the number of data bytes available.
-         */
-        conn->input = httpSplitPacket(packet, 0);
-        conn->newData = httpGetPacketLength(conn->input);
-    }
-#else
     /*
         Split the headers and retain the data in conn->input. Set newData to the number of data bytes available.
      */
     conn->input = httpSplitPacket(packet, 0);
     conn->newData = httpGetPacketLength(conn->input);
-#endif
     return 1;
 }
 
@@ -899,6 +880,7 @@ static bool processParsed(HttpConn *conn)
     }
     httpSetState(conn, HTTP_STATE_CONTENT);
 
+    //  TODO - remove special case for upload
     if (rx->streaming && !rx->upload) {
         if (rx->remainingContent == 0) {
             rx->eof = 1;
@@ -976,11 +958,6 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
             conn->input = httpSplitPacket(packet, nbytes);
             *more = 1;
         }
-#if HTTP_DIRECT_INPUT
-        if (rx->flags & HTTP_DIRECT_INPUT) {
-            rx->flags &= ~HTTP_DIRECT_INPUT;
-        }
-#endif
     } else {
         if (rx->chunkState && nbytes > 0 && httpGetPacketLength(packet) > nbytes) {
             /* Split data for next chunk */
@@ -990,11 +967,6 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
     }
     mprTrace(6, "filterPacket: read %d bytes, useful %d, remaining %d, more %d", 
         conn->newData, nbytes, rx->remainingContent, *more);
-#if HTTP_DIRECT_INPUT
-    if (rx->flags & HTTP_DIRECT_INPUT) {
-        nbytes = 0;
-    }
-#endif
     return nbytes;
 }
 
@@ -1017,10 +989,10 @@ static bool processContent(HttpConn *conn)
 
     if ((nbytes = filterPacket(conn, packet, &more)) > 0) {
         if (!(tx->finalized && conn->endpoint)) {                                                          
-            if (rx->form) {
-                httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-            } else {
+            if (rx->streaming) {
                 httpPutPacketToNext(q, packet);
+            } else {
+                httpPutForService(q, packet, HTTP_DELAY_SERVICE);
             }
         }
         if (packet == conn->input) {
@@ -1802,7 +1774,7 @@ PUBLIC char *httpGetExt(HttpConn *conn)
 }
 
 
-//  MOB - can this just use the default compare
+//  TODO - can this just use the default compare
 static int compareLang(char **s1, char **s2)
 {
     return scmp(*s1, *s2);

@@ -188,8 +188,7 @@ PUBLIC int httpDigestParse(HttpConn *conn)
         when = 0;
         parseDigestNonce(dp->nonce, &secret, &realm, &when);
         if (!smatch(secret, secret)) {
-            //  How should this be reported
-            //  MOB - could this set conn->errorMsg?
+            //  TODO - How should this be reported, could this set conn->errorMsg?
             mprTrace(2, "Access denied: Nonce mismatch\n");
             return MPR_ERR_BAD_STATE;
 

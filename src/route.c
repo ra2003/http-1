@@ -27,7 +27,7 @@
         route->field = mprCloneHash(route->parent->field); \
     }
 
-//MOB temp
+//TODO temp
 #if !BIT_PACK_PCRE
     int pcre_exec(void *a, void *b, cchar *c, int d, int e, int f, int *g, int h) { return -1; }
     void *pcre_compile2(cchar *a, int b, int *c, cchar **d, int *e, const unsigned char *f) { return 0; }
@@ -155,6 +155,8 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->params = parent->params;
     route->parent = parent;
     route->vars = parent->vars;
+    route->map = parent->map;
+    route->mappings = parent->mappings;
     route->pattern = parent->pattern;
     route->patternCompiled = parent->patternCompiled;
     route->optimizedPattern = parent->optimizedPattern;
@@ -189,6 +191,8 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
 static void manageRoute(HttpRoute *route, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
+        mprMark(route->map);
+        mprMark(route->mappings);
         mprMark(route->name);
         mprMark(route->pattern);
         mprMark(route->startSegment);
@@ -215,6 +219,8 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->data);
         mprMark(route->eroute);
         mprMark(route->vars);
+        mprMark(route->map);
+        mprMark(route->mappings);
         mprMark(route->languages);
         mprMark(route->inputStages);
         mprMark(route->outputStages);
@@ -636,6 +642,10 @@ PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route)
     HttpTx      *tx;
     HttpLang    *lang;
     MprPath     *info;
+    MprList     *extensions;
+    char        *mapped, *ext, *path;
+    int         next;
+    bool        acceptGzip, zipped;
 
     assert(conn);
     assert(route);
@@ -646,6 +656,8 @@ PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route)
 
     assert(rx->target);
     tx->filename = rx->target;
+    info = &tx->fileInfo;
+
     if (lang && lang->path) {
         tx->filename = mprJoinPath(lang->path, tx->filename);
     }
@@ -653,9 +665,49 @@ PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route)
 #if BIT_ROM
     tx->filename = mprGetRelPath(tx->filename, NULL);
 #endif
+    /*
+        Change the filename if using mapping. Typically used to prefer compressed or minified content.
+     */
+    if (route->map) {
+        if (route->mappings && (mapped = mprLookupKey(route->mappings, tx->filename)) != 0) {
+            tx->filename = mapped;
+        } else if ((extensions = mprLookupKey(route->map, tx->ext)) != 0) {
+            acceptGzip = scontains(rx->acceptEncoding, "gzip");
+            for (ITERATE_ITEMS(extensions, ext, next)) {
+                zipped = sends(ext, "gz");
+                if (zipped && !acceptGzip) {
+                    continue;
+                }
+                path = mprReplacePathExt(tx->filename, ext);
+                if (mprGetPathInfo(path, info) == 0) {
+                    tx->filename = path;
+                    mprAddKey(route->mappings, tx->filename, path);
+                    if (zipped) {
+                        httpSetHeader(conn, "Content-Encoding", "gzip");
+                    }
+                    break;
+                }
+            }
+            if (!ext) {
+                mprAddKey(route->mappings, tx->filename, tx->filename);
+            }
+        } else {
+            mprAddKey(route->mappings, tx->filename, tx->filename);
+        }
+    }
     tx->ext = httpGetExt(conn);
-    info = &tx->fileInfo;
-    mprGetPathInfo(tx->filename, info);
+    if (!info->valid) {
+        mprGetPathInfo(tx->filename, info);
+    }
+#if DEPRECATE || 1
+    /* Deprecated in 4.4 */
+    if (!info->valid && !route->map && (route->flags & HTTP_ROUTE_GZIP) && scontains(rx->acceptEncoding, "gzip")) {
+        path = sjoin(tx->filename, ".gz", NULL);
+        if (mprGetPathInfo(path, info) == 0) {
+            tx->filename = path;
+        }
+    }
+#endif
     if (info->valid) {
         tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
     }
@@ -784,7 +836,6 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
     }
     if (!extensions && !handler->match) {
         mprError("Adding handler \"%s\" without extensions to match", handler->name);
-        //  MOB - could add extensions to ""
     }
     if (extensions) {
         /*
@@ -1043,6 +1094,31 @@ PUBLIC void httpSetRouteCompression(HttpRoute *route, int flags)
 }
 
 
+PUBLIC void httpAddRouteMapping(HttpRoute *route, cchar *extensions, cchar *mappings)
+{
+    MprList     *mapList;
+    cchar       *ext, *map;
+    char        *etok, *mtok;
+
+    if (!route->mappings) {
+        route->mappings = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, 0);
+    }
+    if (!route->map) {
+        route->map = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, 0);
+    }
+    for (ext = stok(sclone(extensions), ", \t", &etok); ext; ext = stok(0, ", \t", &etok)) {
+        if (*ext == '.') {
+            ext++;
+        }
+        mapList = mprCreateList(0, 0);
+        for (map = stok(sclone(mappings), ", \t", &mtok); map; map = stok(0, ", \t", &mtok)) {
+            mprAddItem(mapList, sreplace(map, "${1}", ext));
+        }
+        mprAddKey(route->map, ext, mapList);
+    }
+}
+
+
 PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
 {
     HttpStage     *stage;
@@ -1074,6 +1150,21 @@ PUBLIC void httpSetRouteData(HttpRoute *route, cchar *key, void *data)
 }
 
 
+//  TODO - rename SetRouteDocuments
+
+PUBLIC void httpSetRouteDir(HttpRoute *route, cchar *path)
+{
+    assert(route);
+    assert(path && *path);
+    
+    route->dir = httpMakePath(route, route->home, path);
+    httpSetRouteVar(route, "DOCUMENTS_DIR", route->dir);
+    //  DEPRECATE
+    httpSetRouteVar(route, "DOCUMENTS", route->dir);
+    httpSetRouteVar(route, "DOCUMENT_ROOT", route->dir);
+}
+
+
 PUBLIC void httpSetRouteFlags(HttpRoute *route, int flags)
 {
     assert(route);
@@ -1094,21 +1185,6 @@ PUBLIC int httpSetRouteHandler(HttpRoute *route, cchar *name)
     }
     route->handler = handler;
     return 0;
-}
-
-
-//  MOB - rename SetRouteDocuments
-
-PUBLIC void httpSetRouteDir(HttpRoute *route, cchar *path)
-{
-    assert(route);
-    assert(path && *path);
-    
-    route->dir = httpMakePath(route, route->home, path);
-    httpSetRouteVar(route, "DOCUMENTS_DIR", route->dir);
-    //  DEPRECATE
-    httpSetRouteVar(route, "DOCUMENTS", route->dir);
-    httpSetRouteVar(route, "DOCUMENT_ROOT", route->dir);
 }
 
 
@@ -1164,6 +1240,18 @@ PUBLIC void httpSetRouteMethods(HttpRoute *route, cchar *methods)
     route->methodSpec = sclone(methods);
     finalizeMethods(route);
 }
+
+
+#if UNUSED
+PUBLIC void httpSetRouteMinify(HttpRoute *route, bool on)
+{
+    assert(route);
+    route->flags &= ~HTTP_ROUTE_MINIFY;
+    if (on) {
+        route->flags |= HTTP_ROUTE_MINIFY;
+    }
+}
+#endif
 
 
 PUBLIC void httpSetRouteName(HttpRoute *route, cchar *name)
@@ -1672,7 +1760,7 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
 /********************************* Path and URI Expansion *****************************/
 /*
     What does this return. Does it return an absolute URI?
-    MOB - consider rename httpUri() and move to uri.c
+    TODO - consider rename httpUri() and move to uri.c
  */
 PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
 {
@@ -2349,6 +2437,7 @@ static HttpRoute *addRestful(HttpRoute *parent, cchar *action, cchar *methods, c
     HttpRoute   *route;
     cchar       *name, *nameResource, *prefix, *source;
 
+    //  TODO - remove ANGULAR from route
     if (parent->flags & HTTP_ROUTE_ANGULAR) {
         nameResource = smatch(resource, "{service}") ? "*" : resource;
         if (parent->prefix) {
@@ -2469,7 +2558,7 @@ PUBLIC void httpAddRouteSet(HttpRoute *parent, cchar *set)
 
     } else if (scaselessmatch(set, "angular")) {
         httpAddAngularResourceGroup(parent, "{service}");
-        httpAddClientRoute(parent, NULL);
+        httpAddClientRoute(parent, "");
 
 #if DEPRECATE || 1
     } else if (scaselessmatch(set, "mvc")) {

@@ -1878,9 +1878,11 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
 }
 
 
+//  TODO - rename to UriTemplate
 /*
-    Expect a route->tplate with embedded tokens of the form: "/${service}/${action}/${other}"
+    Expect a tplate with embedded tokens of the form: "/${service}/${action}/${other}"
     The options is a hash of token values.
+    TODO - rename tplate to template
  */
 PUBLIC char *httpTemplate(HttpConn *conn, cchar *tplate, MprHash *options)
 {
@@ -2492,8 +2494,8 @@ PUBLIC void httpAddAngularResourceGroup(HttpRoute *parent, cchar *resource)
     addRestful(parent, "index",     "GET",    "(/)*$",                   "index",         resource, 0);
     addRestful(parent, "init",      "GET",    "/init$",                  "init",          resource, 0);
     addRestful(parent, "update",    "POST",   "(/{id=[0-9]+})*$",        "update",        resource, HTTP_ROUTE_JSON);
-    addRestful(parent, "custom",    "POST",   "/{action}/{id=[0-9]+}$",  "${action}",     resource, 0);
-    addRestful(parent, "default",   "*",      "/{action}$",              "cmd-${action}", resource, HTTP_ROUTE_JSON);
+    addRestful(parent, "action",    "POST",   "/{action}/{id=[0-9]+}$",  "${action}",     resource, 0);
+    addRestful(parent, "cmd",       "*",      "/{action}$",              "cmd-${action}", resource, HTTP_ROUTE_JSON);
 }
 
 
@@ -2536,7 +2538,7 @@ PUBLIC void httpAddHomeRoute(HttpRoute *parent)
 }
 
 
-PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *prefix)
+PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *name, cchar *prefix)
 {
     HttpRoute   *route;
     cchar       *path, *pattern;
@@ -2546,7 +2548,7 @@ PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *prefix)
     }
     pattern = sfmt("^%s/(.*)", prefix);
     path = stemplate("${CLIENT_DIR}/$1", parent->vars);
-    route = httpDefineRoute(parent, prefix, "GET", pattern, path, parent->sourceName);
+    route = httpDefineRoute(parent, name, "GET", pattern, path, parent->sourceName);
     httpAddRouteHandler(route, "fileHandler", "");
 }
 
@@ -2558,22 +2560,22 @@ PUBLIC void httpAddRouteSet(HttpRoute *parent, cchar *set)
 
     } else if (scaselessmatch(set, "angular")) {
         httpAddAngularResourceGroup(parent, "{service}");
-        httpAddClientRoute(parent, "");
+        httpAddClientRoute(parent, sfmt("%s-client", parent->name), "");
 
 #if DEPRECATE || 1
     } else if (scaselessmatch(set, "mvc")) {
         httpAddHomeRoute(parent);
-        httpAddClientRoute(parent, "/static");
+        httpAddClientRoute(parent, "/static", "/static");
 
     } else if (scaselessmatch(set, "restful")) {
         httpAddHomeRoute(parent);
-        httpAddClientRoute(parent, "/static");
+        httpAddClientRoute(parent, "/static", "/static");
         httpAddResourceGroup(parent, "{controller}");
 #endif
 #if UNUSED
     } else if (scaselessmatch(set, "mvc-fixed")) {
         httpAddHomeRoute(parent);
-        httpAddClientRoute(parent, "/static");
+        httpAddClientRoute(parent, "/static", "/static");
         httpDefineRoute(parent, "default", NULL, "^/{controller}(~/{action}~)", "${controller}-${action}", 
             "${controller}.c");
 #endif

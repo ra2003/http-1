@@ -3228,7 +3228,9 @@ PUBLIC void httpDefineAction(cchar *uri, HttpAction fun);
 #define HTTP_ROUTE_PUT_DELETE_METHODS   0x4000      /**< Support PUT|DELETE on this route */
 #define HTTP_ROUTE_TRACE_METHOD         0x8000      /**< Enable the trace method for handlers supporting it */
 #define HTTP_ROUTE_JSON                 0x10000     /**< Route expects params in JSON body */
-#if DEPRECATED || 1
+#define HTTP_ROUTE_JSON_RESOURCES       0x20000     /**< Create resource routes to use JSON params */
+
+#if (DEPRECATED || 1) && !DOXYGEN
 #define HTTP_ROUTE_LEGACY_MVC           0x40000     /**< Legacy MVC app. Using "static" instead of "client". Deprecated in 4.4 */
 #endif
 
@@ -3256,7 +3258,7 @@ typedef struct HttpRoute {
     char            *startSegment;          /**< Starting literal segment of pattern (includes prefix) */
     char            *startWith;             /**< Starting literal segment of pattern (includes prefix) */
     char            *optimizedPattern;      /**< Processed pattern (excludes prefix) */
-    char            *prefix;                /**< Application scriptName prefix */
+    char            *prefix;                /**< Application scriptName prefix. Set to NULL for "/" */
     char            *tplate;                /**< URI template for forming links based on this route (includes prefix) */
     char            *targetRule;            /**< Target rule */
     char            *target;                /**< Route target details */

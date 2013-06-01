@@ -132,6 +132,9 @@ static void printRoute(HttpRoute *route, int next, bool full)
     cchar       *methods, *pattern, *target, *index;
     int         nextIndex;
 
+    if (smatch(route->name, "unused")) {
+        return;
+    }
     methods = httpGetRouteMethods(route);
     methods = methods ? methods : "*";
     pattern = (route->pattern && *route->pattern) ? route->pattern : "^/";
@@ -256,7 +259,6 @@ PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)
     if (mprLookupItem(host->routes, route) < 0) {
         if (route->pattern[0] && (lastRoute = mprGetLastItem(host->routes)) && lastRoute->pattern[0] == '\0') {
             /* Insert non-default route before last default route */
-mprLog(0, "httpAddRoute UNUSED");
             thisRoute = mprInsertItemAtPos(host->routes, mprGetListLength(host->routes) - 1, route);
         } else {
             thisRoute = mprAddItem(host->routes, route);

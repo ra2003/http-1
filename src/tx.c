@@ -28,13 +28,14 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     tx->chunkSize = -1;
 
     tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
+    conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
     tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
     conn->readq = tx->queue[HTTP_QUEUE_RX]->prevQ;
-    conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
 
     if (headers) {
         tx->headers = headers;
-    } else if ((tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS)) != 0) {
+    } else {
+        tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
         if (!conn->endpoint) {
             httpAddHeaderString(conn, "User-Agent", sclone(BIT_HTTP_SOFTWARE));
         }

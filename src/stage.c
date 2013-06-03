@@ -31,13 +31,12 @@ static void outgoing(HttpQueue *q, HttpPacket *packet)
 }
 
 
-/*  
-    Default incoming data routine.  Simply transfer the data upstream to the next filter or handler.
+/*
+    Incoming data routine.  Simply transfer the data upstream to the next filter or handler.
  */
 static void incoming(HttpQueue *q, HttpPacket *packet)
 {
     assert(q);
-    VERIFY_QUEUE(q);
     assert(packet);
     
     if (q->nextQ->put) {
@@ -56,6 +55,14 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
         }
         HTTP_NOTIFY(q->conn, HTTP_EVENT_READABLE, 0);
     }
+}
+
+
+PUBLIC void httpDefaultIncoming(HttpQueue *q, HttpPacket *packet)
+{
+    assert(q);
+    assert(packet);
+    httpPutForService(q, packet, HTTP_DELAY_SERVICE);
 }
 
 

@@ -193,7 +193,7 @@ static void addParamsFromBufInsitu(HttpConn *conn, char *buf, ssize len)
 
 
 
-static void addQueryParams(HttpConn *conn) 
+PUBLIC void httpAddQueryParams(HttpConn *conn) 
 {
     HttpRx      *rx;
 
@@ -205,7 +205,7 @@ static void addQueryParams(HttpConn *conn)
 }
 
 
-static void addBodyParams(HttpConn *conn)
+PUBLIC void httpAddBodyParams(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpQueue   *q;
@@ -228,13 +228,6 @@ static void addBodyParams(HttpConn *conn)
         }
         rx->flags |= HTTP_ADDED_BODY_PARAMS;
     }
-}
-
-
-PUBLIC void httpAddParams(HttpConn *conn)
-{
-    addQueryParams(conn);
-    addBodyParams(conn);
 }
 
 

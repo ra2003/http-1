@@ -39,6 +39,9 @@ PUBLIC HttpHost *httpCreateHost()
     host->routes = mprCreateList(-1, 0);
     host->flags = HTTP_HOST_NO_TRACE;
     host->protocol = sclone("HTTP/1.1");
+    host->streams = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES);
+    httpSetStreaming(host, "application/x-www-form-urlencoded", NULL, 0);
+    httpSetStreaming(host, "application/json", NULL, 0);
     httpAddHost(http, host);
     return host;
 }
@@ -83,6 +86,7 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->mutex);
         mprMark(host->defaultEndpoint);
         mprMark(host->secureEndpoint);
+        mprMark(host->streams);
 
     } else if (flags & MPR_MANAGE_FREE) {
         /* The http->hosts list is static. ie. The hosts won't be marked via http->hosts */
@@ -350,6 +354,39 @@ PUBLIC HttpRoute *httpGetDefaultRoute(HttpHost *host)
     return 0;
 }
 
+
+PUBLIC bool httpGetStreaming(HttpHost *host, cchar *mime, cchar *uri)
+{
+    MprKey      *kp;
+
+    assert(host);
+    assert(host->streams);
+
+    if (schr(mime, ';')) {
+        mime = stok(sclone(mime), ";", 0);
+    }
+    if ((kp = mprLookupKeyEntry(host->streams, mime)) != 0) {
+        if (kp->data == NULL || sstarts(uri, kp->data)) {
+            /* Type is set to the enable value */
+            return kp->type;
+        }
+    }
+    return 1;
+}
+
+
+PUBLIC void httpSetStreaming(HttpHost *host, cchar *mime, cchar *uri, bool enable)
+{
+    MprKey  *kp;
+
+    assert(host);
+    /*
+        We store the enable value in the key type to save an allocation
+     */
+    if ((kp = mprAddKey(host->streams, mime, uri)) != 0) {
+        kp->type = enable;
+    }
+}
 
 /*
     @copy   default

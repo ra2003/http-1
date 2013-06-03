@@ -16,6 +16,23 @@ static void httpStartHandler(HttpConn *conn);
 
 /*********************************** Code *************************************/
 
+PUBLIC void httpCreatePipeline(HttpConn *conn)
+{
+    HttpTx      *tx;
+    HttpRx      *rx;
+    
+    tx = conn->tx;
+    rx = conn->rx;
+    assert(conn->endpoint);
+
+    if (conn->endpoint) {
+        assert(rx->route);
+        httpCreateRxPipeline(conn, rx->route);
+        httpCreateTxPipeline(conn, rx->route);
+    }
+}
+
+
 PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
 {
     Http        *http;
@@ -88,17 +105,11 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         httpHandleOptionsTrace does this when called from openFile() in fileHandler.
      */
     httpPutForService(conn->writeq, httpCreateHeaderPacket(), HTTP_DELAY_SERVICE);
-    openQueues(conn);
 
-#if FUTURE
-    if (rx->upgrade && !conn->upgraded) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Cannot upgrade communications protocol");
-    }
-#endif
-    if (tx->pendingFinalize) {
-        tx->finalizedOutput = 0;
-        httpFinalizeOutput(conn);
-    }
+    /*
+        Open the pipelien stages. This calls the open entrypoints on all stages
+     */
+    openQueues(conn);
 }
 
 
@@ -251,15 +262,11 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
     HttpQueue   *qhead, *q, *prevQ, *nextQ;
     HttpTx      *tx;
     HttpRx      *rx;
-    
+
     tx = conn->tx;
     rx = conn->rx;
+    assert(conn->endpoint);
 
-    if (conn->endpoint) {
-        httpCreateRxPipeline(conn, rx->route);
-        httpCreateTxPipeline(conn, rx->route);
-    }
-    tx->started = 1;
     if (rx->needInputPipeline) {
         qhead = tx->queue[HTTP_QUEUE_RX];
         for (q = qhead->nextQ; !tx->finalized && q->nextQ != qhead; q = nextQ) {
@@ -280,12 +287,19 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
             q->stage->start(q);
         }
     }
-    /* Start the handler last */
-    q = qhead->nextQ;
+    /* 
+        Start the handler
+     */
     httpStartHandler(conn);
     if (!tx->finalized && !tx->finalizedConnector && rx->remainingContent > 0) {
-        /* If no remaining content, wait till the processing stage to avoid duplicate writable events */
+        /* 
+            If no remaining content, wait till the processing stage to avoid duplicate writable events 
+         */
         HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
+    }
+    if (tx->pendingFinalize) {
+        tx->finalizedOutput = 0;
+        httpFinalizeOutput(conn);
     }
 }
 
@@ -306,6 +320,9 @@ static void httpStartHandler(HttpConn *conn)
 {
     HttpQueue   *q;
     
+    assert(!conn->tx->started);
+
+    conn->tx->started = 1;
     q = conn->writeq;
     if (q->stage->start && !conn->tx->finalized && !(q->flags & HTTP_QUEUE_STARTED)) {
         q->flags |= HTTP_QUEUE_STARTED;

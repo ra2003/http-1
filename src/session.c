@@ -30,9 +30,6 @@ static HttpSession *allocSession(HttpConn *conn, cchar *id, cchar *data)
     sp->lifespan = conn->limits->sessionTimeout;
     sp->id = sclone(id);
     sp->cache = conn->http->sessionCache;
-#if UNUSED
-    sp->conn = conn;
-#endif
     if (data) {
         sp->data = mprDeserialize(data);
     } else {

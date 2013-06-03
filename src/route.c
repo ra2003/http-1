@@ -77,7 +77,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->defaultLanguage = sclone("en");
     route->dir = mprGetCurrentPath(".");
     route->home = route->dir;
-    route->streaming = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES);
     route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->flags = 0;
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
@@ -105,9 +104,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
         route->mimeTypes = MPR->mimeTypes;
     }  
     definePathVars(route);
-    mprAddKey(route->streaming, "application/x-www-form-urlencoded", "0");
-    mprAddKey(route->streaming, "application/json", "0");
-    mprAddKey(route->streaming, "*", "1");
     return route;
 }
 
@@ -138,7 +134,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->data = parent->data;
     route->eroute = parent->eroute;
     route->errorDocuments = parent->errorDocuments;
-    route->streaming = parent->streaming;
     route->extensions = parent->extensions;
     route->handler = parent->handler;
     route->handlers = parent->handlers;
@@ -225,7 +220,6 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->inputStages);
         mprMark(route->outputStages);
         mprMark(route->errorDocuments);
-        mprMark(route->streaming);
         mprMark(route->context);
         mprMark(route->uploadDir);
         mprMark(route->script);
@@ -1242,18 +1236,6 @@ PUBLIC void httpSetRouteMethods(HttpRoute *route, cchar *methods)
 }
 
 
-#if UNUSED
-PUBLIC void httpSetRouteMinify(HttpRoute *route, bool on)
-{
-    assert(route);
-    route->flags &= ~HTTP_ROUTE_MINIFY;
-    if (on) {
-        route->flags |= HTTP_ROUTE_MINIFY;
-    }
-}
-#endif
-
-
 PUBLIC void httpSetRouteName(HttpRoute *route, cchar *name)
 {
     assert(route);
@@ -1417,30 +1399,6 @@ PUBLIC cchar *httpLookupRouteErrorDocument(HttpRoute *route, int code)
     return (cchar*) mprLookupKey(route->errorDocuments, num);
 }
 
-
-PUBLIC void httpSetRouteStreaming(HttpRoute *route, cchar *mimeType, bool enable)
-{
-    assert(route);
-    GRADUATE_HASH(route, streaming);
-    mprAddKey(route->streaming, mimeType, enable ? "1" : "0");
-}
-
-
-PUBLIC bool httpGetRouteStreaming(HttpRoute *route, cchar *mimeType)
-{
-    cchar   *enable;
-
-    assert(route);
-    assert(route->streaming);
-
-    if (schr(mimeType, ';')) {
-        mimeType = stok(sclone(mimeType), ";", 0);
-    }
-    if ((enable = mprLookupKey(route->streaming, mimeType)) == 0) {
-        enable = mprLookupKey(route->streaming, "*");
-    }
-    return (enable && *enable == '1');
-}
 
 /********************************* Route Finalization *************************/
 

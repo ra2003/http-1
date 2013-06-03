@@ -419,7 +419,7 @@ PUBLIC cchar *httpGetBodyInput(HttpConn *conn)
     MprBuf      *content;
     
     rx = conn->rx;
-    if (rx->streaming && !rx->eof) {
+    if (!rx->eof) {
         return 0;
     }
     q = conn->readq;

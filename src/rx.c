@@ -25,6 +25,7 @@ static bool processParsed(HttpConn *conn);
 static bool processReady(HttpConn *conn);
 static bool processRunning(HttpConn *conn);
 static int setParsedUri(HttpConn *conn);
+static int sendContinue(HttpConn *conn);
 
 /*********************************** Code *************************************/
 
@@ -251,12 +252,16 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
          */
         httpCreateRxPipeline(conn, conn->http->clientRoute);
     }
+    if (rx->flags & HTTP_EXPECT_CONTINUE) {
+        sendContinue(conn);
+        rx->flags &= ~HTTP_EXPECT_CONTINUE;
+    }
     httpSetState(conn, HTTP_STATE_PARSED);
     return 1;
 }
 
 
-static void mapMethod(HttpConn *conn)
+static bool mapMethod(HttpConn *conn)
 {
     HttpRx      *rx;
     cchar       *method;
@@ -266,8 +271,10 @@ static void mapMethod(HttpConn *conn)
         if (!scaselessmatch(method, rx->method)) {
             mprLog(3, "Change method from %s to %s for %s", rx->method, method, rx->uri);
             httpSetMethod(conn, method);
+            return 1;
         }
     }
+    return 0;
 }
 
 
@@ -610,7 +617,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 rx->inputRange = httpCreateRange(conn, start, end);
 
             } else if (strcasecmp(key, "content-type") == 0) {
-                rx->mimeType = slower(value);
+                rx->mimeType = sclone(value);
                 if (rx->flags & (HTTP_POST | HTTP_PUT)) {
                     if (conn->endpoint) {
                         rx->form = scontains(rx->mimeType, "application/x-www-form-urlencoded") != 0;
@@ -765,12 +772,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         case 'x':
             if (strcasecmp(key, "x-http-method-override") == 0) {
                 httpSetMethod(conn, value);
-            } else if (strcasecmp(key, "x-stream-form") == 0) {
-                /*
-                    Override the normal buffering of forms and stream instead. 
-                    This means form parameters cannot be used in routing (rare anyway)
-                 */
-                rx->streaming = 1;
 
             } else if (strcasecmp(key, "x-own-params") == 0) {
                 /*
@@ -835,24 +836,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
 
 /*
-    Sends an 100 Continue response to the client. This bypasses the transmission pipeline, writing directly to the socket.
- */
-static int sendContinue(HttpConn *conn)
-{
-    cchar      *response;
-
-    assert(conn);
-    assert(conn->sock);
-
-    /* Write the response to the socket and flush. */
-    response = sfmt("%s 100 Continue\r\n\r\n", conn->protocol);
-    mprWriteSocket(conn->sock, response, slen(response));
-    mprFlushSocket(conn->sock);
-    return 0;
-}
-
-
-/*
     Called once the HTTP request/response headers have been parsed
  */
 static bool processParsed(HttpConn *conn)
@@ -860,37 +843,32 @@ static bool processParsed(HttpConn *conn)
     HttpRx      *rx;
 
     rx = conn->rx;
+
     if (conn->endpoint) {
-        httpAddParams(conn);
-        httpRouteRequest(conn);  
-        rx->streaming = !rx->upload && (rx->streaming || httpGetRouteStreaming(rx->route, rx->mimeType));
+        httpAddQueryParams(conn);
+        rx->streaming = httpGetStreaming(conn->host, rx->mimeType, rx->uri);
+        if (rx->streaming) {
+            httpRouteRequest(conn);  
+            httpCreatePipeline(conn);
+            /*
+                Delay starting uploads until the files are extracted.
+             */
+            if (!rx->upload) {
+                httpStartPipeline(conn);
+            }
+        }
     } else {
-        rx->streaming = 1;
-    }
-    /*
-        Send a 100 (Continue) response if the client has requested it. If the connection has an error, that takes
-        precedence and 100 Continue will not be sent. Also, if the connector has already written bytes to the socket, we
-        do not send 100 Continue to avoid corrupting the response.
-     */
-    if ((rx->flags & HTTP_EXPECT_CONTINUE) && !conn->tx->finalized && !conn->tx->bytesWritten) {
-        sendContinue(conn);
-        rx->flags &= ~HTTP_EXPECT_CONTINUE;
-    }
-    if (!conn->endpoint && conn->upgraded && !httpVerifyWebSocketsHandshake(conn)) {
-        httpSetState(conn, HTTP_STATE_FINALIZED);
-        return 1;
+        if (conn->upgraded && !httpVerifyWebSocketsHandshake(conn)) {
+            httpSetState(conn, HTTP_STATE_FINALIZED);
+            return 1;
+        }
     }
     httpSetState(conn, HTTP_STATE_CONTENT);
-
-    //  TODO - remove special case for upload
-    if (rx->streaming) {
-        if (rx->remainingContent == 0) {
-            rx->eof = 1;
-        }
-        httpStartPipeline(conn);
-        if (rx->eof) {
-            httpSetState(conn, HTTP_STATE_READY);
-        }
+    if (rx->remainingContent == 0) {
+        rx->eof = 1;
+    }
+    if (rx->eof && conn->tx->started) {
+        httpSetState(conn, HTTP_STATE_READY);
     }
     return 1;
 }
@@ -985,41 +963,44 @@ static bool processContent(HttpConn *conn)
     assert(conn);
     rx = conn->rx;
     tx = conn->tx;
+
     q = tx->queue[HTTP_QUEUE_RX];
     packet = conn->input;
     /* Packet may be null */
 
     if ((nbytes = filterPacket(conn, packet, &more)) > 0) {
-        if (!(tx->finalized && conn->endpoint)) {                                                          
-            if (rx->streaming) {
-                httpPutPacketToNext(q, packet);
-            } else {
-                httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-            }
+        if (rx->inputPipeline) {
+            httpPutPacketToNext(q, packet);
+        } else {
+            httpPutForService(q, packet, HTTP_DELAY_SERVICE);
         }
         if (packet == conn->input) {
             conn->input = 0;
         }
     }
+    //  MOB - what of all this does the client do?
     if (rx->eof) {
+        //  MOB - is the endpoint test needed?
         if (conn->endpoint) {
-            httpAddParams(conn);
-            if ((rx->form || rx->upload) && !rx->streaming) {
-                /* Re-route to enable routing on body parameters */
-                if (rx->scriptName && rx->scriptName) {
-                    rx->pathInfo = sjoin(rx->scriptName, rx->pathInfo, NULL);
-                }
+            if (!rx->route) {
+                httpAddBodyParams(conn);
                 mapMethod(conn);
                 httpRouteRequest(conn);
+                httpCreatePipeline(conn);
+                /*
+                    Transfer buffered input body data into the pipeline
+                 */
+                while ((packet = httpGetPacket(q)) != 0) {
+                    httpPutPacketToNext(q, packet);
+                }
             }
+            httpPutPacketToNext(q, httpCreateEndPacket());
+            if (!tx->started) {
+                httpStartPipeline(conn);
+            }
+        } else {
+            httpPutPacketToNext(q, httpCreateEndPacket());
         }
-        if (!tx->started) {
-            httpStartPipeline(conn);
-        }
-        while ((packet = httpGetPacket(q)) != 0) {
-            httpPutPacketToNext(q, packet);
-        }
-        httpPutPacketToNext(q, httpCreateEndPacket());
         httpSetState(conn, HTTP_STATE_READY);
         return conn->workerEvent ? 0 : 1;
     }
@@ -1852,6 +1833,25 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn)
             }
         }
     }
+}
+
+
+/*
+    Sends an 100 Continue response to the client. This bypasses the transmission pipeline, writing directly to the socket.
+ */
+static int sendContinue(HttpConn *conn)
+{
+    cchar      *response;
+
+    assert(conn);
+    assert(conn->sock);
+
+    if (!conn->tx->finalized && !conn->tx->bytesWritten) {
+        response = sfmt("%s 100 Continue\r\n\r\n", conn->protocol);
+        mprWriteSocket(conn->sock, response, slen(response));
+        mprFlushSocket(conn->sock);
+    }
+    return 0;
 }
 
 

@@ -18,10 +18,8 @@ static void httpStartHandler(HttpConn *conn);
 
 PUBLIC void httpCreatePipeline(HttpConn *conn)
 {
-    HttpTx      *tx;
     HttpRx      *rx;
     
-    tx = conn->tx;
     rx = conn->rx;
     assert(conn->endpoint);
 

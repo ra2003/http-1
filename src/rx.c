@@ -969,10 +969,12 @@ static bool processContent(HttpConn *conn)
     /* Packet may be null */
 
     if ((nbytes = filterPacket(conn, packet, &more)) > 0) {
-        if (rx->inputPipeline) {
-            httpPutPacketToNext(q, packet);
-        } else {
-            httpPutForService(q, packet, HTTP_DELAY_SERVICE);
+        if (!(conn->endpoint && tx->finalized)) {
+            if (rx->inputPipeline) {
+                httpPutPacketToNext(q, packet);
+            } else {
+                httpPutForService(q, packet, HTTP_DELAY_SERVICE);
+            }
         }
         if (packet == conn->input) {
             conn->input = 0;

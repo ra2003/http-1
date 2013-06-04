@@ -12,23 +12,23 @@
 /*
     Parse the client 'Authorization' header and the server 'Www-Authenticate' header
  */
-PUBLIC int httpBasicParse(HttpConn *conn)
+PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
 {
     HttpRx  *rx;
     char    *decoded, *cp;
 
-    if (conn->endpoint) {
-        rx = conn->rx;
-        if ((decoded = mprDecode64(rx->authDetails)) == 0) {
-            return MPR_ERR_BAD_FORMAT;
-        }
-        if ((cp = strchr(decoded, ':')) != 0) {
-            *cp++ = '\0';
-        }
-        conn->username = sclone(decoded);
-        conn->password = sclone(cp);
-        conn->encoded = 0;
+    assert(conn->endpoint);
+
+    rx = conn->rx;
+    if ((decoded = mprDecode64(rx->authDetails)) == 0) {
+        return MPR_ERR_BAD_FORMAT;
     }
+    if ((cp = strchr(decoded, ':')) != 0) {
+        *cp++ = '\0';
+    }
+    conn->encoded = 0;
+    *username = sclone(decoded);
+    *password = sclone(cp);
     return 0;
 }
 
@@ -50,9 +50,9 @@ PUBLIC void httpBasicLogin(HttpConn *conn)
     Add the client 'Authorization' header for authenticated requests
     NOTE: Can do this without first getting a 401 response
  */
-PUBLIC bool httpBasicSetHeaders(HttpConn *conn)
+PUBLIC bool httpBasicSetHeaders(HttpConn *conn, cchar *username, cchar *password)
 {
-    httpAddHeader(conn, "Authorization", "basic %s", mprEncode64(sfmt("%s:%s", conn->username, conn->password)));
+    httpAddHeader(conn, "Authorization", "basic %s", mprEncode64(sfmt("%s:%s", username, password)));
     return 1;
 }
 

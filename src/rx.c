@@ -980,9 +980,7 @@ static bool processContent(HttpConn *conn)
             conn->input = 0;
         }
     }
-    //  MOB - what of all this does the client do?
     if (rx->eof) {
-        //  MOB - is the endpoint test needed?
         if (conn->endpoint) {
             if (!rx->route) {
                 httpAddBodyParams(conn);

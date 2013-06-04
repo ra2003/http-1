@@ -30,7 +30,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
 
 /*********************************** Code *************************************/
 
-PUBLIC bool httpPamVerifyUser(HttpConn *conn)
+PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
 {
     MprBuf              *abilities;
     pam_handle_t        *pamh;
@@ -39,26 +39,26 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn)
     struct group        *gp;
     int                 res, i;
    
-    assert(conn->username);
-    assert(conn->password);
+    assert(username);
+    assert(password);
     assert(!conn->encoded);
 
-    info.name = (char*) conn->username;
-    info.password = (char*) conn->password;
+    info.name = (char*) username;
+    info.password = (char*) password;
     pamh = NULL;
     if ((res = pam_start("login", info.name, &conv, &pamh)) != PAM_SUCCESS) {
         return 0;
     }
     if ((res = pam_authenticate(pamh, PAM_DISALLOW_NULL_AUTHTOK)) != PAM_SUCCESS) {
         pam_end(pamh, PAM_SUCCESS);
-        mprTrace(5, "httpPamVerifyUser failed to verify %s", conn->username);
+        mprTrace(5, "httpPamVerifyUser failed to verify %s", username);
         return 0;
     }
     pam_end(pamh, PAM_SUCCESS);
-    mprTrace(5, "httpPamVerifyUser verified %s", conn->username);
+    mprTrace(5, "httpPamVerifyUser verified %s", username);
 
     if (!conn->user) {
-        conn->user = mprLookupKey(conn->rx->route->auth->users, conn->username);
+        conn->user = mprLookupKey(conn->rx->route->auth->userCache, username);
     }
     if (!conn->user) {
         Gid     groups[32];
@@ -67,7 +67,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn)
             Create a temporary user with a abilities set to the groups 
          */
         ngroups = sizeof(groups) / sizeof(Gid);
-        if ((i = getgrouplist(conn->username, 99999, groups, &ngroups)) >= 0) {
+        if ((i = getgrouplist(username, 99999, groups, &ngroups)) >= 0) {
             abilities = mprCreateBuf(0, 0);
             for (i = 0; i < ngroups; i++) {
                 if ((gp = getgrgid(groups[i])) != 0) {
@@ -75,11 +75,11 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn)
                 }
             }
             mprAddNullToBuf(abilities);
-            mprTrace(5, "Create temp user \"%s\" with abilities: %s", conn->username, mprGetBufStart(abilities));
+            mprTrace(5, "Create temp user \"%s\" with abilities: %s", username, mprGetBufStart(abilities));
             /*
                 Create a user and map groups to roles and expand to abilities
              */
-            conn->user = httpCreateUser(conn->rx->route->auth, conn->username, 0, mprGetBufStart(abilities));
+            conn->user = httpAddUser(conn->rx->route->auth, username, 0, mprGetBufStart(abilities));
         }
     }
     return 1;

@@ -242,7 +242,7 @@ PUBLIC int httpWriteSession(HttpConn *conn)
 PUBLIC char *httpGetSessionID(HttpConn *conn)
 {
     HttpRx  *rx;
-    cchar   *cookies, *cookie;
+    cchar   *cookie;
     char    *cp, *value;
     int     quoted;
 
@@ -257,8 +257,7 @@ PUBLIC char *httpGetSessionID(HttpConn *conn)
         return 0;
     }
     rx->sessionProbed = 1;
-    cookies = httpGetCookies(conn);
-    for (cookie = cookies; cookie && (value = strstr(cookie, HTTP_SESSION_COOKIE)) != 0; cookie = value) {
+    for (cookie = rx->cookie; cookie && (value = strstr(cookie, HTTP_SESSION_COOKIE)) != 0; cookie = value) {
         value += strlen(HTTP_SESSION_COOKIE);
         while (isspace((uchar) *value) || *value == '=') {
             value++;

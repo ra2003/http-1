@@ -638,12 +638,14 @@ PUBLIC void httpSetConnNotifier(HttpConn *conn, HttpNotifier notifier)
  */
 PUBLIC void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password, cchar *authType)
 {
+    char    *ptok;
+
     httpResetCredentials(conn);
-    conn->username = sclone(username);
     if (password == NULL && strchr(username, ':') != 0) {
-        conn->username = stok(conn->username, ":", &conn->password);
-        conn->password = sclone(conn->password);
+        conn->username = stok(sclone(username), ":", &ptok);
+        conn->password = sclone(ptok);
     } else {
+        conn->username = sclone(username);
         conn->password = sclone(password);
     }
     if (authType) {

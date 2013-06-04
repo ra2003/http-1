@@ -37,7 +37,7 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
 /*
     Parse the client 'Authorization' header and the server 'Www-Authenticate' header
  */
-PUBLIC int httpDigestParse(HttpConn *conn)
+PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
 {
     HttpRx      *rx;
     DigestData  *dp;
@@ -49,6 +49,8 @@ PUBLIC int httpDigestParse(HttpConn *conn)
     dp = conn->authData = mprAllocObj(DigestData, manageDigestData);
     rx = conn->rx;
     key = sclone(rx->authDetails);
+    *password = 0;
+    *username = 0;
 
     while (*key) {
         while (*key && isspace((uchar) *key)) {
@@ -142,7 +144,9 @@ PUBLIC int httpDigestParse(HttpConn *conn)
                 dp->realm = sclone(value);
             } else if (scaselesscmp(key, "response") == 0) {
                 /* Store the response digest in the password field. This is MD5(user:realm:password) */
-                conn->password = sclone(value);
+                if (password) {
+                    *password = sclone(value);
+                }
                 conn->encoded = 1;
             }
             break;
@@ -156,7 +160,9 @@ PUBLIC int httpDigestParse(HttpConn *conn)
             if (scaselesscmp(key, "uri") == 0) {
                 dp->uri = sclone(value);
             } else if (scaselesscmp(key, "username") == 0 || scaselesscmp(key, "user") == 0) {
-                conn->username = sclone(value);
+                if (username) {
+                    *username = sclone(value);
+                }
             }
             break;
 
@@ -174,7 +180,10 @@ PUBLIC int httpDigestParse(HttpConn *conn)
             }
         }
     }
-    if (conn->username == 0 || conn->password == 0) {
+    if (username && *username == 0) {
+        return MPR_ERR_BAD_FORMAT;
+    }
+    if (password && *password == 0) {
         return MPR_ERR_BAD_FORMAT;
     }
     if (dp->realm == 0 || dp->nonce == 0 || dp->uri == 0) {
@@ -261,7 +270,7 @@ PUBLIC void httpDigestLogin(HttpConn *conn)
     Add the client 'Authorization' header for authenticated requests
     Must first get a 401 response to get the authData.
  */
-PUBLIC bool httpDigestSetHeaders(HttpConn *conn)
+PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *password)
 { 
     Http        *http;
     HttpTx      *tx;
@@ -275,18 +284,18 @@ PUBLIC bool httpDigestSetHeaders(HttpConn *conn)
         return 0;
     }
     cnonce = sfmt("%s:%s:%x", http->secret, dp->realm, (int) http->now);
-    ha1 = mprGetMD5(sfmt("%s:%s:%s", conn->username, dp->realm, conn->password));
+    ha1 = mprGetMD5(sfmt("%s:%s:%s", username, dp->realm, password));
     ha2 = mprGetMD5(sfmt("%s:%s", tx->method, tx->parsedUri->path));
     if (smatch(dp->qop, "auth")) {
         digest = mprGetMD5(sfmt("%s:%s:%08x:%s:%s:%s", ha1, dp->nonce, dp->nc, cnonce, dp->qop, ha2));
         httpAddHeader(conn, "Authorization", "Digest username=\"%s\", realm=\"%s\", domain=\"%s\", "
             "algorithm=\"MD5\", qop=\"%s\", cnonce=\"%s\", nc=\"%08x\", nonce=\"%s\", opaque=\"%s\", "
-            "stale=\"FALSE\", uri=\"%s\", response=\"%s\"", conn->username, dp->realm, dp->domain, dp->qop, 
+            "stale=\"FALSE\", uri=\"%s\", response=\"%s\"", username, dp->realm, dp->domain, dp->qop, 
             cnonce, dp->nc, dp->nonce, dp->opaque, tx->parsedUri->path, digest);
     } else {
         digest = mprGetMD5(sfmt("%s:%s:%s", ha1, dp->nonce, ha2));
         httpAddHeader(conn, "Authorization", "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", "
-            "uri=\"%s\", response=\"%s\"", conn->username, dp->realm, dp->nonce, tx->parsedUri->path, digest);
+            "uri=\"%s\", response=\"%s\"", username, dp->realm, dp->nonce, tx->parsedUri->path, digest);
     }
     return 1;
 }
@@ -329,7 +338,7 @@ static char *calcDigest(HttpConn *conn, DigestData *dp)
 
     auth = conn->rx->route->auth;
     if (!conn->user) {
-        conn->user = mprLookupKey(auth->users, conn->username);
+        conn->user = mprLookupKey(auth->userCache, conn->username);
     }
     assert(conn->user && conn->user->password);
     if (conn->user == 0 || conn->user->password == 0) {

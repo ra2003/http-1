@@ -100,7 +100,7 @@ static void setDefaultHeaders(HttpConn *conn)
     }
     if (conn->username && conn->authType) {
         if ((ap = httpLookupAuthType(conn->authType)) != 0) {
-            if ((ap->setAuth)(conn)) {
+            if ((ap->setAuth)(conn, conn->username, conn->password)) {
                 conn->authRequested = 1;
             }
         }
@@ -182,12 +182,11 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
             httpFormatError(conn, rx->status, "Authentication failed");
         } else {
             if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {
-                (authType->parseAuth)(conn);
+                (authType->getCredentials)(conn, NULL, NULL);
             }
             return 1;
         }
-    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && 
-            conn->followRedirects) {
+    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && conn->followRedirects) {
         if (rx->redirect) {
             *url = rx->redirect;
             return 1;

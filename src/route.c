@@ -14,6 +14,7 @@
 
 /********************************** Forwards **********************************/
 
+#undef  GRADUATE_LIST
 #define GRADUATE_LIST(route, field) \
     if (route->field == 0) { \
         route->field = mprCreateList(-1, 0); \
@@ -21,6 +22,7 @@
         route->field = mprCloneList(route->parent->field); \
     }
 
+#undef  GRADUATE_HASH
 #define GRADUATE_HASH(route, field) \
     assert(route->field) ; \
     if (route->parent && route->field == route->parent->field) { \
@@ -388,7 +390,6 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
             next = 0;
             route = 0;
             rewrites++;
-            rx->flags &= ~HTTP_AUTH_CHECKED;
 
         } else if (match == HTTP_ROUTE_OK) {
             break;
@@ -1262,7 +1263,6 @@ PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags)
 PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
 {
     assert(route);
-    //  MOB - must put code to map "/" to NULL
     assert(!smatch(prefix, "/"));
     
     if (prefix && *prefix) {
@@ -2072,6 +2072,7 @@ static int allowDenyCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
     HttpAuth    *auth;
+    cchar       *username, *password;
 
     assert(conn);
     assert(route);
@@ -2081,12 +2082,15 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         /* Authentication not required */
         return HTTP_ROUTE_OK;
     }
-    if (!httpAuthenticate(conn)) {
-        if (!conn->tx->finalized && route->auth && route->auth->type) {
-            (route->auth->type->askLogin)(conn);
+    if (!httpLoggedIn(conn)) {
+        httpGetCredentials(conn, &username, &password);
+        if (!httpLogin(conn, username, password)) {
+            if (!conn->tx->finalized && route->auth && route->auth->type) {
+                (route->auth->type->askLogin)(conn);
+            }
+            /* Request has been denied and fully handled */
+            return HTTP_ROUTE_OK;
         }
-        /* Request has been denied and fully handled */
-        return HTTP_ROUTE_OK;
     }
     if (!httpCanUser(conn, NULL)) {
         httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
@@ -2101,12 +2105,20 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
     HttpAuth    *auth;
+    cchar       *username, *password;
 
     auth = route->auth;
     if (!auth || !auth->type || auth->flags & HTTP_AUTO_LOGIN) {
         return HTTP_ROUTE_REJECT;
     }
-    return httpAuthenticate(conn) ? HTTP_ROUTE_REJECT : HTTP_ROUTE_OK;
+    if (httpLoggedIn(conn)) {
+        return HTTP_ROUTE_REJECT;
+    }
+    httpGetCredentials(conn, &username, &password);
+    if (httpLogin(conn, username, password)) {
+        return HTTP_ROUTE_REJECT;
+    }
+    return HTTP_ROUTE_OK;
 }
 
 
@@ -2458,7 +2470,7 @@ PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *resource)
     addRestful(parent, "index",     "GET",    "(/)*$",                   "index",           resource, 0);
     addRestful(parent, "init",      "GET",    "/init$",                  "init",            resource, 0);
     addRestful(parent, "remove",    "DELETE", "/{id=[0-9]+}$",           "remove",          resource, 0);
-    addRestful(parent, "update",    "POST",   "(/{id=[0-9]+})*$",        "update",          resource, flags);
+    addRestful(parent, "update",    "POST",   "/{id=[0-9]+}*$",          "update",          resource, flags);
     addRestful(parent, "action",    "POST",   "/{action}/{id=[0-9]+}$",  "${action}",       resource, 0);
     addRestful(parent, "cmd",       "*",      "/{action}$",              "cmd-${action}",   resource, flags);
 }
@@ -3317,6 +3329,8 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
     return route->limits;
 }
 
+#undef  GRADUATE_HASH
+#undef  GRADUATE_LIST
 
 /*
     @copy   default

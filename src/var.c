@@ -222,7 +222,8 @@ PUBLIC void httpAddBodyParams(HttpConn *conn)
             if (rx->form || rx->upload) {
                 mprTrace(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
                 addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
-            } else if (rx->route->flags & HTTP_ROUTE_JSON && sstarts(rx->mimeType, "application/json")) {
+
+            } else if (sstarts(rx->mimeType, "application/json")) {
                 mprDeserializeInto(httpGetBodyInput(conn), httpGetParams(conn));
             }
         }

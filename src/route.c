@@ -2088,7 +2088,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
             if (!conn->tx->finalized && route->auth && route->auth->type) {
                 (route->auth->type->askLogin)(conn);
             }
-            /* Request has been denied and fully handled */
+            /* Request has been denied and a response generated. So OK to accept this route. */
             return HTTP_ROUTE_OK;
         }
     }

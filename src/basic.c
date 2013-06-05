@@ -17,9 +17,16 @@ PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
     HttpRx  *rx;
     char    *decoded, *cp;
 
-    assert(conn->endpoint);
-
     rx = conn->rx;
+    if (password) {
+        *password = NULL;
+    }
+    if (username) {
+        *username = NULL;
+    }
+    if (!rx->authDetails) {
+        return 0;
+    }
     if ((decoded = mprDecode64(rx->authDetails)) == 0) {
         return MPR_ERR_BAD_FORMAT;
     }
@@ -27,8 +34,12 @@ PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
         *cp++ = '\0';
     }
     conn->encoded = 0;
-    *username = sclone(decoded);
-    *password = sclone(cp);
+    if (username) {
+        *username = sclone(decoded);
+    }
+    if (password) {
+        *password = sclone(cp);
+    }
     return 0;
 }
 

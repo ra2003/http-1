@@ -16,7 +16,7 @@
         if (auth->parent && auth->field && auth->field == auth->parent->field) { \
             auth->field = mprCloneHash(auth->parent->field); \
         } else { \
-            auth->field = mprCreateHash(0, -1); \
+            auth->field = mprCreateHash(0, 0); \
         } \
     }
 
@@ -45,7 +45,9 @@ PUBLIC void httpInitAuth(Http *http)
         Deprecated in 4.4
      */
     httpAddAuthStore("file", fileVerifyUser);
+#if BIT_HAS_PAM && BIT_HTTP_PAM
     httpAddAuthStore("pam", httpPamVerifyUser);
+#endif
 #endif
 }
 
@@ -70,7 +72,7 @@ PUBLIC bool httpLoggedIn(HttpConn *conn)
 
 /*
     Get the username and password credentials. If using an in-protocol auth scheme like basic|digest, the
-    rx->authDetails will contain the credentials and the getCredentials callback will be invoked to parse.
+    rx->authDetails will contain the credentials and the parseAuth callback will be invoked to parse.
     Otherwise, it is expected that "username" and "password" fields are present in the request parameters.
  */
 PUBLIC bool httpGetCredentials(HttpConn *conn, cchar **username, cchar **password)
@@ -83,7 +85,7 @@ PUBLIC bool httpGetCredentials(HttpConn *conn, cchar **username, cchar **passwor
             httpError(conn, HTTP_CODE_BAD_REQUEST, "Access denied. Wrong authentication protocol type.");
             return 0;
         }
-        if ((auth->type->getCredentials)(conn, username, password) < 0) {
+        if (auth->type->parseAuth && (auth->type->parseAuth)(conn, username, password) < 0) {
             httpError(conn, HTTP_CODE_BAD_REQUEST, "Access denied. Bad authentication data.");
             return 0;
         }
@@ -108,6 +110,10 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     auth = rx->route->auth;
     if (!username || !*username) {
         mprTrace(5, "httpLogin missing username");
+        return 0;
+    }
+    assert(auth->store);
+    if (!auth->store) {
         return 0;
     }
     if (!(auth->store->verifyUser)(conn, username, password)) {
@@ -263,7 +269,7 @@ static void manageAuthType(HttpAuthType *type, int flags)
 }
 
 
-PUBLIC int httpAddAuthType(cchar *name, HttpAskLogin askLogin, HttpGetCredentials getCredentials, HttpSetAuth setAuth)
+PUBLIC int httpAddAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth parseAuth, HttpSetAuth setAuth)
 {
     Http            *http;
     HttpAuthType    *type;
@@ -274,7 +280,7 @@ PUBLIC int httpAddAuthType(cchar *name, HttpAskLogin askLogin, HttpGetCredential
     }
     type->name = sclone(name);
     type->askLogin = askLogin;
-    type->getCredentials = getCredentials;
+    type->parseAuth = parseAuth;
     type->setAuth = setAuth;
 
     if (mprAddKey(http->authTypes, name, type) == 0) {
@@ -533,6 +539,9 @@ PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
         mprError("Cannot find auth type %s", type);
         return MPR_ERR_CANT_FIND;
     }
+    if (!auth->store) {
+        httpSetAuthStore(auth, "internal");
+    }
     return 0;
 }
 
@@ -634,7 +643,7 @@ PUBLIC HttpUser *httpAddUser(HttpAuth *auth, cchar *name, cchar *password, cchar
     HttpUser    *user;
 
     if (!auth->userCache) {
-        auth->userCache = mprCreateHash(0, -1);
+        auth->userCache = mprCreateHash(0, 0);
     }
     if (mprLookupKey(auth->userCache, name)) {
         return 0;

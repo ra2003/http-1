@@ -28,7 +28,7 @@ typedef struct DigestData
 
 /********************************** Forwards **********************************/
 
-static char *calcDigest(HttpConn *conn, DigestData *dp);
+static char *calcDigest(HttpConn *conn, DigestData *dp, cchar *username);
 static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm);
 static void manageDigestData(DigestData *dp, int flags);
 static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime *when);
@@ -46,11 +46,18 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
     cchar       *secret, *realm;
     int         seenComma;
 
-    dp = conn->authData = mprAllocObj(DigestData, manageDigestData);
     rx = conn->rx;
+    if (password) {
+        *password = NULL;
+    }
+    if (username) {
+        *username = NULL;
+    }
+    if (!rx->authDetails) {
+        return 0;
+    }
+    dp = conn->authData = mprAllocObj(DigestData, manageDigestData);
     key = sclone(rx->authDetails);
-    *password = 0;
-    *username = 0;
 
     while (*key) {
         while (*key && isspace((uchar) *key)) {
@@ -213,7 +220,7 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
             mprTrace(2, "Access denied: Nonce is stale\n");
             return MPR_ERR_BAD_STATE;
         }
-        rx->passwordDigest = calcDigest(conn, dp);
+        rx->passwordDigest = calcDigest(conn, dp, *username);
     } else {
         if (dp->domain == 0 || dp->opaque == 0 || dp->algorithm == 0 || dp->stale == 0) {
             return MPR_ERR_BAD_FORMAT;
@@ -329,16 +336,16 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
 
 
 /*
-    Get a Digest value using the MD5 algorithm -- See RFC 2617 to understand this code.
+    Get a password digest using the MD5 algorithm -- See RFC 2617 to understand this code.
  */ 
-static char *calcDigest(HttpConn *conn, DigestData *dp)
+static char *calcDigest(HttpConn *conn, DigestData *dp, cchar *username)
 {
     HttpAuth    *auth;
     char        *digestBuf, *ha1, *ha2;
 
     auth = conn->rx->route->auth;
     if (!conn->user) {
-        conn->user = mprLookupKey(auth->userCache, conn->username);
+        conn->user = mprLookupKey(auth->userCache, username);
     }
     assert(conn->user && conn->user->password);
     if (conn->user == 0 || conn->user->password == 0) {

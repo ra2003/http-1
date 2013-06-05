@@ -164,8 +164,8 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
  */
 PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
 {
-    HttpAuthType    *authType;
     HttpRx          *rx;
+    HttpAuthType    *authType;
 
     assert(conn->rx);
 
@@ -178,11 +178,13 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
     if (rx->status == HTTP_CODE_UNAUTHORIZED) {
         if (conn->username == 0 || conn->authType == 0) {
             httpFormatError(conn, rx->status, "Authentication required");
+
         } else if (conn->authRequested) {
             httpFormatError(conn, rx->status, "Authentication failed");
         } else {
+            assert(!conn->endpoint);
             if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {
-                (authType->getCredentials)(conn, NULL, NULL);
+                (authType->parseAuth)(conn, NULL, NULL);
             }
             return 1;
         }

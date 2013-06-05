@@ -68,6 +68,7 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
     host->routes = parent->routes;
     host->flags = parent->flags | HTTP_HOST_VHOST;
     host->protocol = parent->protocol;
+    host->streams = parent->streams;
     httpAddHost(http, host);
     return host;
 }

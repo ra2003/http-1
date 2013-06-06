@@ -32,7 +32,8 @@ static HttpSession *allocSession(HttpConn *conn, cchar *id, cchar *data)
     sp->cache = conn->http->sessionCache;
     if (data) {
         sp->data = mprDeserialize(data);
-    } else {
+    }
+    if (!sp->data) {
         sp->data = mprCreateHash(BIT_MAX_SESSION_HASH, 0);
     }
     return sp;
@@ -154,11 +155,18 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 
 PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
 {
-    cchar   *str;
+    HttpSession *sp;
+    MprKey      *kp;
 
-    if ((str = httpGetSessionVar(conn, key, 0)) != 0 && *str) {
-        assert(*str == '{');
-        return mprDeserialize(str);
+    assert(conn);
+    assert(key && *key);
+
+    if ((sp = httpGetSession(conn, 0)) != 0) {
+        if ((kp = mprLookupKeyEntry(sp->data, key)) != 0) {
+            if (kp->type == MPR_JSON_OBJ) {
+                return (MprHash*) kp->data;
+            }
+        }
     }
     return 0;
 }
@@ -182,7 +190,23 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 
 PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
 {
-    return httpSetSessionVar(conn, key, mprSerialize(obj, 0));
+    HttpSession *sp;
+    MprKey      *kp;
+
+    assert(conn);
+    assert(key && *key);
+
+    if ((sp = httpGetSession(conn, 1)) == 0) {
+        return MPR_ERR_CANT_FIND;
+    }
+    if (obj == 0) {
+        httpRemoveSessionVar(conn, key);
+    } else {
+        if ((kp = mprAddKey(sp->data, key, obj)) != 0) {
+            kp->type = MPR_JSON_OBJ;
+        }
+    }
+    return 0;
 }
 
 
@@ -200,7 +224,7 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
     assert(key && *key);
 
     if ((sp = httpGetSession(conn, 1)) == 0) {
-        return 0;
+        return MPR_ERR_CANT_FIND;
     }
     if (value == 0) {
         httpRemoveSessionVar(conn, key);

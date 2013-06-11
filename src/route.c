@@ -275,8 +275,7 @@ PUBLIC HttpRoute *httpCreateDefaultRoute(HttpHost *host)
 
 
 /*
-    Create and configure a basic route. This is mainly used for client side piplines.
-    Host may be null.
+    Create and configure a basic route. This is used for client side and Ejscript routes. Host may be null.
  */
 PUBLIC HttpRoute *httpCreateConfiguredRoute(HttpHost *host, int serverSide)
 {

@@ -126,6 +126,12 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     if ((session = httpCreateSession(conn)) == 0) {
         return 0;
     }
+    if (rx->route->flags & HTTP_ROUTE_XSRF) {
+        if ((httpCreateSecurityToken(conn)) == 0) {
+            return 0;
+        }
+        httpRenderSecurityToken(conn);
+    }
     httpSetSessionVar(conn, HTTP_SESSION_USERNAME, username);
     rx->authenticated = 1;
     conn->username = sclone(username);
@@ -207,9 +213,6 @@ PUBLIC HttpAuth *httpCreateAuth()
     if ((auth = mprAllocObj(HttpAuth, manageAuth)) == 0) {
         return 0;
     }
-#if UNUSED
-    httpSetAuthStore(auth, "internal");
-#endif
     return auth;
 }
 
@@ -470,8 +473,7 @@ PUBLIC void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginSer
             logoutService = &logoutService[8];
             secure = 1;
         }
-        //  TODO - should be only POST
-        httpSetRouteMethods(route, "GET, POST");
+        httpSetRouteMethods(route, "POST");
         route = httpCreateActionRoute(parent, logoutService, logoutServiceProc);
         route->auth->type = 0;
         if (secure) {

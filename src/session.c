@@ -307,6 +307,85 @@ PUBLIC char *httpGetSessionID(HttpConn *conn)
     return 0;
 }
 
+
+/*
+    Create a security token to use to mitiate CSRF threats. Security tokens are expected to be sent with POST requests to 
+    verify the request is not being forged.
+
+    Note: the HttpSession API prevents session hijacking by pairing with the client IP
+ */
+PUBLIC cchar *httpCreateSecurityToken(HttpConn *conn)
+{
+    HttpRx      *rx;
+
+    rx = conn->rx;
+    rx->securityToken = mprGetRandomString(32);
+    httpSetSessionVar(conn, BIT_XSRF_TOKEN, rx->securityToken);
+    return rx->securityToken;
+}
+
+
+/*
+    Get the security token. Create one if required.
+ */
+PUBLIC cchar *httpGetSecurityToken(HttpConn *conn)
+{
+    HttpRx      *rx;
+
+    rx = conn->rx;
+
+    if (rx->securityToken == 0) {
+        rx->securityToken = (char*) httpGetSessionVar(conn, BIT_XSRF_TOKEN, 0);
+        if (rx->securityToken == 0) {
+            httpCreateSecurityToken(conn);
+        }
+    }
+    return rx->securityToken;
+}
+
+
+/*
+    Render a security token cookie.
+ */
+PUBLIC int httpRenderSecurityToken(HttpConn *conn) 
+{
+    cchar   *securityToken;
+
+    securityToken = httpGetSecurityToken(conn);
+    httpSetCookie(conn, BIT_XSRF_TOKEN, securityToken, "/", NULL,  0, 0);
+    return 0;
+}
+
+
+/*
+    Check the security token with the request. This must match the last generated token stored in the session state.
+    It is expected the client will set the X-XSRF-TOKEN header with the token or
+ */
+PUBLIC bool httpCheckSecurityToken(HttpConn *conn) 
+{
+    cchar   *requestToken, *sessionToken;
+
+    if ((sessionToken = httpGetSessionVar(conn, BIT_XSRF_TOKEN, "")) != 0) {
+        requestToken = httpGetHeader(conn, BIT_XSRF_HEADER);
+#if DEPRECATE || 1
+        /*
+            Deprecated in 4.4
+        */
+        if (!requestToken) {
+            requestToken = httpGetParam(conn, "__esp_security_token__", 0);
+        }
+#endif
+        if (!smatch(sessionToken, requestToken)) {
+            /*
+                Potential CSRF attack. Deny request.
+             */
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
 /*
     @copy   default
 

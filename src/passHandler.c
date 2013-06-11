@@ -3,6 +3,7 @@
 
     This handler simply relays all content to a network connector. It is used for the ErrorHandler and 
     when there is no handler defined. It is configured as the "passHandler" and "errorHandler".
+    It also handles OPTIONS and TRACE methods for all.
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
@@ -11,13 +12,15 @@
 
 #include    "http.h"
 
+static void handleTrace(HttpConn *conn);
+
 /*********************************** Code *************************************/
 
 static void startPass(HttpQueue *q)
 {
     mprTrace(5, "Start passHandler");
-    if (q->conn->rx->flags & (HTTP_OPTIONS | HTTP_TRACE)) {
-        httpHandleOptionsTrace(q->conn, "");
+    if (q->conn->rx->flags & HTTP_TRACE) {
+        handleTrace(q->conn);
     }
 }
 
@@ -31,71 +34,62 @@ static void readyPass(HttpQueue *q)
 static void readyError(HttpQueue *q)
 {
     if (!q->conn->error) {
-        /*
-            The ErrorHandler emits this error always
-         */
         httpError(q->conn, HTTP_CODE_SERVICE_UNAVAILABLE, "The requested resource is not available");
     }
     httpFinalize(q->conn);
 }
 
 
-/*
-    Handle Trace and Options requests. Handlers can do this themselves if they desire, but typically
-    all Trace/Options requests come here.
- */
-PUBLIC void httpHandleOptionsTrace(HttpConn *conn, cchar *methods)
+PUBLIC void httpHandleOptions(HttpConn *conn)
+{
+    httpSetHeaderString(conn, "Allow", httpGetRouteMethods(conn->rx->route));
+    httpFinalize(conn);
+}
+
+
+static void handleTrace(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
-    HttpRoute   *route;
     HttpQueue   *q;
     HttpPacket  *traceData, *headers;
-    MprKey      *method;
 
     tx = conn->tx;
     rx = conn->rx;
-    route = rx->route;
 
-    if (rx->flags & HTTP_TRACE) {
-        /* The trace method is disabled by default unless 'TraceMethod on' is specified */
-        if (!(route->flags & HTTP_ROUTE_TRACE_METHOD)) {
-            tx->status = HTTP_CODE_NOT_ACCEPTABLE;
-            httpFormatResponseBody(conn, "Trace Request Denied", "The TRACE method is disabled for this resource.");
-        } else {
-            /*
-                Create a dummy set of headers to use as the response body. Then reset so the connector will
-                create the headers in the normal fashion. Need to be careful not to have a content length in the
-                headers in the body.
-             */
-            q = conn->writeq;
-            headers = q->first;
-            tx->flags |= HTTP_TX_NO_LENGTH;
-            httpWriteHeaders(q, headers);
-            traceData = httpCreateDataPacket(httpGetPacketLength(headers) + 128);
-            tx->flags &= ~(HTTP_TX_NO_LENGTH | HTTP_TX_HEADERS_CREATED);
-            q->count -= httpGetPacketLength(headers);
-            assert(q->count == 0);
-            mprFlushBuf(headers->content);
-            mprPutToBuf(traceData->content, mprGetBufStart(q->first->content));
-            httpSetContentType(conn, "message/http");
-            httpPutForService(q, traceData, HTTP_DELAY_SERVICE);
-        }
-
-    } else if (rx->flags & HTTP_OPTIONS) {
-        if (rx->route->methods) {
-            methods = 0;
-            for (ITERATE_KEYS(route->methods, method)) {
-                methods = (methods) ? sjoin(methods, ",", method->key, 0) : method->key;
-            }
-            httpSetHeader(conn, "Allow", "%s", methods);
-        } else {
-            httpSetHeader(conn, "Allow", "OPTIONS,%s%s", (route->flags & HTTP_ROUTE_TRACE_METHOD) ? "TRACE," : "", methods);
-        }
-        assert(tx->length <= 0);
-    }
+    /*
+        Create a dummy set of headers to use as the response body. Then reset so the connector will create 
+        the headers in the normal fashion. Need to be careful not to have a content length in the headers in the body.
+     */
+    q = conn->writeq;
+    headers = q->first;
+    tx->flags |= HTTP_TX_NO_LENGTH;
+    httpWriteHeaders(q, headers);
+    traceData = httpCreateDataPacket(httpGetPacketLength(headers) + 128);
+    tx->flags &= ~(HTTP_TX_NO_LENGTH | HTTP_TX_HEADERS_CREATED);
+    q->count -= httpGetPacketLength(headers);
+    assert(q->count == 0);
+    mprFlushBuf(headers->content);
+    mprPutToBuf(traceData->content, mprGetBufStart(q->first->content));
+    httpSetContentType(conn, "message/http");
+    httpPutForService(q, traceData, HTTP_DELAY_SERVICE);
     httpFinalize(conn);
 }
+
+
+#if DEPRECATE || 1
+PUBLIC void httpHandleOptionsTrace(HttpConn *conn)
+{
+    HttpRx      *rx;
+
+    rx = conn->rx;
+    if (rx->flags & HTTP_OPTIONS) {
+        httpHandleOptions(conn);
+    } else if (rx->flags & HTTP_TRACE) {
+        handleTrace(conn);
+    }
+}
+#endif
 
 
 PUBLIC int httpOpenPassHandler(Http *http)

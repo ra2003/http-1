@@ -568,6 +568,37 @@ PUBLIC void httpRemoveCookie(HttpConn *conn, cchar *name)
 }
 
 
+static void setCorsHeaders(HttpConn *conn)
+{
+    HttpRoute   *route;
+    cchar       *origin;
+
+    route = conn->rx->route;
+
+    /*
+        Cannot use wildcard origin response if allowing credentials
+     */
+    if (*route->corsOrigin && !route->corsCredentials) {
+        httpSetHeaderString(conn, "Access-Control-Allow-Origin", route->corsOrigin);
+    } else {
+        origin = httpGetHeader(conn, "Origin");
+        httpSetHeaderString(conn, "Access-Control-Allow-Origin", origin ? origin : "*");
+    }
+    if (route->corsCredentials) {
+        httpSetHeaderString(conn, "Access-Control-Allow-Credentials", "true");
+    }
+    if (route->corsHeaders) {
+        httpSetHeaderString(conn, "Access-Control-Allow-Headers", route->corsHeaders);
+    }
+    if (route->corsMethods) {
+        httpSetHeaderString(conn, "Access-Control-Allow-Methods", route->corsMethods);
+    }
+    if (route->corsAge) {
+        httpSetHeader(conn, "Access-Control-Max-Age", "%d", route->corsAge);
+    }
+}
+
+
 /*  
     Set headers for httpWriteHeaders. This defines standard headers.
  */
@@ -648,6 +679,9 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         } else {
             httpAddHeaderString(conn, "Connection", "close");
         }
+    }
+    if (route->flags & HTTP_ROUTE_CORS) {
+        setCorsHeaders(conn);
     }
 }
 

@@ -181,7 +181,7 @@ static void printRoute(HttpRoute *route, int next, bool full)
         }
         mprRawLog(0, "\n");
     } else {
-        mprRawLog(0, "%-30s %-12s %-50s %-14s\n", route->name, methods ? methods : "*", pattern, target);
+        mprRawLog(0, "%-34s %-20s %-50s %-14s\n", route->name, methods ? methods : "*", pattern, target);
     }
 }
 
@@ -192,7 +192,7 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
     int         next, foundDefault;
 
     if (!full) {
-        mprRawLog(0, "%-30s %-12s %-50s %-14s\n", "Name", "Methods", "Pattern", "Target");
+        mprRawLog(0, "%-34s %-20s %-50s %-14s\n", "Name", "Methods", "Pattern", "Target");
     }
     for (foundDefault = next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
         printRoute(route, next - 1, full);
@@ -302,6 +302,27 @@ PUBLIC HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
     for (next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
         assert(route->name);
         if (smatch(route->name, name)) {
+            return route;
+        }
+    }
+    return 0;
+}
+
+
+PUBLIC HttpRoute *httpLookupRouteByPattern(HttpHost *host, cchar *pattern)
+{
+    HttpRoute   *route;
+    int         next;
+
+    if (smatch(pattern, "/") || smatch(pattern, "^/") || smatch(pattern, "^/$")) {
+        pattern = "";
+    }
+    if (!host && (host = httpGetDefaultHost()) == 0) {
+        return 0;
+    }
+    for (next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
+        assert(route->pattern);
+        if (smatch(route->pattern, pattern)) {
             return route;
         }
     }

@@ -320,7 +320,7 @@ PUBLIC cchar *httpCreateSecurityToken(HttpConn *conn)
 
     rx = conn->rx;
     rx->securityToken = mprGetRandomString(32);
-    httpSetSessionVar(conn, BIT_XSRF_TOKEN, rx->securityToken);
+    httpSetSessionVar(conn, BIT_XSRF_COOKIE, rx->securityToken);
     return rx->securityToken;
 }
 
@@ -335,7 +335,7 @@ PUBLIC cchar *httpGetSecurityToken(HttpConn *conn)
     rx = conn->rx;
 
     if (rx->securityToken == 0) {
-        rx->securityToken = (char*) httpGetSessionVar(conn, BIT_XSRF_TOKEN, 0);
+        rx->securityToken = (char*) httpGetSessionVar(conn, BIT_XSRF_COOKIE, 0);
         if (rx->securityToken == 0) {
             httpCreateSecurityToken(conn);
         }
@@ -352,7 +352,8 @@ PUBLIC int httpRenderSecurityToken(HttpConn *conn)
     cchar   *securityToken;
 
     securityToken = httpGetSecurityToken(conn);
-    httpSetCookie(conn, BIT_XSRF_TOKEN, securityToken, "/", NULL,  0, 0);
+    httpSetCookie(conn, BIT_XSRF_COOKIE, securityToken, "/", NULL,  0, 0);
+    httpSetHeader(conn, BIT_XSRF_HEADER, securityToken);
     return 0;
 }
 
@@ -365,7 +366,7 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
 {
     cchar   *requestToken, *sessionToken;
 
-    if ((sessionToken = httpGetSessionVar(conn, BIT_XSRF_TOKEN, "")) != 0) {
+    if ((sessionToken = httpGetSessionVar(conn, BIT_XSRF_COOKIE, "")) != 0) {
         requestToken = httpGetHeader(conn, BIT_XSRF_HEADER);
 #if DEPRECATE || 1
         /*

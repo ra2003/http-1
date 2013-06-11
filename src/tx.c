@@ -622,7 +622,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
      */
     httpAddHeaderString(conn, "Date", conn->http->currentDate);
 
-    if (tx->ext) {
+    if (tx->ext && route) {
         //  TODO this should be saved in Tx.
         if ((mimeType = (char*) mprLookupMime(route->mimeTypes, tx->ext)) != 0) {
             if (conn->error) {
@@ -679,9 +679,9 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         } else {
             httpAddHeaderString(conn, "Connection", "close");
         }
-    }
-    if (route->flags & HTTP_ROUTE_CORS) {
-        setCorsHeaders(conn);
+        if (route->flags & HTTP_ROUTE_CORS) {
+            setCorsHeaders(conn);
+        }
     }
 }
 

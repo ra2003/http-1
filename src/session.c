@@ -133,6 +133,7 @@ static void manageSession(HttpSession *sp, int flags)
 PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 {
     HttpRx      *rx;
+    int         flags;
 
     assert(conn);
     rx = conn->rx;
@@ -145,7 +146,8 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
                 NOTE: the session state for this ID may already exist if data has been written to the session.
              */
             if ((rx->session = createSession(conn)) != 0) {
-                httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, 0, 0);
+                flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_COOKIE) ? 0 : HTTP_COOKIE_HTTP;
+                httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, rx->session->lifespan, flags);
             }
         }
     }
@@ -352,6 +354,9 @@ PUBLIC int httpRenderSecurityToken(HttpConn *conn)
     cchar   *securityToken;
 
     securityToken = httpGetSecurityToken(conn);
+    /*
+        This cookie must be visible to Angular - so don't use HTTP_COOKIE_HTTP for "httponly".
+     */
     httpSetCookie(conn, BIT_XSRF_COOKIE, securityToken, "/", NULL,  0, 0);
     httpSetHeader(conn, BIT_XSRF_HEADER, securityToken);
     return 0;

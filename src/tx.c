@@ -513,8 +513,9 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
 
 
 /*
-    Set lifespan < 0 to delete the cookie in the client
-    Set lifespan == 0 to get a session cookie in the client.
+    Set lifespan < 0 to delete the cookie in the client.
+    Set lifespan == 0 for no expiry.
+    WARNING: Some browsers (Chrome, Firefox) do not delete session cookies when you exit the browser.
  */
 PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, MprTicks lifespan, int flags)
 {
@@ -546,7 +547,6 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     if (lifespan) {
         expiresAtt = "; expires=";
         expires = mprFormatUniversalTime(MPR_HTTP_DATE, mprGetTime() + lifespan);
-
     } else {
         expires = expiresAtt = "";
     }

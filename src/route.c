@@ -1150,6 +1150,15 @@ PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
 }
 
 
+PUBLIC void httpSetRouteCookieVisibility(HttpRoute *route, bool visible)
+{
+    route->flags &= ~HTTP_ROUTE_VISIBLE_COOKIE;
+    if (visible) {
+        route->flags |= HTTP_ROUTE_VISIBLE_COOKIE;
+    }
+}
+
+
 PUBLIC void httpSetRouteData(HttpRoute *route, cchar *key, void *data)
 {
     assert(route);

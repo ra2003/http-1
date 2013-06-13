@@ -74,7 +74,7 @@ static void makeAltBody(HttpConn *conn, int status)
     rx = conn->rx;
 
     statusMsg = httpLookupStatus(conn->http, status);
-    msg = (rx->route && rx->route->flags & HTTP_ROUTE_SHOW_ERRORS) ? conn->errorMsg : "";
+    msg = (!rx->route || rx->route->flags & HTTP_ROUTE_SHOW_ERRORS) ? conn->errorMsg : "";
 
     if (scmp(conn->rx->accept, "text/plain") == 0) {
         tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, conn->errorMsg);
@@ -100,7 +100,6 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
 {
     HttpRx      *rx;
     HttpTx      *tx;
-    HttpRoute   *route;
     cchar       *uri;
     int         status;
 
@@ -141,10 +140,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                  */
                 flags |= HTTP_ABORT;
             } else {
-                if ((route = rx->route) == 0) {
-                    route = httpGetDefaultHost()->defaultRoute;
-                }
-                if ((uri = httpLookupRouteErrorDocument(route, tx->status)) && !smatch(uri, rx->uri)) {
+                if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status)) && !smatch(uri, rx->uri)) {
                     errorRedirect(conn, uri);
                 } else {
                     makeAltBody(conn, status);

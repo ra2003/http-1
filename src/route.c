@@ -79,7 +79,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->dir = mprGetCurrentPath(".");
     route->home = route->dir;
     route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
-    route->flags = 0;
+    route->flags = BIT_DEBUG ? HTTP_ROUTE_SHOW_ERRORS : 0;
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
     route->host = host;
     route->http = MPR->httpService;
@@ -931,6 +931,31 @@ PUBLIC void httpAddRouteLoad(HttpRoute *route, cchar *module, cchar *path)
 #endif
 
 
+PUBLIC void httpAddRouteMapping(HttpRoute *route, cchar *extensions, cchar *mappings)
+{
+    MprList     *mapList;
+    cchar       *ext, *map;
+    char        *etok, *mtok;
+
+    if (!route->mappings) {
+        route->mappings = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, 0);
+    }
+    if (!route->map) {
+        route->map = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, 0);
+    }
+    for (ext = stok(sclone(extensions), ", \t", &etok); ext; ext = stok(NULL, ", \t", &etok)) {
+        if (*ext == '.') {
+            ext++;
+        }
+        mapList = mprCreateList(0, 0);
+        for (map = stok(sclone(mappings), ", \t", &mtok); map; map = stok(NULL, ", \t", &mtok)) {
+            mprAddItem(mapList, sreplace(map, "${1}", ext));
+        }
+        mprAddKey(route->map, ext, mapList);
+    }
+}
+
+
 /*
     Param field valuePattern
  */
@@ -1109,31 +1134,6 @@ PUBLIC void httpSetRouteCompression(HttpRoute *route, int flags)
 #endif
 
 
-PUBLIC void httpAddRouteMapping(HttpRoute *route, cchar *extensions, cchar *mappings)
-{
-    MprList     *mapList;
-    cchar       *ext, *map;
-    char        *etok, *mtok;
-
-    if (!route->mappings) {
-        route->mappings = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, 0);
-    }
-    if (!route->map) {
-        route->map = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, 0);
-    }
-    for (ext = stok(sclone(extensions), ", \t", &etok); ext; ext = stok(NULL, ", \t", &etok)) {
-        if (*ext == '.') {
-            ext++;
-        }
-        mapList = mprCreateList(0, 0);
-        for (map = stok(sclone(mappings), ", \t", &mtok); map; map = stok(NULL, ", \t", &mtok)) {
-            mprAddItem(mapList, sreplace(map, "${1}", ext));
-        }
-        mprAddKey(route->map, ext, mapList);
-    }
-}
-
-
 PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
 {
     HttpStage     *stage;
@@ -1162,6 +1162,16 @@ PUBLIC void httpSetRouteData(HttpRoute *route, cchar *key, void *data)
         GRADUATE_HASH(route, data);
     }
     mprAddKey(route->data, key, data);
+}
+
+
+//  MOB MOVE
+PUBLIC void httpSetRouteMonitor(HttpRoute *route, cchar *resource, cchar *expr, cchar *policies)
+{
+}
+
+PUBLIC void httpSetRouteDefense(HttpRoute *route, cchar *policy, cchar *action, cchar *args)
+{
 }
 
 
@@ -1332,6 +1342,15 @@ PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
 }
 
 
+PUBLIC void httpSetRouteShowErrors(HttpRoute *route, bool on)
+{
+    route->flags &= ~HTTP_ROUTE_SHOW_ERRORS;
+    if (on) {
+        route->flags |= HTTP_ROUTE_SHOW_ERRORS;
+    }
+}
+
+
 PUBLIC void httpSetRouteSource(HttpRoute *route, cchar *source)
 {
     assert(route);
@@ -1353,6 +1372,15 @@ PUBLIC void httpSetRouteScript(HttpRoute *route, cchar *script, cchar *scriptPat
     if (scriptPath) {
         assert(*scriptPath);
         route->scriptPath = sclone(scriptPath);
+    }
+}
+
+
+PUBLIC void httpSetRouteStealth(HttpRoute *route, bool on)
+{
+    route->flags &= ~HTTP_ROUTE_STEALTH;
+    if (on) {
+        route->flags |= HTTP_ROUTE_STEALTH;
     }
 }
 

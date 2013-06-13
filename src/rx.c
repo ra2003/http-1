@@ -391,6 +391,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 #if BIT_DEBUG
     conn->startMark = mprGetHiResTicks();
 #endif
+    conn->started = conn->http->now;
     traceRequest(conn, packet);
 
     rx->originalMethod = rx->method = supper(getToken(conn, 0));
@@ -585,6 +586,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
             } else if (strcasecmp(key, "content-range") == 0) {
                 /*
+                    The Content-Range header is used in the response. The Range header is used in the request.
                     This headers specifies the range of any posted body data
                     Format is:  Content-Range: bytes n1-n2/length
                     Where n1 is first byte pos and n2 is last byte pos
@@ -601,13 +603,13 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     start = stoi(sp);
                     if ((sp = strchr(sp, '-')) != 0) {
                         end = stoi(++sp);
-                    }
-                    if ((sp = strchr(sp, '/')) != 0) {
-                        /*
-                            Note this is not the content length transmitted, but the original size of the input of which
-                            the client is transmitting only a portion.
-                         */
-                        size = stoi(++sp);
+                        if ((sp = strchr(sp, '/')) != 0) {
+                            /*
+                                Note this is not the content length transmitted, but the original size of the input of which
+                                the client is transmitting only a portion.
+                             */
+                            size = stoi(++sp);
+                        }
                     }
                 }
                 if (start < 0 || end < 0 || size < 0 || end <= start) {
@@ -693,7 +695,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
             } else if (strcasecmp(key, "if-range") == 0) {
                 char    *word, *tok;
-
                 if ((tok = strchr(value, ';')) != 0) {
                     *tok = '\0';
                 }
@@ -745,6 +746,9 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
         case 'r':
             if (strcasecmp(key, "range") == 0) {
+                /*
+                    The Content-Range header is used in the response. The Range header is used in the request.
+                 */
                 if (!parseRange(conn, value)) {
                     httpError(conn, HTTP_CLOSE | HTTP_CODE_RANGE_NOT_SATISFIABLE, "Bad range");
                 }

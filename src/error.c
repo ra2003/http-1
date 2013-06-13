@@ -43,6 +43,54 @@ PUBLIC void httpError(HttpConn *conn, int flags, cchar *fmt, ...)
 }
 
 
+static void errorRedirect(HttpConn *conn, cchar *uri)
+{
+    HttpTx      *tx;
+
+    /*
+        If the response has started or it is an external redirect ... do a redirect
+     */
+    tx = conn->tx;
+    if (sstarts(uri, "http") || tx->flags & HTTP_TX_HEADERS_CREATED) {
+        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
+    } else {
+        /*
+            No response started and it is an internal redirect, so we can rerun the request.
+            Set finalized to "cap" any output. processCompletion() in rx.c will rerun the request using the errorDocument.
+         */
+        tx->errorDocument = uri;
+        tx->finalized = tx->finalizedOutput = tx->finalizedConnector = 1;
+    }
+}
+
+
+static void makeAltBody(HttpConn *conn, int status)
+{
+    HttpRx      *rx;
+    HttpTx      *tx;
+    cchar       *statusMsg, *msg;
+
+    tx = conn->tx;
+    rx = conn->rx;
+
+    statusMsg = httpLookupStatus(conn->http, status);
+    msg = (rx->route && rx->route->flags & HTTP_ROUTE_SHOW_ERRORS) ? conn->errorMsg : "";
+
+    if (scmp(conn->rx->accept, "text/plain") == 0) {
+        tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, conn->errorMsg);
+    } else {
+        tx->altBody = sfmt("<!DOCTYPE html>\r\n"
+            "<head>\r\n"
+            "    <title>%s</title>\r\n"
+            "    <link rel=\"shortcut icon\" href=\"data:image/x-icon;,\" type=\"image/x-icon\">\r\n"
+            "</head>\r\n"
+            "<body>\r\n<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n</body>\r\n</html>\r\n",
+            statusMsg, status, statusMsg, mprEscapeHtml(conn->errorMsg));
+    }
+    tx->length = slen(tx->altBody);
+}
+
+
 /*
     The current request has an error and cannot complete as normal. This call sets the Http response status and 
     overrides the normal output with an alternate error message. If the output has alread started (headers sent), then
@@ -52,7 +100,8 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
 {
     HttpRx      *rx;
     HttpTx      *tx;
-    cchar       *uri, *statusMsg;
+    HttpRoute   *route;
+    cchar       *uri;
     int         status;
 
     assert(fmt);
@@ -79,7 +128,11 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         conn->error = 1;
         httpOmitBody(conn);
         conn->errorMsg = formatErrorv(conn, status, fmt, args);
+        mprLog(2, "Error: %s", conn->errorMsg);
         HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
+
+        httpAddHeaderString(conn, "Cache-Control", "no-cache");
+
         if (conn->endpoint && tx && rx) {
             if (tx->flags & HTTP_TX_HEADERS_CREATED) {
                 /* 
@@ -88,38 +141,13 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                  */
                 flags |= HTTP_ABORT;
             } else {
-                if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status)) && !smatch(uri, rx->uri)) {
-                    /*
-                        If the response has started or it is an external redirect ... do a redirect
-                     */
-                    if (sstarts(uri, "http") || tx->flags & HTTP_TX_HEADERS_CREATED) {
-                        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
-                    } else {
-                        /*
-                            No response started and it is an internal redirect, so we can rerun the request.
-                            Set finalized to "cap" any output. processCompletion() in rx.c will rerun the request using
-                            the errorDocument.
-                         */
-                        tx->errorDocument = uri;
-                        tx->finalized = tx->finalizedOutput = tx->finalizedConnector = 1;
-                    }
+                if ((route = rx->route) == 0) {
+                    route = httpGetDefaultHost()->defaultRoute;
+                }
+                if ((uri = httpLookupRouteErrorDocument(route, tx->status)) && !smatch(uri, rx->uri)) {
+                    errorRedirect(conn, uri);
                 } else {
-                    httpAddHeaderString(conn, "Cache-Control", "no-cache");
-                    statusMsg = httpLookupStatus(conn->http, status);
-                    if (scmp(conn->rx->accept, "text/plain") == 0) {
-                        tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, conn->errorMsg);
-                    } else {
-                        tx->altBody = sfmt("<!DOCTYPE html>\r\n"
-                            "<head>\r\n"
-                            "    <title>%s</title>\r\n"
-                            "    <link rel=\"shortcut icon\" href=\"data:image/x-icon;,\" type=\"image/x-icon\">\r\n"
-                            "</head>\r\n"
-                            "<body>\r\n<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n</body>\r\n</html>\r\n",
-                            statusMsg, status, statusMsg, mprEscapeHtml(conn->errorMsg));
-                    }
-                    tx->length = slen(tx->altBody);
-                    tx->flags |= HTTP_TX_NO_BODY;
-                    httpDiscardData(conn, HTTP_QUEUE_TX);
+                    makeAltBody(conn, status);
                 }
             }
         }
@@ -149,19 +177,23 @@ static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
                 conn->rx->status = status;
             }
         }
+#if UNUSED
         if (conn->rx == 0 || conn->rx->uri == 0) {
             mprLog(2, "\"%s\", status %d: %s.", httpLookupStatus(conn->http, status), status, conn->errorMsg);
         } else {
             mprLog(2, "Error: %s", conn->errorMsg);
         }
+#endif
     }
     return conn->errorMsg;
 }
 
 
+#if UNUSED
 /*
     Just format conn->errorMsg and set status - nothing more
     NOTE: this is an internal API. Users should use httpError()
+    MOB - eliminate and get client ot use httpError?
  */
 PUBLIC void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
 {
@@ -170,7 +202,9 @@ PUBLIC void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
     va_start(args, fmt); 
     conn->errorMsg = formatErrorv(conn, status, fmt, args);
     va_end(args); 
+    mprLog(2, "Error: %s", conn->errorMsg);
 }
+#endif
 
 
 PUBLIC cchar *httpGetError(HttpConn *conn)

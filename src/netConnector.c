@@ -104,7 +104,7 @@ static void netOutgoingService(HttpQueue *q)
         assert(q->ioIndex > 0);
         written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
         if (written < 0) {
-            errCode = mprGetError(q);
+            errCode = mprGetError();
             mprTrace(6, "netConnector: wrote %d, errno %d, qflags %x", (int) written, errCode, q->flags);
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
                 /*  Socket full, wait for an I/O event */

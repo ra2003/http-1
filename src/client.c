@@ -177,10 +177,10 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
     }
     if (rx->status == HTTP_CODE_UNAUTHORIZED) {
         if (conn->username == 0 || conn->authType == 0) {
-            httpFormatError(conn, rx->status, "Authentication required");
+            httpError(conn, rx->status, "Authentication required");
 
         } else if (conn->authRequested) {
-            httpFormatError(conn, rx->status, "Authentication failed");
+            httpError(conn, rx->status, "Authentication failed");
         } else {
             assert(!conn->endpoint);
             if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {
@@ -193,7 +193,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
             *url = rx->redirect;
             return 1;
         }
-        httpFormatError(conn, rx->status, "Missing location header");
+        httpError(conn, rx->status, "Missing location header");
         return -1;
     }
     return 0;
@@ -264,7 +264,7 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
     if (fileData) {
         for (rc = next = 0; rc >= 0 && (path = mprGetNextItem(fileData, &next)) != 0; ) {
             if (!mprPathExists(path, R_OK)) {
-                httpFormatError(conn, 0, "Cannot open %s", path);
+                httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot open %s", path);
                 return MPR_ERR_CANT_OPEN;
             }
             name = mprGetPathBase(path);

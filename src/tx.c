@@ -516,8 +516,7 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
     Set lifespan < 0 to delete the cookie in the client
     Set lifespan == 0 to get a session cookie in the client.
  */
-PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, 
-    MprTicks lifespan, int flags)
+PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, MprTicks lifespan, int flags)
 {
     HttpRx      *rx;
     char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *secure, *httponly;
@@ -551,11 +550,12 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     } else {
         expires = expiresAtt = "";
     }
+    secure = (conn->secure & (flags & HTTP_COOKIE_SECURE)) ? "; secure" : "";
+    httponly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
+
     /* 
        Allow multiple cookie headers. Even if the same name. Later definitions take precedence.
      */
-    secure = (flags & HTTP_COOKIE_SECURE) ? "; secure" : "";
-    httponly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
     httpAppendHeader(conn, "Set-Cookie", 
         sjoin(name, "=", value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
     httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
@@ -671,7 +671,9 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         httpSetHeader(conn, "Accept-Ranges", "bytes");
     }
     if (conn->endpoint) {
-        httpAddHeaderString(conn, "Server", conn->http->software);
+        if (!(route->flags & HTTP_ROUTE_STEALTH)) {
+            httpAddHeaderString(conn, "Server", conn->http->software);
+        }
         if (--conn->keepAliveCount > 0) {
             httpAddHeaderString(conn, "Connection", "Keep-Alive");
             httpAddHeader(conn, "Keep-Alive", "timeout=%Ld, max=%d", conn->limits->inactivityTimeout / 1000,

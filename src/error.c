@@ -33,6 +33,32 @@ PUBLIC void httpDisconnect(HttpConn *conn)
 }
 
 
+PUBLIC void httpBadRequestError(HttpConn *conn, int flags, cchar *fmt, ...)
+{
+    va_list     args;
+
+    va_start(args, fmt);
+    if (conn->endpoint) {
+        httpMonitorEvent(conn, HTTP_COUNTER_BAD_REQUEST_ERRORS, 1);
+    }
+    errorv(conn, flags, fmt, args);
+    va_end(args);
+}
+
+
+PUBLIC void httpLimitError(HttpConn *conn, int flags, cchar *fmt, ...)
+{
+    va_list     args;
+
+    va_start(args, fmt);
+    if (conn->endpoint) {
+        httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
+    }
+    errorv(conn, flags, fmt, args);
+    va_end(args);
+}
+
+
 PUBLIC void httpError(HttpConn *conn, int flags, cchar *fmt, ...)
 {
     va_list     args;
@@ -123,15 +149,21 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
             rx->eof = 1;
         }
     }
+
     if (!conn->error) {
         conn->error = 1;
         httpOmitBody(conn);
         conn->errorMsg = formatErrorv(conn, status, fmt, args);
         mprLog(2, "Error: %s", conn->errorMsg);
+
         HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
-
+        if (conn->endpoint) {
+            if (status == HTTP_CODE_NOT_FOUND) {
+                httpMonitorEvent(conn, HTTP_COUNTER_NOT_FOUND_ERRORS, 1);
+            }
+            httpMonitorEvent(conn, HTTP_COUNTER_TOTAL_ERRORS, 1);
+        }
         httpAddHeaderString(conn, "Cache-Control", "no-cache");
-
         if (conn->endpoint && tx && rx) {
             if (tx->flags & HTTP_TX_HEADERS_CREATED) {
                 /* 
@@ -173,34 +205,9 @@ static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
                 conn->rx->status = status;
             }
         }
-#if UNUSED
-        if (conn->rx == 0 || conn->rx->uri == 0) {
-            mprLog(2, "\"%s\", status %d: %s.", httpLookupStatus(conn->http, status), status, conn->errorMsg);
-        } else {
-            mprLog(2, "Error: %s", conn->errorMsg);
-        }
-#endif
     }
     return conn->errorMsg;
 }
-
-
-#if UNUSED
-/*
-    Just format conn->errorMsg and set status - nothing more
-    NOTE: this is an internal API. Users should use httpError()
-    MOB - eliminate and get client ot use httpError?
- */
-PUBLIC void httpFormatError(HttpConn *conn, int status, cchar *fmt, ...)
-{
-    va_list     args;
-
-    va_start(args, fmt); 
-    conn->errorMsg = formatErrorv(conn, status, fmt, args);
-    va_end(args); 
-    mprLog(2, "Error: %s", conn->errorMsg);
-}
-#endif
 
 
 PUBLIC cchar *httpGetError(HttpConn *conn)

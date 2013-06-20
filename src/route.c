@@ -159,6 +159,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->optimizedPattern = parent->optimizedPattern;
     route->prefix = parent->prefix;
     route->prefixLen = parent->prefixLen;
+    route->requestHeaders = parent->requestHeaders;
     route->responseStatus = parent->responseStatus;
     route->script = parent->script;
     route->scriptPath = parent->scriptPath;
@@ -216,6 +217,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->defaultLanguage);
         mprMark(route->extensions);
         mprMark(route->handlers);
+        mprMark(route->headers);
         mprMark(route->connector);
         mprMark(route->data);
         mprMark(route->eroute);
@@ -232,7 +234,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->scriptPath);
         mprMark(route->methods);
         mprMark(route->params);
-        mprMark(route->headers);
+        mprMark(route->requestHeaders);
         mprMark(route->conditions);
         mprMark(route->updates);
         mprMark(route->sourceName);
@@ -521,8 +523,8 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
 
     rx->target = route->target ? expandTokens(conn, route->target) : sclone(&conn->rx->pathInfo[1]);
 
-    if (route->headers) {
-        for (next = 0; (op = mprGetNextItem(route->headers, &next)) != 0; ) {
+    if (route->requestHeaders) {
+        for (next = 0; (op = mprGetNextItem(route->requestHeaders, &next)) != 0; ) {
             mprTrace(6, "Test route \"%s\" header \"%s\"", route->name, op->name);
             if ((header = httpGetHeader(conn, op->name)) != 0) {
                 count = pcre_exec(op->mdata, NULL, header, (int) slen(header), 0, 0, 
@@ -890,31 +892,6 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
 }
 
 
-/*
-    Header field valuePattern
- */
-PUBLIC void httpAddRouteHeader(HttpRoute *route, cchar *header, cchar *value, int flags)
-{
-    HttpRouteOp     *op;
-    cchar           *errMsg;
-    int             column;
-
-    assert(route);
-    assert(header && *header);
-    assert(value && *value);
-
-    GRADUATE_LIST(route, headers);
-    if ((op = createRouteOp(header, flags | HTTP_ROUTE_FREE)) == 0) {
-        return;
-    }
-    if ((op->mdata = pcre_compile2(value, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprError("Cannot compile header pattern. Error %s at column %d", errMsg, column); 
-    } else {
-        mprAddItem(route->headers, op);
-    }
-}
-
-
 #if FUTURE && KEEP
 PUBLIC void httpAddRouteLoad(HttpRoute *route, cchar *module, cchar *path)
 {
@@ -978,6 +955,45 @@ PUBLIC void httpAddRouteParam(HttpRoute *route, cchar *field, cchar *value, int 
     } else {
         mprAddItem(route->params, op);
     }
+}
+
+
+/*
+    RequestHeader [!] header pattern
+ */
+PUBLIC void httpAddRouteRequestHeaderCheck(HttpRoute *route, cchar *header, cchar *pattern, int flags)
+{
+    HttpRouteOp     *op;
+    cchar           *errMsg;
+    int             column;
+
+    assert(route);
+    assert(header && *header);
+    assert(pattern && *pattern);
+
+    GRADUATE_LIST(route, requestHeaders);
+    if ((op = createRouteOp(header, flags | HTTP_ROUTE_FREE)) == 0) {
+        return;
+    }
+    if ((op->mdata = pcre_compile2(pattern, 0, 0, &errMsg, &column, NULL)) == 0) {
+        mprError("Cannot compile header pattern. Error %s at column %d", errMsg, column); 
+    } else {
+        mprAddItem(route->requestHeaders, op);
+    }
+}
+
+
+/*
+    ResponseHeader [add|append|remove|set] header value
+ */
+PUBLIC void httpAddRouteResponseHeader(HttpRoute *route, int cmd, cchar *header, cchar *value)
+{
+    assert(route);
+    assert(header && *header);
+    assert(value && *value);
+
+    GRADUATE_LIST(route, headers);
+    mprAddItem(route->headers, mprCreateKeyPair(header, value, cmd));
 }
 
 
@@ -1171,16 +1187,6 @@ PUBLIC void httpSetRouteData(HttpRoute *route, cchar *key, void *data)
         GRADUATE_HASH(route, data);
     }
     mprAddKey(route->data, key, data);
-}
-
-
-//  MOB MOVE
-PUBLIC void httpSetRouteMonitor(HttpRoute *route, cchar *resource, cchar *expr, cchar *policies)
-{
-}
-
-PUBLIC void httpSetRouteDefense(HttpRoute *route, cchar *policy, cchar *action, cchar *args)
-{
 }
 
 
@@ -3370,6 +3376,33 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
     }
     return route->limits;
 }
+
+
+PUBLIC uint64 httpGetNumber(cchar *value)
+{
+    uint64  number;
+
+    value = strim(slower(value), " \t", MPR_TRIM_BOTH);
+    if (sends(value, "sec") || sends(value, "secs") || sends(value, "seconds") || sends(value, "seconds")) {
+        number = stoi(value);
+    } else if (sends(value, "min") || sends(value, "mins") || sends(value, "minute") || sends(value, "minutes")) {
+        number = stoi(value) * 60;
+    } else if (sends(value, "hr") || sends(value, "hrs") || sends(value, "hour") || sends(value, "hours")) {
+        number = stoi(value) * 60 * 60;
+    } else if (sends(value, "day") || sends(value, "days")) {
+        number = stoi(value) * 60 * 60 * 24;
+    } else {
+        number = stoi(value);
+    }
+    return number;
+}
+
+
+PUBLIC MprTicks httpGetTicks(cchar *value)
+{
+    return httpGetNumber(value) * MPR_TICKS_PER_SEC;
+}
+
 
 #undef  GRADUATE_HASH
 #undef  GRADUATE_LIST

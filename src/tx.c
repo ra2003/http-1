@@ -129,7 +129,7 @@ PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     } else {
         value = MPR->emptyString;
     }
-    if (!mprLookupKey(conn->tx->headers, key)) {
+    if (conn->tx && !mprLookupKey(conn->tx->headers, key)) {
         addHdr(conn, key, value);
     }
 }
@@ -143,7 +143,7 @@ PUBLIC void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
     assert(key && *key);
     assert(value);
 
-    if (!mprLookupKey(conn->tx->headers, key)) {
+    if (conn->tx && !mprLookupKey(conn->tx->headers, key)) {
         addHdr(conn, key, sclone(value));
     }
 }
@@ -160,6 +160,9 @@ PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     char        *value;
     cchar       *cookie;
 
+    if (!conn->tx) {
+        return;
+    }
     assert(key && *key);
     assert(fmt && *fmt);
 
@@ -207,6 +210,9 @@ PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
     assert(key && *key);
     assert(value && *value);
 
+    if (!conn->tx) {
+        return;
+    }
     oldValue = mprLookupKey(conn->tx->headers, key);
     if (oldValue) {
         if (scaselessmatch(key, "Set-Cookie")) {
@@ -608,8 +614,10 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     HttpTx      *tx;
     HttpRoute   *route;
     HttpRange   *range;
+    MprKeyValue *item;
     MprOff      length;
     cchar       *mimeType;
+    int         next;
 
     assert(packet->flags == HTTP_PACKET_HEADER);
 
@@ -676,13 +684,26 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         }
         if (--conn->keepAliveCount > 0) {
             httpAddHeaderString(conn, "Connection", "Keep-Alive");
-            httpAddHeader(conn, "Keep-Alive", "timeout=%Ld, max=%d", conn->limits->inactivityTimeout / 1000,
-                conn->keepAliveCount);
+            httpAddHeader(conn, "Keep-Alive", "timeout=%Ld, max=%d", conn->limits->inactivityTimeout / 1000, conn->keepAliveCount);
         } else {
             httpAddHeaderString(conn, "Connection", "close");
         }
         if (route->flags & HTTP_ROUTE_CORS) {
             setCorsHeaders(conn);
+        }
+        /* 
+            Apply response headers
+         */
+        for (ITERATE_ITEMS(route->headers, item, next)) {
+            if (item->flags == HTTP_ROUTE_ADD_HEADER) {
+                httpAddHeaderString(conn, item->key, item->value);
+            } else if (item->flags == HTTP_ROUTE_APPEND_HEADER) {
+                httpAppendHeaderString(conn, item->key, item->value);
+            } else if (item->flags == HTTP_ROUTE_REMOVE_HEADER) {
+                httpRemoveHeader(conn, item->key);
+            } else if (item->flags == HTTP_ROUTE_SET_HEADER) {
+                httpSetHeaderString(conn, item->key, item->value);
+            }
         }
     }
 }

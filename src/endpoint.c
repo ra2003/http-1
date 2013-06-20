@@ -27,7 +27,6 @@ PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *disp
     }
     http = MPR->httpService;
     endpoint->http = http;
-    endpoint->clientLoad = mprCreateHash(BIT_MAX_CLIENTS_HASH, MPR_HASH_STATIC_VALUES);
     endpoint->async = 1;
     endpoint->http = MPR->httpService;
     endpoint->port = port;
@@ -57,7 +56,6 @@ static int manageEndpoint(HttpEndpoint *endpoint, int flags)
         mprMark(endpoint->http);
         mprMark(endpoint->hosts);
         mprMark(endpoint->limits);
-        mprMark(endpoint->clientLoad);
         mprMark(endpoint->ip);
         mprMark(endpoint->context);
         mprMark(endpoint->sock);
@@ -130,7 +128,6 @@ static int destroyEndpointConnections(HttpEndpoint *endpoint)
     lock(http->connections);
     for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
         if (conn->endpoint == endpoint) {
-            conn->endpoint = 0;
             httpDestroyConn(conn);
             next--;
         }
@@ -211,115 +208,6 @@ PUBLIC void httpStopEndpoint(HttpEndpoint *endpoint)
 }
 
 
-/*
-    OPT
- */
-PUBLIC bool httpValidateLimits(HttpEndpoint *endpoint, int event, HttpConn *conn)
-{
-    HttpLimits  *limits;
-    Http        *http;
-    int         count, level, dir;
-
-    limits = conn->limits;
-    dir = HTTP_TRACE_RX;
-    assert(conn->endpoint == endpoint);
-    http = endpoint->http;
-
-    lock(endpoint);
-
-    switch (event) {
-    case HTTP_VALIDATE_OPEN_CONN:
-        /*
-            This measures active client systems with unique IP addresses.
-         */
-        if (endpoint->activeClients >= limits->clientMax) {
-            unlock(endpoint);
-            /*  Abort connection */
-            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, 
-                "Too many concurrent clients %d/%d", endpoint->activeClients, limits->clientMax);
-            return 0;
-        }
-        count = (int) PTOL(mprLookupKey(endpoint->clientLoad, conn->ip));
-        mprTrace(7, "Connection count for client %s, count %d limit %d\n", conn->ip, count, limits->requestsPerClientMax);
-        if (count >= limits->requestsPerClientMax) {
-            unlock(endpoint);
-            /*  Abort connection */
-            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, 
-                "Too many concurrent requests for this client %s %d/%d", conn->ip, count, limits->requestsPerClientMax);
-            return 0;
-        }
-        mprAddKey(endpoint->clientLoad, conn->ip, ITOP(count + 1));
-        endpoint->activeClients = (int) mprGetHashLength(endpoint->clientLoad);
-        dir = HTTP_TRACE_RX;
-        break;
-
-    case HTTP_VALIDATE_CLOSE_CONN:
-        count = (int) PTOL(mprLookupKey(endpoint->clientLoad, conn->ip));
-        if (count > 1) {
-            mprAddKey(endpoint->clientLoad, conn->ip, ITOP(count - 1));
-        } else {
-            mprRemoveKey(endpoint->clientLoad, conn->ip);
-        }
-        endpoint->activeClients = (int) mprGetHashLength(endpoint->clientLoad);
-        dir = HTTP_TRACE_TX;
-        break;
-    
-    case HTTP_VALIDATE_OPEN_REQUEST:
-        assert(conn->rx);
-        if (endpoint->activeRequests >= limits->requestMax) {
-            unlock(endpoint);
-            httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Server overloaded");
-            mprLog(2, "Too many concurrent requests %d/%d", endpoint->activeRequests, limits->requestMax);
-            return 0;
-        }
-        endpoint->activeRequests++;
-        conn->rx->flags |= HTTP_LIMITS_OPENED;
-        dir = HTTP_TRACE_RX;
-        break;
-
-    case HTTP_VALIDATE_CLOSE_REQUEST:
-        if (conn->rx && conn->rx->flags & HTTP_LIMITS_OPENED) {
-            /* Requests incremented only when conn->rx is assigned */
-            endpoint->activeRequests--;
-            assert(endpoint->activeRequests >= 0);
-            dir = HTTP_TRACE_TX;
-            conn->rx->flags &= ~HTTP_LIMITS_OPENED;
-        }
-        break;
-
-    case HTTP_VALIDATE_OPEN_PROCESS:
-        http->activeProcesses++;
-        if (http->activeProcesses > limits->processMax) {
-            unlock(endpoint);
-            httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Server overloaded");
-            mprLog(2, "Too many concurrent processes %d/%d", http->activeProcesses, limits->processMax);
-            return 0;
-        }
-        dir = HTTP_TRACE_RX;
-        break;
-
-    case HTTP_VALIDATE_CLOSE_PROCESS:
-        http->activeProcesses--;
-        assert(http->activeProcesses >= 0);
-        break;
-    }
-    if (event == HTTP_VALIDATE_CLOSE_CONN || event == HTTP_VALIDATE_CLOSE_REQUEST) {
-        if ((level = httpShouldTrace(conn, dir, HTTP_TRACE_LIMITS, NULL)) >= 0) {
-            mprTrace(4, "Validate request for %d. Active connections %d, active requests: %d/%d, active client IP %d/%d", 
-                event, mprGetListLength(http->connections), endpoint->activeRequests, limits->requestMax, 
-                endpoint->activeClients, limits->clientMax);
-        }
-    }
-#if KEEP
-    mprTrace(0, "Validate Active connections %d, requests: %d/%d, IP %d/%d, Processes %d/%d", 
-        mprGetListLength(http->connections), endpoint->activeRequests, limits->requestMax, 
-        endpoint->activeClients, limits->clientMax, http->activeProcesses, limits->processMax);
-#endif
-    unlock(endpoint);
-    return 1;
-}
-
-
 PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 {
     MprSocket   *sock;
@@ -357,35 +245,10 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
     assert(endpoint);
     http = endpoint->http;
 
-    if (endpoint->ssl) {
-        if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
-            mprError("Cannot upgrade socket for SSL: %s", sock->errorMsg);
-            mprCloseSocket(sock, 0);
-            return 0;
-        }
-    }
     if (mprShouldDenyNewRequests()) {
         mprCloseSocket(sock, 0);
         return 0;
     }
-#if FUTURE
-    static int  warnOnceConnections = 0;
-    int count;
-    /* 
-        Client connections are entered into http->connections. Need to split into two lists 
-        Also, ejs pre-allocates connections in the Http constructor.
-     */
-    if ((count = mprGetListLength(http->connections)) >= endpoint->limits->requestMax) {
-        /* To help alleviate DOS - we just close without responding */
-        if (!warnOnceConnections) {
-            warnOnceConnections = 1;
-            mprLog(2, "Too many concurrent connections %d/%d", count, endpoint->limits->requestMax);
-        }
-        mprCloseSocket(sock, 0);
-        http->underAttack = 1;
-        return 0;
-    }
-#endif
     if ((conn = httpCreateConn(http, endpoint, dispatcher)) == 0) {
         mprCloseSocket(sock, 0);
         return 0;
@@ -396,13 +259,28 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
     conn->sock = sock;
     conn->port = sock->port;
     conn->ip = sclone(sock->ip);
-    conn->secure = (endpoint->ssl != 0);
 
-    if (!httpValidateLimits(endpoint, HTTP_VALIDATE_OPEN_CONN, conn)) {
-        conn->endpoint = 0;
+    httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1);
+    if (conn->address->banUntil > http->now) {
+        mprError("Address \"%s\" has been banned", conn->ip);
+        httpDisconnect(conn);
+        return 0;
+    }
+    if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
+        httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, "Too many concurrent clients");
         httpDestroyConn(conn);
         return 0;
     }
+    if (endpoint->ssl) {
+        if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
+            mprError("Cannot upgrade socket for SSL: %s", sock->errorMsg);
+            mprCloseSocket(sock, 0);
+            httpMonitorEvent(conn, HTTP_COUNTER_SSL_ERRORS, 1); 
+            return 0;
+        }
+        conn->secure = 1;
+    }
+
     assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 

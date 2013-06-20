@@ -516,6 +516,9 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 }
             }
             if ((currentFrameLen + len) > conn->limits->webSocketsMessageSize) {
+                if (conn->endpoint) {
+                    httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
+                }
                 mprError("webSocketFilter: Incoming message is too large %d/%d", len, limits->webSocketsMessageSize);
                 error = WS_STATUS_MESSAGE_TOO_LARGE;
                 break;
@@ -631,6 +634,9 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         len = slen(buf);
     }
     if (len > conn->limits->webSocketsMessageSize) {
+        if (conn->endpoint) {
+            httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
+        }
         mprError("webSocketFilter: Outgoing message is too large %d/%d", len, conn->limits->webSocketsMessageSize);
         return MPR_ERR_WONT_FIT;
     }

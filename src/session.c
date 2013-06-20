@@ -62,8 +62,7 @@ static HttpSession *createSession(HttpConn *conn)
     mprGetCacheStats(conn->http->sessionCache, &http->activeSessions, NULL);
     if (http->activeSessions >= conn->limits->sessionMax) {
         unlock(http);
-        httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Too many sessions %d/%d", http->activeSessions, 
-            conn->limits->sessionMax);
+        httpLimitError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Too many sessions %d/%d", http->activeSessions, conn->limits->sessionMax);
         return 0;
     }
     unlock(http);

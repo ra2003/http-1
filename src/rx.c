@@ -10,6 +10,7 @@
 /***************************** Forward Declarations ***************************/
 
 static void addMatchEtag(HttpConn *conn, char *etag);
+static void delayAwake(HttpConn *conn, MprEvent *event);
 static char *getToken(HttpConn *conn, cchar *delim);
 static void manageRange(HttpRange *range, int flags);
 static void manageRx(HttpRx *rx, int flags);
@@ -18,7 +19,8 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet);
 static bool parseRange(HttpConn *conn, char *value);
 static bool parseRequestLine(HttpConn *conn, HttpPacket *packet);
 static bool parseResponseLine(HttpConn *conn, HttpPacket *packet);
-static void processCompletion(HttpConn *conn);
+static bool processCompletion(HttpConn *conn);
+static bool processFinalized(HttpConn *conn);
 static bool processContent(HttpConn *conn);
 static void parseMethod(HttpConn *conn);
 static bool processParsed(HttpConn *conn);
@@ -121,13 +123,14 @@ PUBLIC void httpDestroyRx(HttpRx *rx)
  */
 PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
 {
-    bool    canProceed;
+    bool    canProceed, complete;
 
     assert(conn);
     if (conn->pumping) {
         return 0;
     }
     canProceed = 1;
+    complete = 0;
     conn->pumping = 1;
 
     while (canProceed) {
@@ -155,15 +158,13 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
             break;
 
         case HTTP_STATE_FINALIZED:
-            processCompletion(conn);
+            canProceed = processFinalized(conn);
             break;
 
         case HTTP_STATE_COMPLETE:
-            if (conn->rx->session) {
-                httpWriteSession(conn);
-            }
-            conn->pumping = 0;
-            return !conn->connError;
+            canProceed = processCompletion(conn);
+            complete = !conn->connError;
+            break;
 
         default:
             assert(conn->state == HTTP_STATE_COMPLETE);
@@ -175,7 +176,7 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
         httpWriteSession(conn);
     }
     conn->pumping = 0;
-    return 0;
+    return complete;
 }
 
 
@@ -186,6 +187,7 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
 static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
 {
     HttpRx      *rx;
+    HttpAddress *address;
     ssize       len;
     char        *start, *end;
 
@@ -218,7 +220,7 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
      */
     if ((end = sncontains(start, "\r\n\r\n", len)) == 0) {
         if (len >= conn->limits->headerSize) {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
+            httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
                 "Header too big. Length %d vs limit %d", len, conn->limits->headerSize);
         }
         return 0;
@@ -227,7 +229,7 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
     mprAddNullToBuf(packet->content);
 
     if (len >= conn->limits->headerSize) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
+        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
             "Header too big. Length %d vs limit %d", len, conn->limits->headerSize);
         return 0;
     }
@@ -257,7 +259,23 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
         rx->flags &= ~HTTP_EXPECT_CONTINUE;
     }
     httpSetState(conn, HTTP_STATE_PARSED);
+
+    if ((address = conn->address) != 0) {
+        if (address->delay && address->delayUntil > conn->http->now) {
+            mprCreateEvent(conn->dispatcher, "delayConn", conn->delay, delayAwake, conn, 0);
+            return 0;
+        }
+    }
     return 1;
+}
+
+
+static void delayAwake(HttpConn *conn, MprEvent *event)
+{
+    conn->delay = 0;
+    httpPumpRequest(conn, NULL);
+    httpEnableConnEvents(conn);
+    // httpSocketBlocked(conn);
 }
 
 
@@ -287,8 +305,9 @@ static void traceRequest(HttpConn *conn, HttpPacket *packet)
     cchar   *endp, *ext, *cp;
     int     len, level;
 
-    content = packet->content;
     ext = 0;
+    content = packet->content;
+
     /*
         Find the Uri extension:   "GET /path.ext HTTP/1.1"
      */
@@ -317,7 +336,6 @@ static void traceRequest(HttpConn *conn, HttpPacket *packet)
             content->start[len - 2] = '\r';
         }
     }
-    httpValidateLimits(conn->endpoint, HTTP_VALIDATE_OPEN_REQUEST, conn);
 }
 
 
@@ -388,22 +406,29 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     ssize       len;
 
     rx = conn->rx;
-#if BIT_DEBUG
+#if BIT_DEBUG && MPR_HIGH_RES_TIMER
     conn->startMark = mprGetHiResTicks();
 #endif
     conn->started = conn->http->now;
-    traceRequest(conn, packet);
 
+    if (conn->endpoint) {
+        if (httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, 1) < 0) {
+            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, "Too many concurrent requests");
+        } else {
+            httpMonitorEvent(conn, HTTP_COUNTER_REQUESTS, 1);
+        }
+    }
+    traceRequest(conn, packet);
     rx->originalMethod = rx->method = supper(getToken(conn, 0));
     parseMethod(conn);
 
     uri = getToken(conn, 0);
     len = slen(uri);
     if (*uri == '\0') {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty URI");
+        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty URI");
         return 0;
     } else if (len >= conn->limits->uriSize) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
+        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
             "Bad request. URI too long. Length %d vs limit %d", len, conn->limits->uriSize);
         return 0;
     }
@@ -419,7 +444,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
         conn->protocol = protocol;
     } else {
         conn->protocol = sclone("HTTP/1.1");
-        httpError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
+        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
         return 0;
     }
     rx->originalUri = rx->uri = sclone(uri);
@@ -461,12 +486,12 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
             rx->remainingContent = MAXINT;
         }
     } else if (strcmp(protocol, "HTTP/1.1") != 0) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
+        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
         return 0;
     }
     status = getToken(conn, 0);
     if (*status == '\0') {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Bad response status code");
+        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Bad response status code");
         return 0;
     }
     rx->status = atoi(status);
@@ -474,7 +499,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
 
     len = slen(rx->statusMessage);
     if (len >= conn->limits->uriSize) {
-        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
             "Bad response. Status message too long. Length %d vs limit %d", len, conn->limits->uriSize);
         return 0;
     }
@@ -507,11 +532,11 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
     for (count = 0; content->start[0] != '\r' && !conn->error; count++) {
         if (count >= limits->headerMax) {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Too many headers");
+            httpLimitError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Too many headers");
             return 0;
         }
         if ((key = getToken(conn, ":")) == 0 || *key == '\0') {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header format");
+            httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header format");
             return 0;
         }
         value = getToken(conn, "\r\n");
@@ -520,7 +545,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         }
         mprTrace(8, "Key %s, value %s", key, value);
         if (strspn(key, "%<>/\\") > 0) {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header key value");
+            httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header key value");
             return 0;
         }
         if ((oldValue = mprLookupKey(rx->headers, key)) != 0) {
@@ -563,16 +588,16 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
             } else if (strcasecmp(key, "content-length") == 0) {
                 if (rx->length >= 0) {
-                    httpError(conn, HTTP_CLOSE | HTTP_CODE_BAD_REQUEST, "Mulitple content length headers");
+                    httpBadRequestError(conn, HTTP_CLOSE | HTTP_CODE_BAD_REQUEST, "Mulitple content length headers");
                     break;
                 }
                 rx->length = stoi(value);
                 if (rx->length < 0) {
-                    httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad content length");
+                    httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad content length");
                     return 0;
                 }
                 if (rx->length >= conn->limits->receiveBodySize) {
-                    httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
+                    httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                         "Request content length %,Ld bytes is too big. Limit %,Ld", 
                         rx->length, conn->limits->receiveBodySize);
                     return 0;
@@ -613,7 +638,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     }
                 }
                 if (start < 0 || end < 0 || size < 0 || end <= start) {
-                    httpError(conn, HTTP_CLOSE | HTTP_CODE_RANGE_NOT_SATISFIABLE, "Bad content range");
+                    httpBadRequestError(conn, HTTP_CLOSE | HTTP_CODE_RANGE_NOT_SATISFIABLE, "Bad content range");
                     break;
                 }
                 rx->inputRange = httpCreateRange(conn, start, end);
@@ -644,7 +669,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                  */
                 if (!conn->http10) {
                     if (strcasecmp(value, "100-continue") != 0) {
-                        httpError(conn, HTTP_CODE_EXPECTATION_FAILED, "Expect header value \"%s\" is unsupported", value);
+                        httpBadRequestError(conn, HTTP_CODE_EXPECTATION_FAILED, "Expect header value \"%s\" is unsupported", value);
                     } else {
                         rx->flags |= HTTP_EXPECT_CONTINUE;
                     }
@@ -750,7 +775,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     The Content-Range header is used in the response. The Range header is used in the request.
                  */
                 if (!parseRange(conn, value)) {
-                    httpError(conn, HTTP_CLOSE | HTTP_CODE_RANGE_NOT_SATISFIABLE, "Bad range");
+                    httpBadRequestError(conn, HTTP_CLOSE | HTTP_CODE_RANGE_NOT_SATISFIABLE, "Bad range");
                 }
             } else if (strcasecmp(key, "referer") == 0) {
                 /* NOTE: yes the header is misspelt in the spec */
@@ -817,7 +842,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         }
     }
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
-        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
             "Request form of %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveFormSize);
     }
     if (!keepAlive) {
@@ -922,11 +947,11 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
         Enforce sandbox limits
      */
     if (rx->bytesRead >= conn->limits->receiveBodySize) {
-        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
             "Request body of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveBodySize);
 
     } else if (rx->form && rx->bytesRead >= conn->limits->receiveFormSize) {
-        httpError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
             "Request form of %,Ld bytes is too big. Limit %,Ld", rx->bytesRead, conn->limits->receiveFormSize);
     }
     if (httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, tx->ext) >= 0) {
@@ -1191,12 +1216,12 @@ static void createErrorRequest(HttpConn *conn)
         conn->input = packet;
         conn->state = HTTP_STATE_CONNECTED;
     } else {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Can't reconstruct headers");
+        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Can't reconstruct headers");
     }
 }
 
 
-static void processCompletion(HttpConn *conn)
+static bool processFinalized(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -1216,8 +1241,8 @@ static void processCompletion(HttpConn *conn)
         assert(rx->route);
         if (rx->route && rx->route->log) {
             httpLogRequest(conn);
+            httpMonitorEvent(conn, HTTP_COUNTER_NETWORK_IO, tx->bytesWritten);
         }
-        httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_REQUEST, conn);
     }
     assert(conn->state == HTTP_STATE_FINALIZED);
     httpSetState(conn, HTTP_STATE_COMPLETE);
@@ -1225,6 +1250,16 @@ static void processCompletion(HttpConn *conn)
         mprLog(2, "  ErrorDoc %s for %d from %s", tx->errorDocument, tx->status, rx->uri);
         createErrorRequest(conn);
     }
+    return 1;
+}
+
+
+static bool processCompletion(HttpConn *conn)
+{
+    if (conn->endpoint && conn->rx->uri) {
+        httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, -1);
+    }
+    return 0;
 }
 
 
@@ -1397,7 +1432,7 @@ static int setParsedUri(HttpConn *conn)
 
     rx = conn->rx;
     if (httpSetUri(conn, rx->uri) < 0 || rx->pathInfo[0] != '/') {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad URL");
+        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad URL");
         return MPR_ERR_BAD_ARGS;
     }
     /*
@@ -1462,12 +1497,15 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     if (conn->state <= HTTP_STATE_BEGIN) {
         assert(conn->state >= HTTP_STATE_BEGIN);
         return MPR_ERR_BAD_STATE;
-    } 
+    }
     if (conn->input && httpGetPacketLength(conn->input) > 0) {
         httpPumpRequest(conn, conn->input);
     }
     assert(conn->sock);
     if (conn->error || !conn->sock) {
+        if (conn->state >= state) {
+            return 0;
+        }
         return MPR_ERR_BAD_STATE;
     }
     mark = mprGetTicks();

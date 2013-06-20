@@ -77,10 +77,7 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
         HTTP_NOTIFY(conn, HTTP_EVENT_DESTROY, 0);
         httpRemoveConn(conn->http, conn);
         if (conn->endpoint) {
-            if (conn->rx) {
-                httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_REQUEST, conn);
-            }
-            httpValidateLimits(conn->endpoint, HTTP_VALIDATE_CLOSE_CONN, conn);
+            httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, -1);
         }
         conn->input = 0;
         if (conn->tx) {
@@ -106,6 +103,7 @@ static void manageConn(HttpConn *conn, int flags)
     assert(conn);
 
     if (flags & MPR_MANAGE_MARK) {
+        mprMark(conn->address);
         mprMark(conn->rx);
         mprMark(conn->tx);
         mprMark(conn->endpoint);
@@ -477,7 +475,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 
     mprTrace(7, "EnableConnEvents");
     sp = conn->sock;
-    if (!conn->async || !sp) {
+    if (!conn->async || !sp || conn->delay) {
         return;
     }
     tx = conn->tx;
@@ -755,7 +753,7 @@ PUBLIC void httpNotify(HttpConn *conn, int event, int arg)
 
 
 /*
-    Set each timeout arg to -1 to skip. Set to zero for no timeout. Otherwise set to number of msecs
+    Set each timeout arg to -1 to skip. Set to zero for no timeout. Otherwise set to number of msecs.
  */
 PUBLIC void httpSetTimeout(HttpConn *conn, MprTicks requestTimeout, MprTicks inactivityTimeout)
 {

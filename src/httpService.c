@@ -123,12 +123,19 @@ PUBLIC Http *httpCreate(int flags)
         http->routeConditions = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
         http->routeUpdates = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
         http->sessionCache = mprCreateCache(MPR_CACHE_SHARED);
+        http->counters = mprCreateList(-1, 0);
+        http->monitors = mprCreateList(-1, 0);
+        http->addresses = mprCreateHash(-1, 0);
+        http->defenses = mprCreateHash(-1, 0);
+        http->remedies = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_STATIC_VALUES);
         httpOpenUploadFilter(http);
         httpOpenCacheHandler(http);
         httpOpenPassHandler(http);
         httpOpenActionHandler(http);
         http->serverLimits = httpCreateLimits(1);
         httpDefineRouteBuiltins();
+        httpAddCounters();
+        httpAddRemedies();
     }
     if (flags & HTTP_CLIENT_SIDE) {
         http->defaultClientHost = sclone("127.0.0.1");
@@ -176,6 +183,11 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->proxyHost);
         mprMark(http->authTypes);
         mprMark(http->authStores);
+        mprMark(http->addresses);
+        mprMark(http->defenses);
+        mprMark(http->remedies);
+        mprMark(http->monitors);
+        mprMark(http->counters);
 
         /*
             Endpoints keep connections alive until a timeout. Keep marking even if no other references.
@@ -660,11 +672,11 @@ static void updateCurrentDate(Http *http)
 
 PUBLIC void httpGetStats(HttpStats *sp)
 {
+    Http                *http;
+    HttpCounter         *counters;
+    MprKey              *kp;
     MprMemStats         *ap;
     MprWorkerStats      wstats;
-    Http                *http;
-    HttpEndpoint        *ep;
-    int                 next;
 
     memset(sp, 0, sizeof(*sp));
     http = MPR->httpService;
@@ -692,11 +704,13 @@ PUBLIC void httpGetStats(HttpStats *sp)
     sp->activeConnections = mprGetListLength(http->connections);
     sp->activeProcesses = http->activeProcesses;
     sp->activeSessions = http->activeSessions;
-    for (ITERATE_ITEMS(http->endpoints, ep, next)) {
-        sp->activeRequests += ep->activeRequests;
-        sp->activeClients += ep->activeClients;
-    }
 
+    lock(http);
+    for (ITERATE_KEY_DATA(http->addresses, kp, counters)) {
+        sp->activeRequests += counters[HTTP_COUNTER_ACTIVE_REQUESTS].value;
+        sp->activeClients += counters[HTTP_COUNTER_ACTIVE_CLIENTS].value;
+    }
+    unlock(http);
     sp->totalRequests = http->totalRequests;
     sp->totalConnections = http->totalConnections;
     sp->totalSweeps = MPR->heap->iteration;

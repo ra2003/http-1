@@ -113,6 +113,7 @@
     <ClCompile Include="..\..\src\host.c" />
     <ClCompile Include="..\..\src\httpService.c" />
     <ClCompile Include="..\..\src\log.c" />
+    <ClCompile Include="..\..\src\monitor.c" />
     <ClCompile Include="..\..\src\netConnector.c" />
     <ClCompile Include="..\..\src\packet.c" />
     <ClCompile Include="..\..\src\pam.c" />

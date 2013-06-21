@@ -162,6 +162,7 @@ clean:
 	rm -f "$(CONFIG)/obj/host.o"
 	rm -f "$(CONFIG)/obj/httpService.o"
 	rm -f "$(CONFIG)/obj/log.o"
+	rm -f "$(CONFIG)/obj/monitor.o"
 	rm -f "$(CONFIG)/obj/netConnector.o"
 	rm -f "$(CONFIG)/obj/packet.o"
 	rm -f "$(CONFIG)/obj/pam.o"
@@ -561,200 +562,211 @@ $(CONFIG)/obj/log.o: \
 	$(CC) -c -o $(CONFIG)/obj/log.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/log.c
 
 #
-#   netConnector.o
+#   monitor.o
 #
 DEPS_34 += $(CONFIG)/inc/bit.h
 DEPS_34 += src/http.h
 
+$(CONFIG)/obj/monitor.o: \
+    src/monitor.c $(DEPS_34)
+	@echo '   [Compile] $(CONFIG)/obj/monitor.o'
+	$(CC) -c -o $(CONFIG)/obj/monitor.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/monitor.c
+
+#
+#   netConnector.o
+#
+DEPS_35 += $(CONFIG)/inc/bit.h
+DEPS_35 += src/http.h
+
 $(CONFIG)/obj/netConnector.o: \
-    src/netConnector.c $(DEPS_34)
+    src/netConnector.c $(DEPS_35)
 	@echo '   [Compile] $(CONFIG)/obj/netConnector.o'
 	$(CC) -c -o $(CONFIG)/obj/netConnector.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/netConnector.c
 
 #
 #   packet.o
 #
-DEPS_35 += $(CONFIG)/inc/bit.h
-DEPS_35 += src/http.h
+DEPS_36 += $(CONFIG)/inc/bit.h
+DEPS_36 += src/http.h
 
 $(CONFIG)/obj/packet.o: \
-    src/packet.c $(DEPS_35)
+    src/packet.c $(DEPS_36)
 	@echo '   [Compile] $(CONFIG)/obj/packet.o'
 	$(CC) -c -o $(CONFIG)/obj/packet.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/packet.c
 
 #
 #   pam.o
 #
-DEPS_36 += $(CONFIG)/inc/bit.h
-DEPS_36 += src/http.h
+DEPS_37 += $(CONFIG)/inc/bit.h
+DEPS_37 += src/http.h
 
 $(CONFIG)/obj/pam.o: \
-    src/pam.c $(DEPS_36)
+    src/pam.c $(DEPS_37)
 	@echo '   [Compile] $(CONFIG)/obj/pam.o'
 	$(CC) -c -o $(CONFIG)/obj/pam.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/pam.c
 
 #
 #   passHandler.o
 #
-DEPS_37 += $(CONFIG)/inc/bit.h
-DEPS_37 += src/http.h
+DEPS_38 += $(CONFIG)/inc/bit.h
+DEPS_38 += src/http.h
 
 $(CONFIG)/obj/passHandler.o: \
-    src/passHandler.c $(DEPS_37)
+    src/passHandler.c $(DEPS_38)
 	@echo '   [Compile] $(CONFIG)/obj/passHandler.o'
 	$(CC) -c -o $(CONFIG)/obj/passHandler.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/passHandler.c
 
 #
 #   pipeline.o
 #
-DEPS_38 += $(CONFIG)/inc/bit.h
-DEPS_38 += src/http.h
+DEPS_39 += $(CONFIG)/inc/bit.h
+DEPS_39 += src/http.h
 
 $(CONFIG)/obj/pipeline.o: \
-    src/pipeline.c $(DEPS_38)
+    src/pipeline.c $(DEPS_39)
 	@echo '   [Compile] $(CONFIG)/obj/pipeline.o'
 	$(CC) -c -o $(CONFIG)/obj/pipeline.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/pipeline.c
 
 #
 #   queue.o
 #
-DEPS_39 += $(CONFIG)/inc/bit.h
-DEPS_39 += src/http.h
+DEPS_40 += $(CONFIG)/inc/bit.h
+DEPS_40 += src/http.h
 
 $(CONFIG)/obj/queue.o: \
-    src/queue.c $(DEPS_39)
+    src/queue.c $(DEPS_40)
 	@echo '   [Compile] $(CONFIG)/obj/queue.o'
 	$(CC) -c -o $(CONFIG)/obj/queue.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/queue.c
 
 #
 #   rangeFilter.o
 #
-DEPS_40 += $(CONFIG)/inc/bit.h
-DEPS_40 += src/http.h
+DEPS_41 += $(CONFIG)/inc/bit.h
+DEPS_41 += src/http.h
 
 $(CONFIG)/obj/rangeFilter.o: \
-    src/rangeFilter.c $(DEPS_40)
+    src/rangeFilter.c $(DEPS_41)
 	@echo '   [Compile] $(CONFIG)/obj/rangeFilter.o'
 	$(CC) -c -o $(CONFIG)/obj/rangeFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/rangeFilter.c
 
 #
 #   route.o
 #
-DEPS_41 += $(CONFIG)/inc/bit.h
-DEPS_41 += src/http.h
+DEPS_42 += $(CONFIG)/inc/bit.h
+DEPS_42 += src/http.h
 
 $(CONFIG)/obj/route.o: \
-    src/route.c $(DEPS_41)
+    src/route.c $(DEPS_42)
 	@echo '   [Compile] $(CONFIG)/obj/route.o'
 	$(CC) -c -o $(CONFIG)/obj/route.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/route.c
 
 #
 #   rx.o
 #
-DEPS_42 += $(CONFIG)/inc/bit.h
-DEPS_42 += src/http.h
+DEPS_43 += $(CONFIG)/inc/bit.h
+DEPS_43 += src/http.h
 
 $(CONFIG)/obj/rx.o: \
-    src/rx.c $(DEPS_42)
+    src/rx.c $(DEPS_43)
 	@echo '   [Compile] $(CONFIG)/obj/rx.o'
 	$(CC) -c -o $(CONFIG)/obj/rx.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/rx.c
 
 #
 #   sendConnector.o
 #
-DEPS_43 += $(CONFIG)/inc/bit.h
-DEPS_43 += src/http.h
+DEPS_44 += $(CONFIG)/inc/bit.h
+DEPS_44 += src/http.h
 
 $(CONFIG)/obj/sendConnector.o: \
-    src/sendConnector.c $(DEPS_43)
+    src/sendConnector.c $(DEPS_44)
 	@echo '   [Compile] $(CONFIG)/obj/sendConnector.o'
 	$(CC) -c -o $(CONFIG)/obj/sendConnector.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/sendConnector.c
 
 #
 #   session.o
 #
-DEPS_44 += $(CONFIG)/inc/bit.h
-DEPS_44 += src/http.h
+DEPS_45 += $(CONFIG)/inc/bit.h
+DEPS_45 += src/http.h
 
 $(CONFIG)/obj/session.o: \
-    src/session.c $(DEPS_44)
+    src/session.c $(DEPS_45)
 	@echo '   [Compile] $(CONFIG)/obj/session.o'
 	$(CC) -c -o $(CONFIG)/obj/session.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/session.c
 
 #
 #   stage.o
 #
-DEPS_45 += $(CONFIG)/inc/bit.h
-DEPS_45 += src/http.h
+DEPS_46 += $(CONFIG)/inc/bit.h
+DEPS_46 += src/http.h
 
 $(CONFIG)/obj/stage.o: \
-    src/stage.c $(DEPS_45)
+    src/stage.c $(DEPS_46)
 	@echo '   [Compile] $(CONFIG)/obj/stage.o'
 	$(CC) -c -o $(CONFIG)/obj/stage.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/stage.c
 
 #
 #   trace.o
 #
-DEPS_46 += $(CONFIG)/inc/bit.h
-DEPS_46 += src/http.h
+DEPS_47 += $(CONFIG)/inc/bit.h
+DEPS_47 += src/http.h
 
 $(CONFIG)/obj/trace.o: \
-    src/trace.c $(DEPS_46)
+    src/trace.c $(DEPS_47)
 	@echo '   [Compile] $(CONFIG)/obj/trace.o'
 	$(CC) -c -o $(CONFIG)/obj/trace.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/trace.c
 
 #
 #   tx.o
 #
-DEPS_47 += $(CONFIG)/inc/bit.h
-DEPS_47 += src/http.h
+DEPS_48 += $(CONFIG)/inc/bit.h
+DEPS_48 += src/http.h
 
 $(CONFIG)/obj/tx.o: \
-    src/tx.c $(DEPS_47)
+    src/tx.c $(DEPS_48)
 	@echo '   [Compile] $(CONFIG)/obj/tx.o'
 	$(CC) -c -o $(CONFIG)/obj/tx.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/tx.c
 
 #
 #   uploadFilter.o
 #
-DEPS_48 += $(CONFIG)/inc/bit.h
-DEPS_48 += src/http.h
+DEPS_49 += $(CONFIG)/inc/bit.h
+DEPS_49 += src/http.h
 
 $(CONFIG)/obj/uploadFilter.o: \
-    src/uploadFilter.c $(DEPS_48)
+    src/uploadFilter.c $(DEPS_49)
 	@echo '   [Compile] $(CONFIG)/obj/uploadFilter.o'
 	$(CC) -c -o $(CONFIG)/obj/uploadFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/uploadFilter.c
 
 #
 #   uri.o
 #
-DEPS_49 += $(CONFIG)/inc/bit.h
-DEPS_49 += src/http.h
+DEPS_50 += $(CONFIG)/inc/bit.h
+DEPS_50 += src/http.h
 
 $(CONFIG)/obj/uri.o: \
-    src/uri.c $(DEPS_49)
+    src/uri.c $(DEPS_50)
 	@echo '   [Compile] $(CONFIG)/obj/uri.o'
 	$(CC) -c -o $(CONFIG)/obj/uri.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/uri.c
 
 #
 #   var.o
 #
-DEPS_50 += $(CONFIG)/inc/bit.h
-DEPS_50 += src/http.h
+DEPS_51 += $(CONFIG)/inc/bit.h
+DEPS_51 += src/http.h
 
 $(CONFIG)/obj/var.o: \
-    src/var.c $(DEPS_50)
+    src/var.c $(DEPS_51)
 	@echo '   [Compile] $(CONFIG)/obj/var.o'
 	$(CC) -c -o $(CONFIG)/obj/var.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/var.c
 
 #
 #   webSockFilter.o
 #
-DEPS_51 += $(CONFIG)/inc/bit.h
-DEPS_51 += src/http.h
+DEPS_52 += $(CONFIG)/inc/bit.h
+DEPS_52 += src/http.h
 
 $(CONFIG)/obj/webSockFilter.o: \
-    src/webSockFilter.c $(DEPS_51)
+    src/webSockFilter.c $(DEPS_52)
 	@echo '   [Compile] $(CONFIG)/obj/webSockFilter.o'
 	$(CC) -c -o $(CONFIG)/obj/webSockFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/webSockFilter.c
 
@@ -762,161 +774,163 @@ ifeq ($(BIT_PACK_PCRE),1)
 #
 #   libhttp
 #
-DEPS_52 += $(CONFIG)/inc/mpr.h
-DEPS_52 += $(CONFIG)/inc/bit.h
-DEPS_52 += src/bitos.h
-DEPS_52 += $(CONFIG)/obj/mprLib.o
-DEPS_52 += $(CONFIG)/bin/libmpr.dylib
-DEPS_52 += $(CONFIG)/inc/pcre.h
-DEPS_52 += $(CONFIG)/obj/pcre.o
-DEPS_52 += $(CONFIG)/bin/libpcre.dylib
-DEPS_52 += $(CONFIG)/inc/bitos.h
-DEPS_52 += $(CONFIG)/inc/http.h
-DEPS_52 += src/http.h
-DEPS_52 += $(CONFIG)/obj/actionHandler.o
-DEPS_52 += $(CONFIG)/obj/auth.o
-DEPS_52 += $(CONFIG)/obj/basic.o
-DEPS_52 += $(CONFIG)/obj/cache.o
-DEPS_52 += $(CONFIG)/obj/chunkFilter.o
-DEPS_52 += $(CONFIG)/obj/client.o
-DEPS_52 += $(CONFIG)/obj/conn.o
-DEPS_52 += $(CONFIG)/obj/digest.o
-DEPS_52 += $(CONFIG)/obj/endpoint.o
-DEPS_52 += $(CONFIG)/obj/error.o
-DEPS_52 += $(CONFIG)/obj/host.o
-DEPS_52 += $(CONFIG)/obj/httpService.o
-DEPS_52 += $(CONFIG)/obj/log.o
-DEPS_52 += $(CONFIG)/obj/netConnector.o
-DEPS_52 += $(CONFIG)/obj/packet.o
-DEPS_52 += $(CONFIG)/obj/pam.o
-DEPS_52 += $(CONFIG)/obj/passHandler.o
-DEPS_52 += $(CONFIG)/obj/pipeline.o
-DEPS_52 += $(CONFIG)/obj/queue.o
-DEPS_52 += $(CONFIG)/obj/rangeFilter.o
-DEPS_52 += $(CONFIG)/obj/route.o
-DEPS_52 += $(CONFIG)/obj/rx.o
-DEPS_52 += $(CONFIG)/obj/sendConnector.o
-DEPS_52 += $(CONFIG)/obj/session.o
-DEPS_52 += $(CONFIG)/obj/stage.o
-DEPS_52 += $(CONFIG)/obj/trace.o
-DEPS_52 += $(CONFIG)/obj/tx.o
-DEPS_52 += $(CONFIG)/obj/uploadFilter.o
-DEPS_52 += $(CONFIG)/obj/uri.o
-DEPS_52 += $(CONFIG)/obj/var.o
-DEPS_52 += $(CONFIG)/obj/webSockFilter.o
+DEPS_53 += $(CONFIG)/inc/mpr.h
+DEPS_53 += $(CONFIG)/inc/bit.h
+DEPS_53 += src/bitos.h
+DEPS_53 += $(CONFIG)/obj/mprLib.o
+DEPS_53 += $(CONFIG)/bin/libmpr.dylib
+DEPS_53 += $(CONFIG)/inc/pcre.h
+DEPS_53 += $(CONFIG)/obj/pcre.o
+DEPS_53 += $(CONFIG)/bin/libpcre.dylib
+DEPS_53 += $(CONFIG)/inc/bitos.h
+DEPS_53 += $(CONFIG)/inc/http.h
+DEPS_53 += src/http.h
+DEPS_53 += $(CONFIG)/obj/actionHandler.o
+DEPS_53 += $(CONFIG)/obj/auth.o
+DEPS_53 += $(CONFIG)/obj/basic.o
+DEPS_53 += $(CONFIG)/obj/cache.o
+DEPS_53 += $(CONFIG)/obj/chunkFilter.o
+DEPS_53 += $(CONFIG)/obj/client.o
+DEPS_53 += $(CONFIG)/obj/conn.o
+DEPS_53 += $(CONFIG)/obj/digest.o
+DEPS_53 += $(CONFIG)/obj/endpoint.o
+DEPS_53 += $(CONFIG)/obj/error.o
+DEPS_53 += $(CONFIG)/obj/host.o
+DEPS_53 += $(CONFIG)/obj/httpService.o
+DEPS_53 += $(CONFIG)/obj/log.o
+DEPS_53 += $(CONFIG)/obj/monitor.o
+DEPS_53 += $(CONFIG)/obj/netConnector.o
+DEPS_53 += $(CONFIG)/obj/packet.o
+DEPS_53 += $(CONFIG)/obj/pam.o
+DEPS_53 += $(CONFIG)/obj/passHandler.o
+DEPS_53 += $(CONFIG)/obj/pipeline.o
+DEPS_53 += $(CONFIG)/obj/queue.o
+DEPS_53 += $(CONFIG)/obj/rangeFilter.o
+DEPS_53 += $(CONFIG)/obj/route.o
+DEPS_53 += $(CONFIG)/obj/rx.o
+DEPS_53 += $(CONFIG)/obj/sendConnector.o
+DEPS_53 += $(CONFIG)/obj/session.o
+DEPS_53 += $(CONFIG)/obj/stage.o
+DEPS_53 += $(CONFIG)/obj/trace.o
+DEPS_53 += $(CONFIG)/obj/tx.o
+DEPS_53 += $(CONFIG)/obj/uploadFilter.o
+DEPS_53 += $(CONFIG)/obj/uri.o
+DEPS_53 += $(CONFIG)/obj/var.o
+DEPS_53 += $(CONFIG)/obj/webSockFilter.o
 
-LIBS_52 += -lmpr
-LIBS_52 += -lpcre
+LIBS_53 += -lmpr
+LIBS_53 += -lpcre
 
-$(CONFIG)/bin/libhttp.dylib: $(DEPS_52)
+$(CONFIG)/bin/libhttp.dylib: $(DEPS_53)
 	@echo '      [Link] $(CONFIG)/bin/libhttp.dylib'
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 1.4.0 -current_version 1.4.0 "$(CONFIG)/obj/actionHandler.o" "$(CONFIG)/obj/auth.o" "$(CONFIG)/obj/basic.o" "$(CONFIG)/obj/cache.o" "$(CONFIG)/obj/chunkFilter.o" "$(CONFIG)/obj/client.o" "$(CONFIG)/obj/conn.o" "$(CONFIG)/obj/digest.o" "$(CONFIG)/obj/endpoint.o" "$(CONFIG)/obj/error.o" "$(CONFIG)/obj/host.o" "$(CONFIG)/obj/httpService.o" "$(CONFIG)/obj/log.o" "$(CONFIG)/obj/netConnector.o" "$(CONFIG)/obj/packet.o" "$(CONFIG)/obj/pam.o" "$(CONFIG)/obj/passHandler.o" "$(CONFIG)/obj/pipeline.o" "$(CONFIG)/obj/queue.o" "$(CONFIG)/obj/rangeFilter.o" "$(CONFIG)/obj/route.o" "$(CONFIG)/obj/rx.o" "$(CONFIG)/obj/sendConnector.o" "$(CONFIG)/obj/session.o" "$(CONFIG)/obj/stage.o" "$(CONFIG)/obj/trace.o" "$(CONFIG)/obj/tx.o" "$(CONFIG)/obj/uploadFilter.o" "$(CONFIG)/obj/uri.o" "$(CONFIG)/obj/var.o" "$(CONFIG)/obj/webSockFilter.o" $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS) -lpam 
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 1.4.0 -current_version 1.4.0 "$(CONFIG)/obj/actionHandler.o" "$(CONFIG)/obj/auth.o" "$(CONFIG)/obj/basic.o" "$(CONFIG)/obj/cache.o" "$(CONFIG)/obj/chunkFilter.o" "$(CONFIG)/obj/client.o" "$(CONFIG)/obj/conn.o" "$(CONFIG)/obj/digest.o" "$(CONFIG)/obj/endpoint.o" "$(CONFIG)/obj/error.o" "$(CONFIG)/obj/host.o" "$(CONFIG)/obj/httpService.o" "$(CONFIG)/obj/log.o" "$(CONFIG)/obj/monitor.o" "$(CONFIG)/obj/netConnector.o" "$(CONFIG)/obj/packet.o" "$(CONFIG)/obj/pam.o" "$(CONFIG)/obj/passHandler.o" "$(CONFIG)/obj/pipeline.o" "$(CONFIG)/obj/queue.o" "$(CONFIG)/obj/rangeFilter.o" "$(CONFIG)/obj/route.o" "$(CONFIG)/obj/rx.o" "$(CONFIG)/obj/sendConnector.o" "$(CONFIG)/obj/session.o" "$(CONFIG)/obj/stage.o" "$(CONFIG)/obj/trace.o" "$(CONFIG)/obj/tx.o" "$(CONFIG)/obj/uploadFilter.o" "$(CONFIG)/obj/uri.o" "$(CONFIG)/obj/var.o" "$(CONFIG)/obj/webSockFilter.o" $(LIBPATHS_53) $(LIBS_53) $(LIBS_53) $(LIBS) -lpam 
 endif
 
 #
 #   http.o
 #
-DEPS_53 += $(CONFIG)/inc/bit.h
-DEPS_53 += src/http.h
+DEPS_54 += $(CONFIG)/inc/bit.h
+DEPS_54 += src/http.h
 
 $(CONFIG)/obj/http.o: \
-    src/http.c $(DEPS_53)
+    src/http.c $(DEPS_54)
 	@echo '   [Compile] $(CONFIG)/obj/http.o'
 	$(CC) -c -o $(CONFIG)/obj/http.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/http.c
 
 #
 #   httpcmd
 #
-DEPS_54 += $(CONFIG)/inc/mpr.h
-DEPS_54 += $(CONFIG)/inc/bit.h
-DEPS_54 += src/bitos.h
-DEPS_54 += $(CONFIG)/obj/mprLib.o
-DEPS_54 += $(CONFIG)/bin/libmpr.dylib
-DEPS_54 += $(CONFIG)/inc/pcre.h
-DEPS_54 += $(CONFIG)/obj/pcre.o
+DEPS_55 += $(CONFIG)/inc/mpr.h
+DEPS_55 += $(CONFIG)/inc/bit.h
+DEPS_55 += src/bitos.h
+DEPS_55 += $(CONFIG)/obj/mprLib.o
+DEPS_55 += $(CONFIG)/bin/libmpr.dylib
+DEPS_55 += $(CONFIG)/inc/pcre.h
+DEPS_55 += $(CONFIG)/obj/pcre.o
 ifeq ($(BIT_PACK_PCRE),1)
-    DEPS_54 += $(CONFIG)/bin/libpcre.dylib
+    DEPS_55 += $(CONFIG)/bin/libpcre.dylib
 endif
-DEPS_54 += $(CONFIG)/inc/bitos.h
-DEPS_54 += $(CONFIG)/inc/http.h
-DEPS_54 += src/http.h
-DEPS_54 += $(CONFIG)/obj/actionHandler.o
-DEPS_54 += $(CONFIG)/obj/auth.o
-DEPS_54 += $(CONFIG)/obj/basic.o
-DEPS_54 += $(CONFIG)/obj/cache.o
-DEPS_54 += $(CONFIG)/obj/chunkFilter.o
-DEPS_54 += $(CONFIG)/obj/client.o
-DEPS_54 += $(CONFIG)/obj/conn.o
-DEPS_54 += $(CONFIG)/obj/digest.o
-DEPS_54 += $(CONFIG)/obj/endpoint.o
-DEPS_54 += $(CONFIG)/obj/error.o
-DEPS_54 += $(CONFIG)/obj/host.o
-DEPS_54 += $(CONFIG)/obj/httpService.o
-DEPS_54 += $(CONFIG)/obj/log.o
-DEPS_54 += $(CONFIG)/obj/netConnector.o
-DEPS_54 += $(CONFIG)/obj/packet.o
-DEPS_54 += $(CONFIG)/obj/pam.o
-DEPS_54 += $(CONFIG)/obj/passHandler.o
-DEPS_54 += $(CONFIG)/obj/pipeline.o
-DEPS_54 += $(CONFIG)/obj/queue.o
-DEPS_54 += $(CONFIG)/obj/rangeFilter.o
-DEPS_54 += $(CONFIG)/obj/route.o
-DEPS_54 += $(CONFIG)/obj/rx.o
-DEPS_54 += $(CONFIG)/obj/sendConnector.o
-DEPS_54 += $(CONFIG)/obj/session.o
-DEPS_54 += $(CONFIG)/obj/stage.o
-DEPS_54 += $(CONFIG)/obj/trace.o
-DEPS_54 += $(CONFIG)/obj/tx.o
-DEPS_54 += $(CONFIG)/obj/uploadFilter.o
-DEPS_54 += $(CONFIG)/obj/uri.o
-DEPS_54 += $(CONFIG)/obj/var.o
-DEPS_54 += $(CONFIG)/obj/webSockFilter.o
+DEPS_55 += $(CONFIG)/inc/bitos.h
+DEPS_55 += $(CONFIG)/inc/http.h
+DEPS_55 += src/http.h
+DEPS_55 += $(CONFIG)/obj/actionHandler.o
+DEPS_55 += $(CONFIG)/obj/auth.o
+DEPS_55 += $(CONFIG)/obj/basic.o
+DEPS_55 += $(CONFIG)/obj/cache.o
+DEPS_55 += $(CONFIG)/obj/chunkFilter.o
+DEPS_55 += $(CONFIG)/obj/client.o
+DEPS_55 += $(CONFIG)/obj/conn.o
+DEPS_55 += $(CONFIG)/obj/digest.o
+DEPS_55 += $(CONFIG)/obj/endpoint.o
+DEPS_55 += $(CONFIG)/obj/error.o
+DEPS_55 += $(CONFIG)/obj/host.o
+DEPS_55 += $(CONFIG)/obj/httpService.o
+DEPS_55 += $(CONFIG)/obj/log.o
+DEPS_55 += $(CONFIG)/obj/monitor.o
+DEPS_55 += $(CONFIG)/obj/netConnector.o
+DEPS_55 += $(CONFIG)/obj/packet.o
+DEPS_55 += $(CONFIG)/obj/pam.o
+DEPS_55 += $(CONFIG)/obj/passHandler.o
+DEPS_55 += $(CONFIG)/obj/pipeline.o
+DEPS_55 += $(CONFIG)/obj/queue.o
+DEPS_55 += $(CONFIG)/obj/rangeFilter.o
+DEPS_55 += $(CONFIG)/obj/route.o
+DEPS_55 += $(CONFIG)/obj/rx.o
+DEPS_55 += $(CONFIG)/obj/sendConnector.o
+DEPS_55 += $(CONFIG)/obj/session.o
+DEPS_55 += $(CONFIG)/obj/stage.o
+DEPS_55 += $(CONFIG)/obj/trace.o
+DEPS_55 += $(CONFIG)/obj/tx.o
+DEPS_55 += $(CONFIG)/obj/uploadFilter.o
+DEPS_55 += $(CONFIG)/obj/uri.o
+DEPS_55 += $(CONFIG)/obj/var.o
+DEPS_55 += $(CONFIG)/obj/webSockFilter.o
 ifeq ($(BIT_PACK_PCRE),1)
-    DEPS_54 += $(CONFIG)/bin/libhttp.dylib
+    DEPS_55 += $(CONFIG)/bin/libhttp.dylib
 endif
-DEPS_54 += $(CONFIG)/obj/http.o
+DEPS_55 += $(CONFIG)/obj/http.o
 
 ifeq ($(BIT_PACK_PCRE),1)
-    LIBS_54 += -lhttp
+    LIBS_55 += -lhttp
 endif
-LIBS_54 += -lmpr
+LIBS_55 += -lmpr
 ifeq ($(BIT_PACK_PCRE),1)
-    LIBS_54 += -lpcre
+    LIBS_55 += -lpcre
 endif
 
-$(CONFIG)/bin/http: $(DEPS_54)
+$(CONFIG)/bin/http: $(DEPS_55)
 	@echo '      [Link] $(CONFIG)/bin/http'
-	$(CC) -o $(CONFIG)/bin/http -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/http.o" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) 
+	$(CC) -o $(CONFIG)/bin/http -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/http.o" $(LIBPATHS_55) $(LIBS_55) $(LIBS_55) $(LIBS) 
 
 #
 #   stop
 #
-stop: $(DEPS_55)
+stop: $(DEPS_56)
 
 #
 #   installBinary
 #
-installBinary: $(DEPS_56)
+installBinary: $(DEPS_57)
 
 #
 #   start
 #
-start: $(DEPS_57)
+start: $(DEPS_58)
 
 #
 #   install
 #
-DEPS_58 += stop
-DEPS_58 += installBinary
-DEPS_58 += start
+DEPS_59 += stop
+DEPS_59 += installBinary
+DEPS_59 += start
 
-install: $(DEPS_58)
+install: $(DEPS_59)
 	
 
 #
 #   uninstall
 #
-DEPS_59 += stop
+DEPS_60 += stop
 
-uninstall: $(DEPS_59)
+uninstall: $(DEPS_60)
 

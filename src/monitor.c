@@ -211,12 +211,13 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     Register a monitor event
     This code is very carefully locked for maximum speed. There are some tolerated race conditions
  */
-PUBLIC int httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
+PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
 {
     Http            *http;
     HttpRx          *rx;
     HttpCounter     *counter;
     HttpAddress     *address;
+    int64           result;
     int             ncounters;
 
     assert(conn->endpoint);
@@ -241,8 +242,9 @@ PUBLIC int httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
     if (counter->value < 0) {
         counter->value = 0;
     }
+    result = counter->value;
     unlock(http->addresses);
-    return 0;
+    return result;
 }
 
 

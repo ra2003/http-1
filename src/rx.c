@@ -402,18 +402,21 @@ static void parseMethod(HttpConn *conn)
 static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 {
     HttpRx      *rx;
+    HttpLimits  *limits;
     char        *uri, *protocol;
     ssize       len;
 
     rx = conn->rx;
+    limits = conn->limits;
 #if BIT_DEBUG && MPR_HIGH_RES_TIMER
     conn->startMark = mprGetHiResTicks();
 #endif
     conn->started = conn->http->now;
 
     if (conn->endpoint) {
-        if (httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, 1) < 0) {
+        if (httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, 1) >= limits->requestsPerClientMax) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, "Too many concurrent requests");
+            return 0;
         } else {
             httpMonitorEvent(conn, HTTP_COUNTER_REQUESTS, 1);
         }
@@ -427,9 +430,9 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     if (*uri == '\0') {
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty URI");
         return 0;
-    } else if (len >= conn->limits->uriSize) {
+    } else if (len >= limits->uriSize) {
         httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
-            "Bad request. URI too long. Length %d vs limit %d", len, conn->limits->uriSize);
+            "Bad request. URI too long. Length %d vs limit %d", len, limits->uriSize);
         return 0;
     }
     protocol = conn->protocol = supper(getToken(conn, "\r\n"));

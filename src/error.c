@@ -96,14 +96,17 @@ static void makeAltBody(HttpConn *conn, int status)
     HttpTx      *tx;
     cchar       *statusMsg, *msg;
 
-    tx = conn->tx;
     rx = conn->rx;
+    tx = conn->tx;
+    assert(rx && tx);
 
     statusMsg = httpLookupStatus(conn->http, status);
-    msg = (!rx->route || rx->route->flags & HTTP_ROUTE_SHOW_ERRORS) ? conn->errorMsg : "";
-
-    if (scmp(conn->rx->accept, "text/plain") == 0) {
-        tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, conn->errorMsg);
+    msg = "";
+    if (rx && (!rx->route || rx->route->flags & HTTP_ROUTE_SHOW_ERRORS)) {
+        msg = conn->errorMsg;
+    }
+    if (rx && scmp(rx->accept, "text/plain") == 0) {
+        tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, msg);
     } else {
         tx->altBody = sfmt("<!DOCTYPE html>\r\n"
             "<head>\r\n"
@@ -111,7 +114,7 @@ static void makeAltBody(HttpConn *conn, int status)
             "    <link rel=\"shortcut icon\" href=\"data:image/x-icon;,\" type=\"image/x-icon\">\r\n"
             "</head>\r\n"
             "<body>\r\n<h2>Access Error: %d -- %s</h2>\r\n<pre>%s</pre>\r\n</body>\r\n</html>\r\n",
-            statusMsg, status, statusMsg, mprEscapeHtml(conn->errorMsg));
+            statusMsg, status, statusMsg, mprEscapeHtml(msg));
     }
     tx->length = slen(tx->altBody);
 }
@@ -149,7 +152,6 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
             rx->eof = 1;
         }
     }
-
     if (!conn->error) {
         conn->error = 1;
         httpOmitBody(conn);

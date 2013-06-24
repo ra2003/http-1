@@ -61,6 +61,8 @@ PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatche
     } else {
         conn->dispatcher = mprGetDispatcher();
     }
+    conn->rx = httpCreateRx(conn);
+    conn->tx = httpCreateTx(conn, NULL);
     httpSetState(conn, HTTP_STATE_BEGIN);
     httpAddConn(http, conn);
     return conn;
@@ -227,15 +229,6 @@ static void commonPrep(HttpConn *conn)
     conn->errorMsg = 0;
     conn->state = 0;
     conn->authRequested = 0;
-
-    if (conn->endpoint) {
-        conn->authType = 0;
-        conn->username = 0;
-        conn->password = 0;
-        conn->user = 0;
-        conn->authData = 0;
-        conn->encoded = 0;
-    }
     httpSetState(conn, HTTP_STATE_BEGIN);
     httpInitSchedulerQueue(conn->serviceq);
 }
@@ -256,10 +249,14 @@ static bool prepForNext(HttpConn *conn)
     if (conn->rx) {
         conn->rx->conn = 0;
     }
-    conn->rx = 0;
-    conn->tx = 0;
-    conn->readq = 0;
-    conn->writeq = 0;
+    conn->authType = 0;
+    conn->username = 0;
+    conn->password = 0;
+    conn->user = 0;
+    conn->authData = 0;
+    conn->encoded = 0;
+    conn->rx = httpCreateRx(conn);
+    conn->tx = httpCreateTx(conn, NULL);
     commonPrep(conn);
     assert(conn->state == HTTP_STATE_BEGIN);
     return conn->input && (httpGetPacketLength(conn->input) > 0) && !conn->connError;

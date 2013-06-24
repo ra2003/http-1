@@ -238,6 +238,7 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
 {
     Http        *http;
     HttpConn    *conn;
+    HttpAddress *address;
     MprEvent    e;
     int         level;
 
@@ -261,10 +262,16 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
     conn->ip = sclone(sock->ip);
 
     httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1);
-    if (conn->address->banUntil > http->now) {
-        mprError("Address \"%s\" has been banned", conn->ip);
-        httpDisconnect(conn);
-        return 0;
+    address = conn->address;
+    if (address && address->banUntil > http->now) {
+        if (address->banStatus) {
+            httpError(conn, HTTP_CLOSE | address->banStatus, address->banMsg ? address->banMsg : "Client banned");
+        } else if (address->banMsg) {
+            httpError(conn, HTTP_CLOSE | HTTP_CODE_NOT_ACCEPTABLE, address->banMsg);
+        } else {
+            httpDisconnect(conn);
+            return 0;
+        }
     }
     if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
         httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, "Too many concurrent clients");
@@ -280,7 +287,6 @@ static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndp
         }
         conn->secure = 1;
     }
-
     assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 

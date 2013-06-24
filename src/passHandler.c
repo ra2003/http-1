@@ -49,18 +49,15 @@ PUBLIC void httpHandleOptions(HttpConn *conn)
 
 static void handleTrace(HttpConn *conn)
 {
-    HttpRx      *rx;
     HttpTx      *tx;
     HttpQueue   *q;
     HttpPacket  *traceData, *headers;
-
-    tx = conn->tx;
-    rx = conn->rx;
 
     /*
         Create a dummy set of headers to use as the response body. Then reset so the connector will create 
         the headers in the normal fashion. Need to be careful not to have a content length in the headers in the body.
      */
+    tx = conn->tx;
     q = conn->writeq;
     headers = q->first;
     tx->flags |= HTTP_TX_NO_LENGTH;

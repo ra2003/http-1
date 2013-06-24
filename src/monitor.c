@@ -32,13 +32,13 @@ PUBLIC void httpAddCounters()
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_ACTIVE_REQUESTS, sclone("ActiveRequests"));
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_ACTIVE_PROCESSES, sclone("ActiveProcesses"));
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_BAD_REQUEST_ERRORS, sclone("BadRequestErrors"));
+    mprInsertItemAtPos(http->counters, HTTP_COUNTER_ERRORS, sclone("Errors"));
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_LIMIT_ERRORS, sclone("LimitErrors"));
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_MEMORY, sclone("Memory"));
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_NOT_FOUND_ERRORS, sclone("NotFoundErrors"));
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_NETWORK_IO, sclone("NetworkIO"));
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_REQUESTS, sclone("Requests"));
     mprInsertItemAtPos(http->counters, HTTP_COUNTER_SSL_ERRORS, sclone("SSLErrors"));
-    mprInsertItemAtPos(http->counters, HTTP_COUNTER_TOTAL_ERRORS, sclone("TotalErrors"));
 }
 
 
@@ -63,7 +63,7 @@ static void invokeDefenses(HttpMonitor *monitor, MprHash *args)
             kp->data = stemplate(kp->data, args);
         }
         mprBlendHash(args, extra);
-        mprTrace(1, "Run remedy %s", defense->remedy);
+        mprLog(1, "Defense \"%s\" activated. Running remedy \"%s\".", defense->name, defense->remedy);
         remedyProc(args);
     }
     mprRelease(args);
@@ -97,7 +97,7 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
         msg = sfmt(fmt, address, counter->name, value, period, monitor->limit);
         subject = sfmt("Monitor %s Alert", counter->name);
         args = mprDeserialize(
-            sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %d, MSG: '%s', PERIOD: %d, SUBJECT: '%s', VALUE: %d }", 
+            sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %d, MESSAGE: '%s', PERIOD: %d, SUBJECT: '%s', VALUE: %d }", 
             counter->name, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, value));
         invokeDefenses(monitor, args);
     }
@@ -207,6 +207,14 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
 }
 
 
+static void manageAddress(HttpAddress *address, int flags)
+{
+    if (flags & MPR_MANAGE_MARK) {
+        mprMark(address->banMsg);
+    }
+}
+
+
 /*
     Register a monitor event
     This code is very carefully locked for maximum speed. There are some tolerated race conditions
@@ -214,21 +222,27 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
 PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
 {
     Http            *http;
-    HttpRx          *rx;
     HttpCounter     *counter;
     HttpAddress     *address;
     int64           result;
     int             ncounters;
 
     assert(conn->endpoint);
-    rx = conn->rx;
     http = conn->http;
 
     lock(http->addresses);
     address = mprLookupKey(http->addresses, conn->ip);
     if (!address || address->ncounters <= counterIndex) {
         ncounters = ((counterIndex + 0xF) & ~0xF);
-        address = mprRealloc(address, sizeof(HttpAddress) * ncounters * sizeof(HttpCounter));
+        if (address) {
+            address = mprRealloc(address, sizeof(HttpAddress) * ncounters * sizeof(HttpCounter));
+        } else {
+            address = mprAllocMem(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter), MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO);
+            mprSetManager(address, (MprManager) manageAddress);
+        }
+        if (!address) {
+            return 0;
+        }
         address->ncounters = ncounters;
         mprAddKey(http->addresses, conn->ip, address);
     }
@@ -259,20 +273,21 @@ static int manageDefense(HttpDefense *defense, int flags)
 }
 
 
-static HttpDefense *createDefense(cchar *remedy, MprHash *args)
+static HttpDefense *createDefense(cchar *name, cchar *remedy, MprHash *args)
 {
     HttpDefense     *defense;
 
     if ((defense = mprAllocObj(HttpDefense, manageDefense)) == 0) {
         return 0;
     }
+    defense->name = sclone(name);
     defense->remedy = sclone(remedy);
     defense->args = args;
     return defense;
 }
 
 
-PUBLIC int httpAddDefense(cchar *policy, cchar *remedy, cchar *remedyArgs)
+PUBLIC int httpAddDefense(cchar *name, cchar *remedy, cchar *remedyArgs)
 {
     Http        *http;
     MprHash     *args;
@@ -287,12 +302,32 @@ PUBLIC int httpAddDefense(cchar *policy, cchar *remedy, cchar *remedyArgs)
         key = stok(arg, "=", &value);
         mprAddKey(args, key, strim(value, "\"'", 0));
     }
-    mprAddKey(http->defenses, policy, createDefense(remedy, args));
+    mprAddKey(http->defenses, name, createDefense(name, remedy, args));
     return 0;
 }
 
 
 /************************************ Remedies ********************************/
+
+PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
+{
+    Http            *http;
+    HttpAddress     *address;
+    MprTicks        banUntil;
+
+    http = MPR->httpService;
+    if ((address = mprLookupKey(http->addresses, ip)) == 0) {
+        mprLog(1, "Cannot find client %s to ban", ip);
+        return MPR_ERR_CANT_FIND;
+    }
+    banUntil = http->now + period;
+    address->banUntil = max(banUntil, address->banUntil);
+    address->banMsg = msg;
+    address->banStatus = status;
+    mprLog(1, "Client %s banned for %d secs. %s", ip, period / 1000, address->banMsg ? address->banMsg : "");
+    return 0;
+}
+
 
 static MprTicks lookupTicks(MprHash *args, cchar *key, MprTicks defaultValue)
 {
@@ -304,19 +339,16 @@ static MprTicks lookupTicks(MprHash *args, cchar *key, MprTicks defaultValue)
 static void banRemedy(MprHash *args)
 {
     Http            *http;
-    HttpAddress     *address;
-    MprTicks        banUntil, banPeriod;
-    cchar           *ip;
+    MprTicks        period;
+    cchar           *ip, *banStatus, *msg;
+    int             status;
 
     http = MPR->httpService;
     if ((ip = mprLookupKey(args, "IP")) != 0) {
-        if ((address = mprLookupKey(http->addresses, ip)) != 0) {
-            banPeriod = lookupTicks(args, "PERIOD", BIT_HTTP_BAN_PERIOD);
-            banUntil = http->now + banPeriod;
-            address->banUntil = max(banUntil, address->banUntil);
-            mprLog(0, "%s", mprLookupKey(args, "MSG"));
-            mprLog(0, "IP address %s banned for %d secs", ip, banPeriod / 1000);
-        }
+        period = lookupTicks(args, "PERIOD", BIT_HTTP_BAN_PERIOD);
+        msg = mprLookupKey(args, "MESSAGE");
+        status = ((banStatus = mprLookupKey(args, "STATUS")) != 0) ? atoi(banStatus) : 0;
+        httpBanClient(ip, period, status, msg);
     }
 }
 
@@ -384,7 +416,7 @@ static void delayRemedy(MprHash *args)
             address->delayUntil = max(delayUntil, address->delayUntil);
             delay = (int) lookupTicks(args, "DELAY", BIT_HTTP_DELAY);
             address->delay = max(delay, address->delay);
-            mprLog(0, "%s", mprLookupKey(args, "MSG"));
+            mprLog(0, "%s", mprLookupKey(args, "MESSAGE"));
             mprLog(0, "Initiate delay of %d for IP address %s", address->delay, ip);
         }
     }
@@ -396,7 +428,7 @@ static void emailRemedy(MprHash *args)
     if (!mprLookupKey(args, "FROM")) {
         mprAddKey(args, "FROM", "admin");
     }
-    mprAddKey(args, "CMD", "To: ${TO}\nFrom: ${FROM}\nSubject: ${SUBJECT}\n${MSG}\n\n| sendmail -t");
+    mprAddKey(args, "CMD", "To: ${TO}\nFrom: ${FROM}\nSubject: ${SUBJECT}\n${MESSAGE}\n\n| sendmail -t");
     cmdRemedy(args);
 }
 
@@ -405,7 +437,7 @@ static void httpRemedy(MprHash *args)
 {
     Http        *http;
     HttpConn    *conn;
-    cchar       *uri, *msg;
+    cchar       *uri, *msg, *method;
     int         status;
 
     http = MPR->httpService;
@@ -414,14 +446,19 @@ static void httpRemedy(MprHash *args)
         return;
     }
     uri = mprLookupKey(args, "URI");
-    if (httpConnect(conn, "POST", uri, NULL) < 0) {
+    if ((method = mprLookupKey(args, "METHOD")) == 0) {
+        method = "POST";
+    }
+    if (httpConnect(conn, method, uri, NULL) < 0) {
         mprError("Cannot connect to URI: %s", uri);
         return;
     }
-    msg = mprLookupKey(args, "MSG");
-    if (httpWriteBlock(conn->writeq, msg, slen(msg), HTTP_BLOCK) < 0) {
-        mprError("Cannot write to %s", uri);
-        return;
+    if (smatch(method, "POST")) {
+        msg = mprLookupKey(args, "MESSAGE");
+        if (httpWriteBlock(conn->writeq, msg, slen(msg), HTTP_BLOCK) < 0) {
+            mprError("Cannot write to %s", uri);
+            return;
+        }
     }
     httpFinalizeOutput(conn);
     if (httpWait(conn, HTTP_STATE_PARSED, conn->limits->requestTimeout) < 0) {
@@ -437,7 +474,7 @@ static void httpRemedy(MprHash *args)
 
 static void logRemedy(MprHash *args)
 {
-    mprLog(0, "%s", mprLookupKey(args, "MSG"));
+    mprLog(0, "%s", mprLookupKey(args, "MESSAGE"));
 }
 
 
@@ -453,9 +490,6 @@ PUBLIC int httpAddRemedy(cchar *name, HttpRemedyProc remedy)
 
 PUBLIC int httpAddRemedies()
 {
-    Http    *http;
-
-    http = MPR->httpService;
     httpAddRemedy("ban", banRemedy);
     httpAddRemedy("cmd", cmdRemedy);
     httpAddRemedy("delay", delayRemedy);

@@ -24,7 +24,7 @@
 
 #undef  GRADUATE_HASH
 #define GRADUATE_HASH(route, field) \
-    if (!route->field || route->parent && route->field == route->parent->field) { \
+    if (!route->field || (route->parent && route->field == route->parent->field)) { \
         route->field = mprCloneHash(route->parent->field); \
     }
 
@@ -380,7 +380,11 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     tx = conn->tx;
     route = 0;
 
-    for (next = rewrites = 0; rewrites < BIT_MAX_REWRITE; ) {
+    if (conn->error) {
+        tx->handler = conn->http->passHandler;
+        route = rx->route = conn->host->defaultRoute;
+
+    } else for (next = rewrites = 0; rewrites < BIT_MAX_REWRITE; ) {
         if (next >= conn->host->routes->length) {
             break;
         }

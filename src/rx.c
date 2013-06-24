@@ -198,10 +198,14 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
         httpError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "The server is terminating");
         return 0;
     }
+    assert(conn->rx);
+    assert(conn->tx);
+#if UNUSED
     if (!conn->rx) {
         conn->rx = httpCreateRx(conn);
         conn->tx = httpCreateTx(conn, NULL);
     }
+#endif
     rx = conn->rx;
     if ((len = httpGetPacketLength(packet)) == 0) {
         return 0;
@@ -844,6 +848,11 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
     }
+    if (conn->error) {
+        /* Cannot continue with keep-alive as the headers have not been correctly parsed */
+        conn->keepAliveCount = -1;                                                                                   
+        conn->connError = 1;
+    }
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
             "Request form of %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveFormSize);
@@ -1244,8 +1253,8 @@ static bool processFinalized(HttpConn *conn)
         assert(rx->route);
         if (rx->route && rx->route->log) {
             httpLogRequest(conn);
-            httpMonitorEvent(conn, HTTP_COUNTER_NETWORK_IO, tx->bytesWritten);
         }
+        httpMonitorEvent(conn, HTTP_COUNTER_NETWORK_IO, tx->bytesWritten);
     }
     assert(conn->state == HTTP_STATE_FINALIZED);
     httpSetState(conn, HTTP_STATE_COMPLETE);
@@ -1259,8 +1268,9 @@ static bool processFinalized(HttpConn *conn)
 
 static bool processCompletion(HttpConn *conn)
 {
-    if (conn->endpoint && conn->rx->uri) {
+    if (conn->endpoint && !(conn->rx->flags & HTTP_COMPLETED)) {
         httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, -1);
+        conn->rx->flags |= HTTP_COMPLETED;
     }
     return 0;
 }

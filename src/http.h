@@ -307,8 +307,8 @@ PUBLIC void httpSetForkCallback(struct Http *http, MprForkCallback proc, void *a
 #define HTTP_COUNTER_ACTIVE_REQUESTS    2       /**< Active requests per client */
 #define HTTP_COUNTER_ACTIVE_PROCESSES   3       /**< Total processes for server */
 #define HTTP_COUNTER_BAD_REQUEST_ERRORS 4       /**< Bad request format errors */
-#define HTTP_COUNTER_TOTAL_ERRORS       5       /**< All errors */
-#define HTTP_COUNTER_LIMIT_ERRORS       7       /**< Limit violation errors */
+#define HTTP_COUNTER_ERRORS             5       /**< All errors */
+#define HTTP_COUNTER_LIMIT_ERRORS       6       /**< Limit violation errors */
 #define HTTP_COUNTER_MEMORY             7       /**< Total application memory for server */
 #define HTTP_COUNTER_NETWORK_IO         8       /**< Network I/O */
 #define HTTP_COUNTER_NOT_FOUND_ERRORS   9       /**< URI not found errors */

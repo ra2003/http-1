@@ -163,7 +163,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
             if (status == HTTP_CODE_NOT_FOUND) {
                 httpMonitorEvent(conn, HTTP_COUNTER_NOT_FOUND_ERRORS, 1);
             }
-            httpMonitorEvent(conn, HTTP_COUNTER_TOTAL_ERRORS, 1);
+            httpMonitorEvent(conn, HTTP_COUNTER_ERRORS, 1);
         }
         httpAddHeaderString(conn, "Cache-Control", "no-cache");
         if (conn->endpoint && tx && rx) {

@@ -2725,11 +2725,11 @@ PUBLIC Mpr *mprCreate(int argc, char **argv, int flags)
             mpr->argv = (cchar**) argv;
         } else {
             mpr->argv = mprAllocZeroed(sizeof(void*) * (argc + 1));
-            memcpy(mpr->argv, argv, sizeof(void*) * argc);
+            memcpy((char*) mpr->argv, argv, sizeof(void*) * argc);
         }
 #else
         mpr->argv = mprAllocZeroed(sizeof(void*) * (argc + 1));
-        memcpy(mpr->argv, argv, sizeof(void*) * argc);
+        memcpy((char*) mpr->argv, argv, sizeof(void*) * argc);
 #endif
         mpr->argc = argc;
         if (!mprIsPathAbs(mpr->argv[0])) {

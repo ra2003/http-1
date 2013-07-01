@@ -322,7 +322,6 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             if (packet->last || tail) {
                 packet->flags |= HTTP_PACKET_SOLO;
                 ws->messageLength += httpGetPacketLength(packet);
-                mprAddNullToBuf(packet->content);
                 httpPutPacketToNext(q, packet);
                 ws->currentMessage = 0;
             } else {
@@ -337,7 +336,6 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         if (httpGetPacketLength(packet) >= 2) {
             ws->closeStatus = ((uchar) cp[0]) << 8 | (uchar) cp[1];
             if (httpGetPacketLength(packet) >= 4) {
-                mprAddNullToBuf(content);
                 if (ws->maskOffset >= 0) {
                     for (cp = content->start; cp < content->end; cp++) {
                         *cp = *cp ^ ws->dataMask[ws->maskOffset++ & 0x3];

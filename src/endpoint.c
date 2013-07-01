@@ -9,7 +9,7 @@
 
 /********************************** Forwards **********************************/
 
-static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndpoint *endpoint);
+static void acceptConn(HttpEndpoint *endpoint);
 static int manageEndpoint(HttpEndpoint *endpoint, int flags);
 static int destroyEndpointConnections(HttpEndpoint *endpoint);
 
@@ -112,7 +112,7 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents,
     httpSetHostDefaultRoute(host, route);
     httpSetHostIpAddr(host, ip, port);
     httpAddHostToEndpoint(endpoint, host);
-    httpSetRouteDir(route, documents);
+    httpSetRouteDocuments(route, documents);
     httpFinalizeRoute(route);
     return endpoint;
 }
@@ -177,8 +177,8 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
         return MPR_ERR_CANT_OPEN;
     }
     if (endpoint->async && !endpoint->sock->handler) {
-        mprAddSocketHandler(endpoint->sock, MPR_SOCKET_READABLE, endpoint->dispatcher, httpAcceptConn, endpoint, 
-            (endpoint->dispatcher) ? 0 : MPR_WAIT_NEW_DISPATCHER);
+        mprAddSocketHandler(endpoint->sock, MPR_SOCKET_READABLE, endpoint->dispatcher, acceptConn, endpoint, 
+            (endpoint->dispatcher ? 0 : MPR_WAIT_NEW_DISPATCHER) | MPR_WAIT_IMMEDIATE);
     } else {
         mprSetSocketBlockingMode(endpoint->sock, 1);
     }
@@ -208,99 +208,38 @@ PUBLIC void httpStopEndpoint(HttpEndpoint *endpoint)
 }
 
 
-PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
-{
-    MprSocket   *sock;
-
-    /*
-        In sync mode, this will block until a connection arrives
-     */
-    sock = mprAcceptSocket(endpoint->sock);
-
-    /*
-        Immediately re-enable because acceptConn can block while servicing a request. Must always re-enable even if
-        the sock acceptance above fails.
-     */
-    if (endpoint->sock->handler) {
-        mprEnableSocketEvents(endpoint->sock, MPR_READABLE);
-    }
-    if (sock == 0) {
-        return 0;
-    }
-    return acceptConn(sock, event->dispatcher, endpoint);
-}
-
-
-/*  
-    Accept a new client connection on a new socket. This will come in on a worker thread dedicated to this connection. 
+/*
+    This routine runs using the service event thread. It accepts the socket and creates an event on a new dispatcher to 
+    manage the connection. When it returns, it immediately can listen for new connections without having to modify the 
+    event listen masks.
  */
-static HttpConn *acceptConn(MprSocket *sock, MprDispatcher *dispatcher, HttpEndpoint *endpoint)
+static void acceptConn(HttpEndpoint *endpoint)
 {
-    Http        *http;
-    HttpConn    *conn;
-    HttpAddress *address;
-    MprEvent    e;
-    int         level;
+    MprDispatcher   *dispatcher;
+    MprEvent        *event;
+    MprSocket       *sock;
+    MprWaitHandler  *wp;
 
-    assert(dispatcher);
-    assert(endpoint);
-    http = endpoint->http;
-
-    if (mprShouldDenyNewRequests()) {
-        mprCloseSocket(sock, 0);
-        return 0;
+    if ((sock = mprAcceptSocket(endpoint->sock)) == 0) {
+        return;
     }
-    if ((conn = httpCreateConn(http, endpoint, dispatcher)) == 0) {
-        mprCloseSocket(sock, 0);
-        return 0;
+    wp = endpoint->sock->handler;
+    if (wp->flags & MPR_WAIT_NEW_DISPATCHER) {
+        dispatcher = mprCreateDispatcher("IO", MPR_DISPATCHER_ENABLED | MPR_DISPATCHER_AUTO_CREATE);
+    } else if (wp->dispatcher) {
+        dispatcher = wp->dispatcher;
+    } else {
+        dispatcher = mprGetDispatcher();
     }
-    conn->notifier = endpoint->notifier;
-    conn->async = endpoint->async;
-    conn->endpoint = endpoint;
-    conn->sock = sock;
-    conn->port = sock->port;
-    conn->ip = sclone(sock->ip);
-
-    httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1);
-    address = conn->address;
-    if (address && address->banUntil > http->now) {
-        if (address->banStatus) {
-            httpError(conn, HTTP_CLOSE | address->banStatus, address->banMsg ? address->banMsg : "Client banned");
-        } else if (address->banMsg) {
-            httpError(conn, HTTP_CLOSE | HTTP_CODE_NOT_ACCEPTABLE, address->banMsg);
-        } else {
-            httpDisconnect(conn);
-            return 0;
-        }
-    }
-    if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, "Too many concurrent clients");
-        httpDestroyConn(conn);
-        return 0;
-    }
-    if (endpoint->ssl) {
-        if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
-            mprError("Cannot upgrade socket for SSL: %s", sock->errorMsg);
-            mprCloseSocket(sock, 0);
-            httpMonitorEvent(conn, HTTP_COUNTER_SSL_ERRORS, 1); 
-            return 0;
-        }
-        conn->secure = 1;
-    }
-    assert(conn->state == HTTP_STATE_BEGIN);
-    httpSetState(conn, HTTP_STATE_CONNECTED);
-
-    if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
-        mprLog(level, "### Incoming connection from %s:%d to %s:%d %s", 
-            conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure ? "(secure)" : "");
-        if (endpoint->ssl) {
-            mprLog(level, "Upgrade to TLS");
-        }
-    }
-    e.mask = MPR_READABLE;
-    e.timestamp = conn->http->now;
-    (conn->ioCallback)(conn, &e);
-    return conn;
+    event = mprCreateEvent(dispatcher, "AcceptConn", 0, httpAcceptConn, endpoint, MPR_EVENT_DONT_QUEUE);
+    event->mask = wp->presentMask;
+    event->sock = sock;
+    event->handler = wp;
+    /*
+        MOB - NEED API
+     */
+    MPR->eventService->nap = HTTP_TIMER_PERIOD;
+    mprQueueEvent(dispatcher, event);
 }
 
 

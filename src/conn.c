@@ -311,33 +311,86 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
 }
 
 
-PUBLIC void httpCallEvent(HttpConn *conn, int mask)
+/*
+    Accept a new client connection on a new socket. 
+    This will come in on a worker thread with a new dispatcher dedicated to this connection. 
+ */
+//  MOB - return value not needed
+PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 {
-    MprEvent    e;
+    Http        *http;
+    HttpConn    *conn;
+    HttpAddress *address;
+    MprSocket   *sock;
+    int         level;
 
-    if (conn->http) {
-        e.mask = mask;
-        e.timestamp = conn->http->now;
-        httpEvent(conn, &e);
+    assert(event);
+    assert(event->dispatcher);
+    assert(endpoint);
+
+    sock = event->sock;
+    http = endpoint->http;
+
+    if (mprShouldDenyNewRequests()) {
+        mprCloseSocket(sock, 0);
+        return 0;
     }
-}
+    if ((conn = httpCreateConn(http, endpoint, event->dispatcher)) == 0) {
+        mprCloseSocket(sock, 0);
+        return 0;
+    }
+    conn->notifier = endpoint->notifier;
+    conn->async = endpoint->async;
+    conn->endpoint = endpoint;
+    conn->sock = sock;
+    conn->port = sock->port;
+    conn->ip = sclone(sock->ip);
 
+    if (httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1) > conn->limits->connectionsMax) {
+        mprError("Too many concurrent clients");
+        httpDestroyConn(conn);
+        return 0;
+    }
+    if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
+        mprError("Too many concurrent clients");
+        httpDestroyConn(conn);
+        return 0;
+    }
 
-PUBLIC void httpAfterEvent(HttpConn *conn)
-{
-    if (conn->endpoint) {
-        if (conn->keepAliveCount < 0 && (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE)) {
-            httpDestroyConn(conn);
-            return;
-        } else if (conn->state == HTTP_STATE_COMPLETE) {
-            prepForNext(conn);
+    address = conn->address;
+    if (address && address->banUntil > http->now) {
+        if (address->banStatus) {
+            httpError(conn, HTTP_CLOSE | address->banStatus, address->banMsg ? address->banMsg : "Client banned");
+        } else if (address->banMsg) {
+            httpError(conn, HTTP_CLOSE | HTTP_CODE_NOT_ACCEPTABLE, address->banMsg);
+        } else {
+            httpDisconnect(conn);
+            return 0;
         }
-    } else if (mprIsSocketEof(conn->sock)) {
-        return;
     }
-    if (!conn->state != HTTP_STATE_RUNNING) {
-        httpEnableConnEvents(conn);
+    if (endpoint->ssl) {
+        if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
+            mprError("Cannot upgrade socket for SSL: %s", sock->errorMsg);
+            mprCloseSocket(sock, 0);
+            httpMonitorEvent(conn, HTTP_COUNTER_SSL_ERRORS, 1); 
+            return 0;
+        }
+        conn->secure = 1;
     }
+    assert(conn->state == HTTP_STATE_BEGIN);
+    httpSetState(conn, HTTP_STATE_CONNECTED);
+
+    if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
+        mprLog(level, "### Incoming connection from %s:%d to %s:%d %s", 
+            conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure ? "(secure)" : "");
+        if (endpoint->ssl) {
+            mprLog(level, "Upgrade to TLS");
+        }
+    }
+    event->mask = MPR_READABLE;
+    event->timestamp = conn->http->now;
+    (conn->ioCallback)(conn, event);
+    return conn;
 }
 
 
@@ -461,6 +514,24 @@ PUBLIC MprSocket *httpStealConn(HttpConn *conn)
 }
 
 
+PUBLIC void httpAfterEvent(HttpConn *conn)
+{
+    if (conn->endpoint) {
+        if (conn->keepAliveCount < 0 && (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE)) {
+            httpDestroyConn(conn);
+            return;
+        } else if (conn->state == HTTP_STATE_COMPLETE) {
+            prepForNext(conn);
+        }
+    } else if (mprIsSocketEof(conn->sock)) {
+        return;
+    }
+    if (!conn->state != HTTP_STATE_RUNNING) {
+        httpEnableConnEvents(conn);
+    }
+}
+
+
 PUBLIC void httpEnableConnEvents(HttpConn *conn)
 {
     HttpTx      *tx;
@@ -552,13 +623,17 @@ static HttpPacket *getPacket(HttpConn *conn, ssize *size)
 {
     HttpPacket  *packet;
     MprBuf      *content;
+    ssize       psize;
 
     if ((packet = conn->input) == NULL) {
-        conn->input = packet = httpCreateDataPacket(BIT_MAX_BUFFER);
+        /*
+            Boost the size of the packet if we have already read a largish amount of data
+         */
+        psize = (conn->rx && conn->rx->bytesRead > BIT_MAX_BUFFER) ? BIT_MAX_BUFFER * 8 : BIT_MAX_BUFFER;
+        conn->input = packet = httpCreateDataPacket(psize);
     } else {
         content = packet->content;
         mprResetBufIfEmpty(content);
-        mprAddNullToBuf(content);
         if (mprGetBufSpace(content) < BIT_MAX_BUFFER && mprGrowBuf(content, BIT_MAX_BUFFER) < 0) {
             return 0;
         }

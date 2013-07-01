@@ -28,12 +28,6 @@
         route->field = mprCloneHash(route->parent->field); \
     }
 
-//TODO temp
-#if !BIT_PACK_PCRE
-    int pcre_exec(void *a, void *b, cchar *c, int d, int e, int f, int *g, int h) { return -1; }
-    void *pcre_compile2(cchar *a, int b, int *c, cchar **d, int *e, const unsigned char *f) { return 0; }
-#endif
-     
 /********************************** Forwards **********************************/
 
 static void addUniqueItem(MprList *list, HttpRouteOp *op);
@@ -311,7 +305,7 @@ PUBLIC HttpRoute *httpCreateAliasRoute(HttpRoute *parent, cchar *pattern, cchar 
     }
     httpSetRoutePattern(route, pattern, 0);
     if (path) {
-        httpSetRouteDir(route, path);
+        httpSetRouteDocuments(route, path);
     }
     route->responseStatus = status;
     return route;
@@ -480,7 +474,7 @@ static int matchRequestUri(HttpConn *conn, HttpRoute *route)
 
     if (route->patternCompiled) {
         rx->matchCount = pcre_exec(route->patternCompiled, NULL, rx->pathInfo, (int) slen(rx->pathInfo), 0, 0, 
-                rx->matches, sizeof(rx->matches) / sizeof(int));
+            rx->matches, sizeof(rx->matches) / sizeof(int));
         mprTrace(6, "Test route pattern \"%s\", regexp %s, pathInfo %s", route->name, route->optimizedPattern, rx->pathInfo);
 
         if (route->flags & HTTP_ROUTE_NOT) {
@@ -1194,19 +1188,27 @@ PUBLIC void httpSetRouteData(HttpRoute *route, cchar *key, void *data)
 }
 
 
-//  TODO - rename SetRouteDocuments
-
-PUBLIC void httpSetRouteDir(HttpRoute *route, cchar *path)
+PUBLIC void httpSetRouteDocuments(HttpRoute *route, cchar *path)
 {
     assert(route);
     assert(path && *path);
     
     route->dir = httpMakePath(route, route->home, path);
     httpSetRouteVar(route, "DOCUMENTS_DIR", route->dir);
+#if DEPRECATE || 1
     //  DEPRECATE
     httpSetRouteVar(route, "DOCUMENTS", route->dir);
     httpSetRouteVar(route, "DOCUMENT_ROOT", route->dir);
+#endif
 }
+
+
+#if DEPRECATE || 1
+PUBLIC void httpSetRouteDir(HttpRoute *route, cchar *path)
+{
+    return httpSetRouteDocuments(route, path);
+}
+#endif
 
 
 PUBLIC void httpSetRouteFlags(HttpRoute *route, int flags)
@@ -1798,7 +1800,8 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
 
 /********************************* Path and URI Expansion *****************************/
 /*
-    What does this return. Does it return an absolute URI?
+    Create and resolve a URI link given a set of options.
+
     TODO - consider rename httpUri() and move to uri.c
  */
 PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
@@ -1924,13 +1927,11 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
 }
 
 
-//  TODO - rename to UriTemplate
 /*
-    Expect a tplate with embedded tokens of the form: "/${service}/${action}/${other}"
+    Expect a template with embedded tokens of the form: "/${service}/${action}/${other}"
     The options is a hash of token values.
-    TODO - rename tplate to template
  */
-PUBLIC char *httpTemplate(HttpConn *conn, cchar *tplate, MprHash *options)
+PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
 {
     MprBuf      *buf;
     HttpRoute   *route;
@@ -1938,19 +1939,19 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *tplate, MprHash *options)
     char        key[BIT_MAX_BUFFER];
 
     route = conn->rx->route;
-    if (tplate == 0 || *tplate == '\0') {
+    if (template == 0 || *template == '\0') {
         return MPR->emptyString;
     }
     buf = mprCreateBuf(-1, -1);
-    for (cp = tplate; *cp; cp++) {
-        if (*cp == '~' && (cp == tplate || cp[-1] != '\\')) {
+    for (cp = template; *cp; cp++) {
+        if (*cp == '~' && (cp == template || cp[-1] != '\\')) {
             if (route->prefix) {
                 mprPutStringToBuf(buf, route->prefix);
             } else {
                 mprPutStringToBuf(buf, "/");
             }
 
-        } else if (*cp == '$' && cp[1] == '{' && (cp == tplate || cp[-1] != '\\')) {
+        } else if (*cp == '$' && cp[1] == '{' && (cp == template || cp[-1] != '\\')) {
             cp += 2;
             if ((ep = strchr(cp, '}')) != 0) {
                 sncopy(key, sizeof(key), cp, ep - cp);
@@ -2017,6 +2018,14 @@ PUBLIC char *httpMakePath(HttpRoute *route, cchar *dir, cchar *path)
     return mprGetAbsPath(path);
 }
 
+
+PUBLIC void httpSetRouteXsrf(HttpRoute *route, bool enable)
+{
+    route->flags &= ~HTTP_ROUTE_XSRF;
+    if (enable) {
+        route->flags |= HTTP_ROUTE_XSRF;
+    }
+}
 
 /********************************* Language ***********************************/
 /*
@@ -2158,7 +2167,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     assert(route);
 
     auth = route->auth;
-    if (!auth || !auth->type || auth->flags & HTTP_AUTO_LOGIN) {
+    if (!auth || !auth->type) {
         /* Authentication not required */
         return HTTP_ROUTE_OK;
     }
@@ -2188,7 +2197,7 @@ static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *
     cchar       *username, *password;
 
     auth = route->auth;
-    if (!auth || !auth->type || auth->flags & HTTP_AUTO_LOGIN) {
+    if (!auth || !auth->type) {
         return HTTP_ROUTE_REJECT;
     }
     if (httpLoggedIn(conn)) {
@@ -2543,8 +2552,8 @@ PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *resource)
     addRestful(parent, "list",      "GET",     "/list$",                  "list",            resource);
     addRestful(parent, "init",      "GET",     "/init$",                  "init",            resource);
     addRestful(parent, "remove",    "DELETE",  "/{id=[0-9]+}$",           "remove",          resource);
-    addRestful(parent, "update",    "POST",    "/{id=[0-9]+}*$",          "update",          resource);
-    addRestful(parent, "action",    "POST",    "/{action}/{id=[0-9]+}$",  "${action}",       resource);
+    addRestful(parent, "update",    "POST",    "/{id=[0-9]+}$",           "update",          resource);
+    addRestful(parent, "action",    "GET,POST","/{id=[0-9]+}/{action}$",  "${action}",       resource);
     addRestful(parent, "default",   "GET,POST","/{action}$",              "cmd-${action}",   resource);
 }
 

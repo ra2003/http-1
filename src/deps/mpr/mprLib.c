@@ -10450,13 +10450,18 @@ static void serviceIO(MprWaitService *ws, int count)
         }
         wp->presentMask = mask & wp->desiredMask;
         if (wp->presentMask) {
-            struct epoll_event  ev;
-            memset(&ev, 0, sizeof(ev));
-            ev.data.fd = fd;
-            wp->desiredMask = 0;
-            ws->handlerMap[wp->fd] = 0;
-            epoll_ctl(ws->epoll, EPOLL_CTL_DEL, wp->fd, &ev);
-            mprQueueIOEvent(wp);
+            mprTrace(7, "ServiceIO for wp %p", wp);
+            if (wp->flags & MPR_WAIT_IMMEDIATE) {
+                (wp->proc)(wp->handlerData, NULL);
+            } else {
+                struct epoll_event  ev;
+                memset(&ev, 0, sizeof(ev));
+                ev.data.fd = fd;
+                wp->desiredMask = 0;
+                ws->handlerMap[wp->fd] = 0;
+                epoll_ctl(ws->epoll, EPOLL_CTL_DEL, wp->fd, &ev);
+                mprQueueIOEvent(wp);
+            }
         }
     }
     unlock(ws);
@@ -12977,7 +12982,7 @@ static void serviceIO(MprWaitService *ws, int count)
         if (wp->presentMask) {
             mprTrace(7, "ServiceIO for wp %p", wp);
             if (wp->flags & MPR_WAIT_IMMEDIATE) {
-                (wp->proc)(wp, NULL);
+                (wp->proc)(wp->handlerData, NULL);
             } else {
                 /* 
                     Suppress further events while this event is being serviced. User must re-enable 
@@ -18152,8 +18157,13 @@ static void serviceIO(MprWaitService *ws, struct pollfd *fds, int count)
         wp->presentMask = mask & wp->desiredMask;
         fp->revents = 0;
         if (wp->presentMask) {
-            mprNotifyOn(ws, wp, 0);
-            mprQueueIOEvent(wp);
+            mprTrace(7, "ServiceIO for wp %p", wp);
+            if (wp->flags & MPR_WAIT_IMMEDIATE) {
+                (wp->proc)(wp->handlerData, NULL);
+            } else {
+                mprNotifyOn(ws, wp, 0);
+                mprQueueIOEvent(wp);
+            }
         }
     }
     unlock(ws);
@@ -20012,8 +20022,13 @@ static void serviceIO(MprWaitService *ws, int maxfd)
         }
         wp->presentMask = mask & wp->desiredMask;
         if (wp->presentMask) {
-            mprNotifyOn(ws, wp, 0);
-            mprQueueIOEvent(wp);
+            mprTrace(7, "ServiceIO for wp %p", wp);
+            if (wp->flags & MPR_WAIT_IMMEDIATE) {
+                (wp->proc)(wp->handlerData, NULL);
+            } else {
+                mprNotifyOn(ws, wp, 0);
+                mprQueueIOEvent(wp);
+            }
         }
     }
     unlock(ws);
@@ -24989,9 +25004,6 @@ PUBLIC int mprStartWorkerService()
 
     ws = MPR->workerService;
     mprSetMinWorkers(ws->minThreads);
-#if UNUSED
-    ws->pruneTimer = mprCreateTimerEvent(NULL, "pruneWorkers", MPR_TIMEOUT_PRUNER, pruneWorkers, ws, MPR_EVENT_QUICK);
-#endif
     return 0;
 }
 

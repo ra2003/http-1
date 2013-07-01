@@ -29,7 +29,9 @@ typedef struct {
 static int pamChat(int msgCount, const struct pam_message **msg, struct pam_response **resp, void *data);
 
 /*********************************** Code *************************************/
-
+/*
+    Use PAM to verify a user.  The password may be NULL if using auto-login.
+ */
 PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
 {
     MprBuf              *abilities;
@@ -40,32 +42,34 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     int                 res, i;
    
     assert(username);
-    assert(password);
     assert(!conn->encoded);
 
     info.name = (char*) username;
-    info.password = (char*) password;
-    pamh = NULL;
-    if ((res = pam_start("login", info.name, &conv, &pamh)) != PAM_SUCCESS) {
-        return 0;
-    }
-    if ((res = pam_authenticate(pamh, PAM_DISALLOW_NULL_AUTHTOK)) != PAM_SUCCESS) {
+
+    if (password) {
+        info.password = (char*) password;
+        pamh = NULL;
+        if ((res = pam_start("login", info.name, &conv, &pamh)) != PAM_SUCCESS) {
+            return 0;
+        }
+        if ((res = pam_authenticate(pamh, PAM_DISALLOW_NULL_AUTHTOK)) != PAM_SUCCESS) {
+            pam_end(pamh, PAM_SUCCESS);
+            mprTrace(5, "httpPamVerifyUser failed to verify %s", username);
+            return 0;
+        }
         pam_end(pamh, PAM_SUCCESS);
-        mprTrace(5, "httpPamVerifyUser failed to verify %s", username);
-        return 0;
     }
-    pam_end(pamh, PAM_SUCCESS);
     mprTrace(5, "httpPamVerifyUser verified %s", username);
 
     if (!conn->user) {
         conn->user = mprLookupKey(conn->rx->route->auth->userCache, username);
     }
     if (!conn->user) {
-        Gid     groups[32];
-        int     ngroups;
         /* 
             Create a temporary user with a abilities set to the groups 
          */
+        Gid     groups[32];
+        int     ngroups;
         ngroups = sizeof(groups) / sizeof(Gid);
         if ((i = getgrouplist(username, 99999, groups, &ngroups)) >= 0) {
             abilities = mprCreateBuf(0, 0);
@@ -74,8 +78,10 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
                     mprPutToBuf(abilities, "%s ", gp->gr_name);
                 }
             }
+#if BIT_DEBUG
             mprAddNullToBuf(abilities);
             mprTrace(5, "Create temp user \"%s\" with abilities: %s", username, mprGetBufStart(abilities));
+#endif
             /*
                 Create a user and map groups to roles and expand to abilities
              */

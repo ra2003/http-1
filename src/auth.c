@@ -55,12 +55,21 @@ PUBLIC void httpInitAuth(Http *http)
 PUBLIC bool httpLoggedIn(HttpConn *conn)
 {
     HttpRx      *rx;
+    HttpAuth    *auth;
     cchar       *username;
 
     rx = conn->rx;
+    auth = rx->route->auth;
+
     if (!rx->authenticated) {
         if ((username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0)) == 0) {
-            return 0;
+            if (auth->username) {
+                httpLogin(conn, auth->username, NULL);
+                username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0);
+            }
+            if (!username) {
+                return 0;
+            }
         }
         mprLog(5, "Using cached authentication data for user %s", username);
         conn->username = username;
@@ -118,7 +127,15 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     }
     assert(auth->store);
     if (!auth->store) {
+        mprError("No AuthStore defined");
         return 0;
+    }
+    if (!auth->store->verifyUser) {
+        mprError("No AuthStore verification routine defined");
+        return 0;
+    }
+    if (auth->username) {
+        username = auth->username;
     }
     if (!(auth->store->verifyUser)(conn, username, password)) {
         return 0;
@@ -241,6 +258,7 @@ PUBLIC HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
         auth->roles = parent->roles;
         auth->loggedIn = parent->loggedIn;
         auth->loginPage = parent->loginPage;
+        auth->username = parent->username;
         auth->parent = parent;
     }
     return auth;
@@ -264,6 +282,7 @@ static void manageAuth(HttpAuth *auth, int flags)
         mprMark(auth->type);
         mprMark(auth->userCache);
         mprMark(auth->roles);
+        mprMark(auth->username);
     }
 }
 
@@ -350,13 +369,6 @@ PUBLIC void httpSetAuthAnyValidUser(HttpAuth *auth)
     auth->permittedUsers = 0;
 }
 #endif
-
-
-PUBLIC void httpSetAuthAutoLogin(HttpAuth *auth, bool on)
-{
-    auth->flags &= ~HTTP_AUTO_LOGIN;
-    auth->flags |= on ? HTTP_AUTO_LOGIN : 0;
-}
 
 
 /*
@@ -552,6 +564,12 @@ PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
 }
 
 
+PUBLIC void httpSetAuthUsername(HttpAuth *auth, cchar *username)
+{
+    auth->username = sclone(username);
+}
+
+
 PUBLIC HttpAuthType *httpLookupAuthType(cchar *type)
 {
     Http    *http;
@@ -742,6 +760,7 @@ PUBLIC void httpComputeAllUserAbilities(HttpAuth *auth)
 
 /*
     Verify the user password based on the internal users set. This is used when not using PAM or custom verification.
+    Password may be NULL only if using auto-login.
  */
 static bool fileVerifyUser(HttpConn *conn, cchar *username, cchar *password)
 {
@@ -751,26 +770,29 @@ static bool fileVerifyUser(HttpConn *conn, cchar *username, cchar *password)
 
     rx = conn->rx;
     auth = rx->route->auth;
-    if (!conn->encoded) {
-        password = mprGetMD5(sfmt("%s:%s:%s", username, auth->realm, password));
-        conn->encoded = 1;
-    }
     if (!conn->user && (conn->user = mprLookupKey(auth->userCache, username)) == 0) {
         mprLog(5, "fileVerifyUser: Unknown user \"%s\" for route %s", username, rx->route->name);
         return 0;
     }
-    if (rx->passwordDigest) {
-        /* Digest authentication computes a digest using the password as one ingredient */
-        success = smatch(password, rx->passwordDigest);
-    } else {
-        success = smatch(password, conn->user->password);
+    if (password) {
+        if (!conn->encoded) {
+            password = mprGetMD5(sfmt("%s:%s:%s", username, auth->realm, password));
+            conn->encoded = 1;
+        }
+        if (rx->passwordDigest) {
+            /* Digest authentication computes a digest using the password as one ingredient */
+            success = smatch(password, rx->passwordDigest);
+        } else {
+            success = smatch(password, conn->user->password);
+        }
+        if (success) {
+            mprLog(5, "User \"%s\" authenticated for route %s", username, rx->route->name);
+        } else {
+            mprLog(5, "Password for user \"%s\" failed to authenticate for route %s", username, rx->route->name);
+        }
+        return success;
     }
-    if (success) {
-        mprLog(5, "User \"%s\" authenticated for route %s", username, rx->route->name);
-    } else {
-        mprLog(5, "Password for user \"%s\" failed to authenticate for route %s", username, rx->route->name);
-    }
-    return success;
+    return 1;
 }
 
 

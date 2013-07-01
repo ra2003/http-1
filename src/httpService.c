@@ -294,14 +294,17 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->cacheItemSize = BIT_MAX_CACHE_ITEM;
     limits->chunkSize = BIT_MAX_CHUNK;
     limits->clientMax = BIT_MAX_CLIENTS;
+    limits->connectionsMax = BIT_MAX_CONNECTIONS;
     limits->headerMax = BIT_MAX_NUM_HEADERS;
     limits->headerSize = BIT_MAX_HEADERS;
     limits->keepAliveMax = BIT_MAX_KEEP_ALIVE;
     limits->receiveFormSize = BIT_MAX_RECEIVE_FORM;
     limits->receiveBodySize = BIT_MAX_RECEIVE_BODY;
-    limits->processMax = BIT_MAX_REQUESTS;
+    limits->processMax = BIT_MAX_PROCESSES;
     limits->requestsPerClientMax = BIT_MAX_REQUESTS_PER_CLIENT;
+#if UNUSED
     limits->requestMax = BIT_MAX_REQUESTS;
+#endif
     limits->sessionMax = BIT_MAX_SESSIONS;
     limits->transmissionBodySize = BIT_MAX_TX_BODY;
     limits->uploadSize = BIT_MAX_UPLOAD;
@@ -422,9 +425,7 @@ static void httpTimer(Http *http, MprEvent *event)
     assert(event);
     
     updateCurrentDate(http);
-    if (mprGetDebugMode()) {
-        return;
-    }
+
     /* 
        Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
        OPT - could check for expired connections every 10 seconds.
@@ -442,7 +443,7 @@ static void httpTimer(Http *http, MprEvent *event)
                     (conn->started + limits->requestTimeout) < http->now) {
                 abort = 1;
             }
-            if (abort) {
+            if (abort && !mprGetDebugMode()) {
                 conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, httpConnTimeout, conn, 0);
             }
         }
@@ -577,10 +578,9 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
     mprAddItem(http->connections, conn);
     updateCurrentDate(http);
 
-    //  OPT - use a less contentions mutex
     lock(http);
     conn->seqno = (int) http->totalConnections++;
-    if (!http->timer) {
+    if ((!BIT_DEBUG || !mprGetDebugMode()) && !http->timer) {
         http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
             MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
     }
@@ -762,10 +762,10 @@ PUBLIC char *httpStatsReport(int flags)
     mprPutToBuf(buf, "Workers     %8d busy - %d yielded, %d idle, %d max\n", 
         s.workersBusy, s.workersYielded, s.workersIdle, s.workersMax);
     mprPutCharToBuf(buf, '\n');
-    mprAddNullToBuf(buf);
 
     last = s;
     lastTime = now;
+    mprAddNullToBuf(buf);
     return sclone(mprGetBufStart(buf));
 }
 

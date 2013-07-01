@@ -447,9 +447,6 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
         if (mprPutBlockToBuf(packet->content, mprGetBufEnd(orig->content), (ssize) count) != count) {
             return 0;
         }
-#if BIT_DEBUG
-        mprAddNullToBuf(orig->content);
-#endif
     }
     packet->flags = orig->flags;
     packet->type = orig->type;

@@ -212,7 +212,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, bool blocking)
     do {
         httpScheduleQueue(q);
         next = q->nextQ;
-        if (next->count >= next->max) {
+        if (next->count > 0) {
             httpScheduleQueue(next);
         }
         httpServiceQueues(conn);

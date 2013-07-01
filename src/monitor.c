@@ -202,7 +202,9 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     monitor->defenses = defenseList;
     monitor->http = http;
     mprAddItem(http->monitors, monitor);
-    mprCreateTimerEvent(NULL, "monitor", period, checkMonitor, monitor, 0);
+    if (!mprGetDebugMode()) {
+        mprCreateTimerEvent(NULL, "monitor", period, checkMonitor, monitor, 0);
+    }
     return 0;
 }
 
@@ -338,12 +340,10 @@ static MprTicks lookupTicks(MprHash *args, cchar *key, MprTicks defaultValue)
 
 static void banRemedy(MprHash *args)
 {
-    Http            *http;
-    MprTicks        period;
-    cchar           *ip, *banStatus, *msg;
-    int             status;
+    MprTicks    period;
+    cchar       *ip, *banStatus, *msg;
+    int         status;
 
-    http = MPR->httpService;
     if ((ip = mprLookupKey(args, "IP")) != 0) {
         period = lookupTicks(args, "PERIOD", BIT_HTTP_BAN_PERIOD);
         msg = mprLookupKey(args, "MESSAGE");

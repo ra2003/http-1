@@ -200,12 +200,6 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
     }
     assert(conn->rx);
     assert(conn->tx);
-#if UNUSED
-    if (!conn->rx) {
-        conn->rx = httpCreateRx(conn);
-        conn->tx = httpCreateTx(conn, NULL);
-    }
-#endif
     rx = conn->rx;
     if ((len = httpGetPacketLength(packet)) == 0) {
         return 0;
@@ -230,8 +224,6 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
         return 0;
     }
     len = end - start;
-    mprAddNullToBuf(packet->content);
-
     if (len >= conn->limits->headerSize) {
         httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
             "Header too big. Length %d vs limit %d", len, conn->limits->headerSize);

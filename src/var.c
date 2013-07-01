@@ -218,8 +218,8 @@ PUBLIC void httpAddBodyParams(HttpConn *conn)
         if (q->first && q->first->content) {
             httpJoinPackets(q, -1);
             content = q->first->content;
-            mprAddNullToBuf(content);
             if (rx->form || rx->upload) {
+                mprAddNullToBuf(content);
                 mprTrace(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
                 addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
 

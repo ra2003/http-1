@@ -354,6 +354,7 @@ static void saveCachedResponse(HttpConn *conn)
     assert(tx->finalizedOutput && tx->cacheBuffer);
 
     buf = tx->cacheBuffer;
+    //  MOB - is this really required?
     mprAddNullToBuf(buf);
     tx->cacheBuffer = 0;
     /* 

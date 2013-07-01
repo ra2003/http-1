@@ -37,15 +37,15 @@ typedef struct Upload {
 /********************************** Forwards **********************************/
 
 static void closeUpload(HttpQueue *q);
-static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundaryLen);
+static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundaryLen, bool *pureData);
 static void incomingUpload(HttpQueue *q, HttpPacket *packet);
 static void manageHttpUploadFile(HttpUploadFile *file, int flags);
 static void manageUpload(Upload *up, int flags);
 static int matchUpload(HttpConn *conn, HttpRoute *route, int dir);
 static void openUpload(HttpQueue *q);
-static int  processContentBoundary(HttpQueue *q, char *line);
-static int  processContentHeader(HttpQueue *q, char *line);
-static int  processContentData(HttpQueue *q);
+static int  processUploadBoundary(HttpQueue *q, char *line);
+static int  processUploadHeader(HttpQueue *q, char *line);
+static int  processUploadData(HttpQueue *q);
 
 /************************************* Code ***********************************/
 
@@ -208,7 +208,6 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
     
     packet = q->first;
     content = packet->content;
-    mprAddNullToBuf(content);
     count = httpGetPacketLength(packet);
 
     for (done = 0, line = 0; !done; ) {
@@ -217,30 +216,29 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
                 Parse the next input line
              */
             line = mprGetBufStart(content);
-            stok(line, "\n", &nextTok);
-            if (nextTok == 0) {
+            if ((nextTok = memchr(line, '\n', mprGetBufLength(content))) == 0) {
                 /* Incomplete line */
-                /* done++; */
                 break; 
             }
+            *nextTok++ = '\0';
             mprAdjustBufStart(content, (int) (nextTok - line));
             line = strim(line, "\r", MPR_TRIM_END);
         }
         switch (up->contentState) {
         case HTTP_UPLOAD_BOUNDARY:
-            if (processContentBoundary(q, line) < 0) {
+            if (processUploadBoundary(q, line) < 0) {
                 done++;
             }
             break;
 
         case HTTP_UPLOAD_CONTENT_HEADER:
-            if (processContentHeader(q, line) < 0) {
+            if (processUploadHeader(q, line) < 0) {
                 done++;
             }
             break;
 
         case HTTP_UPLOAD_CONTENT_DATA:
-            rc = processContentData(q);
+            rc = processUploadData(q);
             if (rc < 0) {
                 done++;
             }
@@ -255,21 +253,24 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
             break;
         }
     }
-    /*  
-        Compact the buffer to prevent memory growth. There is often residual data after the boundary for the next block.
-     */
-    if (packet != rx->headerPacket) {
-        mprCompactBuf(content);
-    }
     q->count -= (count - httpGetPacketLength(packet));
     assert(q->count >= 0);
 
     if (httpGetPacketLength(packet) == 0) {
         /* 
-           Quicker to remove the buffer so the packets don't have to be joined the next time 
+            Quicker to remove the buffer so the packets don't have to be joined the next time 
          */
         httpGetPacket(q);
+        mprYield(0);
         assert(q->count >= 0);
+
+    } else {
+        /*  
+            Compact the buffer to prevent memory growth. There is often residual data after the boundary for the next block.
+         */
+        if (packet != rx->headerPacket) {
+            mprCompactBuf(content);
+        }
     }
 }
 
@@ -279,7 +280,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
     Returns  < 0 on a request or state error
             == 0 if successful
  */
-static int processContentBoundary(HttpQueue *q, char *line)
+static int processUploadBoundary(HttpQueue *q, char *line)
 {
     HttpConn    *conn;
     Upload      *up;
@@ -308,7 +309,7 @@ static int processContentBoundary(HttpQueue *q, char *line)
     Returns  < 0  Request or state error
     Returns == 0  Successfully parsed the input line.
  */
-static int processContentHeader(HttpQueue *q, char *line)
+static int processUploadHeader(HttpQueue *q, char *line)
 {
     HttpConn        *conn;
     HttpRx          *rx;
@@ -330,7 +331,6 @@ static int processContentHeader(HttpQueue *q, char *line)
     stok(line, ": ", &rest);
 
     if (scaselesscmp(headerTok, "Content-Disposition") == 0) {
-
         /*  
             The content disposition header describes either a form
             variable or an uploaded file.
@@ -481,7 +481,7 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
             == 0 when more data is needed
             == 1 when data successfully written
  */
-static int processContentData(HttpQueue *q)
+static int processUploadData(HttpQueue *q)
 {
     HttpConn        *conn;
     HttpUploadFile  *file;
@@ -489,6 +489,7 @@ static int processContentData(HttpQueue *q)
     MprBuf          *content;
     Upload          *up;
     ssize           size, dataLen;
+    bool            pureData;
     char            *data, *bp, *key;
 
     conn = q->conn;
@@ -502,7 +503,7 @@ static int processContentData(HttpQueue *q)
         /*  Incomplete boundary. Return and get more data */
         return 0;
     }
-    bp = getBoundary(mprGetBufStart(content), size, up->boundary, up->boundaryLen);
+    bp = getBoundary(mprGetBufStart(content), size, up->boundary, up->boundaryLen, &pureData);
     if (bp == 0) {
         mprTrace(7, "uploadFilter: Got boundary filename %x", up->clientFilename);
         if (up->clientFilename) {
@@ -510,9 +511,11 @@ static int processContentData(HttpQueue *q)
                 No signature found yet. probably more data to come. Must handle split boundaries.
              */
             data = mprGetBufStart(content);
-            dataLen = ((int) (mprGetBufEnd(content) - data)) - (up->boundaryLen - 1);
-            if (dataLen > 0 && writeToFile(q, mprGetBufStart(content), dataLen) < 0) {
-                return MPR_ERR_CANT_WRITE;
+            dataLen = pureData ? size : (size - (up->boundaryLen - 1));
+            if (dataLen > 0) {
+                if (writeToFile(q, mprGetBufStart(content), dataLen) < 0) {
+                    return MPR_ERR_CANT_WRITE;
+                }
             }
             mprAdjustBufStart(content, dataLen);
             return 0;       /* Get more data */
@@ -583,7 +586,7 @@ static int processContentData(HttpQueue *q)
 /*  
     Find the boundary signature in memory. Returns pointer to the first match.
  */ 
-static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundaryLen)
+static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundaryLen, bool *pureData)
 {
     char    *cp, *endp;
     char    first;
@@ -594,14 +597,17 @@ static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundary
 
     first = *((char*) boundary);
     cp = (char*) buf;
+    *pureData = 0;
 
     if (bufLen < boundaryLen) {
+        *pureData = memchr(cp, first, bufLen) != 0;
         return 0;
     }
     endp = cp + (bufLen - boundaryLen) + 1;
     while (cp < endp) {
         cp = (char *) memchr(cp, first, endp - cp);
         if (!cp) {
+            *pureData = 1;
             return 0;
         }
         if (memcmp(cp, boundary, boundaryLen) == 0) {

@@ -1002,7 +1002,7 @@ static bool processContent(HttpConn *conn)
     /* Packet may be null */
 
     if ((nbytes = filterPacket(conn, packet, &more)) > 0) {
-        if (!(conn->endpoint && tx->finalized)) {
+        if (conn->state < HTTP_STATE_COMPLETE) {
             if (rx->inputPipeline) {
                 httpPutPacketToNext(q, packet);
             } else {
@@ -1013,7 +1013,7 @@ static bool processContent(HttpConn *conn)
             conn->input = 0;
         }
     }
-    if (rx->eof) {
+    if (rx->eof && conn->state < HTTP_STATE_FINALIZED) {
         if (conn->endpoint) {
             if (!rx->route) {
                 httpAddBodyParams(conn);

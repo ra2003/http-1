@@ -80,8 +80,9 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
         httpRemoveConn(conn->http, conn);
         if (conn->endpoint) {
             httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, -1);
-            if (conn->rx && !(conn->rx->flags & HTTP_COMPLETED)) {
+            if (conn->activeRequest) {
                 httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, -1);
+                conn->activeRequest = 0;
             }
         }
         conn->input = 0;

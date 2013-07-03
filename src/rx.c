@@ -409,13 +409,16 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 #endif
     conn->started = conn->http->now;
 
-    if (conn->endpoint) {
+    /*
+        ErrorDocuments may come through here twice so test activeRequest to keep counters valid.
+     */
+    if (conn->endpoint && !conn->activeRequest) {
+        conn->activeRequest = 1;
         if (httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, 1) >= limits->requestsPerClientMax) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, "Too many concurrent requests");
             return 0;
-        } else {
-            httpMonitorEvent(conn, HTTP_COUNTER_REQUESTS, 1);
         }
+        httpMonitorEvent(conn, HTTP_COUNTER_REQUESTS, 1);
     }
     traceRequest(conn, packet);
     rx->originalMethod = rx->method = supper(getToken(conn, 0));
@@ -1262,9 +1265,9 @@ static bool processFinalized(HttpConn *conn)
 
 static bool processCompletion(HttpConn *conn)
 {
-    if (conn->endpoint && !(conn->rx->flags & HTTP_COMPLETED)) {
+    if (conn->endpoint && conn->activeRequest) {
         httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, -1);
-        conn->rx->flags |= HTTP_COMPLETED;
+        conn->activeRequest = 0;
     }
     return 0;
 }

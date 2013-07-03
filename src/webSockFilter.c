@@ -612,8 +612,8 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             ws->closeStatus = ((uchar) cp[0]) << 8 | (uchar) cp[1];
 
             /* 
-                This is a hideous spec! 
-                Invalid codes: 104, 105, 106, 1012-1016, 2000-2999
+                WebSockets is a hideous spec, as if UTF validation wasn't bad enough, we must invalidate these codes: 
+                    1004, 1005, 1006, 1012-1016, 2000-2999
              */
             if (ws->closeStatus < 1000 || ws->closeStatus >= 5000 ||
                 (1004 <= ws->closeStatus && ws->closeStatus <= 1006) ||
@@ -625,7 +625,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             mprAdjustBufStart(content, 2);
             if (httpGetPacketLength(packet) > 0) {
                 ws->closeReason = mprCloneBufMem(content);
-                if (!rx->route->ignoreEncodingErrors) {
+                if (!rx->route || !rx->route->ignoreEncodingErrors) {
                     if (validUTF8(ws->closeReason, slen(ws->closeReason)) != UTF8_ACCEPT) {
                         mprError("webSocketFilter: Text packet has invalid UTF8");
                         return WS_STATUS_INVALID_UTF8;
@@ -1027,15 +1027,18 @@ static int validUTF8(cchar *str, ssize len)
 static bool validateText(HttpConn *conn, HttpPacket *packet)
 {
     HttpWebSocket   *ws;
+    HttpRx          *rx;
     MprBuf          *content;
     int             state;
     bool            valid;
 
-    ws = conn->rx->webSocket;
+    rx = conn->rx;
+    ws = rx->webSocket;
+
     /*
         Skip validation if ignoring errors or some frames have already been sent to the callback
      */
-    if (conn->rx->route->ignoreEncodingErrors || ws->messageLength > 0) {
+    if ((rx->route && rx->route->ignoreEncodingErrors) || ws->messageLength > 0) {
         return 1;
     }
     content = packet->content;

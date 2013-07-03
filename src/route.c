@@ -1467,6 +1467,13 @@ PUBLIC void httpSetRouteTemplate(HttpRoute *route, cchar *tplate)
 }
 
 
+PUBLIC void httpSetRouteUploadDir(HttpRoute *route, cchar *dir)
+{
+    assert(route);
+    route->uploadDir = sclone(dir);
+}
+
+
 PUBLIC void httpSetRouteWorkers(HttpRoute *route, int workers)
 {
     assert(route);

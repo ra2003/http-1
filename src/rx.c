@@ -991,7 +991,7 @@ static bool processContent(HttpConn *conn)
     HttpQueue   *q;
     HttpPacket  *packet;
     ssize       nbytes;
-    int         more;
+    int         moreData;
 
     assert(conn);
     rx = conn->rx;
@@ -1001,7 +1001,7 @@ static bool processContent(HttpConn *conn)
     packet = conn->input;
     /* Packet may be null */
 
-    if ((nbytes = filterPacket(conn, packet, &more)) > 0) {
+    if ((nbytes = filterPacket(conn, packet, &moreData)) > 0) {
         if (conn->state < HTTP_STATE_COMPLETE) {
             if (rx->inputPipeline) {
                 httpPutPacketToNext(q, packet);
@@ -1013,34 +1013,36 @@ static bool processContent(HttpConn *conn)
             conn->input = 0;
         }
     }
-    if (rx->eof && conn->state < HTTP_STATE_FINALIZED) {
-        if (conn->endpoint) {
-            if (!rx->route) {
-                httpAddBodyParams(conn);
-                mapMethod(conn);
-                httpRouteRequest(conn);
-                httpCreatePipeline(conn);
-                /*
-                    Transfer buffered input body data into the pipeline
-                 */
-                while ((packet = httpGetPacket(q)) != 0) {
-                    httpPutPacketToNext(q, packet);
+    if (rx->eof) {
+        if (conn->state < HTTP_STATE_FINALIZED) {
+            if (conn->endpoint) {
+                if (!rx->route) {
+                    httpAddBodyParams(conn);
+                    mapMethod(conn);
+                    httpRouteRequest(conn);
+                    httpCreatePipeline(conn);
+                    /*
+                        Transfer buffered input body data into the pipeline
+                     */
+                    while ((packet = httpGetPacket(q)) != 0) {
+                        httpPutPacketToNext(q, packet);
+                    }
                 }
+                httpPutPacketToNext(q, httpCreateEndPacket());
+                if (!tx->started) {
+                    httpStartPipeline(conn);
+                }
+            } else {
+                httpPutPacketToNext(q, httpCreateEndPacket());
             }
-            httpPutPacketToNext(q, httpCreateEndPacket());
-            if (!tx->started) {
-                httpStartPipeline(conn);
-            }
-        } else {
-            httpPutPacketToNext(q, httpCreateEndPacket());
+            httpSetState(conn, HTTP_STATE_READY);
         }
-        httpSetState(conn, HTTP_STATE_READY);
         return conn->workerEvent ? 0 : 1;
     }
     if (tx->started) {
         httpServiceQueues(conn);
     }
-    return (conn->connError || more);
+    return (conn->connError || moreData);
 }
 
 

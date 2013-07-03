@@ -6426,8 +6426,9 @@ PUBLIC void httpStopHost(HttpHost *host);
     then upgraded without impacting the original connection. This means it will work with existing networking infrastructure
     including firewalls and proxies.
     @defgroup HttpWebSocket HttpWebSocket
-    @see httpGetWebSocketCloseReason httpGetWebSocketMessageLength httpGetWebSocketProtocol httpGetWriteQueueCount
-        httpIsLastPacket httpSend httpSendBlock httpSendClose httpSetWebSocketProtocols httpWebSocketOrderlyClosed
+    @see httpGetWebSocketCloseReason httpGetWebSocketMessageLength httpGetWebSocketProtocol 
+        httpGetWebSocketState httpGetWriteQueueCount httpIsLastPacket httpSend httpSendBlock httpSendClose 
+        httpSetWebSocketPreserveFrames httpSetWebSocketProtocols httpWebSocketOrderlyClosed
     @stability Internal
  */
 typedef struct HttpWebSocket {
@@ -6450,9 +6451,9 @@ typedef struct HttpWebSocket {
     void            *data;                  /**< Custom data for applications (marked) */
 } HttpWebSocket;
 
-#define WS_VERSION      13
 #define WS_MAGIC        "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 #define WS_MAX_CONTROL  125                 /**< Maximum bytes in control message */
+#define WS_VERSION      13                  /**< Current web socket specification version */
 
 /*
     httpSendBlock message types
@@ -6499,8 +6500,9 @@ typedef struct HttpWebSocket {
 
 /**
     Get the close reason supplied by the peer.
+    @description The peer may supply a UTF8 messages reason for the closure.
     @param conn HttpConn connection object created via #httpCreateConn
-    @return The reason string supplied by the peer when closing the web socket.
+    @return The UTF8 reason string supplied by the peer when closing the web socket.
     @ingroup HttpWebSocket
     @stability Evolving
  */
@@ -6509,7 +6511,7 @@ PUBLIC char *httpGetWebSocketCloseReason(HttpConn *conn);
 /**
     Get the message length for the current message
     @description The message length will be updated as the message frames are received. The message length is 
-        only valid when the last frame has been received. See #httpIsLastPacket
+        only complete when the last frame has been received. See #httpIsLastPacket
     @param conn HttpConn connection object created via #httpCreateConn
     @return The size of the message.
     @ingroup HttpWebSocket
@@ -6537,6 +6539,7 @@ PUBLIC ssize httpGetWebSocketState(HttpConn *conn);
 /**
     Send a UTF-8 text message to the web socket peer
     @description This call invokes httpSend with a type of WS_MSG_TEXT and flags of HTTP_BUFFER.
+        The message must be valid UTF8 as the peer will reject invalid UTF8 messages.
     @param conn HttpConn connection object created via #httpCreateConn
     @param fmt Printf style formatted string
     @param ... Arguments for the format
@@ -6592,14 +6595,13 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *msg, ssize len, int 
 /**
     Send a close message to the web socket peer
     @description This call invokes httpSendBlock with a type of WS_MSG_CLOSE and flags of HTTP_BUFFER. 
-        The status and reason are encoded in the message.
+        The status and reason are encoded in the message. The reason is an optional UTF8 closure reason message.
     @param conn HttpConn connection object created via #httpCreateConn
     @param status Web socket status
-    @param reason Optional reason text message. The reason must be less than 124 bytes in length.
+    @param reason Optional UTF8 reason text message. The reason must be less than 124 bytes in length.
     @return Number of data message bytes written. Should equal len if successful, otherwise returns a negative
         MPR error code.
     @ingroup HttpWebSocket
-    @return Number of data message bytes written. Otherwise returns a negative MPR error code.
     @stability Evolving
  */
 PUBLIC ssize httpSendClose(HttpConn *conn, int status, cchar *reason);
@@ -6607,8 +6609,10 @@ PUBLIC ssize httpSendClose(HttpConn *conn, int status, cchar *reason);
 /**
     Preserve frames for incoming messages
     @description This routine enables user control of message framing.
-    When preserving frames, all sent messages will not be split into frames or aggregated with other data. Received messages
-        will similarly have their frame boundaries preserved and will be stored one frame per HttpPacket.
+        When preserving frames, sent message boundaries will be preserved and  will not be split into frames or 
+        aggregated with other message frames. Received messages will similarly have their frame boundaries preserved 
+        and will be stored one frame per HttpPacket.
+        Note: enabling this option may prevent full validation of UTF8 text messages if UTF8 codepoints span frame boundaries.
     @param conn HttpConn connection object created via #httpCreateConn
     @param on Set to true to preserve frames
     @return True if the web socket was orderly closed.

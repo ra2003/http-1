@@ -236,9 +236,10 @@ static void acceptConn(HttpEndpoint *endpoint)
     event->sock = sock;
     event->handler = wp;
     /*
-        MOB - NEED API
+        Optimization to wake the event service in this amount of time. This ensures that when the HttpTimer is scheduled,
+        it won't need to awaken the notifier.
      */
-    MPR->eventService->nap = HTTP_TIMER_PERIOD;
+    mprSetEventServiceSleep(HTTP_TIMER_PERIOD);
     mprQueueEvent(dispatcher, event);
 }
 

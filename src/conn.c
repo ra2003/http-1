@@ -80,6 +80,9 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
         httpRemoveConn(conn->http, conn);
         if (conn->endpoint) {
             httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, -1);
+            if (conn->rx && !(conn->rx->flags & HTTP_COMPLETED)) {
+                httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, -1);
+            }
         }
         conn->input = 0;
         if (conn->tx) {
@@ -161,7 +164,7 @@ PUBLIC void httpCloseConn(HttpConn *conn)
     assert(conn);
 
     if (conn->sock) {
-        mprLog(5, "Closing connection");
+        mprLog(4, "Closing connection");
         mprCloseSocket(conn->sock, 0);
         conn->sock = 0;
     }
@@ -242,6 +245,10 @@ static bool prepForNext(HttpConn *conn)
 {
     assert(conn->endpoint);
     assert(conn->state == HTTP_STATE_COMPLETE);
+
+    if (conn->keepAliveCount < 0) {
+        return 0;
+    }
     if (conn->tx) {
         assert(conn->tx->finalized && conn->tx->finalizedConnector && conn->tx->finalizedOutput);
         conn->tx->conn = 0;
@@ -315,7 +322,6 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
     Accept a new client connection on a new socket. 
     This will come in on a worker thread with a new dispatcher dedicated to this connection. 
  */
-//  MOB - return value not needed
 PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 {
     Http        *http;

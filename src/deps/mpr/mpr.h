@@ -2545,6 +2545,14 @@ PUBLIC MprBuf *mprCreateBuf(ssize initialSize, ssize maxSize);
 PUBLIC MprBuf *mprCloneBuf(MprBuf *orig);
 
 /**
+    Clone a buffer and return a memory block
+    @param bp Buffer to copy
+    @return Returns a newly allocated memory block containing the buffer contents.
+    @stability Prototype.
+ */
+PUBLIC char *mprCloneBufMem(MprBuf *bp);
+
+/**
     Compact the buffer contents
     @description Compact the buffer contents by copying the contents down to start the the buffer origin.
     @param buf Buffer created via mprCreateBuf
@@ -5558,9 +5566,9 @@ typedef struct MprEventService {
     MprDispatcher   *idleQ;             /**< Queue of idle dispatchers */
     MprDispatcher   *pendingQ;          /**< Queue of pending dispatchers (waiting for resources) */
     MprOsThread     serviceThread;      /**< Thread running the dispatcher service */
+    MprTicks        delay;              /**< Maximum sleep time before awaking */
     int             eventCount;         /**< Count of events */
     int             waiting;            /**< Waiting for I/O (sleeping) */
-    int             nap;                /**< Override short nap time */
     int             pendingCount;       /**< Count of pendingQ dispatchers */
     struct MprCond  *waitCond;          /**< Waiting sync */
     struct MprMutex *mutex;             /**< Multi-thread sync */
@@ -5627,6 +5635,14 @@ PUBLIC MprDispatcher *mprGetDispatcher();
     @stability Stable
  */
 PUBLIC int mprServiceEvents(MprTicks delay, int flags);
+
+/**
+    Set the maximum sleep time for the event service
+    @param delay Maximum time to sleep before checking for events to service
+    @ingroup MprDispatcher
+    @stability Prototype;
+ */
+PUBLIC void mprSetEventServiceSleep(MprTicks delay);
 
 /**
     Wait for an event to occur on the given dispatcher

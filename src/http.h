@@ -424,7 +424,16 @@ PUBLIC int httpAddCounter(cchar *name);
  */
 PUBLIC int httpAddRemedy(cchar *name, HttpRemedyProc remedy);
 
-//  MOB
+/**
+    Ban a client IP from service
+    @param ip Client IP address to ban
+    @param period Period in milliseconds to ban the client
+    @param status If non-zero, then return a HTTP response to the client with this HTTP status.
+    @param msg If non-null, then return a HTTP response with this message. If both status and msg are zero and null respectively,
+        then do not send a response to the client, rather immediately close the connection.
+    @ingroup HttpMonitor
+    @stability Prototype
+ */
 PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg);
 
 /*
@@ -767,8 +776,8 @@ typedef struct HttpLimits {
 
     int      webSocketsMax;             /**< Maximum number of WebSockets */
     ssize    webSocketsMessageSize;     /**< Maximum total size of a WebSocket message including all frames */
-    ssize    webSocketsFrameSize;       /**< Maximum size of a WebSocket frame on the wire */
-    ssize    webSocketsPacketSize;      /**< Maximum size of a WebSocket packet exchanged with the user */
+    ssize    webSocketsFrameSize;       /**< Maximum size of sent WebSocket frames. Incoming frames have no limit except message size.  */
+    ssize    webSocketsPacketSize;      /**< Maximum size of a WebSocket packet exchanged with the user callback */
 } HttpLimits;
 
 /**
@@ -1173,7 +1182,7 @@ PUBLIC HttpPacket *httpGetPacket(struct HttpQueue *q);
  */
 PUBLIC ssize httpGetPacketLength(HttpPacket *packet);
 #else
-#define httpGetPacketLength(p) ((p && p->content) ? mprGetBufLength(p->content) : 0)
+    #define httpGetPacketLength(p) ((p && p->content) ? mprGetBufLength(p->content) : 0)
 #endif
 
 /**
@@ -1204,6 +1213,7 @@ PUBLIC int httpJoinPacket(HttpPacket *packet, HttpPacket *other);
         stages can digest their contents. If a packet is too large for the queue maximum size, it should be split.
         When the packet is split, a new packet is created containing the data after the offset. Any suffix headers
         are moved to the new packet.
+        NOTE: when splitting packets, the HttpPacket.content reference may be modified. 
     @param packet Packet to split
     @param offset Route in the original packet at which to split
     @return New HttpPacket object containing the data after the offset. No need to free, unless you have a very long
@@ -1500,11 +1510,11 @@ PUBLIC void httpRemoveQueue(HttpQueue *q);
     @param q Queue reference
     @param packet Packet to put
     @param size If size is > 0, then also ensure the packet is not larger than this size.
-    @return "Zero" if successful, otherwise a negative Mpr error code
+    @return Zero if the packet is not resized. Otherwise return the tail packet that was put back onto the queue.
     @ingroup HttpQueue
     @stability Stable
  */
-PUBLIC int httpResizePacket(struct HttpQueue *q, HttpPacket *packet, ssize size);
+PUBLIC HttpPacket *httpResizePacket(struct HttpQueue *q, HttpPacket *packet, ssize size);
 
 /** 
     Resume a queue
@@ -4612,6 +4622,15 @@ PUBLIC void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_T
 PUBLIC void httpSetRouteVar(HttpRoute *route, cchar *token, cchar *value);
 
 /**
+    Set the default upload directory for file uploads
+    @param route Route to modify
+    @param dir Directory path
+    @ingroup HttpRoute
+    @stability Prototype
+ */
+PUBLIC void httpSetRouteUploadDir(HttpRoute *route, cchar *dir);
+
+/**
     Define the maximum number of workers for a route
     @param route Route to modify
     @param workers Maximum number of workers for this route
@@ -6419,30 +6438,33 @@ typedef struct HttpWebSocket {
     ssize           frameLength;            /**< Length of the current frame */
     ssize           messageLength;          /**< Length of the current message */
     char            *subProtocol;           /**< Application level sub-protocol */
-    HttpPacket      *currentFrame;          /**< Pending message frame */
-    HttpPacket      *currentMessage;        /**< Pending message frame */
+    HttpPacket      *currentFrame;          /**< Message frame being currently read */
+    HttpPacket      *currentMessage;        /**< Total message currently being read */
     HttpPacket      *tailMessage;           /**< Subsequent message frames */
     MprEvent        *pingEvent;             /**< Ping timer event */
     char            *closeReason;           /**< Reason for closure */
     uchar           dataMask[4];            /**< Mask for data */
     int             maskOffset;             /**< Offset in dataMask */
     int             preserveFrames;         /**< Do not join frames */
+    int             partialUTF;             /**< Last packet had a partial UTF codepoint */ 
+    void            *data;                  /**< Custom data for applications (marked) */
 } HttpWebSocket;
 
-#define WS_VERSION     13
-#define WS_MAGIC       "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+#define WS_VERSION      13
+#define WS_MAGIC        "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+#define WS_MAX_CONTROL  125                 /**< Maximum bytes in control message */
 
 /*
     httpSendBlock message types
  */
-#define WS_MSG_CONT     0x0       /**< Continuation of WebSocket message */
-#define WS_MSG_TEXT     0x1       /**< httpSendBlock type for text messages */
-#define WS_MSG_BINARY   0x2       /**< httpSendBlock type for binary messages */
-#define WS_MSG_CONTROL  0x8       /**< Start of control messages */
-#define WS_MSG_CLOSE    0x8       /**< httpSendBlock type for close message */
-#define WS_MSG_PING     0x9       /**< httpSendBlock type for ping messages */
-#define WS_MSG_PONG     0xA       /**< httpSendBlock type for pong messages */
-#define WS_MSG_MAX      0xB       /**< Max message type for httpSendBlock */
+#define WS_MSG_CONT     0x0                 /**< Continuation of WebSocket message */
+#define WS_MSG_TEXT     0x1                 /**< httpSendBlock type for text messages */
+#define WS_MSG_BINARY   0x2                 /**< httpSendBlock type for binary messages */
+#define WS_MSG_CONTROL  0x8                 /**< Start of control messages */
+#define WS_MSG_CLOSE    0x8                 /**< httpSendBlock type for close message */
+#define WS_MSG_PING     0x9                 /**< httpSendBlock type for ping messages */
+#define WS_MSG_PONG     0xA                 /**< httpSendBlock type for pong messages */
+#define WS_MSG_MAX      0xB                 /**< Max message type for httpSendBlock */
 
 /*
     Close message status codes
@@ -6456,7 +6478,7 @@ typedef struct HttpWebSocket {
 #define WS_STATUS_GOING_AWAY           1001     /**< Endpoint is going away. Server down or browser navigating away */
 #define WS_STATUS_PROTOCOL_ERROR       1002     /**< WebSockets protocol error */
 #define WS_STATUS_UNSUPPORTED_TYPE     1003     /**< Unsupported message data type */
-#define WS_STATUS_FRAME_TOO_LARGE      1004     /**< Message frame is too large */
+#define WS_STATUS_FRAME_TOO_LARGE      1004     /**< Reserved. Message frame is too large */
 #define WS_STATUS_NO_STATUS            1005     /**< No status was received from the peer in closing */
 #define WS_STATUS_COMMS_ERROR          1006     /**< TCP/IP communications error  */
 #define WS_STATUS_INVALID_UTF8         1007     /**< Text message has invalid UTF-8 */
@@ -6524,7 +6546,10 @@ PUBLIC ssize httpGetWebSocketState(HttpConn *conn);
  */
 PUBLIC ssize httpSend(HttpConn *conn, cchar *fmt, ...);
 
-#define HTTP_MORE   0x1000         /**< Flag for #httpSendBlock to indicate there are more frames for this message */
+/** 
+    Flag for #httpSendBlock to indicate there are more frames for this message 
+ */
+#define HTTP_MORE   0x1000         
 
 /**
     Send a message of a given type to the web socket peer

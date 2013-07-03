@@ -367,9 +367,9 @@ PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 /*  
     Resize and possibly split a packet so it fits in the downstream queue. Put back the 2nd portion of the split packet 
     on the queue. Ensure that the packet is not larger than "size" if it is greater than zero. If size < 0, then
-    use the default packet size. 
+    use the default packet size. Return the tail packet.
  */
-PUBLIC int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
+PUBLIC HttpPacket *httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
 {
     HttpPacket  *tail;
     ssize       len;
@@ -379,7 +379,7 @@ PUBLIC int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
     }
     if (packet->esize > size) {
         if ((tail = httpSplitPacket(packet, size)) == 0) {
-            return MPR_ERR_MEMORY;
+            return 0;
         }
     } else {
         /*  
@@ -393,28 +393,31 @@ PUBLIC int httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size)
             return 0;
         }
         if ((tail = httpSplitPacket(packet, size)) == 0) {
-            return MPR_ERR_MEMORY;
+            return 0;
         }
     }
     httpPutBackPacket(q, tail);
-    return 0;
+    return tail;
 }
 
 
 /*
-    Split a packet at a given offset and return a new packet containing the data after the offset.
+    Split a packet at a given offset and return the tail packet containing the data after the offset.
     The prefix data remains with the original packet. 
  */
 PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 {
-    HttpPacket  *packet;
+    HttpPacket  *tail;
     ssize       count, size;
 
     /* Must not be in a queue */
     assert(orig->next == 0);
 
     if (orig->esize) {
-        if ((packet = httpCreateEntityPacket(orig->epos + offset, orig->esize - offset, orig->fill)) == 0) {
+        if (offset >= orig->esize) {
+            return 0;
+        }
+        if ((tail = httpCreateEntityPacket(orig->epos + offset, orig->esize - offset, orig->fill)) == 0) {
             return 0;
         }
         orig->esize = offset;
@@ -437,21 +440,40 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
                         copy from packet
                 Adjust the content->start
          */
-        count = httpGetPacketLength(orig) - offset;
-        size = max(count, BIT_MAX_BUFFER);
-        size = HTTP_PACKET_ALIGN(size);
-        if ((packet = httpCreateDataPacket(size)) == 0) {
-            return 0;
-        }
-        httpAdjustPacketEnd(orig, (ssize) -count);
-        if (mprPutBlockToBuf(packet->content, mprGetBufEnd(orig->content), (ssize) count) != count) {
-            return 0;
+        if (offset < (httpGetPacketLength(orig) / 2)) {
+            /*
+                A large packet will often be resized by splitting into chunks that the downstream queues will accept. 
+                To optimize, we allocate a new packet content buffer and the tail packet keeps the trimmed original packet buffer.
+             */
+            if ((tail = httpCreateDataPacket(0)) == 0) {
+                return 0;
+            }
+            tail->content = orig->content;
+            if ((orig->content = mprCreateBuf(offset, 0)) == 0) {
+                return 0;
+            }
+            if (mprPutBlockToBuf(orig->content, mprGetBufStart(tail->content), offset) != offset) {
+                return 0;
+            }
+            mprAdjustBufStart(tail->content, offset);
+
+        } else {
+            count = httpGetPacketLength(orig) - offset;
+            size = max(count, BIT_MAX_BUFFER);
+            size = HTTP_PACKET_ALIGN(size);
+            if ((tail = httpCreateDataPacket(size)) == 0) {
+                return 0;
+            }
+            httpAdjustPacketEnd(orig, -count);
+            if (mprPutBlockToBuf(tail->content, mprGetBufEnd(orig->content), count) != count) {
+                return 0;
+            }
         }
     }
-    packet->flags = orig->flags;
-    packet->type = orig->type;
-    packet->last = orig->last;
-    return packet;
+    tail->flags = orig->flags;
+    tail->type = orig->type;
+    tail->last = orig->last;
+    return tail;
 }
 
 

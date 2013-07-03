@@ -370,9 +370,10 @@ typedef struct HttpDefense {
     Trace an event and validate against defined limits and monitored resources
     @description The Http library supports a suite of resource limits that restrict the impact of a request on
         the system. This call validates a processing event for the current request against the server's endpoint limits.
-    @param endpoint The endpoint on which the server was listening
+    @param conn Connection object.
     @param counter The counter to adjust.
     @param conn HttpConn connection object
+    @param adj Value to adjust the counter by. May be positive or negative.
     @return Monitor value after applying the adjustment.
     @ingroup HttpMonitor
     @stability Prototype
@@ -3459,8 +3460,10 @@ PUBLIC void httpDefineAction(cchar *uri, HttpAction fun);
 /********************************** HttpStream  ********************************/
 /**
     Determine if input body content should be streamed or buffered for requests with content of a given mime type 
+    @description The mime type and URI are used to match the request.
     @param host Host to modify
     @param mime Mime type to configure
+    @param uri URI prefix to match with.
     @return True if input should be streamed. False if it should be buffered.
     @ingroup HttpHost
     @stability Prototype
@@ -3472,8 +3475,8 @@ PUBLIC bool httpGetStreaming(struct HttpHost *host, cchar *mime, cchar *uri);
     Control if input body content should be streamed or buffered for requests with content of a given mime type 
     @param host Host to modify
     @param mime Mime type to configure
-    @param stream Set to true to enable streaming for this mime type.
-    @param immediate Set to true to immediately run the handler after parsing headers.
+    @param uri URI prefix to match.
+    @param streaming Set to true to enable streaming for this mime type.
     @ingroup HttpHost
     @stability Prototype
     @internal
@@ -3887,11 +3890,10 @@ PUBLIC void httpAddRouteRequestHeaderCheck(HttpRoute *route, cchar *header, ccha
     @description This modifies the response header set
     @param route Route to modify
     @param cmd Set to HTTP_ROUTE_HEADER_ADD to add a header if it is not already present in the response header set.
-        Set to HTTP_ROUTE_HEADER_REMOVE to remove a header. Set to HTTP_ROUTE_HEADER_SET to define a header and overwrite any prior values.
-        Set to HTTP_ROUTE_HEADER_APPEND to append to an existing header value.
+        Set to HTTP_ROUTE_HEADER_REMOVE to remove a header. Set to HTTP_ROUTE_HEADER_SET to define a header and overwrite any 
+        prior values. Set to HTTP_ROUTE_HEADER_APPEND to append to an existing header value.
     @param header Header field to interrogate
     @param value Header value that will match
-    @param flags Set to HTTP_ROUTE_NOT to negate the header test
     @ingroup HttpRoute
     @stability Evolving
  */

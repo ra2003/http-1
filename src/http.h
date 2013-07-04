@@ -6485,7 +6485,7 @@ typedef struct HttpWebSocket {
     uchar           dataMask[4];            /**< Mask for data */
     int             maskOffset;             /**< Offset in dataMask */
     int             preserveFrames;         /**< Do not join frames */
-    int             partialUTF;             /**< Last packet had a partial UTF codepoint */ 
+    int             partialUTF;             /**< Last frame had a partial UTF codepoint */ 
     void            *data;                  /**< Custom data for applications (marked) */
 } HttpWebSocket;
 

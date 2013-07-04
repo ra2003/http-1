@@ -451,23 +451,32 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 error = WS_STATUS_MESSAGE_TOO_LARGE;
                 break;
             }
+            if (ws->maskOffset >= 0) {
+                for (cp = content->start; cp < content->end; cp++) {
+                    *cp = *cp ^ ws->dataMask[ws->maskOffset++ & 0x3];
+                }
+            } 
             if (packet->type == WS_MSG_CONT && ws->currentFrame) {
                 mprTrace(5, "webSocketFilter: Joining data packet %d/%d", currentFrameLen, len);
                 httpJoinPacket(ws->currentFrame, packet);
                 packet = ws->currentFrame;
                 content = packet->content;
             }
+            if (packet->type == WS_MSG_TEXT) {
+                /*
+                    Validate the frame for fast-fail provided the last frame does not have a partial codepoint.
+                 */
+                if (!ws->partialUTF) {
+                    if (!validateText(conn, packet)) {
+                        error = WS_STATUS_INVALID_UTF8;
+                        break;
+                    }
+                    ws->partialUTF = 0;
+                }
+            }
             frameLen = httpGetPacketLength(packet);
             assert(frameLen <= ws->frameLength);
             if (frameLen == ws->frameLength) {
-                /*
-                    Got a complete frame 
-                 */
-                if (ws->maskOffset >= 0) {
-                    for (cp = content->start; cp < content->end; cp++) {
-                        *cp = *cp ^ ws->dataMask[ws->maskOffset++ & 0x3];
-                    }
-                } 
                 if ((error = processFrame(q, packet)) != 0) {
                     break;
                 }
@@ -551,7 +560,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         if (packet->type == WS_MSG_TEXT) {
             mprLog(4, "webSocketFilter: Receive text \"%s\"", content->start);
             /*
-                Validate this frame if we don't have a partial codepoint from a prior frame. This permits fast-fail.
+                Validate this frame if we don't have a partial codepoint from a prior frame.
              */
             if (!ws->partialUTF) {
                 if (!validateText(conn, packet)) {

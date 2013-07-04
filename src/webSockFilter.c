@@ -914,6 +914,12 @@ PUBLIC char *httpGetWebSocketCloseReason(HttpConn *conn)
 }
 
 
+PUBLIC void *httpGetWebSocketData(HttpConn *conn)
+{
+    return (conn->rx && conn->rx->webSocket) ? conn->rx->webSocket->data : NULL;
+}
+
+
 PUBLIC ssize httpGetWebSocketMessageLength(HttpConn *conn)
 {
     HttpWebSocket   *ws;
@@ -971,6 +977,14 @@ PUBLIC bool httpWebSocketOrderlyClosed(HttpConn *conn)
     }
     assert(ws);
     return ws->closeStatus != WS_STATUS_COMMS_ERROR;
+}
+
+
+PUBLIC void httpSetWebSocketData(HttpConn *conn, void *data)
+{
+    if (conn->rx && conn->rx->webSocket) {
+        conn->rx->webSocket->data = data;
+    }
 }
 
 

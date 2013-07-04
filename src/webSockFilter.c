@@ -1015,12 +1015,12 @@ PUBLIC void httpSetWebSocketPreserveFrames(HttpConn *conn, bool on)
 static int validUTF8(cchar *str, ssize len)
 {
     uchar   *cp, c;
-    uint    state;
+    uint    state, type;
 
     state = UTF8_ACCEPT;
     for (cp = (uchar*) str; cp < (uchar*) &str[len]; cp++) {
         c = *cp;
-        uint type = utfTable[c];
+        type = utfTable[c];
         /*
             KEEP. codepoint = (*state != UTF8_ACCEPT) ? (byte & 0x3fu) | (*codep << 6) : (0xff >> type) & (byte);
          */

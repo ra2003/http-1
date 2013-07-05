@@ -193,6 +193,8 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
         }
         rx->webSocket = ws;
         ws->state = WS_STATE_OPEN;
+        ws->preserveFrames = (rx->route->flags & HTTP_ROUTE_PRESERVE_FRAMES) ? 1 : 0;
+
         /* Just select the first protocol */
         if (route->webSocketsProtocol) {
             for (kind = stok(sclone(protocols), " \t,", &tok); kind; kind = stok(NULL, " \t,", &tok)) {

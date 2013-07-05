@@ -1260,6 +1260,12 @@ PUBLIC void httpSetRouteHost(HttpRoute *route, HttpHost *host)
 }
 
 
+PUBLIC void httpSetRouteIgnoreEncodingErrors(HttpRoute *route, bool on)
+{
+    route->ignoreEncodingErrors = on;
+}
+
+
 PUBLIC void httpAddRouteIndex(HttpRoute *route, cchar *index)
 {
     cchar   *item;
@@ -1359,6 +1365,15 @@ PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
     }
     if (route->pattern) {
         finalizePattern(route);
+    }
+}
+
+
+PUBLIC void httpSetRoutePreserveFrames(HttpRoute *route, bool on)
+{
+    route->flags &= ~HTTP_ROUTE_PRESERVE_FRAMES;
+    if (on) {
+        route->flags |= HTTP_ROUTE_PRESERVE_FRAMES;
     }
 }
 
@@ -2777,7 +2792,7 @@ static void definePathVars(HttpRoute *route)
     mprAddKey(route->vars, "PRODUCT", sclone(BIT_PRODUCT));
     mprAddKey(route->vars, "OS", sclone(BIT_OS));
     mprAddKey(route->vars, "VERSION", sclone(BIT_VERSION));
-
+    mprAddKey(route->vars, "PLATFORM", sclone(BIT_PLATFORM));
     mprAddKey(route->vars, "BIN_DIR", mprGetAppDir());
     //  DEPRECATED
     mprAddKey(route->vars, "LIBDIR", mprGetAppDir());

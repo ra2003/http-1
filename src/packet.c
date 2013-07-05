@@ -173,6 +173,25 @@ PUBLIC HttpPacket *httpGetPacket(HttpQueue *q)
 }
 
 
+PUBLIC char *httpGetPacketStart(HttpPacket *packet)
+{
+    if (!packet && !packet->content) {
+        return 0;
+    }
+    return mprGetBufStart(packet->content);
+}
+
+
+PUBLIC char *httpGetPacketString(HttpPacket *packet)
+{
+    if (!packet && !packet->content) {
+        return 0;
+    }
+    mprAddNullToBuf(packet->content);
+    return mprGetBufStart(packet->content);
+}
+
+
 /*  
     Test if the packet is too too large to be accepted by the downstream queue.
  */

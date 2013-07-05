@@ -837,7 +837,6 @@ PUBLIC ssize httpSendClose(HttpConn *conn, int status, cchar *reason)
  */
 static void outgoingWebSockService(HttpQueue *q)
 {
-    HttpWebSocket   *ws;
     HttpConn        *conn;
     HttpPacket      *packet, *tail;
     char            *ep, *fp, *prefix, dataMask[4];
@@ -845,7 +844,6 @@ static void outgoingWebSockService(HttpQueue *q)
     int             i, mask;
 
     conn = q->conn;
-    ws = conn->rx->webSocket;
     mprTrace(5, "webSocketFilter: outgoing service");
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {

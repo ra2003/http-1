@@ -171,15 +171,21 @@ struct  MprXml;
 #define MPR_TEST_SHORT_TIMEOUT  200         /* 1/5 sec */
 #define MPR_TEST_NAP            50          /* Short timeout to prevent busy waiting */
 
-/*
+/**
     Events
  */
 #define MPR_EVENT_TIME_SLICE    20          /* 20 msec */
 
-/*
-    Maximum number of files
+/**
+    Maximum number of files to close when forking
  */
 #define MPR_MAX_FILE            256
+
+/**
+    Maximum number of kernel events
+ */
+#define MPR_MAX_KEVENTS         32
+
 
 /*
     Event notification mechanism
@@ -6360,14 +6366,7 @@ typedef struct MprWaitService {
     int             breakPipe[2];           /* Pipe to wakeup select */
 #elif MPR_EVENT_KQUEUE
     int             kq;                     /* Kqueue() return descriptor */
-    struct kevent   *interest;              /* Events of interest */
-    int             interestMax;            /* Size of the interest array */
-    int             interestCount;          /* Last used entry in the interest array */
-    struct kevent   *events;                /* Events triggered */
-    int             eventsMax;              /* Max size of events/interest */
-    struct MprWaitHandler **handlerMap;     /* Map of fds to handlers */
-    int             handlerMax;             /* Size of the handlers array */
-    int             breakPipe[2];           /* Pipe to wakeup select */
+    MprList         *handlerMap;            /* Map of fds to handlers */
 #elif MPR_EVENT_POLL
     struct MprWaitHandler **handlerMap;     /* Map of fds to handlers (indexed by fd) */
     int             handlerMax;             /* Size of the handlers array */

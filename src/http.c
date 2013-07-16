@@ -146,6 +146,7 @@ MAIN(httpMain, int argc, char **argv, char **envp)
     if (!app->success && app->verbose) {
         mprError("Request failed");
     }
+    mprDestroy(MPR_EXIT_DEFAULT);
     return (app->success) ? 0 : 255;
 }
 

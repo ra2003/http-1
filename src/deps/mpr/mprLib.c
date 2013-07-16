@@ -2929,7 +2929,9 @@ PUBLIC void mprTerminate(int how, int status)
         (terminator)(how, status);
     }
     mprStopWorkers();
+#if UNUSED
     mprWakeGCService();
+#endif
     mprWakeDispatchers();
     mprWakeNotifier();
 }
@@ -12712,7 +12714,7 @@ PUBLIC void *mprQueryJsonValue(MprHash *obj, cchar *key, int type)
 /************************************************************************/
 
 /**
-    kevent.c - Wait for I/O by using kevent on BSD based Unix systems.
+    kevent.c - Wait for I/O by using kevent on MacOSX Unix systems.
 
     This module augments the mprWait wait services module by providing kqueue() based waiting support.
     Also see mprAsyncSelectWait and mprSelectWait. This module is thread-safe.
@@ -12725,39 +12727,22 @@ PUBLIC void *mprQueryJsonValue(MprHash *obj, cchar *key, int type)
 
 
 #if MPR_EVENT_KQUEUE
+
 /********************************** Forwards **********************************/
 
-static int growEvents(MprWaitService *ws);
-static void serviceIO(MprWaitService *ws, int count);
+static void serviceIO(MprWaitService *ws, struct kevent *events, int count);
 
 /************************************ Code ************************************/
 
 PUBLIC int mprCreateNotifierService(MprWaitService *ws)
 {
-    ws->interestMax = MPR_FD_MIN;
-    ws->eventsMax = MPR_FD_MIN;
-    ws->handlerMax = MPR_FD_MIN;
-    ws->interest = mprAllocZeroed(sizeof(struct kevent) * ws->interestMax);
-    ws->events = mprAllocZeroed(sizeof(struct kevent) * ws->eventsMax);
-    ws->handlerMap = mprAllocZeroed(sizeof(MprWaitHandler*) * ws->handlerMax);
-    if (ws->interest == 0 || ws->events == 0 || ws->handlerMap == 0) {
+    if ((ws->handlerMap = mprCreateList(MPR_FD_MIN, MPR_LIST_STATIC_VALUES)) == 0) {
         return MPR_ERR_CANT_INITIALIZE;
     }
     if ((ws->kq = kqueue()) < 0) {
         mprError("Call to kqueue() failed");
         return MPR_ERR_CANT_INITIALIZE;
     }
-    /*
-        Initialize the "wakeup" pipe. This is used to wakeup the service thread if other threads need to wait for I/O.
-     */
-    if (pipe(ws->breakPipe) < 0) {
-        mprError("Cannot open breakout pipe");
-        return MPR_ERR_CANT_INITIALIZE;
-    }
-    fcntl(ws->breakPipe[0], F_SETFL, fcntl(ws->breakPipe[0], F_GETFL) | O_NONBLOCK);
-    fcntl(ws->breakPipe[1], F_SETFL, fcntl(ws->breakPipe[1], F_GETFL) | O_NONBLOCK);
-    EV_SET(&ws->interest[ws->interestCount], ws->breakPipe[MPR_READ_PIPE], EVFILT_READ, EV_ADD, 0, 0, 0);
-    ws->interestCount++;
     return 0;
 }
 
@@ -12765,56 +12750,30 @@ PUBLIC int mprCreateNotifierService(MprWaitService *ws)
 PUBLIC void mprManageKqueue(MprWaitService *ws, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
-        mprMark(ws->events);
-        mprMark(ws->interest);
+        mprMark(ws->handlerMap);
 
     } else if (flags & MPR_MANAGE_FREE) {
-        if (ws->kq) {
+        if (ws->kq >= 0) {
             close(ws->kq);
-        }
-        if (ws->breakPipe[0] >= 0) {
-            close(ws->breakPipe[0]);
-        }
-        if (ws->breakPipe[1] >= 0) {
-            close(ws->breakPipe[1]);
+            ws->kq = 0;
         }
     }
-}
-
-
-/*
-    Called locked
- */
-static int growEvents(MprWaitService *ws)
-{
-    ws->interestMax *= 2;
-    ws->eventsMax = ws->interestMax;
-    ws->interest = mprRealloc(ws->interest, sizeof(struct kevent) * ws->interestMax);
-    ws->events = mprRealloc(ws->events, sizeof(struct kevent) * ws->eventsMax);
-    if (ws->interest == 0 || ws->events == 0) {
-        assert(!MPR_ERR_MEMORY);
-        return MPR_ERR_MEMORY;
-    }
-    return 0;
 }
 
 
 PUBLIC int mprNotifyOn(MprWaitService *ws, MprWaitHandler *wp, int mask)
 {
-    struct kevent   *kp, *start;
+    struct kevent   interest[4], *kp;
     int             fd;
 
     assert(wp);
     fd = wp->fd;
+    kp = &interest[0];
 
     lock(ws);
     mprTrace(7, "mprNotifyOn: fd %d, mask %x, old mask %x", wp->fd, mask, wp->desiredMask);
     if (wp->desiredMask != mask) {
         assert(fd >= 0);
-        while ((ws->interestCount + 4) >= ws->interestMax) {
-            growEvents(ws);
-        }
-        start = kp = &ws->interest[ws->interestCount];
         if (wp->desiredMask & MPR_READABLE && !(mask & MPR_READABLE)) {
             EV_SET(kp, fd, EVFILT_READ, EV_DELETE, 0, 0, 0);
             kp++;
@@ -12831,23 +12790,16 @@ PUBLIC int mprNotifyOn(MprWaitService *ws, MprWaitHandler *wp, int mask)
             EV_SET(kp, fd, EVFILT_WRITE, EV_ADD, 0, 0, 0);
             kp++;
         }
-        ws->interestCount += (int) (kp - start);
-        if (fd >= ws->handlerMax) {
-            ws->handlerMax = fd + 32;
-            if ((ws->handlerMap = mprRealloc(ws->handlerMap, sizeof(MprWaitHandler*) * ws->handlerMax)) == 0) {
-                assert(!MPR_ERR_MEMORY);
-                unlock(ws);
-                return MPR_ERR_MEMORY;
-            }
-        }
-        assert(ws->handlerMap[fd] == 0 || ws->handlerMap[fd] == wp);
         wp->desiredMask = mask;
         if (wp->event) {
             mprRemoveEvent(wp->event);
             wp->event = 0;
         }
+        if (kevent(ws->kq, interest, (int) (kp - interest), NULL, 0, NULL) < 0) {
+            mprError("Cannot issue notifier wakeup event");
+        }
     }
-    ws->handlerMap[fd] = (mask) ? wp : 0;
+    mprSetItem(ws->handlerMap, fd, wp);
     unlock(ws);
     return 0;
 }
@@ -12902,8 +12854,8 @@ PUBLIC int mprWaitForSingleIO(int fd, int mask, MprTicks timeout)
 PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
 {
     struct timespec ts;
-    struct kevent   *interest;
-    int             rc, count;
+    struct kevent   events[MPR_MAX_KEVENTS];
+    int             rc;
 
     assert(timeout > 0);
 
@@ -12922,18 +12874,10 @@ PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
     ts.tv_sec = ((int) (timeout / 1000));
     ts.tv_nsec = ((int) ((timeout % 1000) * 1000 * 1000));
 
-    lock(ws);
-    count = ws->interestCount;
-    interest = alloca(sizeof(struct kevent) * count);
-    memcpy(interest, ws->interest, sizeof(struct kevent) * count);
-    /* Preserve the wakeup pipe fd */
-    ws->interestCount = 1;
-    unlock(ws);
-
     mprTrace(8, "kevent sleep for %d", timeout);
     mprYield(MPR_YIELD_STICKY | MPR_YIELD_NO_BLOCK);
 
-    rc = kevent(ws->kq, interest, count, ws->events, ws->eventsMax, &ts);
+    rc = kevent(ws->kq, NULL, 0, events, MPR_MAX_KEVENTS, &ts);
 
     mprClearWaiting();
     mprResetYield();
@@ -12942,52 +12886,50 @@ PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
     if (rc < 0) {
         mprTrace(7, "Kevent returned %d, errno %d", rc, mprGetOsError());
     } else if (rc > 0) {
-        serviceIO(ws, rc);
+        serviceIO(ws, events, rc);
     }
     ws->wakeRequested = 0;
 }
 
 
-static void serviceIO(MprWaitService *ws, int count)
+static void serviceIO(MprWaitService *ws, struct kevent *events, int count)
 {
     MprWaitHandler      *wp;
     struct kevent       *kev;
-    char                buf[128];
-    int                 fd, i, mask, err;
+    int                 fd, i, mask, prior, err;
 
     lock(ws);
     for (i = 0; i < count; i++) {
-        kev = &ws->events[i];
+        kev = &events[i];
         fd = (int) kev->ident;
-        assert(fd < ws->handlerMax);
-        if ((wp = ws->handlerMap[fd]) == 0) {
-            if (kev->filter == EVFILT_READ && fd == ws->breakPipe[MPR_READ_PIPE]) {
-                (void) read(fd, buf, sizeof(buf));
-            }
+        if (kev->filter == EVFILT_USER) {
             continue;
         }
-        if (kev->flags & EV_ERROR) {
-            err = (int) kev->data;
-            if (err == ENOENT) {
-                /* File descriptor was closed and re-opened */
-                mask = wp->desiredMask;
-                mprNotifyOn(ws, wp, 0);
-                wp->desiredMask = 0;
-                mprNotifyOn(ws, wp, mask);
-                mprTrace(7, "kqueue: file descriptor may have been closed and reopened, fd %d", wp->fd);
-
-//  EINVAL
-            } else if (err == EBADF) {
-                /* File descriptor was closed */
-                mask = wp->desiredMask;
-                mprNotifyOn(ws, wp, 0);
-                wp->desiredMask = 0;
-                mprNotifyOn(ws, wp, mask);
-                mprTrace(7, "kqueue: invalid file descriptor %d, fd %d", wp->fd);
-            }
+        if (fd < 0 || (wp = mprGetItem(ws->handlerMap, fd)) == 0) {
+            mprTrace(0, "WARNING: fd not in handler map. fd %d", fd);
             continue;
         }
         mask = 0;
+        if (kev->flags & EV_ERROR) {
+            err = (int) kev->data;
+            if (err == ENOENT) {
+                /* 
+                    File descriptor was closed and re-opened. Re-enable event.
+                 */
+                prior = wp->desiredMask;
+                mprNotifyOn(ws, wp, 0);
+                wp->desiredMask = 0;
+                mprNotifyOn(ws, wp, prior);
+                mprTrace(0, "WARNING: kqueue: file descriptor may have been closed and reopened, fd %d", wp->fd);
+                continue;
+
+            } else if (err == EBADF || err == EINVAL) {
+                /* File descriptor was closed */
+                mprNotifyOn(ws, wp, 0);
+                mprTrace(0, "WARNING: kqueue: invalid file descriptor %d, fd %d", wp->fd);
+                mask |= MPR_READABLE;
+            }
+        }
         if (kev->filter == EVFILT_READ) {
             mask |= MPR_READABLE;
         }
@@ -13002,7 +12944,7 @@ static void serviceIO(MprWaitService *ws, int count)
                 (wp->proc)(wp->handlerData, NULL);
             } else {
                 /* 
-                    Suppress further events while this event is being serviced. User must re-enable 
+                    Suppress further events while this event is being serviced. User must re-enable.
                  */
                 mprNotifyOn(ws, wp, 0);
                 mprQueueIOEvent(wp);
@@ -13020,13 +12962,15 @@ static void serviceIO(MprWaitService *ws, int count)
 PUBLIC void mprWakeNotifier()
 {
     MprWaitService  *ws;
-    int             c;
+    struct kevent   ev;
 
     ws = MPR->waitService;
     if (!ws->wakeRequested) {
         ws->wakeRequested = 1;
-        c = 0;
-        (void) write(ws->breakPipe[MPR_WRITE_PIPE], (char*) &c, 1);
+        EV_SET(&ev, 0, EVFILT_USER, EV_ADD | EV_CLEAR, NOTE_TRIGGER, 0, 0);
+        if (kevent(ws->kq, &ev, 1, NULL, 0, NULL) < 0) {
+            mprError("Cannot issue notifier wakeup event");
+        }
     }
 }
 

@@ -71,7 +71,7 @@ static void openChunk(HttpQueue *q)
 }
 
 
-/*  
+/*
     Filter chunk headers and leave behind pure data. This is called for chunked and unchunked data.
     Chunked data format is:
         Chunk spec <CRLF>
@@ -119,7 +119,7 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
         /* Fall through */
 
     case HTTP_CHUNK_START:
-        /*  
+        /*
             Validate:  "\r\nSIZE.*\r\n"
          */
         if (mprGetBufLength(buf) < 5) {
@@ -237,7 +237,7 @@ static void setChunkPrefix(HttpQueue *q, HttpPacket *packet)
         return;
     }
     packet->prefix = mprCreateBuf(32, 32);
-    /*  
+    /*
         NOTE: prefixes don't count in the queue length. No need to adjust q->count
      */
     if (httpGetPacketLength(packet)) {

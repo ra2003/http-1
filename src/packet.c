@@ -13,7 +13,7 @@
 static void managePacket(HttpPacket *packet, int flags);
 
 /************************************ Code ************************************/
-/*  
+/*
     Create a new packet. If size is -1, then also create a default growable buffer -- 
     used for incoming body content. If size > 0, then create a non-growable buffer 
     of the requested size.
@@ -192,19 +192,19 @@ PUBLIC char *httpGetPacketString(HttpPacket *packet)
 }
 
 
-/*  
+/*
     Test if the packet is too too large to be accepted by the downstream queue.
  */
 PUBLIC bool httpIsPacketTooBig(HttpQueue *q, HttpPacket *packet)
 {
     ssize   size;
-    
+
     size = mprGetBufLength(packet->content);
     return size > q->max || size > q->packetSize;
 }
 
 
-/*  
+/*
     Join a packet onto the service queue. This joins packet content data.
  */
 PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
@@ -231,7 +231,7 @@ PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serv
 }
 
 
-/*  
+/*
     Join two packets by pulling the content from the second into the first.
     WARNING: this will not update the queue count. Assumes the either both are on the queue or neither. 
  */
@@ -318,7 +318,7 @@ PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
 }
 
 
-/*  
+/*
     Pass to the next stage in the pipeline
  */
 PUBLIC void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
@@ -340,7 +340,7 @@ PUBLIC void httpPutPackets(HttpQueue *q)
 }
 
 
-/*  
+/*
     Put the packet back at the front of the queue
  */
 PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
@@ -348,7 +348,7 @@ PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
     assert(packet);
     assert(packet->next == 0);
     assert(q->count >= 0);
-    
+
     if (packet) {
         packet->next = q->first;
         if (q->first == 0) {
@@ -360,16 +360,16 @@ PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
 }
 
 
-/*  
+/*
     Put a packet on the service queue.
  */
 PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
     assert(packet);
-   
+
     q->count += httpGetPacketLength(packet);
     packet->next = 0;
-    
+
     if (q->first) {
         q->last->next = packet;
         q->last = packet;
@@ -383,7 +383,7 @@ PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 }
 
 
-/*  
+/*
     Resize and possibly split a packet so it fits in the downstream queue. Put back the 2nd portion of the split packet 
     on the queue. Ensure that the packet is not larger than "size" if it is greater than zero. If size < 0, then
     use the default packet size. Return the tail packet.
@@ -392,7 +392,7 @@ PUBLIC HttpPacket *httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size
 {
     HttpPacket  *tail;
     ssize       len;
-    
+
     if (size <= 0) {
         size = MAXINT;
     }
@@ -401,7 +401,7 @@ PUBLIC HttpPacket *httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size
             return 0;
         }
     } else {
-        /*  
+        /*
             Calculate the size that will fit downstream
          */
         len = packet->content ? httpGetPacketLength(packet) : 0;
@@ -445,20 +445,6 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
         if (offset >= httpGetPacketLength(orig)) {
             return 0;
         }
-        /*
-            OPT - A large packet will often be resized by splitting into chunks that the
-            downstream queues will accept. This causes many allocations that are a small delta less than the large
-            packet 
-            Better:
-                - If offset is < size/2
-                    - Allocate packet size == offset
-                    - Set orig->content =   
-                    - packet->content = orig->content
-                        httpAdjustPacketStart(packet, offset) 
-                    - orig->content = Packet(size == offset)
-                        copy from packet
-                Adjust the content->start
-         */
         if (offset < (httpGetPacketLength(orig) / 2)) {
             /*
                 A large packet will often be resized by splitting into chunks that the downstream queues will accept. 

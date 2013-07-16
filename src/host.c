@@ -59,7 +59,7 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
     }
     host->mutex = mprCreateLock();
 
-    /*  
+    /*
         The dirs and routes are all copy-on-write.
         Don't clone ip, port and name
      */
@@ -257,7 +257,7 @@ PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)
     int         i, thisRoute;
 
     assert(route);
-    
+
     if (host->parent && host->routes == host->parent->routes) {
         host->routes = mprCloneList(host->parent->routes);
     }

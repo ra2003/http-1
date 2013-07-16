@@ -115,7 +115,7 @@ PUBLIC void httpDestroyRx(HttpRx *rx)
 }
 
 
-/*  
+/*
     Pump the Http engine.
     Process an incoming request and drive the state machine. This will process only one request.
     All socket I/O is non-blocking, and this routine must not block. Note: packet may be null.
@@ -180,7 +180,7 @@ PUBLIC bool httpPumpRequest(HttpConn *conn, HttpPacket *packet)
 }
 
 
-/*  
+/*
     Parse the incoming http message. Return true to keep going with this or subsequent request, zero means
     insufficient data to proceed.
  */
@@ -391,7 +391,7 @@ static void parseMethod(HttpConn *conn)
 }
 
 
-/*  
+/*
     Parse the first line of a http request. Return true if the first line parsed. This is only called once all the headers
     have been read and buffered. Requests look like: METHOD URL HTTP/1.X.
  */
@@ -456,7 +456,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 }
 
 
-/*  
+/*
     Parse the first line of a http response. Return true if the first line parsed. This is only called once all the headers
     have been read and buffered. Response status lines look like: HTTP/1.X CODE Message
  */
@@ -512,7 +512,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
 }
 
 
-/*  
+/*
     Parse the request headers. Return true if the header parsed.
  */
 static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
@@ -742,7 +742,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 keepAlive = 1;
                 if ((tok = scontains(value, "max=")) != 0) {
                     conn->keepAliveCount = atoi(&tok[4]);
-                    /*  
+                    /*
                         IMPORTANT: Deliberately close the connection one request early. This ensures a client-led 
                         termination and helps relieve server-side TIME_WAIT conditions.
                      */
@@ -751,8 +751,8 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     }
                 }
             }
-            break;                
-                
+            break;
+
         case 'l':
             if (strcasecmp(key, "location") == 0) {
                 rx->redirect = sclone(value);
@@ -788,7 +788,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         case 't':
             if (strcasecmp(key, "transfer-encoding") == 0) {
                 if (scaselesscmp(value, "chunked") == 0) {
-                    /*  
+                    /*
                         remainingContent will be revised by the chunk filter as chunks are processed and will 
                         be set to zero when the last chunk has been received.
                      */
@@ -845,7 +845,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
     }
     if (conn->error) {
         /* Cannot continue with keep-alive as the headers have not been correctly parsed */
-        conn->keepAliveCount = -1;                                                                                   
+        conn->keepAliveCount = -1;
         conn->connError = 1;
     }
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
@@ -856,7 +856,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         conn->keepAliveCount = 0;
     }
     if (!(rx->flags & HTTP_CHUNKED)) {
-        /*  
+        /*
             Step over "\r\n" after headers. 
             Don't do this if chunked so chunking can parse a single chunk delimiter of "\r\nSIZE ...\r\n"
          */
@@ -884,7 +884,7 @@ static bool processParsed(HttpConn *conn)
         httpAddQueryParams(conn);
         rx->streaming = httpGetStreaming(conn->host, rx->mimeType, rx->uri);
         if (rx->streaming) {
-            httpRouteRequest(conn);  
+            httpRouteRequest(conn);
             httpCreatePipeline(conn);
             /*
                 Delay starting uploads until the files are extracted.
@@ -1150,7 +1150,7 @@ static void measure(HttpConn *conn)
         return;
     }
     uri = (conn->endpoint) ? conn->rx->uri : tx->parsedUri->path;
-   
+
     if ((level = httpShouldTrace(conn, HTTP_TRACE_TX, HTTP_TRACE_TIME, tx->ext)) >= 0) {
         elapsed = mprGetTicks() - conn->started;
 #if MPR_HIGH_RES_TIMER
@@ -1299,7 +1299,7 @@ PUBLIC bool httpContentNotModified(HttpConn *conn)
     tx = conn->tx;
 
     if (rx->flags & HTTP_IF_MODIFIED) {
-        /*  
+        /*
             If both checks, the last modification time and etag, claim that the request doesn't need to be
             performed, skip the transfer.
          */
@@ -1556,7 +1556,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
 }
 
 
-/*  
+/*
     Set the connector as write blocked and can't proceed.
  */
 PUBLIC void httpSocketBlocked(HttpConn *conn)
@@ -1611,7 +1611,7 @@ static char *getToken(HttpConn *conn, cchar *delim)
 }
 
 
-/*  
+/*
     Match the entity's etag with the client's provided etag.
  */
 PUBLIC bool httpMatchEtag(HttpConn *conn, char *requestedEtag)
@@ -1636,7 +1636,7 @@ PUBLIC bool httpMatchEtag(HttpConn *conn, char *requestedEtag)
 }
 
 
-/*  
+/*
     If an IF-MODIFIED-SINCE was specified, then return true if the resource has not been modified. If using
     IF-UNMODIFIED, then return true if the resource was modified.
  */
@@ -1660,7 +1660,7 @@ PUBLIC bool httpMatchModified(HttpConn *conn, MprTime time)
 }
 
 
-/*  
+/*
     Format is:  Range: bytes=n1-n2,n3-n4,...
     Where n1 is first byte pos and n2 is last byte pos
 
@@ -1683,7 +1683,7 @@ static bool parseRange(HttpConn *conn, char *value)
     if (value == 0) {
         return 0;
     }
-    /*  
+    /*
         Step over the "bytes="
      */
     stok(value, "=", &value);
@@ -1692,7 +1692,7 @@ static bool parseRange(HttpConn *conn, char *value)
         if ((range = mprAllocObj(HttpRange, manageRange)) == 0) {
             return 0;
         }
-        /*  
+        /*
             A range "-7" will set the start to -1 and end to 8
          */
         tok = stok(value, ",", &value);
@@ -1722,7 +1722,7 @@ static bool parseRange(HttpConn *conn, char *value)
         last = range;
     }
 
-    /*  
+    /*
         Validate ranges
      */
     for (range = tx->outputRanges; range; range = range->next) {

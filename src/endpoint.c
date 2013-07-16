@@ -70,7 +70,7 @@ static int manageEndpoint(HttpEndpoint *endpoint, int flags)
 }
 
 
-/*  
+/*
     Convenience function to create and configure a new endpoint without using a config file.
  */
 PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents, cchar *ip, int port)
@@ -83,7 +83,7 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents,
     http = MPR->httpService;
 
     if (ip == 0 && port <= 0) {
-        /*  
+        /*
             If no IP:PORT specified, find the first endpoint
          */
         if ((endpoint = mprGetFirstItem(http->endpoints)) != 0) {

@@ -15,7 +15,7 @@ static void manageUri(HttpUri *uri, int flags);
 static void trimPathToDirname(HttpUri *uri);
 
 /************************************ Code ************************************/
-/*  
+/*
     Create and initialize a URI. This accepts full URIs with schemes (http:) and partial URLs
     Support IPv4 and [IPv6]. Supported forms:
 
@@ -196,7 +196,7 @@ static void manageUri(HttpUri *uri, int flags)
 }
 
 
-/*  
+/*
     Create and initialize a URI. This accepts full URIs with schemes (http:) and partial URLs
  */
 PUBLIC HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, 
@@ -360,7 +360,7 @@ PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
 }
 
 
-/*  
+/*
     Format a string URI from parts
  */
 PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, int flags)
@@ -484,7 +484,7 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
     if (*startDiff == '/') {
         startDiff++;
     }
-    
+
     if ((uri = httpCloneUri(target, 0)) == 0) {
         return 0;
     }

@@ -65,7 +65,7 @@ PUBLIC int httpOpenUploadFilter(Http *http)
 }
 
 
-/*  
+/*
     Match if this request needs the upload filter. Return true if needed.
  */
 static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
@@ -73,7 +73,7 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
     HttpRx  *rx;
     char    *pat;
     ssize   len;
-    
+
     if (!(dir & HTTP_STAGE_RX)) {
         return HTTP_ROUTE_REJECT;
     }
@@ -92,7 +92,7 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
 }
 
 
-/*  
+/*
     Initialize the upload filter for a new request
  */
 static void openUpload(HttpQueue *q)
@@ -149,7 +149,7 @@ static void manageUpload(Upload *up, int flags)
 }
 
 
-/*  
+/*
     Cleanup when the entire request has complete
  */
 static void closeUpload(HttpQueue *q)
@@ -160,7 +160,7 @@ static void closeUpload(HttpQueue *q)
 
     rx = q->conn->rx;
     up = q->queueData;
-    
+
     if (up->currentFile) {
         file = up->currentFile;
         file->filename = 0;
@@ -171,7 +171,7 @@ static void closeUpload(HttpQueue *q)
 }
 
 
-/*  
+/*
     Incoming data acceptance routine. The service queue is used, but not a service routine as the data is processed
     immediately. Partial data is buffered on the service queue until a correct mime boundary is seen.
  */
@@ -184,13 +184,13 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
     char        *line, *nextTok;
     ssize       count;
     int         done, rc;
-    
+
     assert(packet);
-    
+
     conn = q->conn;
     rx = conn->rx;
     up = q->queueData;
-    
+
     if (httpGetPacketLength(packet) == 0) {
         if (up->contentState != HTTP_UPLOAD_CONTENT_END) {
             httpError(conn, HTTP_CODE_BAD_REQUEST, "Client supplied insufficient upload data");
@@ -199,13 +199,13 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
         return;
     }
     mprTrace(7, "uploadIncomingData: %d bytes", httpGetPacketLength(packet));
-    
-    /*  
+
+    /*
         Put the packet data onto the service queue for buffering. This aggregates input data incase we don't have
         a complete mime record yet.
      */
     httpJoinPacketForService(q, packet, 0);
-    
+
     packet = q->first;
     content = packet->content;
     count = httpGetPacketLength(packet);
@@ -265,7 +265,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
         assert(q->count >= 0);
 
     } else {
-        /*  
+        /*
             Compact the buffer to prevent memory growth. There is often residual data after the boundary for the next block.
          */
         if (packet != rx->headerPacket) {
@@ -275,7 +275,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
 }
 
 
-/*  
+/*
     Process the mime boundary division
     Returns  < 0 on a request or state error
             == 0 if successful
@@ -304,7 +304,7 @@ static int processUploadBoundary(HttpQueue *q, char *line)
 }
 
 
-/*  
+/*
     Expecting content headers. A blank line indicates the start of the data.
     Returns  < 0  Request or state error
     Returns == 0  Successfully parsed the input line.
@@ -320,7 +320,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
     conn = q->conn;
     rx = conn->rx;
     up = q->queueData;
-    
+
     if (line[0] == '\0') {
         up->contentState = HTTP_UPLOAD_CONTENT_DATA;
         return 0;
@@ -331,15 +331,15 @@ static int processUploadHeader(HttpQueue *q, char *line)
     stok(line, ": ", &rest);
 
     if (scaselesscmp(headerTok, "Content-Disposition") == 0) {
-        /*  
+        /*
             The content disposition header describes either a form
             variable or an uploaded file.
-        
+
             Content-Disposition: form-data; name="field1"
             >>blank line
             Field Data
             ---boundary
-     
+ 
             Content-Disposition: form-data; name="field1" ->
                 filename="user.file"
             >>blank line
@@ -366,7 +366,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
                     return MPR_ERR_BAD_STATE;
                 }
                 up->clientFilename = sclone(value);
-                /*  
+                /*
                     Create the file to hold the uploaded data
                  */
                 up->tmpPath = mprGetTempPath(rx->uploadDir);
@@ -382,7 +382,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
                     httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot open upload temp file %s", up->tmpPath);
                     return MPR_ERR_BAD_STATE;
                 }
-                /*  
+                /*
                     Create the files[id]
                  */
                 file = up->currentFile = mprAllocObj(HttpUploadFile, manageHttpUploadFile);
@@ -420,7 +420,7 @@ static void defineFileFields(HttpQueue *q, Upload *up)
 
     conn = q->conn;
     if (conn->tx->handler == conn->http->ejsHandler) {
-        /*  
+        /*
             Ejscript manages this for itself
          */
         return;
@@ -459,7 +459,7 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
         return MPR_ERR_CANT_WRITE;
     }
     if (len > 0) {
-        /*  
+        /*
             File upload. Write the file data.
          */
         rc = mprWriteFile(up->file, data, len);
@@ -475,7 +475,7 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
 }
 
 
-/*  
+/*
     Process the content data.
     Returns < 0 on error
             == 0 when more data is needed
@@ -507,7 +507,7 @@ static int processUploadData(HttpQueue *q)
     if (bp == 0) {
         mprTrace(7, "uploadFilter: Got boundary filename %x", up->clientFilename);
         if (up->clientFilename) {
-            /*  
+            /*
                 No signature found yet. probably more data to come. Must handle split boundaries.
              */
             data = mprGetBufStart(content);
@@ -526,14 +526,14 @@ static int processUploadData(HttpQueue *q)
 
     if (dataLen > 0) {
         mprAdjustBufStart(content, dataLen);
-        /*  
+        /*
             This is the CRLF before the boundary
          */
         if (dataLen >= 2 && data[dataLen - 2] == '\r' && data[dataLen - 1] == '\n') {
             dataLen -= 2;
         }
         if (up->clientFilename) {
-            /*  
+            /*
                 Write the last bit of file data and add to the list of files and define environment variables
              */
             if (writeToFile(q, data, dataLen) < 0) {
@@ -543,7 +543,7 @@ static int processUploadData(HttpQueue *q)
             defineFileFields(q, up);
 
         } else {
-            /*  
+            /*
                 Normal string form data variables
              */
             data[dataLen] = '\0'; 
@@ -568,7 +568,7 @@ static int processUploadData(HttpQueue *q)
         }
     }
     if (up->clientFilename) {
-        /*  
+        /*
             Now have all the data (we've seen the boundary)
          */
         mprCloseFile(up->file);
@@ -583,7 +583,7 @@ static int processUploadData(HttpQueue *q)
 }
 
 
-/*  
+/*
     Find the boundary signature in memory. Returns pointer to the first match.
  */ 
 static char *getBoundary(void *buf, ssize bufLen, void *boundary, ssize boundaryLen, bool *pureData)

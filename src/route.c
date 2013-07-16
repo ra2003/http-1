@@ -99,13 +99,13 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
 
     if ((route->mimeTypes = mprCreateMimeTypes("mime.types")) == 0) {
         route->mimeTypes = MPR->mimeTypes;
-    }  
+    }
     definePathVars(route);
     return route;
 }
 
 
-/*  
+/*
     Create a new location block. Inherit from the parent. We use a copy-on-write scheme if these are modified later.
  */
 PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
@@ -785,7 +785,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     int         pos;
 
     assert(route);
-    
+
     stage = httpLookupStage(route->http, name);
     if (stage == 0) {
         mprError("Cannot find filter %s", name); 
@@ -1025,7 +1025,7 @@ PUBLIC int httpAddRouteUpdate(HttpRoute *route, cchar *rule, cchar *details, int
             return MPR_ERR_BAD_SYNTAX;
         }
         op->value = finalizeReplacement(route, value);
-    
+
     } else {
         return MPR_ERR_BAD_SYNTAX;
     }
@@ -1153,7 +1153,7 @@ PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
     HttpStage     *stage;
 
     assert(route);
-    
+
     stage = httpLookupStage(route->http, name);
     if (stage == 0) {
         mprError("Cannot find connector %s", name); 
@@ -1192,7 +1192,7 @@ PUBLIC void httpSetRouteDocuments(HttpRoute *route, cchar *path)
 {
     assert(route);
     assert(path && *path);
-    
+
     route->dir = httpMakePath(route, route->home, path);
     httpSetRouteVar(route, "DOCUMENTS_DIR", route->dir);
 #if DEPRECATE || 1
@@ -1224,7 +1224,7 @@ PUBLIC int httpSetRouteHandler(HttpRoute *route, cchar *name)
 
     assert(route);
     assert(name && *name);
-    
+
     if ((handler = httpLookupStage(route->http, name)) == 0) {
         mprError("Cannot find handler %s", name); 
         return MPR_ERR_CANT_FIND;
@@ -1238,7 +1238,7 @@ PUBLIC void httpSetRouteHome(HttpRoute *route, cchar *path)
 {
     assert(route);
     assert(path && *path);
-    
+
     route->home = httpMakePath(route, ".", path);
 
     httpSetRouteVar(route, "HOME_DIR", route->home);
@@ -1254,7 +1254,7 @@ PUBLIC void httpSetRouteHost(HttpRoute *route, HttpHost *host)
 {
     assert(route);
     assert(host);
-    
+
     route->host = host;
     defineHostVars(route);
 }
@@ -1273,7 +1273,7 @@ PUBLIC void httpAddRouteIndex(HttpRoute *route, cchar *index)
 
     assert(route);
     assert(index && *index);
-    
+
     GRADUATE_LIST(route, indicies);
     for (ITERATE_ITEMS(route->indicies, item, next)) {
         if (smatch(index, item)) {
@@ -1327,7 +1327,7 @@ PUBLIC void httpSetRouteName(HttpRoute *route, cchar *name)
 {
     assert(route);
     assert(name && *name);
-    
+
     route->name = sclone(name);
 }
 
@@ -1336,7 +1336,7 @@ PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags)
 {
     assert(route);
     assert(pattern);
-    
+
     route->flags |= (flags & HTTP_ROUTE_NOT);
     route->pattern = sclone(pattern);
     finalizePattern(route);
@@ -1350,7 +1350,7 @@ PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
 {
     assert(route);
     assert(!smatch(prefix, "/"));
-    
+
     if (prefix && *prefix) {
         if (smatch(prefix, "/")) {
             route->prefix = 0;
@@ -1400,7 +1400,7 @@ PUBLIC void httpSetRouteSource(HttpRoute *route, cchar *source)
 PUBLIC void httpSetRouteScript(HttpRoute *route, cchar *script, cchar *scriptPath)
 {
     assert(route);
-    
+
     if (script) {
         assert(*script);
         route->script = sclone(script);
@@ -1477,7 +1477,7 @@ PUBLIC void httpSetRouteTemplate(HttpRoute *route, cchar *tplate)
 {
     assert(route);
     assert(tplate && *tplate);
-    
+
     route->tplate = sclone(tplate);
 }
 

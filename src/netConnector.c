@@ -21,7 +21,7 @@ static void netClose(HttpQueue *q);
 static void netOutgoingService(HttpQueue *q);
 
 /*********************************** Code *************************************/
-/*  
+/*
     Initialize the net connector
  */
 PUBLIC int httpOpenNetConnector(Http *http)
@@ -62,7 +62,7 @@ static void netOutgoingService(HttpQueue *q)
     tx = conn->tx;
     conn->lastActivity = conn->http->now;
     assert(conn->sock);
-    
+
     if (!conn->sock || tx->finalizedConnector) {
         return;
     }
@@ -98,7 +98,7 @@ static void netOutgoingService(HttpQueue *q)
         if (q->ioIndex == 0 && buildNetVec(q) <= 0) {
             break;
         }
-        /*  
+        /*
             Issue a single I/O request to write all the blocks in the I/O vector
          */
         assert(q->ioIndex > 0);

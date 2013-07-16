@@ -165,7 +165,7 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->routeUpdates);
         mprMark(http->sessionCache);
         /* Don't mark convenience stage references as they will be in http->stages */
-        
+
         mprMark(http->clientLimits);
         mprMark(http->serverLimits);
         mprMark(http->clientRoute);
@@ -229,7 +229,7 @@ PUBLIC void httpRemoveEndpoint(Http *http, HttpEndpoint *endpoint)
 }
 
 
-/*  
+/*
     Lookup a host address. If ipAddr is null or port is -1, then those elements are wild.
  */
 PUBLIC HttpEndpoint *httpLookupEndpoint(Http *http, cchar *ip, int port)
@@ -386,7 +386,7 @@ PUBLIC cchar *httpLookupStatus(Http *http, int status)
 {
     HttpStatusCode  *ep;
     char            *key;
-    
+
     key = itos(status);
     ep = (HttpStatusCode*) mprLookupKey(http->statusCodes, key);
     if (ep == 0) {
@@ -409,7 +409,7 @@ PUBLIC void httpSetListenCallback(Http *http, HttpListenCallback fn)
 }
 
 
-/*  
+/*
     The http timer does maintenance activities and will fire per second while there are active requests.
     This is run in both servers and clients.
     NOTE: Because we lock the http here, connections cannot be deleted while we are modifying the list.
@@ -423,7 +423,7 @@ static void httpTimer(Http *http, MprEvent *event)
     int         next, active, abort;
 
     assert(event);
-    
+
     updateCurrentDate(http);
 
     /* 

@@ -39,7 +39,7 @@ PUBLIC int httpOpenSendConnector(Http *http)
 }
 
 
-/*  
+/*
     Initialize the send connector for a request
  */
 PUBLIC void httpSendOpen(HttpQueue *q)
@@ -146,7 +146,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
 }
 
 
-/*  
+/*
     Build the IO vector. This connector uses the send file API which permits multiple IO blocks to be written with 
     file data. This is used to write transfer the headers and chunk encoding boundaries. Return the count of bytes to 
     be written. Return -1 for EOF.
@@ -159,7 +159,7 @@ static MprOff buildSendVec(HttpQueue *q)
     q->ioCount = 0;
     q->ioFile = 0;
 
-    /*  
+    /*
         Examine each packet and accumulate as many packets into the I/O vector as possible. Can only have one data packet at
         a time due to the limitations of the sendfile API (on Linux). And the data packet must be after all the 
         vector entries. Leave the packets on the queue for now, they are removed after the IO is complete for the 
@@ -186,7 +186,7 @@ static MprOff buildSendVec(HttpQueue *q)
 }
 
 
-/*  
+/*
     Add one entry to the io vector
  */
 static void addToSendVector(HttpQueue *q, char *ptr, ssize bytes)
@@ -201,7 +201,7 @@ static void addToSendVector(HttpQueue *q, char *ptr, ssize bytes)
 }
 
 
-/*  
+/*
     Add a packet to the io vector. Return the number of bytes added to the vector.
  */
 static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
@@ -212,7 +212,7 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
 
     conn = q->conn;
     tx = conn->tx;
-    
+
     assert(q->count >= 0);
     assert(q->ioIndex < (BIT_MAX_IOVEC - 2));
 
@@ -290,7 +290,7 @@ static void freeSendPackets(HttpQueue *q, MprOff bytes)
 }
 
 
-/*  
+/*
     Clear entries from the IO vector that have actually been transmitted. This supports partial writes due to the socket
     being full. Don't come here if we've seen all the packets and all the data has been completely written. ie. small files
     don't come here.

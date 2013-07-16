@@ -21,7 +21,7 @@ static void httpStartHandler(HttpConn *conn);
 PUBLIC void httpCreatePipeline(HttpConn *conn)
 {
     HttpRx      *rx;
-    
+
     rx = conn->rx;
     assert(conn->endpoint);
 
@@ -306,7 +306,7 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
 PUBLIC void httpReadyHandler(HttpConn *conn)
 {
     HttpQueue   *q;
-    
+
     q = conn->writeq;
     if (q->stage && q->stage->ready && !conn->tx->finalized && !(q->flags & HTTP_QUEUE_READY)) {
         q->flags |= HTTP_QUEUE_READY;
@@ -318,7 +318,7 @@ PUBLIC void httpReadyHandler(HttpConn *conn)
 static void httpStartHandler(HttpConn *conn)
 {
     HttpQueue   *q;
-    
+
     assert(!conn->tx->started);
 
     conn->tx->started = 1;
@@ -336,7 +336,7 @@ static void httpStartHandler(HttpConn *conn)
 PUBLIC bool httpGetMoreOutput(HttpConn *conn)
 {
     HttpQueue   *q;
-    
+
     q = conn->writeq;
     if (!q->stage || !q->stage->writable) {
        return 0;
@@ -352,7 +352,7 @@ PUBLIC bool httpGetMoreOutput(HttpConn *conn)
 }
 
 
-/*  
+/*
     Run the queue service routines until there is no more work to be done. NOTE: all I/O is non-blocking.
  */
 PUBLIC bool httpServiceQueues(HttpConn *conn)

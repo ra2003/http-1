@@ -16,14 +16,14 @@
 static void manageStage(HttpStage *stage, int flags);
 
 /*********************************** Code *************************************/
-/*  
+/*
     Put packets on the service queue.
  */
 static void outgoing(HttpQueue *q, HttpPacket *packet)
 {
     int     enableService;
 
-    /*  
+    /*
         Handlers service routines must only be auto-enabled if in the running state.
      */
     enableService = !(q->stage->flags & HTTP_STAGE_HANDLER) || (q->conn->state >= HTTP_STATE_READY) ? 1 : 0;
@@ -38,7 +38,7 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
 {
     assert(q);
     assert(packet);
-    
+
     if (q->nextQ->put) {
         httpPutPacketToNext(q, packet);
     } else {

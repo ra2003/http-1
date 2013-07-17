@@ -354,7 +354,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     conn->ip = sclone(sock->ip);
 
     if (httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1) > conn->limits->connectionsMax) {
-        mprError("Too many concurrent clients");
+        mprError("Too many concurrent connections");
         httpDestroyConn(conn);
         return 0;
     }
@@ -363,7 +363,6 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
         httpDestroyConn(conn);
         return 0;
     }
-
     address = conn->address;
     if (address && address->banUntil > http->now) {
         if (address->banStatus) {

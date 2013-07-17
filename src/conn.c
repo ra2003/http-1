@@ -157,7 +157,7 @@ static void manageConn(HttpConn *conn, int flags)
 }
 
 
-/*  
+/*
     Close the connection but don't destroy the conn object.
  */
 PUBLIC void httpCloseConn(HttpConn *conn)
@@ -400,7 +400,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 }
 
 
-/*  
+/*
     IO event handler. This is invoked by the wait subsystem in response to I/O events. It is also invoked via 
     relay when an accept event is received by the server. Initially the conn->dispatcher will be set to the
     server->dispatcher and the first I/O event will be handled on the server thread (or main thread). A request handler
@@ -622,7 +622,7 @@ PUBLIC void httpFollowRedirects(HttpConn *conn, bool follow)
 }
 
 
-/*  
+/*
     Get the packet into which to read data. Return in *size the length of data to attempt to read.
  */
 static HttpPacket *getPacket(HttpConn *conn, ssize *size)
@@ -769,7 +769,7 @@ PUBLIC void httpSetConnHost(HttpConn *conn, void *host)
 }
 
 
-/*  
+/*
     Set the protocol to use for outbound requests
  */
 PUBLIC void httpSetProtocol(HttpConn *conn, cchar *protocol)

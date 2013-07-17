@@ -359,7 +359,7 @@ static void saveCachedResponse(HttpConn *conn)
 #endif
     tx->cacheBuffer = 0;
     /* 
-        Truncate modified time to get a 1 sec resolution. This is the resolution for If-Modified headers.  
+        Truncate modified time to get a 1 sec resolution. This is the resolution for If-Modified headers.
      */
     modified = mprGetTime() / MPR_TICKS_PER_SEC * MPR_TICKS_PER_SEC;
     mprWriteCache(conn->host->responseCache, makeCacheKey(conn), mprGetBufStart(buf), modified, 

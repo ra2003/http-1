@@ -119,7 +119,7 @@ static bool applyRange(HttpQueue *q, HttpPacket *packet)
     tx = conn->tx;
     range = tx->currentRange;
 
-    /*  
+    /*
         Process the data packet over multiple ranges ranges until all the data is processed or discarded.
         A packet may contain data or it may be empty with an associated entityLength. If empty, range packets
         are filled with entity data as required.
@@ -176,7 +176,7 @@ static bool applyRange(HttpQueue *q, HttpPacket *packet)
 }
 
 
-/*  
+/*
     Create a range boundary packet
  */
 static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range)
@@ -198,7 +198,7 @@ static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range)
 }
 
 
-/*  
+/*
     Create a final range packet that follows all the data
  */
 static HttpPacket *createFinalRangePacket(HttpConn *conn)
@@ -215,7 +215,7 @@ static HttpPacket *createFinalRangePacket(HttpConn *conn)
 }
 
 
-/*  
+/*
     Create a range boundary. This is required if more than one range is requested.
  */
 static void createRangeBoundary(HttpConn *conn)
@@ -230,7 +230,7 @@ static void createRangeBoundary(HttpConn *conn)
 }
 
 
-/*  
+/*
     Ensure all the range limits are within the entity size limits. Fixup negative ranges.
  */
 static bool fixRangeLength(HttpConn *conn)

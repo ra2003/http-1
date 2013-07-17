@@ -67,7 +67,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         For PHP, REQUEST_URI must be the original URI. The SCRIPT_NAME will refer to the new pathInfo
      */
     mprAddKey(svars, "REQUEST_URI", rx->originalUri);
-    /*  
+    /*
         URIs are broken into the following: http://{SERVER_NAME}:{SERVER_PORT}{SCRIPT_NAME}{PATH_INFO} 
         NOTE: Appweb refers to pathInfo as the app relative URI and scriptName as the app address before the pathInfo.
         In CGI|PHP terms, the scriptName is the appweb rx->pathInfo and the PATH_INFO is the extraPath. 
@@ -76,7 +76,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     mprAddKeyFmt(svars, "SCRIPT_NAME", "%s%s", rx->scriptName, rx->pathInfo);
     mprAddKey(svars, "SCRIPT_FILENAME", tx->filename);
     if (rx->extraPath) {
-        /*  
+        /*
             Only set PATH_TRANSLATED if extraPath is set (CGI spec) 
          */
         assert(rx->extraPath[0] == '/');
@@ -101,7 +101,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
 }
 
 
-/*  
+/*
     Add variables to the vars environment store. This comes from the query string and urlencoded post data.
     Make variables for each keyword in a query string. The buffer must be url encoded (ie. key=value&key2=value2..., 
     spaces converted to '+' and all else should be %HEX encoded).
@@ -129,7 +129,7 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
         keyword = mprUriDecode(keyword);
 
         if (*keyword) {
-            /*  
+            /*
                 Append to existing keywords
              */
             oldValue = mprLookupKey(vars, keyword);
@@ -172,7 +172,7 @@ static void addParamsFromBufInsitu(HttpConn *conn, char *buf, ssize len)
         mprUriDecode(keyword);
 
         if (*keyword) {
-            /*  
+            /*
                 Append to existing keywords
              */
             oldValue = mprLookupKey(vars, keyword);
@@ -258,7 +258,7 @@ PUBLIC MprHash *httpGetParams(HttpConn *conn)
 PUBLIC int httpTestParam(HttpConn *conn, cchar *var)
 {
     MprHash    *vars;
-    
+
     vars = httpGetParams(conn);
     return vars && mprLookupKey(vars, var) != 0;
 }
@@ -268,7 +268,7 @@ PUBLIC cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
 {
     MprHash     *vars;
     cchar       *value;
-    
+
     vars = httpGetParams(conn);
     value = mprLookupKey(vars, var);
     return (value) ? value : defaultValue;
@@ -279,7 +279,7 @@ PUBLIC int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
 {
     MprHash     *vars;
     cchar       *value;
-    
+
     vars = httpGetParams(conn);
     value = mprLookupKey(vars, var);
     return (value) ? (int) stoi(value) : defaultValue;
@@ -349,7 +349,7 @@ PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value)
 PUBLIC void httpSetIntParam(HttpConn *conn, cchar *var, int value) 
 {
     MprHash     *vars;
-    
+
     vars = httpGetParams(conn);
     mprAddKey(vars, var, sfmt("%d", value));
 }

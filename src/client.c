@@ -159,7 +159,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
 }
 
 
-/*  
+/*
     Check the response for authentication failures and redirections. Return true if a retry is requried.
  */
 PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
@@ -200,7 +200,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
 }
 
 
-/*  
+/*
     Set the request as being a multipart mime upload. This defines the content type and defines a multipart mime boundary
  */
 PUBLIC void httpEnableUpload(HttpConn *conn)
@@ -243,7 +243,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
 }
 
 
-/*  
+/*
     Write upload data. This routine blocks. If you need non-blocking ... cut and paste.
  */
 PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *formData)

@@ -40,7 +40,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     struct pam_conv     conv = { pamChat, &info };
     struct group        *gp;
     int                 res, i;
-   
+
     assert(username);
     assert(!conn->encoded);
 
@@ -91,7 +91,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     return 1;
 }
 
-/*  
+/*
     Callback invoked by the pam_authenticate function
  */
 static int pamChat(int msgCount, const struct pam_message **msg, struct pam_response **resp, void *data) 
@@ -99,7 +99,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
     UserInfo                *info;
     struct pam_response     *reply;
     int                     i;
-    
+
     i = 0;
     reply = 0;
     info = (UserInfo*) data;
@@ -113,7 +113,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
     for (i = 0; i < msgCount; i++) {
         reply[i].resp_retcode = 0;
         reply[i].resp = 0;
-        
+
         switch (msg[i]->msg_style) {
         case PAM_PROMPT_ECHO_ON:
             reply[i].resp = strdup(info->name);

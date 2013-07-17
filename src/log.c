@@ -17,7 +17,7 @@ PUBLIC int httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup
     assert(route);
     assert(path && *path);
     assert(format);
-    
+
     if (format == NULL || *format == '\0') {
         format = BIT_HTTP_LOG_FORMAT;
     }

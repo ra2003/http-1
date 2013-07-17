@@ -111,7 +111,7 @@ PUBLIC int httpRemoveHeader(HttpConn *conn, cchar *key)
 }
 
 
-/*  
+/*
     Add a http header if not already defined
  */
 PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
@@ -226,7 +226,7 @@ PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
 }
 
 
-/*  
+/*
     Set a http header. Overwrite if present.
  */
 PUBLIC void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
@@ -426,7 +426,7 @@ PUBLIC void httpOmitBody(HttpConn *conn)
 }
 
 
-/*  
+/*
     Redirect the user to another web page. The targetUri may or may not have a scheme.
  */
 PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
@@ -605,7 +605,7 @@ static void setCorsHeaders(HttpConn *conn)
 }
 
 
-/*  
+/*
     Set headers for httpWriteHeaders. This defines standard headers.
  */
 static void setHeaders(HttpConn *conn, HttpPacket *packet)
@@ -759,7 +759,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
 
     if (tx->flags & HTTP_TX_HEADERS_CREATED) {
         return;
-    }    
+    }
     tx->flags |= HTTP_TX_HEADERS_CREATED;
     tx->responded = 1;
     if (conn->headersCallback) {

@@ -105,7 +105,7 @@ PUBLIC void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
     q->prevQ = q;
     q->name = sclone(name);
     q->max = conn->limits->bufferSize;
-    q->low = q->max / 100 *  5;    
+    q->low = q->max / 100 *  5;
     if (tx && tx->chunkSize > 0) {
         q->packetSize = tx->chunkSize;
     } else {
@@ -122,7 +122,7 @@ PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize low, ssize max)
 
 
 #if KEEP
-/*  
+/*
     Insert a queue after the previous element
  */
 PUBLIC void httpAppendQueueToHead(HttpQueue *head, HttpQueue *q)
@@ -155,7 +155,7 @@ PUBLIC bool httpIsSuspendQueue(HttpQueue *q)
 
 
 
-/*  
+/*
     Remove all data in the queue. If removePackets is true, actually remove the packet too.
     This preserves the header and EOT packets.
  */
@@ -197,7 +197,7 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
 }
 
 
-/*  
+/*
     Flush queue data by scheduling the queue and servicing all scheduled queues. Return true if there is room for more data.
     If blocking is requested, the call will block until the queue count falls below the queue max.
     WARNING: Be very careful when using blocking == true. Should only be used by end applications and not by middleware.
@@ -250,7 +250,7 @@ PUBLIC HttpQueue *httpFindPreviousQueue(HttpQueue *q)
 PUBLIC HttpQueue *httpGetNextQueueForService(HttpQueue *q)
 {
     HttpQueue     *next;
-    
+
     if (q->scheduleNext != q) {
         next = q->scheduleNext;
         next->schedulePrev->scheduleNext = next->scheduleNext;
@@ -262,14 +262,14 @@ PUBLIC HttpQueue *httpGetNextQueueForService(HttpQueue *q)
 }
 
 
-/*  
+/*
     Return the number of bytes the queue will accept. Always positive.
  */
 PUBLIC ssize httpGetQueueRoom(HttpQueue *q)
 {
     assert(q->max > 0);
     assert(q->count >= 0);
-    
+
     if (q->count >= q->max) {
         return 0;
     }
@@ -284,7 +284,7 @@ PUBLIC void httpInitSchedulerQueue(HttpQueue *q)
 }
 
 
-/*  
+/*
     Append a queue after the previous element
  */
 PUBLIC void httpAppendQueue(HttpQueue *prev, HttpQueue *q)
@@ -302,7 +302,7 @@ PUBLIC bool httpIsQueueEmpty(HttpQueue *q)
 }
 
 
-/*  
+/*
     Read data. If sync mode, this will block. If async, will never block.
     Will return what data is available up to the requested size. 
     Returns a count of bytes read. Returns zero if not data. EOF if returns zero and conn->state is > HTTP_STATE_CONTENT.
@@ -417,7 +417,7 @@ PUBLIC cchar *httpGetBodyInput(HttpConn *conn)
     HttpQueue   *q;
     HttpRx      *rx;
     MprBuf      *content;
-    
+
     rx = conn->rx;
     if (!rx->eof) {
         return 0;
@@ -445,10 +445,10 @@ PUBLIC void httpRemoveQueue(HttpQueue *q)
 PUBLIC void httpScheduleQueue(HttpQueue *q)
 {
     HttpQueue     *head;
-    
+
     assert(q->conn);
     head = q->conn->serviceq;
-    
+
     if (q->scheduleNext == q && !(q->flags & HTTP_QUEUE_SUSPENDED)) {
         q->scheduleNext = head;
         q->schedulePrev = head->schedulePrev;
@@ -465,7 +465,7 @@ PUBLIC void httpServiceQueue(HttpQueue *q)
     if (q->servicing) {
         q->flags |= HTTP_QUEUE_RESERVICE;
     } else {
-        /*  
+        /*
             Since we are servicing this "q" now, we can remove from the schedule queue if it is already queued.
          */
         if (q->conn->serviceq->scheduleNext == q) {
@@ -485,7 +485,7 @@ PUBLIC void httpServiceQueue(HttpQueue *q)
 }
 
 
-/*  
+/*
     Return true if the next queue will accept this packet. If not, then disable the queue's service procedure.
     This may split the packet if it exceeds the downstreams maximum packet size.
  */
@@ -513,7 +513,7 @@ PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
     if (nextQ->count < nextQ->low || (size + nextQ->count) <= nextQ->max) {
         return 1;
     }
-    /*  
+    /*
         The downstream queue cannot accept this packet, so disable queue and mark the downstream queue as full and service 
      */
     httpSuspendQueue(q);
@@ -542,7 +542,7 @@ PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpPacket *packet, bool spl
             return 1;
         }
     }
-    /*  
+    /*
         The downstream queue is full, so disable the queue and mark the downstream queue as full and service 
      */
     if (!(q->flags & HTTP_QUEUE_SUSPENDED)) {
@@ -552,7 +552,7 @@ PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpPacket *packet, bool spl
 }
 
 
-/*  
+/*
     Return true if the next queue will accept a certain amount of data. If not, then disable the queue's service procedure.
     Will not split the packet.
  */
@@ -664,7 +664,7 @@ PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
 {
     va_list     vargs;
     char        *buf;
-    
+
     va_start(vargs, fmt);
     buf = sfmtv(fmt, vargs);
     va_end(vargs);

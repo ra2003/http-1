@@ -226,7 +226,7 @@ PUBLIC bool httpIsAuthenticated(HttpConn *conn)
 PUBLIC HttpAuth *httpCreateAuth()
 {
     HttpAuth    *auth;
-    
+
     if ((auth = mprAllocObj(HttpAuth, manageAuth)) == 0) {
         return 0;
     }

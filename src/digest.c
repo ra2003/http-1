@@ -162,7 +162,7 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
             if (scaselesscmp(key, "stale") == 0) {
                 break;
             }
-        
+
         case 'u':
             if (scaselesscmp(key, "uri") == 0) {
                 dp->uri = sclone(value);

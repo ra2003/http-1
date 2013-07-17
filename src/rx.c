@@ -404,7 +404,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 
     rx = conn->rx;
     limits = conn->limits;
-#if BIT_DEBUG && MPR_HIGH_RES_TIMER
+#if MPR_HIGH_RES_TIMER
     conn->startMark = mprGetHiResTicks();
 #endif
     conn->started = conn->http->now;
@@ -1137,7 +1137,6 @@ static bool processRunning(HttpConn *conn)
 }
 
 
-#if BIT_DEBUG
 static void measure(HttpConn *conn)
 {
     MprTicks    elapsed;
@@ -1155,15 +1154,12 @@ static void measure(HttpConn *conn)
         elapsed = mprGetTicks() - conn->started;
 #if MPR_HIGH_RES_TIMER
         if (elapsed < 1000) {
-            mprTrace(level, "TIME: Request %s took %,d msec %,d ticks", uri, elapsed, mprGetHiResTicks() - conn->startMark);
+            mprTrace(level, "TIME: Request %s took %,Ld msec %,Ld ticks", uri, elapsed, mprGetHiResTicks() - conn->startMark);
         } else
 #endif
-            mprTrace(level, "TIME: Request %s took %,d msec", uri, elapsed);
+            mprTrace(level, "TIME: Request %s took %,Ld msec", uri, elapsed);
     }
 }
-#else
-#define measure(conn)
-#endif
 
 
 static void createErrorRequest(HttpConn *conn)

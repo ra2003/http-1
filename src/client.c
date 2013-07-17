@@ -140,7 +140,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
     conn->authRequested = 0;
     conn->tx->method = supper(method);
     conn->tx->parsedUri = httpCreateUri(uri, HTTP_COMPLETE_URI_PATH);
-#if BIT_DEBUG
+#if MPR_HIGH_RES_TIMER
     conn->startMark = mprGetHiResTicks();
 #endif
     /*

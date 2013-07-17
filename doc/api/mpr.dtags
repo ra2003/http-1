@@ -608,6 +608,13 @@
     </member>
     <member kind="define">
       <type>#define</type>
+      <name>MPR_EVENT_TIME_SLICE</name>
+      <anchorfile>mpr_8h.html</anchorfile>
+      <anchor>ac9caa92980fc78d01d0899c46ad35331</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
       <name>MPR_EXIT_DEFAULT</name>
       <anchorfile>mpr_8h.html</anchorfile>
       <anchor>aff10757e54446408f4f71cefb854eb49</anchor>
@@ -867,9 +874,23 @@
     </member>
     <member kind="define">
       <type>#define</type>
+      <name>MPR_MAX_FILE</name>
+      <anchorfile>mpr_8h.html</anchorfile>
+      <anchor>aa0b8717f01a9a8cb31d3c5c2d950f612</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
       <name>MPR_MAX_GEN</name>
       <anchorfile>mpr_8h.html</anchorfile>
       <anchor>a2d75c304c2b727f4225d589dd1d3ae6b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>MPR_MAX_KEVENTS</name>
+      <anchorfile>mpr_8h.html</anchorfile>
+      <anchor>a977789cbac50181dbae4c7fe7334c853</anchor>
       <arglist></arglist>
     </member>
     <member kind="define">
@@ -4166,8 +4187,8 @@
       <type>void</type>
       <name>mprRecallWaitHandlerByFd</name>
       <anchorfile>group___mpr_wait_handler.html</anchorfile>
-      <anchor>ga6301332e3c370e7510738f9c348603e9</anchor>
-      <arglist>(int fd)</arglist>
+      <anchor>gab449e3836233feee7490af3364437d15</anchor>
+      <arglist>(Socket fd)</arglist>
     </member>
     <member kind="function">
       <type>int</type>
@@ -8376,8 +8397,8 @@
       <type>void</type>
       <name>mprRecallWaitHandlerByFd</name>
       <anchorfile>group___mpr_wait_handler.html</anchorfile>
-      <anchor>ga6301332e3c370e7510738f9c348603e9</anchor>
-      <arglist>(int fd)</arglist>
+      <anchor>gab449e3836233feee7490af3364437d15</anchor>
+      <arglist>(Socket fd)</arglist>
     </member>
     <member kind="function">
       <type>void</type>

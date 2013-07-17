@@ -437,6 +437,13 @@ PUBLIC int httpAddRemedy(cchar *name, HttpRemedyProc remedy);
  */
 PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg);
 
+/**
+    Print the monitor counters to the error log
+    @ingroup HttpMonitor
+    @stability Prototype
+  */
+PUBLIC void httpDumpCounters();
+
 /*
     Internal
  */

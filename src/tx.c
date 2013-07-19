@@ -631,7 +631,6 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     httpAddHeaderString(conn, "Date", conn->http->currentDate);
 
     if (tx->ext && route) {
-        //  TODO this should be saved in Tx.
         if ((mimeType = (char*) mprLookupMime(route->mimeTypes, tx->ext)) != 0) {
             if (conn->error) {
                 httpAddHeaderString(conn, "Content-Type", "text/html");

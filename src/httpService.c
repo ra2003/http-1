@@ -302,9 +302,6 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->receiveBodySize = BIT_MAX_RECEIVE_BODY;
     limits->processMax = BIT_MAX_PROCESSES;
     limits->requestsPerClientMax = BIT_MAX_REQUESTS_PER_CLIENT;
-#if UNUSED
-    limits->requestMax = BIT_MAX_REQUESTS;
-#endif
     limits->sessionMax = BIT_MAX_SESSIONS;
     limits->transmissionBodySize = BIT_MAX_TX_BODY;
     limits->uploadSize = BIT_MAX_UPLOAD;

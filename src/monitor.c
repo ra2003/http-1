@@ -153,7 +153,14 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
             }
         } while (removed);
         unlock(http->addresses);
+        return;
     }
+#if XX
+    if (counter.value == 0) {
+        mprRemoveEvent(monitor->timer);
+        monitor->timer = 0;
+    }
+#endif
 }
 
 
@@ -161,6 +168,9 @@ static int manageMonitor(HttpMonitor *monitor, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(monitor->defenses);
+#if XX
+        mprMark(monitor->timer);
+#endif
     }
     return 0;
 }

@@ -98,9 +98,6 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
         httpCloseConn(conn);
         conn->http = 0;
     }
-    if (conn->dispatcher->flags & MPR_DISPATCHER_AUTO_CREATE) {
-        mprDisableDispatcher(conn->dispatcher);
-    }
 }
 
 
@@ -607,7 +604,7 @@ PUBLIC void httpSetupWaitHandler(HttpConn *conn, int eventMask)
         if (sp->handler == 0) {
             mprAddSocketHandler(sp, eventMask, conn->dispatcher, conn->ioCallback, conn, 0);
         } else {
-            sp->handler->dispatcher = conn->dispatcher;
+            mprSetSocketDispatcher(sp, conn->dispatcher);
             mprEnableSocketEvents(sp, eventMask);
         }
     } else if (sp->handler) {

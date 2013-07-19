@@ -354,9 +354,6 @@ static void saveCachedResponse(HttpConn *conn)
     assert(tx->finalizedOutput && tx->cacheBuffer);
 
     buf = tx->cacheBuffer;
-#if UNUSED
-    mprAddNullToBuf(buf);
-#endif
     tx->cacheBuffer = 0;
     /* 
         Truncate modified time to get a 1 sec resolution. This is the resolution for If-Modified headers.

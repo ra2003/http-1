@@ -205,14 +205,10 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
         return 0;
     }
     start = mprGetBufStart(packet->content);
-
-#if FUTURE
     while (*start == '\r' || *start == '\n') {
         mprGetCharFromBuf(packet->content);
         start = mprGetBufStart(packet->content);
     }
-#endif
-
     /*
         Don't start processing until all the headers have been received (delimited by two blank lines)
      */

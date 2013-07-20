@@ -672,7 +672,7 @@ static void updateCurrentDate(Http *http)
 PUBLIC void httpGetStats(HttpStats *sp)
 {
     Http                *http;
-    HttpCounter         *counters;
+    HttpAddress         *address;
     MprKey              *kp;
     MprMemStats         *ap;
     MprWorkerStats      wstats;
@@ -704,12 +704,12 @@ PUBLIC void httpGetStats(HttpStats *sp)
     sp->activeProcesses = http->activeProcesses;
     sp->activeSessions = http->activeSessions;
 
-    lock(http);
-    for (ITERATE_KEY_DATA(http->addresses, kp, counters)) {
-        sp->activeRequests += (int) counters[HTTP_COUNTER_ACTIVE_REQUESTS].value;
-        sp->activeClients += (int) counters[HTTP_COUNTER_ACTIVE_CLIENTS].value;
+    lock(http->addresses);
+    for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
+        sp->activeRequests += (int) address->counters[HTTP_COUNTER_ACTIVE_REQUESTS].value;
+        sp->activeClients += (int) address->counters[HTTP_COUNTER_ACTIVE_CLIENTS].value;
     }
-    unlock(http);
+    unlock(http->addresses);
     sp->totalRequests = http->totalRequests;
     sp->totalConnections = http->totalConnections;
     sp->totalSweeps = MPR->heap->iteration;

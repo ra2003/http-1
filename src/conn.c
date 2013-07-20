@@ -96,6 +96,10 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
             conn->rx = 0;
         }
         httpCloseConn(conn);
+        if (conn->endpoint) {
+            mprDestroyDispatcher(conn->dispatcher);
+            conn->dispatcher = 0;
+        }
         conn->http = 0;
     }
 }

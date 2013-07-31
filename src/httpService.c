@@ -188,6 +188,7 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->remedies);
         mprMark(http->monitors);
         mprMark(http->counters);
+        mprMark(http->dateCache);
 
         /*
             Endpoints keep connections alive until a timeout. Keep marking even if no other references.

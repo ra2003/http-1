@@ -96,7 +96,7 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
             conn->rx = 0;
         }
         httpCloseConn(conn);
-        if (conn->dispatcher && conn->dispatcher->flags & MPR_DISPATCHER_EVENT) {
+        if (conn->dispatcher && conn->dispatcher->flags & MPR_DISPATCHER_AUTO) {
             mprDestroyDispatcher(conn->dispatcher);
             conn->dispatcher = 0;
         }

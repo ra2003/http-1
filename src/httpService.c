@@ -683,7 +683,6 @@ PUBLIC void httpGetStats(HttpStats *sp)
     ap = mprGetMemStats();
 
     sp->cpus = ap->numCpu;
-    sp->regions = ap->regions;
     sp->pendingRequests = MPR->eventService->pendingCount;
 
     sp->mem = ap->rss;
@@ -741,7 +740,6 @@ PUBLIC char *httpStatsReport(int flags)
     mprPutToBuf(buf, "Heap-free   %8.1f MB, %5.1f%% free\n", s.heapFree / mb, s.heapFree / (double) s.heap * 100.0);
 
     mprPutCharToBuf(buf, '\n');
-    mprPutToBuf(buf, "Regions     %8d\n", s.regions);
     mprPutToBuf(buf, "CPUs        %8d\n", s.cpus);
     mprPutCharToBuf(buf, '\n');
 

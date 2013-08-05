@@ -225,7 +225,7 @@ static void acceptConn(HttpEndpoint *endpoint)
     }
     wp = endpoint->sock->handler;
     if (wp->flags & MPR_WAIT_NEW_DISPATCHER) {
-        dispatcher = mprCreateDispatcher("IO");
+        dispatcher = mprCreateDispatcher("IO", MPR_DISPATCHER_AUTO);
     } else if (wp->dispatcher) {
         dispatcher = wp->dispatcher;
     } else {

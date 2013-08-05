@@ -1150,10 +1150,10 @@ static void measure(HttpConn *conn)
         elapsed = mprGetTicks() - conn->started;
 #if MPR_HIGH_RES_TIMER
         if (elapsed < 1000) {
-            mprTrace(level, "TIME: Request %s took %,Ld msec %,Ld ticks", uri, elapsed, mprGetHiResTicks() - conn->startMark);
+            mprLog(level, "TIME: Request %s took %,Ld msec %,Ld ticks", uri, elapsed, mprGetHiResTicks() - conn->startMark);
         } else
 #endif
-            mprTrace(level, "TIME: Request %s took %,Ld msec", uri, elapsed);
+            mprLog(level, "TIME: Request %s took %,Ld msec", uri, elapsed);
     }
 }
 

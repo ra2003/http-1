@@ -373,6 +373,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     rx = conn->rx;
     tx = conn->tx;
     route = 0;
+    rewrites = 0;
 
     if (conn->error) {
         tx->handler = conn->http->passHandler;

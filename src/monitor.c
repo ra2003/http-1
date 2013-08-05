@@ -403,6 +403,7 @@ static void cmdRemedy(MprHash *args)
         return;
     }
     command = sclone(mprLookupKey(args, "CMD"));
+    data = 0;
     if (scontains(command, "|")) {
         data = stok(command, "|", &command);
         data = stemplate(data, args);

@@ -269,7 +269,7 @@ DEPS_9 += $(CONFIG)/inc/pcre.h
 $(CONFIG)/obj/pcre.o: \
     src/deps/pcre/pcre.c $(DEPS_9)
 	@echo '   [Compile] $(CONFIG)/obj/pcre.o'
-	$(CC) -c -o $(CONFIG)/obj/pcre.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/deps/pcre/pcre.c
+	$(CC) -c -o $(CONFIG)/obj/pcre.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/deps/pcre/pcre.c
 
 ifeq ($(BIT_PACK_PCRE),1)
 #
@@ -302,7 +302,7 @@ DEPS_12 += src/bitos.h
 $(CONFIG)/obj/mprLib.o: \
     src/deps/mpr/mprLib.c $(DEPS_12)
 	@echo '   [Compile] $(CONFIG)/obj/mprLib.o'
-	$(CC) -c -o $(CONFIG)/obj/mprLib.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/deps/mpr/mprLib.c
+	$(CC) -c -o $(CONFIG)/obj/mprLib.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/deps/mpr/mprLib.c
 
 #
 #   libmpr
@@ -326,7 +326,7 @@ DEPS_14 += $(CONFIG)/inc/est.h
 $(CONFIG)/obj/mprSsl.o: \
     src/deps/mpr/mprSsl.c $(DEPS_14)
 	@echo '   [Compile] $(CONFIG)/obj/mprSsl.o'
-	$(CC) -c -o $(CONFIG)/obj/mprSsl.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" "-I$(BIT_PACK_MATRIXSSL_PATH)" "-I$(BIT_PACK_MATRIXSSL_PATH)/matrixssl" "-I$(BIT_PACK_NANOSSL_PATH)/src" "-I$(BIT_PACK_OPENSSL_PATH)/include" src/deps/mpr/mprSsl.c
+	$(CC) -c -o $(CONFIG)/obj/mprSsl.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" "-I$(BIT_PACK_MATRIXSSL_PATH)" "-I$(BIT_PACK_MATRIXSSL_PATH)/matrixssl" "-I$(BIT_PACK_NANOSSL_PATH)/src" "-I$(BIT_PACK_OPENSSL_PATH)/include" src/deps/mpr/mprSsl.c
 
 #
 #   libmprssl
@@ -356,7 +356,7 @@ DEPS_16 += $(CONFIG)/inc/mpr.h
 $(CONFIG)/obj/makerom.o: \
     src/deps/mpr/makerom.c $(DEPS_16)
 	@echo '   [Compile] $(CONFIG)/obj/makerom.o'
-	$(CC) -c -o $(CONFIG)/obj/makerom.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/deps/mpr/makerom.c
+	$(CC) -c -o $(CONFIG)/obj/makerom.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/deps/mpr/makerom.c
 
 #
 #   makerom
@@ -406,7 +406,7 @@ DEPS_21 += $(CONFIG)/inc/mpr.h
 $(CONFIG)/obj/actionHandler.o: \
     src/actionHandler.c $(DEPS_21)
 	@echo '   [Compile] $(CONFIG)/obj/actionHandler.o'
-	$(CC) -c -o $(CONFIG)/obj/actionHandler.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/actionHandler.c
+	$(CC) -c -o $(CONFIG)/obj/actionHandler.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/actionHandler.c
 
 #
 #   auth.o
@@ -417,7 +417,7 @@ DEPS_22 += src/http.h
 $(CONFIG)/obj/auth.o: \
     src/auth.c $(DEPS_22)
 	@echo '   [Compile] $(CONFIG)/obj/auth.o'
-	$(CC) -c -o $(CONFIG)/obj/auth.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/auth.c
+	$(CC) -c -o $(CONFIG)/obj/auth.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/auth.c
 
 #
 #   basic.o
@@ -428,7 +428,7 @@ DEPS_23 += src/http.h
 $(CONFIG)/obj/basic.o: \
     src/basic.c $(DEPS_23)
 	@echo '   [Compile] $(CONFIG)/obj/basic.o'
-	$(CC) -c -o $(CONFIG)/obj/basic.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/basic.c
+	$(CC) -c -o $(CONFIG)/obj/basic.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/basic.c
 
 #
 #   cache.o
@@ -439,7 +439,7 @@ DEPS_24 += src/http.h
 $(CONFIG)/obj/cache.o: \
     src/cache.c $(DEPS_24)
 	@echo '   [Compile] $(CONFIG)/obj/cache.o'
-	$(CC) -c -o $(CONFIG)/obj/cache.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/cache.c
+	$(CC) -c -o $(CONFIG)/obj/cache.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/cache.c
 
 #
 #   chunkFilter.o
@@ -450,7 +450,7 @@ DEPS_25 += src/http.h
 $(CONFIG)/obj/chunkFilter.o: \
     src/chunkFilter.c $(DEPS_25)
 	@echo '   [Compile] $(CONFIG)/obj/chunkFilter.o'
-	$(CC) -c -o $(CONFIG)/obj/chunkFilter.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/chunkFilter.c
+	$(CC) -c -o $(CONFIG)/obj/chunkFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/chunkFilter.c
 
 #
 #   client.o
@@ -461,7 +461,7 @@ DEPS_26 += src/http.h
 $(CONFIG)/obj/client.o: \
     src/client.c $(DEPS_26)
 	@echo '   [Compile] $(CONFIG)/obj/client.o'
-	$(CC) -c -o $(CONFIG)/obj/client.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/client.c
+	$(CC) -c -o $(CONFIG)/obj/client.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/client.c
 
 #
 #   conn.o
@@ -472,7 +472,7 @@ DEPS_27 += src/http.h
 $(CONFIG)/obj/conn.o: \
     src/conn.c $(DEPS_27)
 	@echo '   [Compile] $(CONFIG)/obj/conn.o'
-	$(CC) -c -o $(CONFIG)/obj/conn.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/conn.c
+	$(CC) -c -o $(CONFIG)/obj/conn.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/conn.c
 
 #
 #   digest.o
@@ -483,7 +483,7 @@ DEPS_28 += src/http.h
 $(CONFIG)/obj/digest.o: \
     src/digest.c $(DEPS_28)
 	@echo '   [Compile] $(CONFIG)/obj/digest.o'
-	$(CC) -c -o $(CONFIG)/obj/digest.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/digest.c
+	$(CC) -c -o $(CONFIG)/obj/digest.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/digest.c
 
 #
 #   endpoint.o
@@ -494,7 +494,7 @@ DEPS_29 += src/http.h
 $(CONFIG)/obj/endpoint.o: \
     src/endpoint.c $(DEPS_29)
 	@echo '   [Compile] $(CONFIG)/obj/endpoint.o'
-	$(CC) -c -o $(CONFIG)/obj/endpoint.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/endpoint.c
+	$(CC) -c -o $(CONFIG)/obj/endpoint.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/endpoint.c
 
 #
 #   error.o
@@ -505,7 +505,7 @@ DEPS_30 += src/http.h
 $(CONFIG)/obj/error.o: \
     src/error.c $(DEPS_30)
 	@echo '   [Compile] $(CONFIG)/obj/error.o'
-	$(CC) -c -o $(CONFIG)/obj/error.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/error.c
+	$(CC) -c -o $(CONFIG)/obj/error.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/error.c
 
 #
 #   host.o
@@ -516,7 +516,7 @@ DEPS_31 += src/http.h
 $(CONFIG)/obj/host.o: \
     src/host.c $(DEPS_31)
 	@echo '   [Compile] $(CONFIG)/obj/host.o'
-	$(CC) -c -o $(CONFIG)/obj/host.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/host.c
+	$(CC) -c -o $(CONFIG)/obj/host.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/host.c
 
 #
 #   httpService.o
@@ -527,7 +527,7 @@ DEPS_32 += src/http.h
 $(CONFIG)/obj/httpService.o: \
     src/httpService.c $(DEPS_32)
 	@echo '   [Compile] $(CONFIG)/obj/httpService.o'
-	$(CC) -c -o $(CONFIG)/obj/httpService.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/httpService.c
+	$(CC) -c -o $(CONFIG)/obj/httpService.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/httpService.c
 
 #
 #   log.o
@@ -538,7 +538,7 @@ DEPS_33 += src/http.h
 $(CONFIG)/obj/log.o: \
     src/log.c $(DEPS_33)
 	@echo '   [Compile] $(CONFIG)/obj/log.o'
-	$(CC) -c -o $(CONFIG)/obj/log.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/log.c
+	$(CC) -c -o $(CONFIG)/obj/log.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/log.c
 
 #
 #   monitor.o
@@ -549,7 +549,7 @@ DEPS_34 += src/http.h
 $(CONFIG)/obj/monitor.o: \
     src/monitor.c $(DEPS_34)
 	@echo '   [Compile] $(CONFIG)/obj/monitor.o'
-	$(CC) -c -o $(CONFIG)/obj/monitor.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/monitor.c
+	$(CC) -c -o $(CONFIG)/obj/monitor.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/monitor.c
 
 #
 #   netConnector.o
@@ -560,7 +560,7 @@ DEPS_35 += src/http.h
 $(CONFIG)/obj/netConnector.o: \
     src/netConnector.c $(DEPS_35)
 	@echo '   [Compile] $(CONFIG)/obj/netConnector.o'
-	$(CC) -c -o $(CONFIG)/obj/netConnector.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/netConnector.c
+	$(CC) -c -o $(CONFIG)/obj/netConnector.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/netConnector.c
 
 #
 #   packet.o
@@ -571,7 +571,7 @@ DEPS_36 += src/http.h
 $(CONFIG)/obj/packet.o: \
     src/packet.c $(DEPS_36)
 	@echo '   [Compile] $(CONFIG)/obj/packet.o'
-	$(CC) -c -o $(CONFIG)/obj/packet.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/packet.c
+	$(CC) -c -o $(CONFIG)/obj/packet.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/packet.c
 
 #
 #   pam.o
@@ -582,7 +582,7 @@ DEPS_37 += src/http.h
 $(CONFIG)/obj/pam.o: \
     src/pam.c $(DEPS_37)
 	@echo '   [Compile] $(CONFIG)/obj/pam.o'
-	$(CC) -c -o $(CONFIG)/obj/pam.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/pam.c
+	$(CC) -c -o $(CONFIG)/obj/pam.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/pam.c
 
 #
 #   passHandler.o
@@ -593,7 +593,7 @@ DEPS_38 += src/http.h
 $(CONFIG)/obj/passHandler.o: \
     src/passHandler.c $(DEPS_38)
 	@echo '   [Compile] $(CONFIG)/obj/passHandler.o'
-	$(CC) -c -o $(CONFIG)/obj/passHandler.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/passHandler.c
+	$(CC) -c -o $(CONFIG)/obj/passHandler.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/passHandler.c
 
 #
 #   pipeline.o
@@ -604,7 +604,7 @@ DEPS_39 += src/http.h
 $(CONFIG)/obj/pipeline.o: \
     src/pipeline.c $(DEPS_39)
 	@echo '   [Compile] $(CONFIG)/obj/pipeline.o'
-	$(CC) -c -o $(CONFIG)/obj/pipeline.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/pipeline.c
+	$(CC) -c -o $(CONFIG)/obj/pipeline.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/pipeline.c
 
 #
 #   queue.o
@@ -615,7 +615,7 @@ DEPS_40 += src/http.h
 $(CONFIG)/obj/queue.o: \
     src/queue.c $(DEPS_40)
 	@echo '   [Compile] $(CONFIG)/obj/queue.o'
-	$(CC) -c -o $(CONFIG)/obj/queue.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/queue.c
+	$(CC) -c -o $(CONFIG)/obj/queue.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/queue.c
 
 #
 #   rangeFilter.o
@@ -626,7 +626,7 @@ DEPS_41 += src/http.h
 $(CONFIG)/obj/rangeFilter.o: \
     src/rangeFilter.c $(DEPS_41)
 	@echo '   [Compile] $(CONFIG)/obj/rangeFilter.o'
-	$(CC) -c -o $(CONFIG)/obj/rangeFilter.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/rangeFilter.c
+	$(CC) -c -o $(CONFIG)/obj/rangeFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/rangeFilter.c
 
 #
 #   route.o
@@ -637,7 +637,7 @@ DEPS_42 += src/http.h
 $(CONFIG)/obj/route.o: \
     src/route.c $(DEPS_42)
 	@echo '   [Compile] $(CONFIG)/obj/route.o'
-	$(CC) -c -o $(CONFIG)/obj/route.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/route.c
+	$(CC) -c -o $(CONFIG)/obj/route.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/route.c
 
 #
 #   rx.o
@@ -648,7 +648,7 @@ DEPS_43 += src/http.h
 $(CONFIG)/obj/rx.o: \
     src/rx.c $(DEPS_43)
 	@echo '   [Compile] $(CONFIG)/obj/rx.o'
-	$(CC) -c -o $(CONFIG)/obj/rx.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/rx.c
+	$(CC) -c -o $(CONFIG)/obj/rx.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/rx.c
 
 #
 #   sendConnector.o
@@ -659,7 +659,7 @@ DEPS_44 += src/http.h
 $(CONFIG)/obj/sendConnector.o: \
     src/sendConnector.c $(DEPS_44)
 	@echo '   [Compile] $(CONFIG)/obj/sendConnector.o'
-	$(CC) -c -o $(CONFIG)/obj/sendConnector.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/sendConnector.c
+	$(CC) -c -o $(CONFIG)/obj/sendConnector.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/sendConnector.c
 
 #
 #   session.o
@@ -670,7 +670,7 @@ DEPS_45 += src/http.h
 $(CONFIG)/obj/session.o: \
     src/session.c $(DEPS_45)
 	@echo '   [Compile] $(CONFIG)/obj/session.o'
-	$(CC) -c -o $(CONFIG)/obj/session.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/session.c
+	$(CC) -c -o $(CONFIG)/obj/session.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/session.c
 
 #
 #   stage.o
@@ -681,7 +681,7 @@ DEPS_46 += src/http.h
 $(CONFIG)/obj/stage.o: \
     src/stage.c $(DEPS_46)
 	@echo '   [Compile] $(CONFIG)/obj/stage.o'
-	$(CC) -c -o $(CONFIG)/obj/stage.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/stage.c
+	$(CC) -c -o $(CONFIG)/obj/stage.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/stage.c
 
 #
 #   trace.o
@@ -692,7 +692,7 @@ DEPS_47 += src/http.h
 $(CONFIG)/obj/trace.o: \
     src/trace.c $(DEPS_47)
 	@echo '   [Compile] $(CONFIG)/obj/trace.o'
-	$(CC) -c -o $(CONFIG)/obj/trace.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/trace.c
+	$(CC) -c -o $(CONFIG)/obj/trace.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/trace.c
 
 #
 #   tx.o
@@ -703,7 +703,7 @@ DEPS_48 += src/http.h
 $(CONFIG)/obj/tx.o: \
     src/tx.c $(DEPS_48)
 	@echo '   [Compile] $(CONFIG)/obj/tx.o'
-	$(CC) -c -o $(CONFIG)/obj/tx.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/tx.c
+	$(CC) -c -o $(CONFIG)/obj/tx.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/tx.c
 
 #
 #   uploadFilter.o
@@ -714,7 +714,7 @@ DEPS_49 += src/http.h
 $(CONFIG)/obj/uploadFilter.o: \
     src/uploadFilter.c $(DEPS_49)
 	@echo '   [Compile] $(CONFIG)/obj/uploadFilter.o'
-	$(CC) -c -o $(CONFIG)/obj/uploadFilter.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/uploadFilter.c
+	$(CC) -c -o $(CONFIG)/obj/uploadFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/uploadFilter.c
 
 #
 #   uri.o
@@ -725,7 +725,7 @@ DEPS_50 += src/http.h
 $(CONFIG)/obj/uri.o: \
     src/uri.c $(DEPS_50)
 	@echo '   [Compile] $(CONFIG)/obj/uri.o'
-	$(CC) -c -o $(CONFIG)/obj/uri.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/uri.c
+	$(CC) -c -o $(CONFIG)/obj/uri.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/uri.c
 
 #
 #   var.o
@@ -736,7 +736,7 @@ DEPS_51 += src/http.h
 $(CONFIG)/obj/var.o: \
     src/var.c $(DEPS_51)
 	@echo '   [Compile] $(CONFIG)/obj/var.o'
-	$(CC) -c -o $(CONFIG)/obj/var.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/var.c
+	$(CC) -c -o $(CONFIG)/obj/var.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/var.c
 
 #
 #   webSockFilter.o
@@ -747,7 +747,7 @@ DEPS_52 += src/http.h
 $(CONFIG)/obj/webSockFilter.o: \
     src/webSockFilter.c $(DEPS_52)
 	@echo '   [Compile] $(CONFIG)/obj/webSockFilter.o'
-	$(CC) -c -o $(CONFIG)/obj/webSockFilter.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/webSockFilter.c
+	$(CC) -c -o $(CONFIG)/obj/webSockFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/webSockFilter.c
 
 ifeq ($(BIT_PACK_PCRE),1)
 #
@@ -811,7 +811,7 @@ DEPS_54 += src/http.h
 $(CONFIG)/obj/http.o: \
     src/http.c $(DEPS_54)
 	@echo '   [Compile] $(CONFIG)/obj/http.o'
-	$(CC) -c -o $(CONFIG)/obj/http.o -arch $(CC_ARCH) $(CFLAGS) "$(IFLAGS)" "-Isrc" src/http.c
+	$(CC) -c -o $(CONFIG)/obj/http.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) "$(IFLAGS)" "-Isrc" src/http.c
 
 #
 #   httpcmd

@@ -1,4 +1,4 @@
-/*
+i*
     conn.c -- Connection module to handle individual HTTP connections.
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */

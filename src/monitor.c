@@ -144,7 +144,9 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
                 /*
                     Expire old records
                  */
-                period = max((int) monitor->period, 5 * 60 * 1000);
+                //  MOB - need a define for this
+                //  MOB - this should be the max of all monitor periods
+                period = max((int) monitor->period, 60 * 1000);
                 if ((address->updated + period) < http->now) {
                     mprRemoveKey(http->addresses, kp->key);
                     removed = 1;
@@ -152,6 +154,12 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
                 }
             }
         } while (removed);
+#if XX
+        if (mprGetHashLength(http->addresses) == 0) {
+            mprRemoveEvent(monitor->timer);
+            monitor->timer = 0;
+        }
+#endif
         unlock(http->addresses);
         return;
     }
@@ -213,7 +221,7 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     monitor->http = http;
     mprAddItem(http->monitors, monitor);
     if (!mprGetDebugMode()) {
-        mprCreateTimerEvent(NULL, "monitor", period, checkMonitor, monitor, 0);
+        /* monitor->timer = */ mprCreateTimerEvent(NULL, "monitor", period, checkMonitor, monitor, 0);
     }
     return 0;
 }
@@ -229,7 +237,8 @@ static void manageAddress(HttpAddress *address, int flags)
 
 /*
     Register a monitor event
-    This code is very carefully locked for maximum speed. There are some tolerated race conditions.
+    This code is very carefully coded for maximum speed without using locks. 
+    There are some tolerated race conditions.
  */
 PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
 {
@@ -240,8 +249,9 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
 
     assert(conn->endpoint);
     http = conn->http;
+    address = conn->address;
 
-    if (!conn->address) {
+    if (!address) {
         lock(http->addresses);
         address = mprLookupKey(http->addresses, conn->ip);
         if (!address || address->ncounters <= counterIndex) {
@@ -261,9 +271,10 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
         conn->address = address;
         unlock(http->addresses);
     }
-    counter = &conn->address->counters[counterIndex];
+    counter = &address->counters[counterIndex];
     mprAtomicAdd64(&counter->value, adj);
-    conn->address->updated = http->now;
+    /* Tolerated race with "updated" and the return value */
+    address->updated = http->now;
     return counter->value;
 }
 

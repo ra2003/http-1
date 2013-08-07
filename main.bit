@@ -31,6 +31,7 @@ Bit.load({
         'without-all': [ 'doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'ssl' ],
         http: {
             pam: true,
+            webSockets: true,
         },
         est: {
             camellia: false,
@@ -46,6 +47,7 @@ Bit.load({
 
     usage: {
         'http.pam': 'Enable Unix Pluggable Auth Module (true|false)',                              
+        'http.webSockets': 'Enable WebSockets (true|false)',                              
     },
 
     profiles: {

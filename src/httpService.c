@@ -112,7 +112,9 @@ PUBLIC Http *httpCreate(int flags)
     httpOpenSendConnector(http);
     httpOpenRangeFilter(http);
     httpOpenChunkFilter(http);
+#if BIT_HTTP_WEB_SOCKETS
     httpOpenWebSockFilter(http);
+#endif
 
     mprSetIdleCallback(isIdle);
     mprAddTerminator(terminateHttp);

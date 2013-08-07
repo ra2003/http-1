@@ -1,5 +1,5 @@
 /*
-    webSock.c - WebSockets filter support
+    webSockFilter.c - WebSockets filter support
 
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
@@ -8,6 +8,7 @@
 
 #include    "http.h"
 
+#if BIT_HTTP_WEB_SOCKETS
 /********************************** Locals ************************************/
 /*
     Message frame states
@@ -1167,6 +1168,7 @@ PUBLIC bool httpVerifyWebSocketsHandshake(HttpConn *conn)
     return 1;
 }
 
+#endif /* BIT_HTTP_WEB_SOCKETS */
 /*
     @copy   default
 

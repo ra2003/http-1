@@ -889,11 +889,13 @@ static bool processParsed(HttpConn *conn)
                 httpStartPipeline(conn);
             }
         }
+#if BIT_HTTP_WEB_SOCKETS
     } else {
         if (conn->upgraded && !httpVerifyWebSocketsHandshake(conn)) {
             httpSetState(conn, HTTP_STATE_FINALIZED);
             return 1;
         }
+#endif
     }
     httpSetState(conn, HTTP_STATE_CONTENT);
     if (rx->remainingContent == 0) {

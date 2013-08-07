@@ -285,7 +285,9 @@ PUBLIC HttpRoute *httpCreateConfiguredRoute(HttpHost *host, int serverSide)
     http = route->http;
     httpAddRouteFilter(route, http->rangeFilter->name, NULL, HTTP_STAGE_TX);
     httpAddRouteFilter(route, http->chunkFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
+#if BIT_HTTP_WEB_SOCKETS
     httpAddRouteFilter(route, http->webSocketFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
+#endif
     if (serverSide) {
         httpAddRouteFilter(route, http->uploadFilter->name, NULL, HTTP_STAGE_RX);
     }

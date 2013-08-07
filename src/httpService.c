@@ -100,6 +100,8 @@ PUBLIC Http *httpCreate(int flags)
     http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE);
     http->booted = mprGetTime();
     http->flags = flags;
+    http->monitorMaxPeriod = 0;
+    http->monitorMinPeriod = MAXINT;
     http->secret = mprGetRandomString(HTTP_MAX_SECRET);
 
     updateCurrentDate(http);

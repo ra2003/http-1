@@ -9011,7 +9011,9 @@ PUBLIC void mprScheduleDispatcher(MprDispatcher *dispatcher)
     int                 mustWakeWaitService, mustWakeCond;
 
     assert(dispatcher);
-    assert(!(dispatcher->flags & MPR_DISPATCHER_DESTROYED));
+    if (dispatcher->flags & MPR_DISPATCHER_DESTROYED) {
+        return;
+    }
     es = dispatcher->service;
     lock(es);
     if (isRunning(dispatcher)) {

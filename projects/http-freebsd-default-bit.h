@@ -85,6 +85,9 @@
 #ifndef BIT_HTTP_PAM
     #define BIT_HTTP_PAM 1
 #endif
+#ifndef BIT_HTTP_WEB_SOCKETS
+    #define BIT_HTTP_WEB_SOCKETS 1
+#endif
 #ifndef BIT_PREFIXES
     #define BIT_PREFIXES "embedthis-prefixes"
 #endif

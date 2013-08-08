@@ -97,15 +97,15 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
     if (fmt) {
         period = monitor->period / 1000;
         address = ip ? sfmt(" %s", ip) : "";
-        counter->name = mprGetItem(monitor->http->counters, monitor->counterIndex);
-        msg = sfmt(fmt, address, counter->name, value, period, monitor->limit);
-        subject = sfmt("Monitor %s Alert", counter->name);
+        msg = sfmt(fmt, address, monitor->counterName, value, period, monitor->limit);
+        subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
-            sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %d, MESSAGE: '%s', PERIOD: %d, SUBJECT: '%s', VALUE: %d }", 
-            counter->name, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, value));
+            sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %Ld, MESSAGE: '%s', PERIOD: %Ld, SUBJECT: '%s', VALUE: %Ld }", 
+            monitor->counterName, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, value));
         invokeDefenses(monitor, args);
     }
     counter->prior = counter->value;
+    mprTrace(5, "CheckCounter %s, value %Ld, prior %Ld", monitor->counterName, counter->value, counter->prior);
 }
 
 
@@ -113,7 +113,7 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
 {
     Http            *http;
     HttpAddress     *address;
-    HttpCounter     counter;
+    HttpCounter     c, *counter;
     MprKey          *kp;
     int             removed;
 
@@ -121,22 +121,22 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
     http->now = mprGetTicks();
 
     if (monitor->counterIndex == HTTP_COUNTER_MEMORY) {
-        counter.prior = 0;
-        memset(&counter, 0, sizeof(HttpCounter));
-        counter.value = mprGetMem();
-        checkCounter(monitor, &counter, NULL);
+        c.prior = 0;
+        memset(&c, 0, sizeof(HttpCounter));
+        c.value = mprGetMem();
+        checkCounter(monitor, &c, NULL);
 
     } else if (monitor->counterIndex == HTTP_COUNTER_ACTIVE_PROCESSES) {
-        counter.prior = 0;
-        memset(&counter, 0, sizeof(HttpCounter));
-        counter.value = mprGetListLength(MPR->cmdService->cmds);
-        checkCounter(monitor, &counter, NULL);
+        c.prior = 0;
+        memset(&c, 0, sizeof(HttpCounter));
+        c.value = mprGetListLength(MPR->cmdService->cmds);
+        checkCounter(monitor, &c, NULL);
 
     } else if (monitor->counterIndex == HTTP_COUNTER_ACTIVE_CLIENTS) {
-        counter.prior = 0;
-        memset(&counter, 0, sizeof(HttpCounter));
-        counter.value = mprGetHashLength(http->addresses);
-        checkCounter(monitor, &counter, NULL);
+        c.prior = 0;
+        memset(&c, 0, sizeof(HttpCounter));
+        c.value = mprGetHashLength(http->addresses);
+        checkCounter(monitor, &c, NULL);
 
     } else {
         /*
@@ -146,9 +146,9 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
         do {
             removed = 0;
             for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
-                counter = address->counters[monitor->counterIndex];
+                counter = &address->counters[monitor->counterIndex];
                 unlock(http->addresses);
-                checkCounter(monitor, &counter, kp->key);
+                checkCounter(monitor, counter, kp->key);
                 lock(http->addresses);
                 /*
                     Expire old records
@@ -219,6 +219,7 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
         mprAddItem(defenseList, defense);
     }
     monitor->counterIndex = counterIndex;
+    monitor->counterName = mprGetItem(http->counters, monitor->counterIndex);
     monitor->expr = (expr && *expr == '<') ? '<' : '>';
     monitor->limit = limit;
     monitor->period = period;
@@ -259,7 +260,7 @@ static void startMonitors()
         http->monitorsStarted = 1;
     }
     unlock(http);
-    mprTrace(4, "Start monitors: min %d, max %d",  http->monitorMinPeriod, http->monitorMaxPeriod);
+    mprTrace(4, "Start monitors: min %Ld, max %Ld",  http->monitorMinPeriod, http->monitorMaxPeriod);
 }
 
 
@@ -425,7 +426,7 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
     address->banUntil = max(banUntil, address->banUntil);
     address->banMsg = msg;
     address->banStatus = status;
-    mprLog(1, "Client %s banned for %d secs. %s", ip, period / 1000, address->banMsg ? address->banMsg : "");
+    mprLog(1, "Client %s banned for %Ld secs. %s", ip, period / 1000, address->banMsg ? address->banMsg : "");
     return 0;
 }
 

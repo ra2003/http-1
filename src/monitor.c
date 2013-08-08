@@ -78,34 +78,33 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
 {
     MprHash     *args;
     cchar       *address, *fmt, *msg, *subject;
-    uint64      value, period;
+    uint64      period;
 
     fmt = 0;
-    assert(counter->value >= counter->prior);
-    value = counter->value - counter->prior;
 
     if (monitor->expr == '>') {
-        if (value > monitor->limit) {
+        if (counter->value > monitor->limit) {
             fmt = "WARNING: Monitor%s for %s at %Ld / %Ld secs exceeds limit of %Ld";
         }
 
     } else if (monitor->expr == '>') {
-        if (value < monitor->limit) {
+        if (counter->value < monitor->limit) {
             fmt = "WARNING: Monitor%s for %s at %Ld / %Ld secs outside limit of %Ld";
         }
     }
     if (fmt) {
         period = monitor->period / 1000;
         address = ip ? sfmt(" %s", ip) : "";
-        msg = sfmt(fmt, address, monitor->counterName, value, period, monitor->limit);
+        msg = sfmt(fmt, address, monitor->counterName, counter->value, period, monitor->limit);
         subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
             sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %Ld, MESSAGE: '%s', PERIOD: %Ld, SUBJECT: '%s', VALUE: %Ld }", 
-            monitor->counterName, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, value));
+            monitor->counterName, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, counter->value));
         invokeDefenses(monitor, args);
     }
-    counter->prior = counter->value;
-    mprTrace(5, "CheckCounter %s, value %Ld, prior %Ld", monitor->counterName, counter->value, counter->prior);
+    mprTrace(5, "CheckCounter \"%s\" (%Ld %c limit %Ld) every %Ld secs", monitor->counterName, counter->value, monitor->expr, monitor->limit, 
+        monitor->period / 1000);
+    counter->value = 0;
 }
 
 
@@ -121,19 +120,16 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
     http->now = mprGetTicks();
 
     if (monitor->counterIndex == HTTP_COUNTER_MEMORY) {
-        c.prior = 0;
         memset(&c, 0, sizeof(HttpCounter));
         c.value = mprGetMem();
         checkCounter(monitor, &c, NULL);
 
     } else if (monitor->counterIndex == HTTP_COUNTER_ACTIVE_PROCESSES) {
-        c.prior = 0;
         memset(&c, 0, sizeof(HttpCounter));
         c.value = mprGetListLength(MPR->cmdService->cmds);
         checkCounter(monitor, &c, NULL);
 
     } else if (monitor->counterIndex == HTTP_COUNTER_ACTIVE_CLIENTS) {
-        c.prior = 0;
         memset(&c, 0, sizeof(HttpCounter));
         c.value = mprGetHashLength(http->addresses);
         checkCounter(monitor, &c, NULL);

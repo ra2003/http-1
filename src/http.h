@@ -326,7 +326,6 @@ PUBLIC void httpSetForkCallback(struct Http *http, MprForkCallback proc, void *a
  */
 typedef struct HttpCounter {
     int64       value;                          /**< Current counter value */
-    int64       prior;                          /**< Prior counter value when monitor last ran */
 } HttpCounter;
 
 typedef struct HttpMonitor {

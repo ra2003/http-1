@@ -873,6 +873,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 static bool processParsed(HttpConn *conn)
 {
     HttpRx      *rx;
+    HttpQueue   *q;
 
     rx = conn->rx;
 
@@ -902,6 +903,8 @@ static bool processParsed(HttpConn *conn)
         rx->eof = 1;
     }
     if (rx->eof && conn->tx->started) {
+        q = conn->tx->queue[HTTP_QUEUE_RX];
+        httpPutPacketToNext(q, httpCreateEndPacket());
         httpSetState(conn, HTTP_STATE_READY);
     }
     return 1;

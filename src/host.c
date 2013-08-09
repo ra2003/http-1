@@ -153,7 +153,8 @@ static void printRoute(HttpRoute *route, int next, bool full)
         mprRawLog(0, "    Methods:      %s\n", methods);
         mprRawLog(0, "    Prefix:       %s\n", route->prefix);
         mprRawLog(0, "    Target:       %s\n", target);
-        mprRawLog(0, "    Directory:    %s\n", route->dir);
+        mprRawLog(0, "    Home:         %s\n", route->home);
+        mprRawLog(0, "    Documents:    %s\n", route->documents);
         mprRawLog(0, "    Source:       %s\n", route->sourceName);
         mprRawLog(0, "    Template:     %s\n", route->tplate);
         if (route->indicies) {

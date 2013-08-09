@@ -70,8 +70,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     }
     route->auth = httpCreateAuth();
     route->defaultLanguage = sclone("en");
-    route->dir = mprGetCurrentPath(".");
-    route->home = route->dir;
+    route->home = route->documents = mprGetCurrentPath(".");
     route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->flags = BIT_DEBUG ? HTTP_ROUTE_SHOW_ERRORS : 0;
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
@@ -126,7 +125,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->conditions = parent->conditions;
     route->connector = parent->connector;
     route->defaultLanguage = parent->defaultLanguage;
-    route->dir = parent->dir;
+    route->documents = parent->documents;
     route->home = parent->home;
     route->data = parent->data;
     route->eroute = parent->eroute;
@@ -199,7 +198,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->tplate);
         mprMark(route->targetRule);
         mprMark(route->target);
-        mprMark(route->dir);
+        mprMark(route->documents);
         mprMark(route->home);
         mprMark(route->indicies);
         mprMark(route->handler);
@@ -676,7 +675,7 @@ PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route)
     if (lang && lang->path) {
         tx->filename = mprJoinPath(lang->path, tx->filename);
     }
-    tx->filename = mprJoinPath(route->dir, tx->filename);
+    tx->filename = mprJoinPath(route->documents, tx->filename);
 #if BIT_ROM
     tx->filename = mprGetRelPath(tx->filename, NULL);
 #endif
@@ -1089,10 +1088,17 @@ PUBLIC void *httpGetRouteData(HttpRoute *route, cchar *key)
 }
 
 
-PUBLIC cchar *httpGetRouteDir(HttpRoute *route)
+PUBLIC cchar *httpGetRouteDocuments(HttpRoute *route)
 {
     assert(route);
-    return route->dir;
+    return route->documents;
+}
+
+
+PUBLIC cchar *httpGetRouteHome(HttpRoute *route)
+{
+    assert(route);
+    return route->home;
 }
 
 
@@ -1196,12 +1202,12 @@ PUBLIC void httpSetRouteDocuments(HttpRoute *route, cchar *path)
     assert(route);
     assert(path && *path);
 
-    route->dir = httpMakePath(route, route->home, path);
-    httpSetRouteVar(route, "DOCUMENTS_DIR", route->dir);
+    route->documents = httpMakePath(route, route->home, path);
+    httpSetRouteVar(route, "DOCUMENTS", route->documents);
 #if DEPRECATE || 1
     //  DEPRECATE
-    httpSetRouteVar(route, "DOCUMENTS", route->dir);
-    httpSetRouteVar(route, "DOCUMENT_ROOT", route->dir);
+    httpSetRouteVar(route, "DOCUMENTS_DIR", route->documents);
+    httpSetRouteVar(route, "DOCUMENT_ROOT", route->documents);
 #endif
 }
 
@@ -1243,9 +1249,9 @@ PUBLIC void httpSetRouteHome(HttpRoute *route, cchar *path)
     assert(path && *path);
 
     route->home = httpMakePath(route, ".", path);
-
-    httpSetRouteVar(route, "HOME_DIR", route->home);
+    httpSetRouteVar(route, "HOME", route->home);
     //  DEPRECATED
+    httpSetRouteVar(route, "HOME_DIR", route->home);
     httpSetRouteVar(route, "ROUTE_HOME", route->home);
 }
 
@@ -2251,7 +2257,7 @@ static int directoryCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
      */
     tx = conn->tx;
     httpMapFile(conn, route);
-    path = mprJoinPath(route->dir, expandTokens(conn, op->details));
+    path = mprJoinPath(route->documents, expandTokens(conn, op->details));
     tx->ext = tx->filename = 0;
     mprGetPathInfo(path, &info);
     if (info.isDir) {
@@ -2278,7 +2284,7 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
      */
     tx = conn->tx;
     httpMapFile(conn, route);
-    path = mprJoinPath(route->dir, expandTokens(conn, op->details));
+    path = mprJoinPath(route->documents, expandTokens(conn, op->details));
     tx->ext = tx->filename = 0;
     if (mprPathExists(path, R_OK)) {
         return HTTP_ROUTE_OK;
@@ -2808,14 +2814,16 @@ static void definePathVars(HttpRoute *route)
 static void defineHostVars(HttpRoute *route) 
 {
     assert(route);
-    mprAddKey(route->vars, "DOCUMENTS", route->dir);
-    mprAddKey(route->vars, "ROUTE_HOME", route->home);
+    mprAddKey(route->vars, "DOCUMENTS", route->documents);
+    mprAddKey(route->vars, "HOME", route->home);
     mprAddKey(route->vars, "SERVER_NAME", route->host->name);
     mprAddKey(route->vars, "SERVER_PORT", itos(route->host->port));
 
-    //  DEPRECATE
-    mprAddKey(route->vars, "DOCUMENT_ROOT", route->dir);
+#if DEPRECATE || 1
+    mprAddKey(route->vars, "ROUTE_HOME", route->home);
+    mprAddKey(route->vars, "DOCUMENT_ROOT", route->documents);
     mprAddKey(route->vars, "SERVER_ROOT", route->home);
+#endif
 }
 
 

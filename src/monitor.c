@@ -354,6 +354,9 @@ static HttpDefense *createDefense(cchar *name, cchar *remedy, MprHash *args)
 }
 
 
+/*
+    Remedy can be set via REMEDY= in the remedyArgs
+ */
 PUBLIC int httpAddDefense(cchar *name, cchar *remedy, cchar *remedyArgs)
 {
     Http        *http;
@@ -362,12 +365,17 @@ PUBLIC int httpAddDefense(cchar *name, cchar *remedy, cchar *remedyArgs)
     char        *arg, *key, *value;
     int         next;
 
+    assert(name && *name);
+
     http = MPR->httpService;
     args = mprCreateHash(0, 0);
     list = stolist(remedyArgs);
     for (ITERATE_ITEMS(list, arg, next)) {
         key = stok(arg, "=", &value);
         mprAddKey(args, key, strim(value, "\"'", 0));
+    }
+    if (!remedy) {
+        remedy = mprLookupKey(args, "REMEDY");
     }
     mprAddKey(http->defenses, name, createDefense(name, remedy, args));
     return 0;

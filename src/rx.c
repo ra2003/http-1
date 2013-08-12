@@ -1143,7 +1143,8 @@ static bool processRunning(HttpConn *conn)
 
 
 /*
-    Get more output by invoking the stage 'writable' callback. Called by processRunning.
+    Get more output by invoking the handler's writable callback. Called by processRunning.
+    Also issues an HTTP_EVENT_WRITABLE for application level notification.
  */
 static bool getOutput(HttpConn *conn)
 {

@@ -286,16 +286,8 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
             q->stage->start(q);
         }
     }
-    /* 
-        Start the handler
-     */
     httpStartHandler(conn);
-    if (!tx->finalized && !tx->finalizedConnector && rx->remainingContent > 0) {
-        /* 
-            If no remaining content, wait till the processing stage to avoid duplicate writable events 
-         */
-        HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
-    }
+
     if (tx->pendingFinalize) {
         tx->finalizedOutput = 0;
         httpFinalizeOutput(conn);
@@ -327,28 +319,6 @@ static void httpStartHandler(HttpConn *conn)
         q->flags |= HTTP_QUEUE_STARTED;
         q->stage->start(q);
     }
-}
-
-
-/*
-    Get more output by invoking the stage 'writable' callback. Called by processRunning.
- */
-PUBLIC bool httpGetMoreOutput(HttpConn *conn)
-{
-    HttpQueue   *q;
-
-    q = conn->writeq;
-    if (!q->stage || !q->stage->writable) {
-       return 0;
-    }
-    if (!conn->tx->finalizedOutput) {
-        q->stage->writable(q);
-        if (q->count > 0) {
-            httpScheduleQueue(q);
-            httpServiceQueues(conn);
-        }
-    }
-    return 1;
 }
 
 

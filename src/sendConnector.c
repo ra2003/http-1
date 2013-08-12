@@ -140,8 +140,6 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     if (q->first && q->first->flags & HTTP_PACKET_END) {
         mprTrace(6, "sendConnector: end of stream. Finalize connector");
         httpFinalizeConnector(conn);
-    } else {
-        HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
     }
 }
 

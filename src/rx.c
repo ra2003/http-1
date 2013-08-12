@@ -12,6 +12,8 @@
 static void addMatchEtag(HttpConn *conn, char *etag);
 static void delayAwake(HttpConn *conn, MprEvent *event);
 static char *getToken(HttpConn *conn, cchar *delim);
+
+static bool getOutput(HttpConn *conn);
 static void manageRange(HttpRange *range, int flags);
 static void manageRx(HttpRx *rx, int flags);
 static bool parseHeaders(HttpConn *conn, HttpPacket *packet);
@@ -267,7 +269,6 @@ static void delayAwake(HttpConn *conn, MprEvent *event)
     conn->delay = 0;
     httpPumpRequest(conn, NULL);
     httpEnableConnEvents(conn);
-    // httpSocketBlocked(conn);
 }
 
 
@@ -1044,8 +1045,12 @@ static bool processContent(HttpConn *conn)
         return conn->workerEvent ? 0 : 1;
     }
     if (tx->started) {
-        httpServiceQueues(conn);
+        /*
+            Some requests (websockets) remain in the content state while still generating output
+         */
+        moreData += getOutput(conn);
     }
+    httpServiceQueues(conn);
     return (conn->connError || moreData);
 }
 
@@ -1091,13 +1096,12 @@ static bool processRunning(HttpConn *conn)
                 assert(conn->state < HTTP_STATE_FINALIZED);
             }
 
-        } else if (!httpGetMoreOutput(conn)) {
-            /* Request not complete yet. No process callback defined */
+        } else if (!getOutput(conn)) {
             canProceed = 0;
             assert(conn->state < HTTP_STATE_FINALIZED);
 
         } else if (conn->state >= HTTP_STATE_FINALIZED) {
-            /* This happens when httpGetMoreOutput calls writable on windows which then completes the request */
+            /* This happens when getOutput calls writable on windows which then completes the request */
             canProceed = 1;
 
         } else if (q->count < q->low) {
@@ -1135,6 +1139,35 @@ static bool processRunning(HttpConn *conn)
         }
     }
     return canProceed;
+}
+
+
+/*
+    Get more output by invoking the stage 'writable' callback. Called by processRunning.
+ */
+static bool getOutput(HttpConn *conn)
+{
+    HttpQueue   *q;
+    HttpTx      *tx;
+    ssize       count;
+
+    tx = conn->tx;
+    if (tx->started && !tx->writeBlocked) {
+        q = conn->writeq;
+        count = q->count;
+        if (!tx->finalizedOutput) {
+            HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
+            if (tx->handler->writable) {
+                tx->handler->writable(q);
+            }
+        }
+        if (count != q->count) {
+            httpScheduleQueue(q);
+            httpServiceQueues(conn);
+            return 1;
+        }
+    }
+    return 0;
 }
 
 

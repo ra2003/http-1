@@ -788,7 +788,6 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
             }
         }
     } while (len > 0);
-
     httpServiceQueues(conn);
     return totalWritten;
 }
@@ -842,11 +841,13 @@ static void outgoingWebSockService(HttpQueue *q)
 {
     HttpConn        *conn;
     HttpPacket      *packet, *tail;
+    HttpWebSocket   *ws;
     char            *ep, *fp, *prefix, dataMask[4];
     ssize           len;
     int             i, mask;
 
     conn = q->conn;
+    ws = conn->rx->webSocket;
     mprTrace(5, "webSocketFilter: outgoing service");
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
@@ -900,8 +901,8 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            mprLog(3, "webSocketFilter: send \"%s\" (%d) frame, last %d, length %d",
-                codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
+            mprLog(3, "webSocketFilter: %d: send \"%s\" (%d) frame, last %d, length %d",
+                ws->txSeq++, codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
         }
         httpPutPacketToNext(q, packet);
         mprYield(0);

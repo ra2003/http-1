@@ -38,7 +38,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         port = (uri->secure) ? 443 : 80;
     }
     if (conn && conn->sock) {
-        if (--conn->keepAliveCount < 0 || port != conn->port || strcmp(ip, conn->ip) != 0 || 
+        if (conn->keepAliveCount-- <= 0 || port != conn->port || strcmp(ip, conn->ip) != 0 || 
                 uri->secure != (conn->sock->ssl != 0) || conn->sock->ssl != ssl) {
             httpCloseConn(conn);
         } else {
@@ -60,7 +60,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     conn->ip = sclone(ip);
     conn->port = port;
     conn->secure = uri->secure;
-    conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : -1;
+    conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : 0;
 
 #if BIT_PACK_SSL
     /* Must be done even if using keep alive for repeat SSL requests */

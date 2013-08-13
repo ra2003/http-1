@@ -226,7 +226,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
             ws->pingEvent = mprCreateEvent(conn->dispatcher, "webSocket", route->webSocketsPingPeriod, 
                 webSockPing, conn, MPR_EVENT_CONTINUOUS);
         }
-        conn->keepAliveCount = -1;
+        conn->keepAliveCount = 0;
         conn->upgraded = 1;
         rx->eof = 0;
         rx->remainingContent = MAXINT;
@@ -654,7 +654,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             httpSendClose(conn, WS_STATUS_OK, "OK");
             rx->eof = 1;
             rx->remainingContent = 0;
-            conn->keepAliveCount = -1;
+            conn->keepAliveCount = 0;
         }
         ws->state = WS_STATE_CLOSED;
         break;
@@ -1122,7 +1122,7 @@ PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
     httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
     httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
     conn->upgraded = 1;
-    conn->keepAliveCount = -1;
+    conn->keepAliveCount = 0;
     conn->rx->remainingContent = MAXINT;
     return 0;
 }

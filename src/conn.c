@@ -244,7 +244,7 @@ static bool prepForNext(HttpConn *conn)
     assert(conn->endpoint);
     assert(conn->state == HTTP_STATE_COMPLETE);
 
-    if (conn->keepAliveCount < 0) {
+    if (conn->keepAliveCount <= 0) {
         return 0;
     }
     if (conn->tx) {
@@ -285,7 +285,7 @@ PUBLIC void httpConsumeLastRequest(HttpConn *conn)
         }
     }
     if (HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_COMPLETE) {
-        conn->keepAliveCount = -1;
+        conn->keepAliveCount = 0;
     }
 }
  
@@ -296,7 +296,7 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
 
     assert(conn);
     conn->connError = 0;
-    if (conn->keepAliveCount >= 0 && conn->sock) {
+    if (conn->keepAliveCount > 0 && conn->sock) {
         /* Eat remaining input incase last request did not consume all data */
         httpConsumeLastRequest(conn);
     } else {
@@ -442,7 +442,7 @@ static void readEvent(HttpConn *conn)
 
     } else if (nbytes < 0 && mprIsSocketEof(conn->sock)) {
         conn->errorMsg = conn->sock->errorMsg;
-        conn->keepAliveCount = -1;
+        conn->keepAliveCount = 0;
         if (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE) {
             return;
         }
@@ -521,7 +521,7 @@ PUBLIC MprSocket *httpStealConn(HttpConn *conn)
 PUBLIC void httpAfterEvent(HttpConn *conn)
 {
     if (conn->endpoint) {
-        if (conn->keepAliveCount < 0 && (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE)) {
+        if (conn->keepAliveCount <= 0 && (conn->state < HTTP_STATE_PARSED || conn->state == HTTP_STATE_COMPLETE)) {
             httpDestroyConn(conn);
             return;
         } else if (conn->state == HTTP_STATE_COMPLETE) {

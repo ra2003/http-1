@@ -21,7 +21,7 @@ PUBLIC void httpDisconnect(HttpConn *conn)
     }
     conn->connError = 1;
     conn->error = 1;
-    conn->keepAliveCount = -1;
+    conn->keepAliveCount = 0;
     if (conn->rx) {
         conn->rx->eof = 1;
     }
@@ -144,7 +144,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         status = HTTP_CODE_INTERNAL_SERVER_ERROR;
     }
     if (flags & (HTTP_ABORT | HTTP_CLOSE)) {
-        conn->keepAliveCount = -1;
+        conn->keepAliveCount = 0;
     }
     if (flags & HTTP_ABORT) {
         conn->connError = 1;

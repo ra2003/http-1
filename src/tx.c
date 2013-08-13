@@ -681,10 +681,15 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         if (!(route->flags & HTTP_ROUTE_STEALTH)) {
             httpAddHeaderString(conn, "Server", conn->http->software);
         }
+        /*
+            If keepAliveCount == 1
+         */
         if (--conn->keepAliveCount > 0) {
+            assert(conn->keepAliveCount >= 1);
             httpAddHeaderString(conn, "Connection", "Keep-Alive");
             httpAddHeader(conn, "Keep-Alive", "timeout=%Ld, max=%d", conn->limits->inactivityTimeout / 1000, conn->keepAliveCount);
         } else {
+            /* Tell the peer to close the connection */
             httpAddHeaderString(conn, "Connection", "close");
         }
         if (route->flags & HTTP_ROUTE_CORS) {
@@ -766,7 +771,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         (conn->headersCallback)(conn->headersCallbackArg);
     }
     if (tx->flags & HTTP_TX_USE_OWN_HEADERS && !conn->error) {
-        conn->keepAliveCount = -1;
+        conn->keepAliveCount = 0;
         return;
     }
     setHeaders(conn, packet);

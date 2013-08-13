@@ -520,14 +520,14 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
     MprBuf      *content;
     char        *cp, *key, *value, *tok, *hvalue;
     cchar       *oldValue;
-    int         count, keepAlive;
+    int         count, keepAliveHeader;
 
     rx = conn->rx;
     tx = conn->tx;
     rx->headerPacket = packet;
     content = packet->content;
     limits = conn->limits;
-    keepAlive = (conn->http10) ? 0 : 1;
+    keepAliveHeader = 0;
 
     for (count = 0; content->start[0] != '\r' && !conn->error; count++) {
         if (count >= limits->headerMax) {
@@ -579,10 +579,11 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             if (strcasecmp(key, "connection") == 0) {
                 rx->connection = sclone(value);
                 if (scaselesscmp(value, "KEEP-ALIVE") == 0) {
-                    keepAlive = 1;
+                    keepAliveHeader = 1;
+
                 } else if (scaselesscmp(value, "CLOSE") == 0) {
-                    /*  Not really required, but set to 0 to be sure */
                     conn->keepAliveCount = 0;
+                    conn->mustClose = 1;
                 }
 
             } else if (strcasecmp(key, "content-length") == 0) {
@@ -736,14 +737,16 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         case 'k':
             /* Keep-Alive: timeout=N, max=1 */
             if (strcasecmp(key, "keep-alive") == 0) {
-                keepAlive = 1;
                 if ((tok = scontains(value, "max=")) != 0) {
                     conn->keepAliveCount = atoi(&tok[4]);
+                    if (conn->keepAliveCount < 0 || conn->keepAliveCount > BIT_MAX_KEEP_ALIVE) {
+                        conn->keepAliveCount = 0;
+                    }
                     /*
-                        IMPORTANT: Deliberately close the connection one request early. This ensures a client-led 
-                        termination and helps relieve server-side TIME_WAIT conditions.
+                        IMPORTANT: Deliberately close client connections one request early. This encourages a client-led 
+                        termination and may help relieve excessive server-side TIME_WAIT conditions.
                      */
-                    if (conn->keepAliveCount == 1) {
+                    if (!conn->endpoint && conn->keepAliveCount == 1) {
                         conn->keepAliveCount = 0;
                     }
                 }
@@ -840,17 +843,25 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
     }
-    if (conn->error) {
-        /* Cannot continue with keep-alive as the headers have not been correctly parsed */
-        conn->keepAliveCount = -1;
-        conn->connError = 1;
-    }
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
             "Request form of %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveFormSize);
     }
-    if (!keepAlive) {
+    if (conn->error) {
+        /* Cannot continue with keep-alive as the headers have not been correctly parsed */
         conn->keepAliveCount = 0;
+        conn->connError = 1;
+    }
+    if (conn->http10 && !keepAliveHeader) {
+        conn->keepAliveCount = 0;
+    }
+    if (!conn->endpoint && conn->mustClose && rx->length < 0) {
+        /*
+            Google does responses with a body and without a Content-Lenght like this:
+                Connection: close
+                Location: URI
+         */
+        rx->remainingContent = rx->redirect ? 0 : MAXINT;
     }
     if (!(rx->flags & HTTP_CHUNKED)) {
         /*
@@ -968,7 +979,7 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
         httpTraceContent(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, packet, nbytes, rx->bytesRead);
     }
     if (rx->eof) {
-        if (rx->remainingContent > 0 && !conn->http10) {
+        if (rx->remainingContent > 0 && !conn->mustClose) {
             /* Closing is the only way for HTTP/1.0 to signify the end of data */
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
             return 0;
@@ -1312,7 +1323,7 @@ PUBLIC void httpCloseRx(HttpConn *conn)
 {
     if (conn->rx && !conn->rx->remainingContent) {
         /* May not have consumed all read data, so can't be assured the next request will be okay */
-        conn->keepAliveCount = -1;
+        conn->keepAliveCount = 0;
     }
     if (conn->state < HTTP_STATE_FINALIZED) {
         httpPumpRequest(conn, NULL);

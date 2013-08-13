@@ -541,38 +541,24 @@ static void emailRemedy(MprHash *args)
 static void httpRemedy(MprHash *args)
 {
     Http        *http;
-    HttpConn    *conn;
     cchar       *uri, *msg, *method;
+    char        *response, *err;
     int         status;
 
     http = MPR->httpService;
-    if ((conn = httpCreateConn(http, NULL, NULL)) < 0) {
-        mprError("Cannot create http connection");
-        return;
-    }
     uri = mprLookupKey(args, "URI");
     if ((method = mprLookupKey(args, "METHOD")) == 0) {
         method = "POST";
     }
-    if (httpConnect(conn, method, uri, NULL) < 0) {
-        mprError("Cannot connect to URI: %s", uri);
+    msg = smatch(method, "POST") ? mprLookupKey(args, "MESSAGE") : 0;
+
+    status = httpRequest(method, uri, msg, &response, &err);
+    if (status < 0) {
+        mprError("%s", err);
         return;
     }
-    if (smatch(method, "POST")) {
-        msg = mprLookupKey(args, "MESSAGE");
-        if (httpWriteBlock(conn->writeq, msg, slen(msg), HTTP_BLOCK) < 0) {
-            mprError("Cannot write to %s", uri);
-            return;
-        }
-    }
-    httpFinalizeOutput(conn);
-    if (httpWait(conn, HTTP_STATE_PARSED, conn->limits->requestTimeout) < 0) {
-        mprError("Cannot wait for URI %s to respond", uri);
-        return;
-    }
-    if ((status = httpGetStatus(conn)) != HTTP_CODE_OK) {
-        mprError("Remedy URI %s responded with status %d", status);
-        return;
+    if (status != HTTP_CODE_OK) {
+        mprError("Remedy URI %s responded with status %d\n%s", status, response);
     }
 }
 

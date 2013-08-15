@@ -353,9 +353,6 @@ PUBLIC int httpRenderSecurityToken(HttpConn *conn)
     cchar   *securityToken;
 
     securityToken = httpGetSecurityToken(conn);
-    /*
-        This cookie must be visible to Angular - so don't use HTTP_COOKIE_HTTP for "httponly".
-     */
     httpSetCookie(conn, BIT_XSRF_COOKIE, securityToken, "/", NULL,  0, 0);
     httpSetHeader(conn, BIT_XSRF_HEADER, securityToken);
     return 0;

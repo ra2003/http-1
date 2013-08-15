@@ -3,11 +3,9 @@ LICENSE.md - Embedthis Http Licenses
 
 This file documents the Embedthis Software Licenses. It includes the Embedthis Http Open Source License and licenses for third-party components within Http.
 
-This software is distributed under commercial and open source licenses. You may use the GPLv2 Open Source License below or you may acquire a commercial license from Embedthis Software. You agree to be fully bound by the terms of either license. The GPLv2 License does NOT generally permit incorporating this software into non-open source programs. If you are unable to comply with the GPLv2, you must acquire a commercial license to use this software.
+This software is distributed under commercial and open source licenses. You may use the GPLv2 Open Source License below or you may acquire a commercial license from Embedthis Software. You agree to be fully bound by the terms of either license. The GPLv2 License does NOT generally permit incorporating this software into non-open source programs. If you are unable to comply with the GPLv2, you must acquire a commercial license to use this software. Commercial licenses for this software and support services are available from Embedthis Software at: http://embedthis.com/licensing/index.html.
 
-Commercial licenses for this software and support services are available from Embedthis Software at: http://embedthis.com/licensing/index.html
-
-See third-party licenses after the open source license.
+This software uses some third-party components and the licenses for these are included below. These licenses are not "tainting" and can be used in commercial software products. There is no third-party software included that uses the GPL or similar licenses.  The obligations of some of these third-party components require that you include a copy of their license with your binary, software and documentation distributions of your product. Including this file with your product will satify these obligations.
 
 Embedthis Http Open Source License
 ===
@@ -18,7 +16,6 @@ Copyright (C) 1989, 1991 Free Software Foundation, Inc. 59 Temple Place, Suite 3
 Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
 
 PREAMBLE
----
 ---
 
 The licenses for most software are designed to take away your freedom to share and change it. By contrast, the GNU General Public License is intended to guarantee your freedom to share and change free software--to make sure the software is free for all its users. This General Public License applies to most of the Free Software Foundation's software and to any other program whose authors commit to using it. (Some other Free Software Foundation software is covered by the GNU Library General Public License instead.) You can apply it to your programs, too.

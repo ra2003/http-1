@@ -314,7 +314,6 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
     q = conn->readq;
     assert(q->count >= 0);
     assert(size >= 0);
-    VERIFY_QUEUE(q);
 
     while (q->count <= 0 && !conn->async && !conn->error && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
         httpServiceQueues(conn);

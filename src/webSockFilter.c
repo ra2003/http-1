@@ -317,7 +317,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
     ws = conn->rx->webSocket;
     assert(ws);
     limits = conn->limits;
-    VERIFY_QUEUE(q);
 
     if (packet->flags & HTTP_PACKET_DATA) {
         /*
@@ -542,8 +541,8 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
 
     if (3 <= MPR->logLevel) {
         mprAddNullToBuf(content);
-        mprLog(3, "webSocketFilter: receive \"%s\" (%d) frame, last %d, length %d", 
-            codetxt[packet->type], packet->type, packet->last, mprGetBufLength(content));
+        mprLog(2, "WebSocket: %d: receive \"%s\" (%d) frame, last %d, length %d",
+             ws->rxSeq++, codetxt[packet->type], packet->type, packet->last, mprGetBufLength(content));
     }
     switch (packet->type) {
     case WS_MSG_CONT:
@@ -901,7 +900,7 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            mprLog(3, "webSocketFilter: %d: send \"%s\" (%d) frame, last %d, length %d",
+            mprLog(2, "WebSocket: %d: send \"%s\" (%d) frame, last %d, length %d",
                 ws->txSeq++, codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
         }
         httpPutPacketToNext(q, packet);

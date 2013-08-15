@@ -224,7 +224,6 @@ PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serv
         }
         q->count += httpGetPacketLength(packet);
     }
-    VERIFY_QUEUE(q);
     if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
         httpScheduleQueue(q);
     }

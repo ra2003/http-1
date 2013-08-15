@@ -49,6 +49,12 @@
 #ifndef BIT_EST_XTEA
     #define BIT_EST_XTEA 0
 #endif
+#ifndef BIT_HAS_ATOMIC
+    #define BIT_HAS_ATOMIC 0
+#endif
+#ifndef BIT_HAS_ATOMIC64
+    #define BIT_HAS_ATOMIC64 0
+#endif
 #ifndef BIT_HAS_DYN_LOAD
     #define BIT_HAS_DYN_LOAD 1
 #endif

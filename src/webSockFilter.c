@@ -599,6 +599,9 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             if (packet->last || ws->tailMessage || ws->preserveFrames) {
                 packet->flags |= HTTP_PACKET_SOLO;
                 ws->messageLength += httpGetPacketLength(packet);
+                if (packet->type == WS_MSG_TEXT) {
+                    mprAddNullToBuf(packet->content);
+                }
                 /*
                     WARNING: this can run GC due to ejs script from httpNotify. So must retain tailMessage.
                  */

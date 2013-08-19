@@ -970,11 +970,11 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
     size = rx->bytesRead - rx->bytesUploaded;
     if (size >= conn->limits->receiveBodySize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
-            "Request body of %,Ld bytes (sofar) is too big. Limit %,Ld", size, conn->limits->receiveBodySize);
+            "Receive body of %,Ld bytes (sofar) is too big. Limit %,Ld", size, conn->limits->receiveBodySize);
 
     } else if (rx->form && size >= conn->limits->receiveFormSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
-            "Request form of %,Ld bytes (sofar) is too big. Limit %,Ld", size, conn->limits->receiveFormSize);
+            "Receive form of %,Ld bytes (sofar) is too big. Limit %,Ld", size, conn->limits->receiveFormSize);
     }
     if (httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, tx->ext) >= 0) {
         httpTraceContent(conn, HTTP_TRACE_RX, HTTP_TRACE_BODY, packet, nbytes, rx->bytesRead);

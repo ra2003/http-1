@@ -303,13 +303,9 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->headerMax = BIT_MAX_NUM_HEADERS;
     limits->headerSize = BIT_MAX_HEADERS;
     limits->keepAliveMax = BIT_MAX_KEEP_ALIVE;
-    limits->receiveFormSize = BIT_MAX_RECEIVE_FORM;
-    limits->receiveBodySize = BIT_MAX_RECEIVE_BODY;
     limits->processMax = BIT_MAX_PROCESSES;
     limits->requestsPerClientMax = BIT_MAX_REQUESTS_PER_CLIENT;
     limits->sessionMax = BIT_MAX_SESSIONS;
-    limits->transmissionBodySize = BIT_MAX_TX_BODY;
-    limits->uploadSize = BIT_MAX_UPLOAD;
     limits->uriSize = BIT_MAX_URI;
 
     limits->inactivityTimeout = BIT_MAX_INACTIVITY_DURATION;
@@ -322,6 +318,18 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->webSocketsFrameSize = BIT_MAX_WSS_FRAME;
     limits->webSocketsPacketSize = BIT_MAX_WSS_PACKET;
     limits->webSocketsPing = BIT_MAX_PING_DURATION;
+
+    if (serverSide) {
+        limits->receiveFormSize = BIT_MAX_RECEIVE_FORM;
+        limits->receiveBodySize = BIT_MAX_RECEIVE_BODY;
+        limits->transmissionBodySize = BIT_MAX_TX_BODY;
+        limits->uploadSize = BIT_MAX_UPLOAD;
+    } else {
+        limits->receiveFormSize = MAXOFF;
+        limits->receiveBodySize = MAXOFF;
+        limits->transmissionBodySize = MAXOFF;
+        limits->uploadSize = MAXOFF;
+    }
 
 #if FUTURE
     mprSetMaxSocketClients(endpoint, atoi(value));

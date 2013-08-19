@@ -95,10 +95,10 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     httpAddRouteFilter(route, http->rangeFilter->name, NULL, HTTP_STAGE_TX);
     httpAddRouteFilter(route, http->chunkFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
 
-    httpAddRouteResponseHeader(route, HTTP_ROUTE_SET_HEADER, "Content-Security-Policy", "default-src 'self'");
-    httpAddRouteResponseHeader(route, HTTP_ROUTE_SET_HEADER, "X-XSS-Protection", "1; mode=block");
-    httpAddRouteResponseHeader(route, HTTP_ROUTE_SET_HEADER, "X-Frame-Options", "SAMEORIGIN");
-    httpAddRouteResponseHeader(route, HTTP_ROUTE_SET_HEADER, "X-Content-Type-Options", "nosniff");
+    httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "Content-Security-Policy", "default-src 'self'");
+    httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-XSS-Protection", "1; mode=block");
+    httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-Frame-Options", "SAMEORIGIN");
+    httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-Content-Type-Options", "nosniff");
 
     if (MPR->httpService) {
         route->limits = mprMemdup(http->serverLimits ? http->serverLimits : http->clientLimits, sizeof(HttpLimits));
@@ -1007,10 +1007,21 @@ PUBLIC void httpAddRouteRequestHeaderCheck(HttpRoute *route, cchar *header, ccha
  */
 PUBLIC void httpAddRouteResponseHeader(HttpRoute *route, int cmd, cchar *header, cchar *value)
 {
+    MprKeyValue     *pair;
+    int             next;
+
     assert(route);
     assert(header && *header);
 
     GRADUATE_LIST(route, headers);
+    if (cmd == HTTP_ROUTE_REMOVE_HEADER) {
+        for (ITERATE_ITEMS(route->headers, pair, next)) {
+            if (smatch(pair->key, header)) {
+                mprRemoveItem(route->headers, pair);
+                next--;
+            }
+        }
+    }
     mprAddItem(route->headers, mprCreateKeyPair(header, value, cmd));
 }
 

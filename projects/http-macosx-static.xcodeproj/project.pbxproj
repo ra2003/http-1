@@ -1169,7 +1169,7 @@ fi";
 				);
 				OTHER_LDFLAGS = ();
 
-				MACH_O_TYPE = staticlib;
+				MACH_O_TYPE = mh_execute;
 
 			};
 			name = Debug;
@@ -1186,7 +1186,7 @@ fi";
 
 				OTHER_LDFLAGS = ();
 
-				MACH_O_TYPE = staticlib;
+				MACH_O_TYPE = mh_execute;
 
 			};
 			name = Release;
@@ -1327,7 +1327,7 @@ fi";
 				);
 				OTHER_LDFLAGS = ();
 
-				MACH_O_TYPE = staticlib;
+				MACH_O_TYPE = mh_execute;
 
 			};
 			name = Debug;
@@ -1344,7 +1344,7 @@ fi";
 
 				OTHER_LDFLAGS = ();
 
-				MACH_O_TYPE = staticlib;
+				MACH_O_TYPE = mh_execute;
 
 			};
 			name = Release;
@@ -1407,7 +1407,7 @@ fi";
 				);
 				OTHER_LDFLAGS = ();
 
-				MACH_O_TYPE = staticlib;
+				MACH_O_TYPE = mh_execute;
 
 			};
 			name = Debug;
@@ -1424,7 +1424,7 @@ fi";
 
 				OTHER_LDFLAGS = ();
 
-				MACH_O_TYPE = staticlib;
+				MACH_O_TYPE = mh_execute;
 
 			};
 			name = Release;

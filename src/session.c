@@ -145,7 +145,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
                 NOTE: the session state for this ID may already exist if data has been written to the session.
              */
             if ((rx->session = createSession(conn)) != 0) {
-                flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_COOKIE) ? 0 : HTTP_COOKIE_HTTP;
+                flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
                 httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, rx->session->lifespan, flags);
             }
         }

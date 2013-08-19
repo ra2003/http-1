@@ -696,7 +696,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
             setCorsHeaders(conn);
         }
         /* 
-            Apply response headers
+            Apply route headers
          */
         for (ITERATE_ITEMS(route->headers, item, next)) {
             if (item->flags == HTTP_ROUTE_ADD_HEADER) {

@@ -318,7 +318,7 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->sessionTimeout = BIT_MAX_SESSION_DURATION;
 
     limits->webSocketsMax = BIT_MAX_WSS_SOCKETS;
-    limits->webSocketsMessageSize = HTTP_MAX_WSS_MESSAGE;
+    limits->webSocketsMessageSize = BIT_MAX_WSS_MESSAGE;
     limits->webSocketsFrameSize = BIT_MAX_WSS_FRAME;
     limits->webSocketsPacketSize = BIT_MAX_WSS_PACKET;
     limits->webSocketsPing = BIT_MAX_PING_DURATION;

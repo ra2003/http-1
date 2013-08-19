@@ -276,7 +276,6 @@ static void manageAuth(HttpAuth *auth, int flags)
         mprMark(auth->permittedUsers);
 #endif
         mprMark(auth->qop);
-        mprMark(auth->cipher);
         mprMark(auth->realm);
         mprMark(auth->abilities);
         mprMark(auth->store);
@@ -371,11 +370,6 @@ PUBLIC void httpSetAuthAnyValidUser(HttpAuth *auth)
 }
 #endif
 
-
-PUBLIC void httpSetAuthCipher(HttpAuth *auth, cchar *cipher)
-{
-    auth->cipher = sclone(cipher);
-}
 
 /*
     Can supply a roles or abilities in the "abilities" parameter 
@@ -773,6 +767,7 @@ static bool fileVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     HttpRx      *rx;
     HttpAuth    *auth;
     bool        success;
+    char        *requiredPassword;
 
     rx = conn->rx;
     auth = rx->route->auth;
@@ -781,24 +776,18 @@ static bool fileVerifyUser(HttpConn *conn, cchar *username, cchar *password)
         return 0;
     }
     if (password) {
-        success = 0;
-        if (!auth->cipher || smatch(auth->cipher, "md5")) {
+        requiredPassword = (rx->passwordDigest) ? rx->passwordDigest : conn->user->password;
+        if (sncmp(requiredPassword, "BF", 2) == 0 && slen(requiredPassword) > 4 && isdigit(requiredPassword[2]) && 
+                requiredPassword[3] == ':') {
+            /* Blowifsh */
+            success = mprCheckPassword(sfmt("%s:%s:%s", username, auth->realm, password), conn->user->password);
+
+        } else {
             if (!conn->encoded) {
                 password = mprGetMD5(sfmt("%s:%s:%s", username, auth->realm, password));
                 conn->encoded = 1;
             }
-            if (rx->passwordDigest) {
-                /* Digest authentication computes a digest using the password as one ingredient */
-                success = smatch(password, rx->passwordDigest);
-            } else {
-                success = smatch(password, conn->user->password);
-            }
-
-        } else if (smatch(auth->cipher, "blowfish")) {
-            success = mprCheckPassword(sfmt("%s:%s:%s", username, auth->realm, password), conn->user->password);
-
-        } else {
-            mprError("Unknown authentication cipher \"%s\"", auth->cipher);
+            success = smatch(password, requiredPassword);
         }
         if (success) {
             mprLog(5, "User \"%s\" authenticated for route %s", username, rx->route->name);

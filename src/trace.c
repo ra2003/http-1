@@ -22,7 +22,7 @@ PUBLIC void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_T
         trace->levels[i] = levels[i];
     }
     if (include && strcmp(include, "*") != 0) {
-        trace->include = mprCreateHash(0, 0);
+        trace->include = mprCreateHash(0, MPR_HASH_STABLE);
         line = sclone(include);
         word = stok(line, ", \t\r\n", &tok);
         while (word) {
@@ -34,7 +34,7 @@ PUBLIC void httpSetRouteTraceFilter(HttpRoute *route, int dir, int levels[HTTP_T
         }
     }
     if (exclude) {
-        trace->exclude = mprCreateHash(0, 0);
+        trace->exclude = mprCreateHash(0, MPR_HASH_STABLE);
         line = sclone(exclude);
         word = stok(line, ", \t\r\n", &tok);
         while (word) {

@@ -35,7 +35,7 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     if (headers) {
         tx->headers = headers;
     } else {
-        tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
+        tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
         if (!conn->endpoint) {
             httpAddHeaderString(conn, "User-Agent", sclone(BIT_HTTP_SOFTWARE));
         }

@@ -31,7 +31,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         /* Do only once */
         return;
     }
-    svars = rx->svars = mprCreateHash(HTTP_VAR_HASH_SIZE, 0);
+    svars = rx->svars = mprCreateHash(HTTP_VAR_HASH_SIZE, MPR_HASH_STABLE);
     tx = conn->tx;
     host = conn->host;
     sock = conn->sock;
@@ -249,7 +249,7 @@ PUBLIC void httpAddJsonParams(HttpConn *conn)
 PUBLIC MprHash *httpGetParams(HttpConn *conn)
 { 
     if (conn->rx->params == 0) {
-        conn->rx->params = mprCreateHash(HTTP_VAR_HASH_SIZE, 0);
+        conn->rx->params = mprCreateHash(HTTP_VAR_HASH_SIZE, MPR_HASH_STABLE);
     }
     return conn->rx->params;
 }
@@ -312,7 +312,7 @@ PUBLIC char *httpGetParamsString(HttpConn *conn)
 
     if (rx->paramString == 0) {
         if ((params = conn->rx->params) != 0) {
-            if ((list = mprCreateList(mprGetHashLength(params), 0)) != 0) {
+            if ((list = mprCreateList(mprGetHashLength(params), MPR_LIST_STABLE)) != 0) {
                 len = 0;
                 for (kp = 0; (kp = mprGetNextKey(params, kp)) != NULL; ) {
                     mprAddItem(list, kp);
@@ -370,7 +370,7 @@ PUBLIC void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *upfile)
 
     rx = conn->rx;
     if (rx->files == 0) {
-        rx->files = mprCreateHash(-1, 0);
+        rx->files = mprCreateHash(-1, MPR_HASH_STABLE);
     }
     mprAddKey(rx->files, id, upfile);
 }

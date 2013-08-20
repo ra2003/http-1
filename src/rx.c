@@ -47,7 +47,7 @@ PUBLIC HttpRx *httpCreateRx(HttpConn *conn)
     rx->pathInfo = sclone("/");
     rx->scriptName = mprEmptyString();
     rx->needInputPipeline = !conn->endpoint;
-    rx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
+    rx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
     rx->chunkState = HTTP_CHUNK_UNCHUNKED;
     rx->traceLevel = -1;
     return rx;
@@ -1616,7 +1616,7 @@ static void addMatchEtag(HttpConn *conn, char *etag)
 
     rx = conn->rx;
     if (rx->etags == 0) {
-        rx->etags = mprCreateList(-1, 0);
+        rx->etags = mprCreateList(-1, MPR_LIST_STABLE);
     }
     mprAddItem(rx->etags, sclone(etag));
 }
@@ -1876,7 +1876,7 @@ PUBLIC HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *default
     if (spoken == 0) {
         return 0;
     }
-    list = mprCreateList(-1, 0);
+    list = mprCreateList(-1, MPR_LIST_STABLE);
     if ((accept = httpGetHeader(conn, "Accept-Language")) != 0) {
         for (tok = stok(sclone(accept), ",", &nextTok); tok; tok = stok(nextTok, ",", &nextTok)) {
             language = stok(tok, ";", &quality);

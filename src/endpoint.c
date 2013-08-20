@@ -32,7 +32,7 @@ PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *disp
     endpoint->port = port;
     endpoint->ip = sclone(ip);
     endpoint->dispatcher = dispatcher;
-    endpoint->hosts = mprCreateList(-1, 0);
+    endpoint->hosts = mprCreateList(-1, MPR_LIST_STABLE);
     endpoint->mutex = mprCreateLock();
     httpAddEndpoint(http, endpoint);
     return endpoint;

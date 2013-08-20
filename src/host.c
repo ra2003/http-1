@@ -36,10 +36,10 @@ PUBLIC HttpHost *httpCreateHost()
     mprSetCacheLimits(host->responseCache, 0, BIT_MAX_CACHE_DURATION, 0, 0);
 
     host->mutex = mprCreateLock();
-    host->routes = mprCreateList(-1, 0);
+    host->routes = mprCreateList(-1, MPR_LIST_STABLE);
     host->flags = HTTP_HOST_NO_TRACE;
     host->protocol = sclone("HTTP/1.1");
-    host->streams = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
+    host->streams = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
     httpSetStreaming(host, "application/x-www-form-urlencoded", NULL, 0);
     httpSetStreaming(host, "application/json", NULL, 0);
     httpAddHost(http, host);
@@ -333,7 +333,7 @@ PUBLIC HttpRoute *httpLookupRouteByPattern(HttpHost *host, cchar *pattern)
 
 PUBLIC void httpResetRoutes(HttpHost *host)
 {
-    host->routes = mprCreateList(-1, 0);
+    host->routes = mprCreateList(-1, MPR_LIST_STABLE);
 }
 
 

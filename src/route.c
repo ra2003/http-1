@@ -71,25 +71,28 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->auth = httpCreateAuth();
     route->defaultLanguage = sclone("en");
     route->home = route->documents = mprGetCurrentPath(".");
-    route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->flags = HTTP_ROUTE_STEALTH;
     if (BIT_DEBUG) {
         route->flags |= HTTP_ROUTE_SHOW_ERRORS;
     }
-    route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
     route->host = host;
     route->http = MPR->httpService;
-    route->errorDocuments = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
-    route->indicies = mprCreateList(-1, 0);
-    route->inputStages = mprCreateList(-1, 0);
     route->lifespan = BIT_MAX_CACHE_DURATION;
-    route->methods = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES);
-    route->outputStages = mprCreateList(-1, 0);
-    route->vars = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS);
     route->pattern = MPR->emptyString;
     route->targetRule = sclone("run");
     route->autoDelete = 1;
     route->workers = -1;
+
+    route->headers = mprCreateList(-1, MPR_LIST_STABLE);
+    route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
+    route->indicies = mprCreateList(-1, MPR_LIST_STABLE);
+    route->inputStages = mprCreateList(-1, MPR_LIST_STABLE);
+    route->outputStages = mprCreateList(-1, MPR_LIST_STABLE);
+
+    route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
+    route->errorDocuments = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
+    route->methods = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
+    route->vars = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
 
     httpAddRouteMethods(route, NULL);
     httpAddRouteFilter(route, http->rangeFilter->name, NULL, HTTP_STAGE_TX);
@@ -293,10 +296,6 @@ PUBLIC HttpRoute *httpCreateConfiguredRoute(HttpHost *host, int serverSide)
      */
     route = httpCreateRoute(host);
     http = route->http;
-#if UNUSED
-    httpAddRouteFilter(route, http->rangeFilter->name, NULL, HTTP_STAGE_TX);
-    httpAddRouteFilter(route, http->chunkFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
-#endif
 #if BIT_HTTP_WEB_SOCKETS
     httpAddRouteFilter(route, http->webSocketFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
 #endif
@@ -818,7 +817,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     filter = httpCloneStage(route->http, stage);
 
     if (extensions && *extensions) {
-        filter->extensions = mprCreateHash(0, MPR_HASH_CASELESS);
+        filter->extensions = mprCreateHash(0, MPR_HASH_CASELESS | MPR_HASH_STABLE);
         extlist = sclone(extensions);
         word = stok(extlist, " \t\r\n", &tok);
         while (word) {
@@ -934,16 +933,16 @@ PUBLIC void httpAddRouteMapping(HttpRoute *route, cchar *extensions, cchar *mapp
     char        *etok, *mtok;
 
     if (!route->mappings) {
-        route->mappings = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, 0);
+        route->mappings = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, MPR_HASH_STABLE);
     }
     if (!route->map) {
-        route->map = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, 0);
+        route->map = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, MPR_HASH_STABLE);
     }
     for (ext = stok(sclone(extensions), ", \t", &etok); ext; ext = stok(NULL, ", \t", &etok)) {
         if (*ext == '.') {
             ext++;
         }
-        mapList = mprCreateList(0, 0);
+        mapList = mprCreateList(0, MPR_LIST_STABLE);
         for (map = stok(sclone(mappings), ", \t", &mtok); map; map = stok(NULL, ", \t", &mtok)) {
             mprAddItem(mapList, sreplace(map, "${1}", ext));
         }
@@ -1015,6 +1014,9 @@ PUBLIC void httpAddRouteResponseHeader(HttpRoute *route, int cmd, cchar *header,
 
     GRADUATE_LIST(route, headers);
     if (cmd == HTTP_ROUTE_REMOVE_HEADER) {
+        /*
+            Remove existing route headers, but keep the remove record so that user headers will be removed too
+         */
         for (ITERATE_ITEMS(route->headers, pair, next)) {
             if (smatch(pair->key, header)) {
                 mprRemoveItem(route->headers, pair);
@@ -1070,10 +1072,10 @@ PUBLIC void httpClearRouteStages(HttpRoute *route, int direction)
     assert(route);
 
     if (direction & HTTP_STAGE_RX) {
-        route->inputStages = mprCreateList(-1, 0);
+        route->inputStages = mprCreateList(-1, MPR_LIST_STABLE);
     }
     if (direction & HTTP_STAGE_TX) {
-        route->outputStages = mprCreateList(-1, 0);
+        route->outputStages = mprCreateList(-1, MPR_LIST_STABLE);
     }
 }
 
@@ -1143,22 +1145,59 @@ PUBLIC void httpResetRoutePipeline(HttpRoute *route)
 {
     assert(route);
 
-    if (route->parent == 0) {
-        route->errorDocuments = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
+    if (!route->parent || route->caching != route->parent->caching) {
         route->caching = 0;
-        route->extensions = 0;
-        route->handlers = mprCreateList(-1, 0);
-        route->inputStages = mprCreateList(-1, 0);
-        route->indicies = mprCreateList(-1, 0);
     }
-    route->outputStages = mprCreateList(-1, 0);
+    if (!route->parent || route->errorDocuments != route->parent->errorDocuments) {
+        route->errorDocuments = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
+    }
+    if (!route->parent || route->extensions != route->parent->extensions) {
+        route->extensions = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
+    }
+    if (!route->parent || route->handlers != route->parent->handlers) {
+        route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
+    }
+    if (!route->parent || route->inputStages != route->parent->inputStages) {
+        route->inputStages = mprCreateList(-1, MPR_LIST_STABLE);
+    }
+    if (!route->parent || route->indicies != route->parent->indicies) {
+        route->indicies = mprCreateList(-1, MPR_LIST_STABLE);
+    }
+    if (!route->parent || route->outputStages != route->parent->outputStages) {
+        route->outputStages = mprCreateList(-1, MPR_LIST_STABLE);
+    }
+    if (!route->parent || route->methods != route->parent->methods) {
+        route->methods = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
+        httpAddRouteMethods(route, NULL);
+    }
+    if (!route->parent || route->requestHeaders != route->parent->requestHeaders) {
+        route->requestHeaders = 0;
+    }
+    if (!route->parent || route->params != route->parent->params) {
+        route->params = 0;
+    }
+    if (!route->parent || route->updates != route->parent->updates) {
+        route->updates = 0;
+    }
+    if (!route->parent || route->conditions != route->parent->conditions) {
+        route->conditions = 0;
+    }
+    if (!route->parent || route->map != route->parent->map) {
+        route->map = 0;
+    }
+    if (!route->parent || route->mappings != route->parent->mappings) {
+        route->mappings = 0;
+    }
+    if (!route->parent || route->languages != route->parent->languages) {
+        route->languages = 0;
+    }
 }
 
 
 PUBLIC void httpResetHandlers(HttpRoute *route)
 {
     assert(route);
-    route->handlers = mprCreateList(-1, 0);
+    route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
 }
 
 
@@ -1356,7 +1395,7 @@ PUBLIC void httpRemoveRouteMethods(HttpRoute *route, cchar *methods)
 
 PUBLIC void httpSetRouteMethods(HttpRoute *route, cchar *methods)
 {
-    route->methods = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES);
+    route->methods = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
     httpAddRouteMethods(route, methods);
 }
 
@@ -1574,7 +1613,7 @@ static void finalizePattern(HttpRoute *route)
     int         column;
 
     assert(route);
-    route->tokens = mprCreateList(-1, 0);
+    route->tokens = mprCreateList(-1, MPR_LIST_STABLE);
     pattern = mprCreateBuf(-1, -1);
     startPattern = route->pattern[0] == '^' ? &route->pattern[1] : route->pattern;
 
@@ -2098,7 +2137,7 @@ PUBLIC int httpAddRouteLanguageSuffix(HttpRoute *route, cchar *language, cchar *
     assert(suffix && *suffix);
 
     if (route->languages == 0) {
-        route->languages = mprCreateHash(-1, 0);
+        route->languages = mprCreateHash(-1, MPR_HASH_STABLE);
     } else {
         GRADUATE_HASH(route, languages);
     }
@@ -2121,7 +2160,7 @@ PUBLIC int httpAddRouteLanguageDir(HttpRoute *route, cchar *language, cchar *pat
     assert(path && *path);
 
     if (route->languages == 0) {
-        route->languages = mprCreateHash(-1, 0);
+        route->languages = mprCreateHash(-1, MPR_HASH_STABLE);
     } else {
         GRADUATE_HASH(route, languages);
     }
@@ -3322,7 +3361,7 @@ static char *trimQuotes(char *str)
 PUBLIC MprHash *httpGetOptions(cchar *options)
 {
     if (options == 0) {
-        return mprCreateHash(-1, 0);
+        return mprCreateHash(-1, MPR_HASH_STABLE);
     }
     if (*options == '@') {
         /* Allow embedded URIs as options */

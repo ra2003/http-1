@@ -431,10 +431,10 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
         }
         httpAddRouteHandler(route, "cacheHandler", NULL);
         httpAddRouteFilter(route, "cacheFilter", "", HTTP_STAGE_TX);
-        route->caching = mprCreateList(0, 0);
+        route->caching = mprCreateList(0, MPR_LIST_STABLE);
 
     } else if (flags & HTTP_CACHE_RESET) {
-        route->caching = mprCreateList(0, 0);
+        route->caching = mprCreateList(0, MPR_LIST_STABLE);
 
     } else if (route->parent && route->caching == route->parent->caching) {
         route->caching = mprCloneList(route->parent->caching);
@@ -443,7 +443,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
         return;
     }
     if (extensions) {
-        cache->extensions = mprCreateHash(0, 0);
+        cache->extensions = mprCreateHash(0, MPR_HASH_STABLE);
         for (item = stok(sclone(extensions), " \t,", &tok); item; item = stok(0, " \t,", &tok)) {
             if (smatch(item, "*")) {
                 extensions = 0;
@@ -452,7 +452,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
             }
         }
     } else if (types) {
-        cache->types = mprCreateHash(0, 0);
+        cache->types = mprCreateHash(0, MPR_HASH_STABLE);
         for (item = stok(sclone(types), " \t,", &tok); item; item = stok(0, " \t,", &tok)) {
             if (smatch(item, "*")) {
                 extensions = 0;
@@ -462,7 +462,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
         }
     }
     if (methods) {
-        cache->methods = mprCreateHash(0, MPR_HASH_CASELESS);
+        cache->methods = mprCreateHash(0, MPR_HASH_CASELESS | MPR_HASH_STABLE);
         for (item = stok(sclone(methods), " \t,", &tok); item; item = stok(0, " \t,", &tok)) {
             if (smatch(item, "*")) {
                 methods = 0;
@@ -472,7 +472,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
         }
     }
     if (uris) {
-        cache->uris = mprCreateHash(0, 0);
+        cache->uris = mprCreateHash(0, MPR_HASH_STABLE);
         for (item = stok(sclone(uris), " \t,", &tok); item; item = stok(0, " \t,", &tok)) {
             if (flags & HTTP_CACHE_ONLY && route->prefix && !scontains(item, sfmt("prefix=%s", route->prefix))) {
                 /*

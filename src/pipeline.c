@@ -49,7 +49,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     rx = conn->rx;
     tx = conn->tx;
 
-    tx->outputPipeline = mprCreateList(-1, 0);
+    tx->outputPipeline = mprCreateList(-1, MPR_LIST_STABLE);
     if (conn->endpoint) {
         if (tx->handler == 0 || tx->finalized) {
             tx->handler = http->passHandler;
@@ -125,7 +125,7 @@ PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
 
     rx = conn->rx;
     tx = conn->tx;
-    rx->inputPipeline = mprCreateList(-1, 0);
+    rx->inputPipeline = mprCreateList(-1, MPR_LIST_STABLE);
     if (route) {
         for (next = 0; (filter = mprGetNextItem(route->inputStages, &next)) != 0; ) {
             if (matchFilter(conn, filter, route, HTTP_STAGE_RX) == HTTP_ROUTE_OK) {

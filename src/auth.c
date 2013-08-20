@@ -16,7 +16,7 @@
         if (auth->parent && auth->field && auth->field == auth->parent->field) { \
             auth->field = mprCloneHash(auth->parent->field); \
         } else { \
-            auth->field = mprCreateHash(0, 0); \
+            auth->field = mprCreateHash(0, MPR_HASH_STABLE); \
         } \
     }
 

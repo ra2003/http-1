@@ -93,11 +93,11 @@ PUBLIC Http *httpCreate(int flags)
     http->software = sclone(BIT_HTTP_SOFTWARE);
     http->protocol = sclone("HTTP/1.1");
     http->mutex = mprCreateLock();
-    http->stages = mprCreateHash(-1, 0);
-    http->hosts = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
+    http->stages = mprCreateHash(-1, MPR_HASH_STABLE);
+    http->hosts = mprCreateList(-1, MPR_LIST_STATIC_VALUES | MPR_LIST_STABLE);
     http->connections = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
-    http->authTypes = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE);
-    http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE);
+    http->authTypes = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE | MPR_HASH_STABLE);
+    http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE | MPR_HASH_STABLE);
     http->booted = mprGetTime();
     http->flags = flags;
     http->monitorMaxPeriod = 0;
@@ -105,7 +105,7 @@ PUBLIC Http *httpCreate(int flags)
     http->secret = mprGetRandomString(HTTP_MAX_SECRET);
 
     updateCurrentDate(http);
-    http->statusCodes = mprCreateHash(41, MPR_HASH_STATIC_VALUES | MPR_HASH_STATIC_KEYS);
+    http->statusCodes = mprCreateHash(41, MPR_HASH_STATIC_VALUES | MPR_HASH_STATIC_KEYS | MPR_HASH_STABLE);
     for (code = HttpStatusCodes; code->code; code++) {
         mprAddKey(http->statusCodes, code->codeString, code);
     }
@@ -122,16 +122,16 @@ PUBLIC Http *httpCreate(int flags)
     mprAddTerminator(terminateHttp);
 
     if (flags & HTTP_SERVER_SIDE) {
-        http->endpoints = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
-        http->routeTargets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
-        http->routeConditions = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
-        http->routeUpdates = mprCreateHash(-1, MPR_HASH_STATIC_VALUES);
-        http->sessionCache = mprCreateCache(MPR_CACHE_SHARED);
-        http->counters = mprCreateList(-1, 0);
-        http->monitors = mprCreateList(-1, 0);
-        http->addresses = mprCreateHash(-1, 0);
-        http->defenses = mprCreateHash(-1, 0);
-        http->remedies = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_STATIC_VALUES);
+        http->endpoints = mprCreateList(-1, MPR_LIST_STATIC_VALUES | MPR_LIST_STABLE);
+        http->counters = mprCreateList(-1, MPR_LIST_STABLE);
+        http->monitors = mprCreateList(-1, MPR_LIST_STABLE);
+        http->routeTargets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
+        http->routeConditions = mprCreateHash(-1, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
+        http->routeUpdates = mprCreateHash(-1, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
+        http->sessionCache = mprCreateCache(MPR_CACHE_SHARED | MPR_HASH_STABLE);
+        http->addresses = mprCreateHash(-1, MPR_HASH_STABLE);
+        http->defenses = mprCreateHash(-1, MPR_HASH_STABLE);
+        http->remedies = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
         httpOpenUploadFilter(http);
         httpOpenCacheHandler(http);
         httpOpenPassHandler(http);
@@ -776,6 +776,31 @@ PUBLIC char *httpStatsReport(int flags)
     return sclone(mprGetBufStart(buf));
 }
 
+
+PUBLIC bool httpConfigure(HttpConfigureProc proc, void *data, MprTicks timeout)
+{
+    Http        *http;
+    MprTicks    mark;
+
+    http = MPR->httpService;
+    mark = mprGetTicks();
+    if (timeout <= 0) {
+        timeout = MAXINT;
+    }
+    do {
+        lock(http->connections);
+        /* Own request will count as 1 */
+        if (mprGetListLength(http->connections) == 0) {
+            (proc)(data);
+            unlock(http->connections);
+            return 1;
+        }
+        unlock(http->connections);
+        mprSleep(10);
+        /* Defaults to 10 secs */
+    } while (mprGetRemainingTicks(mark, timeout) > 0);
+    return 0;
+}
 
 
 /*

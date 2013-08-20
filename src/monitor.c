@@ -203,7 +203,7 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     if ((monitor = mprAllocObj(HttpMonitor, manageMonitor)) == 0) {
         return MPR_ERR_MEMORY;
     }
-    if ((defenseList = mprCreateList(0, -1)) == 0) {
+    if ((defenseList = mprCreateList(-1, MPR_LIST_STABLE)) == 0) {
         return MPR_ERR_MEMORY;
     }
     tok = sclone(defenses);
@@ -368,7 +368,7 @@ PUBLIC int httpAddDefense(cchar *name, cchar *remedy, cchar *remedyArgs)
     assert(name && *name);
 
     http = MPR->httpService;
-    args = mprCreateHash(0, 0);
+    args = mprCreateHash(0, MPR_HASH_STABLE);
     list = stolist(remedyArgs);
     for (ITERATE_ITEMS(list, arg, next)) {
         key = stok(arg, "=", &value);

@@ -6578,11 +6578,12 @@ typedef struct HttpWebSocket {
     ssize           messageLength;          /**< Length of the current message */
     char            *subProtocol;           /**< Application level sub-protocol */
     HttpPacket      *currentFrame;          /**< Message frame being currently read */
-    HttpPacket      *currentMessage;        /**< Current incoming messsage */
+    HttpPacket      *currentMessage;        /**< Current incoming messsage so far */
     HttpPacket      *tailMessage;           /**< Subsequent message frames */
     MprEvent        *pingEvent;             /**< Ping timer event */
     char            *closeReason;           /**< Reason for closure */
     uchar           dataMask[4];            /**< Mask for data */
+    int             currentMessageType;     /**< Current incoming messsage type */
     int             maskOffset;             /**< Offset in dataMask */
     int             more;                   /**< More data to send in a message */
     int             preserveFrames;         /**< Do not join frames */

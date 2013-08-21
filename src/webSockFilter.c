@@ -368,12 +368,12 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             packet->last = GET_FIN(*fp);
             opcode = GET_CODE(*fp);
             if (opcode == WS_MSG_CONT) {
-                if (!ws->currentMessage) {
+                if (!ws->currentMessageType) {
                     mprLog(2, "WebSockets protocol error: continuation frame but not prior message");
                     error = WS_STATUS_PROTOCOL_ERROR;
                     break;
                 }
-            } else if (opcode < WS_MSG_CONTROL && ws->currentMessage) {
+            } else if (opcode < WS_MSG_CONTROL && ws->currentMessageType) {
                 mprLog(2, "WebSockets protocol error: data frame received but expected a continuation frame");
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
@@ -551,21 +551,10 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         mprLog(2, "WebSocket: %d: receive \"%s\" (%d) frame, last %d, length %d",
              ws->rxSeq++, codetxt[packet->type], packet->type, packet->last, mprGetBufLength(content));
     }
+    validated = 0;
+
     switch (packet->type) {
-    case WS_MSG_CONT:
-        if (ws->currentMessage) {
-            packet->type = ws->currentMessage->type;
-        } else {
-            mprError("webSocketFilter: Bad continuation packet");
-            return WS_STATUS_PROTOCOL_ERROR;
-        }
-        /* Fall through */
-    case WS_MSG_BINARY:
     case WS_MSG_TEXT:
-        if (ws->closing) {
-            break;
-        }
-        validated = 0;
         if (packet->type == WS_MSG_TEXT) {
             mprLog(4, "webSocketFilter: Receive text \"%s\"", content->start);
             /*
@@ -578,12 +567,26 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
                 validated++;
             }
         }
-        if (ws->currentMessage) {
-            if (packet->type != ws->currentMessage->type) {
-                mprError("webSocketFilter: Bad message type in multipart message");
+        /* Fall through */
+
+    case WS_MSG_BINARY:
+        ws->messageLength = 0;
+        ws->currentMessageType = packet->type;
+        /* Fall through */
+
+    case WS_MSG_CONT:
+        if (ws->closing) {
+            break;
+        }
+        if (packet->type == WS_MSG_CONT) {
+            if (ws->currentMessageType) {
+                packet->type = ws->currentMessageType;
+            } else {
+                mprError("webSocketFilter: Bad continuation packet");
                 return WS_STATUS_PROTOCOL_ERROR;
             }
-            assert(!ws->preserveFrames);
+        }
+        if (ws->currentMessage && !ws->preserveFrames) {
             httpJoinPacket(ws->currentMessage, packet);
             ws->currentMessage->last = packet->last;
             packet = ws->currentMessage;
@@ -617,6 +620,9 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             } else {
                 ws->currentMessage = packet;
                 break;
+            }
+            if (packet->last) {
+                ws->currentMessageType = 0;
             }
             mprYield(0);
         } 
@@ -713,7 +719,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     HttpWebSocket   *ws;
     HttpPacket      *packet;
     HttpQueue       *q;
-    ssize           thisWrite, totalWritten;
+    ssize           room, thisWrite, totalWritten;
 
     assert(conn);
     assert(buf);
@@ -747,6 +753,9 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     }
     totalWritten = 0;
     do {
+        if ((room = q->max - q->count) == 0) {
+            break;
+        }
         /*
             Break into frames if the user is not preserving frames and has not explicitly specified "more". 
             The outgoingWebSockService will encode each packet as a frame.
@@ -758,33 +767,34 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         }
         thisWrite = min(thisWrite, q->packetSize);
         if (flags & (HTTP_BLOCK | HTTP_NON_BLOCK)) {
-            thisWrite = min(thisWrite, q->max - q->count);
+            thisWrite = min(thisWrite, room);
+        }
+        if ((packet = httpCreateDataPacket(thisWrite)) == 0) {
+            return MPR_ERR_MEMORY;
+        }
+        /*
+            Spec requires type to be set only on the first frame
+         */
+        if (ws->more) {
+            type = 0;
+        }
+        packet->type = type;
+        type = 0;
+        if (ws->preserveFrames || (flags & HTTP_MORE)) {
+            packet->flags |= HTTP_PACKET_SOLO;
         }
         if (thisWrite > 0) {
-            if ((packet = httpCreateDataPacket(thisWrite)) == 0) {
-                return MPR_ERR_MEMORY;
-            }
-            /*
-                Spec requires type to be set only on the first frame
-             */
-            if (ws->more) {
-                type = 0;
-            }
-            packet->type = type;
-            type = 0;
-            if (ws->preserveFrames || (flags & HTTP_MORE)) {
-                packet->flags |= HTTP_PACKET_SOLO;
-            }
             if (mprPutBlockToBuf(packet->content, buf, thisWrite) != thisWrite) {
                 return MPR_ERR_MEMORY;
             }
-            len -= thisWrite;
-            buf += thisWrite;
-            totalWritten += thisWrite;
-            packet->last = (len > 0) ? 0 : !(flags & HTTP_MORE);
-            ws->more = !packet->last;
-            httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
         }
+        len -= thisWrite;
+        buf += thisWrite;
+        totalWritten += thisWrite;
+        packet->last = (len > 0) ? 0 : !(flags & HTTP_MORE);
+        ws->more = !packet->last;
+        httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
+
         if (q->count >= q->max) {
             httpFlushQueue(q, 0);
             if (q->count >= q->max) {
@@ -922,7 +932,7 @@ static void outgoingWebSockService(HttpQueue *q)
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
             mprLog(2, "WebSocket: %d: send \"%s\" (%d) frame, last %d, length %d",
                 ws->txSeq++, codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
-            if (packet->type == WS_MSG_TEXT) {
+            if (packet->type == WS_MSG_TEXT && packet->content) {
                 mprLog(4, "webSocketFilter: Send text \"%s\"", packet->content->start);
             }
         }

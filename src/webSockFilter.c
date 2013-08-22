@@ -470,9 +470,10 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 packet = ws->currentFrame;
                 content = packet->content;
             }
+#if UNUSED
             if (packet->type == WS_MSG_TEXT) {
                 /*
-                    Validate the frame for fast-fail provided the last frame does not have a partial codepoint.
+                    Validate the frame for fast-fail, provided the last frame does not have a partial codepoint.
                  */
                 if (!ws->partialUTF) {
                     if (!validateText(conn, packet)) {
@@ -482,6 +483,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                     ws->partialUTF = 0;
                 }
             }
+#endif
             frameLen = httpGetPacketLength(packet);
             assert(frameLen <= ws->frameLength);
             if (frameLen == ws->frameLength) {
@@ -555,18 +557,8 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
 
     switch (packet->type) {
     case WS_MSG_TEXT:
-        if (packet->type == WS_MSG_TEXT) {
-            mprLog(4, "webSocketFilter: Receive text \"%s\"", content->start);
-            /*
-                Validate this frame if we don't have a partial codepoint from a prior frame.
-             */
-            if (!ws->partialUTF) {
-                if (!validateText(conn, packet)) {
-                    return WS_STATUS_INVALID_UTF8;
-                }
-                validated++;
-            }
-        }
+        mprLog(4, "webSocketFilter: Receive text \"%s\"", content->start);
+
         /* Fall through */
 
     case WS_MSG_BINARY:
@@ -579,12 +571,20 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             break;
         }
         if (packet->type == WS_MSG_CONT) {
-            if (ws->currentMessageType) {
-                packet->type = ws->currentMessageType;
-            } else {
+            if (!ws->currentMessageType) {
                 mprError("webSocketFilter: Bad continuation packet");
                 return WS_STATUS_PROTOCOL_ERROR;
             }
+            packet->type = ws->currentMessageType;
+        }
+        /*
+            Validate this frame if we don't have a partial codepoint from a prior frame.
+         */
+        if (packet->type == WS_MSG_TEXT && !ws->partialUTF) {
+            if (!validateText(conn, packet)) {
+                return WS_STATUS_INVALID_UTF8;
+            }
+            validated++;
         }
         if (ws->currentMessage && !ws->preserveFrames) {
             httpJoinPacket(ws->currentMessage, packet);
@@ -753,9 +753,6 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     }
     totalWritten = 0;
     do {
-        if ((room = q->max - q->count) == 0) {
-            break;
-        }
         /*
             Break into frames if the user is not preserving frames and has not explicitly specified "more". 
             The outgoingWebSockService will encode each packet as a frame.
@@ -766,6 +763,29 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
             thisWrite = min(len, conn->limits->webSocketsFrameSize);
         }
         thisWrite = min(thisWrite, q->packetSize);
+
+        if (q->count >= q->max) {
+            httpFlushQueue(q, 0);
+            if (q->count >= q->max) {
+                if (flags & HTTP_NON_BLOCK) {
+                    break;
+                } else if (flags & HTTP_BLOCK) {
+                    while (q->count >= q->max) {
+                        assert(conn->limits->inactivityTimeout > 10);
+                        httpServiceQueues(conn);
+                        if (conn->tx->writeBlocked) {
+                            httpEnableConnEvents(q->conn);
+                        }
+                        mprWaitForEvent(conn->dispatcher, conn->limits->inactivityTimeout);
+                    }
+                }
+            }
+        }
+        if ((room = q->max - q->count) == 0) {
+            if (flags & HTTP_NON_BLOCK) {
+                break;
+            }
+        }
         if (flags & (HTTP_BLOCK | HTTP_NON_BLOCK)) {
             thisWrite = min(thisWrite, room);
         }
@@ -795,23 +815,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         ws->more = !packet->last;
         httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
 
-        if (q->count >= q->max) {
-            httpFlushQueue(q, 0);
-            if (q->count >= q->max) {
-                if (flags & HTTP_NON_BLOCK) {
-                    break;
-                } else if (flags & HTTP_BLOCK) {
-                    while (q->count >= q->max) {
-                        assert(conn->limits->inactivityTimeout > 10);
-                        httpServiceQueues(conn);
-                        if (conn->tx->writeBlocked) {
-                            httpEnableConnEvents(q->conn);
-                        }
-                        mprWaitForEvent(conn->dispatcher, conn->limits->inactivityTimeout);
-                    }
-                }
-            }
-        }
+
     } while (len > 0);
 
     httpServiceQueues(conn);
@@ -1078,7 +1082,8 @@ static int validUTF8(cchar *str, ssize len)
 
 
 /*
-    Validate a UTF8 packet. Return false if an invalid codepoint is found.
+    Validate the UTF8 in a packet. Return false if an invalid codepoint is found.
+    If the packet is not the last packet, we alloc incomplete codepoints.
     Set ws->partialUTF if the last codepoint was incomplete.
  */
 static bool validateText(HttpConn *conn, HttpPacket *packet)

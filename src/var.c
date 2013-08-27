@@ -249,6 +249,7 @@ PUBLIC void httpAddJsonParams(HttpConn *conn)
 PUBLIC MprHash *httpGetParams(HttpConn *conn)
 { 
     if (conn->rx->params == 0) {
+        //  MOB - should use mprJSON  primitive not mprCreateHash
         conn->rx->params = mprCreateHash(HTTP_VAR_HASH_SIZE, MPR_HASH_STABLE);
     }
     return conn->rx->params;

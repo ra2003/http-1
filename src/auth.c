@@ -135,6 +135,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         return 0;
     }
     if (auth->username) {
+        /* If using auto-login, replace the username */
         username = auth->username;
     }
     if (!(auth->store->verifyUser)(conn, username, password)) {

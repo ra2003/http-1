@@ -2557,13 +2557,17 @@ PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods
 {
     HttpRoute   *route;
 
+#if UNUSED
     if (name == NULL || *name == '\0') {
         name = "/";
     }
+#endif
     if ((route = httpCreateInheritedRoute(parent)) == 0) {
         return 0;
     }
-    httpSetRouteName(route, name);
+    if (name) {
+        httpSetRouteName(route, name);
+    }
     httpSetRoutePattern(route, pattern, 0);
     if (methods) {
         httpSetRouteMethods(route, methods);

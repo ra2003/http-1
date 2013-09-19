@@ -2038,11 +2038,13 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
 PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
 {
     MprBuf      *buf;
+    HttpRx      *rx;
     HttpRoute   *route;
     cchar       *cp, *ep, *value;
     char        key[BIT_MAX_BUFFER];
 
-    route = conn->rx->route;
+    rx = conn->rx;
+    route = rx->route;
     if (template == 0 || *template == '\0') {
         return MPR->emptyString;
     }
@@ -2061,7 +2063,8 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
                 sncopy(key, sizeof(key), cp, ep - cp);
                 if (options && (value = httpGetOption(options, key, 0)) != 0) {
                     mprPutStringToBuf(buf, value);
-                } else if ((value = mprLookupKey(conn->rx->params, key)) != 0) {
+
+                } else if ((value = mprLookupJsonValue(rx->params, key)) != 0) {
                     mprPutStringToBuf(buf, value);
                 }
                 if (value == 0) {
@@ -3337,9 +3340,11 @@ PUBLIC MprHash *httpGetOptionHash(MprHash *options, cchar *field)
     if ((kp = mprLookupKeyEntry(options, field)) == 0) {
         return 0;
     }
+#if UNUSED
     if (kp->type != MPR_JSON_ARRAY && kp->type != MPR_JSON_OBJ) {
         return 0;
     }
+#endif
     return (MprHash*) kp->data;
 }
 
@@ -3360,7 +3365,9 @@ PUBLIC void httpInsertOption(MprHash *options, cchar *field, cchar *value)
     } else {
         kp = mprAddKey(options, field, value);
     }
+#if UNUSED
     kp->type = MPR_JSON_STRING;
+#endif
 }
 
 
@@ -3377,7 +3384,9 @@ PUBLIC void httpAddOption(MprHash *options, cchar *field, cchar *value)
     } else {
         kp = mprAddKey(options, field, value);
     }
+#if UNUSED
     kp->type = MPR_JSON_STRING;
+#endif
 }
 
 
@@ -3409,7 +3418,9 @@ PUBLIC void httpSetOption(MprHash *options, cchar *field, cchar *value)
         return;
     }
     if ((kp = mprAddKey(options, field, value)) != 0) {
+#if UNUSED
         kp->type = MPR_JSON_STRING;
+#endif
     }
 }
 

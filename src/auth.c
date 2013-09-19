@@ -134,9 +134,10 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         mprError("No AuthStore verification routine defined");
         return 0;
     }
-    if (auth->username) {
+    if (auth->username && *auth->username) {
         /* If using auto-login, replace the username */
         username = auth->username;
+        password = 0;
     }
     if (!(auth->store->verifyUser)(conn, username, password)) {
         return 0;
@@ -565,6 +566,9 @@ PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
 }
 
 
+/*
+    This implements auto-loging without requiring a password
+ */
 PUBLIC void httpSetAuthUsername(HttpAuth *auth, cchar *username)
 {
     auth->username = sclone(username);

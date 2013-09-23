@@ -39,7 +39,6 @@ static void defineHostVars(HttpRoute *route);
 static char *expandTokens(HttpConn *conn, cchar *path);
 static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, int matchCount);
 static char *expandRequestTokens(HttpConn *conn, char *targetKey);
-static cchar *expandRouteName(HttpConn *conn, cchar *routeName);
 static void finalizePattern(HttpRoute *route);
 static char *finalizeReplacement(HttpRoute *route, cchar *str);
 static char *finalizeTemplate(HttpRoute *route);
@@ -49,7 +48,6 @@ static void manageLang(HttpLang *lang, int flags);
 static void manageRouteOp(HttpRouteOp *op, int flags);
 static int matchRequestUri(HttpConn *conn, HttpRoute *route);
 static int matchRoute(HttpConn *conn, HttpRoute *route);
-static char *qualifyName(HttpRoute *route, cchar *controller, cchar *name);
 static int selectHandler(HttpConn *conn, HttpRoute *route);
 static int testCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *condition);
 static char *trimQuotes(char *str);
@@ -1909,128 +1907,6 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
 }
 
 
-/********************************* Path and URI Expansion *****************************/
-/*
-    Create and resolve a URI link given a set of options.
-
-    TODO - consider rename httpUri() and move to uri.c
- */
-PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
-{
-    HttpRoute       *route, *lroute;
-    HttpRx          *rx;
-    HttpUri         *uri;
-    cchar           *routeName, *action, *controller, *originalAction, *tplate;
-    char            *rest;
-
-    rx = conn->rx;
-    route = rx->route;
-    controller = 0;
-
-    if (target == 0) {
-        target = "";
-    }
-    if (*target == '@') {
-        target = sjoin("{action: '", target, "'}", NULL);
-    } 
-    if (*target != '{') {
-        target = httpTemplate(conn, target, 0);
-    } else  {
-        if (options) {
-            options = mprBlendHash(httpGetOptions(target), options);
-        } else {
-            options = httpGetOptions(target);
-        }
-        /*
-            Prep the action. Forms are:
-                . @action               # Use the current controller
-                . @controller/          # Use "index" as the action
-                . @controller/action
-         */
-        if ((action = httpGetOption(options, "action", 0)) != 0) {
-            originalAction = action;
-            if (*action == '@') {
-                action = &action[1];
-            }
-            if (strchr(action, '/')) {
-                controller = stok((char*) action, "/", (char**) &action);
-                action = stok((char*) action, "/", &rest);
-            }
-            if (controller) {
-                httpSetOption(options, "controller", controller);
-            } else {
-                controller = httpGetParam(conn, "controller", 0);
-            }
-            if (action == 0 || *action == '\0') {
-                action = "list";
-            }
-            if (action != originalAction) {
-                httpSetOption(options, "action", action);
-            }
-        }
-        /*
-            Find the template to use. Strategy is this order:
-                . options.template
-                . options.route.template
-                . options.action mapped to a route.template, via:
-                . /app/STAR/action
-                . /app/controller/action
-                . /app/STAR/default
-                . /app/controller/default
-         */
-        if ((tplate = httpGetOption(options, "template", 0)) == 0) {
-            if ((routeName = httpGetOption(options, "route", 0)) != 0) {
-                routeName = expandRouteName(conn, routeName);
-                lroute = httpLookupRoute(conn->host, routeName);
-            } else {
-                lroute = 0;
-            }
-            if (lroute == 0) {
-                if ((lroute = httpLookupRoute(conn->host, qualifyName(route, controller, action))) == 0) {
-                    if ((lroute = httpLookupRoute(conn->host, qualifyName(route, "{controller}", action))) == 0) {
-                        if ((lroute = httpLookupRoute(conn->host, qualifyName(route, controller, "default"))) == 0) {
-                            lroute = httpLookupRoute(conn->host, qualifyName(route, "{controller}", "default"));
-                        }
-                    }
-                }
-            }
-            if (lroute) {
-                tplate = lroute->tplate;
-            }
-        }
-        if (tplate) {
-            target = httpTemplate(conn, tplate, options);
-        } else {
-            mprError("Cannot find template for URI %s", target);
-            target = "/";
-        }
-    }
-    //  OPT
-    uri = httpCreateUri(target, 0);
-    uri = httpResolveUri(httpCreateUri(rx->uri, 0), 1, &uri, 0);
-    httpNormalizeUri(uri);
-    return httpUriToString(uri, 0);
-}
-
-
-/*
-    Limited expansion of route names. Support ~/ and ${app} at the start of the route name
- */
-static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
-{
-    HttpRoute   *route;
-
-    route = conn->rx->route;
-    if (routeName[0] == '~') {
-        return sjoin(route->prefix, &routeName[1], NULL);
-    }
-    if (sstarts(routeName, "${app}")) {
-        return sjoin(route->prefix, &routeName[6], NULL);
-    }
-    return routeName;
-}
-
-
 /*
     Expect a template with embedded tokens of the form: "/${controller}/${action}/${other}"
     The options is a hash of token values.
@@ -2588,26 +2464,6 @@ PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods
 
 
 /*
-    Calculate a qualified route name. The form is: /{app}/{controller}/action
- */
-static char *qualifyName(HttpRoute *route, cchar *controller, cchar *action)
-{
-    cchar   *prefix, *controllerPrefix;
-
-    prefix = route->prefix ? route->prefix : "";
-    if (action == 0 || *action == '\0') {
-        action = "default";
-    }
-    if (controller) {
-        controllerPrefix = (controller && smatch(controller, "{controller}")) ? "*" : controller;
-        return sjoin(prefix, "/", controllerPrefix, "/", action, NULL);
-    } else {
-        return sjoin(prefix, "/", action, NULL);
-    }
-}
-
-
-/*
     Add a restful route. The parent route may supply a route prefix. If defined, the route name will prepend the prefix.
  */
 static HttpRoute *addRestful(HttpRoute *parent, cchar *prefix, cchar *action, cchar *methods, cchar *pattern, cchar *target, 
@@ -2698,7 +2554,7 @@ PUBLIC void httpAddHomeRoute(HttpRoute *parent)
 
     prefix = parent->prefix ? parent->prefix : "";
     source = parent->sourceName;
-    name = qualifyName(parent, NULL, "home");
+    name = sjoin(prefix, "/home", NULL);
     path = stemplate("${CLIENT_DIR}/index.esp", parent->vars);
     pattern = sfmt("^%s(/)$", prefix);
     httpDefineRoute(parent, name, "GET,POST", pattern, path, source);

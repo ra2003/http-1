@@ -1401,6 +1401,44 @@ PUBLIC cchar *httpGetCookies(HttpConn *conn)
 }
 
 
+PUBLIC cchar *httpGetCookie(HttpConn *conn, cchar *name)
+{
+    HttpRx  *rx;
+    cchar   *cookie;
+    char    *cp, *value;
+    int     quoted;
+
+    assert(conn);
+    rx = conn->rx;
+    assert(rx);
+
+    for (cookie = rx->cookie; cookie && (value = strstr(cookie, name)) != 0; cookie = value) {
+        value += strlen(name);
+        while (isspace((uchar) *value) || *value == '=') {
+            value++;
+        }
+        quoted = 0;
+        if (*value == '"') {
+            value++;
+            quoted++;
+        }
+        for (cp = value; *cp; cp++) {
+            if (quoted) {
+                if (*cp == '"' && cp[-1] != '\\') {
+                    break;
+                }
+            } else {
+                if ((*cp == ',' || *cp == ';') && cp[-1] != '\\') {
+                    break;
+                }
+            }
+        }
+        return snclone(value, cp - value);
+    }
+    return 0;
+}
+
+
 PUBLIC cchar *httpGetHeader(HttpConn *conn, cchar *key)
 {
     if (conn->rx == 0) {

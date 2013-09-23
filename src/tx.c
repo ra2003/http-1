@@ -448,6 +448,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     }
     tx->status = status;
 
+    targetUri = httpUri(conn, targetUri, 0);
     if (schr(targetUri, '$')) {
         targetUri = httpExpandUri(conn, targetUri);
     }

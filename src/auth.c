@@ -427,7 +427,11 @@ static void loginServiceProc(HttpConn *conn)
             if (auth->loggedIn) {
                 httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loggedIn);
             } else {
-                httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, httpLink(conn, "~", 0));
+#if UNUSED
+                httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, httpUri(conn, "~", 0));
+#else
+                httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, "~");
+#endif
             }
         }
     } else {

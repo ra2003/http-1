@@ -264,12 +264,9 @@ PUBLIC int httpWriteSession(HttpConn *conn)
 }
 
 
-PUBLIC char *httpGetSessionID(HttpConn *conn)
+PUBLIC cchar *httpGetSessionID(HttpConn *conn)
 {
     HttpRx  *rx;
-    cchar   *cookie;
-    char    *cp, *value;
-    int     quoted;
 
     assert(conn);
     rx = conn->rx;
@@ -282,30 +279,7 @@ PUBLIC char *httpGetSessionID(HttpConn *conn)
         return 0;
     }
     rx->sessionProbed = 1;
-    for (cookie = rx->cookie; cookie && (value = strstr(cookie, HTTP_SESSION_COOKIE)) != 0; cookie = value) {
-        value += strlen(HTTP_SESSION_COOKIE);
-        while (isspace((uchar) *value) || *value == '=') {
-            value++;
-        }
-        quoted = 0;
-        if (*value == '"') {
-            value++;
-            quoted++;
-        }
-        for (cp = value; *cp; cp++) {
-            if (quoted) {
-                if (*cp == '"' && cp[-1] != '\\') {
-                    break;
-                }
-            } else {
-                if ((*cp == ',' || *cp == ';') && cp[-1] != '\\') {
-                    break;
-                }
-            }
-        }
-        return snclone(value, cp - value);
-    }
-    return 0;
+    return httpGetCookie(conn, HTTP_SESSION_COOKIE);
 }
 
 

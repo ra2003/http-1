@@ -9,10 +9,12 @@
 
 /********************************** Forwards **********************************/
 
+static cchar *expandRouteName(HttpConn *conn, cchar *routeName);
 static int getPort(HttpUri *uri);
 static int getDefaultPort(cchar *scheme);
 static void manageUri(HttpUri *uri, int flags);
 static void trimPathToDirname(HttpUri *uri);
+static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action);
 
 /************************************ Code ************************************/
 /*
@@ -563,6 +565,11 @@ PUBLIC HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
 }
 
 
+/*
+    Create and resolve a URI link given a set of options.
+
+    TODO - consider rename httpUri() and move to uri.c
+ */
 PUBLIC HttpUri *httpMakeUriLocal(HttpUri *uri)
 {
     if (uri) {
@@ -703,6 +710,112 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
 }
 
 
+PUBLIC char *httpUri(HttpConn *conn, cchar *target, MprHash *options)
+{
+    HttpRoute       *route, *lroute;
+    HttpRx          *rx;
+    HttpUri         *uri;
+    cchar           *routeName, *action, *controller, *originalAction, *tplate;
+    char            *rest;
+
+    rx = conn->rx;
+    route = rx->route;
+    controller = 0;
+
+    if (target == 0) {
+        target = "";
+    }
+    if (*target == '@') {
+        target = sjoin("{action: '", target, "'}", NULL);
+    } 
+    if (*target != '{') {
+        target = httpTemplate(conn, target, 0);
+    } else  {
+        if (options) {
+            options = mprBlendHash(httpGetOptions(target), options);
+        } else {
+            options = httpGetOptions(target);
+        }
+        /*
+            Prep the action. Forms are:
+                . @action               # Use the current controller
+                . @controller/          # Use "index" as the action
+                . @controller/action
+         */
+        if ((action = httpGetOption(options, "action", 0)) != 0) {
+            originalAction = action;
+            if (*action == '@') {
+                action = &action[1];
+            }
+            if (strchr(action, '/')) {
+                controller = stok((char*) action, "/", (char**) &action);
+                action = stok((char*) action, "/", &rest);
+            }
+            if (controller) {
+                httpSetOption(options, "controller", controller);
+            } else {
+                controller = httpGetParam(conn, "controller", 0);
+            }
+            if (action == 0 || *action == '\0') {
+                action = "list";
+            }
+            if (action != originalAction) {
+                httpSetOption(options, "action", action);
+            }
+        }
+        /*
+            Find the template to use. Strategy is this order:
+                . options.template
+                . options.route.template
+                . options.action mapped to a route.template, via:
+                . /app/STAR/action
+                . /app/controller/action
+                . /app/STAR/default
+                . /app/controller/default
+         */
+        if ((tplate = httpGetOption(options, "template", 0)) == 0) {
+            if ((routeName = httpGetOption(options, "route", 0)) != 0) {
+                routeName = expandRouteName(conn, routeName);
+                lroute = httpLookupRoute(conn->host, routeName);
+            } else {
+                lroute = 0;
+            }
+            if (lroute == 0) {
+                if ((lroute = httpLookupRoute(conn->host, actionRoute(route, controller, action))) == 0) {
+                    if ((lroute = httpLookupRoute(conn->host, actionRoute(route, "{controller}", action))) == 0) {
+                        if ((lroute = httpLookupRoute(conn->host, actionRoute(route, controller, "default"))) == 0) {
+                            lroute = httpLookupRoute(conn->host, actionRoute(route, "{controller}", "default"));
+                        }
+                    }
+                }
+            }
+            if (lroute) {
+                tplate = lroute->tplate;
+            }
+        }
+        if (tplate) {
+            target = httpTemplate(conn, tplate, options);
+        } else {
+            mprError("Cannot find template for URI %s", target);
+            target = "/";
+        }
+    }
+    //  OPT
+    uri = httpCreateUri(target, 0);
+    uri = httpResolveUri(httpCreateUri(rx->uri, 0), 1, &uri, 0);
+    httpNormalizeUri(uri);
+    return httpUriToString(uri, 0);
+}
+
+
+#if DEPRECATE || 1
+PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
+{
+    return httpUri(conn, target, options);
+}
+#endif
+
+
 PUBLIC char *httpUriToString(HttpUri *uri, int flags)
 {
     return httpFormatUri(uri->scheme, uri->host, uri->port, uri->path, uri->reference, uri->query, flags);
@@ -745,6 +858,44 @@ static void trimPathToDirname(HttpUri *uri)
         } else if (*path) {
             path[0] = '\0';
         }
+    }
+}
+
+
+/*
+    Limited expansion of route names. Support ~/ and ${app} at the start of the route name
+ */
+static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
+{
+    HttpRoute   *route;
+
+    route = conn->rx->route;
+    if (routeName[0] == '~') {
+        return sjoin(route->prefix, &routeName[1], NULL);
+    }
+    if (sstarts(routeName, "${app}")) {
+        return sjoin(route->prefix, &routeName[6], NULL);
+    }
+    return routeName;
+}
+
+
+/*
+    Calculate a qualified route name. The form is: /{app}/{controller}/action
+ */
+static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action)
+{
+    cchar   *prefix, *controllerPrefix;
+
+    prefix = route->prefix ? route->prefix : "";
+    if (action == 0 || *action == '\0') {
+        action = "default";
+    }
+    if (controller) {
+        controllerPrefix = (controller && smatch(controller, "{controller}")) ? "*" : controller;
+        return sjoin(prefix, "/", controllerPrefix, "/", action, NULL);
+    } else {
+        return sjoin(prefix, "/", action, NULL);
     }
 }
 

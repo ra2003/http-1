@@ -88,7 +88,6 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         assert(params);
         for (index = 0, kp = 0; (kp = mprGetNextKey(rx->files, kp)) != 0; index++) {
             up = (HttpUploadFile*) kp->data;
-            //  MOB - should these be N-Level in json?
             mprSetJsonValue(params, sfmt("FILE_%d_FILENAME", index), up->filename, MPR_JSON_SIMPLE);
             mprSetJsonValue(params, sfmt("FILE_%d_CLIENT_FILENAME", index), up->clientFilename, MPR_JSON_SIMPLE);
             mprSetJsonValue(params, sfmt("FILE_%d_CONTENT_TYPE", index), up->contentType, MPR_JSON_SIMPLE);
@@ -104,8 +103,8 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
 
 /*
     Add variables to the params. This comes from the query string and urlencoded post data.
-    Make variables for each keyword in a query string. The buffer must be url encoded (ie. key=value&key2=value2..., 
-    spaces converted to '+' and all else should be %HEX encoded).
+    Make variables for each keyword in a query string. The buffer must be url encoded 
+    (ie. key=value&key2=value2..., spaces converted to '+' and all else should be %HEX encoded).
  */
 static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
 {
@@ -144,51 +143,6 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
         keyword = stok(0, "&", &tok);
     }
 }
-
-
-#if KEEP
-/*
-    This operates without copying the buffer. It modifies the buffer.
- */
-static void addParamsFromBufInsitu(HttpConn *conn, char *buf, ssize len)
-{
-    MprHash     *vars;
-    cchar       *prior;
-    char        *newValue, *keyword, *value, *tok;
-
-    assert(conn);
-    vars = httpGetParams(conn);
-
-    keyword = stok(buf, "&", &tok);
-    while (keyword != 0) {
-        if ((value = strchr(keyword, '=')) != 0) {
-            *value++ = '\0';
-            mprUriDecodeBuf(value);
-        } else {
-            value = MPR->emptyString;
-        }
-        mprUriDecode(keyword);
-
-        if (*keyword) {
-            /*
-                Append to existing keywords
-             */
-            prior = mprLookupKey(vars, keyword);
-            if (prior != 0 && *prior) {
-                if (*value) {
-                    newValue = sjoin(prior, " ", value, NULL);
-                    mprAddKey(vars, keyword, newValue);
-                }
-            } else {
-                mprAddKey(vars, keyword, sclone(value));
-            }
-        }
-        keyword = stok(0, "&", &tok);
-    }
-}
-#endif
-
-
 
 
 PUBLIC void httpAddQueryParams(HttpConn *conn) 

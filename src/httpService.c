@@ -429,8 +429,10 @@ static void httpTimer(Http *http, MprEvent *event)
     HttpConn    *conn;
     HttpStage   *stage;
     HttpLimits  *limits;
+    HttpAddress *address;
     MprModule   *module;
-    int         next, active, abort;
+    MprKey      *kp;
+    int         removed, next, active, abort, period;
 
     assert(event);
 
@@ -483,6 +485,25 @@ static void httpTimer(Http *http, MprEvent *event)
             }
         }
     }
+
+    /*
+        Expire old client addresses. This is done in checkMonitor if monitors exist.
+        Do here just to cleanup old addresses
+     */
+    period = (int) max(http->monitorMaxPeriod, 60 * 1000);
+    lock(http->addresses);
+    do {
+        removed = 0;
+        for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
+            if ((address->updated + period) < http->now) {
+                mprRemoveKey(http->addresses, kp->key);
+                removed = 1;
+                break;
+            }
+        }
+    } while (removed);
+    unlock(http->addresses);
+
     if (active == 0) {
         mprRemoveEvent(event);
         http->timer = 0;
@@ -717,7 +738,7 @@ PUBLIC void httpGetStats(HttpStats *sp)
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
         sp->activeRequests += (int) address->counters[HTTP_COUNTER_ACTIVE_REQUESTS].value;
-        sp->activeClients += (int) address->counters[HTTP_COUNTER_ACTIVE_CLIENTS].value;
+        sp->activeClients++;
     }
     unlock(http->addresses);
     sp->totalRequests = http->totalRequests;

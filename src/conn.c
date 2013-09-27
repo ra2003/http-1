@@ -326,6 +326,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     HttpConn    *conn;
     HttpAddress *address;
     MprSocket   *sock;
+    int64       value;
     int         level;
 
     assert(event);
@@ -350,13 +351,13 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     conn->port = sock->port;
     conn->ip = sclone(sock->ip);
 
-    if (httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1) > conn->limits->connectionsMax) {
-        mprError("Too many concurrent connections");
+    if ((value = httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1)) > conn->limits->connectionsMax) {
+        mprError("Too many concurrent connections %d/%d", (int) value, conn->limits->connectionsMax);
         httpDestroyConn(conn);
         return 0;
     }
     if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
-        mprError("Too many concurrent clients");
+        mprError("Too many concurrent clients %d/%d", mprGetHashLength(http->addresses), conn->limits->clientMax);
         httpDestroyConn(conn);
         return 0;
     }

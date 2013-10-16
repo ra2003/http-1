@@ -514,6 +514,7 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
 }
 
 
+//  MOB - rethink API, makes chaining hard if result must be supplied
 /*
     result = base.join(other)
  */

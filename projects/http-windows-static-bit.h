@@ -107,7 +107,7 @@
     #define BIT_TITLE "Http Library"
 #endif
 #ifndef BIT_VERSION
-    #define BIT_VERSION "4.4.1"
+    #define BIT_VERSION "4.4.3"
 #endif
 #ifndef BIT_WITHOUT_ALL
     #define BIT_WITHOUT_ALL "doxygen,dsi,man,man2html,pmaker,ssl"
@@ -208,10 +208,10 @@
     #define BIT_MINOR_VERSION 4
 #endif
 #ifndef BIT_PATCH_VERSION
-    #define BIT_PATCH_VERSION 1
+    #define BIT_PATCH_VERSION 3
 #endif
 #ifndef BIT_VNUM
-    #define BIT_VNUM 400040001
+    #define BIT_VNUM 400040003
 #endif
 
 /* Packs */

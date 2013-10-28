@@ -495,9 +495,7 @@ PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
     if (size <= nextQ->packetSize && (size + nextQ->count) <= nextQ->max) {
         return 1;
     }
-    if (httpResizePacket(q, packet, 0) == 0) {
-        return 0;
-    }
+    httpResizePacket(q, packet, 0);
     size = httpGetPacketLength(packet);
     assert(size <= nextQ->packetSize);
     /* 
@@ -529,9 +527,7 @@ PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpPacket *packet, bool spl
         return 1;
     }
     if (split) {
-        if (httpResizePacket(q, packet, 0) == 0) {
-            return 0;
-        }
+        httpResizePacket(q, packet, 0);
         size = httpGetPacketLength(packet);
         assert(size <= q->packetSize);
         if ((size + q->count) <= q->max) {

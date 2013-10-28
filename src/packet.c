@@ -405,7 +405,6 @@ PUBLIC HttpPacket *httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size
          */
         len = packet->content ? httpGetPacketLength(packet) : 0;
         size = min(size, len);
-        size = min(size, q->nextQ->max);
         size = min(size, q->nextQ->packetSize);
         if (size == 0 || size == len) {
             return 0;

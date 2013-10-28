@@ -1104,7 +1104,10 @@ static bool processRunning(HttpConn *conn)
                 /* Request complete and output complete */
                 httpSetState(conn, HTTP_STATE_FINALIZED);
             } else {
-                /* Still got output to do. Wait for Tx I/O event. Do suspend incase handler not using auto-flow routines */
+                /* 
+                    Still got output to do. Wait for Tx I/O event. 
+                    Do suspend incase handler not using auto-flow routines (which it should) 
+                 */
                 tx->writeBlocked = 1;
                 httpSuspendQueue(q);
                 httpEnableConnEvents(q->conn);

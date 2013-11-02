@@ -274,15 +274,11 @@ static void cacheAtClient(HttpConn *conn)
             }
         } else {
             httpAddHeader(conn, "Cache-Control", "public, max-age=%d", cache->clientLifespan / MPR_TICKS_PER_SEC);
+            /* 
+                Old HTTP/1.0 clients don't understand Cache-Control 
+             */
+            httpAddHeader(conn, "Expires", "%s", mprFormatUniversalTime(MPR_HTTP_DATE, mprGetTime() + cache->clientLifespan));
         }
-#if KEEP
-        {
-            /* Old HTTP/1.0 clients don't understand Cache-Control */
-            struct tm   tm;
-            mprDecodeUniversalTime(&tm, conn->http->now + (expires * MPR_TICKS_PER_SEC));
-            httpAddHeader(conn, "Expires", "%s", mprFormatTime(MPR_HTTP_DATE, &tm));
-        }
-#endif
     }
 }
 

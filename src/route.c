@@ -740,6 +740,7 @@ PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route)
     }
 #endif
     if (info->valid) {
+        //  OPT - inodes mean this is harder to cache when served from multiple servers.
         tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
     }
     mprTrace(7, "mapFile uri \"%s\", filename: \"%s\", extension: \"%s\"", rx->uri, tx->filename, tx->ext);

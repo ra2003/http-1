@@ -565,7 +565,9 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
      */
     httpAppendHeader(conn, "Set-Cookie", 
         sjoin(name, "=", value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
-    httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
+    if ((cp = mprLookupKey(conn->tx->headers, "Cache-Control")) == 0 || !scontains(cp, "no-cache")) {
+        httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
+    }
 }
 
 

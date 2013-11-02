@@ -165,7 +165,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
 PUBLIC void httpLogout(HttpConn *conn) 
 {
     conn->rx->authenticated = 0;
-    httpRemoveSessionVar(conn, HTTP_SESSION_USERNAME);
+    httpDestroySession(conn);
 }
 
 

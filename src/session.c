@@ -71,6 +71,15 @@ static HttpSession *createSession(HttpConn *conn)
 }
 
 
+PUBLIC bool httpLookupSessionID(cchar *id)
+{
+    Http    *http;
+
+    http = MPR->httpService;
+    return mprReadCache(http->sessionCache, id, 0, 0) != 0;
+}
+
+
 static HttpSession *lookupSession(HttpConn *conn)
 {
     cchar   *data, *id;
@@ -270,6 +279,8 @@ PUBLIC cchar *httpGetSessionID(HttpConn *conn)
     assert(rx);
 
     if (rx->session) {
+        assert(rx->session->id);
+        assert(*rx->session->id);
         return rx->session->id;
     }
     if (rx->sessionProbed) {

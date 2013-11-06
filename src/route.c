@@ -440,7 +440,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
         tx->handler = conn->http->passHandler;
     }
     if (rx->traceLevel >= 0) {
-        mprLog(rx->traceLevel, "Select handler: \"%s\" for \"%s\"", tx->handler->name, rx->uri);
+        mprLog(rx->traceLevel, "Select handler: \"%s\" for uri \"%s\"", tx->handler->name, rx->uri);
     }
 }
 
@@ -700,7 +700,7 @@ PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route)
     if (route->map) {
         if (route->mappings && (mapped = mprLookupKey(route->mappings, tx->filename)) != 0) {
             tx->filename = mapped;
-            mprLog(4, "Mapping content to %s", tx->filename);
+            mprLog(3, "Mapping content to %s", tx->filename);
         } else if ((extensions = mprLookupKey(route->map, tx->ext)) != 0) {
             acceptGzip = scontains(rx->acceptEncoding, "gzip") != 0;
             for (ITERATE_ITEMS(extensions, ext, next)) {
@@ -711,7 +711,7 @@ PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route)
                 path = mprReplacePathExt(tx->filename, ext);
                 if (mprGetPathInfo(path, info) == 0) {
                     tx->filename = path;
-                    mprLog(4, "Mapping content to %s", tx->filename);
+                    mprLog(3, "Mapping content to %s", tx->filename);
                     mprAddKey(route->mappings, tx->filename, path);
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");

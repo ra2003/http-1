@@ -2558,7 +2558,7 @@ PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *prefix, cchar *name)
         name = sjoin(parent->prefix, name, NULL);
     }
     pattern = sfmt("^%s(/.*)", prefix);
-    path = stemplate("${CLIENT_DIR}/$1", parent->vars);
+    path = mprGetRelPath(stemplate("${CLIENT_DIR}/$1", parent->vars), parent->documents);
     route = httpDefineRoute(parent, name, "GET", pattern, path, parent->sourceName);
     httpAddRouteHandler(route, "fileHandler", "");
 }

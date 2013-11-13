@@ -2564,21 +2564,6 @@ PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *prefix, cchar *name)
 }
 
 
-PUBLIC void httpAddRouteSet(HttpRoute *parent, cchar *prefix, cchar *set)
-{
-    if (scaselessmatch(set, "simple")) {
-        httpAddHomeRoute(parent);
-    }
-    if (scaselessmatch(set, "restful")) {
-        httpAddResourceGroup(parent, prefix, "{controller}");
-        httpAddClientRoute(parent, "", "/client");
-
-    } else if (!scaselessmatch(set, "none")) {
-        mprError("Unknown route set %s", set);
-    }
-}
-
-
 PUBLIC void httpAddHomeRoute(HttpRoute *parent)
 {
     cchar   *source, *name, *path, *pattern, *prefix;

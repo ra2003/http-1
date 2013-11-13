@@ -3663,6 +3663,7 @@ PUBLIC void httpSetStreaming(struct HttpHost *host, cchar *mime, cchar *uri, boo
 #define HTTP_ROUTE_SHOW_ERRORS          0x100       /**< Show errors to the client */
 #define HTTP_ROUTE_VISIBLE_SESSION      0x200       /**< Create a session cookie visible to client Javascript (not httponly) */
 #define HTTP_ROUTE_PRESERVE_FRAMES      0x400       /**< Preserve WebSocket frame boundaries */
+#define HTTP_ROUTE_DISABLED             0x800       /**< Don't use this route in route tables. */
 
 #if (DEPRECATED || 1) && !DOXYGEN
 #define HTTP_ROUTE_GZIP                 0x1000      /**< Support gzipped content on this route */

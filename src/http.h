@@ -4210,6 +4210,25 @@ PUBLIC HttpRoute *httpCreateRoute(struct HttpHost *host);
 PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods, cchar *pattern, cchar *target, cchar *source);
 
 /**
+    Define a RESTful route
+    @description This creates a restful route and then configures it using the given parameters. The route is finalized and
+        added to the parent host.
+    @param parent Parent route from which to inherit configuration.
+    @param prefix URI prefix to use after the route prefix.
+    @param action Controller action name
+    @param methods Http methods for which this route is active
+    @param pattern Matching URI pattern for which this route will qualify
+    @param target Route target string expression. This is used by handlers to determine the physical or virtual resource
+        to serve.
+    @param resource Resource basename to use when constructing a source file name.
+    @return Created route.
+    @ingroup HttpRoute
+    @stability Prototype
+ */
+PUBLIC HttpRoute *httpAddRestfulRoute(HttpRoute *parent, cchar *prefix, cchar *action, cchar *methods, cchar *pattern, 
+    cchar * target, cchar *resource);
+
+/**
     Define a route condition rule
     @description This creates a new condition rule.
     @param name Condition name 

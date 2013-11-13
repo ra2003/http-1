@@ -23,6 +23,8 @@ static HttpSession *allocSession(HttpConn *conn, cchar *id, cchar *data)
 
     assert(conn);
     assert(id && *id);
+    assert(conn->http);
+    assert(conn->http->sessionCache);
 
     if ((sp = mprAllocObj(HttpSession, manageSession)) == 0) {
         return 0;
@@ -51,6 +53,7 @@ static HttpSession *createSession(HttpConn *conn)
 
     assert(conn);
     http = conn->http;
+    assert(http);
 
     /* 
         Thread race here on nextSession++ not critical 
@@ -59,7 +62,7 @@ static HttpSession *createSession(HttpConn *conn)
     id = mprGetMD5WithPrefix(id, slen(id), "::http.session::");
 
     lock(http);
-    mprGetCacheStats(conn->http->sessionCache, &http->activeSessions, NULL);
+    mprGetCacheStats(http->sessionCache, &http->activeSessions, NULL);
     if (http->activeSessions >= conn->limits->sessionMax) {
         unlock(http);
         httpLimitError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Too many sessions %d/%d", http->activeSessions, conn->limits->sessionMax);
@@ -76,6 +79,7 @@ PUBLIC bool httpLookupSessionID(cchar *id)
     Http    *http;
 
     http = MPR->httpService;
+    assert(http);
     return mprReadCache(http->sessionCache, id, 0, 0) != 0;
 }
 
@@ -83,6 +87,9 @@ PUBLIC bool httpLookupSessionID(cchar *id)
 static HttpSession *lookupSession(HttpConn *conn)
 {
     cchar   *data, *id;
+
+    assert(conn);
+    assert(conn->http);
 
     if ((id = httpGetSessionID(conn)) == 0) {
         return 0;
@@ -110,6 +117,8 @@ PUBLIC void httpDestroySession(HttpConn *conn)
     HttpSession *sp;
 
     http = conn->http;
+    assert(http);
+
     lock(http);
     if ((sp = httpGetSession(conn, 0)) != 0) {
         httpRemoveCookie(conn, HTTP_SESSION_COOKIE);

@@ -3873,38 +3873,10 @@ PUBLIC void httpAddPermResource(HttpRoute *parent, cchar *prefix, cchar *resourc
  */
 PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *prefix, cchar *resource);
 
-/**
-    Add a route for the home page.
-    @description This will add a home page to route ESP applications. This will add the following route:
-    <table>
-        <tr><td>Name</td><td>Method</td><td>Pattern</td><td>Target</td></tr>
-        <tr><td>home</td><td>GET,POST,PUT</td><td>^/$</td><td>index.esp</td></tr>
-    </table>
-    @param parent Parent route from which to inherit configuration.
-    @ingroup HttpRoute
-    @stability Evolving
- */
-PUBLIC void httpAddHomeRoute(HttpRoute *parent);
-
-/**
-    Add a route set package
-    @description This will add a set of routes. It will add a home route and optional routes depending on the route set.
-    <table>
-        <tr><td>Name</td><td>Method</td><td>Pattern</td><td>Target</td></tr>
-        <tr><td>home</td><td>GET,POST,PUT</td><td>^/$</td><td>index.esp</td></tr>
-    </table>
-    @param parent Parent route from which to inherit configuration.
-    @param prefix URI prefix to append to the application prefix when constructing route URIs.
-    @param set Route set to select. Use "simple", or "restful". 
-        \n\n
-        The "simple" pack will invoke 
-        #httpAddHomeRoute and #httpAddStaticRoute to add the "home" routes. 
-        \n\n
-        The "restful" selection will add a set of RESTful routes for generic controllers.
-    @ingroup HttpRoute
-    @stability Evolving
- */
-PUBLIC void httpAddRouteSet(HttpRoute *parent, cchar *prefix, cchar *set);
+#if DEPRECATED || 1
+#define httpAddHomeRoute espAddHomeRoute
+#define httpAddRouteSet espAddRouteSet
+#endif
 
 /**
     Add a route for the client directory

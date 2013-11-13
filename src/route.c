@@ -2491,8 +2491,8 @@ PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods
 /*
     Add a restful route. The parent route may supply a route prefix. If defined, the route name will prepend the prefix.
  */
-static HttpRoute *addRestful(HttpRoute *parent, cchar *prefix, cchar *action, cchar *methods, cchar *pattern, cchar *target, 
-        cchar *resource)
+PUBLIC HttpRoute *httpAddRestfulRoute(HttpRoute *parent, cchar *prefix, cchar *action, cchar *methods, cchar *pattern, 
+        cchar *target, cchar *resource)
 {
     cchar       *name, *nameResource, *source, *routePrefix;
 
@@ -2518,27 +2518,27 @@ static HttpRoute *addRestful(HttpRoute *parent, cchar *prefix, cchar *action, cc
 
 PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *prefix, cchar *resource)
 {
-    addRestful(parent, prefix, "create",    "POST",    "(/)*$",                     "create",          resource);
-    addRestful(parent, prefix, "edit",      "GET",     "/{id=[0-9]+}/edit$",        "edit",            resource);
-    addRestful(parent, prefix, "get",       "GET",     "/{id=[0-9]+}$",             "get",             resource);
-    addRestful(parent, prefix, "init",      "GET",     "/init$",                    "init",            resource);
-    addRestful(parent, prefix, "list",      "GET",     "/list$",                    "list",            resource);
-    addRestful(parent, prefix, "remove",    "DELETE",  "/{id=[0-9]+}$",             "remove",          resource);
-    addRestful(parent, prefix, "update",    "POST",    "/{id=[0-9]+}$",             "update",          resource);
-    addRestful(parent, prefix, "action",    "GET,POST","/{id=[0-9]+}/{action}(/)*$","${action}",       resource);
-    addRestful(parent, prefix, "default",   "GET,POST","/{action}(/)*$",            "cmd-${action}",   resource);
+    httpAddRestfulRoute(parent, prefix, "create",    "POST",    "(/)*$",                       "create",          resource);
+    httpAddRestfulRoute(parent, prefix, "edit",      "GET",     "/{id=[0-9]+}/edit$",          "edit",            resource);
+    httpAddRestfulRoute(parent, prefix, "get",       "GET",     "/{id=[0-9]+}$",               "get",             resource);
+    httpAddRestfulRoute(parent, prefix, "init",      "GET",     "/init$",                      "init",            resource);
+    httpAddRestfulRoute(parent, prefix, "list",      "GET",     "/list$",                      "list",            resource);
+    httpAddRestfulRoute(parent, prefix, "remove",    "DELETE",  "/{id=[0-9]+}$",               "remove",          resource);
+    httpAddRestfulRoute(parent, prefix, "update",    "POST",    "/{id=[0-9]+}$",               "update",          resource);
+    httpAddRestfulRoute(parent, prefix, "action",    "GET,POST","/{id=[0-9]+}/{action}(/)*$",  "${action}",       resource);
+    httpAddRestfulRoute(parent, prefix, "default",   "GET,POST","/{action}(/)*$",              "cmd-${action}",   resource);
 }
 
 
 PUBLIC void httpAddResource(HttpRoute *parent, cchar *prefix, cchar *resource)
 {
-    addRestful(parent, prefix, "create",    "POST",    "(/)*$",          "create",     resource);
-    addRestful(parent, prefix, "edit",      "GET",     "/edit$",         "edit",       resource);
-    addRestful(parent, prefix, "get",       "GET",     "(/)*$",          "get",        resource);
-    addRestful(parent, prefix, "init",      "GET",     "/init$",         "init",       resource);
-    addRestful(parent, prefix, "update",    "POST",    "(/)*$",          "update",     resource);
-    addRestful(parent, prefix, "remove",    "DELETE",  "(/)*$",          "remove",     resource);
-    addRestful(parent, prefix, "default",   "GET,POST","/{action}(/)*$", "${action}",  resource);
+    httpAddRestfulRoute(parent, prefix, "create",    "POST",    "(/)*$",          "create",     resource);
+    httpAddRestfulRoute(parent, prefix, "edit",      "GET",     "/edit$",         "edit",       resource);
+    httpAddRestfulRoute(parent, prefix, "get",       "GET",     "(/)*$",          "get",        resource);
+    httpAddRestfulRoute(parent, prefix, "init",      "GET",     "/init$",         "init",       resource);
+    httpAddRestfulRoute(parent, prefix, "update",    "POST",    "(/)*$",          "update",     resource);
+    httpAddRestfulRoute(parent, prefix, "remove",    "DELETE",  "(/)*$",          "remove",     resource);
+    httpAddRestfulRoute(parent, prefix, "default",   "GET,POST","/{action}(/)*$", "${action}",  resource);
 }
 
 
@@ -2547,9 +2547,9 @@ PUBLIC void httpAddResource(HttpRoute *parent, cchar *prefix, cchar *resource)
  */
 PUBLIC void httpAddPermResource(HttpRoute *parent, cchar *prefix, cchar *resource)
 {
-    addRestful(parent, prefix, "get",       "GET",     "(/)*$",        "get",        resource);
-    addRestful(parent, prefix, "update",    "POST",    "(/)*$",        "update",     resource);
-    addRestful(parent, prefix, "default",   "GET,POST","/{action}(/)*$",   "${action}",  resource);
+    httpAddRestfulRoute(parent, prefix, "get",       "GET",     "(/)*$",          "get",        resource);
+    httpAddRestfulRoute(parent, prefix, "update",    "POST",    "(/)*$",          "update",     resource);
+    httpAddRestfulRoute(parent, prefix, "default",   "GET,POST","/{action}(/)*$", "${action}",  resource);
 }
 
 

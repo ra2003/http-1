@@ -730,13 +730,18 @@ PUBLIC char *httpUri(HttpConn *conn, cchar *target, MprHash *options)
         target = sjoin("{action: '", target, "'}", NULL);
     } 
     if (*target != '{') {
-        target = httpTemplate(conn, target, 0);
+        tplate = target;
+        if (!options) {
+            options = route->vars;
+        }
     } else  {
         if (options) {
             options = mprBlendHash(httpGetOptions(target), options);
         } else {
             options = httpGetOptions(target);
         }
+        options = mprBlendHash(options, route->vars);
+
         /*
             Prep the action. Forms are:
                 . @action               # Use the current controller
@@ -781,7 +786,7 @@ PUBLIC char *httpUri(HttpConn *conn, cchar *target, MprHash *options)
             } else {
                 lroute = 0;
             }
-            if (lroute == 0) {
+            if (!lroute) {
                 if ((lroute = httpLookupRoute(conn->host, actionRoute(route, controller, action))) == 0) {
                     if ((lroute = httpLookupRoute(conn->host, actionRoute(route, "{controller}", action))) == 0) {
                         if ((lroute = httpLookupRoute(conn->host, actionRoute(route, controller, "default"))) == 0) {
@@ -794,14 +799,21 @@ PUBLIC char *httpUri(HttpConn *conn, cchar *target, MprHash *options)
                 tplate = lroute->tplate;
             }
         }
-        if (tplate) {
-            target = httpTemplate(conn, tplate, options);
-        } else {
+        if (!tplate) {
             mprError("Cannot find template for URI %s", target);
             target = "/";
         }
     }
+#if UNUSED
+    {
+        MprKey *kp;
+        for (ITERATE_KEYS(options, kp)) {
+            print("KEY %s = %s", kp->key, kp->data);
+        }
+    }
+#endif 
     //  OPT
+    target = httpTemplate(conn, tplate, options);
     uri = httpCreateUri(target, 0);
     uri = httpResolveUri(httpCreateUri(rx->uri, 0), 1, &uri, 0);
     httpNormalizeUri(uri);

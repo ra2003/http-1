@@ -166,6 +166,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->optimizedPattern = parent->optimizedPattern;
     route->prefix = parent->prefix;
     route->prefixLen = parent->prefixLen;
+    route->serverPrefix = parent->serverPrefix;
     route->requestHeaders = parent->requestHeaders;
     route->responseStatus = parent->responseStatus;
     route->script = parent->script;
@@ -209,6 +210,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->startWith);
         mprMark(route->optimizedPattern);
         mprMark(route->prefix);
+        mprMark(route->serverPrefix);
         mprMark(route->tplate);
         mprMark(route->targetRule);
         mprMark(route->target);
@@ -1461,6 +1463,23 @@ PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
 }
 
 
+PUBLIC void httpSetRouteServerPrefix(HttpRoute *route, cchar *prefix)
+{
+    assert(route);
+    assert(!smatch(prefix, "/"));
+
+    if (prefix && *prefix) {
+        if (smatch(prefix, "/")) {
+            route->serverPrefix = 0;
+        } else {
+            route->serverPrefix = sclone(prefix);
+        }
+    } else {
+        route->serverPrefix = 0;
+    }
+}
+
+
 PUBLIC void httpSetRoutePreserveFrames(HttpRoute *route, bool on)
 {
     route->flags &= ~HTTP_ROUTE_PRESERVE_FRAMES;
@@ -1912,6 +1931,9 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
 
 /*
     Expect a template with embedded tokens of the form: "/${controller}/${action}/${other}"
+    Understands the following aliases:
+        ~   For ${PREFIX}
+        ^   For ${SERVER_PREFIX} which includes ${PREFIX}
     The options is a hash of token values.
  */
 PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
@@ -1929,12 +1951,12 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     }
     buf = mprCreateBuf(-1, -1);
     for (cp = template; *cp; cp++) {
-        if (*cp == '~' && (cp == template || cp[-1] != '\\')) {
-            if (route->prefix) {
-                mprPutStringToBuf(buf, route->prefix);
-            } else {
-                mprPutStringToBuf(buf, "/");
-            }
+        if (cp == template && *cp == '~') {
+            mprPutStringToBuf(buf, route->prefix ? route->prefix : "/");
+
+        } else if (cp == template && *cp == '^') {
+            mprPutStringToBuf(buf, route->prefix ? route->prefix : "/");
+            mprPutStringToBuf(buf, route->serverPrefix ? route->serverPrefix : "/");
 
         } else if (*cp == '$' && cp[1] == '{' && (cp == template || cp[-1] != '\\')) {
             cp += 2;

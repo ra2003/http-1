@@ -1042,11 +1042,11 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
 
 
 /** 
-    Create a URI link. 
-    @description Create a URI link by expansions tokens based on the current request and route state.
-    The target parameter may contain partial or complete URI information. The missing parts 
+    Create a URI. 
+    @description Create a URI link based on a given target an expanding embedded tokens based on the current request and 
+        route state. The target URI parameter may contain partial or complete URI information. The missing parts 
     are supplied using the current request and route tables. The resulting URI is a normalized, server-local 
-    URI (that begins with "/"). The URI will include any defined route prefix, but will not include scheme, host or 
+    URI (that begins with "/"). The URI will include a required application route prefix, but will not include scheme, host or 
     port components.
     @param [in] conn HttpConn connection object 
     @param target The URI target. The target parameter can be a URI string or JSON style set of options. 
@@ -3696,6 +3696,7 @@ typedef struct HttpRoute {
     char            *startWith;             /**< Starting literal segment of pattern (includes prefix) */
     char            *optimizedPattern;      /**< Processed pattern (excludes prefix) */
     char            *prefix;                /**< Application scriptName prefix. Set to NULL for "/" */
+    char            *serverPrefix;          /**< Prefix for the server-side. Does not include prefix. Set to NULL for "/" */
     char            *tplate;                /**< URI template for forming links based on this route (includes prefix) */
     char            *targetRule;            /**< Target rule */
     char            *target;                /**< Route target details */
@@ -4592,6 +4593,17 @@ PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags);
 PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix);
 
 /**
+    Set the route prefix for server-side URIs
+    @description The server-side route prefix is appended to the route prefix to create the complete prefix
+    to issue server-side requests. The prefix is made available as the "${request:serverPrefix}" token.
+    @param route Route to modify
+    @param prefix URI prefix to define for server-side routes.
+    @ingroup HttpRoute
+    @stability Prototype
+ */
+PUBLIC void httpSetRouteServerPrefix(HttpRoute *route, cchar *prefix);
+
+/**
     Set the route to preserve WebSocket frames boundaries
     @description When enabled, the WebSocketFilter will not merge or fragment frames.
     @param route Route to modify
@@ -4795,6 +4807,7 @@ PUBLIC void httpSetRouteXsrf(HttpRoute *route, bool enable);
 /**
     Expand a template string using given options
     @description This expands a string with embedded tokens of the form "${token}" using values from the given options.
+    This routine also understands the leading aliases: "~" for the route prefix and "^" for the top server URL (prefix+serverPrefix).
     @param conn HttpConn connection object created via #httpCreateConn
     @param tplate Template string to process
     @param options Hash of option values for embedded tokens.

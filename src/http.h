@@ -4571,7 +4571,7 @@ PUBLIC void httpSetRouteName(HttpRoute *route, cchar *name);
     Set the route pattern
     @description This call defines the route regular expression pattern that is used to match against the request URI.
         The route pattern is an enhanced JavaScript-compatibile regular expression. It is enhanced by optionally 
-        embedding braced tokens "{name}" in the patter. During request URI matching, these tokens are extracted and
+        embedding braced tokens "{name}" in the pattern. During request URI matching, these tokens are extracted and
         defined in the request params and are available to the request. The normal regular expression repeat syntax 
         also uses "{}". To use the traditional (uncommon) repeat syntax, back quote with "\\".
         Sub-expressions and token expressions are also available in various rules as numbered tokens "$1". For example:

@@ -264,7 +264,9 @@ PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)
     }
     if (mprLookupItem(host->routes, route) < 0) {
         if (route->pattern[0] && (lastRoute = mprGetLastItem(host->routes)) && lastRoute->pattern[0] == '\0') {
-            /* Insert non-default route before last default route */
+            /* 
+                Insert non-default route before last default route 
+             */
             thisRoute = mprInsertItemAtPos(host->routes, mprGetListLength(host->routes) - 1, route);
         } else {
             thisRoute = mprAddItem(host->routes, route);

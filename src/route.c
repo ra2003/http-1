@@ -96,7 +96,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     httpAddRouteFilter(route, http->rangeFilter->name, NULL, HTTP_STAGE_TX);
     httpAddRouteFilter(route, http->chunkFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
 
-#if FUTURE
+#if KEEP
     httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "Content-Security-Policy", "default-src 'self'");
 #endif
     httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-XSS-Protection", "1; mode=block");
@@ -918,7 +918,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
 }
 
 
-#if FUTURE && KEEP
+#if KEEP
 PUBLIC void httpAddRouteLoad(HttpRoute *route, cchar *module, cchar *path)
 {
     HttpRouteOp     *op;
@@ -3269,8 +3269,6 @@ PUBLIC bool httpOption(MprHash *hash, cchar *field, cchar *value, int useDefault
 
 PUBLIC void httpSetOption(MprHash *options, cchar *field, cchar *value)
 {
-    MprKey  *kp;
-
     if (value == 0) {
         return;
     }

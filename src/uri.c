@@ -514,7 +514,7 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
 }
 
 
-//  MOB - rethink API, makes chaining hard if result must be supplied
+//  FUTURE - rethink API, makes chaining hard if result must be supplied
 /*
     result = base.join(other)
  */
@@ -568,8 +568,6 @@ PUBLIC HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
 
 /*
     Create and resolve a URI link given a set of options.
-
-    TODO - consider rename httpUri() and move to uri.c
  */
 PUBLIC HttpUri *httpMakeUriLocal(HttpUri *uri)
 {

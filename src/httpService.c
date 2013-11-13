@@ -331,7 +331,7 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
         limits->uploadSize = MAXOFF;
     }
 
-#if FUTURE
+#if KEEP
     mprSetMaxSocketClients(endpoint, atoi(value));
 
     if (scaselesscmp(key, "LimitClients") == 0) {

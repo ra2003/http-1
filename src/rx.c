@@ -1897,7 +1897,7 @@ PUBLIC char *httpGetExt(HttpConn *conn)
 }
 
 
-//  TODO - can this just use the default compare
+//  FUTURE - can this just use the default compare
 static int compareLang(char **s1, char **s2)
 {
     return scmp(*s1, *s2);

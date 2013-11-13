@@ -1089,7 +1089,7 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
                 {AT}Service/action.</li>
             <li>route String Route name to use for the URI template</li>
         </ul>
-    @param options Hash of option values for embedded tokens.
+    @param options Hash of option values for embedded tokens. This hash is blended with the route variables.
     @return A normalized, server-local Uri string.
     @ingroup HttpUri
     @stability Evolving

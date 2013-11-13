@@ -2464,11 +2464,6 @@ PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods
 {
     HttpRoute   *route;
 
-#if UNUSED
-    if (name == NULL || *name == '\0') {
-        name = "/";
-    }
-#endif
     if ((route = httpCreateInheritedRoute(parent)) == 0) {
         return 0;
     }
@@ -3232,11 +3227,6 @@ PUBLIC MprHash *httpGetOptionHash(MprHash *options, cchar *field)
     if ((kp = mprLookupKeyEntry(options, field)) == 0) {
         return 0;
     }
-#if UNUSED
-    if (kp->type != MPR_JSON_ARRAY && kp->type != MPR_JSON_OBJ) {
-        return 0;
-    }
-#endif
     return (MprHash*) kp->data;
 }
 
@@ -3257,9 +3247,6 @@ PUBLIC void httpInsertOption(MprHash *options, cchar *field, cchar *value)
     } else {
         kp = mprAddKey(options, field, value);
     }
-#if UNUSED
-    kp->type = MPR_JSON_STRING;
-#endif
 }
 
 
@@ -3276,9 +3263,6 @@ PUBLIC void httpAddOption(MprHash *options, cchar *field, cchar *value)
     } else {
         kp = mprAddKey(options, field, value);
     }
-#if UNUSED
-    kp->type = MPR_JSON_STRING;
-#endif
 }
 
 
@@ -3309,11 +3293,7 @@ PUBLIC void httpSetOption(MprHash *options, cchar *field, cchar *value)
         assert(options);
         return;
     }
-    if ((kp = mprAddKey(options, field, value)) != 0) {
-#if UNUSED
-        kp->type = MPR_JSON_STRING;
-#endif
-    }
+    mprAddKey(options, field, value);
 }
 
 

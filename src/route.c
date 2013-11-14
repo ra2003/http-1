@@ -759,9 +759,9 @@ PUBLIC void httpMapFile(HttpConn *conn, cchar *filename)
 
     tx = conn->tx;
     info = &tx->fileInfo;
-    assert(!info->valid);
-    mprGetPathInfo(tx->filename, info);
 
+    tx->filename = sclone(filename);
+    mprGetPathInfo(tx->filename, info);
     tx->ext = httpGetExt(conn);
     if (info->valid) {
         //  OPT - inodes mean this is harder to cache when served from multiple servers.

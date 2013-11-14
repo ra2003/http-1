@@ -833,12 +833,15 @@ PUBLIC char *httpUriToString(HttpUri *uri, int flags)
 }
 
 
+/*
+    This tests if the URI has only characters valid to use in a URI before decoding. i.e. It will permit %NN encodings.
+ */
 PUBLIC bool httpValidUriChars(cchar *uri)
 {
     if (uri == 0 || *uri == 0) {
         return 0;
     }
-    return strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=") == slen(uri);
+    return strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%") == slen(uri);
 }
 
 

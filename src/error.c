@@ -154,6 +154,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         }
     }
     if (!conn->error) {
+        //  FUTURE - if aborting, could abbreviate some of this
         conn->error = 1;
         httpOmitBody(conn);
         conn->errorMsg = formatErrorv(conn, status, fmt, args);

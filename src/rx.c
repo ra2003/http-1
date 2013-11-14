@@ -240,7 +240,9 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
     }
     if (conn->endpoint) {
         httpMatchHost(conn);
-        setParsedUri(conn);
+        if (setParsedUri(conn) < 0) {
+            return 0;
+        }
 
     } else if (rx->status != HTTP_CODE_CONTINUE) {
         /* 

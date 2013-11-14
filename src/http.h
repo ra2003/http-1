@@ -4378,14 +4378,24 @@ PUBLIC cchar *httpLookupRouteErrorDocument(HttpRoute *route, int status);
 PUBLIC char *httpMakePath(HttpRoute *route, cchar *dir, cchar *path);
 
 /**
-    Map the request URI and route target to a filename
+    Map the given filename.
     @description This sets the HttpTx filename, ext, etag and info fields.
     @param conn HttpConn connection object 
-    @param route Route to modify
+    @param filename Tx filename to define.
     @ingroup HttpRoute
     @stability Evolving
  */
-PUBLIC void httpMapFile(HttpConn *conn, HttpRoute *route);
+PUBLIC void httpMapFile(HttpConn *conn, cchar *filename);
+
+/**
+    Map the request to a physical filename
+    Computes the filename from the request URI and route and calls httpMapFile.
+    @description This sets the HttpTx filename, ext, etag and info fields.
+    @param conn HttpConn connection object 
+    @ingroup HttpRoute
+    @stability Prototype
+ */
+PUBLIC void httpMapRequest(HttpConn *conn);
 
 /**
     Remove HTTP methods for the route
@@ -5679,7 +5689,7 @@ typedef struct HttpTx {
     int             pendingFinalize;        /**< Call httpFinalize again once the Tx pipeline is created */
     int             finalizedConnector;     /**< Connector has finished sending the response */
     int             finalizedOutput;        /**< Handler or surrogate has finished writing output response */
-    char            *filename;              /**< Name of a real file being served (typically pathInfo mapped) */
+    cchar           *filename;              /**< Name of a real file being served (typically pathInfo mapped) */
     int             flags;                  /**< Response flags */
     int             status;                 /**< HTTP response status */
     int             responded;              /**< The request has started to respond. Some output has been initiated. */
@@ -6065,6 +6075,16 @@ PUBLIC void httpRemoveCookie(HttpConn *conn, cchar *name);
     @stability Stable
  */
 PUBLIC void httpSetEntityLength(HttpConn *conn, MprOff len);
+
+/**
+    Set the handler for this request
+    Use this request from the Handler rewrite callback to change the selected handler to process a request.
+    Most useful to set the Tx.filename and pass to the fileHandler.
+    @param conn HttpConn connection object created via #httpCreateConn
+    @param handler Handler to set
+    @stability Prototype
+ */
+PUBLIC void httpSetHandler(HttpConn *conn, HttpStage *handler);
 
 /** 
     Set a transmission header

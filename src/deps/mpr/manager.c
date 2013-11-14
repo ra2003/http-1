@@ -117,7 +117,7 @@ PUBLIC int main(int argc, char *argv[])
         } else if (strcmp(argp, "--daemon") == 0) {
             app->runAsDaemon++;
 
-#if KEEP
+#if FUTURE
         } else if (strcmp(argp, "--heartBeat") == 0) {
             /*
                 Set the frequency to check on the program.
@@ -229,7 +229,7 @@ PUBLIC int main(int argc, char *argv[])
             "    --program path       # Service program to start\n"
             "    --signal signo       # Signal number to terminate service\n"
             "    --verbose            # Show command feedback\n"
-#if KEEP
+#if FUTURE
             "    --heartBeat interval # Heart beat interval period (secs) \n"
 #endif
             "  Commands:\n"
@@ -343,7 +343,7 @@ static bool run(cchar *fmt, ...)
     app->command = sfmtv(fmt, args);
     mprLog(1, "Run: %s", app->command);
     cmd = mprCreateCmd(NULL);
-    rc = mprRunCmd(cmd, app->command, NULL, NULL, &out, &err, MANAGE_TIMEOUT, 0);
+    rc = mprRunCmd(cmd, app->command, NULL, &out, &err, MANAGE_TIMEOUT, 0);
     app->error = sclone(err);
     app->output = sclone(out);
     mprDestroyCmd(cmd);

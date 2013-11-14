@@ -833,6 +833,15 @@ PUBLIC char *httpUriToString(HttpUri *uri, int flags)
 }
 
 
+PUBLIC bool httpValidUriChars(cchar *uri)
+{
+    if (uri == 0 || *uri == 0) {
+        return 0;
+    }
+    return strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=") == slen(uri);
+}
+
+
 static int getPort(HttpUri *uri)
 {
     if (uri->port) {

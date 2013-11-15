@@ -1458,6 +1458,9 @@ PUBLIC int mprCreateEventOutside(MprDispatcher *dispatcher, void *proc, void *da
     while (heap->mustYield) {
         mprNap(0);
     }
+    if (MPR->state >= MPR_STOPPING) {
+        return MPR_ERR_CANT_CREATE;
+    }
     event = mprCreateEvent(dispatcher, "relay", 0, proc, data, MPR_EVENT_STATIC_DATA);
     mprAtomicAdd((int*) &heap->pauseGC, -1);
     if (!event) {
@@ -12139,12 +12142,25 @@ static int gettok(MprJsonParser *parser)
             case '\'':
                 if (parser->state == MPR_JSON_STATE_NAME || parser->state == MPR_JSON_STATE_VALUE) {
                     for (cp = parser->input; *cp; cp++) {
-                        if (*cp == c && (cp == parser->input || *cp != '\\')) {
+                        if (*cp == '\\') {
+                            cp++;
+                        }
+                        if (*cp == c) {
+                            if (cp == parser->input || cp[-1] != '\\') {
+                                parser->tokid = JTOK_STRING;
+                                parser->input = cp + 1;
+                                break;
+                            }
+                        }
+                        mprPutCharToBuf(parser->buf, *cp);
+#if UNUSED
+                        if (*cp == c && (cp == parser->input || cp[-1] != '\\')) {
                             mprPutBlockToBuf(parser->buf, parser->input, cp - parser->input);
                             parser->tokid = JTOK_STRING;
                             parser->input = cp + 1;
                             break;
                         }
+#endif
                     }
                     if (*cp != c) {
                         mprSetJsonError(parser, "Missing closing quote");
@@ -12309,7 +12325,7 @@ static void formatValue(MprBuf *buf, MprJson *obj, int flags)
     }
     mprPutCharToBuf(buf, '"');
     for (cp = obj->value; *cp; cp++) {
-        if (*cp == '\'') {
+        if (*cp == '\"') {
             mprPutCharToBuf(buf, '\\');
         }
         mprPutCharToBuf(buf, *cp);
@@ -13003,9 +13019,14 @@ PUBLIC MprHash *mprDeserializeInto(cchar *str, MprHash *hash)
 
     obj = mprParseJson(str);
     for (ITERATE_JSON(obj, child, index)) {
+        mprAddKey(hash, child->name, child->value);
+#if UNUSED
         if (child->type & MPR_JSON_VALUE) {
             mprAddKey(hash, child->name, child->value);
+        } else if (child->type & MPR_JSON_OBJ) {
+            mprAddKey(hash, child->name, mprJsonToString(child, 0));
         }
+#endif
     }
     return hash;
 }
@@ -13019,12 +13040,21 @@ PUBLIC MprHash *mprDeserialize(cchar *str)
 
 PUBLIC char *mprSerialize(MprHash *hash, int flags)
 {
-    MprJson  *obj;
+    MprJson  *obj, *value;
     MprKey   *kp;
 
     obj = mprCreateJson(MPR_JSON_OBJ);
     for (ITERATE_KEYS(hash, kp)) {
-        setProperty(obj, kp->key, createJsonValue(kp->data), 1);
+#if UNUSED
+        if (kp->type == MPR_JSON_OBJ) {
+            value = mprHashToJson((MprHash*) kp->data);
+        } else {
+            value = createJsonValue(kp->data);
+        }
+#else
+        value = createJsonValue(kp->data);
+#endif
+        setProperty(obj, kp->key, value, 1);
     }
     return mprJsonToString(obj, flags);
 }
@@ -20939,7 +20969,7 @@ PUBLIC MprWaitHandler *mprAddSocketHandler(MprSocket *sp, int mask, MprDispatche
 
 PUBLIC void mprRemoveSocketHandler(MprSocket *sp)
 {
-    if (sp->handler) {
+    if (sp && sp->handler) {
         mprRemoveWaitHandler(sp->handler);
         sp->handler = 0;
     }
@@ -20948,7 +20978,7 @@ PUBLIC void mprRemoveSocketHandler(MprSocket *sp)
 
 PUBLIC void mprSetSocketDispatcher(MprSocket *sp, MprDispatcher *dispatcher)
 {
-    if (sp->handler) {
+    if (sp && sp->handler) {
         sp->handler->dispatcher = dispatcher;
     }
 }

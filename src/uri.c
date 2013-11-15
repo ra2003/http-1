@@ -838,10 +838,17 @@ PUBLIC char *httpUriToString(HttpUri *uri, int flags)
  */
 PUBLIC bool httpValidUriChars(cchar *uri)
 {
+    ssize   pos;
+
     if (uri == 0 || *uri == 0) {
         return 0;
     }
-    return strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%") == slen(uri);
+    pos = strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%");
+    if (pos < slen(uri)) {
+        mprTrace(3, "Bad character in URI at %s", &uri[pos]);
+        return 0;
+    }
+    return 1;
 }
 
 

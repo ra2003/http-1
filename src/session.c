@@ -179,9 +179,13 @@ PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
 
     if ((sp = httpGetSession(conn, 0)) != 0) {
         if ((kp = mprLookupKeyEntry(sp->data, key)) != 0) {
+#if UNUSED
             if (kp->type == MPR_JSON_OBJ) {
                 return (MprHash*) kp->data;
             }
+#else
+            return mprDeserialize(kp->data);
+#endif
         }
     }
     return 0;
@@ -190,7 +194,8 @@ PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
 
 PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 {
-    HttpSession  *sp;
+    HttpSession *sp;
+    MprKey      *kp;
     cchar       *result;
 
     assert(conn);
@@ -198,7 +203,15 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 
     result = 0;
     if ((sp = httpGetSession(conn, 0)) != 0) {
-        result = mprLookupKey(sp->data, key);
+        if ((kp = mprLookupKeyEntry(sp->data, key)) != 0) {
+            if (kp->type == MPR_JSON_OBJ) {
+                /* Wrong type */
+                mprTrace(0, "Session var is an object");
+                return defaultValue;
+            } else {
+                result = kp->data;
+            }
+        }
     }
     return result ? result : defaultValue;
 }
@@ -207,7 +220,6 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
 {
     HttpSession *sp;
-    MprKey      *kp;
 
     assert(conn);
     assert(key && *key);
@@ -218,9 +230,13 @@ PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
     if (obj == 0) {
         httpRemoveSessionVar(conn, key);
     } else {
+#if UNUSED
         if ((kp = mprAddKey(sp->data, key, obj)) != 0) {
             kp->type = MPR_JSON_OBJ;
         }
+#else
+        mprAddKey(sp->data, key, mprSerialize(obj, 0));
+#endif
     }
     return 0;
 }

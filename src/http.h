@@ -4933,7 +4933,7 @@ typedef struct HttpSession {
     char            *id;                        /**< Session ID key */
     MprCache        *cache;                     /**< Cache store reference */
     MprTicks        lifespan;                   /**< Session inactivity timeout (msecs) */
-    MprHash         *data;                      /**< Session data */
+    MprHash         *data;                      /**< Intermediate session data before writing to cache */
 } HttpSession;
 
 /**

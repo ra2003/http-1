@@ -52,7 +52,7 @@ PUBLIC void httpInitAuth(Http *http)
 }
 
 
-PUBLIC bool httpLoggedIn(HttpConn *conn)
+PUBLIC bool httpAuthenticate(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpAuth    *auth;
@@ -75,7 +75,16 @@ PUBLIC bool httpLoggedIn(HttpConn *conn)
         conn->username = username;
         rx->authenticated = 1;
     }
-    return 1;
+    return rx->authenticated;
+}
+
+
+PUBLIC bool httpLoggedIn(HttpConn *conn)
+{
+    if (!conn->rx->authenticated) {
+        httpAuthenticate(conn);
+    }
+    return conn->rx->authenticated;
 }
 
 

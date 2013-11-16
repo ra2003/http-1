@@ -3204,6 +3204,17 @@ PUBLIC int httpAddRole(HttpAuth *auth, cchar *role, cchar *abilities);
 PUBLIC HttpUser *httpAddUser(HttpAuth *auth, cchar *user, cchar *password, cchar *abilities);
 
 /**
+    Authenticate a user
+    This routine authenticates a user by testing the user supplied session cookie against the server session store.
+    The result is saved in HttpRx.authenticated and supplied as a return result. Thereafter, #httpIsLoggedIn may be called
+    to test HttpRx.authenticated.
+    The httpAuthenticate call is not automatically performed by the request pipeline. Web Frameworks should call this if required.
+    @param conn HttpConn connection object created via #httpCreateConn object.
+    @return True if the user is authenticated. 
+ */
+PUBLIC bool httpAuthenticate(HttpConn *conn);
+
+/**
     Test if a user has the required abilities
     @param conn HttpConn connection object created via #httpCreateConn object.
     @param abilities Comma separated list of abilities to test for. If null, then use the required abilities defined

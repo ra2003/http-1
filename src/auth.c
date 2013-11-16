@@ -42,7 +42,7 @@ PUBLIC void httpInitAuth(Http *http)
     httpAddAuthStore("internal", fileVerifyUser);
 #if DEPRECATE || 1
     /*
-        Deprecated in 4.4
+        Deprecated in 4.4. Use "internal"
      */
     httpAddAuthStore("file", fileVerifyUser);
 #if BIT_HAS_PAM && BIT_HTTP_PAM

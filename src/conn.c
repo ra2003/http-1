@@ -134,10 +134,8 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->pool);
         mprMark(conn->mark);
         mprMark(conn->data);
-#if (DEPRECATE || 1) && !DOXYGEN
         mprMark(conn->grid);
         mprMark(conn->record);
-#endif
         mprMark(conn->boundary);
         mprMark(conn->errorMsg);
         mprMark(conn->ip);

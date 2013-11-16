@@ -738,7 +738,9 @@ PUBLIC void httpMapRequest(HttpConn *conn)
         }
     }
 #if DEPRECATE || 1
-    /* Deprecated in 4.4 */
+    /* 
+        Deprecated in 4.4 
+     */
     if (!info->valid && !route->map && (route->flags & HTTP_ROUTE_GZIP) && scontains(rx->acceptEncoding, "gzip")) {
         path = sjoin(tx->filename, ".gz", NULL);
         if (mprGetPathInfo(path, info) == 0) {
@@ -1312,7 +1314,6 @@ PUBLIC void httpSetRouteDocuments(HttpRoute *route, cchar *path)
     route->documents = httpMakePath(route, route->home, path);
     httpSetRouteVar(route, "DOCUMENTS", route->documents);
 #if DEPRECATE || 1
-    //  DEPRECATE
     httpSetRouteVar(route, "DOCUMENTS_DIR", route->documents);
     httpSetRouteVar(route, "DOCUMENT_ROOT", route->documents);
 #endif

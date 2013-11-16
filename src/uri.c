@@ -885,7 +885,7 @@ static void trimPathToDirname(HttpUri *uri)
 
 
 /*
-    Limited expansion of route names. Support ~/ and ${app} at the start of the route name
+    Limited expansion of route names. Support ~/, |/ and ${app} at the start of the route name
  */
 static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
 {
@@ -898,7 +898,7 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
     if (sstarts(routeName, "${app}")) {
         return sjoin(route->prefix, &routeName[6], NULL);
     }
-    if (routeName[0] == '!') {
+    if (routeName[0] == BIT_SERVER_PREFIX_CHAR) {
         if (route->serverPrefix) {
             return sjoin(route->prefix, "/", route->serverPrefix, &routeName[1], NULL);
         }

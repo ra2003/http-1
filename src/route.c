@@ -1977,7 +1977,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
         if (cp == template && *cp == '~') {
             mprPutStringToBuf(buf, route->prefix ? route->prefix : "/");
 
-        } else if (cp == template && *cp == '^') {
+        } else if (cp == template && *cp == BIT_SERVER_PREFIX_CHAR) {
             mprPutStringToBuf(buf, route->prefix ? route->prefix : "/");
             mprPutStringToBuf(buf, route->serverPrefix ? route->serverPrefix : "/");
 

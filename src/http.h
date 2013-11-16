@@ -155,6 +155,9 @@ struct HttpWebSocket;
 #ifndef BIT_MAX_PING_DURATION
     #define BIT_MAX_PING_DURATION   (30 * 1000)         /**< WSS ping defeat Keep-Alive timeouts (30 sec) */
 #endif
+#ifndef BIT_SERVER_PREFIX_CHAR
+    #define BIT_SERVER_PREFIX_CHAR '|'                  /**< URI prefix character for server prefix */
+#endif
 #ifndef BIT_XSRF_COOKIE
     #define BIT_XSRF_COOKIE        "XSRF-TOKEN"         /**< CSRF token cookie name */
 #endif

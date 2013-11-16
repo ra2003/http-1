@@ -470,7 +470,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 packet = ws->currentFrame;
                 content = packet->content;
             }
-#if UNUSED
+#if KEEP
             if (packet->type == WS_MSG_TEXT) {
                 /*
                     Validate the frame for fast-fail, provided the last frame does not have a partial codepoint.

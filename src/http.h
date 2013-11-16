@@ -161,6 +161,9 @@ struct HttpWebSocket;
 #ifndef BIT_XSRF_HEADER
     #define BIT_XSRF_HEADER        "X-XSRF-TOKEN"       /**< CSRF token name in Http headers */
 #endif
+#ifndef BIT_XSRF_PARAM
+    #define BIT_XSRF_PARAM         "-xsrf-"             /**< CSRF parameter in form fields */
+#endif
 
 #ifndef BIT_HTTP_LOG
     #define BIT_HTTP_LOG_FORMAT     "%h %l %u %t \"%r\" %>s %b %n"

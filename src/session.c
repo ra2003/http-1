@@ -179,13 +179,7 @@ PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
 
     if ((sp = httpGetSession(conn, 0)) != 0) {
         if ((kp = mprLookupKeyEntry(sp->data, key)) != 0) {
-#if UNUSED
-            if (kp->type == MPR_JSON_OBJ) {
-                return (MprHash*) kp->data;
-            }
-#else
             return mprDeserialize(kp->data);
-#endif
         }
     }
     return 0;
@@ -230,13 +224,7 @@ PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
     if (obj == 0) {
         httpRemoveSessionVar(conn, key);
     } else {
-#if UNUSED
-        if ((kp = mprAddKey(sp->data, key, obj)) != 0) {
-            kp->type = MPR_JSON_OBJ;
-        }
-#else
         mprAddKey(sp->data, key, mprSerialize(obj, 0));
-#endif
     }
     return 0;
 }
@@ -381,7 +369,7 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
             Deprecated in 4.4
         */
         if (!requestToken) {
-            requestToken = httpGetParam(conn, "__esp_security_token__", 0);
+            requestToken = httpGetParam(conn, BIT_XSRF_PARAM, 0);
         }
 #endif
         if (!smatch(sessionToken, requestToken)) {

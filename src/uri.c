@@ -802,14 +802,6 @@ PUBLIC char *httpUri(HttpConn *conn, cchar *target, MprHash *options)
             target = "/";
         }
     }
-#if UNUSED
-    {
-        MprKey *kp;
-        for (ITERATE_KEYS(options, kp)) {
-            print("KEY %s = %s", kp->key, kp->data);
-        }
-    }
-#endif 
     //  OPT
     target = httpTemplate(conn, tplate, options);
     uri = httpCreateUri(target, 0);

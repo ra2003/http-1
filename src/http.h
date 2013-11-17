@@ -1095,25 +1095,37 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
     @ingroup HttpUri
     @stability Evolving
     @remarks Examples:<pre>
-    httpUri(conn, "http://example.com/index.html", 0);
-    httpUri(conn, "/path/to/index.html", 0);
-    httpUri(conn, "../images/splash.png", 0);
-    httpUri(conn, "~/static/images/splash.png", 0);
-    httpUri(conn, "${app}/static/images/splash.png", 0);
-    httpUri(conn, "@service/checkout", 0);
+    httpUri(conn, "http://example.com/index.html");
+    httpUri(conn, "/path/to/index.html");
+    httpUri(conn, "../images/splash.png");
+    httpUri(conn, "~/static/images/splash.png");
+    httpUri(conn, "${app}/static/images/splash.png");
+    httpUri(conn, "@service/checkout");
     httpUri(conn, "@service/")               //  Service = Service, action = index
     httpUri(conn, "@init")                   //  Current service, action = init
     httpUri(conn, "@")                       //  Current service, action = index
-    httpUri(conn, "{ action: '@post/create' }", 0);
-    httpUri(conn, "{ action: 'checkout' }", 0);
-    httpUri(conn, "{ action: 'logout', service: 'admin' }", 0);
-    httpUri(conn, "{ action: 'admin/logout'", 0);
-    httpUri(conn, "{ product: 'candy', quantity: '10', template: '/cart/${product}/${quantity}' }", 0);
-    httpUri(conn, "{ route: '~/STAR/edit', action: 'checkout', id: '99' }", 0);
-    httpUri(conn, "{ template: '~/static/images/${theme}/background.jpg', theme: 'blue' }", 0);
+    httpUri(conn, "{ action: '@post/create' }");
+    httpUri(conn, "{ action: 'checkout' }");
+    httpUri(conn, "{ action: 'logout', service: 'admin' }");
+    httpUri(conn, "{ action: 'admin/logout'");
+    httpUri(conn, "{ product: 'candy', quantity: '10', template: '/cart/${product}/${quantity}' }");
+    httpUri(conn, "{ route: '~/STAR/edit', action: 'checkout', id: '99' }");
+    httpUri(conn, "{ template: '~/static/images/${theme}/background.jpg', theme: 'blue' }");
 </pre>
  */
-PUBLIC char *httpUri(struct HttpConn *conn, cchar *target, MprHash *options);
+PUBLIC char *httpUri(struct HttpConn *conn, cchar *target);
+
+/** 
+    Create a URI. 
+    @description Extended httpUri with custom options
+    @param [in] conn HttpConn connection object 
+    @param target The URI target. See #httpUri for details.
+    @param options Hash of option values for embedded tokens. This hash is blended with the route variables.
+    @return A normalized, server-local Uri string.
+    @ingroup HttpUri
+    @stability Prototype
+ */
+PUBLIC char *httpUriEx(struct HttpConn *conn, cchar *target, MprHash *options);
 
 #if DEPRECATE || 1
 PUBLIC char *httpLink(struct HttpConn *conn, cchar *target, MprHash *options);

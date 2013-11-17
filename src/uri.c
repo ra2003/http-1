@@ -709,7 +709,7 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
 }
 
 
-PUBLIC char *httpUri(HttpConn *conn, cchar *target, MprHash *options)
+PUBLIC char *httpUriEx(HttpConn *conn, cchar *target, MprHash *options)
 {
     HttpRoute       *route, *lroute;
     HttpRx          *rx;
@@ -811,10 +811,16 @@ PUBLIC char *httpUri(HttpConn *conn, cchar *target, MprHash *options)
 }
 
 
+PUBLIC char *httpUri(HttpConn *conn, cchar *target)
+{
+    return httpUriEx(conn, target, 0);
+}
+
+
 #if DEPRECATE || 1
 PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
 {
-    return httpUri(conn, target, options);
+    return httpUriEx(conn, target, options);
 }
 #endif
 

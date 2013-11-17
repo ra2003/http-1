@@ -341,9 +341,9 @@ PUBLIC cchar *httpGetSecurityToken(HttpConn *conn)
 
 
 /*
-    Render a security token cookie.
+    Set the security token cookie and header
  */
-PUBLIC int httpRenderSecurityToken(HttpConn *conn) 
+PUBLIC int httpSetSecurityToken(HttpConn *conn) 
 {
     cchar   *securityToken;
 

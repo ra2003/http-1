@@ -158,7 +158,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         if ((httpCreateSecurityToken(conn)) == 0) {
             return 0;
         }
-        httpRenderSecurityToken(conn);
+        httpSetSecurityToken(conn);
     }
     httpSetSessionVar(conn, HTTP_SESSION_USERNAME, username);
     rx->authenticated = 1;

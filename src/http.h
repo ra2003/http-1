@@ -1046,7 +1046,6 @@ PUBLIC HttpUri *httpMakeUriLocal(HttpUri *uri);
   */
 PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool local);
 
-
 /** 
     Create a URI. 
     @description Create a URI link based on a given target an expanding embedded tokens based on the current request and 
@@ -5112,14 +5111,20 @@ PUBLIC cchar *httpCreateSecurityToken(HttpConn *conn);
 PUBLIC cchar *httpGetSecurityToken(HttpConn *conn);
 
 /**
-    Render a security token.
-    @description This call will render a security token in the response as a cookie to be stored in the client. 
-    Client Javascript must then send this token as a request header in subsquent POST requests.
+    Set the security token in the response.
+    @description To minimize form replay attacks, a security token may be required for POST requests on a route.
+    This call will set a security token in the response as a response header and as a response cookie.  
+    Client-side Javascript must then send this token as a request header in subsquent POST requests.
+    To configure a route to require security tokens, call #httpSetRouteXsrf.
     @param conn Http connection object
     @ingroup HttpSession
     @stability Prototype
 */
-PUBLIC int httpRenderSecurityToken(HttpConn *conn);
+PUBLIC int httpSetSecurityToken(HttpConn *conn);
+
+#if DEPRECATED || 1
+#define httpRenderSecurityToken httpSetSecurityToken
+#endif
 
 /********************************** HttpUploadFile *********************************/
 /**

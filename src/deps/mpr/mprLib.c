@@ -23175,6 +23175,15 @@ PUBLIC int64 stoi(cchar *str)
 }
 
 
+PUBLIC double stof(cchar *str)
+{
+    if (str == 0 || *str == 0) {
+        return 0.0;
+    }
+    return atof(str);
+}
+
+
 /*
     Parse a number and check for parse errors. Supports radix 8, 10 or 16. 
     If radix is <= 0, then the radix is sleuthed from the input.
@@ -23182,7 +23191,6 @@ PUBLIC int64 stoi(cchar *str)
         [(+|-)][0][OCTAL_DIGITS]
         [(+|-)][0][(x|X)][HEX_DIGITS]
         [(+|-)][DIGITS]
-
  */
 PUBLIC int64 stoiradix(cchar *str, int radix, int *err)
 {

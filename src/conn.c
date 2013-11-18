@@ -506,8 +506,9 @@ PUBLIC MprSocket *httpStealConn(HttpConn *conn)
 {
     MprSocket   *sock;
 
-    sock = conn->sock;
-    mprRemoveSocketHandler(sock);
+    if ((sock = conn->sock) != 0) {
+        mprRemoveSocketHandler(sock);
+    }
     conn->sock = 0;
 
     if (conn->http) {

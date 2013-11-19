@@ -20,7 +20,7 @@ static bool normalize(MprTestGroup *gp, char *uri, char *expectedUri)
     if (smatch(expectedUri, validated)) {
         return 1;
     } else {
-        mprLog(0, "Uri \"%s\" validated to \"%s\" instead of \"%s\"\n", uri, validated, expectedUri);
+        mprLog(0, "\nUri \"%s\" validated to \"%s\" instead of \"%s\"\n", uri, validated, expectedUri);
         return 0;
     }
 }
@@ -34,7 +34,7 @@ static bool validate(MprTestGroup *gp, char *uri, char *expectedUri)
     if (smatch(expectedUri, validated)) {
         return 1;
     } else {
-        mprLog(0, "Uri \"%s\" validated to \"%s\" instead of \"%s\"\n", uri, validated, expectedUri);
+        mprLog(0, "\nUri \"%s\" validated to \"%s\" instead of \"%s\"\n", uri, validated, expectedUri);
         return 0;
     }
 }
@@ -99,6 +99,7 @@ static void testValidateUri(MprTestGroup *gp)
     /*
         Note that validate only accepts absolute URLs that begin with "/"
      */
+
     tassert(validate(gp, "", 0));
     tassert(validate(gp, "/", "/"));
     tassert(validate(gp, "..", 0));
@@ -137,6 +138,12 @@ static void testValidateUri(MprTestGroup *gp)
     tassert(validate(gp, "/..\\appweb.conf", 0));
     tassert(validate(gp, "/\\appweb.conf", 0));
     tassert(validate(gp, "/..%5Cappweb.conf", "/..\\appweb.conf"));
+
+    /*
+        Regression tests
+     */
+    tassert(validate(gp, "/extra%20long/a/..", "/extra long"));
+    tassert(validate(gp, "/extra%20long/../path/a/..", "/path"));
 }
 
 

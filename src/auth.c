@@ -154,12 +154,6 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     if ((session = httpCreateSession(conn)) == 0) {
         return 0;
     }
-    if (rx->route->flags & HTTP_ROUTE_XSRF) {
-        if ((httpCreateSecurityToken(conn)) == 0) {
-            return 0;
-        }
-        httpSetSecurityToken(conn);
-    }
     httpSetSessionVar(conn, HTTP_SESSION_USERNAME, username);
     rx->authenticated = 1;
     conn->username = sclone(username);

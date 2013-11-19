@@ -618,7 +618,9 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     if ((rc = (*proc)(conn, route, 0)) != HTTP_ROUTE_OK) {
         return rc;
     }
-    if (tx->handler->rewrite) {
+    if (tx->finalized) {
+        tx->handler = conn->http->passHandler;
+    } else if (tx->handler->rewrite) {
         rc = tx->handler->rewrite(conn);
     }
     return rc;
@@ -672,6 +674,7 @@ PUBLIC void httpSetHandler(HttpConn *conn, HttpStage *handler)
 
 /*
     Map the target to physical storage. Sets tx->filename and tx->ext.
+    This will validate on windows (or BIT_EXTRA_SECURITY) if the resultant filename is within the route documents.
  */
 PUBLIC void httpMapRequest(HttpConn *conn)
 {
@@ -701,7 +704,9 @@ PUBLIC void httpMapRequest(HttpConn *conn)
 #endif
 #if BIT_WIN_LIKE || BIT_EXTRA_SECURITY
     if (!mprIsParentPathOf(route->documents, filename)) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad URL");
+        info->checked = 1;
+        info->valid = 0;
+        httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad URL");
         return;
     }
 #endif
@@ -752,6 +757,9 @@ PUBLIC void httpMapRequest(HttpConn *conn)
 }
 
 
+/*
+    Map file may be called by handlers. The filename may be outside the route documents. So caller must take care.
+ */
 PUBLIC void httpMapFile(HttpConn *conn, cchar *filename)
 {
     HttpTx      *tx;

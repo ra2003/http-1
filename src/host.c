@@ -137,7 +137,7 @@ static void printRoute(HttpRoute *route, int next, bool full)
     cchar       *methods, *pattern, *target, *index;
     int         nextIndex;
 
-    if (smatch(route->name, "unused") || (route->flags & HTTP_ROUTE_DISABLED)) {
+    if (route->flags & HTTP_ROUTE_HIDDEN) {
         return;
     }
     methods = httpGetRouteMethods(route);

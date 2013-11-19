@@ -3311,6 +3311,15 @@ PUBLIC void httpSetOption(MprHash *options, cchar *field, cchar *value)
 }
 
 
+PUBLIC void httpHideRoute(HttpRoute *route, bool on)
+{
+    route->flags &= ~HTTP_ROUTE_HIDDEN;
+    if (on) {
+        route->flags |= HTTP_ROUTE_HIDDEN;
+    }
+}
+
+
 PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
 {
     if (route->parent && route->limits == route->parent->limits) {

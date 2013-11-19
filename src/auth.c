@@ -63,7 +63,7 @@ PUBLIC bool httpAuthenticate(HttpConn *conn)
 
     if (!rx->authenticated) {
         if ((username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0)) == 0) {
-            if (auth->username) {
+            if (auth->username && *auth->username) {
                 httpLogin(conn, auth->username, NULL);
                 username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0);
             }

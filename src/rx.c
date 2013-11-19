@@ -1532,8 +1532,9 @@ static int setParsedUri(HttpConn *conn)
 
     rx = conn->rx;
     if (httpSetUri(conn, rx->uri) < 0 || rx->pathInfo[0] != '/') {
-        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad URL");
-        return MPR_ERR_BAD_ARGS;
+        httpBadRequestError(conn, HTTP_CODE_BAD_REQUEST, "Bad URL");
+        rx->parsedUri = httpCreateUri("", 0);
+        /* Continue to render a response */
     }
     /*
         Complete the URI based on the connection state.
@@ -1559,14 +1560,10 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
     char        *pathInfo;
 
     rx = conn->rx;
-    if (!httpValidUriChars(uri)) {
-        return MPR_ERR_BAD_ARGS;
-    }
     if ((rx->parsedUri = httpCreateUri(uri, 0)) == 0) {
         return MPR_ERR_BAD_ARGS;
     }
-    pathInfo = httpNormalizeUriPath(mprUriDecode(rx->parsedUri->path));
-    if (pathInfo[0] != '/') {
+    if ((pathInfo = httpValidateUriPath(rx->parsedUri->path)) == 0) {
         return MPR_ERR_BAD_ARGS;
     }
     rx->pathInfo = pathInfo;

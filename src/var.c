@@ -130,7 +130,7 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
             /*
                 Append to existing keywords
              */
-            prior = mprLookupJson(params, keyword);
+            prior = mprLookupJsonObj(params, keyword);
             if (prior && prior->type == MPR_JSON_VALUE) {
                 if (*value) {
                     newValue = sjoin(prior->value, " ", value, NULL);
@@ -209,7 +209,7 @@ PUBLIC MprJson *httpGetParams(HttpConn *conn)
 
 PUBLIC int httpTestParam(HttpConn *conn, cchar *var)
 {
-    return mprLookupJson(httpGetParams(conn), var) != 0;
+    return mprLookupJsonObj(httpGetParams(conn), var) != 0;
 }
 
 
@@ -217,7 +217,7 @@ PUBLIC cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
 {
     cchar       *value;
 
-    value = mprLookupJsonValue(httpGetParams(conn), var);
+    value = mprLookupJson(httpGetParams(conn), var);
     return (value) ? value : defaultValue;
 }
 
@@ -226,7 +226,7 @@ PUBLIC int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
 {
     cchar       *value;
 
-    value = mprLookupJsonValue(httpGetParams(conn), var);
+    value = mprLookupJson(httpGetParams(conn), var);
     return (value) ? (int) stoi(value) : defaultValue;
 }
 

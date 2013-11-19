@@ -1996,7 +1996,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
                 if (options && (value = httpGetOption(options, key, 0)) != 0) {
                     mprPutStringToBuf(buf, value);
 
-                } else if ((value = mprLookupJsonValue(rx->params, key)) != 0) {
+                } else if ((value = mprLookupJson(rx->params, key)) != 0) {
                     mprPutStringToBuf(buf, value);
                 }
                 if (value == 0) {

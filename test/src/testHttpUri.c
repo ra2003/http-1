@@ -89,8 +89,8 @@ static void testNormalizeUri(MprTestGroup *gp)
 
     tassert(normalize(gp, "\\a\\b\\", "\\a\\b\\"));
 
+    tassert(normalize(gp, "/..appweb.conf", "/..appweb.conf"));
     tassert(normalize(gp, "/..\\appweb.conf", "/..\\appweb.conf"));
-
 }
 
 

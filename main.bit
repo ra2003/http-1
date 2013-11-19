@@ -8,6 +8,7 @@ Bit.load({
         "src/deps/est/est.bit",
         "src/deps/pcre/pcre.bit",
         "src/deps/mpr/mpr.bit",
+        "test/test.bit",
         "doc/doc.bit",
     ],
 

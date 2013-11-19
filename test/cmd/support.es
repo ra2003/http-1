@@ -2,9 +2,11 @@
     Support functions for the Http unit tests
  */
 
-use default namespace public
+const HOST = App.config.uris.http || "127.0.0.1:4100"
 
-var command = Cmd.locate("http") + " --host " + tsession["http"] + " "
+dump(App.config)
+
+var command = Cmd.locate("http") + " --host " + HOST + " "
 if (test.verbose > 2) {
     command += "-v "
 }

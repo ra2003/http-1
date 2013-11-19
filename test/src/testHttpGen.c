@@ -61,8 +61,9 @@ static void testCreateHttp(MprTestGroup *gp)
     Http        *http;
 
     th = gp->data;
-    th->http = http = httpCreate(gp);
+    th->http = http = httpCreate(HTTP_SERVER_SIDE);
     assert(http != 0);
+    httpDestroy(http);
 }
 
 
@@ -75,16 +76,16 @@ static void testBasicHttpGet(MprTestGroup *gp)
     int         rc, status;
 
     th = gp->data;
-    th->http = http = httpCreate(gp);
+    th->http = http = httpCreate(HTTP_CLIENT_SIDE);
     assert(http != 0);
 
     th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
 
-    rc = httpConnect(conn, "GET", "http://embedthis.com/index.html");
+    rc = httpConnect(conn, "GET", "http://embedthis.com/index.html", NULL);
     assert(rc >= 0);
     if (rc >= 0) {
         httpFinalize(conn);
-        httpWait(conn, HTTP_STATE_COMPLETE, MPR_TIMEOUT_SOCKETS);
+        httpWait(conn, HTTP_STATE_COMPLETE, 10 * 1000);
         status = httpGetStatus(conn);
         assert(status == 200 || status == 302);
         if (status != 200 && status != 302) {
@@ -107,12 +108,12 @@ static void testSecureHttpGet(MprTestGroup *gp)
     int         rc, status;
 
     th = gp->data;
-    th->http = http = httpCreate(gp);
+    th->http = http = httpCreate(HTTP_CLIENT_SIDE);
     assert(http != 0);
     th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
     assert(conn != 0);
 
-    rc = httpConnect(conn, "GET", "https://www.ibm.com/");
+    rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
     assert(rc >= 0);
     if (rc >= 0) {
         httpFinalize(conn);
@@ -129,17 +130,7 @@ static void testSecureHttpGet(MprTestGroup *gp)
 
 
 #if FUTURE && TODO
-    mprSetHttpTimeout(http, timeout);
-    mprSetHttpRetries(http, retries);
-    mprSetHttpKeepAlive(http, on);
-    mprSetHttpAuth(http, authType, realm, username, password);
-    mprSetHttpHeader(http, "MyHeader: value");
-    mprSetHttpDefaultHost(http, "localhost");
-    mprSetHttpDefaultPort(http, 80);
-    mprSetHttpBuffer(http, initial, max);
-    mprSetHttpCallback(http, fn, arg);
-    mprGetHttpHeader(http);
-    url = mprGetHttpParsedUrl(http);
+    httpRequest
 #endif
 
 
@@ -148,7 +139,7 @@ MprTestDef testHttpGen = {
     {
         MPR_TEST(0, testCreateHttp),
         MPR_TEST(0, testBasicHttpGet),
-#if BIT_FEATURE_SSL && (BIT_FEATURE_MATRIXSSL || BIT_FEATURE_OPENSSL)
+#if BIT_FEATURE_SSL
         MPR_TEST(0, testSecureHttpGet),
 #endif
         MPR_TEST(0, 0),
@@ -162,26 +153,11 @@ MprTestDef testHttpGen = {
     Copyright (c) Michael O'Brien, 1993-2013. All Rights Reserved.
     
     This software is distributed under commercial and open source licenses.
-    You may use the GPL open source license described below or you may acquire 
-    a commercial license from Embedthis Software. You agree to be fully bound 
-    by the terms of either license. Consult the LICENSE.md distributed with 
-    this software for full details.
-    
-    This software is open source; you can redistribute it and/or modify it 
-    under the terms of the GNU General Public License as published by the 
-    Free Software Foundation; either version 2 of the License, or (at your 
-    option) any later version. See the GNU General Public License for more 
-    details at: http://embedthis.com/downloads/gplLicense.html
-    
-    This program is distributed WITHOUT ANY WARRANTY; without even the 
-    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-    
-    This GPL license does NOT permit incorporating this software into 
-    proprietary programs. If you are unable to comply with the GPL, you must
-    acquire a commercial license to use this software. Commercial licenses 
-    for this software and support services are available from Embedthis 
-    Software at http://embedthis.com 
-    
+    You may use the Embedthis Open Source license or you may acquire a
+    commercial license from Embedthis Software. You agree to be fully bound
+    by the terms of either license. Consult the LICENSE.md distributed with
+    this software for full details and other copyrights.
+
     Local variables:
     tab-width: 4
     c-basic-offset: 4

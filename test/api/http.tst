@@ -1,3 +1,6 @@
 
-let command = Cmd.locate("testHttp") + " --filter mpr.api.http --iterations 2 " + test.mapVerbosity(-1)
-Cmd.run(command)
+let command = Cmd.locate("testHttp") + " -v --iterations 2 " + test.mapVerbosity(-1)
+let result = Cmd.run(command)
+print("Running\n" + result)
+printf("   [Command] ")
+

@@ -1,0 +1,49 @@
+/*
+    test.bit
+ */
+
+Bit.load({
+    targets: {
+        testHttp: {
+            type: 'exe',
+            sources:   [ 'src/*.c' ],
+            depends:   [ 'libhttp' ],
+            platforms: [ 'local' ],
+        },
+
+        test: {
+            action: "
+                let ro = {noio: true}
+                let depth = bit.settings.depth
+                Path('cache').makeDir()
+                run('utest -v -i 1 --depth ' + depth, ro)
+                if (depth >= 2) {
+                    trace('Test', 'Light load tests')
+                    run('utest -v -i 5 --depth ' + depth, ro)
+                }
+                if (depth >= 3) {
+                    for each (t in [2, 4]) {
+                        trace('Test', 'Light thread tests')
+                        run('utest -v -i 20 --depth ' + depth + ' --threads ' + t, ro)
+                    }
+                }
+                if (depth >= 4) {
+                    trace('Test', 'Longevity load tests')
+                    run('utest -v -i 100 --depth ' + depth, ro)
+                    for each (t in [8, 16]) {
+                        trace('Test', 'Light thread tests')
+                        run('utest -v -i 100 --depth ' + depth + ' --threads ' + t, ro)
+                    }
+                }
+                trace('Test', 'Unit tests complete')
+            ",
+            platforms: [ 'local' ],
+        },
+
+        'clean-test': {
+            type: 'clean',                                                                                 
+            action: "                                                                                      
+            ",
+        },  
+    },
+})

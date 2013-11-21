@@ -598,12 +598,6 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad content length");
                     return 0;
                 }
-                if (rx->length >= conn->limits->receiveBodySize) {
-                    httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
-                        "Request content length %,Ld bytes is too big. Limit %,Ld", 
-                        rx->length, conn->limits->receiveBodySize);
-                    return 0;
-                }
                 rx->contentLength = sclone(value);
                 assert(rx->length >= 0);
                 if (conn->endpoint || !scaselessmatch(tx->method, "HEAD")) {
@@ -847,6 +841,11 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             }
             break;
         }
+    }
+    if (!rx->upload && rx->length >= conn->limits->receiveBodySize) {
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
+            "Request content length %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveBodySize);
+        return 0;
     }
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 

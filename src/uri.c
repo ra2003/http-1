@@ -339,9 +339,9 @@ PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
     } else {
         if (!uri->host) {
             uri->host = base->host;
-            if (!uri->port) {
-                uri->port = base->port;
-            }
+        }
+        if (!uri->port) {
+            uri->port = base->port;
         }
         if (!uri->scheme) {
             uri->scheme = base->scheme;
@@ -378,7 +378,9 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
             scheme = "http";
         }
         if (host == 0 || *host == '\0') {
-            host = "localhost";
+            if (port || path || reference || query) {
+                host = "localhost";
+            }
         }
         hostDelim = "://";
     } else {

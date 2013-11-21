@@ -426,8 +426,14 @@ PUBLIC void httpOmitBody(HttpConn *conn)
 }
 
 
+static bool localEndpoint(cchar *host)
+{
+    return smatch(host, "localhost") || smatch(host, "127.0.0.1") || smatch(host, "::1");
+}
+
+
 /*
-    Redirect the user to another web page. The targetUri may or may not have a scheme.
+    Redirect the user to another URI. The targetUri may or may not have a scheme or hostname.
  */
 PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 {
@@ -448,10 +454,11 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     }
     tx->status = status;
 
+    /*
+        Expand the target for embedded tokens. Resolve relative to the current request URI
+        This may add "localhost" if the host is missing in the targetUri.
+     */
     targetUri = httpUri(conn, targetUri);
-    if (schr(targetUri, '$')) {
-        targetUri = httpExpandUri(conn, targetUri);
-    }
     mprLog(3, "redirect %d %s", status, targetUri);
     msg = httpLookupStatus(conn->http, status);
 
@@ -465,15 +472,12 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             Support URIs without a host:  https:///path. This is used to redirect onto the same host but with a 
             different scheme. So find a suitable local endpoint to supply the port for the scheme.
         */
-        if (!target->port &&
-                (!target->host || smatch(base->host, target->host)) &&
-                (target->scheme && !smatch(target->scheme, base->scheme))) {
-            endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
-            if (endpoint) {
-                target->port = endpoint->port;
-            } else {
-                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot find endpoint for scheme %s", target->scheme);
-                return;
+        if (!target->port && (target->scheme && !smatch(target->scheme, base->scheme))) {
+            if (!target->host || smatch(base->host, target->host) || (localEndpoint(base->host) && localEndpoint(target->host))) {
+                endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
+                if (endpoint) {
+                    target->port = endpoint->port;
+                }
             }
         }
         if (target->path && target->path[0] != '/') {

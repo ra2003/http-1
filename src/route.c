@@ -2041,7 +2041,7 @@ PUBLIC cchar *httpExpandRouteVars(HttpRoute *route, cchar *str)
 
 /*
     Make a path name. This replaces $references, converts to an absolute path name, cleans the path and maps delimiters.
-    Paths are resolved relative to the route home (configuration directory not documents).
+    Paths are resolved relative to the given directory or route home if "dir" is null.
  */
 PUBLIC char *httpMakePath(HttpRoute *route, cchar *dir, cchar *path)
 {

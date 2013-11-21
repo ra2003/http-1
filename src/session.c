@@ -229,7 +229,7 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
     if (value == 0) {
         httpRemoveSessionVar(conn, key);
     } else {
-        mprAddKey(sp->data, key, value);
+        mprAddKey(sp->data, key, sclone(value));
     }
     return 0;
 }

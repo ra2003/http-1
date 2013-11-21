@@ -4134,6 +4134,7 @@ PUBLIC MprKey *mprAddDuplicateKey(MprHash *table, cvoid *key, cvoid *ptr);
 /**
     Add a symbol value into the hash table
     @description Associate an arbitrary value with a string symbol key and insert into the symbol table.
+        This will replace existing key values. Use mprAddDuplicateKey to allow duplicates.
     @param table Symbol table returned via mprCreateSymbolTable.
     @param key String key of the symbole entry to delete.
     @param ptr Arbitrary pointer to associate with the key in the table.
@@ -6161,8 +6162,8 @@ PUBLIC void mprXmlSetParserHandler(MprXml *xp, MprXmlHandler h);
     JSON Object
     @defgroup MprJson MprJson
     @stability Prototype
-    @see mprBlendJson mprGetJson mprGetJson mprGetJsonLength mprLoadJson mprParseJson mprSetJsonError 
-        mprParseJsonEx mprParseJsonInto mprQueryJson mprRemoveJson mprSetJson mprSetJsonValue mprJsonToString mprTraceJson
+    @see mprBlendJson mprGetJsonObj mprGetJson mprGetJsonLength mprLoadJson mprParseJson mprSetJsonError 
+        mprParseJsonEx mprParseJsonInto mprQueryJson mprRemoveJson mprSetJsonObj mprSetJson mprJsonToString mprTraceJson
  */
 typedef struct MprJson {
     cchar           *name;              /**< Property name for this object */
@@ -6230,12 +6231,14 @@ typedef struct MprJsonParser {
     int             tolerant;       /* Tolerant parsing: unquoted names, comma before last property of object */
 } MprJsonParser;
 
+#define MPR_JSON_OVERWRITE 0x1      /**< Overwrite existing properties */
+
 /**
     Blend two JSON objects
     @description This performs an N-level deep clone of the JSON object to be blended into the target object 
     @param dest Parsed JSON object. This is the destination object. The "other" object will be blended into this object.
     @param other Parsed JSON object returned by mprJsonParser
-    @param flags Reserved. Must set to zero.
+    @param flags Set to MPR_JSON_OVERWRITE to overwrite existing properties.
     @return Zero if successful.
     @ingroup MprJson
     @stability Prototype
@@ -6490,7 +6493,7 @@ PUBLIC char *mprSerialize(MprHash *hash, int flags);
 PUBLIC void mprSetJsonError(MprJsonParser *jp, cchar *fmt, ...);
 
 /**
-    Update a property in the JSON object
+    Update a property in a JSON object
     @description This call takes a multipart property name and will operate at any level of depth in the JSON object.
     @param obj Parsed JSON object returned by mprParseJson
     @param key Property name to add/update. This may include ".". For example: "settings.mode".
@@ -6503,7 +6506,7 @@ PUBLIC void mprSetJsonError(MprJsonParser *jp, cchar *fmt, ...);
     @ingroup MprJson
     @stability Prototype
  */
-PUBLIC int mprSetJson(MprJson *obj, cchar *key, MprJson *value, int flags);
+PUBLIC int mprSetJsonObj(MprJson *obj, cchar *key, MprJson *value, int flags);
 
 /**
     Update a key/value in the JSON object with a string value
@@ -6519,7 +6522,7 @@ PUBLIC int mprSetJson(MprJson *obj, cchar *key, MprJson *value, int flags);
     @ingroup MprJson
     @stability Prototype
  */
-PUBLIC int mprSetJsonValue(MprJson *obj, cchar *key, cchar *value, int flags);
+PUBLIC int mprSetJson(MprJson *obj, cchar *key, cchar *value, int flags);
 
 /**
     Trace the JSON object to the debug log 

@@ -35,11 +35,11 @@ PUBLIC void httpInitAuth(Http *http)
     httpAddAuthType("digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
     httpAddAuthType("form", formLogin, NULL, NULL);
 
-#if BIT_HAS_PAM && BIT_HTTP_PAM
     httpAddAuthStore("app", NULL);
+    httpAddAuthStore("internal", fileVerifyUser);
+#if BIT_HAS_PAM && BIT_HTTP_PAM
     httpAddAuthStore("system", httpPamVerifyUser);
 #endif
-    httpAddAuthStore("internal", fileVerifyUser);
 #if DEPRECATE || 1
     /*
         Deprecated in 4.4. Use "internal"
@@ -134,7 +134,6 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         mprTrace(5, "httpLogin missing username");
         return 0;
     }
-    assert(auth->store);
     if (!auth->store) {
         mprError("No AuthStore defined");
         return 0;

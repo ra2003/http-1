@@ -157,7 +157,7 @@ PUBLIC void httpAddQueryParams(HttpConn *conn)
 }
 
 
-PUBLIC void httpAddBodyParams(HttpConn *conn)
+PUBLIC int httpAddBodyParams(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpQueue   *q;
@@ -176,11 +176,14 @@ PUBLIC void httpAddBodyParams(HttpConn *conn)
                 addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
 
             } else if (sstarts(rx->mimeType, "application/json")) {
-                mprParseJsonInto(httpGetBodyInput(conn), httpGetParams(conn));
+                if (mprParseJsonInto(httpGetBodyInput(conn), httpGetParams(conn)) == 0) {
+                    return MPR_ERR_BAD_FORMAT;
+                }
             }
         }
         rx->flags |= HTTP_ADDED_BODY_PARAMS;
     }
+    return 0;
 }
 
 

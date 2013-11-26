@@ -339,9 +339,10 @@ PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
     } else {
         if (!uri->host) {
             uri->host = base->host;
-        }
-        if (!uri->port) {
-            uri->port = base->port;
+            /* Must not add a port if there is already a host */
+            if (!uri->port) {
+                uri->port = base->port;
+            }
         }
         if (!uri->scheme) {
             uri->scheme = base->scheme;

@@ -1039,8 +1039,11 @@ static bool processContent(HttpConn *conn)
         if (conn->state < HTTP_STATE_FINALIZED) {
             if (conn->endpoint) {
                 if (!rx->route) {
-                    httpAddBodyParams(conn);
-                    mapMethod(conn);
+                    if (httpAddBodyParams(conn) < 0) {
+                        httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad request parameters");
+                    } else {
+                        mapMethod(conn);
+                    }
                     httpRouteRequest(conn);
                     httpCreatePipeline(conn);
                     /*

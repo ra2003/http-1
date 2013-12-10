@@ -47,41 +47,30 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
     }
     tok = up->uri = sclone(uri);
 
-    if (sncmp(up->uri, "http://", 7) == 0) {
-        up->scheme = sclone("http");
-        if (flags & HTTP_COMPLETE_URI) {
-            up->port = 80;
+    if ((next = scontains(tok, "://")) != 0) {
+        up->scheme = snclone(tok, (next - tok));
+        if (smatch(up->scheme, "http")) {
+            if (flags & HTTP_COMPLETE_URI) {
+                up->port = 80;
+            }
+        } else if (smatch(up->scheme, "ws")) {
+            if (flags & HTTP_COMPLETE_URI) {
+                up->port = 80;
+            }
+            up->webSockets = 1;
+        } else if (smatch(up->scheme, "https")) {
+            if (flags & HTTP_COMPLETE_URI) {
+                up->port = 443;
+            }
+            up->secure = 1;
+        } else if (smatch(up->scheme, "wss")) {
+            if (flags & HTTP_COMPLETE_URI) {
+                up->port = 443;
+            }
+            up->secure = 1;
+            up->webSockets = 1;
         }
-        tok = &up->uri[7];
-
-    } else if (sncmp(up->uri, "ws://", 5) == 0) {
-        up->scheme = sclone("ws");
-        if (flags & HTTP_COMPLETE_URI) {
-            up->port = 80;
-        }
-        tok = &up->uri[5];
-        up->webSockets = 1;
-
-    } else if (sncmp(up->uri, "https://", 8) == 0) {
-        up->scheme = sclone("https");
-        up->secure = 1;
-        if (flags & HTTP_COMPLETE_URI) {
-            up->port = 443;
-        }
-        tok = &up->uri[8];
-
-    } else if (sncmp(up->uri, "wss://", 6) == 0) {
-        up->scheme = sclone("wss");
-        up->secure = 1;
-        if (flags & HTTP_COMPLETE_URI) {
-            up->port = 443;
-        }
-        tok = &up->uri[6];
-        up->webSockets = 1;
-
-    } else {
-        up->scheme = 0;
-        tok = up->uri;
+        tok = &next[3];
     }
     if (schr(tok, ':')) {
         /* Has port specifier */

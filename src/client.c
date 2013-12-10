@@ -84,8 +84,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     }
 #endif
     if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
-        mprLog(level, "### Outgoing connection from %s:%d to %s:%d", 
-            conn->ip, conn->port, conn->sock->ip, conn->sock->port);
+        mprLog(level, "### Outgoing connection to %s:%d", conn->ip, conn->port);
     }
     return conn;
 }
@@ -108,9 +107,9 @@ static void setDefaultHeaders(HttpConn *conn)
         }
     }
     if (conn->port != 80 && conn->port != 443) {
-        httpAddHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
+        httpSetHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
     } else {
-        httpAddHeaderString(conn, "Host", conn->ip);
+        httpSetHeaderString(conn, "Host", conn->ip);
     }
     httpAddHeaderString(conn, "Accept", "*/*");
     if (conn->keepAliveCount > 0) {

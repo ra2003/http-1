@@ -214,7 +214,7 @@ static bool parseIncoming(HttpConn *conn, HttpPacket *packet)
     /*
         Don't start processing until all the headers have been received (delimited by two blank lines)
      */
-    if ((end = sncontains(start, "\r\n\r\n", len)) == 0) {
+    if ((end = sncontains(start, "\r\n\r\n", len)) == 0 && (end = sncontains(start, "\n\n", len)) == 0) {
         if (len >= conn->limits->headerSize) {
             httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
                 "Header too big. Length %d vs limit %d", len, conn->limits->headerSize);

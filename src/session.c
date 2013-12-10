@@ -291,7 +291,6 @@ static cchar *createSecurityToken(HttpConn *conn)
     HttpRx      *rx;
 
     rx = conn->rx;
-    assert(rx->route->flags & HTTP_ROUTE_XSRF);
     rx->securityToken = 0;
 
     /*

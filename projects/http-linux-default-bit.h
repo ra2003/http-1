@@ -110,7 +110,7 @@
     #define BIT_SYNC "bitos,est,mpr,pcre"
 #endif
 #ifndef BIT_TITLE
-    #define BIT_TITLE "Embedthis Http Library"
+    #define BIT_TITLE "Embedthis Http"
 #endif
 #ifndef BIT_VERSION
     #define BIT_VERSION "4.5.0"

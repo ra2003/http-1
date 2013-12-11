@@ -4747,9 +4747,16 @@
     </member>
     <member kind="function">
       <type>int</type>
+      <name>mprSetCacheLink</name>
+      <anchorfile>group___mpr_cache.html</anchorfile>
+      <anchor>gaaa3c0cea1ad910b3fb83dc7800b46b95</anchor>
+      <arglist>(MprCache *cache, cchar *key, void *link)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
       <name>mprSetCacheNotify</name>
       <anchorfile>group___mpr_cache.html</anchorfile>
-      <anchor>ga91178d202cdeaee068fa37a8b659ced7</anchor>
+      <anchor>gab0a5564222ed33ad6fd3e4ccbeb78aef</anchor>
       <arglist>(MprCache *cache, MprCacheProc notify)</arglist>
     </member>
     <member kind="function">
@@ -9628,9 +9635,16 @@
     </member>
     <member kind="function">
       <type>int</type>
+      <name>mprSetCacheLink</name>
+      <anchorfile>group___mpr_cache.html</anchorfile>
+      <anchor>gaaa3c0cea1ad910b3fb83dc7800b46b95</anchor>
+      <arglist>(MprCache *cache, cchar *key, void *link)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
       <name>mprSetCacheNotify</name>
       <anchorfile>group___mpr_cache.html</anchorfile>
-      <anchor>ga91178d202cdeaee068fa37a8b659ced7</anchor>
+      <anchor>gab0a5564222ed33ad6fd3e4ccbeb78aef</anchor>
       <arglist>(MprCache *cache, MprCacheProc notify)</arglist>
     </member>
     <member kind="function">

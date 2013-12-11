@@ -68,6 +68,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "httpcmd", "http-windows-sta
 		{4A62BF6E-E3D0-4846-A8E4-945E9D816482} = {4A62BF6E-E3D0-4846-A8E4-945E9D816482}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bower.json", "http-windows-static\bower.json.vcxproj", "{A1C5A265-90DC-4037-AC40-3AF707131803}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
+	EndProjectSection
+EndProject
 
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -157,6 +162,14 @@ Global
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|Win32.Build.0 = Release|Win32
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|x64.ActiveCfg = Release|x64
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|x64.Build.0 = Release|x64
+{A1C5A265-90DC-4037-AC40-3AF707131803}.Debug|Win32.ActiveCfg = Debug|Win32
+{A1C5A265-90DC-4037-AC40-3AF707131803}.Debug|Win32.Build.0 = Debug|Win32
+{A1C5A265-90DC-4037-AC40-3AF707131803}.Debug|x64.ActiveCfg = Debug|x64
+{A1C5A265-90DC-4037-AC40-3AF707131803}.Debug|x64.Build.0 = Debug|x64
+{A1C5A265-90DC-4037-AC40-3AF707131803}.Release|Win32.ActiveCfg = Release|Win32
+{A1C5A265-90DC-4037-AC40-3AF707131803}.Release|Win32.Build.0 = Release|Win32
+{A1C5A265-90DC-4037-AC40-3AF707131803}.Release|x64.ActiveCfg = Release|x64
+{A1C5A265-90DC-4037-AC40-3AF707131803}.Release|x64.Build.0 = Release|x64
 EndGlobalSection
 
   GlobalSection(SolutionProperties) = preSolution

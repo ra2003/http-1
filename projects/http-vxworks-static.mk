@@ -1,5 +1,5 @@
 #
-#   http-vxworks-static.mk -- Makefile to build Embedthis Http Library for vxworks
+#   http-vxworks-static.mk -- Makefile to build Embedthis Http for vxworks
 #
 
 PRODUCT            := http
@@ -104,6 +104,7 @@ TARGETS            += $(CONFIG)/bin/libmprssl.a
 TARGETS            += $(CONFIG)/bin/makerom.out
 TARGETS            += $(CONFIG)/bin/testHttp.out
 TARGETS            += $(CONFIG)/bin/http
+TARGETS            += bower.json
 
 unexport CDPATH
 
@@ -150,6 +151,7 @@ clean:
 	rm -f "$(CONFIG)/bin/testHttp.out"
 	rm -f "$(CONFIG)/bin/libhttp.a"
 	rm -f "$(CONFIG)/bin/http"
+	rm -f "bower.json"
 	rm -f "$(CONFIG)/obj/estLib.o"
 	rm -f "$(CONFIG)/obj/pcre.o"
 	rm -f "$(CONFIG)/obj/mprLib.o"
@@ -988,34 +990,44 @@ $(CONFIG)/bin/http: $(DEPS_59)
 	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/http.o" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) -Wl,-r 
 
 #
+#   bower.json
+#
+DEPS_60 += package.json
+
+bower.json: $(DEPS_60)
+	@echo '      [Copy] bower.json'
+	mkdir -p "."
+	cp package.json bower.json
+
+#
 #   stop
 #
-stop: $(DEPS_60)
+stop: $(DEPS_61)
 
 #
 #   installBinary
 #
-installBinary: $(DEPS_61)
+installBinary: $(DEPS_62)
 
 #
 #   start
 #
-start: $(DEPS_62)
+start: $(DEPS_63)
 
 #
 #   install
 #
-DEPS_63 += stop
-DEPS_63 += installBinary
-DEPS_63 += start
+DEPS_64 += stop
+DEPS_64 += installBinary
+DEPS_64 += start
 
-install: $(DEPS_63)
+install: $(DEPS_64)
 	
 
 #
 #   uninstall
 #
-DEPS_64 += stop
+DEPS_65 += stop
 
-uninstall: $(DEPS_64)
+uninstall: $(DEPS_65)
 

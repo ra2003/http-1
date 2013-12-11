@@ -1,4 +1,4 @@
-LICENSE.md - Embedthis Http Licenses
+Embedthis Http Licenses
 ===
 
 This file documents the Embedthis Software Licenses. It includes the Embedthis Http Open Source License and licenses for third-party components within Http.

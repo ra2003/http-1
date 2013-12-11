@@ -107,9 +107,9 @@ static void setDefaultHeaders(HttpConn *conn)
         }
     }
     if (conn->port != 80 && conn->port != 443) {
-        httpSetHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
+        httpAddHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
     } else {
-        httpSetHeaderString(conn, "Host", conn->ip);
+        httpAddHeaderString(conn, "Host", conn->ip);
     }
     httpAddHeaderString(conn, "Accept", "*/*");
     if (conn->keepAliveCount > 0) {

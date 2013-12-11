@@ -63,6 +63,15 @@ PUBLIC HttpSession *httpCreateSession(HttpConn *conn)
 }
 
 
+PUBLIC void httpSetSessionNotify(MprCacheProc callback)
+{
+    Http        *http;
+
+    http = MPR->httpService;
+    mprSetCacheNotify(http->sessionCache, callback);
+}
+
+
 PUBLIC void httpDestroySession(HttpConn *conn)
 {
     Http        *http;
@@ -227,6 +236,20 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
     } else {
         mprAddKey(sp->data, key, sclone(value));
     }
+    return 0;
+}
+
+
+PUBLIC int httpSetSessionLink(HttpConn *conn, void *link)
+{
+    HttpSession  *sp;
+
+    assert(conn);
+
+    if ((sp = httpGetSession(conn, 1)) == 0) {
+        return MPR_ERR_CANT_FIND;
+    }
+    mprSetCacheLink(sp->cache, sp->id, link);
     return 0;
 }
 

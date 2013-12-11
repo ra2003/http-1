@@ -1,9 +1,9 @@
 #
-#   http-linux-default.mk -- Makefile to build Http Library for linux
+#   http-linux-default.mk -- Makefile to build Embedthis Http Library for linux
 #
 
 PRODUCT            := http
-VERSION            := 4.4.3
+VERSION            := 4.5.0
 BUILD_NUMBER       := 0
 PROFILE            := default
 ARCH               := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
@@ -194,7 +194,7 @@ clobber: clean
 #   version
 #
 version: $(DEPS_1)
-	echo 4.4.3-0
+	echo 4.5.0-0
 
 #
 #   est.h

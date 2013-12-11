@@ -1,9 +1,9 @@
 #
-#   http-windows-static.nmake -- Makefile to build Http Library for windows
+#   http-windows-static.nmake -- Makefile to build Embedthis Http Library for windows
 #
 
 PRODUCT            = http
-VERSION            = 4.4.3
+VERSION            = 4.5.0
 BUILD_NUMBER       = 0
 PROFILE            = static
 PA                 = $(PROCESSOR_ARCHITECTURE)
@@ -80,7 +80,7 @@ LIBS               = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.li
 
 BIT_ROOT_PREFIX    = C:
 BIT_BASE_PREFIX    = $(BIT_ROOT_PREFIX)\Program Files
-BIT_APP_PREFIX     = $(BIT_BASE_PREFIX)\Http Library
+BIT_APP_PREFIX     = $(BIT_BASE_PREFIX)\Embedthis Http Library
 BIT_VAPP_PREFIX    = $(BIT_APP_PREFIX)
 BIT_DATA_PREFIX    = $(BIT_VAPP_PREFIX)
 BIT_STATE_PREFIX   = $(BIT_VAPP_PREFIX)
@@ -195,7 +195,7 @@ clean:
 #   version
 #
 version: $(DEPS_1)
-	echo 4.4.3-0
+	echo 4.5.0-0
 
 #
 #   est.h

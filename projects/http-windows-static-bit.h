@@ -8,13 +8,13 @@
 
 /* Settings */
 #ifndef BIT_BIT
-    #define BIT_BIT "0.8.6"
+    #define BIT_BIT "0.9.0"
 #endif
 #ifndef BIT_BUILD_NUMBER
     #define BIT_BUILD_NUMBER "0"
 #endif
 #ifndef BIT_COMPANY
-    #define BIT_COMPANY "Embedthis"
+    #define BIT_COMPANY "Embedthis Software"
 #endif
 #ifndef BIT_DEBUG
     #define BIT_DEBUG 1
@@ -104,10 +104,10 @@
     #define BIT_SYNC "bitos,est,mpr,pcre"
 #endif
 #ifndef BIT_TITLE
-    #define BIT_TITLE "Http Library"
+    #define BIT_TITLE "Embedthis Http Library"
 #endif
 #ifndef BIT_VERSION
-    #define BIT_VERSION "4.4.3"
+    #define BIT_VERSION "4.5.0"
 #endif
 #ifndef BIT_WITHOUT_ALL
     #define BIT_WITHOUT_ALL "doxygen,dsi,man,man2html,pmaker,ssl"
@@ -127,46 +127,46 @@
     #define BIT_BASE_PREFIX "C:/Program Files"
 #endif
 #ifndef BIT_APP_PREFIX
-    #define BIT_APP_PREFIX "C:/Program Files/Http Library"
+    #define BIT_APP_PREFIX "C:/Program Files/Embedthis Http Library"
 #endif
 #ifndef BIT_VAPP_PREFIX
-    #define BIT_VAPP_PREFIX "C:/Program Files/Http Library"
+    #define BIT_VAPP_PREFIX "C:/Program Files/Embedthis Http Library"
 #endif
 #ifndef BIT_DATA_PREFIX
-    #define BIT_DATA_PREFIX "C:/Program Files/Http Library"
+    #define BIT_DATA_PREFIX "C:/Program Files/Embedthis Http Library"
 #endif
 #ifndef BIT_STATE_PREFIX
-    #define BIT_STATE_PREFIX "C:/Program Files/Http Library"
+    #define BIT_STATE_PREFIX "C:/Program Files/Embedthis Http Library"
 #endif
 #ifndef BIT_BIN_PREFIX
-    #define BIT_BIN_PREFIX "C:/Program Files/Http Library/bin"
+    #define BIT_BIN_PREFIX "C:/Program Files/Embedthis Http Library/bin"
 #endif
 #ifndef BIT_INC_PREFIX
-    #define BIT_INC_PREFIX "C:/Program Files/Http Library/inc"
+    #define BIT_INC_PREFIX "C:/Program Files/Embedthis Http Library/inc"
 #endif
 #ifndef BIT_LIB_PREFIX
-    #define BIT_LIB_PREFIX "C:/Program Files/Http Library/lib"
+    #define BIT_LIB_PREFIX "C:/Program Files/Embedthis Http Library/lib"
 #endif
 #ifndef BIT_MAN_PREFIX
-    #define BIT_MAN_PREFIX "C:/Program Files/Http Library/man"
+    #define BIT_MAN_PREFIX "C:/Program Files/Embedthis Http Library/man"
 #endif
 #ifndef BIT_ETC_PREFIX
-    #define BIT_ETC_PREFIX "C:/Program Files/Http Library"
+    #define BIT_ETC_PREFIX "C:/Program Files/Embedthis Http Library"
 #endif
 #ifndef BIT_WEB_PREFIX
-    #define BIT_WEB_PREFIX "C:/Program Files/Http Library/web"
+    #define BIT_WEB_PREFIX "C:/Program Files/Embedthis Http Library/web"
 #endif
 #ifndef BIT_LOG_PREFIX
-    #define BIT_LOG_PREFIX "C:/Program Files/Http Library/log"
+    #define BIT_LOG_PREFIX "C:/Program Files/Embedthis Http Library/log"
 #endif
 #ifndef BIT_SPOOL_PREFIX
-    #define BIT_SPOOL_PREFIX "C:/Program Files/Http Library/tmp"
+    #define BIT_SPOOL_PREFIX "C:/Program Files/Embedthis Http Library/tmp"
 #endif
 #ifndef BIT_CACHE_PREFIX
-    #define BIT_CACHE_PREFIX "C:/Program Files/Http Library/cache"
+    #define BIT_CACHE_PREFIX "C:/Program Files/Embedthis Http Library/cache"
 #endif
 #ifndef BIT_SRC_PREFIX
-    #define BIT_SRC_PREFIX "C:/Program Files/Http Library/src"
+    #define BIT_SRC_PREFIX "C:/Program Files/Embedthis Http Library/src"
 #endif
 
 /* Suffixes */
@@ -205,13 +205,13 @@
     #define BIT_MAJOR_VERSION 4
 #endif
 #ifndef BIT_MINOR_VERSION
-    #define BIT_MINOR_VERSION 4
+    #define BIT_MINOR_VERSION 5
 #endif
 #ifndef BIT_PATCH_VERSION
-    #define BIT_PATCH_VERSION 3
+    #define BIT_PATCH_VERSION 0
 #endif
 #ifndef BIT_VNUM
-    #define BIT_VNUM 400040003
+    #define BIT_VNUM 400050000
 #endif
 
 /* Packs */

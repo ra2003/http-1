@@ -1039,7 +1039,6 @@ DEPS_64 += installBinary
 DEPS_64 += start
 
 install: $(DEPS_64)
-	
 
 #
 #   uninstall

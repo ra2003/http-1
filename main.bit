@@ -18,13 +18,7 @@ Bit.load({
     ],
 
     settings: {
-        /* Default settings overridden by build.bit */
-        product: 'http',
-        title: 'Http Library',
-        company: 'Embedthis',
-        version: '4.4.3',
-        buildNumber: '0',
-        bit: '0.8.6',
+        bit: '0.9.0',
         prefixes: 'embedthis-prefixes',
         sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
         '+requires': [ 'compiler', 'pcre' ],
@@ -88,6 +82,12 @@ Bit.load({
             type: 'exe',
             depends: [ 'libhttp' ],
             sources: [ 'src/http.c' ],
+        },
+
+        'bower.json': {
+            type: 'file',
+            path: 'bower.json',
+            files: [ 'package.json' ],
         },
     },
 

@@ -1,0 +1,40 @@
+{
+    "name": "http",
+    "description": "Embedthis Http Library",
+    "version": "4.5.0",
+    "keywords": [
+        "http",
+        "webserver",
+    ],
+    "author": {
+        "name": "Embedthis Software",
+        "email": "dev@embedthis.com",
+        "url": "http://embedthis.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/embedthis/http.git"
+    },
+    "bugs": {
+        "email": "dev@embedthis.com",
+        "url": "http://github.com/embedthis/http/issues"
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "doc",
+        "test",
+        "releases",
+        "package",
+        "*-debug*",
+        "*-release*"
+    ],
+    "licenses": [{ 
+        "type": "GPL", 
+        "url": "http://www.gnu.org/licenses/gpl-2.0.html"
+    }, {
+        "type": "Commercial", 
+        "url": "http://embedthis.com/licensing/"
+    }]
+}

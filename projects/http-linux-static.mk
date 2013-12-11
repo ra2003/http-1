@@ -194,7 +194,7 @@ clobber: clean
 #   version
 #
 version: $(DEPS_1)
-	@echo 4.4.3-0
+	echo 4.4.3-0
 
 #
 #   est.h

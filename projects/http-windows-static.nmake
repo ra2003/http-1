@@ -991,6 +991,7 @@ stop: $(DEPS_60)
 #   installBinary
 #
 installBinary: $(DEPS_61)
+#  Omit build script installBinary
 
 #
 #   start
@@ -1014,4 +1015,5 @@ install: $(DEPS_63)
 DEPS_64 = $(DEPS_64) stop
 
 uninstall: $(DEPS_64)
+#  Omit build script uninstall
 

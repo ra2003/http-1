@@ -100,7 +100,6 @@ TARGETS            += $(CONFIG)/bin/libmprssl.a
 TARGETS            += $(CONFIG)/bin/makerom
 TARGETS            += $(CONFIG)/bin/testHttp
 TARGETS            += $(CONFIG)/bin/http
-TARGETS            += bower.json
 
 unexport CDPATH
 
@@ -144,7 +143,6 @@ clean:
 	rm -f "$(CONFIG)/bin/testHttp"
 	rm -f "$(CONFIG)/bin/libhttp.a"
 	rm -f "$(CONFIG)/bin/http"
-	rm -f "bower.json"
 	rm -f "$(CONFIG)/obj/estLib.o"
 	rm -f "$(CONFIG)/obj/pcre.o"
 	rm -f "$(CONFIG)/obj/mprLib.o"
@@ -204,7 +202,7 @@ version: $(DEPS_1)
 $(CONFIG)/inc/est.h: $(DEPS_2)
 	@echo '      [Copy] $(CONFIG)/inc/est.h'
 	mkdir -p "$(CONFIG)/inc"
-	cp src/deps/est/est.h $(CONFIG)/inc/est.h
+	cp src/paks/est/est.h $(CONFIG)/inc/est.h
 
 #
 #   bit.h
@@ -228,9 +226,9 @@ DEPS_5 += $(CONFIG)/inc/est.h
 DEPS_5 += src/bitos.h
 
 $(CONFIG)/obj/estLib.o: \
-    src/deps/est/estLib.c $(DEPS_5)
+    src/paks/est/estLib.c $(DEPS_5)
 	@echo '   [Compile] $(CONFIG)/obj/estLib.o'
-	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC $(DFLAGS) $(IFLAGS) "-Isrc" src/deps/est/estLib.c
+	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC $(DFLAGS) $(IFLAGS) "-Isrc" src/paks/est/estLib.c
 
 ifeq ($(BIT_PACK_EST),1)
 #
@@ -249,12 +247,12 @@ endif
 #
 #   ca-crt
 #
-DEPS_7 += src/deps/est/ca.crt
+DEPS_7 += src/paks/est/ca.crt
 
 $(CONFIG)/bin/ca.crt: $(DEPS_7)
 	@echo '      [Copy] $(CONFIG)/bin/ca.crt'
 	mkdir -p "$(CONFIG)/bin"
-	cp src/deps/est/ca.crt $(CONFIG)/bin/ca.crt
+	cp src/paks/est/ca.crt $(CONFIG)/bin/ca.crt
 
 #
 #   pcre.h
@@ -262,7 +260,7 @@ $(CONFIG)/bin/ca.crt: $(DEPS_7)
 $(CONFIG)/inc/pcre.h: $(DEPS_8)
 	@echo '      [Copy] $(CONFIG)/inc/pcre.h'
 	mkdir -p "$(CONFIG)/inc"
-	cp src/deps/pcre/pcre.h $(CONFIG)/inc/pcre.h
+	cp src/paks/pcre/pcre.h $(CONFIG)/inc/pcre.h
 
 #
 #   pcre.o
@@ -271,9 +269,9 @@ DEPS_9 += $(CONFIG)/inc/bit.h
 DEPS_9 += $(CONFIG)/inc/pcre.h
 
 $(CONFIG)/obj/pcre.o: \
-    src/deps/pcre/pcre.c $(DEPS_9)
+    src/paks/pcre/pcre.c $(DEPS_9)
 	@echo '   [Compile] $(CONFIG)/obj/pcre.o'
-	$(CC) -c -o $(CONFIG)/obj/pcre.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src/deps/pcre/pcre.c
+	$(CC) -c -o $(CONFIG)/obj/pcre.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src/paks/pcre/pcre.c
 
 ifeq ($(BIT_PACK_PCRE),1)
 #
@@ -294,7 +292,7 @@ endif
 $(CONFIG)/inc/mpr.h: $(DEPS_11)
 	@echo '      [Copy] $(CONFIG)/inc/mpr.h'
 	mkdir -p "$(CONFIG)/inc"
-	cp src/deps/mpr/mpr.h $(CONFIG)/inc/mpr.h
+	cp src/paks/mpr/mpr.h $(CONFIG)/inc/mpr.h
 
 #
 #   mprLib.o
@@ -304,9 +302,9 @@ DEPS_12 += $(CONFIG)/inc/mpr.h
 DEPS_12 += src/bitos.h
 
 $(CONFIG)/obj/mprLib.o: \
-    src/deps/mpr/mprLib.c $(DEPS_12)
+    src/paks/mpr/mprLib.c $(DEPS_12)
 	@echo '   [Compile] $(CONFIG)/obj/mprLib.o'
-	$(CC) -c -o $(CONFIG)/obj/mprLib.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src/deps/mpr/mprLib.c
+	$(CC) -c -o $(CONFIG)/obj/mprLib.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src/paks/mpr/mprLib.c
 
 #
 #   libmpr
@@ -328,9 +326,9 @@ DEPS_14 += $(CONFIG)/inc/mpr.h
 DEPS_14 += $(CONFIG)/inc/est.h
 
 $(CONFIG)/obj/mprSsl.o: \
-    src/deps/mpr/mprSsl.c $(DEPS_14)
+    src/paks/mpr/mprSsl.c $(DEPS_14)
 	@echo '   [Compile] $(CONFIG)/obj/mprSsl.o'
-	$(CC) -c -o $(CONFIG)/obj/mprSsl.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" "-I$(BIT_PACK_MATRIXSSL_PATH)" "-I$(BIT_PACK_MATRIXSSL_PATH)/matrixssl" "-I$(BIT_PACK_NANOSSL_PATH)/src" "-I$(BIT_PACK_OPENSSL_PATH)/include" src/deps/mpr/mprSsl.c
+	$(CC) -c -o $(CONFIG)/obj/mprSsl.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" "-I$(BIT_PACK_MATRIXSSL_PATH)" "-I$(BIT_PACK_MATRIXSSL_PATH)/matrixssl" "-I$(BIT_PACK_NANOSSL_PATH)/src" "-I$(BIT_PACK_OPENSSL_PATH)/include" src/paks/mpr/mprSsl.c
 
 #
 #   libmprssl
@@ -358,9 +356,9 @@ DEPS_16 += $(CONFIG)/inc/bit.h
 DEPS_16 += $(CONFIG)/inc/mpr.h
 
 $(CONFIG)/obj/makerom.o: \
-    src/deps/mpr/makerom.c $(DEPS_16)
+    src/paks/mpr/makerom.c $(DEPS_16)
 	@echo '   [Compile] $(CONFIG)/obj/makerom.o'
-	$(CC) -c -o $(CONFIG)/obj/makerom.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src/deps/mpr/makerom.c
+	$(CC) -c -o $(CONFIG)/obj/makerom.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src/paks/mpr/makerom.c
 
 #
 #   makerom
@@ -983,43 +981,33 @@ $(CONFIG)/bin/http: $(DEPS_59)
 	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/http.o" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) $(LIBS) 
 
 #
-#   bower.json
-#
-DEPS_60 += package.json
-
-bower.json: $(DEPS_60)
-	@echo '      [Copy] bower.json'
-	mkdir -p "."
-	cp package.json bower.json
-
-#
 #   stop
 #
-stop: $(DEPS_61)
+stop: $(DEPS_60)
 
 #
 #   installBinary
 #
-installBinary: $(DEPS_62)
+installBinary: $(DEPS_61)
 
 #
 #   start
 #
-start: $(DEPS_63)
+start: $(DEPS_62)
 
 #
 #   install
 #
-DEPS_64 += stop
-DEPS_64 += installBinary
-DEPS_64 += start
+DEPS_63 += stop
+DEPS_63 += installBinary
+DEPS_63 += start
 
-install: $(DEPS_64)
+install: $(DEPS_63)
 
 #
 #   uninstall
 #
-DEPS_65 += stop
+DEPS_64 += stop
 
-uninstall: $(DEPS_65)
+uninstall: $(DEPS_64)
 

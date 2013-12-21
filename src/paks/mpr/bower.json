@@ -1,11 +1,18 @@
 {
-    "name": "http",
-    "description": "Embedthis Http Library",
-    "title": "Embedthis Http",
+    "name": "mpr",
+    "description": "Embedthis Multithreaded Portable Runtime",
+    "title": "Embedthis MPR",
     "version": "4.5.0",
+    "dirs": {
+        "paks": "src/paks"
+    },
+    "dependencies": {
+        "bitos": "~0.8",
+        "est": "~0.6"
+    },
     "keywords": [
-        "http",
-        "webserver"
+        "mpr",
+        "runtime"
     ],
     "author": {
         "name": "Embedthis Software",
@@ -14,10 +21,10 @@
     },
     "repository": {
         "type": "git",
-        "url": "git://github.com/embedthis/http.git"
+        "url": "git://github.com/embedthis/mpr-4.git"
     },
     "bugs": {
-        "url": "http://github.com/embedthis/http/issues"
+        "url": "http://github.com/embedthis/mpr-4/issues"
     },
     "export": [
         "doc/**"
@@ -31,14 +38,5 @@
             "type": "Commercial",
             "url": "http://embedthis.com/licensing/"
         }
-    ],
-    "dependencies": {
-        "bitos": "~0.8",
-        "est": "~0.6",
-        "mpr": "~4.5",
-        "pcre": "~1.0"
-    },
-    "dirs": {
-        "paks": "src/paks"
-    }
+    ]
 }

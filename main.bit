@@ -5,9 +5,9 @@
 Bit.load({
     blend: [
         "${BITS}/embedthis.bit",
-        "src/deps/est/est.bit",
-        "src/deps/pcre/pcre.bit",
-        "src/deps/mpr/mpr.bit",
+        "src/paks/est/est.bit",
+        "src/paks/pcre/pcre.bit",
+        "src/paks/mpr/mpr.bit",
         "test/test.bit",
         "doc/doc.bit",
     ],
@@ -83,47 +83,41 @@ Bit.load({
             depends: [ 'libhttp' ],
             sources: [ 'src/http.c' ],
         },
-
-        'bower.json': {
-            type: 'file',
-            path: 'bower.json',
-            files: [ 'package.json' ],
-        },
     },
 
     manifest: {
         packages: {
-            combo: {
+            pak: {
                 inherit:    'embedthis-manifest',
                 prefixes:   [ 'src'],
-                sets:       [ 'source' ],
+                sets:       [ 'pak' ],
             },
         },
         files: [ 
             {   from:   'package/http.bit', 
-                to:     '${src}/src/deps/http/http.bit',
-                set:    'source',
+                to:     '${src}/http.bit',
+                set:    'pak',
             },{
                 from:   ['src/http.h', 'src/http.c'],
-                to:     '${src}/src/deps/http/',
-                set:    'source',
+                to:     '${src}/',
+                set:    'pak',
             },{
                 from:   'src/*.c',
                 exclude: /http.c/,
-                to:     '${src}/src/deps/http/httpLib.c',
+                to:     '${src}/httpLib.c',
                 cat:    true,
                 filter: /^#inc.*http.*$/mg,
                 header: '#include \"http.h\"',
                 title:  '${settings.title} Library Source',
-                set:    'source',
+                set:    'pak',
             },{
                 from:   ['doc/api/httpBare.html', 'doc/api/http*.tags', 'doc/api/http.dtags'],
                 to:     '${src}/doc/api/',
-                set:    'source',
+                set:    'pak',
             },{
                 from:   'doc/man/http.1',
                 to:     '${src}/doc/man/',
-                set:    'source',
+                set:    'pak',
             },
         ],
 	},

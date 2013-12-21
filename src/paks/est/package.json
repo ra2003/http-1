@@ -1,11 +1,12 @@
 {
-    "name": "http",
-    "description": "Embedthis Http Library",
-    "title": "Embedthis Http",
-    "version": "4.5.0",
+    "name": "est",
+    "description": "Embedthis EST TLS",
+    "title": "Embethis EST",
+    "version": "0.6.0",
     "keywords": [
-        "http",
-        "webserver"
+        "est",
+        "ssl",
+        "tls"
     ],
     "author": {
         "name": "Embedthis Software",
@@ -14,14 +15,12 @@
     },
     "repository": {
         "type": "git",
-        "url": "git://github.com/embedthis/http.git"
+        "url": "git://github.com/embedthis/est.git"
     },
     "bugs": {
-        "url": "http://github.com/embedthis/http/issues"
+        "email": "dev@embedthis.com",
+        "url": "http://github.com/embedthis/est/issues"
     },
-    "export": [
-        "doc/**"
-    ],
     "licenses": [
         {
             "type": "GPL",
@@ -33,10 +32,7 @@
         }
     ],
     "dependencies": {
-        "bitos": "~0.8",
-        "est": "~0.6",
-        "mpr": "~4.5",
-        "pcre": "~1.0"
+        "bitos": "~0.8"
     },
     "dirs": {
         "paks": "src/paks"

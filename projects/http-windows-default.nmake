@@ -108,7 +108,6 @@ TARGETS            = $(TARGETS) $(CONFIG)\bin\libmprssl.dll
 TARGETS            = $(TARGETS) $(CONFIG)\bin\makerom.exe
 TARGETS            = $(TARGETS) $(CONFIG)\bin\testHttp.exe
 TARGETS            = $(TARGETS) $(CONFIG)\bin\http
-TARGETS            = $(TARGETS) bower.json
 
 !IFNDEF SHOW
 .SILENT:
@@ -163,7 +162,6 @@ clean:
 	if exist "$(CONFIG)\bin\libhttp.pdb" del /Q "$(CONFIG)\bin\libhttp.pdb"
 	if exist "$(CONFIG)\bin\libhttp.exp" del /Q "$(CONFIG)\bin\libhttp.exp"
 	if exist "$(CONFIG)\bin\http" del /Q "$(CONFIG)\bin\http"
-	if exist "bower.json" del /Q "bower.json"
 	if exist "$(CONFIG)\obj\estLib.obj" del /Q "$(CONFIG)\obj\estLib.obj"
 	if exist "$(CONFIG)\obj\pcre.obj" del /Q "$(CONFIG)\obj\pcre.obj"
 	if exist "$(CONFIG)\obj\mprLib.obj" del /Q "$(CONFIG)\obj\mprLib.obj"
@@ -220,7 +218,7 @@ version: $(DEPS_1)
 $(CONFIG)\inc\est.h: $(DEPS_2)
 	@echo '      [Copy] $(CONFIG)/inc/est.h'
 	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
-	copy /Y src\deps\est\est.h $(CONFIG)\inc\est.h
+	copy /Y src\paks\est\est.h $(CONFIG)\inc\est.h
 
 #
 #   bit.h
@@ -244,9 +242,9 @@ DEPS_5 = $(DEPS_5) $(CONFIG)\inc\est.h
 DEPS_5 = $(DEPS_5) src\bitos.h
 
 $(CONFIG)\obj\estLib.obj: \
-    src\deps\est\estLib.c $(DEPS_5)
+    src\paks\est\estLib.c $(DEPS_5)
 	@echo '   [Compile] $(CONFIG)/obj/estLib.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\estLib.obj -Fd$(CONFIG)\obj\estLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src\deps\est\estLib.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\estLib.obj -Fd$(CONFIG)\obj\estLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src\paks\est\estLib.c
 
 !IF "$(BIT_PACK_EST)" == "1"
 #
@@ -265,12 +263,12 @@ $(CONFIG)\bin\libest.dll: $(DEPS_6)
 #
 #   ca-crt
 #
-DEPS_7 = $(DEPS_7) src\deps\est\ca.crt
+DEPS_7 = $(DEPS_7) src\paks\est\ca.crt
 
 $(CONFIG)\bin\ca.crt: $(DEPS_7)
 	@echo '      [Copy] $(CONFIG)/bin/ca.crt'
 	if not exist "$(CONFIG)\bin" md "$(CONFIG)\bin"
-	copy /Y src\deps\est\ca.crt $(CONFIG)\bin\ca.crt
+	copy /Y src\paks\est\ca.crt $(CONFIG)\bin\ca.crt
 
 #
 #   pcre.h
@@ -278,7 +276,7 @@ $(CONFIG)\bin\ca.crt: $(DEPS_7)
 $(CONFIG)\inc\pcre.h: $(DEPS_8)
 	@echo '      [Copy] $(CONFIG)/inc/pcre.h'
 	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
-	copy /Y src\deps\pcre\pcre.h $(CONFIG)\inc\pcre.h
+	copy /Y src\paks\pcre\pcre.h $(CONFIG)\inc\pcre.h
 
 #
 #   pcre.obj
@@ -287,9 +285,9 @@ DEPS_9 = $(DEPS_9) $(CONFIG)\inc\bit.h
 DEPS_9 = $(DEPS_9) $(CONFIG)\inc\pcre.h
 
 $(CONFIG)\obj\pcre.obj: \
-    src\deps\pcre\pcre.c $(DEPS_9)
+    src\paks\pcre\pcre.c $(DEPS_9)
 	@echo '   [Compile] $(CONFIG)/obj/pcre.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\pcre.obj -Fd$(CONFIG)\obj\pcre.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src\deps\pcre\pcre.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\pcre.obj -Fd$(CONFIG)\obj\pcre.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src\paks\pcre\pcre.c
 
 !IF "$(BIT_PACK_PCRE)" == "1"
 #
@@ -310,7 +308,7 @@ $(CONFIG)\bin\libpcre.dll: $(DEPS_10)
 $(CONFIG)\inc\mpr.h: $(DEPS_11)
 	@echo '      [Copy] $(CONFIG)/inc/mpr.h'
 	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
-	copy /Y src\deps\mpr\mpr.h $(CONFIG)\inc\mpr.h
+	copy /Y src\paks\mpr\mpr.h $(CONFIG)\inc\mpr.h
 
 #
 #   mprLib.obj
@@ -320,9 +318,9 @@ DEPS_12 = $(DEPS_12) $(CONFIG)\inc\mpr.h
 DEPS_12 = $(DEPS_12) src\bitos.h
 
 $(CONFIG)\obj\mprLib.obj: \
-    src\deps\mpr\mprLib.c $(DEPS_12)
+    src\paks\mpr\mprLib.c $(DEPS_12)
 	@echo '   [Compile] $(CONFIG)/obj/mprLib.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\mprLib.obj -Fd$(CONFIG)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src\deps\mpr\mprLib.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\mprLib.obj -Fd$(CONFIG)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src\paks\mpr\mprLib.c
 
 #
 #   libmpr
@@ -344,9 +342,9 @@ DEPS_14 = $(DEPS_14) $(CONFIG)\inc\mpr.h
 DEPS_14 = $(DEPS_14) $(CONFIG)\inc\est.h
 
 $(CONFIG)\obj\mprSsl.obj: \
-    src\deps\mpr\mprSsl.c $(DEPS_14)
+    src\paks\mpr\mprSsl.c $(DEPS_14)
 	@echo '   [Compile] $(CONFIG)/obj/mprSsl.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" "-I$(BIT_PACK_MATRIXSSL_PATH)" "-I$(BIT_PACK_MATRIXSSL_PATH)\matrixssl" "-I$(BIT_PACK_NANOSSL_PATH)\src" "-I$(BIT_PACK_OPENSSL_PATH)\include" src\deps\mpr\mprSsl.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" "-I$(BIT_PACK_MATRIXSSL_PATH)" "-I$(BIT_PACK_MATRIXSSL_PATH)\matrixssl" "-I$(BIT_PACK_NANOSSL_PATH)\src" "-I$(BIT_PACK_OPENSSL_PATH)\include" src\paks\mpr\mprSsl.c
 
 #
 #   libmprssl
@@ -395,9 +393,9 @@ DEPS_16 = $(DEPS_16) $(CONFIG)\inc\bit.h
 DEPS_16 = $(DEPS_16) $(CONFIG)\inc\mpr.h
 
 $(CONFIG)\obj\makerom.obj: \
-    src\deps\mpr\makerom.c $(DEPS_16)
+    src\paks\mpr\makerom.c $(DEPS_16)
 	@echo '   [Compile] $(CONFIG)/obj/makerom.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\makerom.obj -Fd$(CONFIG)\obj\makerom.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src\deps\mpr\makerom.c
+	"$(CC)" -c -Fo$(CONFIG)\obj\makerom.obj -Fd$(CONFIG)\obj\makerom.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-Isrc" src\paks\mpr\makerom.c
 
 #
 #   makerom
@@ -1023,48 +1021,38 @@ $(CONFIG)\bin\http: $(DEPS_59)
 	"$(LD)" -out:$(CONFIG)\bin\http -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\http.obj" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) 
 
 #
-#   bower.json
-#
-DEPS_60 = $(DEPS_60) package.json
-
-bower.json: $(DEPS_60)
-	@echo '      [Copy] bower.json'
-	if not exist "." md "."
-	copy /Y package.json bower.json
-
-#
 #   stop
 #
-stop: $(DEPS_61)
+stop: $(DEPS_60)
 #  Omit build script stop
 
 #
 #   installBinary
 #
-installBinary: $(DEPS_62)
+installBinary: $(DEPS_61)
 #  Omit build script installBinary
 
 #
 #   start
 #
-start: $(DEPS_63)
+start: $(DEPS_62)
 #  Omit build script start
 
 #
 #   install
 #
-DEPS_64 = $(DEPS_64) stop
-DEPS_64 = $(DEPS_64) installBinary
-DEPS_64 = $(DEPS_64) start
+DEPS_63 = $(DEPS_63) stop
+DEPS_63 = $(DEPS_63) installBinary
+DEPS_63 = $(DEPS_63) start
 
-install: $(DEPS_64)
+install: $(DEPS_63)
 
 
 #
 #   uninstall
 #
-DEPS_65 = $(DEPS_65) stop
+DEPS_64 = $(DEPS_64) stop
 
-uninstall: $(DEPS_65)
+uninstall: $(DEPS_64)
 #  Omit build script uninstall
 

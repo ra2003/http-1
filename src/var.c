@@ -252,6 +252,12 @@ PUBLIC char *httpGetParamsString(HttpConn *conn)
 }
 
 
+PUBLIC void httpRemoveParam(HttpConn *conn, cchar *var) 
+{
+    mprRemoveJson(httpGetParams(conn), var);
+}
+
+
 PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value) 
 {
     mprSetJson(httpGetParams(conn), var, value, MPR_JSON_SIMPLE);

@@ -297,7 +297,7 @@ static bool mapMethod(HttpConn *conn)
 static void traceRequest(HttpConn *conn, HttpPacket *packet)
 {
     MprBuf  *content;
-    cchar   *endp, *ext, *cp;
+    cchar   *endp, *ext, *cp, *uri, *queryref;
     int     len, level;
 
     ext = 0;
@@ -306,8 +306,11 @@ static void traceRequest(HttpConn *conn, HttpPacket *packet)
     /*
         Find the Uri extension:   "GET /path.ext HTTP/1.1"
      */
-    if ((cp = schr(content->start, ' ')) != 0) {
-        if ((cp = schr(++cp, ' ')) != 0) {
+    if ((uri = schr(content->start, ' ')) != 0) {
+        if ((cp = schr(++uri, ' ')) != 0) {
+            if ((queryref = spbrk(uri, "?#")) != 0) {
+                cp = queryref;
+            }
             for (ext = --cp; ext > content->start && *ext != '.'; ext--) ;
             ext = (*ext == '.') ? snclone(&ext[1], cp - ext) : 0;
             conn->tx->ext = ext;

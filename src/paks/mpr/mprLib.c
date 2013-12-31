@@ -1002,7 +1002,7 @@ PUBLIC void mprResetYield()
          */
         lock(ts->threads);
         tp->stickyYield = 0;
-        if (tp->yielded && heap->mustYield) {
+        if (tp->yielded && heap->mustYield && !heap->pauseGC) {
             tp->yielded = 0;
             unlock(ts->threads);
             mprYield(0);
@@ -1488,7 +1488,7 @@ PUBLIC void mprPauseGC() {
 
 
 PUBLIC void mprResumeGC() {
-    mprAtomicAdd((int*) &heap->pauseGC, -11);
+    mprAtomicAdd((int*) &heap->pauseGC, -1);
 }
 
 

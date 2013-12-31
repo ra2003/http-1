@@ -47,6 +47,14 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
     }
     tok = up->uri = sclone(uri);
 
+    if ((next = schr(tok, '?')) != 0) {
+        *next++ = '\0';
+        up->query = sclone(next);
+    }
+    if ((next = schr(tok, '#')) != 0) {
+        *next++ = '\0';
+        up->reference = sclone(next);
+    }
     if ((next = scontains(tok, "://")) != 0) {
         up->scheme = snclone(tok, (next - tok));
         if (smatch(up->scheme, "http")) {
@@ -121,6 +129,7 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
         }
     }
     if (tok) {
+#if UNUSED
         if ((next = spbrk(tok, "#?")) == NULL) {
             if (*tok) {
                 up->path = sclone(tok);
@@ -141,7 +150,10 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
                 up->query = sclone(tok);
             }
         }
-        if (up->path && (tok = srchr(up->path, '.')) != NULL) {
+#else
+        up->path = sclone(tok);
+#endif
+        if ((tok = srchr(up->path, '.')) != NULL) {
             if (tok[1]) {
                 if ((next = srchr(up->path, '/')) != NULL) {
                     if (next <= tok) {
@@ -536,13 +548,17 @@ PUBLIC HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
         other = others[i];
         if (other->scheme) {
             uri->scheme = sclone(other->scheme);
+            uri->port = other->port;
         }
         if (other->host) {
             uri->host = sclone(other->host);
-        }
-        if (other->port) {
             uri->port = other->port;
         }
+#if UNUSED
+        if (other->port && !uri->host) {
+            uri->port = other->port;
+        }
+#endif
         if (other->path) {
             httpJoinUriPath(uri, uri, other);
         }

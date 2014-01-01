@@ -540,22 +540,23 @@ static void emailRemedy(MprHash *args)
 
 static void httpRemedy(MprHash *args)
 {
-    cchar   *uri, *msg, *method;
-    char    *response, *err;
-    int     status;
+    HttpConn    *conn;
+    cchar       *uri, *msg, *method;
+    char        *err;
+    int         status;
 
     uri = mprLookupKey(args, "URI");
     if ((method = mprLookupKey(args, "METHOD")) == 0) {
         method = "POST";
     }
     msg = smatch(method, "POST") ? mprLookupKey(args, "MESSAGE") : 0;
-    status = httpRequest(method, uri, msg, &response, &err);
-    if (status < 0) {
+    if ((conn = httpRequest(method, uri, msg, &err)) == 0) {
         mprError("%s", err);
         return;
     }
+    status = httpGetStatus(conn);
     if (status != HTTP_CODE_OK) {
-        mprError("Remedy URI %s responded with status %d\n%s", status, response);
+        mprError("Remedy URI %s responded with status %d\n%s", status, httpReadString(conn));
     }
 }
 

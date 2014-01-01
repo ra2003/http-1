@@ -6083,13 +6083,12 @@ PUBLIC int httpRemoveHeader(HttpConn *conn, cchar *key);
     @param method HTTP method to use
     @param uri URI to request
     @param data Optional data to send with request. Set to null for GET requests.
-    @param response Output parameter to receive the HTTP request response.
     @param err Output parameter to receive any error messages.
-    @return HTTP status or a negative MPR error code
+    @return HttpConn object. Use $httpGetStatus to read status and $httpReadString to read the response data.
     @ingroup HttpTx
     @stability Prototype
  */
-PUBLIC int httpRequest(cchar *method, cchar *uri, cchar *data, char **response, char **err);
+PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err);
 
 /** 
     Define a content length header in the transmission. This will define a "Content-Length: NNN" request header and

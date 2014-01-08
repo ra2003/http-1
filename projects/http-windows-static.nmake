@@ -1007,7 +1007,7 @@ DEPS_63 = $(DEPS_63) installBinary
 DEPS_63 = $(DEPS_63) start
 
 install: $(DEPS_63)
-
+#  Omit build script install
 
 #
 #   uninstall

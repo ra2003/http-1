@@ -78,7 +78,6 @@ static void manageHost(HttpHost *host, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(host->name);
-        mprMark(host->ip);
         mprMark(host->parent);
         mprMark(host->responseCache);
         mprMark(host->routes);
@@ -208,35 +207,6 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
         printRoute(host->defaultRoute, next - 1, full);
     }
     mprRawLog(0, "\n");
-}
-
-
-/*
-    IP may be null in which case the host is listening on all interfaces. Port may be set to -1 and ip may contain a port
-    specifier, ie. "address:port".
- */
-PUBLIC void httpSetHostIpAddr(HttpHost *host, cchar *ip, int port)
-{
-    char    *pip;
-
-    if (port < 0 && schr(ip, ':')) {
-        mprParseSocketAddress(ip, &pip, &port, NULL, -1);
-        ip = pip;
-    }
-    host->ip = sclone(ip);
-    host->port = port;
-    if (!host->name) {
-        if (ip) {
-            if (port > 0) {
-                host->name = sfmt("%s:%d", ip, port);
-            } else {
-                host->name = sclone(ip);
-            }
-        } else {
-            assert(port > 0);
-            host->name = sfmt("*:%d", port);
-        }
-    }
 }
 
 

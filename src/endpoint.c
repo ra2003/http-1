@@ -110,7 +110,7 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents,
         return 0;
     }
     httpSetHostDefaultRoute(host, route);
-    httpSetHostIpAddr(host, ip, port);
+    httpSetHostName(host, sfmt("%s:%d", ip, port));
     httpAddHostToEndpoint(endpoint, host);
     httpSetRouteDocuments(route, documents);
     httpFinalizeRoute(route);

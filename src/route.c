@@ -2721,7 +2721,6 @@ static void defineHostVars(HttpRoute *route)
     mprAddKey(route->vars, "DOCUMENTS", route->documents);
     mprAddKey(route->vars, "HOME", route->home);
     mprAddKey(route->vars, "SERVER_NAME", route->host->name);
-    mprAddKey(route->vars, "SERVER_PORT", itos(route->host->port));
 
 #if DEPRECATE || 1
     mprAddKey(route->vars, "ROUTE_HOME", route->home);

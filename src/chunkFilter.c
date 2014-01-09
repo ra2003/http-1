@@ -196,7 +196,7 @@ static void outgoingChunkService(HttpQueue *q)
                 tx->chunkSize = min(conn->limits->chunkSize, q->max);
             }
         }
-        if (tx->flags & HTTP_TX_USE_OWN_HEADERS) {
+        if (tx->flags & HTTP_TX_USE_OWN_HEADERS || conn->http10) {
             tx->chunkSize = -1;
         }
     }

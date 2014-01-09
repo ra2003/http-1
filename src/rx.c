@@ -789,7 +789,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
         case 't':
             if (strcasecmp(key, "transfer-encoding") == 0) {
-                if (scaselesscmp(value, "chunked") == 0) {
+                if (scaselesscmp(value, "chunked") == 0 && !conn->http10) {
                     /*
                         remainingContent will be revised by the chunk filter as chunks are processed and will 
                         be set to zero when the last chunk has been received.

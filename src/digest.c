@@ -8,29 +8,11 @@
 
 #include    "http.h"
 
-/********************************** Defines ***********************************/
-/*
-    Per-request digest authorization data
- */
-typedef struct DigestData 
-{
-    char    *algorithm;
-    char    *cnonce;
-    char    *domain;
-    char    *nc;
-    char    *nonce;
-    char    *opaque;
-    char    *qop;
-    char    *realm;
-    char    *stale;
-    char    *uri;
-} DigestData;
-
 /********************************** Forwards **********************************/
 
-static char *calcDigest(HttpConn *conn, DigestData *dp, cchar *username);
+static char *calcDigest(HttpConn *conn, HttpDigest *dp, cchar *username);
 static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm);
-static void manageDigestData(DigestData *dp, int flags);
+static void manageDigestData(HttpDigest *dp, int flags);
 static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime *when);
 
 /*********************************** Code *************************************/
@@ -40,7 +22,7 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
 PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
 {
     HttpRx      *rx;
-    DigestData  *dp;
+    HttpDigest  *dp;
     MprTime     when;
     char        *value, *tok, *key, *cp, *sp;
     cchar       *secret, *realm;
@@ -56,7 +38,7 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
     if (!rx->authDetails) {
         return 0;
     }
-    dp = conn->authData = mprAllocObj(DigestData, manageDigestData);
+    dp = conn->authData = mprAllocObj(HttpDigest, manageDigestData);
     key = sclone(rx->authDetails);
 
     while (*key) {
@@ -229,7 +211,7 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
 }
 
 
-static void manageDigestData(DigestData *dp, int flags)
+static void manageDigestData(HttpDigest *dp, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(dp->algorithm);
@@ -280,7 +262,7 @@ PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *passwor
 { 
     Http        *http;
     HttpTx      *tx;
-    DigestData  *dp;
+    HttpDigest  *dp;
     char        *ha1, *ha2, *digest, *cnonce;
 
     http = conn->http;
@@ -337,7 +319,7 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
 /*
     Get a password digest using the MD5 algorithm -- See RFC 2617 to understand this code.
  */ 
-static char *calcDigest(HttpConn *conn, DigestData *dp, cchar *username)
+static char *calcDigest(HttpConn *conn, HttpDigest *dp, cchar *username)
 {
     HttpAuth    *auth;
     char        *digestBuf, *ha1, *ha2;

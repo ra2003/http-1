@@ -623,6 +623,7 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
                     break;
                 } else if (flags & HTTP_BLOCK) {
                     while (q->count >= q->max && !tx->finalized) {
+                        /* WARNING: this may yield, but even if the connection times out, our connection should be safe */
                         if (!mprWaitForSingleIO((int) conn->sock->fd, MPR_WRITABLE, conn->limits->inactivityTimeout)) {
                             return MPR_ERR_TIMEOUT;
                         }

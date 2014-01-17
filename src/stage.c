@@ -24,7 +24,7 @@ static void outgoing(HttpQueue *q, HttpPacket *packet)
     int     enableService;
 
     /*
-        Handlers service routines must only be auto-enabled if in the running state.
+        Handlers service routines must only be auto-enabled if better than ready.
      */
     enableService = !(q->stage->flags & HTTP_STAGE_HANDLER) || (q->conn->state >= HTTP_STATE_READY) ? 1 : 0;
     httpPutForService(q, packet, enableService);

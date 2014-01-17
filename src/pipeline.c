@@ -23,9 +23,8 @@ PUBLIC void httpCreatePipeline(HttpConn *conn)
     HttpRx      *rx;
 
     rx = conn->rx;
-    assert(conn->endpoint);
 
-    if (conn->endpoint) {
+    if (httpServerConn(conn)) {
         assert(rx->route);
         httpCreateRxPipeline(conn, rx->route);
         httpCreateTxPipeline(conn, rx->route);
@@ -50,7 +49,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     tx = conn->tx;
 
     tx->outputPipeline = mprCreateList(-1, MPR_LIST_STABLE);
-    if (conn->endpoint) {
+    if (httpServerConn(conn)) {
         if (tx->handler == 0 || tx->finalized) {
             tx->handler = http->passHandler;
         }
@@ -139,7 +138,7 @@ PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
     for (next = 0; (stage = mprGetNextItem(rx->inputPipeline, &next)) != 0; ) {
         q = httpCreateQueue(conn, stage, HTTP_QUEUE_RX, q);
     }
-    if (!conn->endpoint) {
+    if (httpClientConn(conn)) {
         pairQueues(conn);
         openQueues(conn);
     }
@@ -235,7 +234,7 @@ PUBLIC void httpSetSendConnector(HttpConn *conn, cchar *path)
 }
 
 
-PUBLIC void httpDestroyPipeline(HttpConn *conn)
+PUBLIC void httpClosePipeline(HttpConn *conn)
 {
     HttpTx      *tx;
     HttpQueue   *q, *qhead;
@@ -322,23 +321,44 @@ static void httpStartHandler(HttpConn *conn)
 }
 
 
-/*
-    Run the queue service routines until there is no more work to be done. NOTE: all I/O is non-blocking.
- */
-PUBLIC bool httpServiceQueues(HttpConn *conn)
+PUBLIC bool httpQueuesNeedService(HttpConn *conn)
 {
     HttpQueue   *q;
-    int         workDone;
+
+    q = conn->serviceq;
+    return (q->scheduleNext != q);
+}
+
+
+/*
+    Run the queue service routines until there is no more work to be done.
+    If flags & HTTP_BLOCK, this routine may block while yielding.  Return true if actual work was done.
+ */
+PUBLIC bool httpServiceQueues(HttpConn *conn, int flags)
+{
+    HttpQueue   *q;
+    bool        workDone;
 
     workDone = 0;
+
     while (conn->state < HTTP_STATE_COMPLETE && (q = httpGetNextQueueForService(conn->serviceq)) != NULL) {
         if (q->servicing) {
+            /* Called re-entrantly */
             q->flags |= HTTP_QUEUE_RESERVICE;
         } else {
             assert(q->schedulePrev == q->scheduleNext);
             httpServiceQueue(q);
             workDone = 1;
         }
+        if (mprNeedYield() && (flags & HTTP_BLOCK)) {
+            mprYield(0);
+        }
+    }
+    /* 
+        Always do a yield if requested even if there are no queues to service 
+     */
+    if (mprNeedYield() && (flags & HTTP_BLOCK)) {
+        mprYield(0);
     }
     return workDone;
 }

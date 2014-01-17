@@ -202,24 +202,42 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
     If blocking is requested, the call will block until the queue count falls below the queue max.
     WARNING: Be very careful when using blocking == true. Should only be used by end applications and not by middleware.
  */
-PUBLIC bool httpFlushQueue(HttpQueue *q, bool blocking)
+PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 {
     HttpConn    *conn;
-    HttpQueue   *next;
+    HttpTx      *tx;
 
     conn = q->conn;
-    assert(conn->sock);
-    do {
-        httpScheduleQueue(q);
-        next = q->nextQ;
-        if (next->count > 0) {
-            httpScheduleQueue(next);
+    tx = conn->tx;
+
+    /*
+        Initiate flushing
+     */
+    httpScheduleQueue(q);
+    httpServiceQueues(conn, flags);
+
+    if (flags & HTTP_BLOCK) {
+        /*
+            Blocking mode: Fully drain the pipeline. This blocks until the connector has written all the data to the O/S socket.
+         */
+        while (tx->writeBlocked) {
+            assert(!tx->finalizedConnector);
+            assert(conn->connectorq->count > 0);
+            if (!mprWaitForSingleIO((int) conn->sock->fd, MPR_WRITABLE, conn->limits->inactivityTimeout)) {
+                return MPR_ERR_TIMEOUT;
+            }
+            conn->lastActivity = conn->http->now;
+            conn->tx->writeBlocked = 0;
+            httpResumeQueue(conn->connectorq);
+            httpServiceQueues(conn, flags);
         }
-        httpServiceQueues(conn);
-        if (conn->sock == 0) {
-            break;
+#if BIT_DEBUG
+        if (!httpRequestExpired(conn, 0)) {
+            assert(q->count == 0);
+            assert(conn->connectorq->count == 0 || mprSocketHandshaking(conn->sock));
         }
-    } while (blocking && q->count > 0 && !conn->tx->finalizedConnector);
+#endif
+    }
     return (q->count < q->max) ? 1 : 0;
 }
 
@@ -299,137 +317,6 @@ PUBLIC bool httpIsQueueEmpty(HttpQueue *q)
 }
 
 
-/*
-    Read data. If sync mode, this will block. If async, will never block.
-    Will return what data is available up to the requested size. 
-    Returns a count of bytes read. Returns zero if not data. EOF if returns zero and conn->state is > HTTP_STATE_CONTENT.
- */
-PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
-{
-    HttpPacket  *packet;
-    HttpQueue   *q;
-    MprBuf      *content;
-    ssize       nbytes, len;
-
-    q = conn->readq;
-    assert(q->count >= 0);
-    assert(size >= 0);
-
-    while (q->count <= 0 && !conn->async && !conn->error && conn->sock && (conn->state <= HTTP_STATE_CONTENT)) {
-        httpServiceQueues(conn);
-        if (conn->sock) {
-            httpWait(conn, 0, MPR_TIMEOUT_NO_BUSY);
-        }
-    }
-    conn->lastActivity = conn->http->now;
-
-    for (nbytes = 0; size > 0 && q->count > 0; ) {
-        if ((packet = q->first) == 0) {
-            break;
-        }
-        content = packet->content;
-        len = mprGetBufLength(content);
-        len = min(len, size);
-        assert(len <= q->count);
-        if (len > 0) {
-            len = mprGetBlockFromBuf(content, buf, len);
-            assert(len <= q->count);
-        }
-        buf += len;
-        size -= len;
-        q->count -= len;
-        assert(q->count >= 0);
-        nbytes += len;
-        if (mprGetBufLength(content) == 0) {
-            httpGetPacket(q);
-        }
-    }
-    assert(q->count >= 0);
-    if (nbytes < size) {
-        buf[nbytes] = '\0';
-    }
-    return nbytes;
-}
-
-
-PUBLIC ssize httpGetReadCount(HttpConn *conn)
-{
-    return conn->readq->count;
-}
-
-
-PUBLIC bool httpIsEof(HttpConn *conn) 
-{
-    return conn->rx == 0 || conn->rx->eof;
-}
-
-
-/*
-    Read data as a string
- */
-PUBLIC char *httpReadString(HttpConn *conn)
-{
-    HttpRx      *rx;
-    ssize       sofar, nbytes, remaining;
-    char        *content;
-
-    rx = conn->rx;
-    remaining = (ssize) min(MAXSSIZE, rx->length);
-
-    if (remaining > 0) {
-        if ((content = mprAlloc(remaining + 1)) == 0) {
-            return 0;
-        }
-        sofar = 0;
-        while (remaining > 0) {
-            nbytes = httpRead(conn, &content[sofar], remaining);
-            if (nbytes < 0) {
-                return 0;
-            }
-            sofar += nbytes;
-            remaining -= nbytes;
-        }
-    } else {
-        content = mprAlloc(BIT_MAX_BUFFER);
-        sofar = 0;
-        while (1) {
-            nbytes = httpRead(conn, &content[sofar], BIT_MAX_BUFFER);
-            if (nbytes < 0) {
-                return 0;
-            } else if (nbytes == 0) {
-                break;
-            }
-            sofar += nbytes;
-            content = mprRealloc(content, sofar + BIT_MAX_BUFFER);
-        }
-    }
-    content[sofar] = '\0';
-    return content;
-}
-
-
-PUBLIC cchar *httpGetBodyInput(HttpConn *conn)
-{
-    HttpQueue   *q;
-    HttpRx      *rx;
-    MprBuf      *content;
-
-    rx = conn->rx;
-    if (!rx->eof) {
-        return 0;
-    }
-    q = conn->readq;
-    if (q->first) {
-        httpJoinPackets(q, -1);
-        if ((content = q->first->content) != 0) {
-            mprAddNullToBuf(content); 
-            return mprGetBufStart(content);
-        }
-    }
-    return 0;
-}
-
-
 PUBLIC void httpRemoveQueue(HttpQueue *q)
 {
     q->prevQ->nextQ = q->nextQ;
@@ -469,6 +356,7 @@ PUBLIC void httpServiceQueue(HttpQueue *q)
         }
         if (!(q->flags & HTTP_QUEUE_SUSPENDED)) {
             q->servicing = 1;
+            mprTrace(7, "Service queue %s", q->name);
             q->service(q);
             if (q->flags & HTTP_QUEUE_RESERVICE) {
                 q->flags &= ~HTTP_QUEUE_RESERVICE;
@@ -518,6 +406,7 @@ PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
 }
 
 
+#if KEEP
 PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpPacket *packet, bool split)
 {
     ssize       size;
@@ -542,6 +431,7 @@ PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpPacket *packet, bool spl
     }
     return 0;
 }
+#endif
 
 
 /*
@@ -561,107 +451,6 @@ PUBLIC bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
         httpScheduleQueue(nextQ);
     }
     return 0;
-}
-
-
-/*
-    Write a block of data. This is the lowest level write routine for data. This will buffer the data and flush if
-    the queue buffer is full. Flushing is done by calling httpFlushQueue which will service queues as required. This
-    may call the queue outgoing service routine and disable downstream queues if they are overfull.
-    This routine will always accept the data and never return "short". 
- */
-PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
-{
-    HttpPacket  *packet;
-    HttpConn    *conn;
-    HttpTx      *tx;
-    ssize       totalWritten, packetSize, thisWrite;
-
-    assert(q == q->conn->writeq);
-    conn = q->conn;
-    tx = conn->tx;
-    if (flags == 0) {
-        flags = HTTP_BUFFER;
-    }
-    if (tx == 0 || tx->finalizedOutput) {
-        return MPR_ERR_CANT_WRITE;
-    }
-    tx->responded = 1;
-
-    for (totalWritten = 0; len > 0; ) {
-        mprTrace(7, "httpWriteBlock q_count %d, q_max %d", q->count, q->max);
-        if (conn->state >= HTTP_STATE_FINALIZED) {
-            return MPR_ERR_CANT_WRITE;
-        }
-        if (q->last && q->last != q->first && q->last->flags & HTTP_PACKET_DATA && mprGetBufSpace(q->last->content) > 0) {
-            packet = q->last;
-        } else {
-            packetSize = (tx->chunkSize > 0) ? tx->chunkSize : q->packetSize;
-            if ((packet = httpCreateDataPacket(packetSize)) == 0) {
-                return MPR_ERR_MEMORY;
-            }
-            httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-        }
-        assert(mprGetBufSpace(packet->content) > 0);
-        thisWrite = min(len, mprGetBufSpace(packet->content));
-        if (flags & (HTTP_BLOCK | HTTP_NON_BLOCK)) {
-            thisWrite = min(thisWrite, q->max - q->count);
-        }
-        if (thisWrite > 0) {
-            if ((thisWrite = mprPutBlockToBuf(packet->content, buf, thisWrite)) == 0) {
-                return MPR_ERR_MEMORY;
-            }
-            buf += thisWrite;
-            len -= thisWrite;
-            q->count += thisWrite;
-            totalWritten += thisWrite;
-        }
-        if (q->count >= q->max) {
-            httpFlushQueue(q, 0);
-            if (q->count >= q->max) {
-                if (flags & HTTP_NON_BLOCK) {
-                    break;
-                } else if (flags & HTTP_BLOCK) {
-                    while (q->count >= q->max && !tx->finalized) {
-                        /* WARNING: this may yield, but even if the connection times out, our connection should be safe */
-                        if (!mprWaitForSingleIO((int) conn->sock->fd, MPR_WRITABLE, conn->limits->inactivityTimeout)) {
-                            return MPR_ERR_TIMEOUT;
-                        }
-                        httpResumeQueue(conn->connectorq);
-                        httpServiceQueues(conn);
-                    }
-                }
-            }
-        }
-    }
-    if (conn->error) {
-        return MPR_ERR_CANT_WRITE;
-    }
-    return totalWritten;
-}
-
-
-PUBLIC ssize httpWriteString(HttpQueue *q, cchar *s)
-{
-    return httpWriteBlock(q, s, strlen(s), HTTP_BUFFER);
-}
-
-
-PUBLIC ssize httpWriteSafeString(HttpQueue *q, cchar *s)
-{
-    return httpWriteString(q, mprEscapeHtml(s));
-}
-
-
-PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
-{
-    va_list     vargs;
-    char        *buf;
-
-    va_start(vargs, fmt);
-    buf = sfmtv(fmt, vargs);
-    va_end(vargs);
-    return httpWriteString(q, buf);
 }
 
 

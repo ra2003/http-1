@@ -36,7 +36,7 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
         tx->headers = headers;
     } else {
         tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
-        if (!conn->endpoint) {
+        if (httpClientConn(conn)) {
             httpAddHeaderString(conn, "User-Agent", sclone(BIT_HTTP_SOFTWARE));
         }
     }
@@ -254,7 +254,7 @@ PUBLIC void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
 
 
 /*
-    Called by connectors (ONLY) when writing the transmission is complete
+    Called by connectors (ONLY) when writing the entire output transmission is complete
  */
 PUBLIC void httpFinalizeConnector(HttpConn *conn)
 {
@@ -263,16 +263,15 @@ PUBLIC void httpFinalizeConnector(HttpConn *conn)
     tx = conn->tx;
     tx->finalizedConnector = 1;
     tx->finalizedOutput = 1;
-    /*
-        Use case: server calling finalize in a timer. Must notify for close event in ejs.web/test/request/events.tst
-      */ 
-    /* Cannot do this if there is still data to read */
-    if (tx->finalized && conn->rx->eof) {
-        httpSetState(conn, HTTP_STATE_FINALIZED);
-    }
 }
 
 
+/*
+    Finalize the request. This means the caller is totally completed with the request. They have sent all
+    output and have read all input. Further input can be discarded. Note that output may not yet have drained from
+    the socket and so the connection state will not be transitioned to FINALIIZED until that happens and all 
+    remaining input has been dealt with.
+ */
 PUBLIC void httpFinalize(HttpConn *conn)
 {
     HttpTx  *tx;
@@ -282,14 +281,14 @@ PUBLIC void httpFinalize(HttpConn *conn)
         return;
     }
     tx->finalized = 1;
-    if (!tx->finalizedOutput) {
-        httpFinalizeOutput(conn);
-    } else {
-        httpServiceQueues(conn);
-    }
+    httpFinalizeOutput(conn);
 }
 
 
+/*
+    This means the caller has generated the entire transmit body. Note: the data may not yet have drained from 
+    the pipeline or socket and the caller may not have read a response.
+ */
 PUBLIC void httpFinalizeOutput(HttpConn *conn)
 {
     HttpTx      *tx;
@@ -298,22 +297,16 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
     if (!tx || tx->finalizedOutput) {
         return;
     }
+    assert(conn->writeq);
+
     tx->responded = 1;
     tx->finalizedOutput = 1;
-    assert(conn->writeq);
     if (conn->writeq == tx->queue[HTTP_QUEUE_TX]) {
         /* Tx Pipeline not yet created */
         tx->pendingFinalize = 1;
         return;
     }
-    assert(conn->state >= HTTP_STATE_CONNECTED);
-    /*
-        This may be called from httpError when the connection fails.
-     */
-    if (conn->sock) {
-        httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
-        httpServiceQueues(conn);
-    }
+    httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
 }
 
 
@@ -330,11 +323,11 @@ PUBLIC int httpIsOutputFinalized(HttpConn *conn)
 
 
 /*
-    Flush the write queue
+    Flush the write queue. Only in async mode, this call may yield. 
  */
 PUBLIC void httpFlush(HttpConn *conn)
 {
-    httpFlushQueue(conn->writeq, !conn->async);
+    httpFlushQueue(conn->writeq, conn->async ? HTTP_NON_BLOCK : HTTP_BLOCK);
 }
 
 
@@ -660,7 +653,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     } else if (tx->length < 0 && tx->chunkSize > 0) {
         httpSetHeaderString(conn, "Transfer-Encoding", "chunked");
 
-    } else if (conn->endpoint) {
+    } else if (httpServerConn(conn)) {
         /* Server must not emit a content length header for 1XX, 204 and 304 status */
         if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304 || tx->flags & HTTP_TX_NO_LENGTH)) {
             if (length >= 0) {
@@ -685,7 +678,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         }
         httpSetHeader(conn, "Accept-Ranges", "bytes");
     }
-    if (conn->endpoint) {
+    if (httpServerConn(conn)) {
         if (!(route->flags & HTTP_ROUTE_STEALTH)) {
             httpAddHeaderString(conn, "Server", conn->http->software);
         }
@@ -730,6 +723,31 @@ PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
     if (tx->outputRanges == 0) {
         tx->length = len;
     }
+}
+
+
+/*
+    Set the filename. The filename may be outside the route documents. So caller must take care.
+ */
+PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename)
+{
+    HttpTx      *tx;
+    MprPath     *info;
+
+    assert(conn);
+
+    tx = conn->tx;
+    info = &tx->fileInfo;
+    tx->filename = sclone(filename);
+    if ((tx->ext = httpGetPathExt(tx->filename)) == 0) {
+        tx->ext = httpGetPathExt(conn->rx->pathInfo);
+    }
+    mprGetPathInfo(tx->filename, info);
+    if (info->valid) {
+        //  OPT - inodes mean this is harder to cache when served from multiple servers.
+        tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
+    }
+    mprTrace(7, "mapFile uri \"%s\", filename: \"%s\", extension: \"%s\"", conn->rx->uri, tx->filename, tx->ext);
 }
 
 
@@ -784,7 +802,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
     }
     setHeaders(conn, packet);
 
-    if (conn->endpoint) {
+    if (httpServerConn(conn)) {
         mprPutStringToBuf(buf, conn->protocol);
         mprPutCharToBuf(buf, ' ');
         mprPutIntToBuf(buf, tx->status);
@@ -857,6 +875,99 @@ PUBLIC bool httpFileExists(HttpConn *conn)
         mprGetPathInfo(tx->filename, &tx->fileInfo);
     }
     return tx->fileInfo.valid;
+}
+
+
+/*
+    Write a block of data. This is the lowest level write routine for data. This will buffer the data and flush if
+    the queue buffer is full. Flushing is done by calling httpFlushQueue which will service queues as required. This
+    may call the queue outgoing service routine and disable downstream queues if they are full.
+ */
+PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
+{
+    HttpPacket  *packet;
+    HttpConn    *conn;
+    HttpTx      *tx;
+    ssize       totalWritten, packetSize, thisWrite;
+
+    assert(q == q->conn->writeq);
+    conn = q->conn;
+    tx = conn->tx;
+
+    if (tx == 0 || tx->finalizedOutput) {
+        return MPR_ERR_CANT_WRITE;
+    }
+    if (flags == 0) {
+        flags = HTTP_BUFFER;
+    }
+    tx->responded = 1;
+
+    for (totalWritten = 0; len > 0; ) {
+        mprTrace(7, "httpWriteBlock q_count %d, q_max %d", q->count, q->max);
+        if (conn->state >= HTTP_STATE_FINALIZED) {
+            return MPR_ERR_CANT_WRITE;
+        }
+        if (q->last && q->last != q->first && q->last->flags & HTTP_PACKET_DATA && mprGetBufSpace(q->last->content) > 0) {
+            packet = q->last;
+        } else {
+            packetSize = (tx->chunkSize > 0) ? tx->chunkSize : q->packetSize;
+            if ((packet = httpCreateDataPacket(packetSize)) == 0) {
+                return MPR_ERR_MEMORY;
+            }
+            httpPutForService(q, packet, HTTP_DELAY_SERVICE);
+        }
+        assert(mprGetBufSpace(packet->content) > 0);
+        thisWrite = min(len, mprGetBufSpace(packet->content));
+        if (flags & (HTTP_BLOCK | HTTP_NON_BLOCK)) {
+            thisWrite = min(thisWrite, q->max - q->count);
+        }
+        if (thisWrite > 0) {
+            if ((thisWrite = mprPutBlockToBuf(packet->content, buf, thisWrite)) == 0) {
+                return MPR_ERR_MEMORY;
+            }
+            buf += thisWrite;
+            len -= thisWrite;
+            q->count += thisWrite;
+            totalWritten += thisWrite;
+        }
+        if (q->count >= q->max) {
+            httpFlushQueue(q, flags);
+            if (q->count >= q->max && (flags & HTTP_NON_BLOCK)) {
+                break;
+            }
+        }
+    }
+    if (conn->error) {
+        return MPR_ERR_CANT_WRITE;
+    }
+    if (httpClientConn(conn)) {
+        httpEnableConnEvents(conn);
+    }
+    return totalWritten;
+}
+
+
+PUBLIC ssize httpWriteString(HttpQueue *q, cchar *s)
+{
+    return httpWriteBlock(q, s, strlen(s), HTTP_BUFFER);
+}
+
+
+PUBLIC ssize httpWriteSafeString(HttpQueue *q, cchar *s)
+{
+    return httpWriteString(q, mprEscapeHtml(s));
+}
+
+
+PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
+{
+    va_list     vargs;
+    char        *buf;
+
+    va_start(vargs, fmt);
+    buf = sfmtv(fmt, vargs);
+    va_end(vargs);
+    return httpWriteString(q, buf);
 }
 
 

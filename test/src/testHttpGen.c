@@ -84,7 +84,6 @@ static void testBasicHttpGet(MprTestGroup *gp)
     rc = httpConnect(conn, "GET", "http://embedthis.com/index.html", NULL);
     assert(rc >= 0);
     if (rc >= 0) {
-        httpFinalize(conn);
         httpWait(conn, HTTP_STATE_COMPLETE, 10 * 1000);
         status = httpGetStatus(conn);
         assert(status == 200 || status == 302);

@@ -441,6 +441,9 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     if (rx->traceLevel >= 0) {
         mprLog(rx->traceLevel, "Select handler: \"%s\" for uri \"%s\"", tx->handler->name, rx->uri);
     }
+    if (tx->handler->module) {
+        tx->handler->module->lastActivity = conn->lastActivity;
+    }
 }
 
 
@@ -670,10 +673,10 @@ PUBLIC void httpSetHandler(HttpConn *conn, HttpStage *handler)
 
 
 /*
-    Map the target to physical storage. Sets tx->filename and tx->ext.
+    Map the request URI target to a filename in physical storage. Sets tx->filename and tx->ext.
     This will validate on windows (or BIT_EXTRA_SECURITY) if the resultant filename is within the route documents.
  */
-PUBLIC void httpMapRequest(HttpConn *conn)
+PUBLIC void httpMapFile(HttpConn *conn)
 {
     HttpLang    *lang;
     HttpRoute   *route;
@@ -741,31 +744,7 @@ PUBLIC void httpMapRequest(HttpConn *conn)
         }
     }
 #endif
-    httpMapFile(conn, filename);
-}
-
-
-/*
-    Map file may be called by handlers. The filename may be outside the route documents. So caller must take care.
- */
-PUBLIC void httpMapFile(HttpConn *conn, cchar *filename)
-{
-    HttpTx      *tx;
-    MprPath     *info;
-
-    assert(conn);
-
-    tx = conn->tx;
-    info = &tx->fileInfo;
-
-    tx->filename = sclone(filename);
-    mprGetPathInfo(tx->filename, info);
-    tx->ext = httpGetExt(conn);
-    if (info->valid) {
-        //  OPT - inodes mean this is harder to cache when served from multiple servers.
-        tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
-    }
-    mprTrace(7, "mapFile uri \"%s\", filename: \"%s\", extension: \"%s\"", conn->rx->uri, tx->filename, tx->ext);
+    httpSetFilename(conn, filename);
 }
 
 
@@ -2259,7 +2238,7 @@ static int directoryCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         Must have tx->filename set when expanding op->details, so map target now 
      */
     tx = conn->tx;
-    httpMapRequest(conn);
+    httpMapFile(conn);
     path = mprJoinPath(route->documents, expandTokens(conn, op->details));
     tx->ext = tx->filename = 0;
     mprGetPathInfo(path, &info);
@@ -2286,7 +2265,7 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         Must have tx->filename set when expanding op->details, so map target now 
      */
     tx = conn->tx;
-    httpMapRequest(conn);
+    httpMapFile(conn);
     path = mprJoinPath(route->documents, expandTokens(conn, op->details));
     tx->ext = tx->filename = 0;
     if (mprPathExists(path, R_OK)) {

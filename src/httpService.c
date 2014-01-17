@@ -199,7 +199,7 @@ static void manageHttp(Http *http, int flags)
          */
         lock(http->connections);
         for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
-            if (conn->endpoint) {
+            if (httpServerConn(conn)) {
                 mprMark(conn);
             }
         }
@@ -446,11 +446,15 @@ static void httpTimer(Http *http, MprEvent *event)
         limits = conn->limits;
         if (!conn->timeoutEvent) {
             abort = mprIsStopping();
-            if (conn->endpoint && HTTP_STATE_BEGIN < conn->state && conn->state < HTTP_STATE_PARSED && 
+            if (httpServerConn(conn) && HTTP_STATE_BEGIN < conn->state && conn->state < HTTP_STATE_PARSED && 
                     (conn->started + limits->requestParseTimeout) < http->now) {
+                conn->timeout = HTTP_PARSE_TIMEOUT;
                 abort = 1;
-            } else if ((conn->lastActivity + limits->inactivityTimeout) < http->now || 
-                    (conn->started + limits->requestTimeout) < http->now) {
+            } else if ((conn->lastActivity + limits->inactivityTimeout) < http->now) {
+                conn->timeout = HTTP_INACTIVITY_TIMEOUT;
+                abort = 1;
+            } else if ((conn->started + limits->requestTimeout) < http->now) {
+                conn->timeout = HTTP_REQUEST_TIMEOUT;
                 abort = 1;
             }
             if (abort && !mprGetDebugMode()) {
@@ -550,6 +554,7 @@ static void terminateHttp(int state, int how, int status)
 {
     Http            *http;
     HttpEndpoint    *endpoint;
+    HttpConn        *conn;
     int             next;
 
     if ((http = MPR->httpService) != 0) {
@@ -562,6 +567,17 @@ static void terminateHttp(int state, int how, int status)
                 /* Abort running requests by simulating a timeout expiry */
                 httpTimer(http, 0);
             }
+            lock(http->connections);
+            for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
+                if (httpServerConn(conn)) {
+                    /* Do not destroy conn here incase requests still running and code active with stack */
+                    httpRemoveConn(http, conn);
+                    next--;
+                } else {
+                    httpDestroyConn(conn);
+                }
+            }
+            unlock(http->connections);
 
         } else if (state == MPR_STOPPING_CORE) {
             httpDestroy(http);

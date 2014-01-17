@@ -379,7 +379,7 @@ PUBLIC ssize httpWriteCached(HttpConn *conn)
     httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
     conn->tx->cacheBuffer = 0;
     httpWriteString(conn->writeq, data);
-    httpFinalize(conn);
+    httpFinalizeOutput(conn);
     return slen(data);
 }
 

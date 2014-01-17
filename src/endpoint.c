@@ -128,7 +128,8 @@ static int destroyEndpointConnections(HttpEndpoint *endpoint)
     lock(http->connections);
     for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
         if (conn->endpoint == endpoint) {
-            httpDestroyConn(conn);
+            /* Do not destroy conn here incase requests still running and code active with stack */
+            httpRemoveConn(http, conn);
             next--;
         }
     }

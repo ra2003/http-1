@@ -93,9 +93,8 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     conn = q->conn;
     tx = conn->tx;
     conn->lastActivity = conn->http->now;
-    assert(conn->sock);
 
-    if (!conn->sock || tx->finalizedConnector) {
+    if (tx->finalizedConnector) {
         return;
     }
     if (tx->flags & HTTP_TX_NO_BODY) {

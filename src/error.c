@@ -16,19 +16,21 @@ static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
 
 PUBLIC void httpDisconnect(HttpConn *conn)
 {
+    assert(conn->sock);
+
     if (conn->sock) {
         mprDisconnectSocket(conn->sock);
     }
     conn->connError = 1;
     conn->error = 1;
     conn->keepAliveCount = 0;
-    if (conn->rx) {
-        conn->rx->eof = 1;
-    }
     if (conn->tx) {
         conn->tx->finalized = 1;
         conn->tx->finalizedOutput = 1;
         conn->tx->finalizedConnector = 1;
+    }
+    if (conn->rx) {
+        httpSetEof(conn);
     }
 }
 
@@ -38,7 +40,7 @@ PUBLIC void httpBadRequestError(HttpConn *conn, int flags, cchar *fmt, ...)
     va_list     args;
 
     va_start(args, fmt);
-    if (conn->endpoint) {
+    if (httpServerConn(conn)) {
         httpMonitorEvent(conn, HTTP_COUNTER_BAD_REQUEST_ERRORS, 1);
     }
     errorv(conn, flags, fmt, args);
@@ -51,7 +53,7 @@ PUBLIC void httpLimitError(HttpConn *conn, int flags, cchar *fmt, ...)
     va_list     args;
 
     va_start(args, fmt);
-    if (conn->endpoint) {
+    if (httpServerConn(conn)) {
         httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
     }
     errorv(conn, flags, fmt, args);
@@ -149,9 +151,6 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     }
     if (flags & HTTP_ABORT) {
         conn->connError = 1;
-        if (rx) {
-            rx->eof = 1;
-        }
     }
     if (!conn->error) {
         //  FUTURE - if aborting, could abbreviate some of this
@@ -161,14 +160,14 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         mprLog(2, "Error: %s", conn->errorMsg);
 
         HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
-        if (conn->endpoint) {
+        if (httpServerConn(conn)) {
             if (status == HTTP_CODE_NOT_FOUND) {
                 httpMonitorEvent(conn, HTTP_COUNTER_NOT_FOUND_ERRORS, 1);
             }
             httpMonitorEvent(conn, HTTP_COUNTER_ERRORS, 1);
         }
         httpAddHeaderString(conn, "Cache-Control", "no-cache");
-        if (conn->endpoint && tx && rx) {
+        if (httpServerConn(conn) && tx && rx) {
             if (tx->flags & HTTP_TX_HEADERS_CREATED) {
                 /* 
                     If the response headers have been sent, must let the other side of the failure ... aborting
@@ -203,7 +202,7 @@ static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
             if (status < 0) {
                 status = HTTP_CODE_INTERNAL_SERVER_ERROR;
             }
-            if (conn->endpoint && conn->tx) {
+            if (httpServerConn(conn) && conn->tx) {
                 conn->tx->status = status;
             } else if (conn->rx) {
                 conn->rx->status = status;

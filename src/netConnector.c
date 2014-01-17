@@ -61,9 +61,8 @@ static void netOutgoingService(HttpQueue *q)
     conn = q->conn;
     tx = conn->tx;
     conn->lastActivity = conn->http->now;
-    assert(conn->sock);
 
-    if (!conn->sock || tx->finalizedConnector) {
+    if (tx->finalizedConnector) {
         return;
     }
     if (tx->flags & HTTP_TX_NO_BODY) {
@@ -112,8 +111,7 @@ static void netOutgoingService(HttpQueue *q)
                 break;
             }
             if (errCode == EPROTO && conn->secure) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Can't negotiate SSL with server: %s",
-                    conn->sock->errorMsg);
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Can't negotiate SSL with server: %s", conn->sock->errorMsg);
             } else if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Can't write. errno %d", errCode);
             } else {

@@ -339,6 +339,15 @@ PUBLIC void httpPutPackets(HttpQueue *q)
 }
 
 
+PUBLIC bool httpNextQueueFull(HttpQueue *q)
+{
+    HttpQueue   *nextQ;
+
+    nextQ = q->nextQ;
+    return (nextQ && nextQ->count > nextQ->max) ? 1 : 0;
+}
+
+
 /*
     Put the packet back at the front of the queue
  */

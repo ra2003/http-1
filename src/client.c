@@ -40,7 +40,8 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     if (conn && conn->sock) {
         if (conn->keepAliveCount-- <= 0 || port != conn->port || strcmp(ip, conn->ip) != 0 || 
                 uri->secure != (conn->sock->ssl != 0) || conn->sock->ssl != ssl) {
-            httpCloseConn(conn);
+            mprCloseSocket(conn->sock, 0);
+            conn->sock = 0;
         } else {
             mprLog(4, "Http: reusing keep-alive socket on: %s:%d", ip, port);
         }
@@ -126,7 +127,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
     assert(method && *method);
     assert(uri && *uri);
 
-    if (conn->endpoint) {
+    if (httpServerConn(conn)) {
         httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
         return MPR_ERR_BAD_STATE;
     }
@@ -141,9 +142,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
     conn->authRequested = 0;
     conn->tx->method = supper(method);
     conn->tx->parsedUri = httpCreateUri(uri, HTTP_COMPLETE_URI_PATH);
-#if MPR_HIGH_RES_TIMER
     conn->startMark = mprGetHiResTicks();
-#endif
     /*
         The receive pipeline is created when parsing the response in parseIncoming()
      */
@@ -152,10 +151,6 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         return MPR_ERR_CANT_OPEN;
     }
     setDefaultHeaders(conn);
-    if (conn->upgraded) {
-        /* Push out headers */
-        httpServiceQueues(conn);
-    }
     return 0;
 }
 
@@ -183,7 +178,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
         } else if (conn->authRequested) {
             httpError(conn, rx->status, "Authentication failed");
         } else {
-            assert(!conn->endpoint);
+            assert(httpClientConn(conn));
             if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {
                 (authType->parseAuth)(conn, NULL, NULL);
             }
@@ -211,6 +206,142 @@ PUBLIC void httpEnableUpload(HttpConn *conn)
 }
 
 
+//  MOB - should httpRead have a timeout?
+//  MOB - should httpRead have HTTP_BLOCK or HTTP_NON_BLOCK?
+/*
+    Read data. If sync mode, this will block. If async, will never block.
+    Will return what data is available up to the requested size. 
+    Returns a count of bytes read. Returns zero if no data. EOF if returns zero and conn->state is > HTTP_STATE_CONTENT.
+ */
+PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
+{
+    HttpPacket  *packet;
+    HttpQueue   *q;
+    MprBuf      *content;
+    ssize       nbytes, len;
+
+    q = conn->readq;
+    assert(q->count >= 0);
+    assert(size >= 0);
+
+    while (!conn->async && q->count <= 0 && !conn->error && (conn->state <= HTTP_STATE_CONTENT)) {
+        httpEnableConnEvents(conn);
+        assert(httpClientConn(conn));
+        mprWaitForEvent(conn->dispatcher, conn->limits->inactivityTimeout);
+    }
+    for (nbytes = 0; size > 0 && q->count > 0; ) {
+        if ((packet = q->first) == 0) {
+            break;
+        }
+        content = packet->content;
+        len = mprGetBufLength(content);
+        len = min(len, size);
+        assert(len <= q->count);
+        if (len > 0) {
+            len = mprGetBlockFromBuf(content, buf, len);
+            assert(len <= q->count);
+        }
+        buf += len;
+        size -= len;
+        q->count -= len;
+        assert(q->count >= 0);
+        nbytes += len;
+        if (mprGetBufLength(content) == 0) {
+            httpGetPacket(q);
+        }
+    }
+    assert(q->count >= 0);
+    if (nbytes < size) {
+        buf[nbytes] = '\0';
+    }
+    return nbytes;
+}
+
+
+PUBLIC char *httpReadString(HttpConn *conn)
+{
+    HttpRx      *rx;
+    ssize       sofar, nbytes, remaining;
+    char        *content;
+
+    rx = conn->rx;
+    remaining = (ssize) min(MAXSSIZE, rx->length);
+
+    if (remaining > 0) {
+        if ((content = mprAlloc(remaining + 1)) == 0) {
+            return 0;
+        }
+        sofar = 0;
+        while (remaining > 0) {
+            nbytes = httpRead(conn, &content[sofar], remaining);
+            if (nbytes < 0) {
+                return 0;
+            }
+            sofar += nbytes;
+            remaining -= nbytes;
+        }
+    } else {
+        content = mprAlloc(BIT_MAX_BUFFER);
+        sofar = 0;
+        while (1) {
+            nbytes = httpRead(conn, &content[sofar], BIT_MAX_BUFFER);
+            if (nbytes < 0) {
+                return 0;
+            } else if (nbytes == 0) {
+                break;
+            }
+            sofar += nbytes;
+            content = mprRealloc(content, sofar + BIT_MAX_BUFFER);
+        }
+    }
+    content[sofar] = '\0';
+    return content;
+}
+
+
+/*  
+    Issue a client http request.
+    Assumes the Mpr and Http services are created and initialized.
+ */
+PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
+{
+    Http        *http;
+    HttpConn    *conn;
+    ssize       len;
+
+    http = MPR->httpService;
+
+    if (err) {
+        *err = 0;
+    }
+    conn = httpCreateConn(http, NULL, NULL);
+    mprAddRoot(conn);
+
+    /* 
+       Open a connection to issue the GET. Then finalize the request output - this forces the request out.
+     */
+    if (httpConnect(conn, method, uri, NULL) < 0) {
+        mprRemoveRoot(conn);
+        *err = sfmt("Cannot connect to %s", uri);
+        return 0;
+    }
+    if (data) {
+        len = slen(data);
+        if (httpWriteBlock(conn->writeq, data, len, HTTP_BLOCK) != len) {
+            *err = sclone("Cannot write request body data");
+        }
+    }
+    httpFinalizeOutput(conn);
+    if (httpWait(conn, HTTP_STATE_CONTENT, 10000) < 0) {
+        mprRemoveRoot(conn);
+        *err = sclone("No response");
+        return 0;
+    }
+    mprRemoveRoot(conn);
+    return conn;
+}
+
+
 static int blockingFileCopy(HttpConn *conn, cchar *path)
 {
     MprFile     *file;
@@ -235,9 +366,8 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
             offset += nbytes;
             assert(bytes >= 0);
         }
-        mprYield(0);
     }
-    httpFlushQueue(conn->writeq, 1);
+    httpFlushQueue(conn->writeq, HTTP_BLOCK);
     mprCloseFile(file);
     mprRemoveRoot(file);
     return 0;
@@ -286,50 +416,56 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
 }
 
 
-/*  
-    Issue a http request.
-    Assumes the Mpr and Http services are created and initialized.
+/*
+    Wait for the connection to reach a given state.
+    Should only be used on the client side.
+    @param state Desired state. Set to zero if you want to wait for one I/O event.
+    @param timeout Timeout in msec. If timeout is zer, wait forever. If timeout is < 0, use default inactivity 
+        and duration timeouts.
  */
-PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
+PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
 {
-    Http        *http;
-    HttpConn    *conn;
-    ssize       len;
-    char        *dummy;
+    int     justOne;
 
-    http = MPR->httpService;
-
-    dummy = sclone("");
-    if (err) {
-        *err = dummy;
+    if (httpServerConn(conn)) {
+        mprError("Should not call httpWait on the server side");
+        return MPR_ERR_BAD_STATE;
+    }
+    if (state == 0) {
+        state = HTTP_STATE_FINALIZED;
+        justOne = 1;
     } else {
-        err = &dummy;
+        justOne = 0;
     }
-    conn = httpCreateConn(http, NULL, NULL);
-    mprAddRoot(conn);
-
-    /* 
-       Open a connection to issue the GET. Then finalize the request output - this forces the request out.
-     */
-    if (httpConnect(conn, method, uri, NULL) < 0) {
-        *err = sfmt("Cannot connect to %s", uri);
-        mprRemoveRoot(conn);
-        return 0;
+    if (conn->state <= HTTP_STATE_BEGIN) {
+        return MPR_ERR_BAD_STATE;
     }
-    if (data) {
-        len = slen(data);
-        if (httpWriteBlock(conn->writeq, data, len, HTTP_BLOCK) != len) {
-            *err = sclone("Cannot write request body data");
+    if (conn->error) {
+        if (conn->state >= state) {
+            return 0;
         }
+        return MPR_ERR_BAD_STATE;
     }
-    httpFinalizeOutput(conn);
-    if (httpWait(conn, HTTP_STATE_PARSED, 10000) < 0) {
-        *err = sclone("No response");
-        mprRemoveRoot(conn);
-        return 0;
+    if (timeout <= 0) {
+        timeout = MPR_MAX_TIMEOUT;
     }
-    mprRemoveRoot(conn);
-    return conn;
+    if (state > HTTP_STATE_CONTENT) {
+        httpFinalizeOutput(conn);
+    }
+    while (conn->state < state && !conn->error && !mprIsSocketEof(conn->sock) && !httpRequestExpired(conn, timeout)) {
+        httpEnableConnEvents(conn);
+        assert(httpClientConn(conn));
+        mprWaitForEvent(conn->dispatcher, min(conn->limits->inactivityTimeout, timeout));
+        if (justOne) break;
+    }
+    if (conn->error) {
+        return MPR_ERR_CANT_CONNECT;
+    }
+    if (!justOne && conn->state < state) {
+        return httpRequestExpired(conn, timeout) ? MPR_ERR_TIMEOUT : MPR_ERR_CANT_READ;
+    }
+    conn->lastActivity = conn->http->now;
+    return 0;
 }
 
 

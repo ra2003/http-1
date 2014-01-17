@@ -68,6 +68,8 @@ static void invokeDefenses(HttpMonitor *monitor, MprHash *args)
         }
         mprBlendHash(args, extra);
         mprLog(1, "Defense \"%s\" activated. Running remedy \"%s\".", defense->name, defense->remedy);
+
+        /*  WARNING: yields */
         remedyProc(args);
     }
     mprRelease(args);
@@ -100,14 +102,20 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
         args = mprDeserialize(
             sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %Ld, MESSAGE: '%s', PERIOD: %Ld, SUBJECT: '%s', VALUE: %Ld }", 
             monitor->counterName, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, counter->value));
+        /*  
+            WARNING: yields 
+         */
         invokeDefenses(monitor, args);
     }
-    mprTrace(5, "CheckCounter \"%s\" (%Ld %c limit %Ld) every %Ld secs", monitor->counterName, counter->value, monitor->expr, monitor->limit, 
-        monitor->period / 1000);
+    mprTrace(5, "CheckCounter \"%s\" (%Ld %c limit %Ld) every %Ld secs", monitor->counterName, counter->value, 
+            monitor->expr, monitor->limit, monitor->period / 1000);
     counter->value = 0;
 }
 
 
+/*
+    WARNING: this routine yields
+ */
 static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
 {
     Http            *http;
@@ -294,7 +302,6 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
     HttpCounter     *counter;
     int             ncounters;
 
-    assert(conn->endpoint);
     http = conn->http;
     address = conn->address;
 
@@ -556,7 +563,7 @@ static void httpRemedy(MprHash *args)
     }
     status = httpGetStatus(conn);
     if (status != HTTP_CODE_OK) {
-        mprError("Remedy URI %s responded with status %d\n%s", status, httpReadString(conn));
+        mprError("Remedy URI %s responded with http status %d\n%s", uri, status);
     }
 }
 

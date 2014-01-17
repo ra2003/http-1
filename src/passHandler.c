@@ -27,7 +27,7 @@ static void startPass(HttpQueue *q)
 
 static void readyPass(HttpQueue *q)
 {
-    httpFinalize(q->conn);
+    httpFinalizeOutput(q->conn);
 }
 
 
@@ -36,14 +36,14 @@ static void readyError(HttpQueue *q)
     if (!q->conn->error) {
         httpError(q->conn, HTTP_CODE_NOT_FOUND, "The requested resource is not available");
     }
-    httpFinalize(q->conn);
+    httpFinalizeOutput(q->conn);
 }
 
 
 PUBLIC void httpHandleOptions(HttpConn *conn)
 {
     httpSetHeaderString(conn, "Allow", httpGetRouteMethods(conn->rx->route));
-    httpFinalize(conn);
+    httpFinalizeOutput(conn);
 }
 
 

@@ -261,9 +261,6 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
             Quicker to remove the buffer so the packets don't have to be joined the next time 
          */
         httpGetPacket(q);
-        mprYield(0);
-        assert(q->count >= 0);
-
     } else {
         /*
             Compact the buffer to prevent memory growth. There is often residual data after the boundary for the next block.

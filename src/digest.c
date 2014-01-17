@@ -181,7 +181,7 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
     if (dp->qop && (dp->cnonce == 0 || dp->nc == 0)) {
         return MPR_ERR_BAD_FORMAT;
     }
-    if (conn->endpoint) {
+    if (httpServerConn(conn)) {
         realm = secret = 0;
         when = 0;
         parseDigestNonce(dp->nonce, &secret, &realm, &when);

@@ -227,7 +227,9 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
                 return MPR_ERR_TIMEOUT;
             }
             conn->lastActivity = conn->http->now;
+#if UNUSED
             conn->tx->writeBlocked = 0;
+#endif
             httpResumeQueue(conn->connectorq);
             httpServiceQueues(conn, flags);
         }

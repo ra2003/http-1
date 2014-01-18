@@ -165,7 +165,7 @@ PUBLIC void httpProtocol(HttpConn *conn)
             break;
 
         default:
-            canProceed = false;
+            canProceed = 0;
             break;
         }
         /* 

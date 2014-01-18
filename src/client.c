@@ -135,6 +135,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
 
     if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
         /* WARNING: this will erase headers */
+        /* WARNING: this will yield */
         httpPrepClientConn(conn, 0);
     }
     assert(conn->state == HTTP_STATE_BEGIN);
@@ -206,14 +207,13 @@ PUBLIC void httpEnableUpload(HttpConn *conn)
 }
 
 
-//  MOB - should httpRead have a timeout?
-//  MOB - should httpRead have HTTP_BLOCK or HTTP_NON_BLOCK?
 /*
     Read data. If sync mode, this will block. If async, will never block.
     Will return what data is available up to the requested size. 
+    Timeout in milliseconds to wait. Set to -1 to use the default inactivity timeout. Set to zero to wait forever.
     Returns a count of bytes read. Returns zero if no data. EOF if returns zero and conn->state is > HTTP_STATE_CONTENT.
  */
-PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
+PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeout, int flags)
 {
     HttpPacket  *packet;
     HttpQueue   *q;
@@ -223,11 +223,20 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
     q = conn->readq;
     assert(q->count >= 0);
     assert(size >= 0);
+    if (flags == 0) {
+        flags = conn->async ? HTTP_NON_BLOCK : HTTP_BLOCK;
+    }
+    if (timeout <= 0) {
+        timeout = MPR_MAX_TIMEOUT;
+    }
+    timeout = min(timeout, conn->limits->inactivityTimeout);
 
-    while (!conn->async && q->count <= 0 && !conn->error && (conn->state <= HTTP_STATE_CONTENT)) {
-        httpEnableConnEvents(conn);
-        assert(httpClientConn(conn));
-        mprWaitForEvent(conn->dispatcher, conn->limits->inactivityTimeout);
+    if (flags & HTTP_BLOCK) {
+        while (q->count <= 0 && !conn->error && (conn->state <= HTTP_STATE_CONTENT) && !httpRequestExpired(conn, timeout)) {
+            httpEnableConnEvents(conn);
+            assert(httpClientConn(conn));
+            mprWaitForEvent(conn->dispatcher, timeout);
+        }
     }
     for (nbytes = 0; size > 0 && q->count > 0; ) {
         if ((packet = q->first) == 0) {
@@ -249,12 +258,21 @@ PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
         if (mprGetBufLength(content) == 0) {
             httpGetPacket(q);
         }
+        if (flags & HTTP_NON_BLOCK) {
+            break;
+        }
     }
     assert(q->count >= 0);
     if (nbytes < size) {
         buf[nbytes] = '\0';
     }
     return nbytes;
+}
+
+
+PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
+{
+    return httpReadBlock(conn, buf, size, -1, 0);
 }
 
 
@@ -332,7 +350,7 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
         }
     }
     httpFinalizeOutput(conn);
-    if (httpWait(conn, HTTP_STATE_CONTENT, 10000) < 0) {
+    if (httpWait(conn, HTTP_STATE_CONTENT, MPR_MAX_TIMEOUT) < 0) {
         mprRemoveRoot(conn);
         *err = sclone("No response");
         return 0;
@@ -420,7 +438,7 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
     Wait for the connection to reach a given state.
     Should only be used on the client side.
     @param state Desired state. Set to zero if you want to wait for one I/O event.
-    @param timeout Timeout in msec. If timeout is zer, wait forever. If timeout is < 0, use default inactivity 
+    @param timeout Timeout in msec. If timeout is zero, wait forever. If timeout is < 0, use default inactivity 
         and duration timeouts.
  */
 PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
@@ -446,7 +464,9 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
         }
         return MPR_ERR_BAD_STATE;
     }
-    if (timeout <= 0) {
+    if (timeout < 0) {
+        timeout = conn->limits->inactivityTimeout;
+    } else if (timeout == 0) {
         timeout = MPR_MAX_TIMEOUT;
     }
     if (state > HTTP_STATE_CONTENT) {

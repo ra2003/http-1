@@ -198,7 +198,7 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
         assert(0);
         httpDestroyConn(conn);
     } else {
-        httpSetupWaitHandler(conn, MPR_READABLE);
+        httpSetupWaitHandler(conn, MPR_WRITABLE);
 #if UNUSED
         httpDisconnect(conn);
 #endif
@@ -401,7 +401,9 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
     mprTrace(6, "httpIOEvent for fd %d, mask %d", conn->sock->fd, event->mask);
     if (event->mask & MPR_WRITABLE) {
         httpResumeQueue(conn->connectorq);
+#if UNUSED
         conn->tx->writeBlocked = 0;
+#endif
     }
     if (event->mask & MPR_READABLE) {
         if ((packet = getPacket(conn, &size)) != 0) {
@@ -814,7 +816,11 @@ PUBLIC HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 
 
 /*
+    Test if a request has expired relative to the default inactivity and request timeout limits.
     Set timeout to a non-zero value to apply an overriding smaller timeout
+    Set timeout to a value in msec. If timeout is zero, override default limits and wait forever. 
+    If timeout is < 0, use default inactivity and duration timeouts. If timeout is > 0, then use this timeout as an additional
+    timeout.
  */
 PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
 {
@@ -822,15 +828,14 @@ PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
     MprTicks    inactivityTimeout, requestTimeout;
 
     limits = conn->limits;
-    if (mprGetDebugMode()) {
+    if (mprGetDebugMode() || timeout == 0) {
         inactivityTimeout = requestTimeout = MPR_MAX_TIMEOUT;
-    } else {
+    } else if (timeout < 0) {
         inactivityTimeout = limits->inactivityTimeout;
         requestTimeout = limits->requestTimeout;
-    }
-    if (timeout > 0) {
-        inactivityTimeout = min(inactivityTimeout, timeout);
-        requestTimeout = min(requestTimeout, timeout);
+    } else {
+        inactivityTimeout = min(limits->inactivityTimeout, timeout);
+        requestTimeout = min(limits->requestTimeout, timeout);
     }
     if (mprGetRemainingTicks(conn->started, requestTimeout) < 0) {
         if (requestTimeout != timeout) {

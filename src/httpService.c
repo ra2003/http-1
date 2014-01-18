@@ -830,7 +830,9 @@ PUBLIC bool httpConfigure(HttpConfigureProc proc, void *data, MprTicks timeout)
 
     http = MPR->httpService;
     mark = mprGetTicks();
-    if (timeout <= 0) {
+    if (timeout < 0) {
+        timeout = http->serverLimits->requestTimeout;
+    } else if (timeout == 0) {
         timeout = MAXINT;
     }
     do {

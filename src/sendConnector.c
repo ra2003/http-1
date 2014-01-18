@@ -108,6 +108,8 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
             return;
         }
     }
+    tx->writeBlocked = 0;
+
     if (q->ioIndex == 0) {
         buildSendVec(q);
     }
@@ -121,7 +123,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
         errCode = mprGetError();
         if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
             /*  Socket full, wait for an I/O event */
-            httpSocketBlocked(conn);
+            tx->writeBlocked = 1;
         } else {
             if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "sendConnector: error, errCode %d", errCode);

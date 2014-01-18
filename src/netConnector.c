@@ -93,6 +93,8 @@ static void netOutgoingService(HttpQueue *q)
         }
     }
 #endif
+    tx->writeBlocked = 0;
+
     while (q->first || q->ioIndex) {
         if (q->ioIndex == 0 && buildNetVec(q) <= 0) {
             break;
@@ -107,7 +109,7 @@ static void netOutgoingService(HttpQueue *q)
             mprTrace(6, "netConnector: wrote %d, errno %d, qflags %x", (int) written, errCode, q->flags);
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
                 /*  Socket full, wait for an I/O event */
-                httpSocketBlocked(conn);
+                tx->writeBlocked = 1;
                 break;
             }
             if (errCode == EPROTO && conn->secure) {

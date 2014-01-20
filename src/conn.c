@@ -191,15 +191,14 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
             mprTrace(2, "  State %d, uri %s", conn->state, conn->rx->uri);
         }
     }
+    assert(conn->connError);
+
     if (!conn->sock || conn->sock->fd == INVALID_SOCKET) {
-        //  MOB - remove this code. Should never happen
+        //  TODO - remove this code. Should never happen
         assert(0);
         httpDestroyConn(conn);
     } else {
         httpSetupWaitHandler(conn, MPR_WRITABLE);
-#if UNUSED
-        httpDisconnect(conn);
-#endif
     }
 }
 
@@ -254,12 +253,13 @@ static bool prepForNext(HttpConn *conn)
 }
 
 
+#if KEEP
 /* 
     Eat remaining input incase last request did not consume all data 
  */
-PUBLIC void httpConsumeLastRequest(HttpConn *conn)
+static void consumeLastRequest(HttpConn *conn)
 {
-    char        junk[4096];
+    char    junk[4096];
 
     if (conn->state >= HTTP_STATE_FIRST) {
         while (!httpIsEof(conn) && !httpRequestExpired(conn, 0)) {
@@ -272,6 +272,7 @@ PUBLIC void httpConsumeLastRequest(HttpConn *conn)
         conn->keepAliveCount = 0;
     }
 }
+#endif
 
 
 PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
@@ -280,7 +281,11 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
 
     assert(conn);
     if (conn->keepAliveCount > 0 && conn->sock) {
-        httpConsumeLastRequest(conn);
+#if KEEP
+        consumeLastRequest(conn);
+#else
+        conn->sock = 0;
+#endif
     } else {
         conn->input = 0;
     }
@@ -399,9 +404,6 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
     mprTrace(6, "httpIOEvent for fd %d, mask %d", conn->sock->fd, event->mask);
     if (event->mask & MPR_WRITABLE) {
         httpResumeQueue(conn->connectorq);
-#if UNUSED
-        conn->tx->writeBlocked = 0;
-#endif
     }
     if (event->mask & MPR_READABLE) {
         if ((packet = getPacket(conn, &size)) != 0) {

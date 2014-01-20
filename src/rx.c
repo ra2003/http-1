@@ -1770,11 +1770,6 @@ static bool parseRange(HttpConn *conn, char *value)
 PUBLIC void httpSetEof(HttpConn *conn)
 {
     conn->rx->eof = 1;
-#if UNUSED
-    if (conn->tx->finalized && conn->tx->finalizedConnector) {
-        httpSetState(conn, HTTP_STATE_FINALIZED);
-    }
-#endif
 }
 
 

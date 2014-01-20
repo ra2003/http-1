@@ -26,7 +26,6 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     tx->length = -1;
     tx->entityLength = -1;
     tx->chunkSize = -1;
-
     tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
     conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
     tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
@@ -729,7 +728,7 @@ PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
 /*
     Set the filename. The filename may be outside the route documents. So caller must take care.
  */
-PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename)
+PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, bool bypass)
 {
     HttpTx      *tx;
     MprPath     *info;
@@ -737,6 +736,7 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename)
     assert(conn);
 
     tx = conn->tx;
+    tx->bypassDocuments = bypass;
     info = &tx->fileInfo;
     tx->filename = sclone(filename);
     if ((tx->ext = httpGetPathExt(tx->filename)) == 0) {

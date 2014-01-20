@@ -699,16 +699,16 @@ PUBLIC void httpMapFile(HttpConn *conn)
         filename = mprJoinPath(lang->path, filename);
     }
     filename = mprJoinPath(route->documents, filename);
+    if (!tx->bypassDocuments) {
+        if (!mprIsAbsPathContained(filename, route->documents)) {
+            info->checked = 1;
+            info->valid = 0;
+            httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad URL");
+            return;
+        }
+    }
 #if BIT_ROM
     filename = mprGetRelPath(filename, NULL);
-#endif
-#if BIT_WIN_LIKE || BIT_EXTRA_SECURITY
-    if (!mprIsParentPathOf(route->documents, filename)) {
-        info->checked = 1;
-        info->valid = 0;
-        httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad URL");
-        return;
-    }
 #endif
     /*
         Change the filename if using mapping. Typically used to prefer compressed or minified content.
@@ -744,7 +744,7 @@ PUBLIC void httpMapFile(HttpConn *conn)
         }
     }
 #endif
-    httpSetFilename(conn, filename);
+    httpSetFilename(conn, filename, !tx->bypassDocuments);
 }
 
 

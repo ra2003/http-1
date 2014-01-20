@@ -169,7 +169,6 @@ clean:
 	rm -f "$(CONFIG)/obj/endpoint.o"
 	rm -f "$(CONFIG)/obj/error.o"
 	rm -f "$(CONFIG)/obj/host.o"
-	rm -f "$(CONFIG)/obj/httpService.o"
 	rm -f "$(CONFIG)/obj/log.o"
 	rm -f "$(CONFIG)/obj/monitor.o"
 	rm -f "$(CONFIG)/obj/netConnector.o"
@@ -182,6 +181,7 @@ clean:
 	rm -f "$(CONFIG)/obj/route.o"
 	rm -f "$(CONFIG)/obj/rx.o"
 	rm -f "$(CONFIG)/obj/sendConnector.o"
+	rm -f "$(CONFIG)/obj/service.o"
 	rm -f "$(CONFIG)/obj/session.o"
 	rm -f "$(CONFIG)/obj/stage.o"
 	rm -f "$(CONFIG)/obj/trace.o"
@@ -542,147 +542,147 @@ $(CONFIG)/obj/host.o: \
 	$(CC) -c -o $(CONFIG)/obj/host.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/host.c
 
 #
-#   httpService.o
+#   log.o
 #
 DEPS_32 += $(CONFIG)/inc/bit.h
 DEPS_32 += src/http.h
 
-$(CONFIG)/obj/httpService.o: \
-    src/httpService.c $(DEPS_32)
-	@echo '   [Compile] $(CONFIG)/obj/httpService.o'
-	$(CC) -c -o $(CONFIG)/obj/httpService.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/httpService.c
-
-#
-#   log.o
-#
-DEPS_33 += $(CONFIG)/inc/bit.h
-DEPS_33 += src/http.h
-
 $(CONFIG)/obj/log.o: \
-    src/log.c $(DEPS_33)
+    src/log.c $(DEPS_32)
 	@echo '   [Compile] $(CONFIG)/obj/log.o'
 	$(CC) -c -o $(CONFIG)/obj/log.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/log.c
 
 #
 #   monitor.o
 #
-DEPS_34 += $(CONFIG)/inc/bit.h
-DEPS_34 += src/http.h
+DEPS_33 += $(CONFIG)/inc/bit.h
+DEPS_33 += src/http.h
 
 $(CONFIG)/obj/monitor.o: \
-    src/monitor.c $(DEPS_34)
+    src/monitor.c $(DEPS_33)
 	@echo '   [Compile] $(CONFIG)/obj/monitor.o'
 	$(CC) -c -o $(CONFIG)/obj/monitor.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/monitor.c
 
 #
 #   netConnector.o
 #
-DEPS_35 += $(CONFIG)/inc/bit.h
-DEPS_35 += src/http.h
+DEPS_34 += $(CONFIG)/inc/bit.h
+DEPS_34 += src/http.h
 
 $(CONFIG)/obj/netConnector.o: \
-    src/netConnector.c $(DEPS_35)
+    src/netConnector.c $(DEPS_34)
 	@echo '   [Compile] $(CONFIG)/obj/netConnector.o'
 	$(CC) -c -o $(CONFIG)/obj/netConnector.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/netConnector.c
 
 #
 #   packet.o
 #
-DEPS_36 += $(CONFIG)/inc/bit.h
-DEPS_36 += src/http.h
+DEPS_35 += $(CONFIG)/inc/bit.h
+DEPS_35 += src/http.h
 
 $(CONFIG)/obj/packet.o: \
-    src/packet.c $(DEPS_36)
+    src/packet.c $(DEPS_35)
 	@echo '   [Compile] $(CONFIG)/obj/packet.o'
 	$(CC) -c -o $(CONFIG)/obj/packet.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/packet.c
 
 #
 #   pam.o
 #
-DEPS_37 += $(CONFIG)/inc/bit.h
-DEPS_37 += src/http.h
+DEPS_36 += $(CONFIG)/inc/bit.h
+DEPS_36 += src/http.h
 
 $(CONFIG)/obj/pam.o: \
-    src/pam.c $(DEPS_37)
+    src/pam.c $(DEPS_36)
 	@echo '   [Compile] $(CONFIG)/obj/pam.o'
 	$(CC) -c -o $(CONFIG)/obj/pam.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/pam.c
 
 #
 #   passHandler.o
 #
-DEPS_38 += $(CONFIG)/inc/bit.h
-DEPS_38 += src/http.h
+DEPS_37 += $(CONFIG)/inc/bit.h
+DEPS_37 += src/http.h
 
 $(CONFIG)/obj/passHandler.o: \
-    src/passHandler.c $(DEPS_38)
+    src/passHandler.c $(DEPS_37)
 	@echo '   [Compile] $(CONFIG)/obj/passHandler.o'
 	$(CC) -c -o $(CONFIG)/obj/passHandler.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/passHandler.c
 
 #
 #   pipeline.o
 #
-DEPS_39 += $(CONFIG)/inc/bit.h
-DEPS_39 += src/http.h
+DEPS_38 += $(CONFIG)/inc/bit.h
+DEPS_38 += src/http.h
 
 $(CONFIG)/obj/pipeline.o: \
-    src/pipeline.c $(DEPS_39)
+    src/pipeline.c $(DEPS_38)
 	@echo '   [Compile] $(CONFIG)/obj/pipeline.o'
 	$(CC) -c -o $(CONFIG)/obj/pipeline.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/pipeline.c
 
 #
 #   queue.o
 #
-DEPS_40 += $(CONFIG)/inc/bit.h
-DEPS_40 += src/http.h
+DEPS_39 += $(CONFIG)/inc/bit.h
+DEPS_39 += src/http.h
 
 $(CONFIG)/obj/queue.o: \
-    src/queue.c $(DEPS_40)
+    src/queue.c $(DEPS_39)
 	@echo '   [Compile] $(CONFIG)/obj/queue.o'
 	$(CC) -c -o $(CONFIG)/obj/queue.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/queue.c
 
 #
 #   rangeFilter.o
 #
-DEPS_41 += $(CONFIG)/inc/bit.h
-DEPS_41 += src/http.h
+DEPS_40 += $(CONFIG)/inc/bit.h
+DEPS_40 += src/http.h
 
 $(CONFIG)/obj/rangeFilter.o: \
-    src/rangeFilter.c $(DEPS_41)
+    src/rangeFilter.c $(DEPS_40)
 	@echo '   [Compile] $(CONFIG)/obj/rangeFilter.o'
 	$(CC) -c -o $(CONFIG)/obj/rangeFilter.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/rangeFilter.c
 
 #
 #   route.o
 #
-DEPS_42 += $(CONFIG)/inc/bit.h
-DEPS_42 += src/http.h
+DEPS_41 += $(CONFIG)/inc/bit.h
+DEPS_41 += src/http.h
 
 $(CONFIG)/obj/route.o: \
-    src/route.c $(DEPS_42)
+    src/route.c $(DEPS_41)
 	@echo '   [Compile] $(CONFIG)/obj/route.o'
 	$(CC) -c -o $(CONFIG)/obj/route.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/route.c
 
 #
 #   rx.o
 #
-DEPS_43 += $(CONFIG)/inc/bit.h
-DEPS_43 += src/http.h
+DEPS_42 += $(CONFIG)/inc/bit.h
+DEPS_42 += src/http.h
 
 $(CONFIG)/obj/rx.o: \
-    src/rx.c $(DEPS_43)
+    src/rx.c $(DEPS_42)
 	@echo '   [Compile] $(CONFIG)/obj/rx.o'
 	$(CC) -c -o $(CONFIG)/obj/rx.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/rx.c
 
 #
 #   sendConnector.o
 #
+DEPS_43 += $(CONFIG)/inc/bit.h
+DEPS_43 += src/http.h
+
+$(CONFIG)/obj/sendConnector.o: \
+    src/sendConnector.c $(DEPS_43)
+	@echo '   [Compile] $(CONFIG)/obj/sendConnector.o'
+	$(CC) -c -o $(CONFIG)/obj/sendConnector.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/sendConnector.c
+
+#
+#   service.o
+#
 DEPS_44 += $(CONFIG)/inc/bit.h
 DEPS_44 += src/http.h
 
-$(CONFIG)/obj/sendConnector.o: \
-    src/sendConnector.c $(DEPS_44)
-	@echo '   [Compile] $(CONFIG)/obj/sendConnector.o'
-	$(CC) -c -o $(CONFIG)/obj/sendConnector.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/sendConnector.c
+$(CONFIG)/obj/service.o: \
+    src/service.c $(DEPS_44)
+	@echo '   [Compile] $(CONFIG)/obj/service.o'
+	$(CC) -c -o $(CONFIG)/obj/service.o $(CFLAGS) $(DFLAGS) "-I$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-Isrc" src/service.c
 
 #
 #   session.o
@@ -798,7 +798,6 @@ DEPS_53 += $(CONFIG)/obj/digest.o
 DEPS_53 += $(CONFIG)/obj/endpoint.o
 DEPS_53 += $(CONFIG)/obj/error.o
 DEPS_53 += $(CONFIG)/obj/host.o
-DEPS_53 += $(CONFIG)/obj/httpService.o
 DEPS_53 += $(CONFIG)/obj/log.o
 DEPS_53 += $(CONFIG)/obj/monitor.o
 DEPS_53 += $(CONFIG)/obj/netConnector.o
@@ -811,6 +810,7 @@ DEPS_53 += $(CONFIG)/obj/rangeFilter.o
 DEPS_53 += $(CONFIG)/obj/route.o
 DEPS_53 += $(CONFIG)/obj/rx.o
 DEPS_53 += $(CONFIG)/obj/sendConnector.o
+DEPS_53 += $(CONFIG)/obj/service.o
 DEPS_53 += $(CONFIG)/obj/session.o
 DEPS_53 += $(CONFIG)/obj/stage.o
 DEPS_53 += $(CONFIG)/obj/trace.o
@@ -822,7 +822,7 @@ DEPS_53 += $(CONFIG)/obj/webSockFilter.o
 
 $(CONFIG)/bin/libhttp.out: $(DEPS_53)
 	@echo '      [Link] $(CONFIG)/bin/libhttp.out'
-	$(CC) -r -o $(CONFIG)/bin/libhttp.out $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/actionHandler.o" "$(CONFIG)/obj/auth.o" "$(CONFIG)/obj/basic.o" "$(CONFIG)/obj/cache.o" "$(CONFIG)/obj/chunkFilter.o" "$(CONFIG)/obj/client.o" "$(CONFIG)/obj/conn.o" "$(CONFIG)/obj/digest.o" "$(CONFIG)/obj/endpoint.o" "$(CONFIG)/obj/error.o" "$(CONFIG)/obj/host.o" "$(CONFIG)/obj/httpService.o" "$(CONFIG)/obj/log.o" "$(CONFIG)/obj/monitor.o" "$(CONFIG)/obj/netConnector.o" "$(CONFIG)/obj/packet.o" "$(CONFIG)/obj/pam.o" "$(CONFIG)/obj/passHandler.o" "$(CONFIG)/obj/pipeline.o" "$(CONFIG)/obj/queue.o" "$(CONFIG)/obj/rangeFilter.o" "$(CONFIG)/obj/route.o" "$(CONFIG)/obj/rx.o" "$(CONFIG)/obj/sendConnector.o" "$(CONFIG)/obj/session.o" "$(CONFIG)/obj/stage.o" "$(CONFIG)/obj/trace.o" "$(CONFIG)/obj/tx.o" "$(CONFIG)/obj/uploadFilter.o" "$(CONFIG)/obj/uri.o" "$(CONFIG)/obj/var.o" "$(CONFIG)/obj/webSockFilter.o" $(LIBS) 
+	$(CC) -r -o $(CONFIG)/bin/libhttp.out $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/actionHandler.o" "$(CONFIG)/obj/auth.o" "$(CONFIG)/obj/basic.o" "$(CONFIG)/obj/cache.o" "$(CONFIG)/obj/chunkFilter.o" "$(CONFIG)/obj/client.o" "$(CONFIG)/obj/conn.o" "$(CONFIG)/obj/digest.o" "$(CONFIG)/obj/endpoint.o" "$(CONFIG)/obj/error.o" "$(CONFIG)/obj/host.o" "$(CONFIG)/obj/log.o" "$(CONFIG)/obj/monitor.o" "$(CONFIG)/obj/netConnector.o" "$(CONFIG)/obj/packet.o" "$(CONFIG)/obj/pam.o" "$(CONFIG)/obj/passHandler.o" "$(CONFIG)/obj/pipeline.o" "$(CONFIG)/obj/queue.o" "$(CONFIG)/obj/rangeFilter.o" "$(CONFIG)/obj/route.o" "$(CONFIG)/obj/rx.o" "$(CONFIG)/obj/sendConnector.o" "$(CONFIG)/obj/service.o" "$(CONFIG)/obj/session.o" "$(CONFIG)/obj/stage.o" "$(CONFIG)/obj/trace.o" "$(CONFIG)/obj/tx.o" "$(CONFIG)/obj/uploadFilter.o" "$(CONFIG)/obj/uri.o" "$(CONFIG)/obj/var.o" "$(CONFIG)/obj/webSockFilter.o" $(LIBS) 
 endif
 
 #
@@ -886,7 +886,6 @@ DEPS_57 += $(CONFIG)/obj/digest.o
 DEPS_57 += $(CONFIG)/obj/endpoint.o
 DEPS_57 += $(CONFIG)/obj/error.o
 DEPS_57 += $(CONFIG)/obj/host.o
-DEPS_57 += $(CONFIG)/obj/httpService.o
 DEPS_57 += $(CONFIG)/obj/log.o
 DEPS_57 += $(CONFIG)/obj/monitor.o
 DEPS_57 += $(CONFIG)/obj/netConnector.o
@@ -899,6 +898,7 @@ DEPS_57 += $(CONFIG)/obj/rangeFilter.o
 DEPS_57 += $(CONFIG)/obj/route.o
 DEPS_57 += $(CONFIG)/obj/rx.o
 DEPS_57 += $(CONFIG)/obj/sendConnector.o
+DEPS_57 += $(CONFIG)/obj/service.o
 DEPS_57 += $(CONFIG)/obj/session.o
 DEPS_57 += $(CONFIG)/obj/stage.o
 DEPS_57 += $(CONFIG)/obj/trace.o
@@ -956,7 +956,6 @@ DEPS_59 += $(CONFIG)/obj/digest.o
 DEPS_59 += $(CONFIG)/obj/endpoint.o
 DEPS_59 += $(CONFIG)/obj/error.o
 DEPS_59 += $(CONFIG)/obj/host.o
-DEPS_59 += $(CONFIG)/obj/httpService.o
 DEPS_59 += $(CONFIG)/obj/log.o
 DEPS_59 += $(CONFIG)/obj/monitor.o
 DEPS_59 += $(CONFIG)/obj/netConnector.o
@@ -969,6 +968,7 @@ DEPS_59 += $(CONFIG)/obj/rangeFilter.o
 DEPS_59 += $(CONFIG)/obj/route.o
 DEPS_59 += $(CONFIG)/obj/rx.o
 DEPS_59 += $(CONFIG)/obj/sendConnector.o
+DEPS_59 += $(CONFIG)/obj/service.o
 DEPS_59 += $(CONFIG)/obj/session.o
 DEPS_59 += $(CONFIG)/obj/stage.o
 DEPS_59 += $(CONFIG)/obj/trace.o

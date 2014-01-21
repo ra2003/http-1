@@ -279,12 +279,9 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
 
     assert(conn);
     if (conn->keepAliveCount > 0 && conn->sock) {
-#if KEEP
-        /* Cannot use this as it may block and therefore yield */
-        consumeLastRequest(conn);
-#else
-        conn->sock = 0;
-#endif
+        if (!httpIsEof(conn)) {
+            conn->sock = 0;
+        }
     } else {
         conn->input = 0;
     }

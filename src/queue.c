@@ -243,9 +243,10 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 
 PUBLIC void httpResumeQueue(HttpQueue *q)
 {
-    mprTrace(7, "Resume q %s", q->name);
-    q->flags &= ~HTTP_QUEUE_SUSPENDED;
-    httpScheduleQueue(q);
+    if (q) {
+        q->flags &= ~HTTP_QUEUE_SUSPENDED;
+        httpScheduleQueue(q);
+    }
 }
 
 

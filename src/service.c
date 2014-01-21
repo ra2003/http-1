@@ -558,7 +558,7 @@ static void httpTimer(Http *http, MprEvent *event)
         limits = conn->limits;
         if (!conn->timeoutEvent) {
             abort = mprIsStopping();
-            if (httpServerConn(conn) && HTTP_STATE_BEGIN < conn->state && conn->state < HTTP_STATE_PARSED && 
+            if (httpServerConn(conn) && (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED) && 
                     (conn->started + limits->requestParseTimeout) < http->now) {
                 conn->timeout = HTTP_PARSE_TIMEOUT;
                 abort = 1;

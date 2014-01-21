@@ -4,7 +4,6 @@
 
 PRODUCT            := http
 VERSION            := 4.5.0
-BUILD_NUMBER       := 0
 PROFILE            := static
 ARCH               := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
 CC_ARCH            := $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
@@ -194,7 +193,7 @@ clobber: clean
 #   version
 #
 version: $(DEPS_1)
-	echo 4.5.0-0
+	echo 4.5.0
 
 #
 #   est.h

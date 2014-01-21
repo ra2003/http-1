@@ -4,7 +4,6 @@
 
 PRODUCT            := http
 VERSION            := 4.5.0
-BUILD_NUMBER       := 0
 PROFILE            := default
 ARCH               := $(shell echo $(WIND_HOST_TYPE) | sed 's/-.*//')
 CPU                := $(subst X86,PENTIUM,$(shell echo $(ARCH) | tr a-z A-Z))
@@ -201,7 +200,7 @@ clobber: clean
 #   version
 #
 version: $(DEPS_1)
-	echo 4.5.0-0
+	echo 4.5.0
 
 #
 #   est.h

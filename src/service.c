@@ -302,9 +302,9 @@ static bool isIdle()
     int             next;
     static MprTicks lastTrace = 0;
 
-    if ((http = (Http*) mprGetMpr()->httpService) != 0) {
-        lock(http->connections);
+    if ((http = MPR->httpService) != 0) {
         now = http->now;
+        lock(http->connections);
         for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
             if (conn->state != HTTP_STATE_BEGIN) {
                 if (lastTrace < now) {
@@ -322,6 +322,8 @@ static bool isIdle()
             }
         }
         unlock(http->connections);
+    } else {
+        now = mprGetTicks();
     }
     if (!mprServicesAreIdle()) {
         if (lastTrace < now) {

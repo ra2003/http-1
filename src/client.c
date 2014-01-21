@@ -269,6 +269,9 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
 }
 
 
+/*
+    Read with standard connection timeouts and in blocking mode for clients, non-blocking for server-side
+ */
 PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
 {
     return httpReadBlock(conn, buf, size, -1, 0);

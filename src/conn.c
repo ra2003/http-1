@@ -191,8 +191,6 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
             mprTrace(2, "  State %d, uri %s", conn->state, conn->rx->uri);
         }
     }
-    assert(conn->connError);
-
     if (!conn->sock || conn->sock->fd == INVALID_SOCKET) {
         //  TODO - remove this code. Should never happen
         assert(0);
@@ -403,7 +401,7 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
         return;
     }
     mprTrace(6, "httpIOEvent for fd %d, mask %d", conn->sock->fd, event->mask);
-    if (event->mask & MPR_WRITABLE) {
+    if (event->mask & MPR_WRITABLE && conn->connectorq) {
         httpResumeQueue(conn->connectorq);
     }
     if (event->mask & MPR_READABLE) {

@@ -76,7 +76,6 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
     if (conn->http) {
         assert(conn->http);
         HTTP_NOTIFY(conn, HTTP_EVENT_DESTROY, 0);
-        httpRemoveConn(conn->http, conn);
         if (httpServerConn(conn)) {
             httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, -1);
             if (conn->activeRequest) {
@@ -103,6 +102,7 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
             mprDestroyDispatcher(conn->dispatcher);
             conn->dispatcher = 0;
         }
+        httpRemoveConn(conn->http, conn);
         conn->http = 0;
     }
 }
@@ -154,7 +154,9 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->password);
 
     } else if (flags & MPR_MANAGE_FREE) {
-        httpDestroyConn(conn);
+        if (conn->http) {
+            httpDestroyConn(conn);
+        }
     }
 }
 
@@ -183,17 +185,12 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
 
         } else if (conn->timeout == HTTP_REQUEST_TIMEOUT) {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "Exceeded timeout %d sec", limits->requestTimeout / 1000);
-
-        } else {
-            assert(0);
         }
         if (conn->rx) {
-            mprTrace(2, "  State %d, uri %s", conn->state, conn->rx->uri);
+            mprTrace(5, "  State %d, uri %s", conn->state, conn->rx->uri);
         }
     }
-    if (!conn->sock || conn->sock->fd == INVALID_SOCKET) {
-        //  TODO - remove this code. Should never happen
-        assert(0);
+    if (httpClientConn(conn)) {
         httpDestroyConn(conn);
     } else {
         httpSetupWaitHandler(conn, MPR_WRITABLE);
@@ -851,6 +848,11 @@ PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
     return 0;
 }
 
+
+PUBLIC void httpSetConnData(HttpConn *conn, void *data)
+{
+    conn->data = data;
+}
 
 /*
     @copy   default

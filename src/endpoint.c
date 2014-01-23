@@ -28,7 +28,7 @@ PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *disp
     http = MPR->httpService;
     endpoint->http = http;
     endpoint->async = 1;
-    endpoint->http = MPR->httpService;
+    endpoint->http = http;
     endpoint->port = port;
     endpoint->ip = sclone(ip);
     endpoint->dispatcher = dispatcher;

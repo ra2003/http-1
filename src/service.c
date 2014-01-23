@@ -366,7 +366,9 @@ PUBLIC void httpAddEndpoint(Http *http, HttpEndpoint *endpoint)
 
 PUBLIC void httpRemoveEndpoint(Http *http, HttpEndpoint *endpoint)
 {
-    mprRemoveItem(http->endpoints, endpoint);
+    if (http) {
+        mprRemoveItem(http->endpoints, endpoint);
+    }
 }
 
 

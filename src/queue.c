@@ -222,7 +222,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
          */
         while (tx->writeBlocked) {
             assert(!tx->finalizedConnector);
-            assert(conn->connectorq->count > 0);
+            assert(conn->connectorq->count > 0 || conn->connectorq->ioCount);
             if (!mprWaitForSingleIO((int) conn->sock->fd, MPR_WRITABLE, conn->limits->inactivityTimeout)) {
                 return MPR_ERR_TIMEOUT;
             }

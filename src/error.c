@@ -16,8 +16,6 @@ static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
 
 PUBLIC void httpDisconnect(HttpConn *conn)
 {
-    assert(conn->sock);
-
     if (conn->sock) {
         mprDisconnectSocket(conn->sock);
     }

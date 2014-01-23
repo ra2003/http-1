@@ -164,11 +164,13 @@ static void manageConn(HttpConn *conn, int flags)
 PUBLIC void httpConnTimeout(HttpConn *conn)
 {
     HttpLimits  *limits;
+    cchar       *msg, *prefix;
 
     if (!conn->http) {
         return;
     }
     limits = conn->limits;
+    msg = 0;
     assert(limits);
     mprLog(5, "Inactive connection timed out");
 
@@ -176,24 +178,32 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
         (conn->timeoutCallback)(conn);
     }
     if (!conn->connError) {
+        prefix = (conn->state == HTTP_STATE_BEGIN) ? "Idle connection" : "Request";
         if (conn->timeout == HTTP_PARSE_TIMEOUT) {
-            httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "Exceeded parse headers timeout of %Ld sec", 
-                limits->requestParseTimeout  / 1000);
+            msg = sfmt("%s exceeded parse headers timeout of %Ld sec", prefix, limits->requestParseTimeout  / 1000);
 
         } else if (conn->timeout == HTTP_INACTIVITY_TIMEOUT) {
-            httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "Exceeded inactivity timeout of %Ld sec", limits->inactivityTimeout / 1000);
+            msg = sfmt("%s exceeded inactivity timeout of %Ld sec", prefix, limits->inactivityTimeout / 1000);
 
         } else if (conn->timeout == HTTP_REQUEST_TIMEOUT) {
-            httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "Exceeded timeout %d sec", limits->requestTimeout / 1000);
+            msg = sfmt("%s exceeded timeout %d sec", prefix, limits->requestTimeout / 1000);
         }
-        if (conn->rx) {
+        if (conn->rx && (conn->state > HTTP_STATE_CONNECTED)) {
             mprTrace(5, "  State %d, uri %s", conn->state, conn->rx->uri);
+        }
+        if (conn->state < HTTP_STATE_FIRST) {
+            httpDisconnect(conn);
+            if (msg) {
+                mprError(msg);
+            }
+        } else {
+            httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, msg);
         }
     }
     if (httpClientConn(conn)) {
         httpDestroyConn(conn);
     } else {
-        httpSetupWaitHandler(conn, MPR_WRITABLE);
+        httpEnableConnEvents(conn);
     }
 }
 
@@ -395,7 +405,7 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
         return;
     }
     mprTrace(6, "httpIOEvent for fd %d, mask %d", conn->sock->fd, event->mask);
-    if (event->mask & MPR_WRITABLE && conn->connectorq) {
+    if ((event->mask & MPR_WRITABLE) && conn->connectorq) {
         httpResumeQueue(conn->connectorq);
     }
     if (event->mask & MPR_READABLE) {
@@ -454,13 +464,12 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     if (rx) {
         if (conn->connError || 
            (tx->writeBlocked) || 
-           (conn->connectorq && conn->connectorq->count > 0) || 
+           (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) || 
            (httpQueuesNeedService(conn)) || 
            (mprSocketHasBufferedWrite(sp)) ||
-           (tx->finalized && conn->state < HTTP_STATE_FINALIZED)) {
-
+           (rx->eof && tx->finalized && conn->state < HTTP_STATE_FINALIZED)) {
             if (!mprSocketHandshaking(sp)) {
-                /* Must not pollute the data stream if the SSL stack is doing manual handshaking still */
+                /* Must not pollute the data stream if the SSL stack is still doing manual handshaking */
                 eventMask |= MPR_WRITABLE;
             }
         }

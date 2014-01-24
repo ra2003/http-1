@@ -4046,11 +4046,6 @@ PUBLIC void httpAddPermResource(HttpRoute *parent, cchar *prefix, cchar *resourc
  */
 PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *prefix, cchar *resource);
 
-#if DEPRECATED || 1
-#define httpAddHomeRoute espAddHomeRoute
-#define httpAddRouteSet espAddRouteSet
-#endif
-
 /**
     Add a route for the client directory
     The client directory is defined via the {CLIENT_DIR} route var.

@@ -14,25 +14,6 @@ static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
 
 /*********************************** Code *************************************/
 
-PUBLIC void httpDisconnect(HttpConn *conn)
-{
-    if (conn->sock) {
-        mprDisconnectSocket(conn->sock);
-    }
-    conn->connError = 1;
-    conn->error = 1;
-    conn->keepAliveCount = 0;
-    if (conn->tx) {
-        conn->tx->finalized = 1;
-        conn->tx->finalizedOutput = 1;
-        conn->tx->finalizedConnector = 1;
-    }
-    if (conn->rx) {
-        httpSetEof(conn);
-    }
-}
-
-
 PUBLIC void httpBadRequestError(HttpConn *conn, int flags, cchar *fmt, ...)
 {
     va_list     args;

@@ -480,7 +480,7 @@ PUBLIC uint64 httpGetNumber(cchar *value);
     If the configuration is modified when the application is multithreaded, all requests must be first be quiesced.
     @defgroup Http Http
     @see Http HttpConn HttpEndpoint gettGetDateString httpConfigurenamedVirtualEndpoint httpCreate
-        httpDestroy httpGetContext httpGetDateString httpLookupEndpoint httpLookupStatus httpLooupHost 
+        httpGetContext httpGetDateString httpLookupEndpoint httpLookupStatus httpLooupHost 
         httpSetContext httpSetDefaultClientHost httpSetDefaultClientPort httpSetDefaultPort httpSetForkCallback 
         httpSetProxy httpSetSoftware httpConfigure
     @stability Internal
@@ -735,15 +735,11 @@ PUBLIC void httpSetProxy(Http *http, cchar *host, int port);
 PUBLIC void httpSetSoftware(Http *http, cchar *description);
 
 /**
-    Stop the Http service.
-    @param how Termination control flags. Use MPR_EXIT_GRACEFUL to allow all current requests and commands to
-        complete before exiting. Use MPR_EXIT_IMMEDIATE to abort all current requests.
+    Stop all connections owned by the data handle
+    @param data HttpConn data value to search for in current connections
     @ingroup Http
-    @stability Prototype
+    @stability Internal
  */
-PUBLIC void httpStop(int how);
-
-//  MOB
 PUBLIC void httpStopConnections(void *data);
 
 /* Internal APIs */
@@ -2416,7 +2412,7 @@ PUBLIC void httpSetIOCallback(struct HttpConn *conn, HttpIOCallback fn);
 
     @defgroup HttpConn HttpConn
     @see HttpConn HttpEnvCallback HttpGetPassword HttpListenCallback HttpNotifier HttpQueue HttpRedirectCallback 
-        HttpRx HttpStage HttpTx HtttpListenCallback httpCallEvent httpFinalizeConnector httpConnTimeout
+        HttpRx HttpStage HttpTx HtttpListenCallback httpCallEvent httpFinalizeConnector httpScheduleConnTimeout
         httpCreateConn httpCreateRxPipeline httpCreateTxPipeline httpDestroyConn httpClosePipeline httpDiscardData
         httpDisconnect httpEnableUpload httpError httpIOEvent httpGetAsync httpGetChunkSize httpGetConnContext httpGetConnHost
         httpGetError httpGetExt httpGetKeepAliveCount httpGetWriteQueueCount httpMatchHost httpMemoryError
@@ -2527,16 +2523,15 @@ PUBLIC void httpClosePipeline(HttpConn *conn);
 #define HTTP_PARSE_TIMEOUT          3
 
 /**
-    Signal a connection timeout on a connection
-    @description This call cancels a connections current request, disconnects the socket and issues an error to the error 
-        log. This call is normally invoked by the httpTimer which runs regularly to check for timed out requests.
-        This call should not be made on another thread, but should be scheduled to run on the connection's dispatcher to
-        avoid thread races.
+    Schedule a connection timeout event on a connection
+    @description This call schedules an event to run serialized on the connection dispatcher. When run, it will
+        cancels the current request, disconnects the socket and issues an error to the error log. 
+        This call is normally invoked by the httpTimer which runs regularly to check for timed out requests.
     @param conn HttpConn connection object created via #httpCreateConn
     @ingroup HttpConn
     @stability Internal
   */
-PUBLIC void httpConnTimeout(HttpConn *conn);
+PUBLIC void httpScheduleConnTimeout(HttpConn *conn);
 
 /** 
     Create a connection object.
@@ -2588,12 +2583,12 @@ PUBLIC void httpDiscardData(HttpConn *conn, int dir);
 
 /**
     Disconnect the connection's socket
-    @description This call will close the socket and signal a connection error. Subsequent use of the connection socket
-        will not be possible.  This call should not be made on another thread, but should be scheduled to run on the 
-        connection's dispatcher to avoid thread races.
+    @description This call will close the socket and signal a connection error by setting connError. 
+        Subsequent use of the connection socket will not be possible. It will also set HttpRx.eof and will finalize
+        the request. Used internally when a connection times out and for abortive errors.
     @param conn HttpConn connection object created via #httpCreateConn
     @ingroup HttpConn
-    @stability Stable
+    @stability Internal
   */
 PUBLIC void httpDisconnect(HttpConn *conn);
 

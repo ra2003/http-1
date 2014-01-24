@@ -69,7 +69,6 @@ PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatche
 
 /*
     Destroy a connection. This removes the connection from the list of connections. Should GC after that.
-    This should only EVER be called from the top-level event loop from httpIOEvent.
  */
 PUBLIC void httpDestroyConn(HttpConn *conn)
 {
@@ -83,6 +82,8 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
                 conn->activeRequest = 0;
             }
         }
+        httpRemoveConn(conn->http, conn);
+        conn->http = 0;
         conn->input = 0;
         if (conn->tx) {
             httpClosePipeline(conn);
@@ -102,8 +103,6 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
             mprDestroyDispatcher(conn->dispatcher);
             conn->dispatcher = 0;
         }
-        httpRemoveConn(conn->http, conn);
-        conn->http = 0;
     }
 }
 
@@ -161,7 +160,26 @@ static void manageConn(HttpConn *conn, int flags)
 }
 
 
-PUBLIC void httpConnTimeout(HttpConn *conn)
+PUBLIC void httpDisconnect(HttpConn *conn)
+{
+    if (conn->sock) {
+        mprDisconnectSocket(conn->sock);
+    }
+    conn->connError = 1;
+    conn->error = 1;
+    conn->keepAliveCount = 0;
+    if (conn->tx) {
+        conn->tx->finalized = 1;
+        conn->tx->finalizedOutput = 1;
+        conn->tx->finalizedConnector = 1;
+    }
+    if (conn->rx) {
+        httpSetEof(conn);
+    }
+}
+
+
+static void connTimeout(HttpConn *conn, MprEvent *event)
 {
     HttpLimits  *limits;
     cchar       *msg, *prefix;
@@ -169,6 +187,10 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
     if (!conn->http) {
         return;
     }
+    assert(conn->dispatcher == event->dispatcher);
+    assert(conn->tx);
+    assert(conn->rx);
+
     limits = conn->limits;
     msg = 0;
     assert(limits);
@@ -204,6 +226,18 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
         httpDestroyConn(conn);
     } else {
         httpEnableConnEvents(conn);
+    }
+}
+
+
+PUBLIC void httpScheduleConnTimeout(HttpConn *conn) 
+{
+    assert(conn->http);
+    if (!conn->timeoutEvent) {
+        /* 
+            Will run on the HttpConn dispatcher unless shutting down and it is destroyed already 
+         */
+        conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, connTimeout, conn, MPR_EVENT_QUICK);
     }
 }
 
@@ -404,6 +438,10 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
         /* Connection has been destroyed */
         return;
     }
+    assert(conn->dispatcher == event->dispatcher);
+    assert(conn->tx);
+    assert(conn->rx);
+
     mprTrace(6, "httpIOEvent for fd %d, mask %d", conn->sock->fd, event->mask);
     if ((event->mask & MPR_WRITABLE) && conn->connectorq) {
         httpResumeQueue(conn->connectorq);

@@ -11,7 +11,6 @@
 
 static void acceptConn(HttpEndpoint *endpoint);
 static int manageEndpoint(HttpEndpoint *endpoint, int flags);
-static int destroyEndpointConnections(HttpEndpoint *endpoint);
 
 /************************************ Code ************************************/
 /*
@@ -41,7 +40,12 @@ PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *disp
 
 PUBLIC void httpDestroyEndpoint(HttpEndpoint *endpoint)
 {
+#if KEEP
+    /*
+        Connections may survive and endpoint being closed
+     */
     destroyEndpointConnections(endpoint);
+#endif
     if (endpoint->sock) {
         mprCloseSocket(endpoint->sock, 0);
         endpoint->sock = 0;
@@ -118,6 +122,7 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(cchar *home, cchar *documents,
 }
 
 
+#if KEEP
 static int destroyEndpointConnections(HttpEndpoint *endpoint)
 {
     HttpConn    *conn;
@@ -136,6 +141,7 @@ static int destroyEndpointConnections(HttpEndpoint *endpoint)
     unlock(http->connections);
     return 0;
 }
+#endif
 
 
 static bool validateEndpoint(HttpEndpoint *endpoint)

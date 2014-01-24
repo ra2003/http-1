@@ -14750,7 +14750,7 @@ PUBLIC MprMutex *mprInitLock(MprMutex *lock)
 #elif WINCE
     InitializeCriticalSection(&lock->cs);
 
-#elif BIT_WIN_LIKE && CRITICAL_SECTION_NO_DEBUG_INFO
+#elif BIT_WIN_LIKE && !BIT_DEBUG && CRITICAL_SECTION_NO_DEBUG_INFO
     InitializeCriticalSectionEx(&lock->cs, BIT_MPR_SPIN_COUNT, CRITICAL_SECTION_NO_DEBUG_INFO);
 
 #elif BIT_WIN_LIKE

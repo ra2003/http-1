@@ -3461,8 +3461,8 @@ PUBLIC int mprInitWindow()
     if (ws->hwnd) {
         return 0;
     }
-    name                = wide(mprGetAppName());
-    title               = wide(mprGetAppTitle());
+    name                = (wchar*) wide(mprGetAppName());
+    title               = (wchar*) wide(mprGetAppTitle());
     wc.style            = CS_HREDRAW | CS_VREDRAW;
     wc.hbrBackground    = (HBRUSH) (COLOR_WINDOW+1);
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
@@ -3494,8 +3494,9 @@ PUBLIC void mprTermWindow()
 {
     MprWaitService  *ws;
 
+    ws = MPR->waitService;
     if (ws->hwnd) {
-        UnregisterClass(wide(mprGetAppName()));
+        UnregisterClass(wide(mprGetAppName()), 0);
         ws->hwnd = 0;
     }
 }
@@ -8727,7 +8728,7 @@ static int getPathInfo(MprDiskFileSystem *fs, cchar *path, MprPath *info)
     if (sends(path, "/")) {
         /* Windows stat fails with a trailing "/" */
         path = strim(path, "/", MPR_TRIM_END);
-    } else if (sends(path("\\")) {
+    } else if (sends(path, "\\")) {
         path = strim(path, "\\", MPR_TRIM_END);
     }
     if (_stat64(path, &s) < 0) {

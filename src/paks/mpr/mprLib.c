@@ -1518,7 +1518,10 @@ static void relayOutsideEvent(void *data, struct MprEvent *event)
 
     op = data;
     (op->proc)(op->data);
-    mprSignalCond(op->cond);
+    if (op->cond) {
+        mprSignalCond(op->cond);
+        mprRelease(op->cond);
+    }
 }
 
 
@@ -1531,11 +1534,13 @@ static void relayOutsideEvent(void *data, struct MprEvent *event)
  */
 PUBLIC int mprCreateEventOutside(MprDispatcher *dispatcher, void *proc, void *data, int flags)
 {
-    OutsideEvent    outside;
+    OutsideEvent    *op;
 
-    memset(&outside, 0, sizeof(outside));
-    outside.proc = proc;
-    outside.data = data;
+    if ((op = mprAlloc(sizeof(OutsideEvent))) == 0) {
+        return MPR_ERR_MEMORY;
+    }
+    op->proc = proc;
+    op->data = data;
 
     if (!mprPauseGC()) {
         return MPR_ERR_BAD_STATE;
@@ -1548,13 +1553,15 @@ PUBLIC int mprCreateEventOutside(MprDispatcher *dispatcher, void *proc, void *da
         mprAtomicBarrier();
     }
     if (flags & MPR_EVENT_BLOCK) {
-        outside.cond = mprCreateCond();
+        op->cond = mprCreateCond();
+        mprHold(op->cond);
     }
-    mprCreateEvent(dispatcher, "relay", 0, relayOutsideEvent, &outside, MPR_EVENT_STATIC_DATA);
-    if (flags & MPR_EVENT_BLOCK) {
-        mprWaitForCond(outside.cond, -1);
-    }
+    mprCreateEvent(dispatcher, "relay", 0, relayOutsideEvent, op, MPR_EVENT_QUICK);
+
     mprResumeGC();
+    if (flags & MPR_EVENT_BLOCK) {
+        mprWaitForCond(op->cond, -1);
+    }
     return 0;
 }
 
@@ -2825,6 +2832,7 @@ static void serviceEventsThread(void *data, MprThread *tp)
     mprSignalCond(MPR->cond);
     mprServiceEvents(-1, 0);
     mprRescheduleDispatcher(MPR->dispatcher);
+    mprTermWindow();
 }
 
 
@@ -3363,9 +3371,12 @@ PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
         mprDoWaitRecall(ws);
         return;
     }
-    SetTimer(ws->hwnd, 0, (UINT) timeout, NULL);
-
     mprYield(MPR_YIELD_STICKY);
+
+    /*
+        Timer must be after yield
+     */
+    SetTimer(ws->hwnd, 0, (UINT) timeout, NULL);
     if (GetMessage(&msg, NULL, 0, 0) == 0) {
         mprResetYield();
         mprTerminate(MPR_EXIT_DEFAULT, -1);
@@ -3436,6 +3447,7 @@ PUBLIC void mprWakeNotifier()
 
 /*
     Create a default window if the application has not already created one.
+    Windows are meant to be per-thread, but this creates a window for mprServiceEvents.
  */ 
 PUBLIC int mprInitWindow()
 {
@@ -3449,8 +3461,8 @@ PUBLIC int mprInitWindow()
     if (ws->hwnd) {
         return 0;
     }
-    name = (wchar*) wide(mprGetAppName());
-    title = (wchar*) wide(mprGetAppTitle());
+    name                = wide(mprGetAppName());
+    title               = wide(mprGetAppTitle());
     wc.style            = CS_HREDRAW | CS_VREDRAW;
     wc.hbrBackground    = (HBRUSH) (COLOR_WINDOW+1);
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
@@ -3475,6 +3487,17 @@ PUBLIC int mprInitWindow()
     ws->hwnd = hwnd;
     ws->socketMessage = MPR_SOCKET_MESSAGE;
     return 0;
+}
+
+
+PUBLIC void mprTermWindow()
+{
+    MprWaitService  *ws;
+
+    if (ws->hwnd) {
+        UnregisterClass(wide(mprGetAppName()));
+        ws->hwnd = 0;
+    }
 }
 
 
@@ -8704,6 +8727,8 @@ static int getPathInfo(MprDiskFileSystem *fs, cchar *path, MprPath *info)
     if (sends(path, "/")) {
         /* Windows stat fails with a trailing "/" */
         path = strim(path, "/", MPR_TRIM_END);
+    } else if (sends(path("\\")) {
+        path = strim(path, "\\", MPR_TRIM_END);
     }
     if (_stat64(path, &s) < 0) {
 #if BIT_WIN && KEEP
@@ -9237,8 +9262,9 @@ PUBLIC int mprServiceEvents(MprTicks timeout, int flags)
         return 0;
     }
     MPR->eventing = 1;
+#if UNUSED
     mprInitWindow();
-
+#endif
     es = MPR->eventService;
     beginEventCount = eventCount = es->eventCount;
     es->now = mprGetTicks();
@@ -14730,7 +14756,7 @@ PUBLIC MprMutex *mprInitLock(MprMutex *lock)
 #elif WINCE
     InitializeCriticalSection(&lock->cs);
 
-#elif BIT_WIN_LIKE && !BIT_DEBUG && CRITICAL_SECTION_NO_DEBUG_INFO
+#elif BIT_WIN_LIKE && CRITICAL_SECTION_NO_DEBUG_INFO
     InitializeCriticalSectionEx(&lock->cs, BIT_MPR_SPIN_COUNT, CRITICAL_SECTION_NO_DEBUG_INFO);
 
 #elif BIT_WIN_LIKE
@@ -18909,6 +18935,11 @@ PUBLIC void mprWriteToOsLog(cchar *message, int flags, int level)
 PUBLIC int mprInitWindow()
 {
     return 0;
+}
+
+
+PUBLIC void mprTermWindow()
+{
 }
 
 
@@ -26389,7 +26420,7 @@ PUBLIC MprTime mprGetTime()
 #endif
 
 /*
-    Ugh! Aparently monotonic clocks are broken on VxWorks prior to 6.7
+    Ugh! Apparently monotonic clocks are broken on VxWorks prior to 6.7
  */
 #if CLOCK_MONOTONIC_RAW
     #if BIT_UNIX_LIKE
@@ -26441,18 +26472,33 @@ PUBLIC MprTicks mprGetTicks()
     clock_gettime(CLOCK_MONOTONIC, &tv);
     return (MprTicks) (((MprTicks) tv.tv_sec) * 1000) + (tv.tv_nsec / (1000 * 1000));
 #else
-    static MprTime lastTicks;
+    /*
+        Last chance. Need to resort to mprGetTime which is subject to user and seasonal adjustments.
+        This code will prevent it going backwards, but may suffer large jumps forward.
+     */
+    static MprTime lastTicks = 0;
     static MprTime adjustTicks = 0;
     static MprSpin ticksSpin;
     MprTime     result, diff;
 
     if (lastTicks == 0) {
         /* This will happen at init time when single threaded */
+#if BIT_WIN_LIKE
+        lastTicks = GetTickCount();
+#else
         lastTicks = mprGetTime();
+#endif
         mprInitSpinLock(&ticksSpin);
     }
     mprSpinLock(&ticksSpin);
+#if BIT_WIN_LIKE
+    /*
+        GetTickCount will wrap in 49.7 days
+     */
+    result = GetTickCount() + adjustTicks;
+#else
     result = mprGetTime() + adjustTicks;
+#endif
     if ((diff = (result - lastTicks)) < 0) {
         /*
             Handle time reversals. Don't handle jumps forward. Sorry.
@@ -28067,6 +28113,12 @@ PUBLIC int mprInitWindow()
 {
     return 0;
 }
+
+
+PUBLIC void mprTermWindow()
+{
+}
+
 
 
 /*

@@ -6995,6 +6995,7 @@ PUBLIC int  mprStartWaitService(MprWaitService *ws);
 PUBLIC int  mprStopWaitService(MprWaitService *ws);
 PUBLIC void mprSetWaitServiceThread(MprWaitService *ws, MprThread *thread);
 PUBLIC int  mprInitWindow();
+PUBLIC void mprTermWindow();
 PUBLIC void mprWakeNotifier();
 #if MPR_EVENT_KQUEUE
     PUBLIC void mprManageKqueue(MprWaitService *ws, int flags);

@@ -1556,7 +1556,7 @@ PUBLIC int mprCreateEventOutside(MprDispatcher *dispatcher, void *proc, void *da
         op->cond = mprCreateCond();
         mprHold(op->cond);
     }
-    mprCreateEvent(dispatcher, "relay", 0, relayOutsideEvent, op, MPR_EVENT_QUICK);
+    mprCreateEvent(dispatcher, "relay", 0, relayOutsideEvent, op, 0);
 
     mprResumeGC();
     if (flags & MPR_EVENT_BLOCK) {
@@ -3279,8 +3279,6 @@ PUBLIC int mprNotifyOn(MprWaitService *ws, MprWaitHandler *wp, int mask)
 {
     int     winMask;
 
-    assert(ws->hwnd);
-
     lock(ws);
     winMask = 0;
     if (wp->desiredMask != mask) {
@@ -3356,8 +3354,6 @@ PUBLIC int mprWaitForSingleIO(int fd, int desiredMask, MprTicks timeout)
 PUBLIC void mprWaitForIO(MprWaitService *ws, MprTicks timeout)
 {
     MSG     msg;
-
-    assert(ws->hwnd);
 
     if (timeout < 0 || timeout > MAXINT) {
         timeout = MAXINT;
@@ -9263,9 +9259,6 @@ PUBLIC int mprServiceEvents(MprTicks timeout, int flags)
         return 0;
     }
     MPR->eventing = 1;
-#if UNUSED
-    mprInitWindow();
-#endif
     es = MPR->eventService;
     beginEventCount = eventCount = es->eventCount;
     es->now = mprGetTicks();

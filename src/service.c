@@ -412,7 +412,9 @@ PUBLIC void httpAddHost(Http *http, HttpHost *host)
 
 PUBLIC void httpRemoveHost(Http *http, HttpHost *host)
 {
-    mprRemoveItem(http->hosts, host);
+    if (http) {
+        mprRemoveItem(http->hosts, host);
+    }
 }
 
 
@@ -715,7 +717,9 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 
 PUBLIC void httpRemoveConn(Http *http, HttpConn *conn)
 {
-    mprRemoveItem(http->connections, conn);
+    if (http) {
+        mprRemoveItem(http->connections, conn);
+    }
 }
 
 

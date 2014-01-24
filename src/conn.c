@@ -194,7 +194,7 @@ PUBLIC void httpConnTimeout(HttpConn *conn)
         if (conn->state < HTTP_STATE_FIRST) {
             httpDisconnect(conn);
             if (msg) {
-                mprError(msg);
+                mprLog(5, msg);
             }
         } else {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, msg);

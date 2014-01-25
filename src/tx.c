@@ -725,10 +725,12 @@ PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
 }
 
 
+
 /*
     Set the filename. The filename may be outside the route documents. So caller must take care.
+    This will update HttpTx.ext and HttpTx.fileInfo.
  */
-PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, bool bypass)
+PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
 {
     HttpTx      *tx;
     MprPath     *info;
@@ -736,18 +738,35 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, bool bypass)
     assert(conn);
 
     tx = conn->tx;
-    tx->bypassDocuments = bypass;
     info = &tx->fileInfo;
-    tx->filename = sclone(filename);
-    if ((tx->ext = httpGetPathExt(tx->filename)) == 0) {
+    tx->flags &= (HTTP_TX_NO_CHECK | HTTP_TX_NO_MAP);
+    tx->flags |= (flags & (HTTP_TX_NO_CHECK | HTTP_TX_NO_MAP));
+
+    if (filename == 0) {
+        tx->filename = 0;
+        tx->ext = 0;
+        info->checked = info->valid = 0;
+        mprTrace(7, "httpSetFilename clear filename");
+        return;
+    }
+    if (!(tx->flags & HTTP_TX_NO_CHECK)) {
+        if (!mprIsAbsPathContained(filename, conn->rx->route->documents)) {
+            info->checked = 1;
+            info->valid = 0;
+            httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad URL");
+            return;
+        }
+    }
+    if ((tx->ext = httpGetPathExt(filename)) == 0) {
         tx->ext = httpGetPathExt(conn->rx->pathInfo);
     }
-    mprGetPathInfo(tx->filename, info);
+    mprGetPathInfo(filename, info);
     if (info->valid) {
-        //  OPT - inodes mean this is harder to cache when served from multiple servers.
+        //  OPT - using inodes mean this is harder to cache when served from multiple servers.
         tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
     }
-    mprTrace(7, "mapFile uri \"%s\", filename: \"%s\", extension: \"%s\"", conn->rx->uri, tx->filename, tx->ext);
+    tx->filename = sclone(filename);
+    mprTrace(7, "httpSetFilename uri \"%s\", filename: \"%s\", extension: \"%s\"", conn->rx->uri, tx->filename, tx->ext);
 }
 
 

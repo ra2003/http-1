@@ -138,13 +138,13 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         httpPrepClientConn(conn, 0);
     }
     assert(conn->state == HTTP_STATE_BEGIN);
+    conn->tx->parsedUri = httpCreateUri(uri, HTTP_COMPLETE_URI_PATH);
 
     if (openConnection(conn, ssl) == 0) {
         return MPR_ERR_CANT_OPEN;
     }
     conn->authRequested = 0;
     conn->tx->method = supper(method);
-    conn->tx->parsedUri = httpCreateUri(uri, HTTP_COMPLETE_URI_PATH);
     conn->startMark = mprGetHiResTicks();
     /*
         The receive pipeline is created when parsing the response in parseIncoming()

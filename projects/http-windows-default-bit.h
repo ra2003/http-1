@@ -109,6 +109,9 @@
 #ifndef BIT_VERSION
     #define BIT_VERSION "4.5.0"
 #endif
+#ifndef BIT_WHO
+    #define BIT_WHO "embedthis"
+#endif
 #ifndef BIT_WITHOUT_ALL
     #define BIT_WITHOUT_ALL "doxygen,dsi,man,man2html,pmaker,ssl"
 #endif

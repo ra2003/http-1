@@ -7,6 +7,9 @@
 
 
 /* Settings */
+#ifndef BIT_AUTHOR
+    #define BIT_AUTHOR "Embedthis Software"
+#endif
 #ifndef BIT_BIT
     #define BIT_BIT "0.9.3"
 #endif
@@ -14,7 +17,7 @@
     #define BIT_BUILD_NUMBER 0
 #endif
 #ifndef BIT_COMPANY
-    #define BIT_COMPANY "Embedthis Software"
+    #define BIT_COMPANY "embedthis"
 #endif
 #ifndef BIT_COMPATIBLE
     #define BIT_COMPATIBLE "4.5.0"
@@ -24,6 +27,9 @@
 #endif
 #ifndef BIT_DEPTH
     #define BIT_DEPTH 1
+#endif
+#ifndef BIT_DESCRIPTION
+    #define BIT_DESCRIPTION "Embedthis Http Library"
 #endif
 #ifndef BIT_DISCOVER
     #define BIT_DISCOVER "doxygen,dsi,man,man2html,ssl,utest"
@@ -100,6 +106,9 @@
 #ifndef BIT_HTTP_WEB_SOCKETS
     #define BIT_HTTP_WEB_SOCKETS 1
 #endif
+#ifndef BIT_NAME
+    #define BIT_NAME "http"
+#endif
 #ifndef BIT_PREFIXES
     #define BIT_PREFIXES "embedthis-prefixes"
 #endif
@@ -126,9 +135,6 @@
 #endif
 #ifndef BIT_WARN_UNUSED
     #define BIT_WARN_UNUSED 0
-#endif
-#ifndef BIT_WHO
-    #define BIT_WHO "embedthis"
 #endif
 #ifndef BIT_WITHOUT_ALL
     #define BIT_WITHOUT_ALL "doxygen,dsi,man,man2html,pmaker,ssl"

@@ -823,7 +823,7 @@ fi";
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0430;
-				ORGANIZATIONNAME = "Embedthis Software";
+				ORGANIZATIONNAME = "embedthis";
 			};
 			buildConfigurationList = 8D6C0C438D6C373300000002 /* Build configuration list for PBXProject "http" */;
 			compatibilityVersion = "Xcode 3.2";

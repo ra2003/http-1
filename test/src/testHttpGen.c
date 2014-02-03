@@ -62,7 +62,7 @@ static void testCreateHttp(MprTestGroup *gp)
 
     th = gp->data;
     th->http = http = httpCreate(HTTP_SERVER_SIDE);
-    assert(http != 0);
+    tassert(http != 0);
     httpDestroy(http);
 }
 
@@ -77,22 +77,22 @@ static void testBasicHttpGet(MprTestGroup *gp)
 
     th = gp->data;
     th->http = http = httpCreate(HTTP_CLIENT_SIDE);
-    assert(http != 0);
+    tassert(http != 0);
 
     th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
 
     rc = httpConnect(conn, "GET", "http://embedthis.com/index.html", NULL);
-    assert(rc >= 0);
+    tassert(rc >= 0);
     if (rc >= 0) {
         httpWait(conn, HTTP_STATE_COMPLETE, 10 * 1000);
         status = httpGetStatus(conn);
-        assert(status == 200 || status == 302);
+        tassert(status == 200 || status == 302);
         if (status != 200 && status != 302) {
             mprLog(0, "HTTP response status %d", status);
         }
-        assert(httpGetError(conn) != 0);
+        tassert(httpGetError(conn) != 0);
         length = httpGetContentLength(conn);
-        assert(length != 0);
+        tassert(length != 0);
     }
     httpDestroy(http);
 }
@@ -108,17 +108,17 @@ static void testSecureHttpGet(MprTestGroup *gp)
 
     th = gp->data;
     th->http = http = httpCreate(HTTP_CLIENT_SIDE);
-    assert(http != 0);
+    tassert(http != 0);
     th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
-    assert(conn != 0);
+    tassert(conn != 0);
 
-    rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
-    assert(rc >= 0);
+    rc = httpConnect(conn, "GET", "https://www.embedthis.com/", NULL);
+    tassert(rc >= 0);
     if (rc >= 0) {
         httpFinalize(conn);
         httpWait(conn, HTTP_STATE_COMPLETE, MPR_TIMEOUT_SOCKETS);
         status = httpGetStatus(conn);
-        assert(status == 200 || status == 301 || status == 302);
+        tassert(status == 200 || status == 301 || status == 302);
         if (status != 200 && status != 301 && status != 302) {
             mprLog(0, "HTTP response status %d", status);
         }
@@ -128,9 +128,59 @@ static void testSecureHttpGet(MprTestGroup *gp)
 #endif
 
 
-#if FUTURE && TODO
-    httpRequest
-#endif
+static void testStealSocket(MprTestGroup *gp)
+{
+    TestHttp    *th;
+    Http        *http;
+    HttpConn    *conn;
+    MprSocket   *sp, *prior;
+    int         fd, rc, priorState;
+
+    th = gp->data;
+    th->http = http = httpCreate(HTTP_CLIENT_SIDE);
+    tassert(http != 0);
+
+    /*
+        Test httpStealSocket
+     */
+    th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
+    tassert(conn != 0);
+    rc = httpConnect(conn, "GET", "https://www.embedthis.com/", NULL);
+    tassert(rc >= 0);
+    if (rc >= 0) {
+        tassert(conn->sock);
+        tassert(conn->sock->fd != INVALID_SOCKET);
+        prior = conn->sock;
+        sp = httpStealSocket(conn);
+        assert(sp != conn->sock);
+        assert(prior == conn->sock);
+        tassert(conn->state == HTTP_STATE_COMPLETE);
+        tassert(sp->fd != INVALID_SOCKET);
+        tassert(conn->sock->fd == INVALID_SOCKET);
+        mprCloseSocket(sp, 0);
+    }
+
+
+    /*
+        Test httpStealSocketHandle
+     */
+    th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
+    tassert(conn != 0);
+    rc = httpConnect(conn, "GET", "https://www.embedthis.com/", NULL);
+    tassert(rc >= 0);
+    if (rc >= 0) {
+        tassert(conn->sock);
+        tassert(conn->sock->fd != INVALID_SOCKET);
+        priorState = conn->state;
+        fd = httpStealSocketHandle(conn);
+        tassert(conn->state == priorState);
+        tassert(fd != INVALID_SOCKET);
+        tassert(conn->sock->fd == INVALID_SOCKET);
+        closesocket(fd);
+    }
+
+    httpDestroy(http);
+}
 
 
 MprTestDef testHttpGen = {
@@ -141,6 +191,7 @@ MprTestDef testHttpGen = {
 #if BIT_FEATURE_SSL
         MPR_TEST(0, testSecureHttpGet),
 #endif
+        MPR_TEST(0, testStealSocket),
         MPR_TEST(0, 0),
     },
 };

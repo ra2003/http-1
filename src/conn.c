@@ -144,7 +144,7 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->password);
 
     } else if (flags & MPR_MANAGE_FREE) {
-        if (conn->http) {
+        if (!conn->destroyed) {
             httpDestroyConn(conn);
         }
     }
@@ -175,10 +175,9 @@ static void connTimeout(HttpConn *conn, MprEvent *event)
     HttpLimits  *limits;
     cchar       *msg, *prefix;
 
-    if (!conn->http) {
+    if (conn->destroyed) {
         return;
     }
-    assert(conn->dispatcher == event->dispatcher);
     assert(conn->tx);
     assert(conn->rx);
 
@@ -223,12 +222,11 @@ static void connTimeout(HttpConn *conn, MprEvent *event)
 
 PUBLIC void httpScheduleConnTimeout(HttpConn *conn) 
 {
-    assert(conn->http);
-    if (!conn->timeoutEvent) {
+    if (!conn->timeoutEvent && !conn->destroyed) {
         /* 
             Will run on the HttpConn dispatcher unless shutting down and it is destroyed already 
          */
-        conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, connTimeout, conn, MPR_EVENT_QUICK);
+        conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, connTimeout, conn, 0);
     }
 }
 
@@ -425,7 +423,7 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
     HttpPacket  *packet;
     ssize       size;
 
-    if (!conn->http) {
+    if (conn->destroyed) {
         /* Connection has been destroyed */
         return;
     }
@@ -544,13 +542,17 @@ PUBLIC void httpUsePrimary(HttpConn *conn)
 /*
     Steal the socket object from a connection. This disconnects the socket from management by the Http service.
     It is the callers responsibility to call mprCloseSocket when required.
+    Harder than it looks. We clone the socket, steal the socket handle and set the connection socket handle to invalid.
+    This preserves the HttpConn.sock object for the connection and returns a new MprSocket for the caller.
  */
 PUBLIC MprSocket *httpStealSocket(HttpConn *conn)
 {
     MprSocket   *sock;
 
     assert(conn->sock);
-    if (conn->http) {
+    assert(!conn->destroyed);
+
+    if (!conn->destroyed) {
         lock(conn->http);
         sock = mprCloneSocket(conn->sock);
         (void) mprStealSocketHandle(conn->sock);
@@ -571,7 +573,8 @@ PUBLIC MprSocket *httpStealSocket(HttpConn *conn)
 
 /*
     Steal the O/S socket handle a connection's socket. This disconnects the socket handle from management by the connection.
-    It is the callers responsibility to call close() when required.
+    It is the callers responsibility to call close() on the Socket when required.
+    Note: this does not change the state of the connection. 
  */
 PUBLIC Socket httpStealSocketHandle(HttpConn *conn)
 {

@@ -68,7 +68,7 @@ PUBLIC HttpStatusCode HttpStatusCodes[] = {
 /****************************** Forward Declarations **************************/
 
 static void httpTimer(Http *http, MprEvent *event);
-static bool isIdle();
+static bool isIdle(bool traceRequests);
 static void manageHttp(Http *http, int flags);
 static void terminateHttp(int state, int how, int status);
 static void updateCurrentDate(Http *http);
@@ -208,37 +208,6 @@ static void manageHttp(Http *http, int flags)
 
 
 /*
-    Stop listening endpoints. If shutdown is not graceful, abort running requests.
-    Called from terminateHttp
- */
-static void stopHttp(int how)
-{
-    Http            *http;
-    HttpEndpoint    *endpoint;
-    int             next;
-
-    if ((http = MPR->httpService) == 0) {
-        return;
-    }
-    if (how & MPR_EXIT_DEFAULT) {
-        how = MPR->exitStrategy;
-    }
-    /* 
-        Close the listening endpoints - this stops all new requests 
-     */
-    for (ITERATE_ITEMS(http->endpoints, endpoint, next)) {
-        httpStopEndpoint(endpoint);
-    }
-    if (!(how & MPR_EXIT_GRACEFUL)) {
-        /* 
-            Abort running requests by simulating a timeout expiry 
-         */
-        httpTimer(http, 0);
-    }
-}
-
-
-/*
     Called to close all connections owned by a service (e.g. ejs)
  */
 PUBLIC void httpStopConnections(void *data)
@@ -267,10 +236,14 @@ PUBLIC void httpStopConnections(void *data)
 PUBLIC void httpDestroy() 
 {
     Http            *http;
+    HttpEndpoint    *endpoint;
+    int             next;
 
     if ((http = MPR->httpService) == 0) {
         return;
     }
+    httpStopConnections(0);
+
     if (http->timer) {
         mprRemoveEvent(http->timer);
         http->timer = 0;
@@ -279,7 +252,9 @@ PUBLIC void httpDestroy()
         mprRemoveEvent(http->timestamp);
         http->timestamp = 0;
     }
-    httpStopConnections(0);
+    for (ITERATE_ITEMS(http->endpoints, endpoint, next)) {
+        httpStopEndpoint(endpoint);
+    }
     MPR->httpService = NULL;
 }
 
@@ -289,10 +264,7 @@ PUBLIC void httpDestroy()
  */
 static void terminateHttp(int state, int how, int status)
 {
-    if (state == MPR_STOPPING) {
-        stopHttp(how);
-
-    } else if (state == MPR_DESTROYING) {
+    if (state >= MPR_STOPPED) {
         httpDestroy();
     }
 }
@@ -301,7 +273,7 @@ static void terminateHttp(int state, int how, int status)
 /*
     Test if the http service (including MPR) is idle with no running requests
  */
-static bool isIdle()
+static bool isIdle(bool traceRequests)
 {
     HttpConn        *conn;
     Http            *http;
@@ -314,10 +286,9 @@ static bool isIdle()
         lock(http->connections);
         for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
             if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
-                if (lastTrace < now) {
+                if (traceRequests && lastTrace < now) {
                     if (conn->rx) {
-                        mprLog(2, "http: Request for \"%s\" is still active", 
-                            conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
+                        mprLog(2, "http: Request for \"%s\" is still active", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
                     }
                     lastTrace = now;
                 }
@@ -329,14 +300,7 @@ static bool isIdle()
     } else {
         now = mprGetTicks();
     }
-    if (!mprServicesAreIdle()) {
-        if (lastTrace < now) {
-            mprLog(3, "Waiting for MPR services complete");
-            lastTrace = now;
-        }
-        return 0;
-    }
-    return 1;
+    return mprServicesAreIdle(traceRequests);
 }
 
 
@@ -500,6 +464,9 @@ PUBLIC void httpAddStage(Http *http, HttpStage *stage)
 
 PUBLIC HttpStage *httpLookupStage(Http *http, cchar *name)
 {
+    if (!http) {
+        return 0;
+    }
     return mprLookupKey(http->stages, name);
 }
 
@@ -507,6 +474,10 @@ PUBLIC HttpStage *httpLookupStage(Http *http, cchar *name)
 PUBLIC void *httpLookupStageData(Http *http, cchar *name)
 {
     HttpStage   *stage;
+
+    if (!http) {
+        return 0;
+    }
     if ((stage = mprLookupKey(http->stages, name)) != 0) {
         return stage->stageData;
     }

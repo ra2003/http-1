@@ -141,6 +141,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->defaultLanguage = parent->defaultLanguage;
     route->documents = parent->documents;
     route->home = parent->home;
+    route->envPrefix = parent->envPrefix;
     route->data = parent->data;
     route->eroute = parent->eroute;
     route->errorDocuments = parent->errorDocuments;
@@ -214,6 +215,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->target);
         mprMark(route->documents);
         mprMark(route->home);
+        mprMark(route->envPrefix);
         mprMark(route->indicies);
         mprMark(route->handler);
         mprMark(route->caching);
@@ -1250,15 +1252,6 @@ PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
 }
 
 
-PUBLIC void httpSetRouteSessionVisibility(HttpRoute *route, bool visible)
-{
-    route->flags &= ~HTTP_ROUTE_VISIBLE_SESSION;
-    if (visible) {
-        route->flags |= HTTP_ROUTE_VISIBLE_SESSION;
-    }
-}
-
-
 PUBLIC void httpSetRouteData(HttpRoute *route, cchar *key, void *data)
 {
     assert(route);
@@ -1300,6 +1293,21 @@ PUBLIC void httpSetRouteFlags(HttpRoute *route, int flags)
 {
     assert(route);
     route->flags = flags;
+}
+
+
+PUBLIC void httpSetRouteEnvEscape(HttpRoute *route, bool on)
+{
+    route->flags &= ~(HTTP_ROUTE_ENV_ESCAPE);
+    if (on) {
+        route->flags |= HTTP_ROUTE_ENV_ESCAPE;
+    }
+}
+
+
+PUBLIC void httpSetRouteEnvPrefix(HttpRoute *route, cchar *prefix)
+{
+    route->envPrefix = sclone(prefix);
 }
 
 
@@ -1454,6 +1462,15 @@ PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
 }
 
 
+PUBLIC void httpSetRoutePreserveFrames(HttpRoute *route, bool on)
+{
+    route->flags &= ~HTTP_ROUTE_PRESERVE_FRAMES;
+    if (on) {
+        route->flags |= HTTP_ROUTE_PRESERVE_FRAMES;
+    }
+}
+
+
 PUBLIC void httpSetRouteServerPrefix(HttpRoute *route, cchar *prefix)
 {
     assert(route);
@@ -1471,11 +1488,11 @@ PUBLIC void httpSetRouteServerPrefix(HttpRoute *route, cchar *prefix)
 }
 
 
-PUBLIC void httpSetRoutePreserveFrames(HttpRoute *route, bool on)
+PUBLIC void httpSetRouteSessionVisibility(HttpRoute *route, bool visible)
 {
-    route->flags &= ~HTTP_ROUTE_PRESERVE_FRAMES;
-    if (on) {
-        route->flags |= HTTP_ROUTE_PRESERVE_FRAMES;
+    route->flags &= ~HTTP_ROUTE_VISIBLE_SESSION;
+    if (visible) {
+        route->flags |= HTTP_ROUTE_VISIBLE_SESSION;
     }
 }
 

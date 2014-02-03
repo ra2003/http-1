@@ -148,7 +148,7 @@ static void testStealSocket(MprTestGroup *gp)
     rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
     tassert(rc >= 0);
     if (rc >= 0) {
-        tassert(conn->sock);
+        tassert(conn->sock != 0);
         tassert(conn->sock->fd != INVALID_SOCKET);
         prior = conn->sock;
         sp = httpStealSocket(conn);
@@ -169,7 +169,7 @@ static void testStealSocket(MprTestGroup *gp)
     rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
     tassert(rc >= 0);
     if (rc >= 0) {
-        tassert(conn->sock);
+        tassert(conn->sock != 0);
         tassert(conn->sock->fd != INVALID_SOCKET);
         priorState = conn->state;
         fd = httpStealSocketHandle(conn);

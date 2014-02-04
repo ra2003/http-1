@@ -6005,6 +6005,7 @@ typedef struct HttpTx {
     HttpUri         *parsedUri;             /**< Client request uri */
     char            *method;                /**< Client request method GET, HEAD, POST, DELETE, OPTIONS, PUT, TRACE */
     cchar           *errorDocument;         /**< Error document to render */
+    char            *authType;              /**< Type of authentication: set to basic, digest, post or a custom name */
 
     struct HttpConn *conn;                  /**< Current connection object */
     MprList         *outputPipeline;        /**< Output processing */

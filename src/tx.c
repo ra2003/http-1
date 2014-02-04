@@ -60,6 +60,7 @@ static void manageTx(HttpTx *tx, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(tx->altBody);
+        mprMark(tx->authType);
         mprMark(tx->cache);
         mprMark(tx->cacheBuffer);
         mprMark(tx->cachedContent);
@@ -881,6 +882,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
     }
     tx->headerSize = mprGetBufLength(buf);
     tx->flags |= HTTP_TX_HEADERS_CREATED;
+    tx->authType = conn->authType;
     q->count += httpGetPacketLength(packet);
 }
 

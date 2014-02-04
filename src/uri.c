@@ -792,7 +792,8 @@ PUBLIC char *httpUriEx(HttpConn *conn, cchar *target, MprHash *options)
     //  OPT
     target = httpTemplate(conn, tplate, options);
     uri = httpCreateUri(target, 0);
-    uri = httpResolveUri(httpCreateUri(rx->uri, 0), 1, &uri, 0);
+    //  MOB - was httpCreateUri(rx->uri)
+    uri = httpResolveUri(rx->parsedUri, 1, &uri, 0);
     httpNormalizeUri(uri);
     return httpUriToString(uri, 0);
 }

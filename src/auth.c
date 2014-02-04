@@ -35,18 +35,18 @@ PUBLIC void httpInitAuth(Http *http)
     httpAddAuthType("digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
     httpAddAuthType("form", formLogin, NULL, NULL);
 
-    httpAddAuthStore("app", NULL);
-    httpAddAuthStore("internal", fileVerifyUser);
+    httpCreateAuthStore("app", NULL);
+    httpCreateAuthStore("internal", fileVerifyUser);
 #if BIT_HAS_PAM && BIT_HTTP_PAM
-    httpAddAuthStore("system", httpPamVerifyUser);
+    httpCreateAuthStore("system", httpPamVerifyUser);
 #endif
 #if DEPRECATE || 1
     /*
         Deprecated in 4.4. Use "internal"
      */
-    httpAddAuthStore("file", fileVerifyUser);
+    httpCreateAuthStore("file", fileVerifyUser);
 #if BIT_HAS_PAM && BIT_HTTP_PAM
-    httpAddAuthStore("pam", httpPamVerifyUser);
+    httpCreateAuthStore("pam", httpPamVerifyUser);
 #endif
 #endif
 }
@@ -56,13 +56,15 @@ PUBLIC bool httpAuthenticate(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpAuth    *auth;
-    cchar       *username;
+    cchar       *ip, *username;
 
     rx = conn->rx;
     auth = rx->route->auth;
 
     if (!rx->authenticated) {
-        if ((username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0)) == 0) {
+        ip = httpGetSessionVar(conn, HTTP_SESSION_IP, 0);
+        username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0);
+        if (!smatch(ip, conn->ip) || !username) {
             if (auth->username && *auth->username) {
                 httpLogin(conn, auth->username, NULL);
                 username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0);
@@ -158,10 +160,13 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     if (!(verifyUser)(conn, username, password)) {
         return 0;
     }
-    if ((session = httpCreateSession(conn)) == 0) {
-        return 0;
+    if (!auth->store->noSession) {
+        if ((session = httpCreateSession(conn)) == 0) {
+            return 0;
+        }
+        httpSetSessionVar(conn, HTTP_SESSION_USERNAME, username);
+        httpSetSessionVar(conn, HTTP_SESSION_IP, conn->ip);
     }
-    httpSetSessionVar(conn, HTTP_SESSION_USERNAME, username);
     rx->authenticated = 1;
     conn->username = sclone(username);
     conn->encoded = 0;
@@ -339,22 +344,33 @@ static void manageAuthStore(HttpAuthStore *store, int flags)
 }
 
 
-PUBLIC int httpAddAuthStore(cchar *name, HttpVerifyUser verifyUser)
+PUBLIC HttpAuthStore *httpCreateAuthStore(cchar *name, HttpVerifyUser verifyUser)
 {
     Http            *http;
     HttpAuthStore   *store;
 
     if ((store = mprAllocObj(HttpAuthStore, manageAuthStore)) == 0) {
-        return MPR_ERR_CANT_CREATE;
+        return 0;
     }
     store->name = sclone(name);
     store->verifyUser = verifyUser;
     http = MPR->httpService;
     if (mprAddKey(http->authStores, name, store) == 0) {
+        return 0;
+    }
+    return store;
+}
+
+
+#if DEPRECATED || 1
+PUBLIC int httpAddAuthStore(cchar *name, HttpVerifyUser verifyUser)
+{
+    if (httpCreateAuthStore(name, verifyUser) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     return 0;
 }
+#endif
 
 
 PUBLIC void httpSetAuthVerify(HttpAuth *auth, HttpVerifyUser verifyUser)
@@ -552,6 +568,13 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
     }
     GRADUATE_HASH(auth, userCache);
     return 0;
+}
+
+
+PUBLIC void httpSetAuthStoreSessions(HttpAuthStore *store, bool noSession)
+{
+    assert(store);
+    store->noSession = noSession;
 }
 
 

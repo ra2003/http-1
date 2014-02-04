@@ -792,7 +792,11 @@ PUBLIC char *httpUriEx(HttpConn *conn, cchar *target, MprHash *options)
     //  OPT
     target = httpTemplate(conn, tplate, options);
     uri = httpCreateUri(target, 0);
-    //  MOB - was httpCreateUri(rx->uri)
+    /*
+        This was changed from: httpCreateUri(rx->uri) to rx->parsedUri.
+        The use case was appweb: /auth/form/login which redirects using: https:///auth/form/login on localhost:4443
+        This must extract the existing host and port from the prior request
+     */
     uri = httpResolveUri(rx->parsedUri, 1, &uri, 0);
     httpNormalizeUri(uri);
     return httpUriToString(uri, 0);

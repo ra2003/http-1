@@ -81,7 +81,7 @@ static void testBasicHttpGet(MprTestGroup *gp)
 
     th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
 
-    rc = httpConnect(conn, "GET", "http://embedthis.com/index.html", NULL);
+    rc = httpConnect(conn, "GET", "http://www.ibm.com/index.html", NULL);
     tassert(rc >= 0);
     if (rc >= 0) {
         httpWait(conn, HTTP_STATE_COMPLETE, 10 * 1000);
@@ -112,7 +112,7 @@ static void testSecureHttpGet(MprTestGroup *gp)
     th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
     tassert(conn != 0);
 
-    rc = httpConnect(conn, "GET", "https://www.embedthis.com/", NULL);
+    rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
     tassert(rc >= 0);
     if (rc >= 0) {
         httpFinalize(conn);

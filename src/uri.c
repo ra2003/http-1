@@ -317,7 +317,6 @@ PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
     } else {
         if (!uri->host) {
             uri->host = base->host;
-            /* Must not add a port if there is already a host */
             if (!uri->port) {
                 uri->port = base->port;
             }
@@ -671,8 +670,17 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
 
     for (i = 0; i < argc; i++) {
         other = others[i];
-        if (other->scheme) {
+        if (other->scheme && !smatch(current->scheme, other->scheme)) {
             current->scheme = sclone(other->scheme);
+            /*
+                If the scheme is changed (test above), then accept an explict port.
+                If no port, then must not use the current port as the scheme has changed.
+             */
+            if (other->port) {
+                current->port = other->port;
+            } else if (current->port) {
+                current->port = 0;
+            }
         }
         if (other->host) {
             current->host = sclone(other->host);

@@ -1490,7 +1490,7 @@ PUBLIC void httpSetMethod(HttpConn *conn, cchar *method)
 static int setParsedUri(HttpConn *conn)
 {
     HttpRx      *rx;
-    char        *cp;
+    HttpUri     *up;
     cchar       *hostname;
 
     rx = conn->rx;
@@ -1503,16 +1503,14 @@ static int setParsedUri(HttpConn *conn)
         Complete the URI based on the connection state.
         Must have a complete scheme, host, port and path.
      */
-    rx->parsedUri->scheme = sclone(conn->secure ? "https" : "http");
+    up = rx->parsedUri;
+    up->scheme = sclone(conn->secure ? "https" : "http");
     hostname = rx->hostHeader ? rx->hostHeader : conn->host->name;
     if (!hostname) {
         hostname = conn->sock->acceptIp;
     }
-    rx->parsedUri->host = sclone(hostname);
-    if ((cp = strchr(rx->parsedUri->host, ':')) != 0) {
-        *cp = '\0';
-    }
-    rx->parsedUri->port = conn->sock->listenSock->port;
+    mprParseSocketAddress(hostname, &up->host, NULL, NULL, 0);
+    up->port = conn->sock->listenSock->port;
     return 0;
 }
 

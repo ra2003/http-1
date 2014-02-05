@@ -3,7 +3,7 @@
 #
 
 PRODUCT            = http
-VERSION            = 4.5.0
+VERSION            = 4.5.1
 PROFILE            = default
 PA                 = $(PROCESSOR_ARCHITECTURE)
 
@@ -209,7 +209,7 @@ clean:
 #   version
 #
 version: $(DEPS_1)
-	echo 4.5.0
+	echo 4.5.1
 
 #
 #   est.h

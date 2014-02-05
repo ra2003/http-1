@@ -530,14 +530,17 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     if (path == 0) {
         path = "/";
     }
-    domain = (char*) cookieDomain;
-    if (!domain) {
-        domain = sclone(rx->hostHeader);
-        if ((cp = strchr(domain, ':')) != 0) {
-            *cp = '\0';
+    domain = 0;
+    if (cookieDomain) {
+        if (*cookieDomain) {
+            domain = (char*) cookieDomain;
+        } else {
+            /* Omit domain if set to empty string */
         }
-        if (*domain && domain[strlen(domain) - 1] == '.') {
-            domain[strlen(domain) - 1] = '\0';
+    } else if (rx->hostHeader) {
+        mprParseSocketAddress(rx->hostHeader, &domain, NULL, NULL, 0);
+        if (domain && (*domain == ':' || isdigit(*domain))) {
+            domain = 0;
         }
     }
     domainAtt = domain ? "; domain=" : "";

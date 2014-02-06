@@ -49,7 +49,7 @@ PUBLIC bool httpLookupSessionID(cchar *id)
 
     http = MPR->httpService;
     assert(http);
-    return mprReadCache(http->sessionCache, id, 0, 0) != 0;
+    return mprLookupCache(http->sessionCache, id, 0, 0) != 0;
 }
 
 

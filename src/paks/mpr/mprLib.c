@@ -4915,6 +4915,39 @@ PUBLIC int64 mprIncCache(MprCache *cache, cchar *key, int64 amount)
 }
 
 
+PUBLIC char *mprLookupCache(MprCache *cache, cchar *key, MprTime *modified, int64 *version)
+{
+    CacheItem   *item;
+    char        *result;
+
+    assert(cache);
+    assert(key);
+
+    if (cache->shared) {
+        cache = cache->shared;
+        assert(cache == shared);
+    }
+    lock(cache);
+    if ((item = mprLookupKey(cache->store, key)) == 0) {
+        unlock(cache);
+        return 0;
+    }
+    if (item->expires && item->expires <= mprGetTicks()) {
+        unlock(cache);
+        return 0;
+    }
+    if (version) {
+        *version = item->version;
+    }
+    if (modified) {
+        *modified = item->lastModified;
+    }
+    result = item->data;
+    unlock(cache);
+    return result;
+}
+
+
 PUBLIC char *mprReadCache(MprCache *cache, cchar *key, MprTime *modified, int64 *version)
 {
     CacheItem   *item;

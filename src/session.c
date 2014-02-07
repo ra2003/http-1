@@ -75,19 +75,23 @@ PUBLIC void httpSetSessionNotify(MprCacheProc callback)
 PUBLIC void httpDestroySession(HttpConn *conn)
 {
     Http        *http;
+    HttpRx      *rx;
     HttpSession *sp;
+    cchar       *cookie;
 
     http = conn->http;
+    rx = conn->rx;
     assert(http);
 
     lock(http);
     if ((sp = httpGetSession(conn, 0)) != 0) {
-        httpRemoveCookie(conn, HTTP_SESSION_COOKIE);
+        cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
+        httpRemoveCookie(conn, rx->route->cookie);
         mprExpireCacheItem(sp->cache, sp->id, 0);
         sp->id = 0;
-        conn->rx->session = 0;
+        rx->session = 0;
     }
-    conn->rx->sessionProbed = 0;
+    rx->sessionProbed = 0;
     unlock(http);
 }
 
@@ -109,7 +113,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 {
     Http        *http;
     HttpRx      *rx;
-    cchar       *data, *id;
+    cchar       *cookie, *data, *id;
     static int  nextSession = 0;
     int         flags;
 
@@ -143,7 +147,8 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 
             rx->session = allocSessionObj(conn, id, NULL);
             flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
-            httpSetCookie(conn, HTTP_SESSION_COOKIE, rx->session->id, "/", NULL, rx->session->lifespan, flags);
+            cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
+            httpSetCookie(conn, cookie, rx->session->id, "/", NULL, rx->session->lifespan, flags);
 
             if ((rx->route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
                 httpSetSessionVar(conn, BIT_XSRF_COOKIE, rx->securityToken);
@@ -285,6 +290,7 @@ PUBLIC int httpWriteSession(HttpConn *conn)
 PUBLIC cchar *httpGetSessionID(HttpConn *conn)
 {
     HttpRx  *rx;
+    cchar   *cookie;
 
     assert(conn);
     rx = conn->rx;
@@ -299,7 +305,8 @@ PUBLIC cchar *httpGetSessionID(HttpConn *conn)
         return 0;
     }
     rx->sessionProbed = 1;
-    return httpGetCookie(conn, HTTP_SESSION_COOKIE);
+    cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
+    return httpGetCookie(conn, cookie);
 }
 
 

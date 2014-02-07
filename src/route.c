@@ -174,6 +174,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->sourceName = parent->sourceName;
     route->ssl = parent->ssl;
     route->target = parent->target;
+    route->cookie = parent->cookie;
     route->targetRule = parent->targetRule;
     route->tokens = parent->tokens;
     route->updates = parent->updates;
@@ -260,6 +261,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->corsOrigin);
         mprMark(route->corsHeaders);
         mprMark(route->corsMethods);
+        mprMark(route->cookie);
 
     } else if (flags & MPR_MANAGE_FREE) {
         if (route->patternCompiled && (route->flags & HTTP_ROUTE_FREE_PATTERN)) {
@@ -1413,6 +1415,14 @@ PUBLIC void httpSetRouteMethods(HttpRoute *route, cchar *methods)
 {
     route->methods = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
     httpAddRouteMethods(route, methods);
+}
+
+
+PUBLIC void httpSetRouteCookie(HttpRoute *route, cchar *cookie)
+{
+    assert(route);
+    assert(cookie && *cookie);
+    route->cookie = cookie;
 }
 
 

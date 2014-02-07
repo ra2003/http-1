@@ -149,6 +149,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
             cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
             httpSetCookie(conn, cookie, rx->session->id, "/", NULL, rx->session->lifespan, flags);
+            mprLog(3, "session: create new cookie %s=%s", cookie, rx->session->id);
 
             if ((rx->route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
                 httpSetSessionVar(conn, BIT_XSRF_COOKIE, rx->securityToken);

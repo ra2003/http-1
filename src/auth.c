@@ -152,6 +152,12 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         mprError("No user verification routine defined on route %s", rx->route->name);
         return 0;
     }
+    if (!auth->store->noSession) {
+        if ((session = httpCreateSession(conn)) == 0) {
+            /* Too many sessions */
+            return 0;
+        }
+    }
     if (auth->username && *auth->username) {
         /* If using auto-login, replace the username */
         username = auth->username;
@@ -161,9 +167,6 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         return 0;
     }
     if (!auth->store->noSession) {
-        if ((session = httpCreateSession(conn)) == 0) {
-            return 0;
-        }
         httpSetSessionVar(conn, HTTP_SESSION_USERNAME, username);
         httpSetSessionVar(conn, HTTP_SESSION_IP, conn->ip);
     }

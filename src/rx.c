@@ -1217,6 +1217,10 @@ static void createErrorRequest(HttpConn *conn)
      */
     key = 0;
     headers = 0;
+    /*
+        Ensure buffer always has a trailing null (one past buf->end)
+     */
+    mprAddNullToBuf(buf);
     for (cp = buf->data; cp < &buf->end[-1]; cp++) {
         if (*cp == '\0') {
             if (cp[1] == '\n') {
@@ -1224,6 +1228,9 @@ static void createErrorRequest(HttpConn *conn)
                     headers = &cp[2];
                 }
                 *cp = '\r';
+                if (&cp[4] <= buf->end && cp[2] == '\r' && cp[3] == '\n') {
+                    cp[4] = '\0';
+                }
                 key = 0;
             } else if (!key) {
                 *cp = ':';

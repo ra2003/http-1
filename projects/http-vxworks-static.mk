@@ -102,7 +102,7 @@ TARGETS            += $(CONFIG)/bin/libmpr.a
 TARGETS            += $(CONFIG)/bin/libmprssl.a
 TARGETS            += $(CONFIG)/bin/makerom.out
 TARGETS            += $(CONFIG)/bin/testHttp.out
-TARGETS            += $(CONFIG)/bin/http
+TARGETS            += $(CONFIG)/bin/http.out
 
 unexport CDPATH
 
@@ -148,7 +148,7 @@ clean:
 	rm -f "$(CONFIG)/bin/makerom.out"
 	rm -f "$(CONFIG)/bin/testHttp.out"
 	rm -f "$(CONFIG)/bin/libhttp.a"
-	rm -f "$(CONFIG)/bin/http"
+	rm -f "$(CONFIG)/bin/http.out"
 	rm -f "$(CONFIG)/obj/estLib.o"
 	rm -f "$(CONFIG)/obj/pcre.o"
 	rm -f "$(CONFIG)/obj/mprLib.o"
@@ -982,9 +982,9 @@ ifeq ($(BIT_PACK_PCRE),1)
     LIBS_59 += -lpcre
 endif
 
-$(CONFIG)/bin/http: $(DEPS_59)
-	@echo '      [Link] $(CONFIG)/bin/http'
-	$(CC) -o $(CONFIG)/bin/http $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/http.o" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) -Wl,-r 
+$(CONFIG)/bin/http.out: $(DEPS_59)
+	@echo '      [Link] $(CONFIG)/bin/http.out'
+	$(CC) -o $(CONFIG)/bin/http.out $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/http.o" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) -Wl,-r 
 
 #
 #   stop

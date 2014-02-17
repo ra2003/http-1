@@ -134,7 +134,8 @@ static void testStealSocket(MprTestGroup *gp)
     Http        *http;
     HttpConn    *conn;
     MprSocket   *sp, *prior;
-    int         fd, rc, priorState;
+    Socket      fd;
+    int         rc, priorState;
 
     th = gp->data;
     th->http = http = httpCreate(HTTP_CLIENT_SIDE);

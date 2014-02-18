@@ -142,11 +142,6 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->authData);
         mprMark(conn->username);
         mprMark(conn->password);
-
-    } else if (flags & MPR_MANAGE_FREE) {
-        if (!conn->destroyed) {
-            httpDestroyConn(conn);
-        }
     }
 }
 

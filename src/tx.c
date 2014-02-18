@@ -82,9 +82,6 @@ static void manageTx(HttpTx *tx, int flags)
         mprMark(tx->queue[1]);
         mprMark(tx->rangeBoundary);
         mprMark(tx->webSockKey);
-
-    } else if (flags & MPR_MANAGE_FREE) {
-        httpDestroyTx(tx);
     }
 }
 

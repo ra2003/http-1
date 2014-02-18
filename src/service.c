@@ -94,7 +94,7 @@ PUBLIC Http *httpCreate(int flags)
     http->protocol = sclone("HTTP/1.1");
     http->mutex = mprCreateLock();
     http->stages = mprCreateHash(-1, MPR_HASH_STABLE);
-    http->hosts = mprCreateList(-1, MPR_LIST_STATIC_VALUES | MPR_LIST_STABLE);
+    http->hosts = mprCreateList(-1, MPR_LIST_STABLE);
     http->connections = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
     http->authTypes = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE | MPR_HASH_STABLE);
     http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE | MPR_HASH_STABLE);
@@ -121,7 +121,7 @@ PUBLIC Http *httpCreate(int flags)
     mprAddTerminator(terminateHttp);
 
     if (flags & HTTP_SERVER_SIDE) {
-        http->endpoints = mprCreateList(-1, MPR_LIST_STATIC_VALUES | MPR_LIST_STABLE);
+        http->endpoints = mprCreateList(-1, MPR_LIST_STABLE);
         http->counters = mprCreateList(-1, MPR_LIST_STABLE);
         http->monitors = mprCreateList(-1, MPR_LIST_STABLE);
         http->routeTargets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
@@ -167,8 +167,6 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->routeConditions);
         mprMark(http->routeUpdates);
         mprMark(http->sessionCache);
-        /* Don't mark convenience stage references as they will be in http->stages */
-
         mprMark(http->clientLimits);
         mprMark(http->serverLimits);
         mprMark(http->clientRoute);

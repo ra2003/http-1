@@ -100,11 +100,6 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->uploadDir);
         mprMark(rx->target);
         mprMark(rx->webSocket);
-
-    } else if (flags & MPR_MANAGE_FREE) {
-        if (rx->conn) {
-            rx->conn->rx = 0;
-        }
     }
 }
 

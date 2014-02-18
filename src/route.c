@@ -266,7 +266,6 @@ static void manageRoute(HttpRoute *route, int flags)
     } else if (flags & MPR_MANAGE_FREE) {
         if (route->patternCompiled && (route->flags & HTTP_ROUTE_FREE_PATTERN)) {
             free(route->patternCompiled);
-            route->patternCompiled = 0;
         }
     }
 }
@@ -2652,7 +2651,6 @@ static void manageRouteOp(HttpRouteOp *op, int flags)
     } else if (flags & MPR_MANAGE_FREE) {
         if (op->flags & HTTP_ROUTE_FREE) {
             free(op->mdata);
-            op->mdata = 0;
         }
     }
 }

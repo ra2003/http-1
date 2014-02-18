@@ -40,12 +40,6 @@ PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *disp
 
 PUBLIC void httpDestroyEndpoint(HttpEndpoint *endpoint)
 {
-#if KEEP
-    /*
-        Connections may survive and endpoint being closed
-     */
-    destroyEndpointConnections(endpoint);
-#endif
     if (endpoint->sock) {
         mprCloseSocket(endpoint->sock, 0);
         endpoint->sock = 0;
@@ -66,9 +60,6 @@ static int manageEndpoint(HttpEndpoint *endpoint, int flags)
         mprMark(endpoint->dispatcher);
         mprMark(endpoint->ssl);
         mprMark(endpoint->mutex);
-
-    } else if (flags & MPR_MANAGE_FREE) {
-        httpDestroyEndpoint(endpoint);
     }
     return 0;
 }

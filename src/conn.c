@@ -475,6 +475,9 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     rx = conn->rx;
     tx = conn->tx;
 
+    if (mprShouldAbortRequests()) {
+        return;
+    }
     if (conn->workerEvent) {
         /* TODO: This is never used */
         event = conn->workerEvent;
@@ -484,6 +487,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     }
     eventMask = 0;
     if (rx) {
+        //  TODO - REFACTOR
         if (conn->connError || 
            (tx->writeBlocked) || 
            (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) || 

@@ -67,7 +67,7 @@ MAIN(testMain, int argc, char **argv, char **envp)
      */
     rc = mprRunTests(ts);
     mprReportTestResults(ts);
-    mprDestroy(MPR_EXIT_DEFAULT);
+    mprDestroy();
     return (rc == 0) ? 0 : 6;
 }
 

@@ -549,7 +549,7 @@ static void httpTimer(Http *http, MprEvent *event)
                 abort = 1;
             } else if (!event) {
                 /* Called directly from httpStop to stop connections */
-                if (MPR->exitStrategy & MPR_EXIT_GRACEFUL) {
+                if (MPR->exitTimeout > 0) {
                     if (conn->state == HTTP_STATE_COMPLETE || 
                         (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED)) {
                         abort = 1;

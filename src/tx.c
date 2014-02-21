@@ -837,8 +837,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
                 mprPutToBuf(buf, "http://%s:%d%s?%s %s", http->proxyHost, http->proxyPort, 
                     parsedUri->path, parsedUri->query, conn->protocol);
             } else {
-                mprPutToBuf(buf, "http://%s:%d%s %s", http->proxyHost, http->proxyPort, parsedUri->path,
-                    conn->protocol);
+                mprPutToBuf(buf, "http://%s:%d%s %s", http->proxyHost, http->proxyPort, parsedUri->path, conn->protocol);
             }
         } else {
             if (parsedUri->query && *parsedUri->query) {

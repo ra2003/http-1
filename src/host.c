@@ -35,10 +35,12 @@ PUBLIC HttpHost *httpCreateHost()
     }
     mprSetCacheLimits(host->responseCache, 0, BIT_MAX_CACHE_DURATION, 0, 0);
 
-    host->mutex = mprCreateLock();
     host->routes = mprCreateList(-1, MPR_LIST_STABLE);
     host->flags = HTTP_HOST_NO_TRACE;
+#if UNUSED
     host->protocol = sclone("HTTP/1.1");
+    host->mutex = mprCreateLock();
+#endif
     host->streams = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
     httpSetStreaming(host, "application/x-www-form-urlencoded", NULL, 0);
     httpSetStreaming(host, "application/json", NULL, 0);
@@ -57,8 +59,9 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
     if ((host = mprAllocObj(HttpHost, manageHost)) == 0) {
         return 0;
     }
+#if UNUSED
     host->mutex = mprCreateLock();
-
+#endif
     /*
         The dirs and routes are all copy-on-write.
         Don't clone ip, port and name
@@ -67,7 +70,9 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
     host->responseCache = parent->responseCache;
     host->routes = parent->routes;
     host->flags = parent->flags | HTTP_HOST_VHOST;
+#if UNUSED
     host->protocol = parent->protocol;
+#endif
     host->streams = parent->streams;
     httpAddHost(http, host);
     return host;
@@ -82,8 +87,12 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->responseCache);
         mprMark(host->routes);
         mprMark(host->defaultRoute);
+#if UNUSED
         mprMark(host->protocol);
+#endif
+#if UNUSED
         mprMark(host->mutex);
+#endif
         mprMark(host->defaultEndpoint);
         mprMark(host->secureEndpoint);
         mprMark(host->streams);
@@ -212,10 +221,12 @@ PUBLIC void httpSetHostName(HttpHost *host, cchar *name)
 }
 
 
+#if UNUSED
 PUBLIC void httpSetHostProtocol(HttpHost *host, cchar *protocol)
 {
     host->protocol = sclone(protocol);
 }
+#endif
 
 
 PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)

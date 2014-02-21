@@ -341,7 +341,7 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
     mprAddRoot(conn);
 
     /* 
-       Open a connection to issue the GET. Then finalize the request output - this forces the request out.
+       Open a connection to issue the request. Then finalize the request output - this forces the request out.
      */
     if (httpConnect(conn, method, uri, NULL) < 0) {
         mprRemoveRoot(conn);

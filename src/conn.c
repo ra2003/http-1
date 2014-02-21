@@ -26,8 +26,8 @@ PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatche
     if ((conn = mprAllocObj(HttpConn, manageConn)) == 0) {
         return 0;
     }
-    conn->http = http;
     conn->protocol = http->protocol;
+    conn->http = http;
     conn->port = -1;
     conn->retries = HTTP_RETRIES;
     conn->endpoint = endpoint;

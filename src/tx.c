@@ -320,15 +320,6 @@ PUBLIC int httpIsOutputFinalized(HttpConn *conn)
 
 
 /*
-    Flush the write queue. Only in async mode, this call may yield. 
- */
-PUBLIC void httpFlush(HttpConn *conn)
-{
-    httpFlushQueue(conn->writeq, conn->async ? HTTP_NON_BLOCK : HTTP_BLOCK);
-}
-
-
-/*
     This formats a response and sets the altBody. The response is not HTML escaped.
     This is the lowest level for formatResponse.
  */

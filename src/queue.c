@@ -238,6 +238,21 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 }
 
 
+PUBLIC void httpFlush(HttpConn *conn)
+{
+    httpFlushQueue(conn->writeq, HTTP_NON_BLOCK);
+}
+
+
+/*
+    Flush the write queue. In sync mode, this call may yield. 
+ */
+PUBLIC void httpFlushAll(HttpConn *conn)
+{
+    httpFlushQueue(conn->writeq, conn->async ? HTTP_NON_BLOCK : HTTP_BLOCK);
+}
+
+
 PUBLIC void httpResumeQueue(HttpQueue *q)
 {
     if (q) {

@@ -103,6 +103,7 @@ static void manageConn(HttpConn *conn, int flags)
     assert(conn);
 
     if (flags & MPR_MANAGE_MARK) {
+        mprMark(conn->workerEvent);
         mprMark(conn->address);
         mprMark(conn->rx);
         mprMark(conn->tx);
@@ -479,9 +480,12 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     if (mprShouldAbortRequests() || conn->borrowed) {
         return;
     }
-#if UNUSED && KEEP
+#if DEPRECATE || 1
+    /*
+        Used by ejs
+     */
     if (conn->workerEvent) {
-        event = conn->workerEvent;
+        MprEvent *event = conn->workerEvent;
         conn->workerEvent = 0;
         mprQueueEvent(conn->dispatcher, event);
         return;
@@ -511,7 +515,10 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 }
 
 
-#if UNUSED && KEEP
+#if DEPRECATE || 1
+/*
+    Used by ejs
+ */
 PUBLIC void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
 {
     lock(conn->http);

@@ -80,9 +80,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->targetRule = sclone("run");
     route->autoDelete = 1;
     route->workers = -1;
-#if KEEP && UNUSED
-    route->protocol = sclone("HTTP/1.1");
-#endif
 
     route->headers = mprCreateList(-1, MPR_LIST_STABLE);
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
@@ -169,9 +166,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->optimizedPattern = parent->optimizedPattern;
     route->prefix = parent->prefix;
     route->prefixLen = parent->prefixLen;
-#if KEEP && UNUSED
-    route->protocol = parent->protocol;
-#endif
     route->serverPrefix = parent->serverPrefix;
     route->requestHeaders = parent->requestHeaders;
     route->responseStatus = parent->responseStatus;
@@ -215,9 +209,6 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->startSegment);
         mprMark(route->startWith);
         mprMark(route->optimizedPattern);
-#if KEEP && UNUSED
-        mprMark(route->protocol);
-#endif
         mprMark(route->prefix);
         mprMark(route->serverPrefix);
         mprMark(route->tplate);

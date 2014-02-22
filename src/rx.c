@@ -1080,7 +1080,7 @@ static bool processContent(HttpConn *conn)
             }
             httpSetState(conn, HTTP_STATE_READY);
         }
-        return conn->workerEvent ? 0 : 1;
+        return 1;
     }
     if (tx->started) {
         /*

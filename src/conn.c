@@ -121,7 +121,6 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->writeq);
         mprMark(conn->connectorq);
         mprMark(conn->timeoutEvent);
-        mprMark(conn->workerEvent);
         mprMark(conn->context);
         mprMark(conn->ejs);
         mprMark(conn->pool);
@@ -470,7 +469,6 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     HttpRx      *rx;
     HttpTx      *tx;
     HttpQueue   *q;
-    MprEvent    *event;
     MprSocket   *sp;
     int         eventMask;
 
@@ -481,19 +479,19 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     if (mprShouldAbortRequests() || conn->borrowed) {
         return;
     }
+#if UNUSED && KEEP
     if (conn->workerEvent) {
-        /* TODO: This is never used */
         event = conn->workerEvent;
         conn->workerEvent = 0;
         mprQueueEvent(conn->dispatcher, event);
         return;
     }
+#endif
     eventMask = 0;
     if (rx) {
-        //  TODO - REFACTOR
         if (conn->connError || 
-           (tx->writeBlocked) || 
-           (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) || 
+           /* TODO - should not need tx->writeBlocked or connectorq->count  */ 
+           (tx->writeBlocked) || (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) || 
            (httpQueuesNeedService(conn)) || 
            (mprSocketHasBufferedWrite(sp)) ||
            (rx->eof && tx->finalized && conn->state < HTTP_STATE_FINALIZED)) {
@@ -513,9 +511,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 }
 
 
-/*
-    TODO - this is never used
- */
+#if UNUSED && KEEP
 PUBLIC void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *event)
 {
     lock(conn->http);
@@ -526,6 +522,7 @@ PUBLIC void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *e
     conn->workerEvent = event;
     unlock(conn->http);
 }
+#endif
 
 
 PUBLIC void httpUsePrimary(HttpConn *conn)

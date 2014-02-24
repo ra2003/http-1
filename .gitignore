@@ -63,3 +63,4 @@ src/firefox.crt
 .flags
 TODO.md
 http.sublime-*
+src/paks/openssl

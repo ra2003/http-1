@@ -876,6 +876,14 @@ PUBLIC bool httpConfigure(HttpConfigureProc proc, void *data, MprTicks timeout)
 }
 
 
+PUBLIC void httpSetRequestLogCallback(HttpRequestCallback callback)
+{
+    Http    *http;
+
+    http = MPR->httpService;
+    http->logCallback = callback;
+}
+
 /*
     @copy   default
 

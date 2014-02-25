@@ -70,9 +70,9 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->defaultLanguage = sclone("en");
     route->home = route->documents = mprGetCurrentPath(".");
     route->flags = HTTP_ROUTE_STEALTH;
-    if (BIT_DEBUG) {
-        route->flags |= HTTP_ROUTE_SHOW_ERRORS;
-    }
+#if BIT_DEBUG
+    route->flags |= HTTP_ROUTE_SHOW_ERRORS;
+#endif
     route->host = host;
     route->http = MPR->httpService;
     route->lifespan = BIT_MAX_CACHE_DURATION;

@@ -657,9 +657,14 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
 
     lock(http);
     conn->seqno = (int) http->totalConnections++;
-    if ((!BIT_DEBUG || !mprGetDebugMode()) && !http->timer) {
-        http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
-            MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
+    if (!http->timer) {
+#if BIT_DEBUG
+        if (!mprGetDebugMode())
+#endif
+        {
+            http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
+                MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
+        }
     }
     unlock(http);
 }

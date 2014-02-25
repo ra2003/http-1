@@ -40,7 +40,7 @@ PUBLIC void httpInitAuth(Http *http)
 #if BIT_HAS_PAM && BIT_HTTP_PAM
     httpCreateAuthStore("system", httpPamVerifyUser);
 #endif
-#if DEPRECATE || 1
+#if DEPRECATED || 1
     /*
         Deprecated in 4.4. Use "internal"
      */
@@ -198,7 +198,7 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
     MprKey      *kp;
 
     auth = conn->rx->route->auth;
-#if DEPRECATE || 1
+#if DEPRECATED || 1
     if (auth->permittedUsers && !mprLookupKey(auth->permittedUsers, conn->username)) {
         mprLog(2, "User \"%s\" is not specified as a permitted user to access %s", conn->username, conn->rx->pathInfo);
         return 0;
@@ -272,7 +272,7 @@ PUBLIC HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
         auth->flags = parent->flags;
         auth->qop = parent->qop;
         auth->realm = parent->realm;
-#if DEPRECATE || 1
+#if DEPRECATED || 1
         auth->permittedUsers = parent->permittedUsers;
 #endif
         auth->abilities = parent->abilities;
@@ -295,7 +295,7 @@ static void manageAuth(HttpAuth *auth, int flags)
         mprMark(auth->deny);
         mprMark(auth->loggedIn);
         mprMark(auth->loginPage);
-#if DEPRECATE || 1
+#if DEPRECATED || 1
         mprMark(auth->permittedUsers);
 #endif
         mprMark(auth->qop);
@@ -389,7 +389,7 @@ PUBLIC void httpSetAuthAllow(HttpAuth *auth, cchar *allow)
 }
 
 
-#if DEPRECATE || 1
+#if DEPRECATED || 1
 PUBLIC void httpSetAuthAnyValidUser(HttpAuth *auth)
 {
     auth->permittedUsers = 0;
@@ -557,7 +557,7 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
     if ((auth->store = mprLookupKey(http->authStores, store)) == 0) {
         return MPR_ERR_CANT_FIND;
     }
-    //  DEPRECATE "pam"
+    //  DEPRECATED "pam"
     if (smatch(store, "system") || smatch(store, "pam")) {
 #if BIT_HAS_PAM && BIT_HTTP_PAM
         if (auth->type && smatch(auth->type->name, "digest")) {

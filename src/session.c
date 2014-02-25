@@ -377,7 +377,7 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
 
     if ((sessionToken = httpGetSessionVar(conn, BIT_XSRF_COOKIE, "")) != 0) {
         requestToken = httpGetHeader(conn, BIT_XSRF_HEADER);
-#if DEPRECATE || 1
+#if DEPRECATED || 1
         /*
             Deprecated in 4.4
         */

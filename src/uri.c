@@ -545,7 +545,7 @@ PUBLIC HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
 }
 
 
-#if DEPRECATE || 1
+#if DEPRECATED || 1
 PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
 {
     return httpUriEx(conn, target, options);

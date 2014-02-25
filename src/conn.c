@@ -480,7 +480,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     if (mprShouldAbortRequests() || conn->borrowed) {
         return;
     }
-#if DEPRECATE || 1
+#if DEPRECATED || 1
     /*
         Used by ejs
      */
@@ -515,7 +515,7 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 }
 
 
-#if DEPRECATE || 1
+#if DEPRECATED || 1
 /*
     Used by ejs
  */

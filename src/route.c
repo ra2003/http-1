@@ -711,7 +711,7 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
             }
         }
     }
-#if DEPRECATE || 1
+#if DEPRECATED || 1
     /* 
         Old style compression. Deprecated in 4.4 
      */
@@ -1227,7 +1227,7 @@ PUBLIC void httpSetRouteAutoDelete(HttpRoute *route, bool enable)
 }
 
 
-#if DEPRECATE || 1
+#if DEPRECATED || 1
 PUBLIC void httpSetRouteCompression(HttpRoute *route, int flags)
 {
     assert(route);
@@ -1275,14 +1275,14 @@ PUBLIC void httpSetRouteDocuments(HttpRoute *route, cchar *path)
 
     route->documents = httpMakePath(route, route->home, path);
     httpSetRouteVar(route, "DOCUMENTS", route->documents);
-#if DEPRECATE || 1
+#if DEPRECATED || 1
     httpSetRouteVar(route, "DOCUMENTS_DIR", route->documents);
     httpSetRouteVar(route, "DOCUMENT_ROOT", route->documents);
 #endif
 }
 
 
-#if DEPRECATE || 1
+#if DEPRECATED || 1
 PUBLIC void httpSetRouteDir(HttpRoute *route, cchar *path)
 {
     httpSetRouteDocuments(route, path);
@@ -2730,7 +2730,7 @@ static void definePathVars(HttpRoute *route)
     mprAddKey(route->vars, "VERSION", sclone(BIT_VERSION));
     mprAddKey(route->vars, "PLATFORM", sclone(BIT_PLATFORM));
     mprAddKey(route->vars, "BIN_DIR", mprGetAppDir());
-#if DEPRECATE || 1
+#if DEPRECATED || 1
     mprAddKey(route->vars, "LIBDIR", mprGetAppDir());
 #endif
     if (route->host) {
@@ -2746,7 +2746,7 @@ static void defineHostVars(HttpRoute *route)
     mprAddKey(route->vars, "HOME", route->home);
     mprAddKey(route->vars, "SERVER_NAME", route->host->name);
 
-#if DEPRECATE || 1
+#if DEPRECATED || 1
     mprAddKey(route->vars, "ROUTE_HOME", route->home);
     mprAddKey(route->vars, "DOCUMENT_ROOT", route->documents);
     mprAddKey(route->vars, "SERVER_ROOT", route->home);

@@ -1388,7 +1388,8 @@ PUBLIC cchar *httpGetCookie(HttpConn *conn, cchar *name)
     rx = conn->rx;
     assert(rx);
 
-    for (cookie = rx->cookie; cookie && (value = strstr(cookie, name)) != 0; cookie = value) {
+    cookie = rx->cookie; 
+    if (cookie && (value = strstr(cookie, name)) != 0) {
         value += strlen(name);
         while (isspace((uchar) *value) || *value == '=') {
             value++;

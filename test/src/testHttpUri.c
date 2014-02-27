@@ -49,7 +49,7 @@ static bool checkUri(HttpUri *uri, cchar *expected)
         printf("\nEXPECTED: %s\n", expected);
         printf("URI:      %s\n", s);
     }
-    return 1;
+    return smatch(s, expected);
 }
 
 
@@ -57,104 +57,104 @@ static void testCreateUri(MprTestGroup *gp)
 {
     HttpUri     *uri;
 
-#if 0
     uri = httpCreateUri(NULL, 0);
-    assert(checkUri(uri, "null-null-0-null-null-null-null"));
+    tassert(checkUri(uri, "null-null-0-null-null-null-null"));
 
     uri = httpCreateUri("", 0);
-    assert(checkUri(uri, "null-null-0-null-null-null-null"));
+    tassert(checkUri(uri, "null-null-0-null-null-null-null"));
 
     uri = httpCreateUri("http", 0);
-    assert(checkUri(uri, "null-http-0-null-null-null-null"));
+    tassert(checkUri(uri, "null-null-0-http-null-null-null"));
 
     uri = httpCreateUri("https", 0);
-    assert(checkUri(uri, "null-https-0-null-null-null-null"));
+    tassert(checkUri(uri, "null-null-0-https-null-null-null"));
     
     uri = httpCreateUri("http://", 0);
-    assert(checkUri(uri, "http-null-0-null-null-null-null"));
+    tassert(checkUri(uri, "http-null-0-null-null-null-null"));
 
     uri = httpCreateUri("https://", 0);
-    assert(checkUri(uri, "https-null-0-null-null-null-null"));
+    tassert(checkUri(uri, "https-null-0-null-null-null-null"));
 
     uri = httpCreateUri("http://:8080/", 0);
-    assert(checkUri(uri, "http-null-8080-/-null-null-null"));
+    tassert(checkUri(uri, "http-null-8080-/-null-null-null"));
 
     uri = httpCreateUri("http://:8080", 0);
-    assert(checkUri(uri, "http-null-8080-null-null-null-null"));
+    tassert(checkUri(uri, "http-null-8080-null-null-null-null"));
 
     uri = httpCreateUri("http:///", 0);
-    assert(checkUri(uri, "http-null-0-/-null-null-null"));
+    tassert(checkUri(uri, "http-null-0-/-null-null-null"));
 
     uri = httpCreateUri("http://localhost", 0);
-    assert(checkUri(uri, "http-localhost-0-null-null-null-null"));
+    tassert(checkUri(uri, "http-localhost-0-null-null-null-null"));
 
     uri = httpCreateUri("http://localhost/", 0);
-    assert(checkUri(uri, "http-localhost-0-/-null-null-null"));
+    tassert(checkUri(uri, "http-localhost-0-/-null-null-null"));
+
+    uri = httpCreateUri("http://[::]", 0);
+    tassert(checkUri(uri, "http-::-0-null-null-null-null"));
 
     uri = httpCreateUri("http://[::]/", 0);
-    assert(checkUri(uri, "http-::-0-/-null-null-null"));
+    tassert(checkUri(uri, "http-::-0-/-null-null-null"));
 
     uri = httpCreateUri("http://[::]:8080", 0);
-    assert(checkUri(uri, "http-::-8080-null-null-null-null"));
+    tassert(checkUri(uri, "http-::-8080-null-null-null-null"));
 
     uri = httpCreateUri("http://[::]:8080/", 0);
-    assert(checkUri(uri, "http-::-8080-/-null-null-null"));
+    tassert(checkUri(uri, "http-::-8080-/-null-null-null"));
 
     uri = httpCreateUri("http://localhost/path", 0);
-    assert(checkUri(uri, "http-localhost-0-/path-null-null-null"));
+    tassert(checkUri(uri, "http-localhost-0-/path-null-null-null"));
 
     uri = httpCreateUri("http://localhost/path.txt", 0);
-    assert(checkUri(uri, "http-localhost-0-/path.txt-txt-null-null"));
+    tassert(checkUri(uri, "http-localhost-0-/path.txt-txt-null-null"));
 
     uri = httpCreateUri("http://localhost/path.txt?query", 0);
-    assert(checkUri(uri, "http-localhost-0-/path.txt-txt-null-query"));
+    tassert(checkUri(uri, "http-localhost-0-/path.txt-txt-null-query"));
 
     uri = httpCreateUri("http://localhost/path.txt?query#ref", 0);
-    assert(checkUri(uri, "http-localhost-0-/path.txt-txt-null-query#ref"));
+    tassert(checkUri(uri, "http-localhost-0-/path.txt-txt-null-query#ref"));
 
     uri = httpCreateUri("http://localhost/path.txt#ref?query", 0);
-    assert(checkUri(uri, "http-localhost-0-/path.txt-txt-ref-query"));
+    tassert(checkUri(uri, "http-localhost-0-/path.txt-txt-ref-query"));
 
     uri = httpCreateUri("http://localhost/path.txt#ref/extra", 0);
-    assert(checkUri(uri, "http-localhost-0-/path.txt-txt-ref/extra-null"));
+    tassert(checkUri(uri, "http-localhost-0-/path.txt-txt-ref/extra-null"));
 
     uri = httpCreateUri("http://localhost/path.txt#ref/extra?query", 0);
-    assert(checkUri(uri, "http-localhost-0-/path.txt-txt-ref/extra-null"));
+    tassert(checkUri(uri, "http-localhost-0-/path.txt-txt-ref/extra-query"));
 
     uri = httpCreateUri(":4100", 0);
-    assert(checkUri(uri, "null-null-4100-null-null-null-null"));
+    tassert(checkUri(uri, "null-null-4100-null-null-null-null"));
 
     uri = httpCreateUri(":4100/path", 0);
-    assert(checkUri(uri, "null-null-4100-/path-null-null-null"));
+    tassert(checkUri(uri, "null-null-4100-/path-null-null-null"));
 
-    //  MOB - should this routine reject invalid URLs Uri(spaces, illegal chars ..., 0)
     uri = httpCreateUri("http:/", 0);
-    assert(checkUri(uri, "null-http-0-/-null-null-null"));
+    tassert(checkUri(uri, "null-http-0-/-null-null-null"));
 
     uri = httpCreateUri("http://:/", 0);
-    assert(checkUri(uri, "http-null-0-/-null-null-null"));
+    tassert(checkUri(uri, "http-null-0-/-null-null-null"));
 
     uri = httpCreateUri("http://:", 0);
-    assert(checkUri(uri, "http-null-0-null-null-null-null"));
+    tassert(checkUri(uri, "http-null-0-null-null-null-null"));
 
     uri = httpCreateUri("http://localhost:", 0);
-    assert(checkUri(uri, "http-localhost-0-null-null-null-null"));
+    tassert(checkUri(uri, "http-localhost-0-null-null-null-null"));
     
     uri = httpCreateUri("http://local#host/", 0);
-    assert(checkUri(uri, "http-local-0-null-null-host/-null"));
+    tassert(checkUri(uri, "http-local-0-null-null-host/-null"));
 
     uri = httpCreateUri("http://local?host/", 0);
-    assert(checkUri(uri, "http-local-0-null-null-null-host/"));
+    tassert(checkUri(uri, "http-local-0-null-null-null-host/"));
 
     uri = httpCreateUri("http://local host/", 0);
-    assert(checkUri(uri, "http-local host-0-/-null-null-null"));
+    tassert(checkUri(uri, "http-local host-0-/-null-null-null"));
 
     uri = httpCreateUri("http://localhost/long path", 0);
-    assert(checkUri(uri, "http-localhost-0-/long path-null-null-null"));
-#endif
+    tassert(checkUri(uri, "http-localhost-0-/long path-null-null-null"));
 
     uri = httpCreateUri("", HTTP_COMPLETE_URI);
-    assert(checkUri(uri, "http-localhost-80-/-null-null-null"));
+    tassert(checkUri(uri, "http-localhost-80-/-null-null-null"));
 }
 
 

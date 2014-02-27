@@ -21,8 +21,8 @@ static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action);
     Create and initialize a URI. This accepts full URIs with schemes (http:) and partial URLs
     Support IPv4 and [IPv6]. Supported forms:
 
-        scheme://[::]:PORT/URI
-        scheme://HOST:PORT/URI
+        SCHEME://[::]:PORT/URI
+        SCHEME://HOST:PORT/URI
         [::]:PORT/URI
         :PORT/URI
         HOST:PORT/URI
@@ -30,7 +30,7 @@ static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action);
         /URI
         URI
 
-        NOTE: the following is not supported and requires a scheme prefix. This is because it is ambiguous with URI.
+        NOTE: the following is not supported and requires a scheme prefix. This is because it is ambiguous with Uri path.
         HOST/URI
 
     Missing fields are null or zero.
@@ -92,11 +92,15 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
      */
     if (*tok == '[' && ((next = strchr(tok, ']')) != 0)) {
         /* IPv6  [::]:port/uri */
-//  MOB - is this right or should it be -2
         up->host = snclone(&tok[1], (next - tok) - 1);
         tok = ++next;
 
-    } else if (*tok && *tok != '/' && *tok != ':') {
+    } else if (*tok && *tok != '/' && *tok != ':' && (up->scheme || strchr(tok, ':'))) {
+        /*
+            Supported forms:
+                scheme://hostname
+                hostname:port
+         */
         if ((next = spbrk(tok, ":/")) == 0) {
             next = &tok[slen(tok)];
         }
@@ -115,7 +119,7 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
     assert(tok);
 
     /* [/path] */
-    if (*tok == '/') {
+    if (*tok) {
         up->path = sclone(tok);
         /* path[.ext[/extra]] */
         if ((tok = srchr(up->path, '.')) != 0) {
@@ -489,12 +493,14 @@ PUBLIC HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
 {
     char    *sep;
 
-    if (other->path[0] == '/') {
-        result->path = sclone(other->path);
-    } else {
-        sep = ((base->path[0] == '\0' || base->path[slen(base->path) - 1] == '/') || 
-               (other->path[0] == '\0' || other->path[0] == '/'))  ? "" : "/";
-        result->path = sjoin(base->path, sep, other->path, NULL);
+    if (other->path) {
+        if (other->path[0] == '/') {
+            result->path = sclone(other->path);
+        } else {
+            sep = ((base->path[0] == '\0' || base->path[slen(base->path) - 1] == '/') || 
+                   (other->path[0] == '\0' || other->path[0] == '/'))  ? "" : "/";
+            result->path = sjoin(base->path, sep, other->path, NULL);
+        }
     }
     return result;
 }
@@ -675,7 +681,7 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
         if (other->port) {
             current->port = other->port;
         }
-        if (other->path) {
+        if (other->path || 1) {
             trimPathToDirname(current);
             httpJoinUriPath(current, current, other);
         }

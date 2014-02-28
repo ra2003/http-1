@@ -105,9 +105,6 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(HttpHost *host, cchar *home, c
             return 0;
         }
         httpSetHostDefaultRoute(host, route);
-#if UNUSED
-        httpSetHostName(host, sfmt("%s:%d", ip, port));
-#endif
     } else {
         route = host->defaultRoute;
     }

@@ -538,13 +538,13 @@ static void httpTimer(Http *http, MprEvent *event)
         if (!conn->timeoutEvent) {
             abort = mprIsStopping();
             if (httpServerConn(conn) && (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED) && 
-                    (conn->started + limits->requestParseTimeout) < http->now) {
+                    (http->now - conn->started) > limits->requestParseTimeout) {
                 conn->timeout = HTTP_PARSE_TIMEOUT;
                 abort = 1;
-            } else if ((conn->lastActivity + limits->inactivityTimeout) < http->now) {
+            } else if ((http->now - conn->lastActivity) > limits->inactivityTimeout) {
                 conn->timeout = HTTP_INACTIVITY_TIMEOUT;
                 abort = 1;
-            } else if ((conn->started + limits->requestTimeout) < http->now) {
+            } else if ((http->now - conn->started) > limits->requestTimeout) {
                 conn->timeout = HTTP_REQUEST_TIMEOUT;
                 abort = 1;
             } else if (!event) {

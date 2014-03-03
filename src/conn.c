@@ -193,7 +193,7 @@ static void connTimeout(HttpConn *conn, MprEvent *event)
             msg = sfmt("%s exceeded inactivity timeout of %Ld sec", prefix, limits->inactivityTimeout / 1000);
 
         } else if (conn->timeout == HTTP_REQUEST_TIMEOUT) {
-            msg = sfmt("%s exceeded timeout %d sec", prefix, limits->requestTimeout / 1000);
+            msg = sfmt("%s exceeded timeout %Ld sec", prefix, limits->requestTimeout / 1000);
         }
         if (conn->rx && (conn->state > HTTP_STATE_CONNECTED)) {
             mprTrace(5, "  State %d, uri %s", conn->state, conn->rx->uri);

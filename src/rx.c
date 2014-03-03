@@ -452,7 +452,10 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
         return 0;
     }
-    rx->originalUri = rx->uri = sclone(uri);
+    rx->uri = sclone(uri);
+    if (!rx->originalUri) {
+        rx->originalUri = rx->uri;
+    }
     conn->http->totalRequests++;
     httpSetState(conn, HTTP_STATE_FIRST);
     return 1;
@@ -1180,7 +1183,7 @@ static void createErrorRequest(HttpConn *conn)
     HttpTx      *tx;
     HttpPacket  *packet;
     MprBuf      *buf;
-    char        *cp, *headers;
+    char        *cp, *headers, *originalUri;
     int         key;
 
     rx = conn->rx;
@@ -1188,11 +1191,13 @@ static void createErrorRequest(HttpConn *conn)
     if (!rx->headerPacket) {
         return;
     }
+    originalUri = rx->uri;
     conn->rx = httpCreateRx(conn);
     conn->tx = httpCreateTx(conn, NULL);
 
     /* Preserve the old status */
     conn->tx->status = tx->status;
+    conn->rx->originalUri = originalUri;
     conn->error = 0;
     conn->errorMsg = 0;
     conn->upgraded = 0;

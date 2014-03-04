@@ -538,13 +538,6 @@ PUBLIC HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
 }
 
 
-#if DEPRECATED || 1
-PUBLIC char *httpLink(HttpConn *conn, cchar *target, MprHash *options)
-{
-    return httpUriEx(conn, target, options);
-}
-#endif
-
 /*
     Create and resolve a URI link given a set of options.
  */
@@ -559,9 +552,10 @@ PUBLIC HttpUri *httpMakeUriLocal(HttpUri *uri)
 }
 
 
-PUBLIC void httpNormalizeUri(HttpUri *uri)
+PUBLIC HttpUri *httpNormalizeUri(HttpUri *uri)
 {
     uri->path = httpNormalizeUriPath(uri->path);
+    return uri;
 }
 
 
@@ -697,7 +691,7 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
 }
 
 
-PUBLIC char *httpUriEx(HttpConn *conn, cchar *target, MprHash *options)
+PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
 {
     HttpRoute       *route, *lroute;
     HttpRx          *rx;
@@ -799,15 +793,33 @@ PUBLIC char *httpUriEx(HttpConn *conn, cchar *target, MprHash *options)
         This must extract the existing host and port from the prior request
      */
     uri = httpResolveUri(rx->parsedUri, 1, &uri, 0);
-    httpNormalizeUri(uri);
-    return httpUriToString(uri, 0);
+    return httpNormalizeUri(uri);
 }
 
+
+PUBLIC char *httpLink(HttpConn *conn, cchar *target)
+{
+    return httpLinkEx(conn, target, 0);
+}
+
+
+PUBLIC char *httpLinkEx(HttpConn *conn, cchar *target, MprHash *options)
+{
+    return httpUriToString(httpLinkUri(conn, target, options), 0);
+}
+
+
+#if DEPRECATED || 1
+PUBLIC char *httpUriEx(HttpConn *conn, cchar *target, MprHash *options)
+{
+    return httpLinkEx(conn, target, options);
+}
 
 PUBLIC char *httpUri(HttpConn *conn, cchar *target)
 {
-    return httpUriEx(conn, target, 0);
+    return httpLink(conn, target);
 }
+#endif
 
 
 PUBLIC char *httpUriToString(HttpUri *uri, int flags)

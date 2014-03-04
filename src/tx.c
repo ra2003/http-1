@@ -439,7 +439,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         Expand the target for embedded tokens. Resolve relative to the current request URI
         This may add "localhost" if the host is missing in the targetUri.
      */
-    targetUri = httpUri(conn, targetUri);
+    targetUri = httpLink(conn, targetUri);
     mprLog(3, "redirect %d %s", status, targetUri);
     msg = httpLookupStatus(conn->http, status);
 

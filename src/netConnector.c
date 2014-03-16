@@ -76,7 +76,7 @@ static void netOutgoingService(HttpQueue *q)
             return;
         }
     }
-#if !BIT_ROM
+#if !ME_ROM
     if (tx->flags & HTTP_TX_SENDFILE) {
         /* Relay via the send connector */
         if (tx->file == 0) {
@@ -163,7 +163,7 @@ static MprOff buildNetVec(HttpQueue *q)
             }
             httpWriteHeaders(q, packet);
         }
-        if (q->ioIndex >= (BIT_MAX_IOVEC - 2)) {
+        if (q->ioIndex >= (ME_MAX_IOVEC - 2)) {
             break;
         }
         if (httpGetPacketLength(packet) > 0 || packet->prefix) {
@@ -206,7 +206,7 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     tx = conn->tx;
 
     assert(q->count >= 0);
-    assert(q->ioIndex < (BIT_MAX_IOVEC - 2));
+    assert(q->ioIndex < (ME_MAX_IOVEC - 2));
 
     if (packet->prefix) {
         addToNetVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));

@@ -456,7 +456,7 @@ static void banRemedy(MprHash *args)
     int         status;
 
     if ((ip = mprLookupKey(args, "IP")) != 0) {
-        period = lookupTicks(args, "PERIOD", BIT_HTTP_BAN_PERIOD);
+        period = lookupTicks(args, "PERIOD", ME_HTTP_BAN_PERIOD);
         msg = mprLookupKey(args, "MESSAGE");
         status = ((banStatus = mprLookupKey(args, "STATUS")) != 0) ? atoi(banStatus) : 0;
         httpBanClient(ip, period, status, msg);
@@ -471,7 +471,7 @@ static void cmdRemedy(MprHash *args)
     char        *command, *data;
     int         rc, status, argc, background;
 
-#if DEBUG_IDE && BIT_UNIX_LIKE
+#if DEBUG_IDE && ME_UNIX_LIKE
     unsetenv("DYLD_LIBRARY_PATH");
     unsetenv("DYLD_FRAMEWORK_PATH");
 #endif
@@ -490,8 +490,8 @@ static void cmdRemedy(MprHash *args)
         command = strim(command, "&", MPR_TRIM_END);
     }
     argc = mprMakeArgv(command, &argv, 0);
-    cmd->stdoutBuf = mprCreateBuf(BIT_MAX_BUFFER, -1);
-    cmd->stderrBuf = mprCreateBuf(BIT_MAX_BUFFER, -1);
+    cmd->stdoutBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
+    cmd->stderrBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
     if (mprStartCmd(cmd, argc, argv, NULL, MPR_CMD_DETACH | MPR_CMD_IN) < 0) {
         mprError("Cannot start command: %s", command);
         return;
@@ -502,7 +502,7 @@ static void cmdRemedy(MprHash *args)
     }
     mprFinalizeCmd(cmd);
     if (!background) {
-        rc = mprWaitForCmd(cmd, BIT_HTTP_REMEDY_TIMEOUT);
+        rc = mprWaitForCmd(cmd, ME_HTTP_REMEDY_TIMEOUT);
         status = mprGetCmdExitStatus(cmd);
         if (rc < 0 || status != 0) {
             mprError("Email remedy failed. Error: %s\nResult: %s", mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf));
@@ -524,9 +524,9 @@ static void delayRemedy(MprHash *args)
     http = MPR->httpService;
     if ((ip = mprLookupKey(args, "IP")) != 0) {
         if ((address = mprLookupKey(http->addresses, ip)) != 0) {
-            delayUntil = http->now + lookupTicks(args, "PERIOD", BIT_HTTP_DELAY_PERIOD);
+            delayUntil = http->now + lookupTicks(args, "PERIOD", ME_HTTP_DELAY_PERIOD);
             address->delayUntil = max(delayUntil, address->delayUntil);
-            delay = (int) lookupTicks(args, "DELAY", BIT_HTTP_DELAY);
+            delay = (int) lookupTicks(args, "DELAY", ME_HTTP_DELAY);
             address->delay = max(delay, address->delay);
             mprLog(0, "%s", mprLookupKey(args, "MESSAGE"));
             mprLog(0, "Initiate delay of %d for IP address %s", address->delay, ip);

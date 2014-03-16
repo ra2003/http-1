@@ -68,7 +68,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         }
     }
     if (tx->connector == 0) {
-#if !BIT_ROM
+#if !ME_ROM
         if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !hasOutputFilters && 
                 !conn->secure && httpShouldTrace(conn, HTTP_TRACE_TX, HTTP_TRACE_BODY, tx->ext) < 0) {
             tx->connector = http->sendConnector;
@@ -222,7 +222,7 @@ static void openQueues(HttpConn *conn)
 
 PUBLIC void httpSetSendConnector(HttpConn *conn, cchar *path)
 {
-#if !BIT_ROM
+#if !ME_ROM
     HttpTx      *tx;
 
     tx = conn->tx;

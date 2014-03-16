@@ -90,7 +90,7 @@ PUBLIC Http *httpCreate(int flags)
         return 0;
     }
     MPR->httpService = http;
-    http->software = sclone(BIT_HTTP_SOFTWARE);
+    http->software = sclone(ME_HTTP_SOFTWARE);
     http->protocol = sclone("HTTP/1.1");
     http->mutex = mprCreateLock();
     http->stages = mprCreateHash(-1, MPR_HASH_STABLE);
@@ -114,7 +114,7 @@ PUBLIC Http *httpCreate(int flags)
     httpOpenSendConnector(http);
     httpOpenRangeFilter(http);
     httpOpenChunkFilter(http);
-#if BIT_HTTP_WEB_SOCKETS
+#if ME_HTTP_WEB_SOCKETS
     httpOpenWebSockFilter(http);
 #endif
     mprSetIdleCallback(isIdle);
@@ -379,35 +379,35 @@ PUBLIC HttpHost *httpLookupHost(Http *http, cchar *name)
 PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
 {
     memset(limits, 0, sizeof(HttpLimits));
-    limits->bufferSize = BIT_MAX_QBUFFER;
-    limits->cacheItemSize = BIT_MAX_CACHE_ITEM;
-    limits->chunkSize = BIT_MAX_CHUNK;
-    limits->clientMax = BIT_MAX_CLIENTS;
-    limits->connectionsMax = BIT_MAX_CONNECTIONS;
-    limits->headerMax = BIT_MAX_NUM_HEADERS;
-    limits->headerSize = BIT_MAX_HEADERS;
-    limits->keepAliveMax = BIT_MAX_KEEP_ALIVE;
-    limits->processMax = BIT_MAX_PROCESSES;
-    limits->requestsPerClientMax = BIT_MAX_REQUESTS_PER_CLIENT;
-    limits->sessionMax = BIT_MAX_SESSIONS;
-    limits->uriSize = BIT_MAX_URI;
+    limits->bufferSize = ME_MAX_QBUFFER;
+    limits->cacheItemSize = ME_MAX_CACHE_ITEM;
+    limits->chunkSize = ME_MAX_CHUNK;
+    limits->clientMax = ME_MAX_CLIENTS;
+    limits->connectionsMax = ME_MAX_CONNECTIONS;
+    limits->headerMax = ME_MAX_NUM_HEADERS;
+    limits->headerSize = ME_MAX_HEADERS;
+    limits->keepAliveMax = ME_MAX_KEEP_ALIVE;
+    limits->processMax = ME_MAX_PROCESSES;
+    limits->requestsPerClientMax = ME_MAX_REQUESTS_PER_CLIENT;
+    limits->sessionMax = ME_MAX_SESSIONS;
+    limits->uriSize = ME_MAX_URI;
 
-    limits->inactivityTimeout = BIT_MAX_INACTIVITY_DURATION;
-    limits->requestTimeout = BIT_MAX_REQUEST_DURATION;
-    limits->requestParseTimeout = BIT_MAX_PARSE_DURATION;
-    limits->sessionTimeout = BIT_MAX_SESSION_DURATION;
+    limits->inactivityTimeout = ME_MAX_INACTIVITY_DURATION;
+    limits->requestTimeout = ME_MAX_REQUEST_DURATION;
+    limits->requestParseTimeout = ME_MAX_PARSE_DURATION;
+    limits->sessionTimeout = ME_MAX_SESSION_DURATION;
 
-    limits->webSocketsMax = BIT_MAX_WSS_SOCKETS;
-    limits->webSocketsMessageSize = BIT_MAX_WSS_MESSAGE;
-    limits->webSocketsFrameSize = BIT_MAX_WSS_FRAME;
-    limits->webSocketsPacketSize = BIT_MAX_WSS_PACKET;
-    limits->webSocketsPing = BIT_MAX_PING_DURATION;
+    limits->webSocketsMax = ME_MAX_WSS_SOCKETS;
+    limits->webSocketsMessageSize = ME_MAX_WSS_MESSAGE;
+    limits->webSocketsFrameSize = ME_MAX_WSS_FRAME;
+    limits->webSocketsPacketSize = ME_MAX_WSS_PACKET;
+    limits->webSocketsPing = ME_MAX_PING_DURATION;
 
     if (serverSide) {
-        limits->receiveFormSize = BIT_MAX_RECEIVE_FORM;
-        limits->receiveBodySize = BIT_MAX_RECEIVE_BODY;
-        limits->transmissionBodySize = BIT_MAX_TX_BODY;
-        limits->uploadSize = BIT_MAX_UPLOAD;
+        limits->receiveFormSize = ME_MAX_RECEIVE_FORM;
+        limits->receiveBodySize = ME_MAX_RECEIVE_BODY;
+        limits->transmissionBodySize = ME_MAX_TX_BODY;
+        limits->uploadSize = ME_MAX_UPLOAD;
     } else {
         limits->receiveFormSize = MAXOFF;
         limits->receiveBodySize = MAXOFF;
@@ -658,7 +658,7 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
     lock(http);
     conn->seqno = (int) http->totalConnections++;
     if (!http->timer) {
-#if BIT_DEBUG
+#if ME_DEBUG
         if (!mprGetDebugMode())
 #endif
         {

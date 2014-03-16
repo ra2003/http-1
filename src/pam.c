@@ -8,7 +8,7 @@
 
 #include    "http.h"
 
-#if BIT_HAS_PAM && BIT_HTTP_PAM
+#if ME_HAS_PAM && ME_HTTP_PAM
  #include    <security/pam_appl.h>
 
 /********************************* Defines ************************************/
@@ -78,7 +78,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
                     mprPutToBuf(abilities, "%s ", gp->gr_name);
                 }
             }
-#if BIT_DEBUG
+#if ME_DEBUG
             mprAddNullToBuf(abilities);
             mprTrace(5, "Create temp user \"%s\" with abilities: %s", username, mprGetBufStart(abilities));
 #endif
@@ -132,7 +132,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
     *resp = reply;
     return PAM_SUCCESS;
 }
-#endif /* BIT_HAS_PAM */
+#endif /* ME_HAS_PAM */
 
 /*
     @copy   default

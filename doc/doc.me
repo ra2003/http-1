@@ -1,15 +1,14 @@
 /*
-    doc.bit -- Appweb documentation build file
+    doc.me -- MakeMe file for Http documentation
  */
 
-Bit.load({
-
+Me.load({
     targets: {
         patch: {
             action: "
                 trace('Patch', 'Expand DSI')
                 let path = Path('dsi/head.html')
-                let settings = bit.settings
+                let settings = me.settings
                 path.write(path.readString().replace(/version\">.*</, 'version\">' + 
                     settings.title + ' ' + settings.version + '<'))
                 for each (path in Path('.').files('**.html', {exclude: /Bare.html|dsi/})) {

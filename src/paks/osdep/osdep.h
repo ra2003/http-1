@@ -1,114 +1,116 @@
 /**
-    bitos.h -- Embedthis O/S abstraction
+    osdep.h -- Embedthis O/S abstraction
  */
 
-#ifndef _h_BITOS
-#define _h_BITOS 1
+#ifndef _h_OSDEP
+#define _h_OSDEP 1
 
 /********************************** Includes **********************************/
 
-#include "bit.h"
+#include "me.h"
 
 /******************************* Default Features *****************************/
-
-#ifndef BIT_DEBUG
-    #define BIT_DEBUG 0                 /**< Default to a debug build */
+/*
+    MakeMe defaults
+ */
+#ifndef ME_EXT_SSL
+    #define ME_EXT_SSL 0                /**< Build without SSL support */
 #endif
-#ifndef BIT_FLOAT
-    #define BIT_FLOAT 1                 /**< Build with floating point support */
+#ifndef ME_DEBUG
+    #define ME_DEBUG 0                  /**< Default to a debug build */
 #endif
-#ifndef BIT_ROM
-    #define BIT_ROM 0                   /**< Build for execute from ROM */
+#ifndef ME_FLOAT
+    #define ME_FLOAT 1                  /**< Build with floating point support */
 #endif
-#ifndef BIT_PACK_SSL
-    #define BIT_PACK_SSL 0              /**< Build without SSL support */
+#ifndef ME_ROM
+    #define ME_ROM 0                    /**< Build for execute from ROM */
 #endif
 
 /********************************* CPU Families *******************************/
 /*
     CPU Architectures
  */
-#define BIT_CPU_UNKNOWN     0
-#define BIT_CPU_ARM         1           /**< Arm */
-#define BIT_CPU_ITANIUM     2           /**< Intel Itanium */
-#define BIT_CPU_X86         3           /**< X86 */
-#define BIT_CPU_X64         4           /**< AMD64 or EMT64 */
-#define BIT_CPU_MIPS        5           /**< Mips */
-#define BIT_CPU_PPC         6           /**< Power PC */
-#define BIT_CPU_SPARC       7           /**< Sparc */
-#define BIT_CPU_TIDSP       8           /**< TI DSP */
-#define BIT_CPU_SH          9           /**< SuperH */
+#define ME_CPU_UNKNOWN     0
+#define ME_CPU_ARM         1           /**< Arm */
+#define ME_CPU_ITANIUM     2           /**< Intel Itanium */
+#define ME_CPU_X86         3           /**< X86 */
+#define ME_CPU_X64         4           /**< AMD64 or EMT64 */
+#define ME_CPU_MIPS        5           /**< Mips */
+#define ME_CPU_PPC         6           /**< Power PC */
+#define ME_CPU_SPARC       7           /**< Sparc */
+#define ME_CPU_TIDSP       8           /**< TI DSP */
+#define ME_CPU_SH          9           /**< SuperH */
 
 /*
     Byte orderings
  */
-#define BIT_LITTLE_ENDIAN   1           /**< Little endian byte ordering */
-#define BIT_BIG_ENDIAN      2           /**< Big endian byte ordering */
+#define ME_LITTLE_ENDIAN   1           /**< Little endian byte ordering */
+#define ME_BIG_ENDIAN      2           /**< Big endian byte ordering */
 
 /*
     Use compiler definitions to determine the CPU type. 
     The default endianness can be overridden by configure --endian big|little.
  */
 #if defined(__alpha__)
-    #define BIT_CPU "alpha"
-    #define BIT_CPU_ARCH BIT_CPU_ALPHA
-    #define CPU_ENDIAN BIT_LITTLE_ENDIAN
+    #define ME_CPU "alpha"
+    #define ME_CPU_ARCH ME_CPU_ALPHA
+    #define CPU_ENDIAN ME_LITTLE_ENDIAN
 
 #elif defined(__arm__)
-    #define BIT_CPU "arm"
-    #define BIT_CPU_ARCH BIT_CPU_ARM
-    #define CPU_ENDIAN BIT_LITTLE_ENDIAN
+    #define ME_CPU "arm"
+    #define ME_CPU_ARCH ME_CPU_ARM
+    #define CPU_ENDIAN ME_LITTLE_ENDIAN
 
 #elif defined(__x86_64__) || defined(_M_AMD64)
-    #define BIT_CPU "x64"
-    #define BIT_CPU_ARCH BIT_CPU_X64
-    #define CPU_ENDIAN BIT_LITTLE_ENDIAN
+    #define ME_CPU "x64"
+    #define ME_CPU_ARCH ME_CPU_X64
+    #define CPU_ENDIAN ME_LITTLE_ENDIAN
 
 #elif defined(__i386__) || defined(__i486__) || defined(__i585__) || defined(__i686__) || defined(_M_IX86)
-    #define BIT_CPU "x86"
-    #define BIT_CPU_ARCH BIT_CPU_X86
-    #define CPU_ENDIAN BIT_LITTLE_ENDIAN
+    #define ME_CPU "x86"
+    #define ME_CPU_ARCH ME_CPU_X86
+    #define CPU_ENDIAN ME_LITTLE_ENDIAN
 
 #elif defined(_M_IA64)
-    #define BIT_CPU "ia64"
-    #define BIT_CPU_ARCH BIT_CPU_ITANIUM
-    #define CPU_ENDIAN BIT_LITTLE_ENDIAN
+    #define ME_CPU "ia64"
+    #define ME_CPU_ARCH ME_CPU_ITANIUM
+    #define CPU_ENDIAN ME_LITTLE_ENDIAN
 
 #elif defined(__mips__) || defined(__mips64)
-    #define BIT_CPU "mips"
-    #define BIT_CPU_ARCH BIT_CPU_MIPS
-    #define CPU_ENDIAN BIT_BIG_ENDIAN
+    #define ME_CPU "mips"
+    #define ME_CPU_ARCH ME_CPU_MIPS
+    #define CPU_ENDIAN ME_BIG_ENDIAN
 
 #elif defined(__ppc__) || defined(__powerpc__) || defined(__ppc64__) || defined(__ppc)
-    #define BIT_CPU "ppc"
-    #define BIT_CPU_ARCH BIT_CPU_PPC
-    #define CPU_ENDIAN BIT_BIG_ENDIAN
+    #define ME_CPU "ppc"
+    #define ME_CPU_ARCH ME_CPU_PPC
+    #define CPU_ENDIAN ME_BIG_ENDIAN
 
 #elif defined(__sparc__)
-    #define BIT_CPU "sparc"
-    #define BIT_CPU_ARCH BIT_CPU_SPARC
-    #define CPU_ENDIAN BIT_BIG_ENDIAN
+    #define ME_CPU "sparc"
+    #define ME_CPU_ARCH ME_CPU_SPARC
+    #define CPU_ENDIAN ME_BIG_ENDIAN
 
 #elif defined(_TMS320C6X)
     #define TIDSP 1
-    #define BIT_CPU "tidsp"
-    #define BIT_CPU_ARCH BIT_CPU_SPARC
-    #define CPU_ENDIAN BIT_LITTLE_ENDIAN
+    #define ME_CPU "tidsp"
+    #define ME_CPU_ARCH ME_CPU_SPARC
+    #define CPU_ENDIAN ME_LITTLE_ENDIAN
 
 #elif defined(__sh__)
-    #define BIT_CPU "sh"
-    #define BIT_CPU_ARCH BIT_CPU_SH
-    #define CPU_ENDIAN BIT_LITTLE_ENDIAN
+    #define ME_CPU "sh"
+    #define ME_CPU_ARCH ME_CPU_SH
+    #define CPU_ENDIAN ME_LITTLE_ENDIAN
 
 #else
-    #error "Cannot determine CPU type in bitos.h"
+    #error "Cannot determine CPU type in osdep.h"
 #endif
 
 /*
-    Set the default endian if bit.h does not define it explicitly
+    Set the default endian if me.h does not define it explicitly
  */
-#ifndef BIT_ENDIAN
-    #define BIT_ENDIAN CPU_ENDIAN
+#ifndef ME_ENDIAN
+    #define ME_ENDIAN CPU_ENDIAN
 #endif
 
 /*
@@ -116,142 +118,142 @@
     define any special symbol.  NOTE: Support for SCOV Unix, LynxOS and UnixWare is deprecated. 
  */
 #if defined(__APPLE__)
-    #define BIT_OS "macosx"
+    #define ME_OS "macosx"
     #define MACOSX 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
-    #define BIT_BSD_LIKE 1
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
+    #define ME_BSD_LIKE 1
     #define HAS_USHORT 1
     #define HAS_UINT 1
 
 #elif defined(__linux__)
-    #define BIT_OS "linux"
+    #define ME_OS "linux"
     #define LINUX 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
 
 #elif defined(__FreeBSD__)
-    #define BIT_OS "freebsd"
+    #define ME_OS "freebsd"
     #define FREEBSD 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
-    #define BIT_BSD_LIKE 1
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
+    #define ME_BSD_LIKE 1
 
 #elif defined(__OpenBSD__)
-    #define BIT_OS "freebsd"
+    #define ME_OS "freebsd"
     #define OPENBSD 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
-    #define BIT_BSD_LIKE 1
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
+    #define ME_BSD_LIKE 1
 
 #elif defined(_WIN32)
-    #define BIT_OS "windows"
+    #define ME_OS "windows"
     #define WINDOWS 1
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 1
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 1
 
 #elif defined(__OS2__)
-    #define BIT_OS "os2"
+    #define ME_OS "os2"
     #define OS2 0
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 0
 
-#elif defined(MSDOS) || defined(__DOS__)
-    #define BIT_OS "msdos"
+#elif defined(MSDOS) || defined(__DME__)
+    #define ME_OS "msdos"
     #define WINDOWS 0
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 0
 
 #elif defined(__NETWARE_386__)
-    #define BIT_OS "netware"
+    #define ME_OS "netware"
     #define NETWARE 0
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 0
 
 #elif defined(__bsdi__)
-    #define BIT_OS "bsdi"
+    #define ME_OS "bsdi"
     #define BSDI 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
-    #define BIT_BSD_LIKE 1
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
+    #define ME_BSD_LIKE 1
 
 #elif defined(__NetBSD__)
-    #define BIT_OS "netbsd"
+    #define ME_OS "netbsd"
     #define NETBSD 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
-    #define BIT_BSD_LIKE 1
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
+    #define ME_BSD_LIKE 1
 
 #elif defined(__QNX__)
-    #define BIT_OS "qnx"
+    #define ME_OS "qnx"
     #define QNX 0
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 0
 
 #elif defined(__hpux)
-    #define BIT_OS "hpux"
+    #define ME_OS "hpux"
     #define HPUX 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
 
 #elif defined(_AIX)
-    #define BIT_OS "aix"
+    #define ME_OS "aix"
     #define AIX 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
 
 #elif defined(__CYGWIN__)
-    #define BIT_OS "cygwin"
+    #define ME_OS "cygwin"
     #define CYGWIN 1
-    #define BIT_UNIX_LIKE 1
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 1
+    #define ME_WIN_LIKE 0
 
 #elif defined(__VMS)
-    #define BIT_OS "vms"
+    #define ME_OS "vms"
     #define VMS 1
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 0
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 0
 
 #elif defined(VXWORKS)
     /* VxWorks does not have a pre-defined symbol */
-    #define BIT_OS "vxworks"
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 0
+    #define ME_OS "vxworks"
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 0
     #define HAS_USHORT 1
 
 #elif defined(ECOS)
     /* ECOS may not have a pre-defined symbol */
-    #define BIT_OS "ecos"
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 0
+    #define ME_OS "ecos"
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 0
 
 #elif defined(TIDSP) 
-    #define BIT_OS "tidsp"
-    #define BIT_UNIX_LIKE 0
-    #define BIT_WIN_LIKE 0
+    #define ME_OS "tidsp"
+    #define ME_UNIX_LIKE 0
+    #define ME_WIN_LIKE 0
     #define HAS_INT32 1
 
 #endif
 
 #if __WORDSIZE == 64 || __amd64 || __x86_64 || __x86_64__ || _WIN64 || __mips64
-    #define BIT_64 1
-    #define BIT_WORDSIZE 64
+    #define ME_64 1
+    #define ME_WORDSIZE 64
 #else
-    #define BIT_64 0
-    #define BIT_WORDSIZE 32
+    #define ME_64 0
+    #define ME_WORDSIZE 32
 #endif
 
 /*
     Unicode
  */
-#ifndef BIT_CHAR_LEN
-    #define BIT_CHAR_LEN 1
+#ifndef ME_CHAR_LEN
+    #define ME_CHAR_LEN 1
 #endif
-#if BIT_CHAR_LEN == 4
+#if ME_CHAR_LEN == 4
     typedef int wchar;
     #define UT(s) L ## s
     #define UNICODE 1
-#elif BIT_CHAR_LEN == 2
+#elif ME_CHAR_LEN == 2
     typedef short wchar;
     #define UT(s) L ## s
     #define UNICODE 1
@@ -260,7 +262,7 @@
     #define UT(s) s
 #endif
 
-#define BIT_PLATFORM BIT_OS "-" BIT_CPU "-" BIT_PROFILE
+#define ME_PLATFORM ME_OS "-" ME_CPU "-" ME_PROFILE
 
 /********************************* O/S Includes *******************************/
 /*
@@ -290,7 +292,7 @@
             RTLD_DEFAULT for dlsym()
      */
     #define _GNU_SOURCE 1
-    #if !BIT_64
+    #if !ME_64
         #define _LARGEFILE64_SOURCE 1
         #ifdef __USE_FILE_OFFSET64
             #define _FILE_OFFSET_BITS 64
@@ -305,7 +307,7 @@
     #include    <vxWorks.h>
 #endif
 
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
     #include    <winsock2.h>
     #include    <windows.h>
     #include    <winbase.h>
@@ -318,7 +320,7 @@
     #include    <process.h>
     #include    <windows.h>
     #include    <shlobj.h>
-    #if BIT_DEBUG
+    #if ME_DEBUG
         #include <crtdbg.h>
     #endif
 #endif
@@ -327,34 +329,34 @@
     Includes in alphabetic order
  */
     #include    <ctype.h>
-#if !BIT_ROM
-#if BIT_WIN_LIKE
+#if !ME_ROM
+#if ME_WIN_LIKE
     #include    <direct.h>
 #else
     #include    <dirent.h>
 #endif
 #endif
-#if BIT_UNIX_LIKE
+#if ME_UNIX_LIKE
     #include    <dlfcn.h>
 #endif
     #include    <fcntl.h>
     #include    <errno.h>
-#if BIT_FLOAT
+#if ME_FLOAT
     #include    <float.h>
     #define __USE_ISOC99 1
     #include    <math.h>
 #endif
-#if BIT_UNIX_LIKE
+#if ME_UNIX_LIKE
     #include    <grp.h> 
 #endif
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
     #include    <io.h>
 #endif
 #if MACOSX || LINUX
     #include    <libgen.h>
 #endif
     #include    <limits.h>
-#if BIT_UNIX_LIKE || VXWORKS
+#if ME_UNIX_LIKE || VXWORKS
     #include    <sys/socket.h>
     #include    <arpa/inet.h>
     #include    <netdb.h>
@@ -363,33 +365,33 @@
     #include    <netinet/tcp.h>
     #include    <netinet/ip.h>
 #endif
-#if BIT_UNIX_LIKE
+#if ME_UNIX_LIKE
     #include    <pthread.h> 
     #include    <pwd.h> 
 #if !CYGWIN
     #include    <resolv.h>
 #endif
 #endif
-#if BIT_BSD_LIKE
+#if ME_BSD_LIKE
     #include    <readpassphrase.h>
 #endif
     #include    <setjmp.h>
     #include    <signal.h>
     #include    <stdarg.h>
-#if BIT_UNIX_LIKE
+#if ME_UNIX_LIKE
     #include    <stdint.h>
 #endif
     #include    <stdio.h>
     #include    <stdlib.h>
     #include    <string.h>
-#if BIT_UNIX_LIKE
+#if ME_UNIX_LIKE
     #include    <syslog.h>
 #endif
 #if !TIDSP
     #include    <sys/stat.h>
     #include    <sys/types.h>
 #endif
-#if BIT_UNIX_LIKE
+#if ME_UNIX_LIKE
     #include    <sys/ioctl.h>
     #include    <sys/mman.h>
     #include    <sys/poll.h>
@@ -609,7 +611,7 @@
 
 #ifndef HAS_SSIZE
     #define HAS_SSIZE 1
-    #if BIT_UNIX_LIKE || VXWORKS || DOXYGEN
+    #if ME_UNIX_LIKE || VXWORKS || DOXYGEN
         /**
             Signed integer size field large enough to hold a pointer offset.
          */
@@ -625,21 +627,21 @@
 /*
     Windows uses uint for write/read counts (Ugh!)
  */
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
     typedef uint wsize;
 #else
     typedef ssize wsize;
 #endif
 
 #ifndef HAS_INT64
-    #if BIT_UNIX_LIKE
+    #if ME_UNIX_LIKE
         __extension__ typedef long long int int64;
     #elif VXWORKS || DOXYGEN
         /**
             Integer 64 bit data type.
          */
         typedef long long int int64;
-    #elif BIT_WIN_LIKE
+    #elif ME_WIN_LIKE
         typedef __int64 int64;
     #else
         typedef long long int int64;
@@ -647,11 +649,11 @@
 #endif
 
 #ifndef HAS_UINT64
-    #if BIT_UNIX_LIKE
+    #if ME_UNIX_LIKE
         __extension__ typedef unsigned long long int uint64;
     #elif VXWORKS || DOXYGEN
         typedef unsigned long long int uint64;
-    #elif BIT_WIN_LIKE
+    #elif ME_WIN_LIKE
         typedef unsigned __int64 uint64;
     #else
         typedef unsigned long long int uint64;
@@ -672,7 +674,7 @@ typedef int64 Offset;
     typedef socklen_t Socklen;
 #endif
 
-#if DOXYGEN || BIT_UNIX_LIKE || VXWORKS
+#if DOXYGEN || ME_UNIX_LIKE || VXWORKS
     /** Argument for sockets */
     typedef int Socket;
     #ifndef SOCKET_ERROR
@@ -682,7 +684,7 @@ typedef int64 Offset;
     #ifndef INVALID_SOCKET
         #define INVALID_SOCKET -1
     #endif
-#elif BIT_WIN_LIKE
+#elif ME_WIN_LIKE
     typedef SOCKET Socket;
 #elif TIDSP
     typedef SOCKET Socket;
@@ -714,9 +716,9 @@ typedef int64 Ticks;
     #define BITS(type)      ((int) (BITSPERBYTE * (int) sizeof(type)))
 #endif
 
-#if BIT_FLOAT
+#if ME_FLOAT
     #ifndef MAXFLOAT
-        #if BIT_WIN_LIKE
+        #if ME_WIN_LIKE
             #define MAXFLOAT        DBL_MAX
         #else
             #define MAXFLOAT        FLT_MAX
@@ -729,7 +731,7 @@ typedef int64 Ticks;
         #define isinf(n)  ((n) == (1.0 / 0.0) || (n) == (-1.0 / 0.0))
         #define isinff(n) ((n) == (1.0 / 0.0) || (n) == (-1.0 / 0.0))
     #endif
-    #if BIT_WIN_LIKE
+    #if ME_WIN_LIKE
         #define isNan(f) (_isnan(f))
     #elif VXWORKS || MACOSX || LINUX
         #define isNan(f) (isnan(f))
@@ -738,7 +740,7 @@ typedef int64 Ticks;
     #endif
 #endif
 
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
     #define INT64(x)    (x##i64)
     #define UINT64(x)   (x##Ui64)
 #else
@@ -771,7 +773,7 @@ typedef int64 Ticks;
 
 #if SIZE_T_MAX
     #define MAXSIZE     SIZE_T_MAX
-#elif BIT_64
+#elif ME_64
     #define MAXSIZE     INT64(0xffffffffffffffff)
 #else
     #define MAXSIZE     MAXINT
@@ -779,7 +781,7 @@ typedef int64 Ticks;
 
 #if SSIZE_T_MAX
     #define MAXSSIZE     SSIZE_T_MAX
-#elif BIT_64
+#elif ME_64
     #define MAXSSIZE     INT64(0x7fffffffffffffff)
 #else
     #define MAXSSIZE     MAXINT
@@ -794,7 +796,7 @@ typedef int64 Ticks;
 /*
     Word size and conversions between integer and pointer.
  */
-#if BIT_64
+#if ME_64
     #define ITOP(i)     ((void*) ((int64) i))
     #define PTOI(i)     ((int) ((int64) i))
     #define LTOP(i)     ((void*) ((int64) i))
@@ -810,7 +812,7 @@ typedef int64 Ticks;
 #undef PUBLIC_DATA
 #undef PRIVATE
 
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
     /*
         Use PUBLIC on function declarations and definitions (*.c and *.h). 
      */
@@ -831,7 +833,7 @@ typedef int64 Ticks;
 #endif
 
 #ifndef PRINTF_ATTRIBUTE
-    #if (__GNUC__ >= 3) && !DOXYGEN && BIT_DEBUG && KEEP
+    #if (__GNUC__ >= 3) && !DOXYGEN && ME_DEBUG && KEEP
         /** 
             Use gcc attribute to check printf fns.  a1 is the 1-based index of the parameter containing the format, 
             and a2 the index of the first argument. Note that some gcc 2.x versions don't handle this properly 
@@ -856,29 +858,29 @@ typedef int64 Ticks;
 #endif
 
 #if !__UCLIBC__ && !CYGWIN && __USE_XOPEN2K
-    #define BIT_HAS_SPINLOCK    1
+    #define ME_HAS_SPINLOCK    1
 #endif
 
-#if BIT_HAS_DOUBLE_BRACES
+#if ME_HAS_DOUBLE_BRACES
     #define  NULL_INIT    {{0}}
 #else
     #define  NULL_INIT    {0}
 #endif
 
 #ifdef __USE_FILE_OFFSET64
-    #define BIT_HAS_OFF64 1
+    #define ME_HAS_OFF64 1
 #else
-    #define BIT_HAS_OFF64 0
+    #define ME_HAS_OFF64 0
 #endif
 
-#if BIT_UNIX_LIKE
-    #define BIT_HAS_FCNTL 1
+#if ME_UNIX_LIKE
+    #define ME_HAS_FCNTL 1
 #endif
 
 #ifndef R_OK
     #define R_OK    4
     #define W_OK    2
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
     #define X_OK    R_OK
 #else
     #define X_OK    1
@@ -905,9 +907,9 @@ typedef int64 Ticks;
     Deprecated API warnings
  */
 #if (__GNUC__ >= 3) || MACOSX
-    #define BIT_DEPRECATED(MSG) __attribute__ ((deprecated(MSG)))
+    #define ME_DEPRECATED(MSG) __attribute__ ((deprecated(MSG)))
 #else
-    #define BIT_DEPRECATED(MSG) 
+    #define ME_DEPRECATED(MSG) 
 #endif
 
 /********************************** Tunables *********************************/
@@ -918,42 +920,42 @@ typedef int64 Ticks;
         maxPath: 4096
     }
  */
-#ifndef BIT_MAX_FNAME
-    #define BIT_MAX_FNAME      256          /**< Reasonable filename size */
+#ifndef ME_MAX_FNAME
+    #define ME_MAX_FNAME      256          /**< Reasonable filename size */
 #endif
-#ifndef BIT_MAX_PATH
-    #define BIT_MAX_PATH       1024         /**< Reasonable filename size */
+#ifndef ME_MAX_PATH
+    #define ME_MAX_PATH       1024         /**< Reasonable filename size */
 #endif
-#ifndef BIT_MAX_BUFFER
-    #define BIT_MAX_BUFFER     4096         /**< Reasonable size for buffers */
+#ifndef ME_MAX_BUFFER
+    #define ME_MAX_BUFFER     4096         /**< Reasonable size for buffers */
 #endif
-#ifndef BIT_MAX_ARGC
-    #define BIT_MAX_ARGC       32           /**< Maximum number of command line args if using MAIN()*/
+#ifndef ME_MAX_ARGC
+    #define ME_MAX_ARGC       32           /**< Maximum number of command line args if using MAIN()*/
 #endif
 
-#ifndef BIT_STACK_SIZE
-#if BIT_HAS_MMU && !VXWORKS
+#ifndef ME_STACK_SIZE
+#if ME_HAS_MMU && !VXWORKS
     /*
         If the system supports virtual memory, then stack size should use system default. Only used pages will
         actually consume memory
     */
-    #define BIT_STACK_SIZE    0               /**< Default thread stack size (0 means use system default) */
+    #define ME_STACK_SIZE    0               /**< Default thread stack size (0 means use system default) */
 #else
     /*
         No MMU, so the stack size actually consumes memory. Set this as low as possible.
         NOTE: php and ejs use stack heavily.
     */
-    #define BIT_STACK_SIZE    (128 * 1024)    /**< Default thread stack size (0 means use system default) */
+    #define ME_STACK_SIZE    (128 * 1024)    /**< Default thread stack size (0 means use system default) */
 #endif
 #endif
 
 /*********************************** Fixups ***********************************/
 
-#ifndef BIT_INLINE
-    #if BIT_WIN_LIKE
-        #define BIT_INLINE __inline
+#ifndef ME_INLINE
+    #if ME_WIN_LIKE
+        #define ME_INLINE __inline
     #else
-        #define BIT_INLINE inline
+        #define ME_INLINE inline
     #endif
 #endif
 
@@ -961,18 +963,18 @@ typedef int64 Ticks;
     #define     LIBKERN_INLINE          /* to avoid kernel inline functions */
 #endif /* ECOS */
 
-#if BIT_UNIX_LIKE || VXWORKS || TIDSP
+#if ME_UNIX_LIKE || VXWORKS || TIDSP
     #define FILE_TEXT        ""
     #define FILE_BINARY      ""
 #endif
 
 #if !TIDSP
-    #define BIT_HAS_MACRO_VARARGS 1
+    #define ME_HAS_MACRO_VARARGS 1
 #else
-    #define BIT_HAS_MACRO_VARARGS 1
+    #define ME_HAS_MACRO_VARARGS 1
 #endif
 
-#if BIT_UNIX_LIKE
+#if ME_UNIX_LIKE
     #define closesocket(x)  close(x)
     #ifndef PTHREAD_MUTEX_RECURSIVE_NP
         #define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
@@ -982,7 +984,7 @@ typedef int64 Ticks;
     #endif
 #endif
 
-#if !BIT_WIN_LIKE && !CYGWIN
+#if !ME_WIN_LIKE && !CYGWIN
     #ifndef O_BINARY
         #define O_BINARY    0
     #endif
@@ -1040,7 +1042,7 @@ typedef int64 Ticks;
     #endif
 #endif
 
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
     typedef int     uid_t;
     typedef void    *handle;
     typedef char    *caddr_t;
@@ -1183,8 +1185,8 @@ typedef int64 Ticks;
     #define STARTF_USESHOWWINDOW 0
     #define STARTF_USESTDHANDLES 0
 
-    #define BUFSIZ   BIT_MAX_BUFFER
-    #define PATHSIZE BIT_MAX_PATH
+    #define BUFSIZ   ME_MAX_BUFFER
+    #define PATHSIZE ME_MAX_PATH
     #define gethostbyname2(a,b) gethostbyname(a)
     #pragma comment( lib, "ws2.lib" )
 #endif /* WINCE */
@@ -1193,7 +1195,7 @@ typedef int64 Ticks;
     #define EINTR   4
     #define EAGAIN  11
     #define INADDR_NONE 0xFFFFFFFF
-    #define PATHSIZE BIT_MAX_PATH
+    #define PATHSIZE ME_MAX_PATH
     #define NBBY 8
     #define hostent _hostent
     #define NFDBITS ((int) (sizeof(fd_mask) * NBBY))
@@ -1232,7 +1234,7 @@ extern "C" {
             This may or may not be necessary - let us know dev@embedthis.com if your system needs this (and why).
          */
         #if _DIAB_TOOL
-            #if BIT_CPU_ARCH == BIT_CPU_PPC
+            #if ME_CPU_ARCH == ME_CPU_PPC
                 #define __va_copy(dest, src) memcpy((dest), (src), sizeof(va_list))
             #endif
         #endif
@@ -1240,7 +1242,7 @@ extern "C" {
     #endif
 #endif  /* VXWORKS */
 
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
     struct timezone {
       int  tz_minuteswest;      /* minutes W of Greenwich */
       int  tz_dsttime;          /* type of dst correction */
@@ -1344,7 +1346,7 @@ extern "C" {
 }
 #endif
 
-#endif /* _h_BITOS */
+#endif /* _h_OSDEP */
 
 /*
     @copy   default

@@ -1,29 +1,28 @@
 /*
-    product.bit -- Product Bit File for the Embedthis Http Library
+    main.me -- MakeMe file for the Embedthis Http Library
  */
 
-Bit.load({
+Me.load({
     blend: [
-        "${BITS}/embedthis.bit",
-        "src/paks/est/est.bit",
-        "src/paks/pcre/pcre.bit",
-        "src/paks/mpr/mpr.bit",
-        "test/test.bit",
-        "doc/doc.bit",
+        "src/paks/*/*.me",
+        "test/test.me",
+        "doc/doc.me",
     ],
 
     customize: [
         /* Optionally load this if present. Feel free to create and customize */
-        'custom.bit',
+        'custom.me',
     ],
 
     settings: {
-        bit: '0.9.3',
-        prefixes: 'embedthis-prefixes',
-        sync: [ 'bitos', 'est', 'mpr', 'pcre' ],
-        '+requires': [ 'compiler', 'pcre' ],
-        '+discover': [ 'doxygen', 'dsi', 'man', 'man2html', 'ssl', 'utest' ],
-        'without-all': [ 'doxygen', 'dsi', 'man', 'man2html', 'pmaker', 'ssl' ],
+        makeme: '0.8.0',
+        prefixes: 'package-prefixes',
+    
+        extensions: {
+            require:  [ 'compiler', 'osdep', 'mpr', 'pcre' ],
+            discover: [ 'doxygen', 'dsi', 'man', 'man2html', 'ssl', 'utest' ],
+        },
+
         http: {
             pam: true,
             webSockets: true,
@@ -56,10 +55,6 @@ Bit.load({
         } },
     },
 
-    defaults: {
-        '+includes': [ 'src' ]
-    },
-
     targets: {
         libhttp: {
             type: 'lib',
@@ -67,11 +62,11 @@ Bit.load({
             sources: [ 'src/*.c' ],
             exclude: /http.c/,
             depends: [ 'libmpr', 'libpcre' ],
-            packs: [ 'pcre' ],
+            components: [ 'pcre' ],
             scripts: {
                 prebuild: "
-                    if (bit.settings.hasPam && bit.settings.http.pam) {
-                        bit.target.libraries.push('pam')
+                    if (me.settings.hasPam && me.settings.http.pam) {
+                        me.target.libraries.push('pam')
                     }
                 ",
             },
@@ -88,14 +83,14 @@ Bit.load({
     manifest: {
         packages: {
             pak: {
-                inherit:    'embedthis-manifest',
+                inherit:    'package-manifest',
                 prefixes:   [ 'src'],
                 sets:       [ 'pak' ],
             },
         },
         files: [ 
-            {   from:   'package/http.bit', 
-                to:     '${src}/http.bit',
+            {   from:   'package/http.me', 
+                to:     '${src}/http.me',
                 set:    'pak',
             },{
                 from:   ['src/http.h', 'src/http.c'],
@@ -121,11 +116,4 @@ Bit.load({
             },
         ],
 	},
-
-    packDefaults: {
-        est: true,
-        matrixssl: false,
-        openssl: false,
-        ssl: true,
-    },
 })

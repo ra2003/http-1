@@ -7,8 +7,9 @@
         "paks": "src/paks"
     },
     "dependencies": {
-        "bitos": "~0.8",
-        "est": "~0.6"
+        "est": "~0.6",
+        "openssl": "~1.0",
+        "osdep": "~0.8"
     },
     "keywords": [
         "mpr",

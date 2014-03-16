@@ -37,7 +37,7 @@ static HttpSession *allocSessionObj(HttpConn *conn, cchar *id, cchar *data)
         sp->data = mprDeserialize(data);
     }
     if (!sp->data) {
-        sp->data = mprCreateHash(BIT_MAX_SESSION_HASH, 0);
+        sp->data = mprCreateHash(ME_MAX_SESSION_HASH, 0);
     }
     return sp;
 }
@@ -152,7 +152,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             mprLog(3, "session: create new cookie %s=%s", cookie, rx->session->id);
 
             if ((rx->route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
-                httpSetSessionVar(conn, BIT_XSRF_COOKIE, rx->securityToken);
+                httpSetSessionVar(conn, ME_XSRF_COOKIE, rx->securityToken);
             }
         }
     }
@@ -342,11 +342,11 @@ PUBLIC cchar *httpGetSecurityToken(HttpConn *conn, bool recreate)
     if (recreate) {
         rx->securityToken = 0;
     } else {
-        rx->securityToken = (char*) httpGetSessionVar(conn, BIT_XSRF_COOKIE, 0);
+        rx->securityToken = (char*) httpGetSessionVar(conn, ME_XSRF_COOKIE, 0);
     }
     if (rx->securityToken == 0) {
         createSecurityToken(conn);
-        httpSetSessionVar(conn, BIT_XSRF_COOKIE, rx->securityToken);
+        httpSetSessionVar(conn, ME_XSRF_COOKIE, rx->securityToken);
     }
     return rx->securityToken;
 }
@@ -361,8 +361,8 @@ PUBLIC int httpAddSecurityToken(HttpConn *conn, bool recreate)
     cchar   *securityToken;
 
     securityToken = httpGetSecurityToken(conn, recreate);
-    httpSetCookie(conn, BIT_XSRF_COOKIE, securityToken, "/", NULL,  0, 0);
-    httpSetHeader(conn, BIT_XSRF_HEADER, securityToken);
+    httpSetCookie(conn, ME_XSRF_COOKIE, securityToken, "/", NULL,  0, 0);
+    httpSetHeader(conn, ME_XSRF_HEADER, securityToken);
     return 0;
 }
 
@@ -375,14 +375,14 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
 {
     cchar   *requestToken, *sessionToken;
 
-    if ((sessionToken = httpGetSessionVar(conn, BIT_XSRF_COOKIE, 0)) != 0) {
-        requestToken = httpGetHeader(conn, BIT_XSRF_HEADER);
+    if ((sessionToken = httpGetSessionVar(conn, ME_XSRF_COOKIE, 0)) != 0) {
+        requestToken = httpGetHeader(conn, ME_XSRF_HEADER);
 #if DEPRECATED || 1
         /*
             Deprecated in 4.4
         */
         if (!requestToken) {
-            requestToken = httpGetParam(conn, BIT_XSRF_PARAM, 0);
+            requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
         }
 #endif
         if (!smatch(sessionToken, requestToken)) {

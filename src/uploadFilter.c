@@ -115,7 +115,7 @@ static void openUpload(HttpQueue *q)
     rx->autoDelete = rx->route->autoDelete;
 
     if (rx->uploadDir == 0) {
-#if BIT_WIN_LIKE
+#if ME_WIN_LIKE
         rx->uploadDir = mprNormalizePath(getenv("TEMP"));
 #else
         rx->uploadDir = sclone("/tmp");
@@ -554,7 +554,7 @@ static int processUploadData(HttpQueue *q)
             httpSetParam(conn, key, data);
 
             if (packet == 0) {
-                packet = httpCreatePacket(BIT_MAX_BUFFER);
+                packet = httpCreatePacket(ME_MAX_BUFFER);
             }
             if (httpGetPacketLength(packet) > 0) {
                 /*

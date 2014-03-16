@@ -925,7 +925,7 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
     if (sstarts(routeName, "${app}")) {
         return sjoin(route->prefix, &routeName[6], NULL);
     }
-    if (routeName[0] == BIT_SERVER_PREFIX_CHAR) {
+    if (routeName[0] == ME_SERVER_PREFIX_CHAR) {
         if (route->serverPrefix) {
             return sjoin(route->prefix, "/", route->serverPrefix, &routeName[1], NULL);
         }

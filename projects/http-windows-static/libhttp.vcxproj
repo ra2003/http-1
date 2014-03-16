@@ -3,7 +3,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(IncDir);..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IncDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -135,10 +135,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(IncDir)\bitos.h" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ClInclude Include="$(IncDir)\http.h" />
   </ItemGroup>
 
@@ -150,7 +146,6 @@
 
   <CustomBuildStep>
     <Command>cd ..\..
-copy /Y src\bitos.h $(IncDir)
 copy /Y src\http.h $(IncDir)
 cd projects\http-windows-static</Command>
     <Outputs>$(BinDir)\libhttp.lib</Outputs>

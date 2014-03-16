@@ -1,8 +1,8 @@
 /*
-    test.bit
+    test.me - MakeMe file for Http test
  */
 
-Bit.load({
+Me.load({
     targets: {
         testHttp: {
             type: 'exe',
@@ -14,7 +14,7 @@ Bit.load({
         test: {
             action: "
                 let ro = {noio: true}
-                let depth = bit.settings.depth
+                let depth = me.settings.depth
                 Path('cache').makeDir()
                 run('utest -v -i 1 --depth ' + depth, ro)
                 if (depth >= 2) {
@@ -42,8 +42,7 @@ Bit.load({
 
         'clean-test': {
             type: 'clean',                                                                                 
-            action: "                                                                                      
-            ",
+            action: "",
         },  
     },
 })

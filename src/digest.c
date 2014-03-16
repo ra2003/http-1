@@ -49,25 +49,28 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
         while (*tok && !isspace((uchar) *tok) && *tok != ',' && *tok != '=') {
             tok++;
         }
-        *tok++ = '\0';
-
+        if (*tok) {
+            *tok++ = '\0';
+        }
         while (isspace((uchar) *tok)) {
             tok++;
         }
         seenComma = 0;
         if (*tok == '\"') {
             value = ++tok;
-            while (*tok != '\"' && *tok != '\0') {
+            while (*tok && *tok != '\"') {
                 tok++;
             }
         } else {
             value = tok;
-            while (*tok != ',' && *tok != '\0') {
+            while (*tok && *tok != ',') {
                 tok++;
             }
             seenComma++;
         }
-        *tok++ = '\0';
+        if (*tok) {
+            *tok++ = '\0';
+        }
 
         /*
             Handle back-quoting

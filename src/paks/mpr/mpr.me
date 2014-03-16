@@ -1,8 +1,8 @@
 /*
-    mpr.bit -- Bit File to build the combo MPR release
+    mpr.me -- MakeMe for the MPR
  */
 
-Bit.load({
+Me.load({
 
     targets: {
         libmpr: {
@@ -18,30 +18,21 @@ Bit.load({
         },
 
         manager: {
-            enable: 'bit.settings.mpr && bit.settings.mpr.manager',
+            enable: 'me.settings.mpr && me.settings.mpr.manager',
             type: 'exe',
             path: '${BIN}/${settings.mpr.manager}${EXE}'
             rule: 'gui',
             depends: [ 'libmpr' ],
             sources: [ 'manager.c' ],
-            scripts: { prebuild: "if (bit.settings.mpr) { bit.settings.mpr.manager ||= 'manager'}" },
+            scripts: { prebuild: "if (me.settings.mpr) { me.settings.mpr.manager ||= 'manager'}" },
         },
 
-        /*
-            Always build makerom because if cross-compiling, the dev system will be !BIT_ROM, but needs it for the target
-         */
         makerom: {
             type: 'exe',
+            goals: [],
             depends: [ 'libmpr', ],
             sources: ['makerom.c'],
             platforms: [ 'local' ],
         },
 	},
-
-    packs: {
-        est: {},
-        matrixssl: {},
-        openssl: {},
-        nanossl: {},
-    },
 })

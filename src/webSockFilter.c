@@ -8,7 +8,7 @@
 
 #include    "http.h"
 
-#if BIT_HTTP_WEB_SOCKETS
+#if ME_HTTP_WEB_SOCKETS
 /********************************** Locals ************************************/
 /*
     Message frame states
@@ -151,6 +151,9 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
     assert(rx);
     assert(tx);
 
+    if (conn->error || tx->responded) {
+        return HTTP_ROUTE_REJECT;
+    }
     if (httpClientConn(conn)) {
         if (rx->webSocket) {
             return HTTP_ROUTE_OK;
@@ -220,7 +223,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
             httpSetHeader(conn, "Sec-WebSocket-Protocol", ws->subProtocol);
         }
         httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
-        httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
+        httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->inactivityTimeout / MPR_TICKS_PER_SEC);
 
         if (route->webSocketsPingPeriod) {
             ws->pingEvent = mprCreateEvent(conn->dispatcher, "webSocket", route->webSocketsPingPeriod, 
@@ -1147,7 +1150,7 @@ PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
     httpSetHeader(conn, "Sec-WebSocket-Protocol", conn->protocols ? conn->protocols : "chat");
     httpSetHeader(conn, "Sec-WebSocket-Version", "13");
     httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
-    httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
+    httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->inactivityTimeout / MPR_TICKS_PER_SEC);
 
     conn->upgraded = 1;
     conn->keepAliveCount = 0;
@@ -1197,7 +1200,7 @@ PUBLIC bool httpVerifyWebSocketsHandshake(HttpConn *conn)
     return 1;
 }
 
-#endif /* BIT_HTTP_WEB_SOCKETS */
+#endif /* ME_HTTP_WEB_SOCKETS */
 /*
     @copy   default
 

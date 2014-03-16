@@ -466,7 +466,7 @@ PUBLIC bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
 }
 
 
-#if BIT_DEBUG
+#if ME_DEBUG
 PUBLIC bool httpVerifyQueue(HttpQueue *q)
 {
     HttpPacket  *packet;

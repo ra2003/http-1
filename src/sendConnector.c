@@ -13,7 +13,7 @@
 #include    "http.h"
 
 /**************************** Forward Declarations ****************************/
-#if !BIT_ROM
+#if !ME_ROM
 
 static void addPacketForSend(HttpQueue *q, HttpPacket *packet);
 static void adjustSendVec(HttpQueue *q, MprOff written);
@@ -168,7 +168,7 @@ static MprOff buildSendVec(HttpQueue *q)
         if (packet->flags & HTTP_PACKET_HEADER) {
             httpWriteHeaders(q, packet);
         }
-        if (q->ioFile || q->ioIndex >= (BIT_MAX_IOVEC - 2)) {
+        if (q->ioFile || q->ioIndex >= (ME_MAX_IOVEC - 2)) {
             /* Only one file entry allowed */
             break;
         }
@@ -213,7 +213,7 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
     tx = conn->tx;
 
     assert(q->count >= 0);
-    assert(q->ioIndex < (BIT_MAX_IOVEC - 2));
+    assert(q->ioIndex < (ME_MAX_IOVEC - 2));
 
     if (packet->prefix) {
         addToSendVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));
@@ -330,7 +330,7 @@ static void adjustSendVec(HttpQueue *q, MprOff written)
 PUBLIC int httpOpenSendConnector(Http *http) { return 0; }
 PUBLIC void httpSendOpen(HttpQueue *q) {}
 PUBLIC void httpSendOutgoingService(HttpQueue *q) {}
-#endif /* !BIT_ROM */
+#endif /* !ME_ROM */
 
 /*
     @copy   default

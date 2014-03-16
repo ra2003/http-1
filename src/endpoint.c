@@ -86,7 +86,7 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(HttpHost *host, cchar *home, c
         } else {
             ip = "localhost";
             if (port <= 0) {
-                port = BIT_HTTP_PORT;
+                port = ME_HTTP_PORT;
             }
             if ((endpoint = httpCreateEndpoint(ip, port, NULL)) == 0) {
                 return 0;
@@ -345,7 +345,7 @@ PUBLIC void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier notifie
 
 PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 {
-#if BIT_PACK_SSL
+#if ME_EXT_SSL
     endpoint->ssl = ssl;
     return 0;
 #else

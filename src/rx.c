@@ -745,8 +745,8 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     if (conn->keepAliveCount < 0) {
                         conn->keepAliveCount = 0;
                     }
-                    if (conn->keepAliveCount > BIT_MAX_KEEP_ALIVE) {
-                        conn->keepAliveCount = BIT_MAX_KEEP_ALIVE;
+                    if (conn->keepAliveCount > ME_MAX_KEEP_ALIVE) {
+                        conn->keepAliveCount = ME_MAX_KEEP_ALIVE;
                     }
                     /*
                         IMPORTANT: Deliberately close client connections one request early. This encourages a client-led 
@@ -816,7 +816,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                     This is for those who want very large forms and to do their own custom handling.
                  */
                 rx->ownParams = 1;
-#if BIT_DEBUG
+#if ME_DEBUG
             } else if (strcasecmp(key, "x-chunk-size") == 0) {
                 tx->chunkSize = atoi(value);
                 if (tx->chunkSize <= 0) {
@@ -928,7 +928,7 @@ static bool processParsed(HttpConn *conn)
                 httpStartPipeline(conn);
             }
         }
-#if BIT_HTTP_WEB_SOCKETS
+#if ME_HTTP_WEB_SOCKETS
     } else {
         if (conn->upgraded && !httpVerifyWebSocketsHandshake(conn)) {
             httpSetState(conn, HTTP_STATE_FINALIZED);
@@ -1203,7 +1203,7 @@ static void createErrorRequest(HttpConn *conn)
     conn->upgraded = 0;
     conn->worker = 0;
 
-    packet = httpCreateDataPacket(BIT_MAX_BUFFER);
+    packet = httpCreateDataPacket(ME_MAX_BUFFER);
     mprPutToBuf(packet->content, "%s %s %s\r\n", rx->method, tx->errorDocument, conn->protocol);
     buf = rx->headerPacket->content;
     /*
@@ -1261,7 +1261,7 @@ static bool processFinalized(HttpConn *conn)
     assert(tx->finalizedOutput);
     assert(tx->finalizedConnector);
 
-#if BIT_TRACE_MEM
+#if ME_TRACE_MEM
     mprTrace(1, "Request complete, status %d, error %d, connError %d, %s%s, memsize %.2f MB",
         tx->status, conn->error, conn->connError, rx->hostHeader, rx->uri, mprGetMem() / 1024 / 1024.0);
 #endif

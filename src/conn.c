@@ -646,12 +646,12 @@ static HttpPacket *getPacket(HttpConn *conn, ssize *size)
         /*
             Boost the size of the packet if we have already read a largish amount of data
          */
-        psize = (conn->rx && conn->rx->bytesRead > BIT_MAX_BUFFER) ? BIT_MAX_BUFFER * 8 : BIT_MAX_BUFFER;
+        psize = (conn->rx && conn->rx->bytesRead > ME_MAX_BUFFER) ? ME_MAX_BUFFER * 8 : ME_MAX_BUFFER;
         conn->input = packet = httpCreateDataPacket(psize);
     } else {
         content = packet->content;
         mprResetBufIfEmpty(content);
-        if (mprGetBufSpace(content) < BIT_MAX_BUFFER && mprGrowBuf(content, BIT_MAX_BUFFER) < 0) {
+        if (mprGetBufSpace(content) < ME_MAX_BUFFER && mprGrowBuf(content, ME_MAX_BUFFER) < 0) {
             mprMemoryError(0);
             conn->keepAliveCount = 0;
             conn->state = HTTP_STATE_BEGIN;
@@ -818,7 +818,7 @@ PUBLIC void httpSetState(HttpConn *conn, int targetState)
 }
 
 
-#if BIT_MPR_TRACING
+#if ME_MPR_TRACING
 static char *events[] = {
     "undefined", "state-change", "readable", "writable", "error", "destroy", "app-open", "app-close",
 };

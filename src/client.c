@@ -63,7 +63,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     conn->secure = uri->secure;
     conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : 0;
 
-#if BIT_PACK_SSL
+#if ME_EXT_SSL
     /* Must be done even if using keep alive for repeat SSL requests */
     if (uri->secure) {
         char *peerName;
@@ -78,7 +78,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         }
     }
 #endif
-#if BIT_HTTP_WEB_SOCKETS
+#if ME_HTTP_WEB_SOCKETS
     if (uri->webSockets && httpUpgradeWebSocket(conn) < 0) {
         conn->errorMsg = sp->errorMsg;
         return 0;
@@ -304,17 +304,17 @@ PUBLIC char *httpReadString(HttpConn *conn)
             remaining -= nbytes;
         }
     } else {
-        content = mprAlloc(BIT_MAX_BUFFER);
+        content = mprAlloc(ME_MAX_BUFFER);
         sofar = 0;
         while (1) {
-            nbytes = httpRead(conn, &content[sofar], BIT_MAX_BUFFER);
+            nbytes = httpRead(conn, &content[sofar], ME_MAX_BUFFER);
             if (nbytes < 0) {
                 return 0;
             } else if (nbytes == 0) {
                 break;
             }
             sofar += nbytes;
-            content = mprRealloc(content, sofar + BIT_MAX_BUFFER);
+            content = mprRealloc(content, sofar + ME_MAX_BUFFER);
         }
     }
     content[sofar] = '\0';
@@ -368,7 +368,7 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
 static int blockingFileCopy(HttpConn *conn, cchar *path)
 {
     MprFile     *file;
-    char        buf[BIT_MAX_BUFFER];
+    char        buf[ME_MAX_BUFFER];
     ssize       bytes, nbytes, offset;
 
     file = mprOpenFile(path, O_RDONLY | O_BINARY, 0);

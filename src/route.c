@@ -8,7 +8,7 @@
 
 #include    "http.h"
 
-#if BIT_PACK_PCRE
+#if ME_EXT_PCRE
  #include    "pcre.h"
 #endif
 
@@ -70,12 +70,12 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->defaultLanguage = sclone("en");
     route->home = route->documents = mprGetCurrentPath(".");
     route->flags = HTTP_ROUTE_STEALTH;
-#if BIT_DEBUG
+#if ME_DEBUG
     route->flags |= HTTP_ROUTE_SHOW_ERRORS;
 #endif
     route->host = host;
     route->http = MPR->httpService;
-    route->lifespan = BIT_MAX_CACHE_DURATION;
+    route->lifespan = ME_MAX_CACHE_DURATION;
     route->pattern = MPR->emptyString;
     route->targetRule = sclone("run");
     route->autoDelete = 1;
@@ -298,7 +298,7 @@ PUBLIC HttpRoute *httpCreateConfiguredRoute(HttpHost *host, int serverSide)
      */
     route = httpCreateRoute(host);
     http = route->http;
-#if BIT_HTTP_WEB_SOCKETS
+#if ME_HTTP_WEB_SOCKETS
     httpAddRouteFilter(route, http->webSocketFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
 #endif
     if (serverSide) {
@@ -349,7 +349,7 @@ PUBLIC HttpRoute *httpCreateActionRoute(HttpRoute *parent, cchar *pattern, HttpA
 
 PUBLIC int httpStartRoute(HttpRoute *route)
 {
-#if !BIT_ROM
+#if !ME_ROM
     if (!(route->flags & HTTP_ROUTE_STARTED)) {
         route->flags |= HTTP_ROUTE_STARTED;
         if (route->logPath && (!route->parent || route->logPath != route->parent->logPath)) {
@@ -395,7 +395,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
         route = rx->route = conn->host->defaultRoute;
 
     } else {
-        for (next = rewrites = 0; rewrites < BIT_MAX_REWRITE; ) {
+        for (next = rewrites = 0; rewrites < ME_MAX_REWRITE; ) {
             if (next >= conn->host->routes->length) {
                 break;
             }
@@ -434,7 +434,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     conn->trace[0] = route->trace[0];
     conn->trace[1] = route->trace[1];
 
-    if (rewrites >= BIT_MAX_REWRITE) {
+    if (rewrites >= ME_MAX_REWRITE) {
         httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
     }
     if (tx->finalized) {
@@ -538,7 +538,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     HttpRx          *rx;
     HttpTx          *tx;
     cchar           *token, *value, *header, *field;
-    int             next, rc, matched[BIT_MAX_ROUTE_MATCHES * 2], count, result;
+    int             next, rc, matched[ME_MAX_ROUTE_MATCHES * 2], count, result;
 
     assert(conn);
     assert(route);
@@ -747,7 +747,7 @@ PUBLIC void httpMapFile(HttpConn *conn)
     }
     filename = mprJoinPath(conn->rx->route->documents, filename);
     filename = mapContent(conn, filename);
-#if BIT_ROM
+#if ME_ROM
     filename = mprGetRelPath(filename, NULL);
 #endif
     httpSetFilename(conn, filename, 0);
@@ -946,7 +946,7 @@ PUBLIC void httpAddRouteMapping(HttpRoute *route, cchar *extensions, cchar *mapp
     char        *etok, *mtok;
 
     if (!route->map) {
-        route->map = mprCreateHash(BIT_MAX_ROUTE_MAP_HASH, MPR_HASH_STABLE);
+        route->map = mprCreateHash(ME_MAX_ROUTE_MAP_HASH, MPR_HASH_STABLE);
     }
     for (ext = stok(sclone(extensions), ", \t", &etok); ext; ext = stok(NULL, ", \t", &etok)) {
         if (*ext == '.') {
@@ -1389,7 +1389,7 @@ PUBLIC void httpAddRouteMethods(HttpRoute *route, cchar *methods)
     assert(route);
 
     if (methods == NULL || *methods == '\0') {
-        methods = BIT_HTTP_DEFAULT_METHODS;
+        methods = ME_HTTP_DEFAULT_METHODS;
     } else if (scaselessmatch(methods, "ALL")) {
        methods = "*";
     }
@@ -1963,7 +1963,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     HttpRx      *rx;
     HttpRoute   *route;
     cchar       *cp, *ep, *value;
-    char        key[BIT_MAX_BUFFER];
+    char        key[ME_MAX_BUFFER];
 
     rx = conn->rx;
     route = rx->route;
@@ -1975,7 +1975,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
         if (cp == template && *cp == '~') {
             mprPutStringToBuf(buf, route->prefix ? route->prefix : "/");
 
-        } else if (cp == template && *cp == BIT_SERVER_PREFIX_CHAR) {
+        } else if (cp == template && *cp == ME_SERVER_PREFIX_CHAR) {
             mprPutStringToBuf(buf, route->prefix ? route->prefix : "/");
             mprPutStringToBuf(buf, route->serverPrefix ? route->serverPrefix : "/");
 
@@ -2307,7 +2307,7 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 static int matchCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
     char    *str;
-    int     matched[BIT_MAX_ROUTE_MATCHES * 2], count;
+    int     matched[ME_MAX_ROUTE_MATCHES * 2], count;
 
     assert(conn);
     assert(route);
@@ -2630,7 +2630,7 @@ PUBLIC void httpAddWebSocketsRoute(HttpRoute *parent, cchar *prefix, cchar *name
     /*
         Set some reasonable defaults. 5 minutes for inactivity and no request timeout limit
      */
-    route->limits->inactivityTimeout = BIT_MAX_INACTIVITY_DURATION * 10;
+    route->limits->inactivityTimeout = ME_MAX_INACTIVITY_DURATION * 10;
     route->limits->requestTimeout = MPR_MAX_TIMEOUT;
 }
 
@@ -2730,10 +2730,10 @@ static void definePathVars(HttpRoute *route)
 {
     assert(route);
 
-    mprAddKey(route->vars, "PRODUCT", sclone(BIT_PRODUCT));
-    mprAddKey(route->vars, "OS", sclone(BIT_OS));
-    mprAddKey(route->vars, "VERSION", sclone(BIT_VERSION));
-    mprAddKey(route->vars, "PLATFORM", sclone(BIT_PLATFORM));
+    mprAddKey(route->vars, "PRODUCT", sclone(ME_NAME));
+    mprAddKey(route->vars, "OS", sclone(ME_OS));
+    mprAddKey(route->vars, "VERSION", sclone(ME_VERSION));
+    mprAddKey(route->vars, "PLATFORM", sclone(ME_PLATFORM));
     mprAddKey(route->vars, "BIN_DIR", mprGetAppDir());
 #if DEPRECATED || 1
     mprAddKey(route->vars, "LIBDIR", mprGetAppDir());
@@ -3364,6 +3364,9 @@ PUBLIC uint64 httpGetNumber(cchar *value)
 {
     uint64  number;
 
+    if (smatch(value, "infinite") || smatch(value, "never")) {
+        return MPR_MAX_TIMEOUT / MPR_TICKS_PER_SEC;
+    }
     value = strim(slower(value), " \t", MPR_TRIM_BOTH);
     if (sends(value, "sec") || sends(value, "secs") || sends(value, "seconds") || sends(value, "seconds")) {
         number = stoi(value);

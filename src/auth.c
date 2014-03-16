@@ -37,7 +37,7 @@ PUBLIC void httpInitAuth(Http *http)
 
     httpCreateAuthStore("app", NULL);
     httpCreateAuthStore("internal", fileVerifyUser);
-#if BIT_HAS_PAM && BIT_HTTP_PAM
+#if ME_HAS_PAM && ME_HTTP_PAM
     httpCreateAuthStore("system", httpPamVerifyUser);
 #endif
 #if DEPRECATED || 1
@@ -45,7 +45,7 @@ PUBLIC void httpInitAuth(Http *http)
         Deprecated in 4.4. Use "internal"
      */
     httpCreateAuthStore("file", fileVerifyUser);
-#if BIT_HAS_PAM && BIT_HTTP_PAM
+#if ME_HAS_PAM && ME_HTTP_PAM
     httpCreateAuthStore("pam", httpPamVerifyUser);
 #endif
 #endif
@@ -152,12 +152,6 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         mprError("No user verification routine defined on route %s", rx->route->name);
         return 0;
     }
-    if (!auth->store->noSession) {
-        if ((session = httpCreateSession(conn)) == 0) {
-            /* Too many sessions */
-            return 0;
-        }
-    }
     if (auth->username && *auth->username) {
         /* If using auto-login, replace the username */
         username = auth->username;
@@ -167,6 +161,10 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         return 0;
     }
     if (!auth->store->noSession) {
+        if ((session = httpCreateSession(conn)) == 0) {
+            /* Too many sessions */
+            return 0;
+        }
         httpSetSessionVar(conn, HTTP_SESSION_USERNAME, username);
         httpSetSessionVar(conn, HTTP_SESSION_IP, conn->ip);
     }
@@ -559,7 +557,7 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
     }
     //  DEPRECATED "pam"
     if (smatch(store, "system") || smatch(store, "pam")) {
-#if BIT_HAS_PAM && BIT_HTTP_PAM
+#if ME_HAS_PAM && ME_HTTP_PAM
         if (auth->type && smatch(auth->type->name, "digest")) {
             mprError("Cannot use the PAM password store with digest authentication");
             return MPR_ERR_BAD_ARGS;
@@ -769,7 +767,7 @@ PUBLIC void httpComputeUserAbilities(HttpAuth *auth, HttpUser *user)
     for (ability = stok(sclone(user->roles), " \t,", &tok); ability; ability = stok(NULL, " \t,", &tok)) {
         computeAbilities(auth, user->abilities, ability);
     }
-#if BIT_DEBUG
+#if ME_DEBUG
     {
         MprBuf *buf = mprCreateBuf(0, 0);
         MprKey *ap;

@@ -2,97 +2,99 @@
 #   http-windows-default.nmake -- Makefile to build Embedthis Http for windows
 #
 
-NAME               = http
-VERSION            = 5.0.0
-PROFILE            = default
-PA                 = $(PROCESSOR_ARCHITECTURE)
+NAME                  = http
+VERSION               = 5.0.0
+
+OS                    = windows
+PA                    = $(PROCESSOR_ARCHITECTURE)
+!IF "$(PROFILE)" == ""
+PROFILE               = default
+!ENDIF
+
 
 !IF "$(PA)" == "AMD64"
-ARCH               = x64
-ENTRY              = _DllMainCRTStartup
+ARCH                  = x64
+ENTRY                 = _DllMainCRTStartup
 !ELSE
-ARCH               = x86
-ENTRY              = _DllMainCRTStartup@12
+ARCH                  = x86
+ENTRY                 = _DllMainCRTStartup@12
 !ENDIF
 
-OS                 = windows
-CONFIG             = $(OS)-$(ARCH)-$(PROFILE)
-LBIN               = $(CONFIG)\bin
+!IF "$(CONFIG)" == ""
+CONFIG                = $(OS)-$(ARCH)-$(PROFILE)
+!ENDIF
+
+LBIN                  = $(CONFIG)\bin
+
+!IF "$(ME_EXT_EST)" == ""
+ME_EXT_EST            = 1
+!ENDIF
+!IF "$(ME_EXT_PCRE)" == ""
+ME_EXT_PCRE           = 1
+!ENDIF
+!IF "$(ME_EXT_SSL)" == ""
+ME_EXT_SSL            = 1
+!ENDIF
+
+ME_EXT_COMPILER_PATH  = cl
+ME_EXT_DOXYGEN_PATH   = doxygen
+ME_EXT_DSI_PATH       = dsi
+ME_EXT_EST_PATH       = src/paks/est/estLib.c
+ME_EXT_LIB_PATH       = lib.exe
+ME_EXT_LINK_PATH      = link
+ME_EXT_MAN_PATH       = man
+ME_EXT_MAN2HTML_PATH  = man2html
+ME_EXT_MATRIXSSL_PATH = /usr/src/matrixssl
+ME_EXT_MPR_PATH       = src/paks/mpr
+ME_EXT_NANOSSL_PATH   = /usr/src/nanossl
+ME_EXT_OPENSSL_PATH   = /usr/src/openssl
+ME_EXT_OSDEP_PATH     = src/paks/osdep
+ME_EXT_PCRE_PATH      = src/paks/pcre
+ME_EXT_RC_PATH        = rc
+ME_EXT_SSL_PATH       = ssl
+ME_EXT_UTEST_PATH     = utest
+ME_EXT_VXWORKS_PATH   = $(WIND_BASE)
+ME_EXT_WINSDK_PATH    = winsdk
+
+CC                    = cl
+LD                    = link
+RC                    = rc
+CFLAGS                = -nologo -GR- -W3  -MD
+DFLAGS                = -D_REENTRANT -D_MT -DME_EXT_EST=$(ME_EXT_EST) -DME_EXT_PCRE=$(ME_EXT_PCRE) -DME_EXT_SSL=$(ME_EXT_SSL) 
+IFLAGS                = -I$(CONFIG)\inc
+LDFLAGS               = -nologo -nodefaultlib -incremental:no -machine:$(ARCH)
+LIBPATHS              = "-libpath:$(CONFIG)\bin"
+LIBS                  = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
+
+ME_ROOT_PREFIX        = C:
+ME_BASE_PREFIX        = $(ME_ROOT_PREFIX)\Program Files
+ME_APP_PREFIX         = $(ME_BASE_PREFIX)\Embedthis Http
+ME_VAPP_PREFIX        = $(ME_APP_PREFIX)
+ME_DATA_PREFIX        = $(ME_VAPP_PREFIX)
+ME_STATE_PREFIX       = $(ME_VAPP_PREFIX)
+ME_BIN_PREFIX         = $(ME_VAPP_PREFIX)\bin
+ME_INC_PREFIX         = $(ME_VAPP_PREFIX)\inc
+ME_LIB_PREFIX         = $(ME_VAPP_PREFIX)\lib
+ME_MAN_PREFIX         = $(ME_VAPP_PREFIX)\man
+ME_ETC_PREFIX         = $(ME_VAPP_PREFIX)
+ME_WEB_PREFIX         = $(ME_VAPP_PREFIX)\web
+ME_LOG_PREFIX         = $(ME_VAPP_PREFIX)\log
+ME_SPOOL_PREFIX       = $(ME_VAPP_PREFIX)\tmp
+ME_CACHE_PREFIX       = $(ME_VAPP_PREFIX)\cache
+ME_SRC_PREFIX         = $(ME_VAPP_PREFIX)\src
+
 
 !IF "$(ME_EXT_EST)" == "1"
-    ME_EXT_EST            = 1
+TARGETS               = $(TARGETS) $(CONFIG)\bin\libest.dll
 !ENDIF
+TARGETS               = $(TARGETS) $(CONFIG)\bin\ca.crt
+TARGETS               = $(TARGETS) $(CONFIG)\bin\libmpr.dll
+TARGETS               = $(TARGETS) $(CONFIG)\bin\libmprssl.dll
 !IF "$(ME_EXT_PCRE)" == "1"
-    ME_EXT_PCRE           = 1
+TARGETS               = $(TARGETS) $(CONFIG)\bin\libpcre.dll
 !ENDIF
-!IF "$(ME_EXT_SSL)" == "1"
-    ME_EXT_SSL            = 1
-!ENDIF
-
-!IF "$(ME_EXT_EST)" == "1"
-    ME_EXT_SSL            = 1
-!ENDIF
-
-
-ME_EXT_COMPILER_PATH      = cl
-ME_EXT_DOXYGEN_PATH       = doxygen
-ME_EXT_DSI_PATH           = dsi
-ME_EXT_EST_PATH           = src/paks/est/estLib.c
-ME_EXT_LIB_PATH           = lib.exe
-ME_EXT_LINK_PATH          = link
-ME_EXT_MAN_PATH           = man
-ME_EXT_MAN2HTML_PATH      = man2html
-ME_EXT_MATRIXSSL_PATH     = /usr/src/matrixssl
-ME_EXT_MPR_PATH           = src/paks/mpr
-ME_EXT_NANOSSL_PATH       = /usr/src/nanossl
-ME_EXT_OPENSSL_PATH       = /usr/src/openssl
-ME_EXT_OSDEP_PATH         = src/paks/osdep
-ME_EXT_PCRE_PATH          = src/paks/pcre
-ME_EXT_RC_PATH            = rc
-ME_EXT_SSL_PATH           = ssl
-ME_EXT_UTEST_PATH         = utest
-ME_EXT_VXWORKS_PATH       = $(WIND_BASE)
-ME_EXT_WINSDK_PATH        = winsdk
-
-CC                 = cl
-LD                 = link
-RC                 = rc
-CFLAGS             = -nologo -GR- -W3 -O2 -MD
-DFLAGS             = -D_REENTRANT -D_MT -DME_EXT_EST=$(ME_EXT_EST) -DME_EXT_PCRE=$(ME_EXT_PCRE) -DME_EXT_SSL=$(ME_EXT_SSL) 
-IFLAGS             = -I$(CONFIG)\inc
-LDFLAGS            = -nologo -nodefaultlib -incremental:no -machine:$(ARCH)
-LIBPATHS           = "-libpath:$(CONFIG)\bin"
-LIBS               = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib msvcrt.lib shell32.lib
-
-ME_ROOT_PREFIX     = C:
-ME_BASE_PREFIX     = $(ME_ROOT_PREFIX)\Program Files
-ME_APP_PREFIX      = $(ME_BASE_PREFIX)\Embedthis Http
-ME_VAPP_PREFIX     = $(ME_APP_PREFIX)
-ME_DATA_PREFIX     = $(ME_VAPP_PREFIX)
-ME_STATE_PREFIX    = $(ME_VAPP_PREFIX)
-ME_BIN_PREFIX      = $(ME_VAPP_PREFIX)\bin
-ME_INC_PREFIX      = $(ME_VAPP_PREFIX)\inc
-ME_LIB_PREFIX      = $(ME_VAPP_PREFIX)\lib
-ME_MAN_PREFIX      = $(ME_VAPP_PREFIX)\man
-ME_ETC_PREFIX      = $(ME_VAPP_PREFIX)
-ME_WEB_PREFIX      = $(ME_VAPP_PREFIX)\web
-ME_LOG_PREFIX      = $(ME_VAPP_PREFIX)\log
-ME_SPOOL_PREFIX    = $(ME_VAPP_PREFIX)\tmp
-ME_CACHE_PREFIX    = $(ME_VAPP_PREFIX)\cache
-ME_SRC_PREFIX      = $(ME_VAPP_PREFIX)\src
-
-
-!IF "$(ME_EXT_EST)" == "1"
-    TARGETS        = $(TARGETS) $(CONFIG)\bin\libest.dll
-!ENDIF
-TARGETS            = $(TARGETS) $(CONFIG)\bin\ca.crt
-TARGETS            = $(TARGETS) $(CONFIG)\bin\libmpr.dll
-TARGETS            = $(TARGETS) $(CONFIG)\bin\libmprssl.dll
-!IF "$(ME_EXT_PCRE)" == "1"
-    TARGETS        = $(TARGETS) $(CONFIG)\bin\libpcre.dll
-!ENDIF
-TARGETS            = $(TARGETS) $(CONFIG)\bin\testHttp.exe
-TARGETS            = $(TARGETS) $(CONFIG)\bin\http.exe
+TARGETS               = $(TARGETS) $(CONFIG)\bin\testHttp.exe
+TARGETS               = $(TARGETS) $(CONFIG)\bin\http.exe
 
 !IFNDEF SHOW
 .SILENT:

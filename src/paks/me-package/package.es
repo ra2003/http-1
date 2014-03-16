@@ -8,6 +8,9 @@ require ejs.tar
 require ejs.unix
 require ejs.zlib
 
+/*
+    Deploy files to a directory
+ */
 public function deploy(manifest, prefixes, package): Array {
     let sets = me.options.sets 
     if (me.options.deploy) {
@@ -200,9 +203,6 @@ function setupManifest(kind, package, prefixes) {
 }
 
 
-/*
-    Create prefixes for the kind of package
- */
 function setupPackagePrefixes(kind, package) {
     let prefixes = {}
     if (me.installing) {
@@ -314,6 +314,7 @@ public function publish() {
 }
 */
 
+
 function cachePackage(package, prefixes, fmt) {
     let staging = prefixes.staging.absolute
     let base = staging.join(me.platform.vname)
@@ -323,7 +324,7 @@ function cachePackage(package, prefixes, fmt) {
     let home = App.dir
     try {
         trace('Cache', me.settings.title + ' ' + version)
-        package.copy(base.join('bower.json'))
+        // UNUSED package.copy(base.join('bower.json'))
         App.chdir(staging)
         run('pak -f cache ' + me.platform.vname)
     } finally {
@@ -488,7 +489,7 @@ function makeSimplePackage(package, prefixes, fmt) {
     if (fmt == 'pak') {
         let base = prefixes.staging.join(me.platform.vname)
         let package = base.join('package.json')
-        package.copy(base.join('bower.json'))
+        // UNUSED package.copy(base.join('bower.json'))
     }
     let name = me.dir.rel.join(me.platform.vname + '-' + fmt + '.tar')
     let zname = name.replaceExt('tgz')
@@ -872,7 +873,6 @@ public function checkUninstalled() {
 }
 
 
-/* UNUSED
 public function getWebUser(): String {
     if (me.platform.os == 'macosx') {
         return '_www'
@@ -899,7 +899,6 @@ public function getWebGroup(): String {
     }
     return '0'
 }
-*/
 
 
 function skip(name, msg) {

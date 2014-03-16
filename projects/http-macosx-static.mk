@@ -2,100 +2,91 @@
 #   http-macosx-static.mk -- Makefile to build Embedthis Http for macosx
 #
 
-NAME               := http
-VERSION            := 5.0.0
-PROFILE            := static
-ARCH               := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
-CC_ARCH            := $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
-OS                 := macosx
-CC                 := clang
-LD                 := link
-CONFIG             := $(OS)-$(ARCH)-$(PROFILE)
-LBIN               := $(CONFIG)/bin
+NAME                  := http
+VERSION               := 5.0.0
+PROFILE               ?= static
+ARCH                  ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
+CC_ARCH               ?= $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
+OS                    ?= macosx
+CC                    ?= clang
+LD                    ?= link
+CONFIG                ?= $(OS)-$(ARCH)-$(PROFILE)
+LBIN                  ?= $(CONFIG)/bin
+PATH                  := $(LBIN):$(PATH)
+
+ME_EXT_EST            ?= 1
+ME_EXT_PCRE           ?= 1
+ME_EXT_SSL            ?= 1
+
+ME_EXT_COMPILER_PATH  ?= clang
+ME_EXT_DOXYGEN_PATH   ?= doxygen
+ME_EXT_DSI_PATH       ?= dsi
+ME_EXT_EST_PATH       ?= src/paks/est/estLib.c
+ME_EXT_LIB_PATH       ?= ar
+ME_EXT_LINK_PATH      ?= link
+ME_EXT_MAN_PATH       ?= man
+ME_EXT_MAN2HTML_PATH  ?= man2html
+ME_EXT_MATRIXSSL_PATH ?= /usr/src/matrixssl
+ME_EXT_MPR_PATH       ?= src/paks/mpr
+ME_EXT_NANOSSL_PATH   ?= /usr/src/nanossl
+ME_EXT_OPENSSL_PATH   ?= /usr/src/openssl
+ME_EXT_OSDEP_PATH     ?= src/paks/osdep
+ME_EXT_PCRE_PATH      ?= src/paks/pcre
+ME_EXT_SSL_PATH       ?= ssl
+ME_EXT_UTEST_PATH     ?= utest
+ME_EXT_VXWORKS_PATH   ?= $(WIND_BASE)
+ME_EXT_WINSDK_PATH    ?= winsdk
+
+export WIND_HOME      ?= $(WIND_BASE)/..
+
+CFLAGS                += -w
+DFLAGS                +=  $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_EXT_EST=$(ME_EXT_EST) -DME_EXT_PCRE=$(ME_EXT_PCRE) -DME_EXT_SSL=$(ME_EXT_SSL) 
+IFLAGS                += "-I$(CONFIG)/inc"
+LDFLAGS               += '-Wl,-rpath,@executable_path/' '-Wl,-rpath,@loader_path/'
+LIBPATHS              += -L$(CONFIG)/bin
+LIBS                  += -ldl -lpthread -lm
+
+DEBUG                 ?= debug
+CFLAGS-debug          ?= -g
+DFLAGS-debug          ?= -DME_DEBUG
+LDFLAGS-debug         ?= -g
+DFLAGS-release        ?= 
+CFLAGS-release        ?= -O2
+LDFLAGS-release       ?= 
+CFLAGS                += $(CFLAGS-$(DEBUG))
+DFLAGS                += $(DFLAGS-$(DEBUG))
+LDFLAGS               += $(LDFLAGS-$(DEBUG))
+
+ME_ROOT_PREFIX        ?= 
+ME_BASE_PREFIX        ?= $(ME_ROOT_PREFIX)/usr/local
+ME_DATA_PREFIX        ?= $(ME_ROOT_PREFIX)/
+ME_STATE_PREFIX       ?= $(ME_ROOT_PREFIX)/var
+ME_APP_PREFIX         ?= $(ME_BASE_PREFIX)/lib/$(NAME)
+ME_VAPP_PREFIX        ?= $(ME_APP_PREFIX)/$(VERSION)
+ME_BIN_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/bin
+ME_INC_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/include
+ME_LIB_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/lib
+ME_MAN_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/share/man
+ME_SBIN_PREFIX        ?= $(ME_ROOT_PREFIX)/usr/local/sbin
+ME_ETC_PREFIX         ?= $(ME_ROOT_PREFIX)/etc/$(NAME)
+ME_WEB_PREFIX         ?= $(ME_ROOT_PREFIX)/var/www/$(NAME)-default
+ME_LOG_PREFIX         ?= $(ME_ROOT_PREFIX)/var/log/$(NAME)
+ME_SPOOL_PREFIX       ?= $(ME_ROOT_PREFIX)/var/spool/$(NAME)
+ME_CACHE_PREFIX       ?= $(ME_ROOT_PREFIX)/var/spool/$(NAME)/cache
+ME_SRC_PREFIX         ?= $(ME_ROOT_PREFIX)$(NAME)-$(VERSION)
+
 
 ifeq ($(ME_EXT_EST),1)
-    ME_EXT_EST            := 1
+    TARGETS           += $(CONFIG)/bin/libest.a
 endif
+TARGETS               += $(CONFIG)/bin/ca.crt
+TARGETS               += $(CONFIG)/bin/libmpr.a
+TARGETS               += $(CONFIG)/bin/libmprssl.a
 ifeq ($(ME_EXT_PCRE),1)
-    ME_EXT_PCRE           := 1
+    TARGETS           += $(CONFIG)/bin/libpcre.a
 endif
-ifeq ($(ME_EXT_SSL),1)
-    ME_EXT_SSL            := 1
-endif
-
-ifeq ($(ME_EXT_EST),1)
-    ME_EXT_SSL            := 1
-endif
-
-ME_EXT_COMPILER_PATH      := clang
-ME_EXT_DOXYGEN_PATH       := doxygen
-ME_EXT_DSI_PATH           := dsi
-ME_EXT_EST_PATH           := src/paks/est/estLib.c
-ME_EXT_LIB_PATH           := ar
-ME_EXT_LINK_PATH          := link
-ME_EXT_MAN_PATH           := man
-ME_EXT_MAN2HTML_PATH      := man2html
-ME_EXT_MATRIXSSL_PATH     := /usr/src/matrixssl
-ME_EXT_MPR_PATH           := src/paks/mpr
-ME_EXT_NANOSSL_PATH       := /usr/src/nanossl
-ME_EXT_OPENSSL_PATH       := /usr/src/openssl
-ME_EXT_OSDEP_PATH         := src/paks/osdep
-ME_EXT_PCRE_PATH          := src/paks/pcre
-ME_EXT_SSL_PATH           := ssl
-ME_EXT_UTEST_PATH         := utest
-ME_EXT_VXWORKS_PATH       := $(WIND_BASE)
-ME_EXT_WINSDK_PATH        := winsdk
-
-export WIND_HOME          := $(WIND_BASE)/..
-
-CFLAGS             += -Wunreachable-code -w
-DFLAGS             +=  $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_EXT_EST=$(ME_EXT_EST) -DME_EXT_PCRE=$(ME_EXT_PCRE) -DME_EXT_SSL=$(ME_EXT_SSL) 
-IFLAGS             += "-I$(CONFIG)/inc"
-LDFLAGS            += '-Wl,-rpath,@executable_path/' '-Wl,-rpath,@loader_path/'
-LIBPATHS           += -L$(CONFIG)/bin
-LIBS               += -ldl -lpthread -lm
-
-DEBUG              := debug
-CFLAGS-debug       := -g
-DFLAGS-debug       := -DME_DEBUG
-LDFLAGS-debug      := -g
-DFLAGS-release     := 
-CFLAGS-release     := -O2
-LDFLAGS-release    := 
-CFLAGS             += $(CFLAGS-$(DEBUG))
-DFLAGS             += $(DFLAGS-$(DEBUG))
-LDFLAGS            += $(LDFLAGS-$(DEBUG))
-
-ME_ROOT_PREFIX     := 
-ME_BASE_PREFIX     := $(ME_ROOT_PREFIX)/usr/local
-ME_DATA_PREFIX     := $(ME_ROOT_PREFIX)/
-ME_STATE_PREFIX    := $(ME_ROOT_PREFIX)/var
-ME_APP_PREFIX      := $(ME_BASE_PREFIX)/lib/$(NAME)
-ME_VAPP_PREFIX     := $(ME_APP_PREFIX)/$(VERSION)
-ME_BIN_PREFIX      := $(ME_ROOT_PREFIX)/usr/local/bin
-ME_INC_PREFIX      := $(ME_ROOT_PREFIX)/usr/local/include
-ME_LIB_PREFIX      := $(ME_ROOT_PREFIX)/usr/local/lib
-ME_MAN_PREFIX      := $(ME_ROOT_PREFIX)/usr/local/share/man
-ME_SBIN_PREFIX     := $(ME_ROOT_PREFIX)/usr/local/sbin
-ME_ETC_PREFIX      := $(ME_ROOT_PREFIX)/etc/$(NAME)
-ME_WEB_PREFIX      := $(ME_ROOT_PREFIX)/var/www/$(NAME)-default
-ME_LOG_PREFIX      := $(ME_ROOT_PREFIX)/var/log/$(NAME)
-ME_SPOOL_PREFIX    := $(ME_ROOT_PREFIX)/var/spool/$(NAME)
-ME_CACHE_PREFIX    := $(ME_ROOT_PREFIX)/var/spool/$(NAME)/cache
-ME_SRC_PREFIX      := $(ME_ROOT_PREFIX)$(NAME)-$(VERSION)
-
-
-ifeq ($(ME_EXT_EST),1)
-    TARGETS        += $(CONFIG)/bin/libest.a
-endif
-TARGETS            += $(CONFIG)/bin/ca.crt
-TARGETS            += $(CONFIG)/bin/libmpr.a
-TARGETS            += $(CONFIG)/bin/libmprssl.a
-ifeq ($(ME_EXT_PCRE),1)
-    TARGETS        += $(CONFIG)/bin/libpcre.a
-endif
-TARGETS            += $(CONFIG)/bin/testHttp
-TARGETS            += $(CONFIG)/bin/http
+TARGETS               += $(CONFIG)/bin/testHttp
+TARGETS               += $(CONFIG)/bin/http
 
 unexport CDPATH
 
@@ -224,7 +215,7 @@ DEPS_5 += $(CONFIG)/inc/osdep.h
 $(CONFIG)/obj/estLib.o: \
     src/paks/est/estLib.c $(DEPS_5)
 	@echo '   [Compile] $(CONFIG)/obj/estLib.o'
-	$(CC) -c -o $(CONFIG)/obj/estLib.o -arch $(CC_ARCH) -Wunreachable-code $(IFLAGS) src/paks/est/estLib.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/estLib.o -arch $(CC_ARCH) $(IFLAGS) src/paks/est/estLib.c
 
 ifeq ($(ME_EXT_EST),1)
 #
@@ -268,7 +259,7 @@ DEPS_9 += $(CONFIG)/inc/osdep.h
 $(CONFIG)/obj/mprLib.o: \
     src/paks/mpr/mprLib.c $(DEPS_9)
 	@echo '   [Compile] $(CONFIG)/obj/mprLib.o'
-	$(CC) -c -o $(CONFIG)/obj/mprLib.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/paks/mpr/mprLib.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/mprLib.o -arch $(CC_ARCH) $(IFLAGS) src/paks/mpr/mprLib.c
 
 #
 #   libmpr
@@ -292,7 +283,7 @@ DEPS_11 += $(CONFIG)/inc/est.h
 $(CONFIG)/obj/mprSsl.o: \
     src/paks/mpr/mprSsl.c $(DEPS_11)
 	@echo '   [Compile] $(CONFIG)/obj/mprSsl.o'
-	$(CC) -c -o $(CONFIG)/obj/mprSsl.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/paks/mpr/mprSsl.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/mprSsl.o -arch $(CC_ARCH) $(IFLAGS) src/paks/mpr/mprSsl.c
 
 #
 #   libmprssl
@@ -330,7 +321,7 @@ DEPS_14 += $(CONFIG)/inc/pcre.h
 $(CONFIG)/obj/pcre.o: \
     src/paks/pcre/pcre.c $(DEPS_14)
 	@echo '   [Compile] $(CONFIG)/obj/pcre.o'
-	$(CC) -c -o $(CONFIG)/obj/pcre.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/paks/pcre/pcre.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/pcre.o -arch $(CC_ARCH) $(IFLAGS) src/paks/pcre/pcre.c
 
 ifeq ($(ME_EXT_PCRE),1)
 #
@@ -363,7 +354,7 @@ DEPS_17 += $(CONFIG)/inc/mpr.h
 $(CONFIG)/obj/actionHandler.o: \
     src/actionHandler.c $(DEPS_17)
 	@echo '   [Compile] $(CONFIG)/obj/actionHandler.o'
-	$(CC) -c -o $(CONFIG)/obj/actionHandler.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/actionHandler.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/actionHandler.o -arch $(CC_ARCH) $(IFLAGS) src/actionHandler.c
 
 #
 #   auth.o
@@ -374,7 +365,7 @@ DEPS_18 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/auth.o: \
     src/auth.c $(DEPS_18)
 	@echo '   [Compile] $(CONFIG)/obj/auth.o'
-	$(CC) -c -o $(CONFIG)/obj/auth.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/auth.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/auth.o -arch $(CC_ARCH) $(IFLAGS) src/auth.c
 
 #
 #   basic.o
@@ -385,7 +376,7 @@ DEPS_19 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/basic.o: \
     src/basic.c $(DEPS_19)
 	@echo '   [Compile] $(CONFIG)/obj/basic.o'
-	$(CC) -c -o $(CONFIG)/obj/basic.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/basic.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/basic.o -arch $(CC_ARCH) $(IFLAGS) src/basic.c
 
 #
 #   cache.o
@@ -396,7 +387,7 @@ DEPS_20 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/cache.o: \
     src/cache.c $(DEPS_20)
 	@echo '   [Compile] $(CONFIG)/obj/cache.o'
-	$(CC) -c -o $(CONFIG)/obj/cache.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/cache.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/cache.o -arch $(CC_ARCH) $(IFLAGS) src/cache.c
 
 #
 #   chunkFilter.o
@@ -407,7 +398,7 @@ DEPS_21 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/chunkFilter.o: \
     src/chunkFilter.c $(DEPS_21)
 	@echo '   [Compile] $(CONFIG)/obj/chunkFilter.o'
-	$(CC) -c -o $(CONFIG)/obj/chunkFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/chunkFilter.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/chunkFilter.o -arch $(CC_ARCH) $(IFLAGS) src/chunkFilter.c
 
 #
 #   client.o
@@ -418,7 +409,7 @@ DEPS_22 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/client.o: \
     src/client.c $(DEPS_22)
 	@echo '   [Compile] $(CONFIG)/obj/client.o'
-	$(CC) -c -o $(CONFIG)/obj/client.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/client.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/client.o -arch $(CC_ARCH) $(IFLAGS) src/client.c
 
 #
 #   conn.o
@@ -429,7 +420,7 @@ DEPS_23 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/conn.o: \
     src/conn.c $(DEPS_23)
 	@echo '   [Compile] $(CONFIG)/obj/conn.o'
-	$(CC) -c -o $(CONFIG)/obj/conn.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/conn.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/conn.o -arch $(CC_ARCH) $(IFLAGS) src/conn.c
 
 #
 #   digest.o
@@ -440,7 +431,7 @@ DEPS_24 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/digest.o: \
     src/digest.c $(DEPS_24)
 	@echo '   [Compile] $(CONFIG)/obj/digest.o'
-	$(CC) -c -o $(CONFIG)/obj/digest.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/digest.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/digest.o -arch $(CC_ARCH) $(IFLAGS) src/digest.c
 
 #
 #   endpoint.o
@@ -451,7 +442,7 @@ DEPS_25 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/endpoint.o: \
     src/endpoint.c $(DEPS_25)
 	@echo '   [Compile] $(CONFIG)/obj/endpoint.o'
-	$(CC) -c -o $(CONFIG)/obj/endpoint.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/endpoint.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/endpoint.o -arch $(CC_ARCH) $(IFLAGS) src/endpoint.c
 
 #
 #   error.o
@@ -462,7 +453,7 @@ DEPS_26 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/error.o: \
     src/error.c $(DEPS_26)
 	@echo '   [Compile] $(CONFIG)/obj/error.o'
-	$(CC) -c -o $(CONFIG)/obj/error.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/error.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/error.o -arch $(CC_ARCH) $(IFLAGS) src/error.c
 
 #
 #   host.o
@@ -473,7 +464,7 @@ DEPS_27 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/host.o: \
     src/host.c $(DEPS_27)
 	@echo '   [Compile] $(CONFIG)/obj/host.o'
-	$(CC) -c -o $(CONFIG)/obj/host.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/host.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/host.o -arch $(CC_ARCH) $(IFLAGS) src/host.c
 
 #
 #   log.o
@@ -484,7 +475,7 @@ DEPS_28 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/log.o: \
     src/log.c $(DEPS_28)
 	@echo '   [Compile] $(CONFIG)/obj/log.o'
-	$(CC) -c -o $(CONFIG)/obj/log.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/log.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/log.o -arch $(CC_ARCH) $(IFLAGS) src/log.c
 
 #
 #   monitor.o
@@ -495,7 +486,7 @@ DEPS_29 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/monitor.o: \
     src/monitor.c $(DEPS_29)
 	@echo '   [Compile] $(CONFIG)/obj/monitor.o'
-	$(CC) -c -o $(CONFIG)/obj/monitor.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/monitor.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/monitor.o -arch $(CC_ARCH) $(IFLAGS) src/monitor.c
 
 #
 #   netConnector.o
@@ -506,7 +497,7 @@ DEPS_30 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/netConnector.o: \
     src/netConnector.c $(DEPS_30)
 	@echo '   [Compile] $(CONFIG)/obj/netConnector.o'
-	$(CC) -c -o $(CONFIG)/obj/netConnector.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/netConnector.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/netConnector.o -arch $(CC_ARCH) $(IFLAGS) src/netConnector.c
 
 #
 #   packet.o
@@ -517,7 +508,7 @@ DEPS_31 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/packet.o: \
     src/packet.c $(DEPS_31)
 	@echo '   [Compile] $(CONFIG)/obj/packet.o'
-	$(CC) -c -o $(CONFIG)/obj/packet.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/packet.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/packet.o -arch $(CC_ARCH) $(IFLAGS) src/packet.c
 
 #
 #   pam.o
@@ -528,7 +519,7 @@ DEPS_32 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/pam.o: \
     src/pam.c $(DEPS_32)
 	@echo '   [Compile] $(CONFIG)/obj/pam.o'
-	$(CC) -c -o $(CONFIG)/obj/pam.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/pam.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/pam.o -arch $(CC_ARCH) $(IFLAGS) src/pam.c
 
 #
 #   passHandler.o
@@ -539,7 +530,7 @@ DEPS_33 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/passHandler.o: \
     src/passHandler.c $(DEPS_33)
 	@echo '   [Compile] $(CONFIG)/obj/passHandler.o'
-	$(CC) -c -o $(CONFIG)/obj/passHandler.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/passHandler.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/passHandler.o -arch $(CC_ARCH) $(IFLAGS) src/passHandler.c
 
 #
 #   pipeline.o
@@ -550,7 +541,7 @@ DEPS_34 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/pipeline.o: \
     src/pipeline.c $(DEPS_34)
 	@echo '   [Compile] $(CONFIG)/obj/pipeline.o'
-	$(CC) -c -o $(CONFIG)/obj/pipeline.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/pipeline.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/pipeline.o -arch $(CC_ARCH) $(IFLAGS) src/pipeline.c
 
 #
 #   queue.o
@@ -561,7 +552,7 @@ DEPS_35 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/queue.o: \
     src/queue.c $(DEPS_35)
 	@echo '   [Compile] $(CONFIG)/obj/queue.o'
-	$(CC) -c -o $(CONFIG)/obj/queue.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/queue.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/queue.o -arch $(CC_ARCH) $(IFLAGS) src/queue.c
 
 #
 #   rangeFilter.o
@@ -572,7 +563,7 @@ DEPS_36 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/rangeFilter.o: \
     src/rangeFilter.c $(DEPS_36)
 	@echo '   [Compile] $(CONFIG)/obj/rangeFilter.o'
-	$(CC) -c -o $(CONFIG)/obj/rangeFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/rangeFilter.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/rangeFilter.o -arch $(CC_ARCH) $(IFLAGS) src/rangeFilter.c
 
 #
 #   route.o
@@ -583,7 +574,7 @@ DEPS_37 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/route.o: \
     src/route.c $(DEPS_37)
 	@echo '   [Compile] $(CONFIG)/obj/route.o'
-	$(CC) -c -o $(CONFIG)/obj/route.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/route.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/route.o -arch $(CC_ARCH) $(IFLAGS) src/route.c
 
 #
 #   rx.o
@@ -594,7 +585,7 @@ DEPS_38 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/rx.o: \
     src/rx.c $(DEPS_38)
 	@echo '   [Compile] $(CONFIG)/obj/rx.o'
-	$(CC) -c -o $(CONFIG)/obj/rx.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/rx.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/rx.o -arch $(CC_ARCH) $(IFLAGS) src/rx.c
 
 #
 #   sendConnector.o
@@ -605,7 +596,7 @@ DEPS_39 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/sendConnector.o: \
     src/sendConnector.c $(DEPS_39)
 	@echo '   [Compile] $(CONFIG)/obj/sendConnector.o'
-	$(CC) -c -o $(CONFIG)/obj/sendConnector.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/sendConnector.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/sendConnector.o -arch $(CC_ARCH) $(IFLAGS) src/sendConnector.c
 
 #
 #   service.o
@@ -616,7 +607,7 @@ DEPS_40 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/service.o: \
     src/service.c $(DEPS_40)
 	@echo '   [Compile] $(CONFIG)/obj/service.o'
-	$(CC) -c -o $(CONFIG)/obj/service.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/service.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/service.o -arch $(CC_ARCH) $(IFLAGS) src/service.c
 
 #
 #   session.o
@@ -627,7 +618,7 @@ DEPS_41 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/session.o: \
     src/session.c $(DEPS_41)
 	@echo '   [Compile] $(CONFIG)/obj/session.o'
-	$(CC) -c -o $(CONFIG)/obj/session.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/session.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/session.o -arch $(CC_ARCH) $(IFLAGS) src/session.c
 
 #
 #   stage.o
@@ -638,7 +629,7 @@ DEPS_42 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/stage.o: \
     src/stage.c $(DEPS_42)
 	@echo '   [Compile] $(CONFIG)/obj/stage.o'
-	$(CC) -c -o $(CONFIG)/obj/stage.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/stage.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/stage.o -arch $(CC_ARCH) $(IFLAGS) src/stage.c
 
 #
 #   trace.o
@@ -649,7 +640,7 @@ DEPS_43 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/trace.o: \
     src/trace.c $(DEPS_43)
 	@echo '   [Compile] $(CONFIG)/obj/trace.o'
-	$(CC) -c -o $(CONFIG)/obj/trace.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/trace.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/trace.o -arch $(CC_ARCH) $(IFLAGS) src/trace.c
 
 #
 #   tx.o
@@ -660,7 +651,7 @@ DEPS_44 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/tx.o: \
     src/tx.c $(DEPS_44)
 	@echo '   [Compile] $(CONFIG)/obj/tx.o'
-	$(CC) -c -o $(CONFIG)/obj/tx.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/tx.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/tx.o -arch $(CC_ARCH) $(IFLAGS) src/tx.c
 
 #
 #   uploadFilter.o
@@ -671,7 +662,7 @@ DEPS_45 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/uploadFilter.o: \
     src/uploadFilter.c $(DEPS_45)
 	@echo '   [Compile] $(CONFIG)/obj/uploadFilter.o'
-	$(CC) -c -o $(CONFIG)/obj/uploadFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/uploadFilter.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/uploadFilter.o -arch $(CC_ARCH) $(IFLAGS) src/uploadFilter.c
 
 #
 #   uri.o
@@ -682,7 +673,7 @@ DEPS_46 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/uri.o: \
     src/uri.c $(DEPS_46)
 	@echo '   [Compile] $(CONFIG)/obj/uri.o'
-	$(CC) -c -o $(CONFIG)/obj/uri.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/uri.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/uri.o -arch $(CC_ARCH) $(IFLAGS) src/uri.c
 
 #
 #   var.o
@@ -693,7 +684,7 @@ DEPS_47 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/var.o: \
     src/var.c $(DEPS_47)
 	@echo '   [Compile] $(CONFIG)/obj/var.o'
-	$(CC) -c -o $(CONFIG)/obj/var.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/var.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/var.o -arch $(CC_ARCH) $(IFLAGS) src/var.c
 
 #
 #   webSockFilter.o
@@ -704,7 +695,7 @@ DEPS_48 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/webSockFilter.o: \
     src/webSockFilter.c $(DEPS_48)
 	@echo '   [Compile] $(CONFIG)/obj/webSockFilter.o'
-	$(CC) -c -o $(CONFIG)/obj/webSockFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/webSockFilter.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/webSockFilter.o -arch $(CC_ARCH) $(IFLAGS) src/webSockFilter.c
 
 #
 #   libhttp
@@ -766,7 +757,7 @@ DEPS_50 += $(CONFIG)/inc/mpr.h
 $(CONFIG)/obj/testHttp.o: \
     test/src/testHttp.c $(DEPS_50)
 	@echo '   [Compile] $(CONFIG)/obj/testHttp.o'
-	$(CC) -c -o $(CONFIG)/obj/testHttp.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) test/src/testHttp.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/testHttp.o -arch $(CC_ARCH) $(IFLAGS) test/src/testHttp.c
 
 #
 #   testHttpGen.o
@@ -777,7 +768,7 @@ DEPS_51 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/testHttpGen.o: \
     test/src/testHttpGen.c $(DEPS_51)
 	@echo '   [Compile] $(CONFIG)/obj/testHttpGen.o'
-	$(CC) -c -o $(CONFIG)/obj/testHttpGen.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) test/src/testHttpGen.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/testHttpGen.o -arch $(CC_ARCH) $(IFLAGS) test/src/testHttpGen.c
 
 #
 #   testHttpUri.o
@@ -788,7 +779,7 @@ DEPS_52 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/testHttpUri.o: \
     test/src/testHttpUri.c $(DEPS_52)
 	@echo '   [Compile] $(CONFIG)/obj/testHttpUri.o'
-	$(CC) -c -o $(CONFIG)/obj/testHttpUri.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) test/src/testHttpUri.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/testHttpUri.o -arch $(CC_ARCH) $(IFLAGS) test/src/testHttpUri.c
 
 #
 #   testHttp
@@ -860,7 +851,7 @@ DEPS_54 += $(CONFIG)/inc/http.h
 $(CONFIG)/obj/http.o: \
     src/http.c $(DEPS_54)
 	@echo '   [Compile] $(CONFIG)/obj/http.o'
-	$(CC) -c -o $(CONFIG)/obj/http.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/http.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/http.o -arch $(CC_ARCH) $(IFLAGS) src/http.c
 
 #
 #   httpcmd

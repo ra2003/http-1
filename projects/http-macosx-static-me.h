@@ -112,7 +112,7 @@
     #define ME_NAME "http"
 #endif
 #ifndef ME_PREFIXES
-    #define ME_PREFIXES "embedthis-prefixes"
+    #define ME_PREFIXES "package-prefixes"
 #endif
 #ifndef ME_STATIC
     #define ME_STATIC 1
@@ -204,8 +204,8 @@
 #ifndef ME_CONFIG_CMD
     #define ME_CONFIG_CMD "me -d -q -platform macosx-x64-static -static -configure . -gen xcode"
 #endif
-#ifndef ME_HTTP_NAME
-    #define ME_HTTP_NAME 1
+#ifndef ME_HTTP_PRODUCT
+    #define ME_HTTP_PRODUCT 1
 #endif
 #ifndef ME_PROFILE
     #define ME_PROFILE "static"

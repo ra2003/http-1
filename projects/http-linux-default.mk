@@ -2,100 +2,91 @@
 #   http-linux-default.mk -- Makefile to build Embedthis Http for linux
 #
 
-NAME               := http
-VERSION            := 5.0.0
-PROFILE            := default
-ARCH               := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
-CC_ARCH            := $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
-OS                 := linux
-CC                 := gcc
-LD                 := link
-CONFIG             := $(OS)-$(ARCH)-$(PROFILE)
-LBIN               := $(CONFIG)/bin
+NAME                  := http
+VERSION               := 5.0.0
+PROFILE               ?= default
+ARCH                  ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
+CC_ARCH               ?= $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
+OS                    ?= linux
+CC                    ?= gcc
+LD                    ?= link
+CONFIG                ?= $(OS)-$(ARCH)-$(PROFILE)
+LBIN                  ?= $(CONFIG)/bin
+PATH                  := $(LBIN):$(PATH)
+
+ME_EXT_EST            ?= 1
+ME_EXT_PCRE           ?= 1
+ME_EXT_SSL            ?= 1
+
+ME_EXT_COMPILER_PATH  ?= gcc
+ME_EXT_DOXYGEN_PATH   ?= doxygen
+ME_EXT_DSI_PATH       ?= dsi
+ME_EXT_EST_PATH       ?= src/paks/est/estLib.c
+ME_EXT_LIB_PATH       ?= ar
+ME_EXT_LINK_PATH      ?= link
+ME_EXT_MAN_PATH       ?= man
+ME_EXT_MAN2HTML_PATH  ?= man2html
+ME_EXT_MATRIXSSL_PATH ?= /usr/src/matrixssl
+ME_EXT_MPR_PATH       ?= src/paks/mpr
+ME_EXT_NANOSSL_PATH   ?= /usr/src/nanossl
+ME_EXT_OPENSSL_PATH   ?= /usr/src/openssl
+ME_EXT_OSDEP_PATH     ?= src/paks/osdep
+ME_EXT_PCRE_PATH      ?= src/paks/pcre
+ME_EXT_SSL_PATH       ?= ssl
+ME_EXT_UTEST_PATH     ?= utest
+ME_EXT_VXWORKS_PATH   ?= $(WIND_BASE)
+ME_EXT_WINSDK_PATH    ?= winsdk
+
+export WIND_HOME      ?= $(WIND_BASE)/..
+
+CFLAGS                += -fPIC -w
+DFLAGS                += -D_REENTRANT -DPIC $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_EXT_EST=$(ME_EXT_EST) -DME_EXT_PCRE=$(ME_EXT_PCRE) -DME_EXT_SSL=$(ME_EXT_SSL) 
+IFLAGS                += "-I$(CONFIG)/inc"
+LDFLAGS               += '-rdynamic' '-Wl,--enable-new-dtags' '-Wl,-rpath,$$ORIGIN/'
+LIBPATHS              += -L$(CONFIG)/bin
+LIBS                  += -lrt -ldl -lpthread -lm
+
+DEBUG                 ?= debug
+CFLAGS-debug          ?= -g
+DFLAGS-debug          ?= -DME_DEBUG
+LDFLAGS-debug         ?= -g
+DFLAGS-release        ?= 
+CFLAGS-release        ?= -O2
+LDFLAGS-release       ?= 
+CFLAGS                += $(CFLAGS-$(DEBUG))
+DFLAGS                += $(DFLAGS-$(DEBUG))
+LDFLAGS               += $(LDFLAGS-$(DEBUG))
+
+ME_ROOT_PREFIX        ?= 
+ME_BASE_PREFIX        ?= $(ME_ROOT_PREFIX)/usr/local
+ME_DATA_PREFIX        ?= $(ME_ROOT_PREFIX)/
+ME_STATE_PREFIX       ?= $(ME_ROOT_PREFIX)/var
+ME_APP_PREFIX         ?= $(ME_BASE_PREFIX)/lib/$(NAME)
+ME_VAPP_PREFIX        ?= $(ME_APP_PREFIX)/$(VERSION)
+ME_BIN_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/bin
+ME_INC_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/include
+ME_LIB_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/lib
+ME_MAN_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/share/man
+ME_SBIN_PREFIX        ?= $(ME_ROOT_PREFIX)/usr/local/sbin
+ME_ETC_PREFIX         ?= $(ME_ROOT_PREFIX)/etc/$(NAME)
+ME_WEB_PREFIX         ?= $(ME_ROOT_PREFIX)/var/www/$(NAME)-default
+ME_LOG_PREFIX         ?= $(ME_ROOT_PREFIX)/var/log/$(NAME)
+ME_SPOOL_PREFIX       ?= $(ME_ROOT_PREFIX)/var/spool/$(NAME)
+ME_CACHE_PREFIX       ?= $(ME_ROOT_PREFIX)/var/spool/$(NAME)/cache
+ME_SRC_PREFIX         ?= $(ME_ROOT_PREFIX)$(NAME)-$(VERSION)
+
 
 ifeq ($(ME_EXT_EST),1)
-    ME_EXT_EST            := 1
+    TARGETS           += $(CONFIG)/bin/libest.so
 endif
+TARGETS               += $(CONFIG)/bin/ca.crt
+TARGETS               += $(CONFIG)/bin/libmpr.so
+TARGETS               += $(CONFIG)/bin/libmprssl.so
 ifeq ($(ME_EXT_PCRE),1)
-    ME_EXT_PCRE           := 1
+    TARGETS           += $(CONFIG)/bin/libpcre.so
 endif
-ifeq ($(ME_EXT_SSL),1)
-    ME_EXT_SSL            := 1
-endif
-
-ifeq ($(ME_EXT_EST),1)
-    ME_EXT_SSL            := 1
-endif
-
-ME_EXT_COMPILER_PATH      := gcc
-ME_EXT_DOXYGEN_PATH       := doxygen
-ME_EXT_DSI_PATH           := dsi
-ME_EXT_EST_PATH           := src/paks/est/estLib.c
-ME_EXT_LIB_PATH           := ar
-ME_EXT_LINK_PATH          := link
-ME_EXT_MAN_PATH           := man
-ME_EXT_MAN2HTML_PATH      := man2html
-ME_EXT_MATRIXSSL_PATH     := /usr/src/matrixssl
-ME_EXT_MPR_PATH           := src/paks/mpr
-ME_EXT_NANOSSL_PATH       := /usr/src/nanossl
-ME_EXT_OPENSSL_PATH       := /usr/src/openssl
-ME_EXT_OSDEP_PATH         := src/paks/osdep
-ME_EXT_PCRE_PATH          := src/paks/pcre
-ME_EXT_SSL_PATH           := ssl
-ME_EXT_UTEST_PATH         := utest
-ME_EXT_VXWORKS_PATH       := $(WIND_BASE)
-ME_EXT_WINSDK_PATH        := winsdk
-
-export WIND_HOME          := $(WIND_BASE)/..
-
-CFLAGS             += -fPIC -w
-DFLAGS             += -D_REENTRANT -DPIC $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_EXT_EST=$(ME_EXT_EST) -DME_EXT_PCRE=$(ME_EXT_PCRE) -DME_EXT_SSL=$(ME_EXT_SSL) 
-IFLAGS             += "-I$(CONFIG)/inc"
-LDFLAGS            += '-rdynamic' '-Wl,--enable-new-dtags' '-Wl,-rpath,$$ORIGIN/'
-LIBPATHS           += -L$(CONFIG)/bin
-LIBS               += -lrt -ldl -lpthread -lm
-
-DEBUG              := debug
-CFLAGS-debug       := -g
-DFLAGS-debug       := -DME_DEBUG
-LDFLAGS-debug      := -g
-DFLAGS-release     := 
-CFLAGS-release     := -O2
-LDFLAGS-release    := 
-CFLAGS             += $(CFLAGS-$(DEBUG))
-DFLAGS             += $(DFLAGS-$(DEBUG))
-LDFLAGS            += $(LDFLAGS-$(DEBUG))
-
-ME_ROOT_PREFIX     := 
-ME_BASE_PREFIX     := $(ME_ROOT_PREFIX)/usr/local
-ME_DATA_PREFIX     := $(ME_ROOT_PREFIX)/
-ME_STATE_PREFIX    := $(ME_ROOT_PREFIX)/var
-ME_APP_PREFIX      := $(ME_BASE_PREFIX)/lib/$(NAME)
-ME_VAPP_PREFIX     := $(ME_APP_PREFIX)/$(VERSION)
-ME_BIN_PREFIX      := $(ME_ROOT_PREFIX)/usr/local/bin
-ME_INC_PREFIX      := $(ME_ROOT_PREFIX)/usr/local/include
-ME_LIB_PREFIX      := $(ME_ROOT_PREFIX)/usr/local/lib
-ME_MAN_PREFIX      := $(ME_ROOT_PREFIX)/usr/local/share/man
-ME_SBIN_PREFIX     := $(ME_ROOT_PREFIX)/usr/local/sbin
-ME_ETC_PREFIX      := $(ME_ROOT_PREFIX)/etc/$(NAME)
-ME_WEB_PREFIX      := $(ME_ROOT_PREFIX)/var/www/$(NAME)-default
-ME_LOG_PREFIX      := $(ME_ROOT_PREFIX)/var/log/$(NAME)
-ME_SPOOL_PREFIX    := $(ME_ROOT_PREFIX)/var/spool/$(NAME)
-ME_CACHE_PREFIX    := $(ME_ROOT_PREFIX)/var/spool/$(NAME)/cache
-ME_SRC_PREFIX      := $(ME_ROOT_PREFIX)$(NAME)-$(VERSION)
-
-
-ifeq ($(ME_EXT_EST),1)
-    TARGETS        += $(CONFIG)/bin/libest.so
-endif
-TARGETS            += $(CONFIG)/bin/ca.crt
-TARGETS            += $(CONFIG)/bin/libmpr.so
-TARGETS            += $(CONFIG)/bin/libmprssl.so
-ifeq ($(ME_EXT_PCRE),1)
-    TARGETS        += $(CONFIG)/bin/libpcre.so
-endif
-TARGETS            += $(CONFIG)/bin/testHttp
-TARGETS            += $(CONFIG)/bin/http
+TARGETS               += $(CONFIG)/bin/testHttp
+TARGETS               += $(CONFIG)/bin/http
 
 unexport CDPATH
 
@@ -224,7 +215,7 @@ DEPS_5 += $(CONFIG)/inc/osdep.h
 $(CONFIG)/obj/estLib.o: \
     src/paks/est/estLib.c $(DEPS_5)
 	@echo '   [Compile] $(CONFIG)/obj/estLib.o'
-	$(CC) -c -o $(CONFIG)/obj/estLib.o -fPIC $(DFLAGS) $(IFLAGS) src/paks/est/estLib.c
+	$(CC) -c -o $(CONFIG)/obj/estLib.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/paks/est/estLib.c
 
 ifeq ($(ME_EXT_EST),1)
 #

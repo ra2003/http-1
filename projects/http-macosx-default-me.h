@@ -112,7 +112,7 @@
     #define ME_NAME "http"
 #endif
 #ifndef ME_PREFIXES
-    #define ME_PREFIXES "embedthis-prefixes"
+    #define ME_PREFIXES "package-prefixes"
 #endif
 #ifndef ME_TITLE
     #define ME_TITLE "Embedthis Http"
@@ -201,8 +201,8 @@
 #ifndef ME_CONFIG_CMD
     #define ME_CONFIG_CMD "me -d -q -platform macosx-x64-default -configure . -gen xcode"
 #endif
-#ifndef ME_HTTP_NAME
-    #define ME_HTTP_NAME 1
+#ifndef ME_HTTP_PRODUCT
+    #define ME_HTTP_PRODUCT 1
 #endif
 #ifndef ME_PROFILE
     #define ME_PROFILE "default"

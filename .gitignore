@@ -66,3 +66,4 @@ http.sublime-*
 src/paks/openssl
 start.me
 macosx-x64*
+macosx-*.me

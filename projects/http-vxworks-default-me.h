@@ -278,5 +278,5 @@
     #define ME_EXT_VXWORKS 1
 #endif
 #ifndef ME_EXT_WINSDK
-    #define ME_EXT_WINSDK 1
+    #define ME_EXT_WINSDK 0
 #endif

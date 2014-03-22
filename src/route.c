@@ -8,7 +8,7 @@
 
 #include    "http.h"
 
-#if ME_EXT_PCRE
+#if ME_COM_PCRE
  #include    "pcre.h"
 #endif
 

@@ -151,8 +151,8 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
     assert(rx);
     assert(tx);
 
-    if (conn->error || tx->responded) {
-        return HTTP_ROUTE_REJECT;
+    if (conn->error) {
+        return HTTP_ROUTE_OMIT_FILTER;
     }
     if (httpClientConn(conn)) {
         if (rx->webSocket) {
@@ -167,16 +167,19 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
             ws->state = WS_STATE_CONNECTING;
             return HTTP_ROUTE_OK;
         }
-        return HTTP_ROUTE_REJECT;
+        return HTTP_ROUTE_OMIT_FILTER;
     }
     if (dir & HTTP_STAGE_TX) {
-        return rx->webSocket ? HTTP_ROUTE_OK : HTTP_ROUTE_REJECT;
+        return rx->webSocket ? HTTP_ROUTE_OK : HTTP_ROUTE_OMIT_FILTER;
     }
     if (!rx->upgrade || !scaselessmatch(rx->upgrade, "websocket")) {
-        return HTTP_ROUTE_REJECT;
+        return HTTP_ROUTE_OMIT_FILTER;
     }
     if (!rx->hostHeader || !smatch(rx->method, "GET")) {
-        return HTTP_ROUTE_REJECT;
+        return HTTP_ROUTE_OMIT_FILTER;
+    }
+    if (tx->flags & HTTP_TX_HEADERS_CREATED) {
+        return HTTP_ROUTE_OMIT_FILTER;
     }
     version = (int) stoi(httpGetHeader(conn, "sec-websocket-version"));
     if (version < WS_VERSION) {
@@ -235,7 +238,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
         rx->remainingContent = MAXINT;
         return HTTP_ROUTE_OK;
     }
-    return HTTP_ROUTE_REJECT;
+    return HTTP_ROUTE_OMIT_FILTER;
 }
 
 

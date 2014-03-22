@@ -37,7 +37,7 @@ PUBLIC void httpInitAuth(Http *http)
 
     httpCreateAuthStore("app", NULL);
     httpCreateAuthStore("internal", fileVerifyUser);
-#if ME_HAS_PAM && ME_HTTP_PAM
+#if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
     httpCreateAuthStore("system", httpPamVerifyUser);
 #endif
 #if DEPRECATED || 1
@@ -45,7 +45,7 @@ PUBLIC void httpInitAuth(Http *http)
         Deprecated in 4.4. Use "internal"
      */
     httpCreateAuthStore("file", fileVerifyUser);
-#if ME_HAS_PAM && ME_HTTP_PAM
+#if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
     httpCreateAuthStore("pam", httpPamVerifyUser);
 #endif
 #endif
@@ -557,7 +557,7 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
     }
     //  DEPRECATED "pam"
     if (smatch(store, "system") || smatch(store, "pam")) {
-#if ME_HAS_PAM && ME_HTTP_PAM
+#if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
         if (auth->type && smatch(auth->type->name, "digest")) {
             mprError("Cannot use the PAM password store with digest authentication");
             return MPR_ERR_BAD_ARGS;

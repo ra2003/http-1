@@ -109,7 +109,7 @@ static int matchCacheFilter(HttpConn *conn, HttpRoute *route, int dir)
         mprTrace(3, "cacheFilter: Cache response content for '%s'", conn->rx->uri);
         return HTTP_ROUTE_OK;
     }
-    return HTTP_ROUTE_REJECT;
+    return HTTP_ROUTE_OMIT_FILTER;
 }
 
 

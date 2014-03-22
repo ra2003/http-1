@@ -345,7 +345,7 @@ PUBLIC void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier notifie
 
 PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 {
-#if ME_EXT_SSL
+#if ME_COM_SSL
     endpoint->ssl = ssl;
     return 0;
 #else

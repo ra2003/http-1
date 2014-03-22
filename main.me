@@ -9,6 +9,11 @@ Me.load({
         "doc/doc.me",
     ],
 
+    configure: {
+        requires:  [ 'osdep', 'mpr', 'pcre' ],
+        discovers: [ 'ssl', ],
+    },
+
     customize: [
         /* Optionally load this if present. Feel free to create and customize */
         'custom.me',
@@ -18,11 +23,6 @@ Me.load({
         makeme: '0.8.0',
         prefixes: 'package-prefixes',
     
-        extensions: {
-            require:  [ 'compiler', 'osdep', 'mpr', 'pcre' ],
-            discover: [ 'doxygen', 'dsi', 'man', 'man2html', 'ssl', 'utest' ],
-        },
-
         http: {
             pam: true,
             webSockets: true,
@@ -64,11 +64,11 @@ Me.load({
             depends: [ 'libmpr', 'libpcre' ],
             components: [ 'pcre' ],
             scripts: {
-                prebuild: "
-                    if (me.settings.hasPam && me.settings.http.pam) {
+                prebuild: `
+                    if (me.settings.compiler.hasPam && me.settings.http.pam) {
                         me.target.libraries.push('pam')
                     }
-                ",
+                `,
             },
         },
 

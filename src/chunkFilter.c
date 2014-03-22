@@ -45,7 +45,7 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
     tx = conn->tx;
 
     if (conn->upgraded || (httpClientConn(conn) && tx->parsedUri && tx->parsedUri->webSockets)) {
-        return HTTP_ROUTE_REJECT;
+        return HTTP_ROUTE_OMIT_FILTER;
     }
     if (dir & HTTP_STAGE_TX) {
         /* 
@@ -53,7 +53,7 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
             the X_APPWEB_CHUNK_SIZE header which may set the chunk size to zero.
          */
         if (tx->length >= 0 || tx->chunkSize == 0) {
-            return HTTP_ROUTE_REJECT;
+            return HTTP_ROUTE_OMIT_FILTER;
         }
         return HTTP_ROUTE_OK;
     } else {

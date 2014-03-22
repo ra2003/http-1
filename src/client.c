@@ -63,7 +63,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     conn->secure = uri->secure;
     conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : 0;
 
-#if ME_EXT_SSL
+#if ME_COM_SSL
     /* Must be done even if using keep alive for repeat SSL requests */
     if (uri->secure) {
         char *peerName;

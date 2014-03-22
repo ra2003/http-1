@@ -8,7 +8,7 @@
 
 #include    "http.h"
 
-#if ME_HAS_PAM && ME_HTTP_PAM
+#if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
  #include    <security/pam_appl.h>
 
 /********************************* Defines ************************************/
@@ -132,7 +132,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
     *resp = reply;
     return PAM_SUCCESS;
 }
-#endif /* ME_HAS_PAM */
+#endif /* ME_COMPILER_HAS_PAM */
 
 /*
     @copy   default

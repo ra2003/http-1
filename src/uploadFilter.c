@@ -75,11 +75,11 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
     ssize   len;
 
     if (!(dir & HTTP_STAGE_RX)) {
-        return HTTP_ROUTE_REJECT;
+        return HTTP_ROUTE_OMIT_FILTER;
     }
     rx = conn->rx;
     if (!(rx->flags & HTTP_POST) || rx->remainingContent <= 0) {
-        return HTTP_ROUTE_REJECT;
+        return HTTP_ROUTE_OMIT_FILTER;
     }
     pat = "multipart/form-data";
     len = strlen(pat);
@@ -88,7 +88,7 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
         mprTrace(5, "matchUpload for %s", rx->uri);
         return HTTP_ROUTE_OK;
     }
-    return HTTP_ROUTE_REJECT;
+    return HTTP_ROUTE_OMIT_FILTER;
 }
 
 

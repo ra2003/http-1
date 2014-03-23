@@ -922,24 +922,38 @@ $(CONFIG)/bin/testHttp.out: $(DEPS_54)
 	$(CC) -o $(CONFIG)/bin/testHttp.out $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/testHttp.o" "$(CONFIG)/obj/testHttpGen.o" "$(CONFIG)/obj/testHttpUri.o" $(LIBS) -Wl,-r 
 
 #
+#   stop
+#
+stop: $(DEPS_55)
+
+#
 #   installBinary
 #
-installBinary: $(DEPS_55)
+installBinary: $(DEPS_56)
 
 #
 #   start
 #
-start: $(DEPS_56)
+start: $(DEPS_57)
 
 #
-#   stop
+#   install
 #
-stop: $(DEPS_57)
+DEPS_58 += stop
+DEPS_58 += installBinary
+DEPS_58 += start
+
+install: $(DEPS_58)
 
 #
 #   uninstall
 #
-DEPS_58 += stop
+DEPS_59 += stop
 
-uninstall: $(DEPS_58)
+uninstall: $(DEPS_59)
+
+#
+#   version
+#
+version: $(DEPS_60)
 

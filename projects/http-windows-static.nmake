@@ -929,28 +929,44 @@ $(CONFIG)\bin\testHttp.exe: $(DEPS_54)
 	"$(LD)" -out:$(CONFIG)\bin\testHttp.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\testHttp.obj" "$(CONFIG)\obj\testHttpGen.obj" "$(CONFIG)\obj\testHttpUri.obj" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) 
 
 #
+#   stop
+#
+stop: $(DEPS_55)
+#  Omit build script stop
+
+#
 #   installBinary
 #
-installBinary: $(DEPS_55)
+installBinary: $(DEPS_56)
 #  Omit build script installBinary
 
 #
 #   start
 #
-start: $(DEPS_56)
+start: $(DEPS_57)
 #  Omit build script start
 
 #
-#   stop
+#   install
 #
-stop: $(DEPS_57)
-#  Omit build script stop
+DEPS_58 = $(DEPS_58) stop
+DEPS_58 = $(DEPS_58) installBinary
+DEPS_58 = $(DEPS_58) start
+
+install: $(DEPS_58)
+#  Omit build script install
 
 #
 #   uninstall
 #
-DEPS_58 = $(DEPS_58) stop
+DEPS_59 = $(DEPS_59) stop
 
-uninstall: $(DEPS_58)
+uninstall: $(DEPS_59)
 #  Omit build script uninstall
+
+#
+#   version
+#
+version: $(DEPS_60)
+#  Omit build script version
 

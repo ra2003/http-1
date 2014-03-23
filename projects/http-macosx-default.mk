@@ -20,7 +20,7 @@ ME_COM_OPENSSL        ?= 0
 ME_COM_PCRE           ?= 1
 ME_COM_SSL            ?= 1
 ME_COM_VXWORKS        ?= 0
-ME_COM_WINSDK         ?= 0
+ME_COM_WINSDK         ?= 1
 
 ifeq ($(ME_COM_EST),1)
     ME_COM_SSL := 1
@@ -36,15 +36,10 @@ ifeq ($(ME_COM_OPENSSL),1)
 endif
 
 ME_COM_COMPILER_PATH  ?= clang
-ME_COM_EST_PATH       ?= src/paks/est
 ME_COM_LIB_PATH       ?= ar
 ME_COM_MATRIXSSL_PATH ?= /usr/src/matrixssl
-ME_COM_MPR_PATH       ?= src/paks/mpr
 ME_COM_NANOSSL_PATH   ?= /usr/src/nanossl
-ME_COM_OPENSSL_PATH   ?= [object Object]
-ME_COM_OSDEP_PATH     ?= src/paks/osdep
-ME_COM_PCRE_PATH      ?= src/paks/pcre
-ME_COM_SSL_PATH       ?= src/paks/ssl
+ME_COM_OPENSSL_PATH   ?= /usr/src/openssl
 
 CFLAGS                += -w
 DFLAGS                +=  $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_COM_EST=$(ME_COM_EST) -DME_COM_MATRIXSSL=$(ME_COM_MATRIXSSL) -DME_COM_NANOSSL=$(ME_COM_NANOSSL) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_VXWORKS=$(ME_COM_VXWORKS) -DME_COM_WINSDK=$(ME_COM_WINSDK) 
@@ -238,7 +233,7 @@ DEPS_6 += $(CONFIG)/obj/mprLib.o
 
 $(CONFIG)/bin/libmpr.dylib: $(DEPS_6)
 	@echo '      [Link] $(CONFIG)/bin/libmpr.dylib'
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libmpr.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libmpr.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/mprLib.o" $(LIBS) 
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libmpr.dylib -arch $(CC_ARCH) -Wl,-rpath,@executable_path/ -Wl,-rpath,@loader_path/ $(LIBPATHS) -install_name @rpath/libmpr.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/mprLib.o" $(LIBS) 
 
 #
 #   pcre.h
@@ -269,7 +264,7 @@ DEPS_9 += $(CONFIG)/obj/pcre.o
 
 $(CONFIG)/bin/libpcre.dylib: $(DEPS_9)
 	@echo '      [Link] $(CONFIG)/bin/libpcre.dylib'
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libpcre.dylib -arch $(CC_ARCH) $(LDFLAGS) -compatibility_version 5.0.0 -current_version 5.0.0 $(LIBPATHS) -install_name @rpath/libpcre.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/pcre.o" $(LIBS) 
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libpcre.dylib -arch $(CC_ARCH) -Wl,-rpath,@executable_path/ -Wl,-rpath,@loader_path/ -compatibility_version 5.0.0 -current_version 5.0.0 $(LIBPATHS) -install_name @rpath/libpcre.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/pcre.o" $(LIBS) 
 endif
 
 #
@@ -687,7 +682,7 @@ endif
 
 $(CONFIG)/bin/libhttp.dylib: $(DEPS_43)
 	@echo '      [Link] $(CONFIG)/bin/libhttp.dylib'
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/actionHandler.o" "$(CONFIG)/obj/auth.o" "$(CONFIG)/obj/basic.o" "$(CONFIG)/obj/cache.o" "$(CONFIG)/obj/chunkFilter.o" "$(CONFIG)/obj/client.o" "$(CONFIG)/obj/conn.o" "$(CONFIG)/obj/digest.o" "$(CONFIG)/obj/endpoint.o" "$(CONFIG)/obj/error.o" "$(CONFIG)/obj/host.o" "$(CONFIG)/obj/log.o" "$(CONFIG)/obj/monitor.o" "$(CONFIG)/obj/netConnector.o" "$(CONFIG)/obj/packet.o" "$(CONFIG)/obj/pam.o" "$(CONFIG)/obj/passHandler.o" "$(CONFIG)/obj/pipeline.o" "$(CONFIG)/obj/queue.o" "$(CONFIG)/obj/rangeFilter.o" "$(CONFIG)/obj/route.o" "$(CONFIG)/obj/rx.o" "$(CONFIG)/obj/sendConnector.o" "$(CONFIG)/obj/service.o" "$(CONFIG)/obj/session.o" "$(CONFIG)/obj/stage.o" "$(CONFIG)/obj/trace.o" "$(CONFIG)/obj/tx.o" "$(CONFIG)/obj/uploadFilter.o" "$(CONFIG)/obj/uri.o" "$(CONFIG)/obj/var.o" "$(CONFIG)/obj/webSockFilter.o" $(LIBPATHS_43) $(LIBS_43) $(LIBS_43) $(LIBS) -lpam 
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libhttp.dylib -arch $(CC_ARCH) -Wl,-rpath,@executable_path/ -Wl,-rpath,@loader_path/ $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/actionHandler.o" "$(CONFIG)/obj/auth.o" "$(CONFIG)/obj/basic.o" "$(CONFIG)/obj/cache.o" "$(CONFIG)/obj/chunkFilter.o" "$(CONFIG)/obj/client.o" "$(CONFIG)/obj/conn.o" "$(CONFIG)/obj/digest.o" "$(CONFIG)/obj/endpoint.o" "$(CONFIG)/obj/error.o" "$(CONFIG)/obj/host.o" "$(CONFIG)/obj/log.o" "$(CONFIG)/obj/monitor.o" "$(CONFIG)/obj/netConnector.o" "$(CONFIG)/obj/packet.o" "$(CONFIG)/obj/pam.o" "$(CONFIG)/obj/passHandler.o" "$(CONFIG)/obj/pipeline.o" "$(CONFIG)/obj/queue.o" "$(CONFIG)/obj/rangeFilter.o" "$(CONFIG)/obj/route.o" "$(CONFIG)/obj/rx.o" "$(CONFIG)/obj/sendConnector.o" "$(CONFIG)/obj/service.o" "$(CONFIG)/obj/session.o" "$(CONFIG)/obj/stage.o" "$(CONFIG)/obj/trace.o" "$(CONFIG)/obj/tx.o" "$(CONFIG)/obj/uploadFilter.o" "$(CONFIG)/obj/uri.o" "$(CONFIG)/obj/var.o" "$(CONFIG)/obj/webSockFilter.o" $(LIBPATHS_43) $(LIBS_43) $(LIBS_43) $(LIBS) -lpam 
 
 #
 #   http.o
@@ -757,7 +752,7 @@ endif
 
 $(CONFIG)/bin/http: $(DEPS_45)
 	@echo '      [Link] $(CONFIG)/bin/http'
-	$(CC) -o $(CONFIG)/bin/http -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/http.o" $(LIBPATHS_45) $(LIBS_45) $(LIBS_45) $(LIBS) 
+	$(CC) -o $(CONFIG)/bin/http -arch $(CC_ARCH) -Wl,-rpath,@executable_path/ -Wl,-rpath,@loader_path/ $(LIBPATHS) "$(CONFIG)/obj/http.o" $(LIBPATHS_45) $(LIBS_45) $(LIBS_45) $(LIBS) 
 
 #
 #   est.h
@@ -790,7 +785,7 @@ DEPS_48 += $(CONFIG)/obj/estLib.o
 
 $(CONFIG)/bin/libest.dylib: $(DEPS_48)
 	@echo '      [Link] $(CONFIG)/bin/libest.dylib'
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libest.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libest.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/estLib.o" $(LIBS) 
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libest.dylib -arch $(CC_ARCH) -Wl,-rpath,@executable_path/ -Wl,-rpath,@loader_path/ $(LIBPATHS) -install_name @rpath/libest.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/estLib.o" $(LIBS) 
 endif
 
 #
@@ -803,7 +798,7 @@ DEPS_49 += $(CONFIG)/inc/est.h
 $(CONFIG)/obj/mprSsl.o: \
     src/paks/mpr/mprSsl.c $(DEPS_49)
 	@echo '   [Compile] $(CONFIG)/obj/mprSsl.o'
-	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/mprSsl.o -arch $(CC_ARCH) $(IFLAGS) "-I$(ME_COM_MATRIXSSL_PATH)" "-I$(ME_COM_MATRIXSSL_PATH)/matrixssl" "-I$(ME_COM_NANOSSL_PATH)/src" src/paks/mpr/mprSsl.c
+	$(CC) -c $(CFLAGS) $(DFLAGS) -o $(CONFIG)/obj/mprSsl.o -arch $(CC_ARCH) $(IFLAGS) "-I$(ME_COM_MATRIXSSL_PATH)" "-I$(ME_COM_MATRIXSSL_PATH)/matrixssl" "-I$(ME_COM_NANOSSL_PATH)/src" "-I$(ME_COM_OPENSSL_PATH)/include" src/paks/mpr/mprSsl.c
 
 #
 #   libmprssl
@@ -832,10 +827,18 @@ ifeq ($(ME_COM_NANOSSL),1)
     LIBS_50 += -lssls
     LIBPATHS_50 += -L$(ME_COM_NANOSSL_PATH)/bin
 endif
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_50 += -lssl
+    LIBPATHS_50 += -L$(ME_COM_OPENSSL_PATH)
+endif
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_50 += -lcrypto
+    LIBPATHS_50 += -L$(ME_COM_OPENSSL_PATH)
+endif
 
 $(CONFIG)/bin/libmprssl.dylib: $(DEPS_50)
 	@echo '      [Link] $(CONFIG)/bin/libmprssl.dylib'
-	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)   -install_name @rpath/libmprssl.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/mprSsl.o" $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS) 
+	$(CC) -dynamiclib -o $(CONFIG)/bin/libmprssl.dylib -arch $(CC_ARCH) -Wl,-rpath,@executable_path/ -Wl,-rpath,@loader_path/ $(LIBPATHS)    -install_name @rpath/libmprssl.dylib -compatibility_version 5.0.0 -current_version 5.0.0 "$(CONFIG)/obj/mprSsl.o" $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS) 
 
 #
 #   testHttp.o
@@ -929,7 +932,7 @@ endif
 
 $(CONFIG)/bin/testHttp: $(DEPS_54)
 	@echo '      [Link] $(CONFIG)/bin/testHttp'
-	$(CC) -o $(CONFIG)/bin/testHttp -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/testHttp.o" "$(CONFIG)/obj/testHttpGen.o" "$(CONFIG)/obj/testHttpUri.o" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) 
+	$(CC) -o $(CONFIG)/bin/testHttp -arch $(CC_ARCH) -Wl,-rpath,@executable_path/ -Wl,-rpath,@loader_path/ $(LIBPATHS) "$(CONFIG)/obj/testHttp.o" "$(CONFIG)/obj/testHttpGen.o" "$(CONFIG)/obj/testHttpUri.o" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) 
 
 #
 #   installBinary

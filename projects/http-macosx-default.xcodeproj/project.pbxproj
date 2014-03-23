@@ -1346,27 +1346,10 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = libmprssl;
 
-				HEADER_SEARCH_PATHS = (
-					"../$(ME_COM_MATRIXSSL_PATH)",
-					"../$(ME_COM_MATRIXSSL_PATH)/matrixssl",
-					"../$(ME_COM_NANOSSL_PATH)/src",
-					"$(inherited)"
-				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ME_DEBUG",
 					"$(inherited)"
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"../$(ME_COM_MATRIXSSL_PATH)",
-					"../$(ME_COM_NANOSSL_PATH)/bin",
-					"$(inherited)"
-				);
-				OTHER_LDFLAGS = (
-					"-lmatrixssl",
-					"-lssls",
-					"$(inherited)"
-				);
-
 			};
 			name = Debug;
 		};
@@ -1375,23 +1358,6 @@ fi";
 			buildSettings = {
 				PRODUCT_NAME = libmprssl;
 
-				HEADER_SEARCH_PATHS = (
-					"../$(ME_COM_MATRIXSSL_PATH)",
-					"../$(ME_COM_MATRIXSSL_PATH)/matrixssl",
-					"../$(ME_COM_NANOSSL_PATH)/src",
-					"$(inherited)"
-				);
-
-				LIBRARY_SEARCH_PATHS = (
-					"../$(ME_COM_MATRIXSSL_PATH)",
-					"../$(ME_COM_NANOSSL_PATH)/bin",
-					"$(inherited)"
-				);
-				OTHER_LDFLAGS = (
-					"-lmatrixssl",
-					"-lssls",
-					"$(inherited)"
-				);
 
 			};
 			name = Release;

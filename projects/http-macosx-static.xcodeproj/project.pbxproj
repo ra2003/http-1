@@ -1383,25 +1383,11 @@ fi";
 				PRODUCT_NAME = libmprssl;
 				EXECUTABLE_EXTENSION = a;
 
-				HEADER_SEARCH_PATHS = (
-					"../$(ME_COM_MATRIXSSL_PATH)",
-					"../$(ME_COM_MATRIXSSL_PATH)/matrixssl",
-					"../$(ME_COM_NANOSSL_PATH)/src",
-					"$(inherited)"
-				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ME_DEBUG",
 					"$(inherited)"
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"../$(ME_COM_MATRIXSSL_PATH)",
-					"../$(ME_COM_NANOSSL_PATH)/bin",
-					"$(inherited)"
-				);
-				OTHER_LDFLAGS = (
-					"",
-					"",
-					);
+				OTHER_LDFLAGS = ();
 
 				MACH_O_TYPE = staticlib;
 
@@ -1414,22 +1400,7 @@ fi";
 				PRODUCT_NAME = libmprssl;
 				EXECUTABLE_EXTENSION = a;
 
-				HEADER_SEARCH_PATHS = (
-					"../$(ME_COM_MATRIXSSL_PATH)",
-					"../$(ME_COM_MATRIXSSL_PATH)/matrixssl",
-					"../$(ME_COM_NANOSSL_PATH)/src",
-					"$(inherited)"
-				);
-
-				LIBRARY_SEARCH_PATHS = (
-					"../$(ME_COM_MATRIXSSL_PATH)",
-					"../$(ME_COM_NANOSSL_PATH)/bin",
-					"$(inherited)"
-				);
-				OTHER_LDFLAGS = (
-					"",
-					"",
-					);
+				OTHER_LDFLAGS = ();
 
 				MACH_O_TYPE = staticlib;
 

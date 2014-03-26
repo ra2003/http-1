@@ -98,6 +98,8 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
         period = monitor->period / 1000;
         address = ip ? sfmt(" %s", ip) : "";
         msg = sfmt(fmt, address, monitor->counterName, counter->value, period, monitor->limit);
+        mprLog(2, "%s", msg);
+
         subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
             sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %Ld, MESSAGE: '%s', PERIOD: %Ld, SUBJECT: '%s', VALUE: %Ld }", 
@@ -158,9 +160,12 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
                     Expire old records
                  */
                 if ((address->updated + http->monitorMaxPeriod) < http->now) {
-                    mprRemoveKey(http->addresses, kp->key);
-                    removed = 1;
-                    break;
+                    if (address->banUntil < http->now) {
+                        mprLog(1, "Remove ban on client %s", kp->key);
+                        mprRemoveKey(http->addresses, kp->key);
+                        removed = 1;
+                        break;
+                    }
                 }
             }
         } while (removed);
@@ -217,8 +222,8 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     tok = sclone(defenses);
     while ((def = stok(tok, " \t", &tok)) != 0) {
         if ((defense = mprLookupKey(http->defenses, def)) == 0) {
-            mprError("Cannot find defense \"%s\"", def);
-            return 0;
+            mprError("Cannot find Defense \"%s\"", def);
+            return MPR_ERR_CANT_FIND;
         }
         mprAddItem(defenseList, defense);
     }
@@ -435,12 +440,11 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
     }
     banUntil = http->now + period;
     address->banUntil = max(banUntil, address->banUntil);
-    address->banMsg = msg;
-    address->banStatus = status;
-    mprLog(1, "Client %s banned for %Ld secs.", ip, period / 1000);
-    if (address->banMsg) {
-        mprLog(1, "%s", address->banMsg);
+    if (msg && *msg) {
+        address->banMsg = sclone(msg);
     }
+    address->banStatus = status;
+    mprLog(1, "Client %s banned for %Ld secs", ip, period / 1000);
     return 0;
 }
 
@@ -499,6 +503,7 @@ static void cmdRemedy(MprHash *args)
         mprError("Cannot start command: %s", command);
         return;
     }
+    mprLog(1, "Cmd data: %s", data);
     if (data && mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
         mprError("Cannot write to command: %s", command);
         return;
@@ -571,6 +576,7 @@ static void httpRemedy(MprHash *args)
 }
 
 
+/* TODO - message already logged at level 2 */
 static void logRemedy(MprHash *args)
 {
     mprLog(0, "%s", mprLookupKey(args, "MESSAGE"));

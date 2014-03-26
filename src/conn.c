@@ -377,7 +377,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
         if (address->banStatus) {
             httpError(conn, HTTP_CLOSE | address->banStatus, 
                 "Connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
-        } else if (address->banMsg) {
+        } else if (address->banMsg && address->banMsg) {
             httpError(conn, HTTP_CLOSE | HTTP_CODE_NOT_ACCEPTABLE, 
                 "Connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
         } else {

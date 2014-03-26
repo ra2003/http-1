@@ -2197,7 +2197,7 @@ PUBLIC size_t mprGetMem()
 
 PUBLIC uint64 mprGetCPU()
 {
-    uint64     ticks, utime, stime;
+    uint64     ticks;
 
     ticks = 0;
 #if LINUX
@@ -2205,19 +2205,13 @@ PUBLIC uint64 mprGetCPU()
     char path[ME_MAX_PATH];
     sprintf(path, "/proc/%d/stat", getpid());
     if ((fd = open(path, O_RDONLY)) >= 0) {
-        char buf[ME_MAX_BUFFER], *tok;
+        char buf[ME_MAX_BUFFER];
         int nbytes = read(fd, buf, sizeof(buf) - 1);
         close(fd);
         if (nbytes > 0) {
+            ulong utime, stime;
             buf[nbytes] = '\0';
-            if ((tok = strstr(buf, "utime:")) != 0) {
-                for (tok += 6; tok && isspace((uchar) *tok); tok++) {}
-                utime = stoi(tok);
-            }
-            if ((tok = strstr(buf, "stime:")) != 0) {
-                for (tok += 6; tok && isspace((uchar) *tok); tok++) {}
-                stime = stoi(tok);
-            }
+            sscanf(buf, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", &utime, &stime);
             ticks = (utime + stime) * MPR_TICKS_PER_SEC / sysconf(_SC_CLK_TCK);
         }
     }
@@ -2225,6 +2219,7 @@ PUBLIC uint64 mprGetCPU()
     struct task_basic_info info;
     mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
     if (task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t) &info, &count) == KERN_SUCCESS) {
+        uint64 utime, stime;
         utime = info.user_time.seconds * MPR_TICKS_PER_SEC + info.user_time.microseconds / 1000;
         stime = info.system_time.seconds * MPR_TICKS_PER_SEC + info.system_time.microseconds / 1000;
         ticks = utime + stime;

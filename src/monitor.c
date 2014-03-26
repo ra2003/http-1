@@ -86,12 +86,12 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
 
     if (monitor->expr == '>') {
         if (counter->value > monitor->limit) {
-            fmt = "WARNING: Monitor%s for %s at %Ld / %Ld secs exceeds limit of %Ld";
+            fmt = "Monitor%s for \"%s\". Value %Ld per %Ld secs exceeds limit of %Ld.";
         }
 
     } else if (monitor->expr == '>') {
         if (counter->value < monitor->limit) {
-            fmt = "WARNING: Monitor%s for %s at %Ld / %Ld secs outside limit of %Ld";
+            fmt = "Monitor%s for \"%s\". Value %Ld per %Ld secs outside limit of %Ld.";
         }
     }
     if (fmt) {
@@ -103,7 +103,7 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
             sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %Ld, MESSAGE: '%s', PERIOD: %Ld, SUBJECT: '%s', VALUE: %Ld }", 
             monitor->counterName, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, counter->value));
         /*  
-            WARNING: yields 
+            WARNING: may yield depending on remedy
          */
         invokeDefenses(monitor, args);
     }
@@ -114,7 +114,7 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
 
 
 /*
-    WARNING: this routine yields
+    WARNING: this routine may yield
  */
 static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
 {
@@ -164,11 +164,11 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
                 }
             }
         } while (removed);
-        unlock(http->addresses);
 
         if (mprGetHashLength(http->addresses) == 0) {
             stopMonitors();
         }
+        unlock(http->addresses);
         return;
     }
 }
@@ -274,10 +274,10 @@ static void stopMonitors()
     Http            *http;
     int             next;
 
-    mprTrace(4, "Stop monitors");
     http = MPR->httpService;
     lock(http);
     if (http->monitorsStarted) {
+        mprTrace(4, "Stop monitors");
         for (ITERATE_ITEMS(http->monitors, monitor, next)) {
             if (monitor->timer) {
                 mprStopContinuousEvent(monitor->timer);
@@ -437,7 +437,10 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
     address->banUntil = max(banUntil, address->banUntil);
     address->banMsg = msg;
     address->banStatus = status;
-    mprLog(1, "Client %s banned for %Ld secs. %s", ip, period / 1000, address->banMsg ? address->banMsg : "");
+    mprLog(1, "Client %s banned for %Ld secs.", ip, period / 1000);
+    if (address->banMsg) {
+        mprLog(1, "%s", address->banMsg);
+    }
     return 0;
 }
 

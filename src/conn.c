@@ -375,11 +375,13 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     address = conn->address;
     if (address && address->banUntil > http->now) {
         if (address->banStatus) {
-            httpError(conn, HTTP_CLOSE | address->banStatus, address->banMsg ? address->banMsg : "Client banned");
+            httpError(conn, HTTP_CLOSE | address->banStatus, 
+                "Connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
         } else if (address->banMsg) {
-            httpError(conn, HTTP_CLOSE | HTTP_CODE_NOT_ACCEPTABLE, address->banMsg);
+            httpError(conn, HTTP_CLOSE | HTTP_CODE_NOT_ACCEPTABLE, 
+                "Connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
         } else {
-            httpDisconnect(conn);
+            httpDestroyConn(conn);
             return 0;
         }
     }

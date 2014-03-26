@@ -189,7 +189,9 @@ static bool parseIncoming(HttpConn *conn)
     HttpRx      *rx;
     HttpAddress *address;
     HttpPacket  *packet;
+    HttpLimits  *limits;
     ssize       len;
+    int64       value;
     char        *start, *end;
 
     if ((packet = conn->input) == 0) {
@@ -202,6 +204,22 @@ static bool parseIncoming(HttpConn *conn)
     assert(conn->rx);
     assert(conn->tx);
     rx = conn->rx;
+    limits = conn->limits;
+
+    if (httpServerConn(conn) && !conn->activeRequest) {
+        /*
+            ErrorDocuments may come through here twice so test activeRequest to keep counters valid.
+         */
+        conn->activeRequest = 1;
+        if ((value = httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, 1)) >= limits->requestsPerClientMax) {
+            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, 
+                "Too many concurrent requests for client: %s %d/%d", conn->ip, (int) value, 
+                limits->requestsPerClientMax);
+            return 0;
+        }
+        httpMonitorEvent(conn, HTTP_COUNTER_REQUESTS, 1);
+    }
+
     if ((len = httpGetPacketLength(packet)) == 0) {
         return 0;
     }
@@ -214,16 +232,16 @@ static bool parseIncoming(HttpConn *conn)
         Don't start processing until all the headers have been received (delimited by two blank lines)
      */
     if ((end = sncontains(start, "\r\n\r\n", len)) == 0 && (end = sncontains(start, "\n\n", len)) == 0) {
-        if (len >= conn->limits->headerSize) {
+        if (len >= limits->headerSize) {
             httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
-                "Header too big. Length %d vs limit %d", len, conn->limits->headerSize);
+                "Header too big. Length %d vs limit %d", len, limits->headerSize);
         }
         return 0;
     }
     len = end - start;
-    if (len >= conn->limits->headerSize) {
+    if (len >= limits->headerSize) {
         httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Header too big. Length %d vs limit %d", len, 
-            conn->limits->headerSize);
+            limits->headerSize);
         return 0;
     }
     if (httpServerConn(conn)) {
@@ -412,17 +430,6 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     conn->startMark = mprGetHiResTicks();
     conn->started = conn->http->now;
 
-    /*
-        ErrorDocuments may come through here twice so test activeRequest to keep counters valid.
-     */
-    if (httpServerConn(conn) && !conn->activeRequest) {
-        conn->activeRequest = 1;
-        if (httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, 1) >= limits->requestsPerClientMax) {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, "Too many concurrent requests for client: %s", conn->ip);
-            return 0;
-        }
-        httpMonitorEvent(conn, HTTP_COUNTER_REQUESTS, 1);
-    }
     traceRequest(conn, packet);
     rx->originalMethod = rx->method = supper(getToken(conn, 0));
     parseMethod(conn);

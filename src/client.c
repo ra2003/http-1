@@ -187,13 +187,14 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
             }
             return 1;
         }
-    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && conn->followRedirects) {
+    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && 
+            conn->followRedirects) {
         if (rx->redirect) {
             *url = rx->redirect;
             return 1;
         }
         httpError(conn, rx->status, "Missing location header");
-        return -1;
+        return 0;
     }
     return 0;
 }

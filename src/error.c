@@ -114,11 +114,10 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     cchar       *uri;
     int         status;
 
-    assert(fmt);
     rx = conn->rx;
     tx = conn->tx;
 
-    if (conn == 0) {
+    if (conn == 0 || fmt == 0) {
         return;
     }
     status = flags & HTTP_CODE_MASK;

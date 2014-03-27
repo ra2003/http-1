@@ -845,21 +845,25 @@ PUBLIC void mprAtomicAdd64(volatile int64 *target, int64 value);
     #endif
 #endif
 #ifndef ME_MPR_ALLOC_LEVEL
-    #define ME_MPR_ALLOC_LEVEL     7                   /* Emit mark/sweek elapsed time at this level */
+    #define ME_MPR_ALLOC_LEVEL     7                    /* Emit mark/sweek elapsed time at this level */
 #endif
 #ifndef ME_MPR_ALLOC_PARALLEL
-    #define ME_MPR_ALLOC_PARALLEL  1                   /* Run sweeper in parallel with user threads */
+    #define ME_MPR_ALLOC_PARALLEL  1                    /* Run sweeper in parallel with user threads */
 #endif
 #if ME_COMPILER_HAS_MMU
-    #define ME_MPR_ALLOC_VIRTUAL   1                   /* Use virtual memory allocations */
+    #define ME_MPR_ALLOC_VIRTUAL   1                    /* Use virtual memory allocations */
 #else
-    #define ME_MPR_ALLOC_VIRTUAL   0                   /* Use malloc() for region allocations */
+    #define ME_MPR_ALLOC_VIRTUAL   0                    /* Use malloc() for region allocations */
 #endif
 #ifndef ME_MPR_ALLOC_QUOTA
-    #define ME_MPR_ALLOC_QUOTA     8192                /* Number of allocations before a GC is worthwhile */
+    #if ME_TUNE_SIZE
+        #define ME_MPR_ALLOC_QUOTA  2048                /* Number of allocations before a GC is worthwhile */
+    #else
+        #define ME_MPR_ALLOC_QUOTA  8192
+    #endif
 #endif
 #ifndef ME_MPR_ALLOC_REGION_SIZE
-    #define ME_MPR_ALLOC_REGION_SIZE (256 * 1024)      /* Memory region allocation chunk size */
+    #define ME_MPR_ALLOC_REGION_SIZE (256 * 1024)       /* Memory region allocation chunk size */
 #endif
 
 #ifndef ME_MPR_ALLOC_ALIGN_SHIFT
@@ -868,9 +872,9 @@ PUBLIC void mprAtomicAdd64(volatile int64 *target, int64 value);
         for doubles. NOTE: SSE and AltiVec instuctions may require 16 byte alignment.
      */
     #if !ME_64 && !(ME_CPU_ARCH == ME_CPU_MIPS)
-        #define ME_MPR_ALLOC_ALIGN_SHIFT 3             /* 8 byte alignment */
+        #define ME_MPR_ALLOC_ALIGN_SHIFT 3              /* 8 byte alignment */
     #else
-        #define ME_MPR_ALLOC_ALIGN_SHIFT 3             /* 8 byte alignment */
+        #define ME_MPR_ALLOC_ALIGN_SHIFT 3
     #endif
 #endif
 #define ME_MPR_ALLOC_ALIGN (1 << ME_MPR_ALLOC_ALIGN_SHIFT)

@@ -217,6 +217,7 @@ PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
     } else {
         mprAddKey(sp->data, key, mprSerialize(obj, 0));
     }
+    sp->dirty = 1;
     return 0;
 }
 
@@ -242,6 +243,7 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
     } else {
         mprAddKey(sp->data, key, sclone(value));
     }
+    sp->dirty = 1;
     return 0;
 }
 
@@ -270,6 +272,7 @@ PUBLIC int httpRemoveSessionVar(HttpConn *conn, cchar *key)
     if ((sp = httpGetSession(conn, 0)) == 0) {
         return 0;
     }
+    sp->dirty = 1;
     return mprRemoveKey(sp->data, key);
 }
 
@@ -279,9 +282,12 @@ PUBLIC int httpWriteSession(HttpConn *conn)
     HttpSession     *sp;
 
     if ((sp = conn->rx->session) != 0) {
-        if (mprWriteCache(sp->cache, sp->id, mprSerialize(sp->data, 0), 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
-            mprError("Cannot persist session cache");
-            return MPR_ERR_CANT_WRITE;
+        if (sp->dirty) {
+            if (mprWriteCache(sp->cache, sp->id, mprSerialize(sp->data, 0), 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
+                mprError("Cannot persist session cache");
+                return MPR_ERR_CANT_WRITE;
+            }
+            sp->dirty = 0;
         }
     }
     return 0;

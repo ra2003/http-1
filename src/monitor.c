@@ -335,7 +335,7 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
             if (address) {
                 address = mprRealloc(address, sizeof(HttpAddress) * ncounters * sizeof(HttpCounter));
             } else {
-                address = mprAllocMem(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter), MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO);
+                address = mprAllocBlock(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter), MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO);
                 mprSetManager(address, (MprManager) manageAddress);
             }
             if (!address) {

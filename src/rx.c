@@ -975,6 +975,10 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
 
     if (mprIsSocketEof(conn->sock)) {
         httpSetEof(conn);
+        if (rx->remainingContent > 0 || (rx->chunkState && rx->chunkState != HTTP_CHUNK_EOF)) {
+            httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
+            return 0;
+        }
     }
     if (rx->chunkState) {
         nbytes = httpFilterChunkData(tx->queue[HTTP_QUEUE_RX], packet);

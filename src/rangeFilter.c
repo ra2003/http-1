@@ -121,6 +121,7 @@ static bool applyRange(HttpQueue *q, HttpPacket *packet)
 
     if (mprNeedYield()) {
         httpScheduleQueue(q);
+        httpPutBackPacket(q, packet);
         return 0;
     }
 

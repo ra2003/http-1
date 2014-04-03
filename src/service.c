@@ -520,10 +520,8 @@ static void httpTimer(Http *http, MprEvent *event)
     HttpConn    *conn;
     HttpStage   *stage;
     HttpLimits  *limits;
-    HttpAddress *address;
     MprModule   *module;
-    MprKey      *kp;
-    int         removed, next, active, abort, period;
+    int         next, active, abort;
 
     updateCurrentDate(http);
 
@@ -588,24 +586,7 @@ static void httpTimer(Http *http, MprEvent *event)
             }
         }
     }
-
-    /*
-        Expire old client addresses. This is done in checkMonitor if monitors exist.
-        Do here just to cleanup old addresses
-     */
-    period = (int) max(http->monitorMaxPeriod, 60 * 1000);
-    lock(http->addresses);
-    do {
-        removed = 0;
-        for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
-            if ((address->updated + period) < http->now) {
-                mprRemoveKey(http->addresses, kp->key);
-                removed = 1;
-                break;
-            }
-        }
-    } while (removed);
-    unlock(http->addresses);
+    httpPruneMonitors();
 
     if (active == 0 || mprIsStopping()) {
         if (event) {

@@ -110,8 +110,35 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
         invokeDefenses(monitor, args);
     }
     mprTrace(5, "CheckCounter \"%s\" (%Ld %c limit %Ld) every %Ld secs", monitor->counterName, counter->value, 
-            monitor->expr, monitor->limit, monitor->period / 1000);
+            monitor->expr, monitor->limit, monitor->period / MPR_TICKS_PER_SEC);
     counter->value = 0;
+}
+
+
+PUBLIC void httpPruneMonitors()
+{
+    Http        *http;
+    HttpAddress *address;
+    MprTicks    period;
+    MprKey      *kp;
+
+    http = MPR->httpService;
+    period = max(http->monitorMaxPeriod, 15 * MPR_TICKS_PER_SEC);
+    lock(http->addresses);
+    for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
+        if ((address->updated + period) < http->now) {
+            if (address->banUntil) {
+                if (address->banUntil < http->now) {
+                    mprLog(1, "Remove ban on client %s", kp->key);
+                    mprRemoveKey(http->addresses, kp->key);
+                }
+            } else {
+                mprRemoveKey(http->addresses, kp->key);
+                /* Safe to keep iterating after removal of key */
+            }
+        }
+    }
+    unlock(http->addresses);
 }
 
 
@@ -124,7 +151,6 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
     HttpAddress     *address;
     HttpCounter     c, *counter;
     MprKey          *kp;
-    int             removed;
 
     http = monitor->http;
     http->now = mprGetTicks();
@@ -149,34 +175,23 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
             Check the monitor for each active client address
          */
         lock(http->addresses);
-        do {
-            removed = 0;
-            for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
-                counter = &address->counters[monitor->counterIndex];
-                unlock(http->addresses);
-                checkCounter(monitor, counter, kp->key);
-                lock(http->addresses);
-                /*
-                    Expire old records
-                 */
-                if ((address->updated + http->monitorMaxPeriod) < http->now) {
-                    if (address->banUntil < http->now) {
-                        if (address->banUntil) {
-                            mprLog(1, "Remove ban on client %s", kp->key);
-                        }
-                        mprRemoveKey(http->addresses, kp->key);
-                        removed = 1;
-                        break;
-                    }
-                }
-            }
-        } while (removed);
+        for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
+            counter = &address->counters[monitor->counterIndex];
+            unlock(http->addresses);
 
+            /*
+                WARNING: this may allow new addresses to be added or stale addresses to be removed.
+                Regardless, because GC is paused, iterating is safe.
+             */
+            checkCounter(monitor, counter, kp->key);
+
+            lock(http->addresses);
+        }
         if (mprGetHashLength(http->addresses) == 0) {
             stopMonitors();
         }
         unlock(http->addresses);
-        return;
+        httpPruneMonitors();
     }
 }
 
@@ -505,7 +520,7 @@ static void cmdRemedy(MprHash *args)
         mprError("Cannot start command: %s", command);
         return;
     }
-    mprLog(1, "Cmd data: %s", data);
+    mprLog(1, "Cmd data: \n%s", data);
     if (data && mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
         mprError("Cannot write to command: %s", command);
         return;
@@ -515,7 +530,7 @@ static void cmdRemedy(MprHash *args)
         rc = mprWaitForCmd(cmd, ME_HTTP_REMEDY_TIMEOUT);
         status = mprGetCmdExitStatus(cmd);
         if (rc < 0 || status != 0) {
-            mprError("Email remedy failed. Error: %s\nResult: %s", mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf));
+            mprError("Remedy failed. Error: %s\nResult: %s", mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf));
             return;
         }
         mprDestroyCmd(cmd);

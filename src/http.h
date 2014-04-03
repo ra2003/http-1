@@ -491,6 +491,7 @@ PUBLIC void httpAddCounters();
 PUBLIC int httpAddRemedies();
 PUBLIC MprTicks httpGetTicks(cchar *value);
 PUBLIC uint64 httpGetNumber(cchar *value);
+PUBLIC void httpPruneMonitors();
 
 /************************************ Http **********************************/
 /** 

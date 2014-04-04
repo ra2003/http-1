@@ -2488,7 +2488,7 @@ typedef struct HttpConn {
     /*  Ordered for debugability */
 
     int             state;                  /**< Connection state */
-    int             error;                  /**< A request error has occurred */
+    int             error;                  /**< A connection and/or request error has occurred */
     int             connError;              /**< A connection error has occurred */
     int             activeRequest;          /**< Actively servicing a request */
 

@@ -98,7 +98,7 @@ static void closeWebSock(HttpQueue *q);
 static void incomingWebSockData(HttpQueue *q, HttpPacket *packet);
 static void manageWebSocket(HttpWebSocket *ws, int flags);
 static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir);
-static void openWebSock(HttpQueue *q);
+static int openWebSock(HttpQueue *q);
 static void outgoingWebSockService(HttpQueue *q);
 static int processFrame(HttpQueue *q, HttpPacket *packet);
 static void readyWebSock(HttpQueue *q);
@@ -245,7 +245,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
 /*
     Open the filter for a new request
  */
-static void openWebSock(HttpQueue *q)
+static int openWebSock(HttpQueue *q)
 {
     HttpConn        *conn;
     HttpWebSocket   *ws;
@@ -266,6 +266,7 @@ static void openWebSock(HttpQueue *q)
         httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
     }
     conn->tx->responded = 0;
+    return 0;
 }
 
 
@@ -290,9 +291,12 @@ static void closeWebSock(HttpQueue *q)
     if (q->conn && q->conn->rx) {
         ws = q->conn->rx->webSocket;
         assert(ws);
-        if (ws && ws->pingEvent) {
-            mprRemoveEvent(ws->pingEvent);
-            ws->pingEvent = 0;
+        if (ws) {
+            ws->state = WS_STATE_CLOSED;
+           if (ws->pingEvent) {
+                mprRemoveEvent(ws->pingEvent);
+                ws->pingEvent = 0;
+           }
         }
     }
 }

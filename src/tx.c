@@ -301,7 +301,7 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
 
     tx->responded = 1;
     tx->finalizedOutput = 1;
-    if (conn->writeq == tx->queue[HTTP_QUEUE_TX]) {
+    if (!(tx->flags & HTTP_TX_PIPELINE)) {
         /* Tx Pipeline not yet created */
         tx->pendingFinalize = 1;
         return;

@@ -74,11 +74,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
             tx->connector = http->sendConnector;
         } else 
 #endif
-        if (route && route->connector) {
-            tx->connector = route->connector;
-        } else {
-            tx->connector = http->netConnector;
-        }
+        tx->connector = (route && route->connector) ? route->connector : http->netConnector;
     }
     mprAddItem(tx->outputPipeline, tx->connector);
     if (rx->traceLevel >= 0) {
@@ -105,9 +101,17 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     httpPutForService(conn->writeq, httpCreateHeaderPacket(), HTTP_DELAY_SERVICE);
 
     /*
-        Open the pipelien stages. This calls the open entrypoints on all stages
+        Open the pipeline stages. This calls the open entrypoints on all stages.
      */
     openQueues(conn);
+
+    if (conn->error) {
+        if (tx->handler != http->passHandler) {
+            tx->handler = http->passHandler;
+            httpAssignQueue(conn->writeq, tx->handler, HTTP_QUEUE_TX);
+        }
+    }
+    tx->flags |= HTTP_TX_PIPELINE;
 }
 
 
@@ -206,12 +210,19 @@ static void openQueues(HttpConn *conn)
     for (i = 0; i < HTTP_MAX_QUEUE; i++) {
         qhead = tx->queue[i];
         for (q = qhead->nextQ; q != qhead; q = q->nextQ) {
-            if (q->open && !(q->flags & (HTTP_QUEUE_OPEN))) {
-                if (q->pair == 0 || !(q->pair->flags & HTTP_QUEUE_OPEN)) {
+            if (q->open && !(q->flags & (HTTP_QUEUE_OPEN_TRIED))) {
+                if (q->pair == 0 || !(q->pair->flags & HTTP_QUEUE_OPEN_TRIED)) {
                     openQueue(q, tx->chunkSize);
-                    if (q->open && !tx->finalized) {
-                        q->flags |= HTTP_QUEUE_OPEN;
-                        q->stage->open(q);
+                    if (q->open) {
+                        q->flags |= HTTP_QUEUE_OPEN_TRIED;
+                        if (q->stage->open(q) == 0) {
+                            q->flags |= HTTP_QUEUE_OPENED;
+                        } else {
+                            if (!conn->error) {
+                                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot open stage %s", q->stage->name);
+                            }
+
+                        }
                     }
                 }
             }
@@ -245,8 +256,8 @@ PUBLIC void httpClosePipeline(HttpConn *conn)
         for (i = 0; i < HTTP_MAX_QUEUE; i++) {
             qhead = tx->queue[i];
             for (q = qhead->nextQ; q != qhead; q = q->nextQ) {
-                if (q->close && q->flags & HTTP_QUEUE_OPEN) {
-                    q->flags &= ~HTTP_QUEUE_OPEN;
+                if (q->close && q->flags & HTTP_QUEUE_OPENED) {
+                    q->flags &= ~HTTP_QUEUE_OPENED;
                     q->stage->close(q);
                 }
             }
@@ -267,7 +278,7 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
 
     if (rx->needInputPipeline) {
         qhead = tx->queue[HTTP_QUEUE_RX];
-        for (q = qhead->nextQ; !tx->finalized && q->nextQ != qhead; q = nextQ) {
+        for (q = qhead->nextQ; q->nextQ != qhead; q = nextQ) {
             nextQ = q->nextQ;
             if (q->start && !(q->flags & HTTP_QUEUE_STARTED)) {
                 if (q->pair == 0 || !(q->pair->flags & HTTP_QUEUE_STARTED)) {
@@ -278,7 +289,7 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
         }
     }
     qhead = tx->queue[HTTP_QUEUE_TX];
-    for (q = qhead->prevQ; !tx->finalized && q->prevQ != qhead; q = prevQ) {
+    for (q = qhead->prevQ; q->prevQ != qhead; q = prevQ) {
         prevQ = q->prevQ;
         if (q->start && !(q->flags & HTTP_QUEUE_STARTED)) {
             q->flags |= HTTP_QUEUE_STARTED;
@@ -299,7 +310,7 @@ PUBLIC void httpReadyHandler(HttpConn *conn)
     HttpQueue   *q;
 
     q = conn->writeq;
-    if (q->stage && q->stage->ready && !conn->tx->finalized && !(q->flags & HTTP_QUEUE_READY)) {
+    if (q->stage && q->stage->ready && !(q->flags & HTTP_QUEUE_READY)) {
         q->flags |= HTTP_QUEUE_READY;
         q->stage->ready(q);
     }
@@ -314,7 +325,7 @@ static void httpStartHandler(HttpConn *conn)
 
     conn->tx->started = 1;
     q = conn->writeq;
-    if (q->stage->start && !conn->tx->finalized && !(q->flags & HTTP_QUEUE_STARTED)) {
+    if (q->stage->start && !(q->flags & HTTP_QUEUE_STARTED)) {
         q->flags |= HTTP_QUEUE_STARTED;
         q->stage->start(q);
     }

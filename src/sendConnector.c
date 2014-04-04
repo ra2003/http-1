@@ -42,7 +42,7 @@ PUBLIC int httpOpenSendConnector(Http *http)
 /*
     Initialize the send connector for a request
  */
-PUBLIC void httpSendOpen(HttpQueue *q)
+PUBLIC int httpSendOpen(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpTx      *tx;
@@ -53,20 +53,21 @@ PUBLIC void httpSendOpen(HttpQueue *q)
     if (tx->connector != conn->http->sendConnector) {
         httpAssignQueue(q, tx->connector, HTTP_QUEUE_TX);
         tx->connector->open(q);
-        return;
+        return 0;
     }
     if (!(tx->flags & HTTP_TX_NO_BODY)) {
         assert(tx->fileInfo.valid);
         if (tx->fileInfo.size > conn->limits->transmissionBodySize) {
             httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Http transmission aborted. File size exceeds max body of %,Ld bytes", conn->limits->transmissionBodySize);
-            return;
+            return MPR_ERR_CANT_OPEN;
         }
         tx->file = mprOpenFile(tx->filename, O_RDONLY | O_BINARY, 0);
         if (tx->file == 0) {
             httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot open document: %s, err %d", tx->filename, mprGetError());
         }
     }
+    return 0;
 }
 
 
@@ -328,7 +329,7 @@ static void adjustSendVec(HttpQueue *q, MprOff written)
 
 #else
 PUBLIC int httpOpenSendConnector(Http *http) { return 0; }
-PUBLIC void httpSendOpen(HttpQueue *q) {}
+PUBLIC int httpSendOpen(HttpQueue *q) {}
 PUBLIC void httpSendOutgoingService(HttpQueue *q) {}
 #endif /* !ME_ROM */
 

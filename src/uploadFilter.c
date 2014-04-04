@@ -42,7 +42,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet);
 static void manageHttpUploadFile(HttpUploadFile *file, int flags);
 static void manageUpload(Upload *up, int flags);
 static int matchUpload(HttpConn *conn, HttpRoute *route, int dir);
-static void openUpload(HttpQueue *q);
+static int openUpload(HttpQueue *q);
 static int  processUploadBoundary(HttpQueue *q, char *line);
 static int  processUploadHeader(HttpQueue *q, char *line);
 static int  processUploadData(HttpQueue *q);
@@ -95,7 +95,7 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
 /*
     Initialize the upload filter for a new request
  */
-static void openUpload(HttpQueue *q)
+static int openUpload(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpRx      *rx;
@@ -107,7 +107,7 @@ static void openUpload(HttpQueue *q)
 
     mprTrace(5, "Open upload filter");
     if ((up = mprAllocObj(Upload, manageUpload)) == 0) {
-        return;
+        return MPR_ERR_MEMORY;
     }
     q->queueData = up;
     up->contentState = HTTP_UPLOAD_BOUNDARY;
@@ -130,9 +130,10 @@ static void openUpload(HttpQueue *q)
     }
     if (up->boundaryLen == 0 || *up->boundary == '\0') {
         httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad boundary");
-        return;
+        return MPR_ERR_BAD_ARGS;
     }
     httpSetParam(conn, "UPLOAD_DIR", rx->uploadDir);
+    return 0;
 }
 
 

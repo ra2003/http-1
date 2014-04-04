@@ -11,7 +11,7 @@
 /********************************** Forwards **********************************/
 
 static int matchChunk(HttpConn *conn, HttpRoute *route, int dir);
-static void openChunk(HttpQueue *q);
+static int openChunk(HttpQueue *q);
 static void outgoingChunkService(HttpQueue *q);
 static void setChunkPrefix(HttpQueue *q, HttpPacket *packet);
 
@@ -62,12 +62,10 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
 }
 
 
-static void openChunk(HttpQueue *q)
+static int openChunk(HttpQueue *q)
 {
-    HttpConn    *conn;
-
-    conn = q->conn;
-    q->packetSize = min(conn->limits->bufferSize, q->max);
+    q->packetSize = min(q->conn->limits->bufferSize, q->max);
+    return 0;
 }
 
 

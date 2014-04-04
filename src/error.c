@@ -128,11 +128,10 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         conn->keepAliveCount = 0;
     }
     if (flags & HTTP_ABORT) {
-        conn->connError = 1;
+        conn->connError++;
     }
     if (!conn->error) {
-        //  FUTURE - if aborting, could abbreviate some of this
-        conn->error = 1;
+        conn->error++;
         httpOmitBody(conn);
         conn->errorMsg = formatErrorv(conn, status, fmt, args);
         mprLog(2, "Error: %s", conn->errorMsg);

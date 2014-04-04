@@ -735,7 +735,7 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
 
     tx = conn->tx;
     info = &tx->fileInfo;
-    tx->flags &= (HTTP_TX_NO_CHECK | HTTP_TX_NO_MAP);
+    tx->flags &= ~(HTTP_TX_NO_CHECK | HTTP_TX_NO_MAP);
     tx->flags |= (flags & (HTTP_TX_NO_CHECK | HTTP_TX_NO_MAP));
 
     if (filename == 0) {

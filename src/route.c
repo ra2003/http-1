@@ -715,7 +715,7 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
             }
         }
     }
-#if DEPRECATED || 1
+#if DEPRECATED
     /* 
         Old style compression. Deprecated in 4.4 
      */
@@ -1231,7 +1231,7 @@ PUBLIC void httpSetRouteAutoDelete(HttpRoute *route, bool enable)
 }
 
 
-#if DEPRECATED || 1
+#if DEPRECATED
 PUBLIC void httpSetRouteCompression(HttpRoute *route, int flags)
 {
     assert(route);
@@ -1279,14 +1279,14 @@ PUBLIC void httpSetRouteDocuments(HttpRoute *route, cchar *path)
 
     route->documents = httpMakePath(route, route->home, path);
     httpSetRouteVar(route, "DOCUMENTS", route->documents);
-#if DEPRECATED || 1
+#if DEPRECATED
     httpSetRouteVar(route, "DOCUMENTS_DIR", route->documents);
     httpSetRouteVar(route, "DOCUMENT_ROOT", route->documents);
 #endif
 }
 
 
-#if DEPRECATED || 1
+#if DEPRECATED
 PUBLIC void httpSetRouteDir(HttpRoute *route, cchar *path)
 {
     httpSetRouteDocuments(route, path);
@@ -1339,9 +1339,10 @@ PUBLIC void httpSetRouteHome(HttpRoute *route, cchar *path)
 
     route->home = httpMakePath(route, ".", path);
     httpSetRouteVar(route, "HOME", route->home);
-    //  DEPRECATED
+#if DEPRECATED
     httpSetRouteVar(route, "HOME_DIR", route->home);
     httpSetRouteVar(route, "ROUTE_HOME", route->home);
+#endif
 }
 
 
@@ -2735,7 +2736,7 @@ static void definePathVars(HttpRoute *route)
     mprAddKey(route->vars, "VERSION", sclone(ME_VERSION));
     mprAddKey(route->vars, "PLATFORM", sclone(ME_PLATFORM));
     mprAddKey(route->vars, "BIN_DIR", mprGetAppDir());
-#if DEPRECATED || 1
+#if DEPRECATED
     mprAddKey(route->vars, "LIBDIR", mprGetAppDir());
 #endif
     if (route->host) {
@@ -2751,7 +2752,7 @@ static void defineHostVars(HttpRoute *route)
     mprAddKey(route->vars, "HOME", route->home);
     mprAddKey(route->vars, "SERVER_NAME", route->host->name);
 
-#if DEPRECATED || 1
+#if DEPRECATED
     mprAddKey(route->vars, "ROUTE_HOME", route->home);
     mprAddKey(route->vars, "DOCUMENT_ROOT", route->documents);
     mprAddKey(route->vars, "SERVER_ROOT", route->home);

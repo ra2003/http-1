@@ -809,7 +809,7 @@ PUBLIC char *httpLinkEx(HttpConn *conn, cchar *target, MprHash *options)
 }
 
 
-#if DEPRECATED || 1
+#if DEPRECATED
 PUBLIC char *httpUriEx(HttpConn *conn, cchar *target, MprHash *options)
 {
     return httpLinkEx(conn, target, options);

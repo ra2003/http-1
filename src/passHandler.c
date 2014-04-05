@@ -74,7 +74,7 @@ static void handleTrace(HttpConn *conn)
 }
 
 
-#if DEPRECATED || 1
+#if DEPRECATED
 PUBLIC void httpHandleOptionsTrace(HttpConn *conn)
 {
     HttpRx      *rx;

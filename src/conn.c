@@ -482,7 +482,6 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     if (mprShouldAbortRequests() || conn->borrowed) {
         return;
     }
-#if DEPRECATED || 1
     /*
         Used by ejs
      */
@@ -492,12 +491,10 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
         mprQueueEvent(conn->dispatcher, event);
         return;
     }
-#endif
     eventMask = 0;
     if (rx) {
-        if (conn->connError || 
-           /* TODO - should not need tx->writeBlocked or connectorq->count  */ 
-           (tx->writeBlocked) || (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) || 
+        if (conn->connError || (tx->writeBlocked) || 
+           (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) || 
            (httpQueuesNeedService(conn)) || 
            (mprSocketHasBufferedWrite(sp)) ||
            (rx->eof && tx->finalized && conn->state < HTTP_STATE_FINALIZED)) {
@@ -517,7 +514,6 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
 }
 
 
-#if DEPRECATED || 1
 /*
     Used by ejs
  */
@@ -531,7 +527,6 @@ PUBLIC void httpUseWorker(HttpConn *conn, MprDispatcher *dispatcher, MprEvent *e
     conn->workerEvent = event;
     unlock(conn->http);
 }
-#endif
 
 
 PUBLIC void httpUsePrimary(HttpConn *conn)
@@ -654,7 +649,6 @@ static HttpPacket *getPacket(HttpConn *conn, ssize *size)
         content = packet->content;
         mprResetBufIfEmpty(content);
         if (mprGetBufSpace(content) < ME_MAX_BUFFER && mprGrowBuf(content, ME_MAX_BUFFER) < 0) {
-            mprMemoryError(0);
             conn->keepAliveCount = 0;
             conn->state = HTTP_STATE_BEGIN;
             return 0;

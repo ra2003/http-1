@@ -40,7 +40,7 @@ PUBLIC void httpInitAuth(Http *http)
 #if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
     httpCreateAuthStore("system", httpPamVerifyUser);
 #endif
-#if DEPRECATED || 1
+#if DEPRECATED
     /*
         Deprecated in 4.4. Use "internal"
      */
@@ -196,12 +196,10 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
     MprKey      *kp;
 
     auth = conn->rx->route->auth;
-#if DEPRECATED || 1
     if (auth->permittedUsers && !mprLookupKey(auth->permittedUsers, conn->username)) {
         mprLog(2, "User \"%s\" is not specified as a permitted user to access %s", conn->username, conn->rx->pathInfo);
         return 0;
     }
-#endif
     if (!auth->abilities && !abilities) {
         /* No abilities are required */
         return 1;
@@ -270,9 +268,7 @@ PUBLIC HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
         auth->flags = parent->flags;
         auth->qop = parent->qop;
         auth->realm = parent->realm;
-#if DEPRECATED || 1
         auth->permittedUsers = parent->permittedUsers;
-#endif
         auth->abilities = parent->abilities;
         auth->userCache = parent->userCache;
         auth->roles = parent->roles;
@@ -293,9 +289,7 @@ static void manageAuth(HttpAuth *auth, int flags)
         mprMark(auth->deny);
         mprMark(auth->loggedIn);
         mprMark(auth->loginPage);
-#if DEPRECATED || 1
         mprMark(auth->permittedUsers);
-#endif
         mprMark(auth->qop);
         mprMark(auth->realm);
         mprMark(auth->abilities);
@@ -363,7 +357,7 @@ PUBLIC HttpAuthStore *httpCreateAuthStore(cchar *name, HttpVerifyUser verifyUser
 }
 
 
-#if DEPRECATED || 1
+#if DEPRECATED
 PUBLIC int httpAddAuthStore(cchar *name, HttpVerifyUser verifyUser)
 {
     if (httpCreateAuthStore(name, verifyUser) == 0) {
@@ -387,12 +381,10 @@ PUBLIC void httpSetAuthAllow(HttpAuth *auth, cchar *allow)
 }
 
 
-#if DEPRECATED || 1
 PUBLIC void httpSetAuthAnyValidUser(HttpAuth *auth)
 {
     auth->permittedUsers = 0;
 }
-#endif
 
 
 /*
@@ -531,9 +523,8 @@ PUBLIC void httpSetAuthRealm(HttpAuth *auth, cchar *realm)
 }
 
 
-#if DEPRECATED || 1
 /*
-    Can achieve this via abilities
+    Can also achieve this via abilities
  */
 PUBLIC void httpSetAuthPermittedUsers(HttpAuth *auth, cchar *users)
 {
@@ -544,7 +535,6 @@ PUBLIC void httpSetAuthPermittedUsers(HttpAuth *auth, cchar *users)
         mprAddKey(auth->permittedUsers, user, user);
     }
 }
-#endif
 
 
 PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
@@ -555,8 +545,7 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
     if ((auth->store = mprLookupKey(http->authStores, store)) == 0) {
         return MPR_ERR_CANT_FIND;
     }
-    //  DEPRECATED "pam"
-    if (smatch(store, "system") || smatch(store, "pam")) {
+    if (smatch(store, "system")) {
 #if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
         if (auth->type && smatch(auth->type->name, "digest")) {
             mprError("Cannot use the PAM password store with digest authentication");

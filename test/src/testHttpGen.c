@@ -155,6 +155,7 @@ static void testStealSocket(MprTestGroup *gp)
         sp = httpStealSocket(conn);
         assert(sp != conn->sock);
         assert(prior == conn->sock);
+        mprNop(prior);
         tassert(conn->state == HTTP_STATE_COMPLETE);
         tassert(sp->fd != INVALID_SOCKET);
         tassert(conn->sock->fd == INVALID_SOCKET);

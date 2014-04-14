@@ -68,7 +68,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     }
     route->auth = httpCreateAuth();
     route->defaultLanguage = sclone("en");
-    route->home = route->documents = mprGetCurrentPath(".");
+    route->home = route->documents = mprGetCurrentPath();
     route->flags = HTTP_ROUTE_STEALTH;
 #if ME_DEBUG
     route->flags |= HTTP_ROUTE_SHOW_ERRORS;
@@ -1955,7 +1955,7 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
     Expect a template with embedded tokens of the form: "/${controller}/${action}/${other}"
     Understands the following aliases:
         ~   For ${PREFIX}
-        ^   For ${SERVER_PREFIX} which includes ${PREFIX}
+        ^   For ${PREFIX}${SERVER_PREFIX}
     The options is a hash of token values.
  */
 PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)

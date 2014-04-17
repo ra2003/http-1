@@ -36,16 +36,13 @@ PUBLIC void httpInitAuth(Http *http)
     httpAddAuthType("form", formLogin, NULL, NULL);
 
     httpCreateAuthStore("app", NULL);
+    httpCreateAuthStore("file", fileVerifyUser);
+#if DEPRECATED || 1
     httpCreateAuthStore("internal", fileVerifyUser);
+#endif
 #if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
     httpCreateAuthStore("system", httpPamVerifyUser);
-#endif
-#if DEPRECATED
-    /*
-        Deprecated in 4.4. Use "internal"
-     */
-    httpCreateAuthStore("file", fileVerifyUser);
-#if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
+#if DEPRECATED || 1
     httpCreateAuthStore("pam", httpPamVerifyUser);
 #endif
 #endif
@@ -578,7 +575,7 @@ PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
         return MPR_ERR_CANT_FIND;
     }
     if (!auth->store) {
-        httpSetAuthStore(auth, "internal");
+        httpSetAuthStore(auth, "file");
     }
     return 0;
 }

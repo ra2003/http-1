@@ -726,7 +726,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     ssize           room, thisWrite, totalWritten;
 
     assert(conn);
-    assert(buf);
+
     ws = conn->rx->webSocket;
     conn->tx->responded = 1;
 

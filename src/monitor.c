@@ -291,7 +291,7 @@ static void startMonitors()
         http->monitorsStarted = 1;
     }
     unlock(http);
-    mprTrace(4, "Start monitors: min %Ld, max %Ld",  http->monitorMinPeriod, http->monitorMaxPeriod);
+    mprTrace(6, "Start monitors: min period %Ld, max period %Ld",  http->monitorMinPeriod, http->monitorMaxPeriod);
 }
 
 

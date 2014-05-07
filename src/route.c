@@ -72,6 +72,8 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->flags = HTTP_ROUTE_STEALTH;
 #if ME_DEBUG
     route->flags |= HTTP_ROUTE_SHOW_ERRORS;
+    route->update = 1;
+    route->keepSource = 1;
 #endif
     route->host = host;
     route->http = MPR->httpService;
@@ -131,71 +133,82 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     if ((route = mprAllocObj(HttpRoute, manageRoute)) == 0) {
         return 0;
     }
-    //  OPT. Structure assigment then overwrite.
-    route->parent = parent;
     route->auth = httpCreateInheritedAuth(parent->auth);
     route->autoDelete = parent->autoDelete;
     route->caching = parent->caching;
+    route->client = parent->client;
+    route->combine = parent->combine;
     route->conditions = parent->conditions;
+    route->config = parent->config;
+    route->configLoaded = parent->configLoaded;
     route->connector = parent->connector;
+    route->cookie = parent->cookie;
+    route->corsAge = parent->corsAge;
+    route->corsCredentials = parent->corsCredentials;
+    route->corsHeaders = parent->corsHeaders;
+    route->corsMethods = parent->corsMethods;
+    route->corsOrigin = parent->corsOrigin;
+    route->data = parent->data;
+    route->database = parent->database;
     route->defaultLanguage = parent->defaultLanguage;
     route->documents = parent->documents;
-    route->home = parent->home;
     route->envPrefix = parent->envPrefix;
-    route->data = parent->data;
     route->eroute = parent->eroute;
     route->errorDocuments = parent->errorDocuments;
     route->extensions = parent->extensions;
+    route->flags = parent->flags & ~(HTTP_ROUTE_FREE_PATTERN);
     route->handler = parent->handler;
     route->handlers = parent->handlers;
     route->headers = parent->headers;
-    route->http = MPR->httpService;
+    route->home = parent->home;
     route->host = parent->host;
-    route->inputStages = parent->inputStages;
+    route->http = MPR->httpService;
     route->indicies = parent->indicies;
+    route->inputStages = parent->inputStages;
+#if UNUSED
+    route->json = parent->json;
+#endif
+    route->keepSource = parent->keepSource;
     route->languages = parent->languages;
     route->lifespan = parent->lifespan;
-    route->methods = parent->methods;
-    route->outputStages = parent->outputStages;
-    route->params = parent->params;
-    route->parent = parent;
-    route->vars = parent->vars;
-    route->map = parent->map;
-    route->pattern = parent->pattern;
-    route->patternCompiled = parent->patternCompiled;
-    route->optimizedPattern = parent->optimizedPattern;
-    route->prefix = parent->prefix;
-    route->prefixLen = parent->prefixLen;
-    route->serverPrefix = parent->serverPrefix;
-    route->requestHeaders = parent->requestHeaders;
-    route->responseStatus = parent->responseStatus;
-    route->script = parent->script;
-    route->scriptPath = parent->scriptPath;
-    route->sourceName = parent->sourceName;
-    route->ssl = parent->ssl;
-    route->target = parent->target;
-    route->cookie = parent->cookie;
-    route->targetRule = parent->targetRule;
-    route->tokens = parent->tokens;
-    route->updates = parent->updates;
-    route->uploadDir = parent->uploadDir;
-    route->workers = parent->workers;
     route->limits = parent->limits;
-    route->mimeTypes = parent->mimeTypes;
-    route->trace[0] = parent->trace[0];
-    route->trace[1] = parent->trace[1];
+    route->loaded = parent->loaded;
     route->log = parent->log;
+    route->logBackup = parent->logBackup;
+    route->logFlags = parent->logFlags;
     route->logFormat = parent->logFormat;
     route->logPath = parent->logPath;
     route->logSize = parent->logSize;
-    route->logBackup = parent->logBackup;
-    route->logFlags = parent->logFlags;
-    route->flags = parent->flags & ~(HTTP_ROUTE_FREE_PATTERN);
-    route->corsOrigin = parent->corsOrigin;
-    route->corsHeaders = parent->corsHeaders;
-    route->corsMethods = parent->corsMethods;
-    route->corsCredentials = parent->corsCredentials;
-    route->corsAge = parent->corsAge;
+    route->map = parent->map;
+    route->methods = parent->methods;
+    route->mimeTypes = parent->mimeTypes;
+    route->mode = parent->mode;
+    route->optimizedPattern = parent->optimizedPattern;
+    route->outputStages = parent->outputStages;
+    route->params = parent->params;
+    route->parent = parent;
+    route->pattern = parent->pattern;
+    route->patternCompiled = parent->patternCompiled;
+    route->prefix = parent->prefix;
+    route->prefixLen = parent->prefixLen;
+    route->requestHeaders = parent->requestHeaders;
+    route->responseFormat = parent->responseFormat;
+    route->responseStatus = parent->responseStatus;
+    route->script = parent->script;
+    route->scriptPath = parent->scriptPath;
+    route->serverPrefix = parent->serverPrefix;
+    route->sourceName = parent->sourceName;
+    route->ssl = parent->ssl;
+    route->target = parent->target;
+    route->targetRule = parent->targetRule;
+    route->tokens = parent->tokens;
+    route->trace[0] = parent->trace[0];
+    route->trace[1] = parent->trace[1];
+    route->update = parent->update;
+    route->updates = parent->updates;
+    route->uploadDir = parent->uploadDir;
+    route->vars = parent->vars;
+    route->workers = parent->workers;
     return route;
 }
 
@@ -203,65 +216,69 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
 static void manageRoute(HttpRoute *route, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
-        mprMark(route->map);
-        mprMark(route->name);
-        mprMark(route->pattern);
-        mprMark(route->startSegment);
-        mprMark(route->startWith);
-        mprMark(route->optimizedPattern);
-        mprMark(route->prefix);
-        mprMark(route->serverPrefix);
-        mprMark(route->tplate);
-        mprMark(route->targetRule);
-        mprMark(route->target);
-        mprMark(route->documents);
-        mprMark(route->home);
-        mprMark(route->envPrefix);
-        mprMark(route->indicies);
-        mprMark(route->handler);
-        mprMark(route->caching);
-        mprMark(route->auth);
-        mprMark(route->http);
-        mprMark(route->host);
-        mprMark(route->parent);
-        mprMark(route->defaultLanguage);
-        mprMark(route->extensions);
-        mprMark(route->handlers);
-        mprMark(route->headers);
-        mprMark(route->connector);
-        mprMark(route->data);
-        mprMark(route->eroute);
-        mprMark(route->vars);
-        mprMark(route->map);
-        mprMark(route->languages);
-        mprMark(route->inputStages);
-        mprMark(route->outputStages);
-        mprMark(route->errorDocuments);
-        mprMark(route->context);
-        mprMark(route->uploadDir);
-        mprMark(route->script);
-        mprMark(route->scriptPath);
-        mprMark(route->methods);
-        mprMark(route->params);
-        mprMark(route->requestHeaders);
-        mprMark(route->conditions);
-        mprMark(route->updates);
-        mprMark(route->sourceName);
-        mprMark(route->tokens);
-        mprMark(route->ssl);
-        mprMark(route->limits);
-        mprMark(route->mimeTypes);
         httpManageTrace(&route->trace[0], flags);
         httpManageTrace(&route->trace[1], flags);
+        mprMark(route->auth);
+        mprMark(route->caching);
+        mprMark(route->client);
+        mprMark(route->conditions);
+        mprMark(route->config);
+        mprMark(route->connector);
+        mprMark(route->context);
+        mprMark(route->cookie);
+        mprMark(route->corsHeaders);
+        mprMark(route->corsMethods);
+        mprMark(route->corsOrigin);
+        mprMark(route->data);
+        mprMark(route->database);
+        mprMark(route->defaultLanguage);
+        mprMark(route->documents);
+        mprMark(route->envPrefix);
+        mprMark(route->eroute);
+        mprMark(route->errorDocuments);
+        mprMark(route->extensions);
+        mprMark(route->handler);
+        mprMark(route->handlers);
+        mprMark(route->headers);
+        mprMark(route->home);
+        mprMark(route->host);
+        mprMark(route->http);
+        mprMark(route->indicies);
+        mprMark(route->inputStages);
+        mprMark(route->languages);
+        mprMark(route->limits);
         mprMark(route->log);
         mprMark(route->logFormat);
         mprMark(route->logPath);
+        mprMark(route->map);
+        mprMark(route->methods);
+        mprMark(route->mimeTypes);
+        mprMark(route->mode);
         mprMark(route->mutex);
+        mprMark(route->name);
+        mprMark(route->optimizedPattern);
+        mprMark(route->outputStages);
+        mprMark(route->params);
+        mprMark(route->parent);
+        mprMark(route->pattern);
+        mprMark(route->prefix);
+        mprMark(route->requestHeaders);
+        mprMark(route->responseFormat);
+        mprMark(route->script);
+        mprMark(route->scriptPath);
+        mprMark(route->serverPrefix);
+        mprMark(route->sourceName);
+        mprMark(route->ssl);
+        mprMark(route->startSegment);
+        mprMark(route->startWith);
+        mprMark(route->target);
+        mprMark(route->targetRule);
+        mprMark(route->tokens);
+        mprMark(route->tplate);
+        mprMark(route->updates);
+        mprMark(route->uploadDir);
+        mprMark(route->vars);
         mprMark(route->webSocketsProtocol);
-        mprMark(route->corsOrigin);
-        mprMark(route->corsHeaders);
-        mprMark(route->corsMethods);
-        mprMark(route->cookie);
 
     } else if (flags & MPR_MANAGE_FREE) {
         if (route->patternCompiled && (route->flags & HTTP_ROUTE_FREE_PATTERN)) {
@@ -1407,6 +1424,8 @@ PUBLIC void httpAddRouteMethods(HttpRoute *route, cchar *methods)
         methods = ME_HTTP_DEFAULT_METHODS;
     } else if (scaselessmatch(methods, "ALL")) {
        methods = "*";
+    } else if (*methods == '[') {
+        methods = strim(methods, "[]", 0);
     }
     if (!route->methods || (route->parent && route->methods == route->parent->methods)) {
         GRADUATE_HASH(route, methods);
@@ -1479,6 +1498,7 @@ PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
         } else {
             route->prefix = sclone(prefix);
             route->prefixLen = slen(prefix);
+            httpSetRouteVar(route, "PREFIX", prefix);
         }
     } else {
         route->prefix = 0;
@@ -3391,6 +3411,14 @@ PUBLIC uint64 httpGetNumber(cchar *value)
         number = stoi(value) * 60 * 60;
     } else if (sends(value, "day") || sends(value, "days")) {
         number = stoi(value) * 60 * 60 * 24;
+    } else if (sends(value, "kb") || sends(value, "k")) {
+        number = stoi(value) * 1024;
+    } else if (sends(value, "mb") || sends(value, "m")) {
+        number = stoi(value) * 1024 * 1024;
+    } else if (sends(value, "gb") || sends(value, "g")) {
+        number = stoi(value) * 1024 * 1024 * 1024;
+    } else if (sends(value, "byte") || sends(value, "bytes")) {
+        number = stoi(value);
     } else {
         number = stoi(value);
     }

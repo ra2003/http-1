@@ -71,7 +71,7 @@ static void httpTimer(Http *http, MprEvent *event);
 static bool isIdle(bool traceRequests);
 static void manageHttp(Http *http, int flags);
 static void terminateHttp(int state, int how, int status);
-static void updateCurrentDate(Http *http);
+static void updateCurrentDate();
 
 /*********************************** Code *************************************/
 
@@ -98,18 +98,22 @@ PUBLIC Http *httpCreate(int flags)
     http->connections = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
     http->authTypes = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE | MPR_HASH_STABLE);
     http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE | MPR_HASH_STABLE);
+    http->routeSets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
     http->booted = mprGetTime();
     http->flags = flags;
     http->monitorMaxPeriod = 0;
     http->monitorMinPeriod = MAXINT;
     http->secret = mprGetRandomString(HTTP_MAX_SECRET);
+    http->localPlatform = slower(sfmt("%s-%s-%s", ME_OS, ME_CPU, ME_PROFILE));
 
-    updateCurrentDate(http);
+    updateCurrentDate();
     http->statusCodes = mprCreateHash(41, MPR_HASH_STATIC_VALUES | MPR_HASH_STATIC_KEYS | MPR_HASH_STABLE);
     for (code = HttpStatusCodes; code->code; code++) {
         mprAddKey(http->statusCodes, code->codeString, code);
     }
-    httpInitAuth(http);
+    httpGetUserGroup();
+    httpInitParser();
+    httpInitAuth();
     httpOpenNetConnector(http);
     httpOpenSendConnector(http);
     httpOpenRangeFilter(http);
@@ -158,38 +162,45 @@ static void manageHttp(Http *http, int flags)
     int         next;
 
     if (flags & MPR_MANAGE_MARK) {
-        mprMark(http->endpoints);
-        mprMark(http->hosts);
-        mprMark(http->connections);
-        mprMark(http->stages);
-        mprMark(http->statusCodes);
-        mprMark(http->routeTargets);
-        mprMark(http->routeConditions);
-        mprMark(http->routeUpdates);
-        mprMark(http->sessionCache);
-        mprMark(http->clientLimits);
-        mprMark(http->serverLimits);
-        mprMark(http->clientRoute);
+        mprMark(http->addresses);
+        mprMark(http->authStores);
+        mprMark(http->authTypes);
         mprMark(http->clientHandler);
-        mprMark(http->timer);
-        mprMark(http->timestamp);
-        mprMark(http->mutex);
-        mprMark(http->software);
-        mprMark(http->forkData);
+        mprMark(http->clientLimits);
+        mprMark(http->clientRoute);
+        mprMark(http->connections);
         mprMark(http->context);
+        mprMark(http->counters);
         mprMark(http->currentDate);
-        mprMark(http->secret);
+        mprMark(http->dateCache);
         mprMark(http->defaultClientHost);
+        mprMark(http->defenses);
+        mprMark(http->endpoints);
+        mprMark(http->forkData);
+        mprMark(http->group);
+        mprMark(http->hosts);
+        mprMark(http->localPlatform);
+        mprMark(http->monitors);
+        mprMark(http->mutex);
+        mprMark(http->parsers);
+        mprMark(http->platform);
+        mprMark(http->platformDir);
         mprMark(http->protocol);
         mprMark(http->proxyHost);
-        mprMark(http->authTypes);
-        mprMark(http->authStores);
-        mprMark(http->addresses);
-        mprMark(http->defenses);
         mprMark(http->remedies);
-        mprMark(http->monitors);
-        mprMark(http->counters);
-        mprMark(http->dateCache);
+        mprMark(http->routeConditions);
+        mprMark(http->routeSets);
+        mprMark(http->routeTargets);
+        mprMark(http->routeUpdates);
+        mprMark(http->secret);
+        mprMark(http->serverLimits);
+        mprMark(http->sessionCache);
+        mprMark(http->software);
+        mprMark(http->stages);
+        mprMark(http->statusCodes);
+        mprMark(http->timer);
+        mprMark(http->timestamp);
+        mprMark(http->user);
 
         /*
             Endpoints keep connections alive until a timeout. Keep marking even if no other references.
@@ -202,6 +213,41 @@ static void manageHttp(Http *http, int flags)
         }
         unlock(http->connections);
     }
+}
+
+
+PUBLIC int httpStartEndpoints()
+{
+    HttpEndpoint    *endpoint;
+    Http            *http;
+    int             next;
+
+    if ((http = MPR->httpService) == 0) {
+        return MPR_ERR_BAD_STATE;
+    }
+    for (ITERATE_ITEMS(http->endpoints, endpoint, next)) {
+        if (httpStartEndpoint(endpoint) < 0) {
+            return MPR_ERR_CANT_OPEN;
+        }
+    }
+    return 0;
+}
+
+
+PUBLIC void httpStopEndpoints()
+{
+    HttpEndpoint    *endpoint;
+    Http            *http;
+    int             next;
+
+    if ((http = MPR->httpService) == 0) {
+        return;
+    }
+    lock(http->connections);
+    for (next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
+        httpStopEndpoint(endpoint);
+    }
+    unlock(http->connections);
 }
 
 
@@ -234,13 +280,12 @@ PUBLIC void httpStopConnections(void *data)
 PUBLIC void httpDestroy() 
 {
     Http            *http;
-    HttpEndpoint    *endpoint;
-    int             next;
 
     if ((http = MPR->httpService) == 0) {
         return;
     }
     httpStopConnections(0);
+    httpStopEndpoints();
 
     if (http->timer) {
         mprRemoveEvent(http->timer);
@@ -249,9 +294,6 @@ PUBLIC void httpDestroy()
     if (http->timestamp) {
         mprRemoveEvent(http->timestamp);
         http->timestamp = 0;
-    }
-    for (ITERATE_ITEMS(http->endpoints, endpoint, next)) {
-        httpStopEndpoint(endpoint);
     }
     MPR->httpService = NULL;
 }
@@ -523,7 +565,7 @@ static void httpTimer(Http *http, MprEvent *event)
     MprModule   *module;
     int         next, active, abort;
 
-    updateCurrentDate(http);
+    updateCurrentDate();
 
     /* 
        Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
@@ -634,7 +676,7 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
     assert(http->now >= 0);
     conn->started = http->now;
     mprAddItem(http->connections, conn);
-    updateCurrentDate(http);
+    updateCurrentDate();
 
     lock(http);
     conn->seqno = (int) http->totalConnections++;
@@ -721,10 +763,12 @@ PUBLIC void httpSetProxy(Http *http, cchar *host, int port)
 }
 
 
-static void updateCurrentDate(Http *http)
+static void updateCurrentDate()
 {
+    Http        *http;
     MprTicks    diff;
 
+    http = MPR->httpService;
     http->now = mprGetTicks();
     diff = http->now - http->currentTime;
     if (diff <= MPR_TICKS_PER_SEC || diff >= MPR_TICKS_PER_SEC) {
@@ -879,6 +923,345 @@ PUBLIC void httpSetRequestLogCallback(HttpRequestCallback callback)
         http->logCallback = callback;
     }
 }
+
+
+PUBLIC int httpApplyUserGroup() 
+{
+#if ME_UNIX_LIKE
+    Http    *http;
+
+    http = MPR->httpService;
+    if (http->userChanged || http->groupChanged) {
+        if (!smatch(MPR->logPath, "stdout") && !smatch(MPR->logPath, "stderr")) {
+            if (chown(MPR->logPath, http->uid, http->gid) < 0) {
+                mprError("Cannot change ownership on %s", MPR->logPath);
+            }
+        }
+    }
+    if (httpApplyChangedGroup() < 0 || httpApplyChangedUser() < 0) {
+        return MPR_ERR_CANT_COMPLETE;
+    }
+    if (http->userChanged || http->groupChanged) {
+        struct group    *gp;
+        gid_t           glist[64], gid;
+        MprBuf          *gbuf = mprCreateBuf(0, 0);
+        cchar           *groups;
+        int             i, ngroup;
+
+        gid = getgid();
+        ngroup = getgroups(sizeof(glist) / sizeof(gid_t), glist);
+        if (ngroup > 1) {
+            mprPutStringToBuf(gbuf, ", groups: ");
+            for (i = 0; i < ngroup; i++) {
+                if (glist[i] == gid) continue;
+                if ((gp = getgrgid(glist[i])) != 0) {
+                    mprPutToBuf(gbuf, "%s (%d) ", gp->gr_name, glist[i]);
+                } else {
+                    mprPutToBuf(gbuf, "(%d) ", glist[i]);
+                }
+            }
+        }
+        groups = mprGetBufStart(gbuf);
+        mprLog(MPR_INFO, "Running as user \"%s\" (%d), group \"%s\" (%d)%s", http->user, http->uid, 
+            http->group, http->gid, groups);
+    }
+#endif
+    return 0;
+}
+
+
+PUBLIC void httpGetUserGroup()
+{
+#if ME_UNIX_LIKE
+    Http            *http;
+    struct passwd   *pp;
+    struct group    *gp;
+
+    http = MPR->httpService;
+    http->uid = getuid();
+    if ((pp = getpwuid(http->uid)) == 0) {
+        mprError("Cannot read user credentials: %d. Check your /etc/passwd file.", http->uid);
+    } else {
+        http->user = sclone(pp->pw_name);
+    }
+    http->gid = getgid();
+    if ((gp = getgrgid(http->gid)) == 0) {
+        mprError("Cannot read group credentials: %d. Check your /etc/group file", http->gid);
+    } else {
+        http->group = sclone(gp->gr_name);
+    }
+#else
+    http->uid = http->gid = -1;
+#endif
+}
+
+
+PUBLIC int httpSetUserAccount(cchar *newUser)
+{
+    Http        *http;
+
+    http = MPR->httpService;
+    if (smatch(newUser, "HTTP") || smatch(newUser, "APPWEB")) {
+#if ME_UNIX_LIKE
+        /* Only change user if root */
+        if (getuid() != 0) {
+            mprLog(2, "Running as user account \"%s\"", http->user);
+            return 0;
+        }
+#endif
+#if MACOSX || FREEBSD
+        newUser = "_www";
+#elif LINUX || ME_UNIX_LIKE
+        newUser = "nobody";
+#elif WINDOWS
+        newUser = "Administrator";
+#endif
+    }
+#if ME_UNIX_LIKE
+{
+    struct passwd   *pp;
+    if (snumber(newUser)) {
+        http->uid = atoi(newUser);
+        if ((pp = getpwuid(http->uid)) == 0) {
+            mprError("Bad user id: %d", http->uid);
+            return MPR_ERR_CANT_ACCESS;
+        }
+        newUser = pp->pw_name;
+
+    } else {
+        if ((pp = getpwnam(newUser)) == 0) {
+            mprError("Bad user name: %s", newUser);
+            return MPR_ERR_CANT_ACCESS;
+        }
+        http->uid = pp->pw_uid;
+    }
+    http->userChanged = 1;
+}
+#endif
+    http->user = sclone(newUser);
+    return 0;
+}
+
+
+//  TODO - this should be pushed down into http
+PUBLIC int httpSetGroupAccount(cchar *newGroup)
+{
+    Http    *http;
+
+    http = MPR->httpService;
+    if (smatch(newGroup, "HTTP") || smatch(newGroup, "APPWEB")) {
+#if ME_UNIX_LIKE
+        /* Only change group if root */
+        if (getuid() != 0) {
+            return 0;
+        }
+#endif
+#if MACOSX || FREEBSD
+        newGroup = "_www";
+#elif LINUX || ME_UNIX_LIKE
+{
+        char    *buf;
+        newGroup = "nobody";
+        /*
+            Debian has nogroup, Fedora has nobody. Ugh!
+         */
+        if ((buf = mprReadPathContents("/etc/group", NULL)) != 0) {
+            if (scontains(buf, "nogroup:")) {
+                newGroup = "nogroup";
+            }
+        }
+}
+#elif WINDOWS
+        newGroup = "Administrator";
+#endif
+    }
+#if ME_UNIX_LIKE
+    struct group    *gp;
+
+    if (snumber(newGroup)) {
+        http->gid = atoi(newGroup);
+        if ((gp = getgrgid(http->gid)) == 0) {
+            mprError("Bad group id: %d", http->gid);
+            return MPR_ERR_CANT_ACCESS;
+        }
+        newGroup = gp->gr_name;
+
+    } else {
+        if ((gp = getgrnam(newGroup)) == 0) {
+            mprError("Bad group name: %s", newGroup);
+            return MPR_ERR_CANT_ACCESS;
+        }
+        http->gid = gp->gr_gid;
+    }
+    http->groupChanged = 1;
+#endif
+    http->group = sclone(newGroup);
+    return 0;
+}
+
+
+PUBLIC int httpApplyChangedUser()
+{
+#if ME_UNIX_LIKE
+    Http    *http;
+
+    http = MPR->httpService;
+    if (http->userChanged && http->uid >= 0) {
+        if (http->gid >= 0 && http->groupChanged) {
+            if (setgroups(0, NULL) == -1) {
+                mprError("Cannot clear supplemental groups");
+            }
+            if (setgid(http->gid) == -1) {
+                mprError("Cannot change group to %s: %d\n"
+                    "WARNING: This is a major security exposure", http->group, http->gid);
+            }
+        } else {
+            struct passwd   *pp;
+            if ((pp = getpwuid(http->uid)) == 0) {
+                mprError("Cannot get user entry for id: %d", http->uid);
+                return MPR_ERR_CANT_ACCESS;
+            }
+            mprLog(4, "Initgroups for %s GID %d", http->user, pp->pw_gid);
+            if (initgroups(http->user, pp->pw_gid) == -1) {
+                mprError("Cannot initgroups for %s, errno: %d", http->user, errno);
+            }
+        }
+        if ((setuid(http->uid)) != 0) {
+            mprError("Cannot change user to: %s: %d\n"
+                "WARNING: This is a major security exposure", http->user, http->uid);
+            if (getuid() != 0) {
+                mprError("Log in as administrator/root and retry");
+            }
+            return MPR_ERR_BAD_STATE;
+#if LINUX && PR_SET_DUMPABLE
+        } else {
+            prctl(PR_SET_DUMPABLE, 1);
+#endif
+        }
+    }
+#endif
+    return 0;
+}
+
+
+PUBLIC int httpApplyChangedGroup()
+{
+#if ME_UNIX_LIKE
+    Http    *http;
+
+    http = MPR->httpService;
+    if (http->groupChanged && http->gid >= 0) {
+        if (setgid(http->gid) != 0) {
+            mprError("Cannot change group to %s: %d\n"
+                "WARNING: This is a major security exposure", http->group, http->gid);
+            if (getuid() != 0) {
+                mprError("Log in as administrator/root and retry");
+            }
+            return MPR_ERR_BAD_STATE;
+#if LINUX && PR_SET_DUMPABLE
+        } else {
+            prctl(PR_SET_DUMPABLE, 1);
+#endif
+        }
+    }
+#endif
+    return 0;
+}
+
+
+PUBLIC int httpParsePlatform(cchar *platform, cchar **os, cchar **arch, cchar **profile)
+{
+    char   *rest;
+
+    if (platform == 0 || *platform == '\0') {
+        return MPR_ERR_BAD_ARGS;
+    }
+    *os = stok(sclone(platform), "-", &rest);
+    *arch = sclone(stok(NULL, "-", &rest));
+    *profile = sclone(rest);
+    if (*os == 0 || *arch == 0 || *profile == 0 || **os == '\0' || **arch == '\0' || **profile == '\0') {
+        return MPR_ERR_BAD_ARGS;
+    }
+    return 0;
+}
+
+
+/*
+    Set the platform and platform objects location
+    PlatformPath may be a platform spec that must be located, or it may be a complete path to the platform output directory.
+    If platformPath is null, the local platform definition is used.
+    Probe is the name of the primary executable program in the platform bin directory.
+ */
+PUBLIC int httpSetPlatform(cchar *platformPath, cchar *probe)
+{
+    Http            *http;
+    MprDirEntry     *dp;
+    cchar           *platform, *dir, *junk, *path;
+    int             next, i;
+
+    http = MPR->httpService;
+    http->platform = http->platformDir = 0;
+
+    if (!platformPath) {
+        platformPath = http->localPlatform;
+    }
+    platform = mprGetPathBase(platformPath);
+
+    if (mprPathExists(mprJoinPath(platformPath, probe), R_OK)) {
+        http->platform = platform;
+        http->platformDir = sclone(platformPath);
+
+    } else if (smatch(platform, http->localPlatform)) {
+        /*
+            Check probe with current executable
+         */
+        path = mprJoinPath(mprGetPathDir(mprGetAppDir()), probe);
+        if (mprPathExists(path, R_OK)) {
+            http->platform = http->localPlatform;
+            http->platformDir = mprGetPathParent(mprGetAppDir());
+
+        } else {
+            /*
+                Check probe with installed product
+             */
+            if (mprPathExists(mprJoinPath(ME_VAPP_PREFIX, probe), R_OK)) {
+                http->platform = http->localPlatform;
+                http->platformDir = sclone(ME_VAPP_PREFIX);
+            }
+        }
+    }
+    
+    /*
+        Last chance. Search up the tree for a similar platform directory.
+        This permits specifying a partial platform like "vxworks" without architecture and profile.
+     */
+    if (!http->platformDir) {
+        dir = mprGetCurrentPath();
+        for (i = 0; !mprSamePath(dir, "/") && i < 64; i++) {
+            for (ITERATE_ITEMS(mprGetPathFiles(dir, 0), dp, next)) {
+                if (dp->isDir && sstarts(mprGetPathBase(dp->name), platform)) {
+                    path = mprJoinPath(dir, dp->name);
+                    if (mprPathExists(mprJoinPath(path, probe), R_OK)) {
+                        http->platform = mprGetPathBase(dp->name);
+                        http->platformDir = mprJoinPath(dir, dp->name);
+                        break;
+                    }
+                }
+            }
+            dir = mprGetPathParent(dir);
+        }
+    }
+    if (!http->platform) {
+        return MPR_ERR_CANT_FIND;
+    }
+    if (httpParsePlatform(http->platform, &junk, &junk, &junk) < 0) {
+        return MPR_ERR_BAD_ARGS;
+    }
+    http->platformDir = mprGetAbsPath(http->platformDir);
+    mprLog(1, "Using platform %s at \"%s\"", http->platform, http->platformDir);
+    return 0;
+}
+
 
 /*
     @copy   default

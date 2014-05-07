@@ -115,6 +115,30 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(HttpHost *host, cchar *home, c
 }
 
 
+/*
+    Add the default host to the unassigned endpoints
+ */
+PUBLIC void httpAddHostToEndpoints(HttpHost *host)
+{
+    HttpEndpoint    *endpoint;
+    Http            *http;
+    int             next;
+
+    if (host == 0) {
+        return;
+    }
+    http = MPR->httpService;
+    for (next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
+        if (mprGetListLength(endpoint->hosts) == 0) {
+            httpAddHostToEndpoint(endpoint, host);
+            if (!host->name) {
+                httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
+            }
+        }
+    }
+}
+
+
 #if KEEP
 static int destroyEndpointConnections(HttpEndpoint *endpoint)
 {
@@ -349,6 +373,7 @@ PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
     endpoint->ssl = ssl;
     return 0;
 #else
+    mprError("Configuration lacks SSL support");
     return MPR_ERR_BAD_STATE;
 #endif
 }

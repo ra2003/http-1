@@ -106,6 +106,7 @@
     <ClCompile Include="..\..\src\cache.c" />
     <ClCompile Include="..\..\src\chunkFilter.c" />
     <ClCompile Include="..\..\src\client.c" />
+    <ClCompile Include="..\..\src\config.c" />
     <ClCompile Include="..\..\src\conn.c" />
     <ClCompile Include="..\..\src\digest.c" />
     <ClCompile Include="..\..\src\endpoint.c" />

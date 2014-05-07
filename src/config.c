@@ -896,10 +896,7 @@ static void parseContentHandlers(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parsePrefix(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    //  MOB - should we be prepending the outer prefix?
     httpSetRoutePrefix(route, sjoin(route->prefix, prop->value, 0));
-    //  MOB - this should be pushed into httpSetRoutePrefix
-    httpSetRouteVar(route, "PREFIX", prop->value);
 }
 
 

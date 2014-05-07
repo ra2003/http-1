@@ -383,14 +383,6 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
 
     if ((sessionToken = httpGetSessionVar(conn, ME_XSRF_COOKIE, 0)) != 0) {
         requestToken = httpGetHeader(conn, ME_XSRF_HEADER);
-#if DEPRECATED
-        /*
-            Deprecated in 4.4
-        */
-        if (!requestToken) {
-            requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
-        }
-#endif
         if (!smatch(sessionToken, requestToken)) {
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.

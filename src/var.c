@@ -50,13 +50,9 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     mprAddKey(svars, "REMOTE_ADDR", conn->ip);
     mprAddKeyFmt(svars, "REMOTE_PORT", "%d", conn->port);
 
-#if DEPRECATED
-    mprAddKey(svars, "DOCUMENT_ROOT", rx->route->documents);
-    //  DEPRECATED - use ROUTE_HOME
-    mprAddKey(svars, "SERVER_ROOT", rx->route->home);
-#endif
-
-    /* Set to the same as AUTH_USER */
+    /* 
+        Set to the same as AUTH_USER 
+     */
     mprAddKey(svars, "REMOTE_USER", conn->username);
     mprAddKey(svars, "REQUEST_METHOD", rx->method);
     mprAddKey(svars, "REQUEST_TRANSPORT", sclone((char*) ((conn->secure) ? "https" : "http")));

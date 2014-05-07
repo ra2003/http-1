@@ -74,21 +74,6 @@ static void handleTrace(HttpConn *conn)
 }
 
 
-#if DEPRECATED
-PUBLIC void httpHandleOptionsTrace(HttpConn *conn)
-{
-    HttpRx      *rx;
-
-    rx = conn->rx;
-    if (rx->flags & HTTP_OPTIONS) {
-        httpHandleOptions(conn);
-    } else if (rx->flags & HTTP_TRACE) {
-        handleTrace(conn);
-    }
-}
-#endif
-
-
 PUBLIC int httpOpenPassHandler(Http *http)
 {
     HttpStage     *stage;

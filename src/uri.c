@@ -809,19 +809,6 @@ PUBLIC char *httpLinkEx(HttpConn *conn, cchar *target, MprHash *options)
 }
 
 
-#if DEPRECATED
-PUBLIC char *httpUriEx(HttpConn *conn, cchar *target, MprHash *options)
-{
-    return httpLinkEx(conn, target, options);
-}
-
-PUBLIC char *httpUri(HttpConn *conn, cchar *target)
-{
-    return httpLink(conn, target);
-}
-#endif
-
-
 PUBLIC char *httpUriToString(HttpUri *uri, int flags)
 {
     return httpFormatUri(uri->scheme, uri->host, uri->port, uri->path, uri->reference, uri->query, flags);

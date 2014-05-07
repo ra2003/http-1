@@ -354,17 +354,6 @@ PUBLIC HttpAuthStore *httpCreateAuthStore(cchar *name, HttpVerifyUser verifyUser
 }
 
 
-#if DEPRECATED
-PUBLIC int httpAddAuthStore(cchar *name, HttpVerifyUser verifyUser)
-{
-    if (httpCreateAuthStore(name, verifyUser) == 0) {
-        return MPR_ERR_CANT_CREATE;
-    }
-    return 0;
-}
-#endif
-
-
 PUBLIC void httpSetAuthVerify(HttpAuth *auth, HttpVerifyUser verifyUser)
 {
     auth->verifyUser = verifyUser;

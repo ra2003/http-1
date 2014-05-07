@@ -416,6 +416,28 @@ PUBLIC int httpAddDefense(cchar *name, cchar *remedy, cchar *remedyArgs)
 }
 
 
+PUBLIC int httpAddDefenseFromJson(cchar *name, cchar *remedy, MprJson *jargs)
+{
+    Http        *http;
+    MprHash     *args;
+    MprJson     *arg;
+    int         next;
+
+    assert(name && *name);
+
+    http = MPR->httpService;
+    args = mprCreateHash(0, MPR_HASH_STABLE);
+    for (ITERATE_JSON(jargs, arg, next)) {
+        mprAddKey(args, arg->name, arg->value);
+        if (smatch(arg->name, "remedy")) {
+            remedy = arg->value;
+        }
+    }
+    mprAddKey(http->defenses, name, createDefense(name, remedy, args));
+    return 0;
+}
+
+
 PUBLIC void httpDumpCounters()
 {
     Http            *http;

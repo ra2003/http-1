@@ -29,7 +29,7 @@ static bool fileVerifyUser(HttpConn *conn, cchar *username, cchar *password);
 
 /*********************************** Code *************************************/
 
-PUBLIC void httpInitAuth(Http *http)
+PUBLIC void httpInitAuth()
 {
     httpAddAuthType("basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
     httpAddAuthType("digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
@@ -529,7 +529,12 @@ PUBLIC void httpSetAuthPermittedUsers(HttpAuth *auth, cchar *users)
 
     GRADUATE_HASH(auth, permittedUsers);
     for (user = stok(sclone(users), " \t,", &tok); users; users = stok(NULL, " \t,", &tok)) {
-        mprAddKey(auth->permittedUsers, user, user);
+        if (smatch(user, "*")) {
+            auth->permittedUsers = 0;
+            break;
+        } else {
+            mprAddKey(auth->permittedUsers, user, user);
+        }
     }
 }
 

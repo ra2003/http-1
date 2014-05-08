@@ -373,16 +373,18 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
         return 0;
     }
     address = conn->address;
-    if (address && address->banUntil > http->now) {
-        if (address->banStatus) {
-            httpError(conn, HTTP_CLOSE | address->banStatus, 
-                "Connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
-        } else if (address->banMsg && address->banMsg) {
-            httpError(conn, HTTP_CLOSE | HTTP_CODE_NOT_ACCEPTABLE, 
-                "Connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
+    if (address && address->banUntil) {
+        if (address->banUntil < http->now) {
+            mprLog(1, "Remove ban on client %s at %s", sock->ip, mprGetDate(0));
+            address->banUntil = 0;
         } else {
-            httpDestroyConn(conn);
-            return 0;
+            if (address->banStatus) {
+                httpError(conn, HTTP_CLOSE | address->banStatus, 
+                    "Connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
+            } else {
+                httpDestroyConn(conn);
+                return 0;
+            }
         }
     }
     if (endpoint->ssl) {

@@ -67,7 +67,7 @@ static void invokeDefenses(HttpMonitor *monitor, MprHash *args)
             kp->data = stemplate(kp->data, args);
         }
         mprBlendHash(args, extra);
-        mprLog(1, "Defense \"%s\" activated. Running remedy \"%s\".", defense->name, defense->remedy);
+        mprLog(4, "Defense \"%s\" running remedy \"%s\".", defense->name, defense->remedy);
 
         /*  WARNING: yields */
         remedyProc(args);
@@ -131,16 +131,13 @@ PUBLIC void httpPruneMonitors()
     period = max(http->monitorMaxPeriod, 15 * MPR_TICKS_PER_SEC);
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
-        if ((address->updated + period) < http->now) {
-            if (address->banUntil) {
-                if (address->banUntil < http->now) {
-                    mprLog(1, "Remove ban on client %s", kp->key);
-                    mprRemoveKey(http->addresses, kp->key);
-                }
-            } else {
-                mprRemoveKey(http->addresses, kp->key);
-                /* Safe to keep iterating after removal of key */
-            }
+        if (address->banUntil && address->banUntil < http->now) {
+            mprLog(1, "Remove ban on client %s at %s", kp->key, mprGetDate(0));
+            address->banUntil = 0;
+        }
+        if ((address->updated + period) < http->now && address->banUntil == 0) {
+            mprRemoveKey(http->addresses, kp->key);
+            /* Safe to keep iterating after removal of key */
         }
     }
     unlock(http->addresses);
@@ -482,13 +479,15 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
         mprLog(1, "Cannot find client %s to ban", ip);
         return MPR_ERR_CANT_FIND;
     }
+    if (address->banUntil < http->now) {
+        mprLog(1, "httpBanClient: %s banned for %Ld secs at %s", ip, period / 1000, mprGetDate(0));
+    }
     banUntil = http->now + period;
     address->banUntil = max(banUntil, address->banUntil);
     if (msg && *msg) {
         address->banMsg = sclone(msg);
     }
     address->banStatus = status;
-    mprLog(1, "Client %s banned for %Ld secs", ip, period / 1000);
     return 0;
 }
 
@@ -535,7 +534,7 @@ static void cmdRemedy(MprHash *args)
         data = stok(command, "|", &command);
         data = stemplate(data, args);
     }
-    mprTrace(1, "Run cmd remedy: %s", command);
+    mprLog(1, "Run cmd remedy: %s", command);
     command = strim(command, " \t", MPR_TRIM_BOTH);
     if ((background = (sends(command, "&"))) != 0) {
         command = strim(command, "&", MPR_TRIM_END);
@@ -547,7 +546,7 @@ static void cmdRemedy(MprHash *args)
         mprError("Cannot start command: %s", command);
         return;
     }
-    mprLog(1, "Cmd data: \n%s", data);
+    mprLog(4, "Cmd data: \n%s", data);
     if (data && mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
         mprError("Cannot write to command: %s", command);
         return;

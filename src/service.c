@@ -1170,18 +1170,36 @@ PUBLIC int httpApplyChangedGroup()
 }
 
 
-PUBLIC int httpParsePlatform(cchar *platform, cchar **os, cchar **arch, cchar **profile)
+PUBLIC int httpParsePlatform(cchar *platform, cchar **osp, cchar **archp, cchar **profilep)
 {
-    char   *rest;
+    char   *arch, *os, *profile, *rest;
 
+    if (osp) {
+        *osp = 0;
+    }
+    if (archp) {
+       *archp = 0;
+    }
+    if (profilep) {
+       *profilep = 0;
+    }
     if (platform == 0 || *platform == '\0') {
         return MPR_ERR_BAD_ARGS;
     }
-    *os = stok(sclone(platform), "-", &rest);
-    *arch = sclone(stok(NULL, "-", &rest));
-    *profile = sclone(rest);
-    if (*os == 0 || *arch == 0 || *profile == 0 || **os == '\0' || **arch == '\0' || **profile == '\0') {
+    os = stok(sclone(platform), "-", &rest);
+    arch = sclone(stok(NULL, "-", &rest));
+    profile = sclone(rest);
+    if (os == 0 || arch == 0 || profile == 0 || *os == '\0' || *arch == '\0' || *profile == '\0') {
         return MPR_ERR_BAD_ARGS;
+    }
+    if (osp) {
+        *osp = os;
+    }
+    if (archp) {
+       *archp = arch;
+    }
+    if (profilep) {
+       *profilep = profile;
     }
     return 0;
 }
@@ -1259,7 +1277,7 @@ PUBLIC int httpSetPlatform(cchar *platformPath, cchar *probe)
         return MPR_ERR_BAD_ARGS;
     }
     http->platformDir = mprGetAbsPath(http->platformDir);
-    mprLog(1, "Using platform %s at \"%s\"", http->platform, http->platformDir);
+    mprLog(2, "Using platform %s at \"%s\"", http->platform, mprGetRelPath(http->platformDir, 0));
     return 0;
 }
 

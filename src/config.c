@@ -224,7 +224,7 @@ static void postParse(HttpRoute *route)
         clientCopy(route, client, mappings);
         mprSetJson(client, "prefix", route->prefix ? route->prefix : "");
         route->client = mprJsonToString(client, MPR_JSON_QUOTES);
-        mprTrace(4, "Client Config: %s", mprJsonToString(client, MPR_JSON_PRETTY));
+        mprTrace(6, "Client Config: for %s, %s", route->name, mprJsonToString(client, MPR_JSON_PRETTY));
     }
 
     httpAddHostToEndpoints(route->host);
@@ -309,6 +309,11 @@ static void parseDirectories(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
     
     for (ITERATE_CONFIG(route, prop, child, ji)) {
+        if (smatch(child->name, "documents")) {
+            httpSetRouteDocuments(route, child->value);
+        } else if (smatch(child->name, "home")) {
+            httpSetRouteHome(route, child->value);
+        }
         httpSetDir(route, child->name, child->value);
     }
 }
@@ -584,7 +589,11 @@ static void parseHeadersRemove(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        httpAddRouteResponseHeader(route, HTTP_ROUTE_REMOVE_HEADER, child->name, child->value);
+        if (prop->type & MPR_JSON_ARRAY) {
+            httpAddRouteResponseHeader(route, HTTP_ROUTE_REMOVE_HEADER, child->value, 0);
+        } else {
+            httpAddRouteResponseHeader(route, HTTP_ROUTE_REMOVE_HEADER, child->name, 0);
+        }
     }
 }
 
@@ -605,6 +614,7 @@ static void parseIndexes(HttpRoute *route, cchar *key, MprJson *prop)
     MprJson     *child;
     int         ji;
 
+    httpResetRouteIndexes(route);
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         httpAddRouteIndex(route, child->value);
     }
@@ -861,50 +871,30 @@ static void parsePipelineFilters(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-#if TODO
-static void parseContentHandlers(HttpRoute *route, cchar *key, MprJson *prop)
+static void parsePipelineHandlers(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
-    cchar       *name, *extensions, *direction;
-    int         flags, ji;
+    int         ji;
 
-    for (ITERATE_CONFIG(route, prop, child, ji)) {
-        if (prop->type & MPR_JSON_STRING) {
-            flags = HTTP_STAGE_RX | HTTP_STAGE_TX;
-            extensions = 0;
-            name = child->value;
-        } else {
-            name = mprGetJson(child, "name");
-            extensions = getList(mprGetJsonObj(child, "extensions"));
-            direction = mprGetJson(child, "direction");
-            flags |= smatch(direction, "input") ? HTTP_STAGE_RX : 0;
-            flags |= smatch(direction, "output") ? HTTP_STAGE_TX : 0;
-            flags |= smatch(direction, "both") ? HTTP_STAGE_RX | HTTP_STAGE_TX : 0;
+    if (prop->type & MPR_JSON_STRING) {
+        if (httpAddRouteHandler(route, prop->name, 0) < 0) {
+            httpParseError(route, "Cannot add handler %s", prop->name);
         }
-        if (httpAddRouteFilter(route, name, extensions, flags) < 0) {
-            httpParseError(route, "Cannot add filter %s", name);
-            break;
-        }
-        if (httpAddRouteHandler(route, handler, extensions) < 0) {
-            httpParseError(route, "Cannot add handler %s", handler);
-            break;
+
+    } else {
+        for (ITERATE_CONFIG(route, prop, child, ji)) {
+            if (httpAddRouteHandler(route, child->name, getList(child)) < 0) {
+                httpParseError(route, "Cannot add handler %s", child->name);
+                break;
+            }
         }
     }
 }
-#endif
 
 
 static void parsePrefix(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpSetRoutePrefix(route, sjoin(route->prefix, prop->value, 0));
-}
-
-
-static void parseProtocol(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    if (sstarts(prop->value, "https")) {
-        httpAddRouteCondition(route, "secure", 0, 0);
-    }
 }
 
 
@@ -1033,6 +1023,14 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
                 httpFinalizeRoute(newRoute);
             }
         }
+    }
+}
+
+
+static void parseScheme(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (sstarts(prop->value, "https")) {
+        httpAddRouteCondition(route, "secure", 0, 0);
     }
 }
 
@@ -1280,43 +1278,6 @@ static void parseSslKey(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseSslProtocol(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    char    *word, *tok;
-    int     mask, protoMask;
-
-    protoMask = 0;
-    word = stok(sclone(prop->value), " \t", &tok);
-    while (word) {
-        mask = -1;
-        if (*word == '-') {
-            word++;
-            mask = 0;
-        } else if (*word == '+') {
-            word++;
-        }
-        if (scaselesscmp(word, "SSLv2") == 0) {
-            protoMask &= ~(MPR_PROTO_SSLV2 & ~mask);
-            protoMask |= (MPR_PROTO_SSLV2 & mask);
-
-        } else if (scaselesscmp(word, "SSLv3") == 0) {
-            protoMask &= ~(MPR_PROTO_SSLV3 & ~mask);
-            protoMask |= (MPR_PROTO_SSLV3 & mask);
-
-        } else if (scaselesscmp(word, "TLSv1") == 0) {
-            protoMask &= ~(MPR_PROTO_TLSV1 & ~mask);
-            protoMask |= (MPR_PROTO_TLSV1 & mask);
-
-        } else if (scaselesscmp(word, "ALL") == 0) {
-            protoMask &= ~(MPR_PROTO_ALL & ~mask);
-            protoMask |= (MPR_PROTO_ALL & mask);
-        }
-        word = stok(0, " \t", &tok);
-    }
-    mprSetSslProtocols(route->ssl, protoMask);
-}
-
-
 static void parseSslProvider(HttpRoute *route, cchar *key, MprJson *prop)
 {
     mprSetSslProvider(route->ssl, prop->value);
@@ -1544,13 +1505,11 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.pattern", parsePattern);
     httpAddConfig("app.http.pipeline", parseAll);
     httpAddConfig("app.http.pipeline.filter", parsePipelineFilters);
-#if TODO
     httpAddConfig("app.http.pipeline.handlers", parsePipelineHandlers);
-#endif
     httpAddConfig("app.http.prefix", parsePrefix);
-    httpAddConfig("app.http.protocol", parseProtocol);
     httpAddConfig("app.http.redirect", parseRedirect);
     httpAddConfig("app.http.routeName", parseRouteName);
+    httpAddConfig("app.http.scheme", parseScheme);
 
     httpAddConfig("app.http.server", parseAll);
     httpAddConfig("app.http.server.account", parseServerAccount);
@@ -1569,7 +1528,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.ssl.certificate", parseSslCertificate);
     httpAddConfig("app.http.ssl.ciphers", parseSslCiphers);
     httpAddConfig("app.http.ssl.key", parseSslKey);
-    httpAddConfig("app.http.ssl.protocol", parseSslProtocol);
     httpAddConfig("app.http.ssl.provider", parseSslProvider);
     httpAddConfig("app.http.ssl.verify", parseAll);
     httpAddConfig("app.http.ssl.verify.client", parseSslVerifyClient);

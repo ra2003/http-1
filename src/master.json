@@ -6,11 +6,11 @@
         controllers: '',
         db: '',
         documents:  '',
-        generate: '',
         home:       '',
         layouts: '',
         lib: '',
         paks: '',
+        pakscache: '',
         src: '',
         upload: '',
         views: '',
@@ -99,13 +99,13 @@
                 type: 'app',            //  basic or digest
                 login: {
                     name: '',
-                    abilities: [ 'edit' ],
+                    roles: [ 'edit' ],
                     url: '',
                 },
                 realm: 'example.com',
                 require: {
                     roles: [],          //  MOB - are roles different to abilities
-                    users: ['*']        //  or user name
+                    users: ['*']        //  or user name or true for any-valid user
                 },
                 roles: {
                     executive:      ['manage', 'direct'],
@@ -138,6 +138,7 @@
                 compress: [ 'css', 'html', 'js' ],
                 keep:     [ 'c' ],
                 minify:   [ 'css', 'html', 'js' ],
+                "stylesheets": "css"
             },
 
             //  MOB - must push down in http
@@ -165,15 +166,15 @@
                     'CrossOrigin':                  'origin=* credentials=yes headers=X-CORS-HEADER age=3000',
                 },
                 remove: [],
-                set: [],
+                set: {},
             },
 
-            //  MOB - maybe move under content
             indexes: [ 
                 'index.esp', 
                 'index.html' 
             ],
 
+//  >>>> HERE
             //  MOB - maybe move under content
             languages: {
                 en: {
@@ -234,14 +235,12 @@
                     extensions: [ 'txt', '*' ],
                 }],
                 handlers: {
-                    file: [ 'html', 'gif', 'jpeg', 'jpg', 'png', 'pdf', 'ico', 'css', 'js', 'txt' ],
-                    esp:  [ '*' ],
+                    fileHandler: [ 'html', 'gif', 'jpeg', 'jpg', 'png', 'pdf', 'ico', 'css', 'js', 'txt' ],
+                    espHandler:  [ '*' ],
                 },
             },
 
             prefix:     '/route/auth',
-
-            protocol:   'https',
 
             redirect: [
                 {
@@ -252,7 +251,7 @@
                     status: 301,
                     to: 'https://${request:serverName}/fixedPressRelease.html'
                 }
-            ]
+            ],
 
             routeName:  '',
 
@@ -260,6 +259,8 @@
             routes: [ 'esp-html-mvc' ],
             routes: [ 'resourceGroup': { name: 'admin' } ],
             routes: [ {} ],
+
+            scheme:   'https',
 
             serverPrefix:   '/do',
 
@@ -282,8 +283,6 @@
                     client:     true,
                     issuer:     true,
                 },
-                provider:       'openssl',
-                protocol:       'TLS',
             },
 
             stealth: true,

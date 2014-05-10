@@ -145,9 +145,9 @@ static void printRoute(HttpRoute *route, int next, bool full)
         mprRawLog(0, "    Documents:    %s\n", route->documents);
         mprRawLog(0, "    Source:       %s\n", route->sourceName);
         mprRawLog(0, "    Template:     %s\n", route->tplate);
-        if (route->indicies) {
-            mprRawLog(0, "    Indicies      ");
-            for (ITERATE_ITEMS(route->indicies, index, nextIndex)) {
+        if (route->indexes) {
+            mprRawLog(0, "    Indexes       ");
+            for (ITERATE_ITEMS(route->indexes, index, nextIndex)) {
                 mprRawLog(0, "%s ", index);
             }
         }

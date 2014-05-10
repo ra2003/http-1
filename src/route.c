@@ -85,7 +85,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
 
     route->headers = mprCreateList(-1, MPR_LIST_STABLE);
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
-    route->indicies = mprCreateList(-1, MPR_LIST_STABLE);
+    route->indexes = mprCreateList(-1, MPR_LIST_STABLE);
     route->inputStages = mprCreateList(-1, MPR_LIST_STABLE);
     route->outputStages = mprCreateList(-1, MPR_LIST_STABLE);
 
@@ -163,7 +163,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->home = parent->home;
     route->host = parent->host;
     route->http = MPR->httpService;
-    route->indicies = parent->indicies;
+    route->indexes = parent->indexes;
     route->inputStages = parent->inputStages;
     route->keepSource = parent->keepSource;
     route->languages = parent->languages;
@@ -240,7 +240,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->home);
         mprMark(route->host);
         mprMark(route->http);
-        mprMark(route->indicies);
+        mprMark(route->indexes);
         mprMark(route->inputStages);
         mprMark(route->languages);
         mprMark(route->limits);
@@ -1187,8 +1187,8 @@ PUBLIC void httpResetRoutePipeline(HttpRoute *route)
     if (!route->parent || route->inputStages != route->parent->inputStages) {
         route->inputStages = mprCreateList(-1, MPR_LIST_STABLE);
     }
-    if (!route->parent || route->indicies != route->parent->indicies) {
-        route->indicies = mprCreateList(-1, MPR_LIST_STABLE);
+    if (!route->parent || route->indexes != route->parent->indexes) {
+        route->indexes = mprCreateList(-1, MPR_LIST_STABLE);
     }
     if (!route->parent || route->outputStages != route->parent->outputStages) {
         route->outputStages = mprCreateList(-1, MPR_LIST_STABLE);
@@ -1364,13 +1364,13 @@ PUBLIC void httpAddRouteIndex(HttpRoute *route, cchar *index)
     assert(route);
     assert(index && *index);
 
-    GRADUATE_LIST(route, indicies);
-    for (ITERATE_ITEMS(route->indicies, item, next)) {
+    GRADUATE_LIST(route, indexes);
+    for (ITERATE_ITEMS(route->indexes, item, next)) {
         if (smatch(index, item)) {
             return;
         }
     }
-    mprAddItem(route->indicies, sclone(index));
+    mprAddItem(route->indexes, sclone(index));
 }
 
 
@@ -1407,6 +1407,13 @@ PUBLIC void httpRemoveRouteMethods(HttpRoute *route, cchar *methods)
         mprRemoveKey(route->methods, method);
     }
 }
+
+
+PUBLIC void httpResetRouteIndexes(HttpRoute *route)
+{
+    route->indexes = mprCreateList(-1, MPR_LIST_STABLE);
+}
+
 
 PUBLIC void httpSetRouteMethods(HttpRoute *route, cchar *methods)
 {
@@ -1939,8 +1946,8 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
         This is important as requests process routes in-order.
      */
     assert(route);
-    if (mprGetListLength(route->indicies) == 0) {
-        mprAddItem(route->indicies,  sclone("index.html"));
+    if (mprGetListLength(route->indexes) == 0) {
+        mprAddItem(route->indexes,  sclone("index.html"));
     }
     httpAddRoute(route->host, route);
 }
@@ -2922,7 +2929,7 @@ PUBLIC char *httpExpandUri(HttpConn *conn, cchar *str)
 
 
 /*
-    Replace text using pcre regular expression match indicies
+    Replace text using pcre regular expression match indexes
  */
 static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, int matchCount)
 {

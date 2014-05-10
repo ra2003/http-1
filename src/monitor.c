@@ -13,6 +13,7 @@
 
 /********************************** Forwards **********************************/
 
+static MprTicks lookupTicks(MprHash *args, cchar *key, MprTicks defaultValue);
 static void stopMonitors();
 
 /************************************ Code ************************************/
@@ -67,10 +68,35 @@ static void invokeDefenses(HttpMonitor *monitor, MprHash *args)
             kp->data = stemplate(kp->data, args);
         }
         mprBlendHash(args, extra);
+
+        if (defense->suppressPeriod) {
+            typedef struct SuppressDefense {
+                MprTicks    suppressUntil;
+            } SuppressDefense;
+
+            SuppressDefense *sd;
+            cchar *str = mprHashToString(args, "");
+            if (!defense->suppress) {
+                defense->suppress = mprCreateHash(0, 0);
+            }
+            if ((sd = mprLookupKey(defense->suppress, str)) != 0) {
+                if (sd->suppressUntil > http->now) {
+                    continue;
+                }
+                sd->suppressUntil = http->now + defense->suppressPeriod;
+            } else {
+                if ((sd = mprAllocStruct(SuppressDefense)) != 0) {
+                    mprAddKey(defense->suppress, str, sd);
+                }
+                sd->suppressUntil = http->now + defense->suppressPeriod;
+            }
+            //  MOB - how to expire old suppressions
+        }
         mprLog(4, "Defense \"%s\" running remedy \"%s\".", defense->name, defense->remedy);
 
         /*  WARNING: yields */
         remedyProc(args);
+
 #if FUTURE
         if (http->monitorCallback) {
             (http->monitorCallback)(monitor, defense, args);
@@ -366,6 +392,7 @@ static int manageDefense(HttpDefense *defense, int flags)
         mprMark(defense->name);
         mprMark(defense->remedy);
         mprMark(defense->args);
+        mprMark(defense->suppress);
     }
     return 0;
 }
@@ -381,6 +408,7 @@ static HttpDefense *createDefense(cchar *name, cchar *remedy, MprHash *args)
     defense->name = sclone(name);
     defense->remedy = sclone(remedy);
     defense->args = args;
+    defense->suppressPeriod = lookupTicks(args, "SUPPRESS", 0);
     return defense;
 }
 

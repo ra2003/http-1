@@ -673,6 +673,7 @@ PUBLIC int httpApplyUserGroup();
   */
 PUBLIC bool httpConfigure(HttpConfigureProc proc, void *arg, MprTicks timeout);
 
+#if UNUSED
 /**
     Configure endpoints with named virtual hosts
     @param http Http service object.
@@ -682,6 +683,7 @@ PUBLIC bool httpConfigure(HttpConfigureProc proc, void *arg, MprTicks timeout);
     @stability Stable
  */
 PUBLIC int httpConfigureNamedVirtualEndpoints(Http *http, cchar *ip, int port);
+#endif
 
 /**
     Create a Http service object
@@ -6867,16 +6869,18 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *formData, MprList *fil
 /*  
     Endpoint flags
  */
+#if UNUSED
 #define HTTP_NAMED_VHOST    0x1             /**< Using named virtual hosting */
+#endif
 #define HTTP_NEW_DISPATCHER 0x2             /**< New dispatcher for each connection */
 
 /** 
     Listening endpoints. Endpoints may have multiple virtual named hosts.
     @defgroup HttpEndpoint HttpEndpoint
     @see HttpEndpoint httpAcceptConn httpAddHostToEndpoint httpCreateConfiguredEndpoint httpCreateEndpoint 
-        httpDestroyEndpoint httpGetEndpointContext httpHasNamedVirtualHosts httpIsEndpointAsync
+        httpDestroyEndpoint httpGetEndpointContext httpIsEndpointAsync
         httpLookupHostOnEndpoint httpSecureEndpoint httpSecureEndpointByName httpSetEndpointAddress 
-        httpSetEndpointAsync httpSetEndpointContext httpSetEndpointNotifier httpSetHasNamedVirtualHosts 
+        httpSetEndpointAsync httpSetEndpointContext httpSetEndpointNotifier
         httpStartEndpoint httpStopEndpoint
     @stability Internal
  */
@@ -6976,14 +6980,16 @@ PUBLIC void httpDestroyEndpoint(HttpEndpoint *endpoint);
  */
 PUBLIC void *httpGetEndpointContext(HttpEndpoint *endpoint);
 
+#if UNUSED
 /**
     Test if an endpoint has named virtual hosts.
     @param endpoint Endpoint object to examine
     @return True if the endpoint has named virutal hosts.
     @ingroup HttpEndpoint
-    @stability Stable
+    @stability Deprecated
  */
 PUBLIC bool httpHasNamedVirtualHosts(HttpEndpoint *endpoint);
+#endif
 
 /**
     Get if the endpoint is running in asynchronous mode
@@ -7070,6 +7076,7 @@ PUBLIC void httpSetEndpointContext(HttpEndpoint *endpoint, void *context);
  */
 PUBLIC void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier fn);
 
+#if UNUSED
 /**
     Control whether the endpoint has named virtual hosts.
     @param endpoint Endpoint object to examine
@@ -7078,6 +7085,7 @@ PUBLIC void httpSetEndpointNotifier(HttpEndpoint *endpoint, HttpNotifier fn);
     @stability Stable
  */
 PUBLIC void httpSetHasNamedVirtualHosts(HttpEndpoint *endpoint, bool on);
+#endif
 
 /** 
     Start listening for client connections on an endpoint.

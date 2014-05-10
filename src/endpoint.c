@@ -129,11 +129,9 @@ PUBLIC void httpAddHostToEndpoints(HttpHost *host)
     }
     http = MPR->httpService;
     for (next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
-        if (mprGetListLength(endpoint->hosts) == 0) {
-            httpAddHostToEndpoint(endpoint, host);
-            if (!host->name) {
-                httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
-            }
+        httpAddHostToEndpoint(endpoint, host);
+        if (!host->name) {
+            httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
         }
     }
 }
@@ -283,11 +281,15 @@ PUBLIC void httpMatchHost(HttpConn *conn)
         mprCloseSocket(conn->sock, 0);
         return;
     }
+#if UNUSED
     if (httpHasNamedVirtualHosts(endpoint)) {
         host = httpLookupHostOnEndpoint(endpoint, conn->rx->hostHeader);
     } else {
         host = mprGetFirstItem(endpoint->hosts);
     }
+#else
+    host = httpLookupHostOnEndpoint(endpoint, conn->rx->hostHeader);
+#endif
     if (host == 0) {
         httpSetConnHost(conn, 0);
         httpError(conn, HTTP_CODE_NOT_FOUND, "No host to serve request. Searching for %s", conn->rx->hostHeader);
@@ -406,13 +408,16 @@ PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
 
 PUBLIC void httpAddHostToEndpoint(HttpEndpoint *endpoint, HttpHost *host)
 {
-    mprAddItem(endpoint->hosts, host);
+    if (mprLookupItem(endpoint->hosts, host) < 0) {
+        mprAddItem(endpoint->hosts, host);
+    }
     if (endpoint->limits == 0) {
         endpoint->limits = host->defaultRoute->limits;
     }
 }
 
 
+#if UNUSED
 PUBLIC bool httpHasNamedVirtualHosts(HttpEndpoint *endpoint)
 {
     return endpoint->flags & HTTP_NAMED_VHOST;
@@ -427,21 +432,19 @@ PUBLIC void httpSetHasNamedVirtualHosts(HttpEndpoint *endpoint, bool on)
         endpoint->flags &= ~HTTP_NAMED_VHOST;
     }
 }
+#endif
 
 
-/*
-    Only used for named virtual hosts
- */
-PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
+PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHeader)
 {
     HttpHost    *host;
     int         next;
 
-    if (name == 0 || *name == '\0') {
+    if (hostHeader == 0 || *hostHeader == '\0' || mprGetListLength(endpoint->hosts) <= 1) {
         return mprGetFirstItem(endpoint->hosts);
     }
     for (next = 0; (host = mprGetNextItem(endpoint->hosts, &next)) != 0; ) {
-        if (smatch(host->name, name)) {
+        if (smatch(host->name, hostHeader)) {
             return host;
         }
         if (*host->name == '*') {
@@ -449,7 +452,7 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
                 /* Match all hosts */
                 return host;
             }
-            if (scontains(name, &host->name[1])) {
+            if (scontains(hostHeader, &host->name[1])) {
                 return host;
             }
         }
@@ -458,6 +461,7 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
 }
 
 
+#if UNUSED
 PUBLIC int httpConfigureNamedVirtualEndpoints(Http *http, cchar *ip, int port)
 {
     HttpEndpoint    *endpoint;
@@ -477,6 +481,7 @@ PUBLIC int httpConfigureNamedVirtualEndpoints(Http *http, cchar *ip, int port)
     }
     return (count == 0) ? MPR_ERR_CANT_FIND : 0;
 }
+#endif
 
 
 /*

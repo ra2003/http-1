@@ -2749,7 +2749,10 @@ static void defineHostVars(HttpRoute *route)
     assert(route);
     mprAddKey(route->vars, "DOCUMENTS", route->documents);
     mprAddKey(route->vars, "HOME", route->home);
+    mprAddKey(route->vars, "HOST", route->host->name);
+#if DEPRECATED || 1
     mprAddKey(route->vars, "SERVER_NAME", route->host->name);
+#endif
 }
 
 

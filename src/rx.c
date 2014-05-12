@@ -97,7 +97,9 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->passwordDigest);
         mprMark(rx->paramString);
         mprMark(rx->files);
+#if UNUSED
         mprMark(rx->uploadDir);
+#endif
         mprMark(rx->target);
         mprMark(rx->webSocket);
     }

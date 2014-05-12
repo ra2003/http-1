@@ -92,6 +92,21 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
 }
 
 
+static cchar *getUploadDir(HttpRoute *route)
+{
+    cchar   *uploadDir;
+
+    if ((uploadDir = httpGetDir(route, "upload")) == 0) {
+#if ME_WIN_LIKE
+        uploadDir = mprNormalizePath(getenv("TEMP"));
+#else
+        uploadDir = sclone("/tmp");
+#endif
+    }
+    return uploadDir;
+}
+
+
 /*
     Initialize the upload filter for a new request
  */
@@ -100,6 +115,7 @@ static int openUpload(HttpQueue *q)
     HttpConn    *conn;
     HttpRx      *rx;
     Upload      *up;
+    cchar       *uploadDir;
     char        *boundary;
 
     conn = q->conn;
@@ -111,17 +127,11 @@ static int openUpload(HttpQueue *q)
     }
     q->queueData = up;
     up->contentState = HTTP_UPLOAD_BOUNDARY;
-    rx->uploadDir = rx->route->uploadDir;
     rx->autoDelete = rx->route->autoDelete;
 
-    if (rx->uploadDir == 0) {
-#if ME_WIN_LIKE
-        rx->uploadDir = mprNormalizePath(getenv("TEMP"));
-#else
-        rx->uploadDir = sclone("/tmp");
-#endif
-    }
-    mprTrace(5, "Upload directory is %s", rx->uploadDir);
+    uploadDir = getUploadDir(rx->route);
+    httpSetParam(conn, "UPLOAD_DIR", uploadDir);
+    mprTrace(5, "Upload directory is %s", uploadDir);
 
     if ((boundary = strstr(rx->mimeType, "boundary=")) != 0) {
         boundary += 9;
@@ -132,7 +142,6 @@ static int openUpload(HttpQueue *q)
         httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad boundary");
         return MPR_ERR_BAD_ARGS;
     }
-    httpSetParam(conn, "UPLOAD_DIR", rx->uploadDir);
     return 0;
 }
 
@@ -313,6 +322,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
     HttpRx          *rx;
     HttpUploadFile  *file;
     Upload          *up;
+    cchar           *uploadDir;
     char            *key, *headerTok, *rest, *nextPair, *value;
 
     conn = q->conn;
@@ -367,10 +377,11 @@ static int processUploadHeader(HttpQueue *q, char *line)
                 /*
                     Create the file to hold the uploaded data
                  */
-                up->tmpPath = mprGetTempPath(rx->uploadDir);
+                uploadDir = getUploadDir(rx->route);
+                up->tmpPath = mprGetTempPath(uploadDir);
                 if (up->tmpPath == 0) {
                     httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, 
-                        "Cannot create upload temp file %s. Check upload temp dir %s", up->tmpPath, rx->uploadDir);
+                        "Cannot create upload temp file %s. Check upload temp dir %s", up->tmpPath, uploadDir);
                     return MPR_ERR_CANT_OPEN;
                 }
                 mprTrace(5, "File upload of: %s stored as %s", up->clientFilename, up->tmpPath);

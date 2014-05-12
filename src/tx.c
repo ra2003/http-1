@@ -443,7 +443,6 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         This may add "localhost" if the host is missing in the targetUri.
      */
     targetUri = httpLink(conn, targetUri);
-    mprLog(3, "redirect %d %s", status, targetUri);
     msg = httpLookupStatus(conn->http, status);
 
     if (300 <= status && status <= 399) {
@@ -483,6 +482,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n<p>The document has moved <a href=\"%s\">here</a>.</p></body></html>\r\n",
             msg, msg, targetUri);
+        mprLog(3, "httpRedirect: %d %s", status, targetUri);
     } else {
         httpFormatResponse(conn, 
             "<!DOCTYPE html>\r\n"

@@ -900,25 +900,39 @@ static void parsePrefix(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
+static void createRedirectAlias(HttpRoute *route, int status, cchar *from, cchar *to)
 {
     HttpRoute   *alias;
+    cchar       *pattern;
+
+    if (sends(from, "/")) {
+        pattern = sfmt("^%s(.*)$", from);
+    } else {
+        /* Add a non-capturing optional trailing "/" */
+        pattern = sfmt("^%s(?:/)*(.*)$", from);
+    }
+    alias = httpCreateAliasRoute(route, pattern, to, 0);
+    httpSetRouteTarget(alias, "redirect", sfmt("%d %s/$1", status, to));
+    if (sstarts(to, "https")) {
+        httpAddRouteCondition(alias, "secure", 0, HTTP_ROUTE_NOT);
+    }
+    httpFinalizeRoute(alias);
+}
+
+
+static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
+{
     MprJson     *child;
-    cchar       *from, *status, *target, *to;
-    int         code, ji;
+    cchar       *from, *status, *to;
+    int         ji;
 
     if (prop->type & MPR_JSON_STRING) {
-        alias = httpCreateAliasRoute(route, "/", 0, 0);
-        httpSetRouteTarget(alias, "redirect", sfmt("0 %s", prop->value));
-        if (sstarts(prop->value, "https")) {
-            httpAddRouteCondition(alias, "secure", 0, HTTP_ROUTE_NOT);
-        }
-        httpFinalizeRoute(alias);
+        createRedirectAlias(route, 0, "/", prop->value);
 
     } else {
         for (ITERATE_CONFIG(route, prop, child, ji)) {
             if (child->type & MPR_JSON_STRING) {
-                from = 0;
+                from = "/";
                 to = child->value;
                 status = "302";
             } else {
@@ -926,21 +940,7 @@ static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
                 to = mprGetJson(child, "to");
                 status = mprGetJson(child, "status");
             }
-            code = (int) stoi(status);
-            if (!from) {
-                from = "/";
-            }
-            alias = httpCreateAliasRoute(route, from, 0, code);
-            target = (to) ? sfmt("%d %s", status, to) : status;
-            httpSetRouteTarget(alias, "redirect", target);
-            if (sstarts(to, "https://")) {
-                /* 
-                    Accept this route if !secure. That will then do a redirect.
-                    Set details to null to avoid creating Strict-Transport-Security header 
-                 */
-                httpAddRouteCondition(alias, "secure", 0, HTTP_ROUTE_NOT);
-            }
-            httpFinalizeRoute(alias);
+            createRedirectAlias(route, (int) stoi(status), from, to);
         }
     }
 }

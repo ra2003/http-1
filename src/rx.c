@@ -967,7 +967,7 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
     tx = conn->tx;
     *more = 0;
 
-    if (mprIsSocketEof(conn->sock)) {
+    if (mprIsSocketEof(conn->sock) || conn->connError) {
         httpSetEof(conn);
     }
     if (rx->chunkState) {

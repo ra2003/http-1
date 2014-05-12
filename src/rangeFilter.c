@@ -47,7 +47,6 @@ static int matchRange(HttpConn *conn, HttpRoute *route, int dir)
 {
     assert(conn->rx);
 
-    httpSetHeader(conn, "Accept-Ranges", "bytes");
     if ((dir & HTTP_STAGE_TX) && conn->tx->outputRanges) {
         return HTTP_ROUTE_OK;
     }
@@ -67,11 +66,13 @@ static void startRange(HttpQueue *q)
      */
     if (tx->outputRanges == 0 || tx->status != HTTP_CODE_OK || !fixRangeLength(conn)) {
         httpRemoveQueue(q);
+        tx->outputRanges = 0;
     } else {
         tx->status = HTTP_CODE_PARTIAL;
         if (tx->outputRanges->next) {
             createRangeBoundary(conn);
         }
+        httpSetHeader(conn, "Accept-Ranges", "bytes");
     }
 }
 
@@ -246,7 +247,9 @@ static bool fixRangeLength(HttpConn *conn)
 
     tx = conn->tx;
     length = tx->entityLength ? tx->entityLength : tx->length;
-
+    if (length <= 0) {
+        return 0;
+    }
     for (range = tx->outputRanges; range; range = range->next) {
         /*
                 Range: 0-49             first 50 bytes
@@ -265,8 +268,8 @@ static bool fixRangeLength(HttpConn *conn)
         if (range->start < 0) {
             if (length <= 0) {
                 /*
-                    Cannot compute an offset from the end as we don't know the entity length and it is not always possible
-                    or wise to buffer all the output.
+                    Cannot compute an offset from the end as we don't know the entity length and it is not 
+                    always possible or wise to buffer all the output.
                  */
                 httpError(conn, HTTP_CODE_RANGE_NOT_SATISFIABLE, "Cannot compute end range with unknown content length"); 
                 return 0;

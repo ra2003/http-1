@@ -47,6 +47,7 @@ static int matchRange(HttpConn *conn, HttpRoute *route, int dir)
 {
     assert(conn->rx);
 
+    httpSetHeader(conn, "Accept-Ranges", "bytes");
     if ((dir & HTTP_STAGE_TX) && conn->tx->outputRanges) {
         return HTTP_ROUTE_OK;
     }
@@ -72,7 +73,6 @@ static void startRange(HttpQueue *q)
         if (tx->outputRanges->next) {
             createRangeBoundary(conn);
         }
-        httpSetHeader(conn, "Accept-Ranges", "bytes");
     }
 }
 

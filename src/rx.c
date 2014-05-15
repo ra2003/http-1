@@ -1249,7 +1249,7 @@ static void createErrorRequest(HttpConn *conn)
         conn->input = packet;
         conn->state = HTTP_STATE_CONNECTED;
     } else {
-        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Can't reconstruct headers");
+        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Cannot reconstruct headers");
     }
 }
 

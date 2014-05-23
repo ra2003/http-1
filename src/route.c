@@ -203,9 +203,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->trace[1] = parent->trace[1];
     route->update = parent->update;
     route->updates = parent->updates;
-#if UNUSED
-    route->uploadDir = parent->uploadDir;
-#endif
     route->vars = parent->vars;
     route->workers = parent->workers;
     return route;
@@ -275,9 +272,6 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->tokens);
         mprMark(route->tplate);
         mprMark(route->updates);
-#if UNUSED
-        mprMark(route->uploadDir);
-#endif
         mprMark(route->vars);
         mprMark(route->webSocketsProtocol);
 
@@ -3363,6 +3357,9 @@ PUBLIC uint64 httpGetNumber(cchar *value)
 {
     uint64  number;
 
+    if (smatch(value, "unlimited")) {
+        return MAXINT64;
+    }
     if (smatch(value, "infinite") || smatch(value, "never")) {
         return MPR_MAX_TIMEOUT / MPR_TICKS_PER_SEC;
     }

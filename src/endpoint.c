@@ -281,15 +281,7 @@ PUBLIC void httpMatchHost(HttpConn *conn)
         mprCloseSocket(conn->sock, 0);
         return;
     }
-#if UNUSED
-    if (httpHasNamedVirtualHosts(endpoint)) {
-        host = httpLookupHostOnEndpoint(endpoint, conn->rx->hostHeader);
-    } else {
-        host = mprGetFirstItem(endpoint->hosts);
-    }
-#else
     host = httpLookupHostOnEndpoint(endpoint, conn->rx->hostHeader);
-#endif
     if (host == 0) {
         httpSetConnHost(conn, 0);
         httpError(conn, HTTP_CODE_NOT_FOUND, "No host to serve request. Searching for %s", conn->rx->hostHeader);
@@ -417,24 +409,6 @@ PUBLIC void httpAddHostToEndpoint(HttpEndpoint *endpoint, HttpHost *host)
 }
 
 
-#if UNUSED
-PUBLIC bool httpHasNamedVirtualHosts(HttpEndpoint *endpoint)
-{
-    return endpoint->flags & HTTP_NAMED_VHOST;
-}
-
-
-PUBLIC void httpSetHasNamedVirtualHosts(HttpEndpoint *endpoint, bool on)
-{
-    if (on) {
-        endpoint->flags |= HTTP_NAMED_VHOST;
-    } else {
-        endpoint->flags &= ~HTTP_NAMED_VHOST;
-    }
-}
-#endif
-
-
 PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHeader)
 {
     HttpHost    *host;
@@ -459,29 +433,6 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHea
     }
     return 0;
 }
-
-
-#if UNUSED
-PUBLIC int httpConfigureNamedVirtualEndpoints(Http *http, cchar *ip, int port)
-{
-    HttpEndpoint    *endpoint;
-    int             next, count;
-
-    if (ip == 0) {
-        ip = "";
-    }
-    for (count = 0, next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
-        if (endpoint->port <= 0 || port <= 0 || endpoint->port == port) {
-            assert(endpoint->ip);
-            if (*endpoint->ip == '\0' || *ip == '\0' || scmp(endpoint->ip, ip) == 0) {
-                httpSetHasNamedVirtualHosts(endpoint, 1);
-                count++;
-            }
-        }
-    }
-    return (count == 0) ? MPR_ERR_CANT_FIND : 0;
-}
-#endif
 
 
 /*

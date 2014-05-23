@@ -228,7 +228,7 @@ static HttpCache *lookupCacheControl(HttpConn *conn)
      */
     for (next = 0; (cache = mprGetNextItem(rx->route->caching, &next)) != 0; ) {
         if (cache->uris) {
-            if (cache->flags & HTTP_CACHE_ONLY) {
+            if (cache->flags & HTTP_CACHE_HAS_PARAMS) {
                 ukey = sfmt("%s?%s", rx->pathInfo, httpGetParamsString(conn));
             } else {
                 ukey = rx->pathInfo;
@@ -470,15 +470,10 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
     if (uris) {
         cache->uris = mprCreateHash(0, MPR_HASH_STABLE);
         for (item = stok(sclone(uris), " \t,", &tok); item; item = stok(0, " \t,", &tok)) {
-            if (flags & HTTP_CACHE_ONLY && route->prefix && !scontains(item, sfmt("prefix=%s", route->prefix))) {
-                /*
-                    Auto-add ?prefix=ROUTE_NAME if there is no query
-                 */
-                if (!schr(item, '?')) {
-                    item = sfmt("%s?prefix=%s", item, route->prefix); 
-                }
-            }
             mprAddKey(cache->uris, item, cache);
+            if (schr(item, '?')) {
+                flags |= HTTP_CACHE_UNIQUE;
+            }
         }
     }
     if (clientLifespan <= 0) {
@@ -521,7 +516,7 @@ static char *makeCacheKey(HttpConn *conn)
     HttpRx      *rx;
 
     rx = conn->rx;
-    if (conn->tx->cache->flags & (HTTP_CACHE_ONLY | HTTP_CACHE_UNIQUE)) {
+    if (conn->tx->cache->flags & HTTP_CACHE_UNIQUE) {
         return sfmt("http::response-%s?%s", rx->pathInfo, httpGetParamsString(conn));
     } else {
         return sfmt("http::response-%s", rx->pathInfo);

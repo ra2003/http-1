@@ -233,6 +233,12 @@ PUBLIC int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
 }
 
 
+static int sortParam(MprJson **j1, MprJson **j2)
+{
+    return scmp((*j1)->name, (*j2)->name);
+}
+
+
 /*
     Return the request parameters as a string. 
     This will return the exact same string regardless of the order of form parameters.
@@ -240,12 +246,39 @@ PUBLIC int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
 PUBLIC char *httpGetParamsString(HttpConn *conn)
 {
     HttpRx      *rx;
+    MprJson     *jp, *params;
+    MprList     *list;
+    char        *buf, *cp;
+    ssize       len;
+    int         ji, next;
 
     assert(conn);
     rx = conn->rx;
 
     if (rx->paramString == 0) {
-        rx->paramString = mprJsonToString(rx->params, 0);
+        if ((params = conn->rx->params) != 0) {
+            if ((list = mprCreateList(params->length, 0)) != 0) {
+                len = 0;
+                for (ITERATE_JSON(params, jp, ji)) {
+                    if (jp->type & MPR_JSON_VALUE) {
+                        mprAddItem(list, jp);
+                        len += slen(jp->name) + slen(jp->value) + 2;
+                    }
+                }
+                if ((buf = mprAlloc(len + 1)) != 0) {
+                    mprSortList(list, (MprSortProc) sortParam, 0);
+                    cp = buf;
+                    for (next = 0; (jp = mprGetNextItem(list, &next)) != 0; ) {
+                        strcpy(cp, jp->name); cp += slen(jp->name);
+                        *cp++ = '=';
+                        strcpy(cp, jp->value); cp += slen(jp->value);
+                        *cp++ = '&';
+                    }
+                    cp[-1] = '\0';
+                    rx->paramString = buf;
+                }
+            }
+        }
     }
     return rx->paramString;
 }

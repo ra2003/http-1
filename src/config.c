@@ -353,14 +353,6 @@ static void parseAuth(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseAuthStore(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    if (httpSetAuthStore(route->auth, prop->value) < 0) {
-        httpParseError(route, "The %s AuthStore is not available on this platform", prop->value);
-    }
-}
-
-
 static void parseAuthLogin(HttpRoute *route, cchar *key, MprJson *prop)
 {
     /* Automatic login as this user. Password not required */
@@ -423,6 +415,22 @@ static void parseAuthRoles(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseAuthStore(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (httpSetAuthStore(route->auth, prop->value) < 0) {
+        httpParseError(route, "The %s AuthStore is not available on this platform", prop->value);
+    }
+}
+
+
+static void parseAuthType(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (httpSetAuthType(route->auth, prop->value, 0) < 0) {
+        httpParseError(route, "The %s AuthType is not available on this platform", prop->value);
+    }
+}
+
+
 static void parseAuthUsers(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -451,11 +459,11 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
         flags = 0;
         if ((client = mprGetJson(child, "client")) != 0) {
             flags |= HTTP_CACHE_CLIENT;
-            clientLifespan = httpGetNumber(client);
+            clientLifespan = httpGetTicks(client);
         }
         if ((server = mprGetJson(child, "server")) != 0) {
             flags |= HTTP_CACHE_SERVER;
-            serverLifespan = httpGetNumber(server);
+            serverLifespan = httpGetTicks(server);
         }
         methods = getList(mprGetJsonObj(child, "methods"));
         extensions = getList(mprGetJsonObj(child, "extensions"));
@@ -1457,16 +1465,14 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http", parseHttp);
     //  MOB - should have Http in all names
     httpAddConfig("app.http.auth", parseAuth);
-#if DEPRECATED || 1
-    httpAddConfig("app.http.auth.type", parseAuthStore);
-#endif
-    httpAddConfig("app.http.auth.store", parseAuthStore);
     httpAddConfig("app.http.auth.login", parseAuthLogin);
     httpAddConfig("app.http.auth.realm", parseAuthRealm);
     httpAddConfig("app.http.auth.require", parseAll);
     httpAddConfig("app.http.auth.require.roles", parseAuthRequireRoles);
     httpAddConfig("app.http.auth.require.users", parseAuthRequireUsers);
     httpAddConfig("app.http.auth.roles", parseAuthRoles);
+    httpAddConfig("app.http.auth.store", parseAuthStore);
+    httpAddConfig("app.http.auth.type", parseAuthType);
     httpAddConfig("app.http.auth.users", parseAuthUsers);
     httpAddConfig("app.http.cache", parseCache);
     httpAddConfig("app.http.content", parseAll);

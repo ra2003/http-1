@@ -69,12 +69,12 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->auth = httpCreateAuth();
     route->defaultLanguage = sclone("en");
     route->home = route->documents = mprGetCurrentPath();
-    route->flags = HTTP_ROUTE_STEALTH;
+    route->flags = HTTP_ROUTE_STEALTH | HTTP_ROUTE_XSRF;
 #if ME_DEBUG
     route->flags |= HTTP_ROUTE_SHOW_ERRORS;
-    route->update = 1;
     route->keepSource = 1;
 #endif
+    route->update = 1;
     route->host = host;
     route->http = MPR->httpService;
     route->lifespan = ME_MAX_CACHE_DURATION;

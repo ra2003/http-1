@@ -15,7 +15,7 @@
 
 /************************************ Forwards ********************************/
 static void parseAll(HttpRoute *route, cchar *key, MprJson *prop);
-static void parseAuthType(HttpRoute *route, cchar *key, MprJson *prop);
+static void parseAuthStore(HttpRoute *route, cchar *key, MprJson *prop);
 static void postParse(HttpRoute *route);
 static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop);
 
@@ -346,14 +346,14 @@ static void parseDirectories(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseAuth(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (prop->type & MPR_JSON_STRING) {
-        parseAuthType(route, key, prop);
+        parseAuthStore(route, key, prop);
     } else if (prop->type == MPR_JSON_OBJ) {
         parseAll(route, key, prop);
     }
 }
 
 
-static void parseAuthType(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseAuthStore(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (httpSetAuthStore(route->auth, prop->value) < 0) {
         httpParseError(route, "The %s AuthStore is not available on this platform", prop->value);
@@ -1457,7 +1457,10 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http", parseHttp);
     //  MOB - should have Http in all names
     httpAddConfig("app.http.auth", parseAuth);
-    httpAddConfig("app.http.auth.type", parseAuthType);
+#if DEPRECATED || 1
+    httpAddConfig("app.http.auth.type", parseAuthStore);
+#endif
+    httpAddConfig("app.http.auth.store", parseAuthStore);
     httpAddConfig("app.http.auth.login", parseAuthLogin);
     httpAddConfig("app.http.auth.realm", parseAuthRealm);
     httpAddConfig("app.http.auth.require", parseAll);

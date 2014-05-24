@@ -25,7 +25,7 @@ static void manageAuth(HttpAuth *auth, int flags);
 static void manageRole(HttpRole *role, int flags);
 static void manageUser(HttpUser *user, int flags);
 static void formLogin(HttpConn *conn);
-static bool fileVerifyUser(HttpConn *conn, cchar *username, cchar *password);
+static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password);
 
 /*********************************** Code *************************************/
 
@@ -36,9 +36,10 @@ PUBLIC void httpInitAuth()
     httpAddAuthType("form", formLogin, NULL, NULL);
 
     httpCreateAuthStore("app", NULL);
-    httpCreateAuthStore("file", fileVerifyUser);
+    httpCreateAuthStore("config", configVerifyUser);
 #if DEPRECATED || 1
-    httpCreateAuthStore("internal", fileVerifyUser);
+    httpCreateAuthStore("file", configVerifyUser);
+    httpCreateAuthStore("internal", configVerifyUser);
 #endif
 #if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
     httpCreateAuthStore("system", httpPamVerifyUser);
@@ -773,10 +774,10 @@ PUBLIC void httpComputeAllUserAbilities(HttpAuth *auth)
 
 
 /*
-    Verify the user password based on the internal users set. This is used when not using PAM or custom verification.
+    Verify the user password based on the users defined via the configuration files. 
     Password may be NULL only if using auto-login.
  */
-static bool fileVerifyUser(HttpConn *conn, cchar *username, cchar *password)
+static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
 {
     HttpRx      *rx;
     HttpAuth    *auth;
@@ -786,7 +787,7 @@ static bool fileVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!conn->user && (conn->user = mprLookupKey(auth->userCache, username)) == 0) {
-        mprLog(5, "fileVerifyUser: Unknown user \"%s\" for route %s", username, rx->route->name);
+        mprLog(5, "configVerifyUser: Unknown user \"%s\" for route %s", username, rx->route->name);
         return 0;
     }
     if (password) {

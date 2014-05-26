@@ -460,6 +460,8 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
                 endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
                 if (endpoint) {
                     target->port = endpoint->port;
+                } else if (smatch(target->scheme, "https")) {
+                    mprError("Missing secure endpoint to use with https redirection");
                 }
             }
         }

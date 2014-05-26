@@ -385,11 +385,15 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
         requestToken = httpGetHeader(conn, ME_XSRF_HEADER);
         if (!requestToken) {
             requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
+            if (!requestToken) {
+                mprLog(4, "Missing security token in request");
+            }
         }
         if (!smatch(sessionToken, requestToken)) {
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.
              */
+            mprLog(4, "Security token in request: %s does not match session token %s", requestToken, sessionToken);
             httpAddSecurityToken(conn, 1);
             return 0;
         }

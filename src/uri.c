@@ -913,10 +913,7 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
         return sjoin(route->prefix, &routeName[6], NULL);
     }
     if (routeName[0] == ME_SERVER_PREFIX_CHAR) {
-        if (route->serverPrefix) {
-            return sjoin(route->prefix, "/", route->serverPrefix, &routeName[1], NULL);
-        }
-        return sjoin(route->prefix, &routeName[1], NULL);
+        return sjoin(route->prefix, route->serverPrefix, &routeName[1], NULL);
     }
     return routeName;
 }
@@ -927,17 +924,16 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
  */
 static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action)
 {
-    cchar   *prefix, *controllerPrefix;
+    cchar   *controllerPrefix;
 
-    prefix = route->prefix ? route->prefix : "";
     if (action == 0 || *action == '\0') {
         action = "default";
     }
     if (controller) {
         controllerPrefix = (controller && smatch(controller, "{controller}")) ? "*" : controller;
-        return sjoin(prefix, "/", controllerPrefix, "/", action, NULL);
+        return sjoin(route->prefix, route->serverPrefix, "/", controllerPrefix, "/", action, NULL);
     } else {
-        return sjoin(prefix, "/", action, NULL);
+        return sjoin(route->prefix, route->serverPrefix, "/", action, NULL);
     }
 }
 

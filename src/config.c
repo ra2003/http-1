@@ -215,7 +215,7 @@ static void postParse(HttpRoute *route)
     if ((mappings = mprGetJsonObj(route->config, "app.client.mappings")) != 0) {
         client = mprCreateJson(MPR_JSON_OBJ);
         clientCopy(route, client, mappings);
-        mprSetJson(client, "prefix", route->prefix ? route->prefix : "");
+        mprSetJson(client, "prefix", route->prefix);
         route->client = mprJsonToString(client, MPR_JSON_QUOTES);
         mprTrace(6, "Client Config: for %s, %s", route->name, mprJsonToString(client, MPR_JSON_PRETTY));
     }
@@ -878,20 +878,19 @@ static void parsePrefix(HttpRoute *route, cchar *key, MprJson *prop)
 static void createRedirectAlias(HttpRoute *route, int status, cchar *from, cchar *to)
 {
     HttpRoute   *alias;
-    cchar       *pattern, *prefix;
+    cchar       *pattern;
 
     if (from == 0 || *from == '\0') {
         from = "/";
     }
-    prefix = route->prefix ? route->prefix : "";
-
     if (sends(from, "/")) {
-        pattern = sfmt("^%s%s(.*)$", prefix, from);
+        pattern = sfmt("^%s%s(.*)$", route->prefix, from);
     } else {
         /* Add a non-capturing optional trailing "/" */
-        pattern = sfmt("^%s%s(?:/)*(.*)$", prefix, from);
+        pattern = sfmt("^%s%s(?:/)*(.*)$", route->prefix, from);
     }
     alias = httpCreateAliasRoute(route, pattern, 0, 0);
+    httpSetRouteName(alias, sfmt("redirect-%s", route->name));
     httpSetRouteMethods(alias, "*");
     httpSetRouteTarget(alias, "redirect", sfmt("%d %s/$1", status, to));
     if (sstarts(to, "https")) {

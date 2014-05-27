@@ -3560,11 +3560,11 @@ PUBLIC void httpSetAuthVerify(HttpAuth *auth, HttpVerifyUser verifyUser);
     @param auth Auth object allocated by #httpCreateAuth.
     @param role Role name to add
     @param abilities Space separated list of abilities.
-    @return Zero if successful, otherwise a negative MPR error code
+    @return Allocated role object.
     @ingroup HttpAuth
     @stability Evolving
  */
-PUBLIC int httpAddRole(HttpAuth *auth, cchar *role, cchar *abilities);
+PUBLIC HttpRole *httpAddRole(HttpAuth *auth, cchar *role, cchar *abilities);
 
 /**
     Add a user. If the user already exists, the user is updated.
@@ -3628,18 +3628,6 @@ PUBLIC void httpComputeUserAbilities(HttpAuth *auth, HttpUser *user);
 PUBLIC HttpAuth *httpCreateAuth();
 
 /**
-    Create a new role
-    @description The role is not added to the authentication database
-    @param auth Auth object allocated by #httpCreateAuth.
-    @param name Role name 
-    @param abilities Space separated list of abilities.
-    @return Zero if successful, otherwise a negative MPR error code
-    @ingroup HttpAuth
-    @stability Evolving
- */
-PUBLIC HttpRole *httpCreateRole(HttpAuth *auth, cchar *name, cchar *abilities);
-
-/**
     Test if the user is authenticated
     @param conn HttpConn connection object 
     @return True if the username and password have been authenticated and the user has the abilities required
@@ -3680,6 +3668,16 @@ PUBLIC bool httpLoggedIn(HttpConn *conn);
     @stability Prototype
  */
 PUBLIC void httpLogout(HttpConn *conn);
+
+/**
+    Lookup a role by name
+    @param auth HttpAuth object. Stored in HttpConn.rx.route.auth
+    @param name Role name
+    @return Role object
+    @ingroup HttpAuth
+    @stability Prototype
+  */
+PUBLIC HttpRole *httpLookupRole(HttpAuth *auth, cchar *name);
 
 /**
     Lookup a user by username

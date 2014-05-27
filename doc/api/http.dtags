@@ -1489,10 +1489,10 @@
       <arglist>)(HttpConn *conn, cchar *username, cchar *password)</arglist>
     </member>
     <member kind="function">
-      <type>int</type>
+      <type>HttpRole *</type>
       <name>httpAddRole</name>
       <anchorfile>group___http_auth.html</anchorfile>
-      <anchor>ga817c321a931cb42635e628b60c99b67a</anchor>
+      <anchor>ga70f35d5d3651d61e9eb5f85d8f670285</anchor>
       <arglist>(HttpAuth *auth, cchar *role, cchar *abilities)</arglist>
     </member>
     <member kind="function">
@@ -1545,13 +1545,6 @@
       <arglist>(cchar *name, HttpAskLogin askLogin, HttpParseAuth parse, HttpSetAuth setAuth)</arglist>
     </member>
     <member kind="function">
-      <type>HttpRole *</type>
-      <name>httpCreateRole</name>
-      <anchorfile>group___http_auth.html</anchorfile>
-      <anchor>ga880fa20529b90237898ad1d9bbc434a5</anchor>
-      <arglist>(HttpAuth *auth, cchar *name, cchar *abilities)</arglist>
-    </member>
-    <member kind="function">
       <type>bool</type>
       <name>httpIsAuthenticated</name>
       <anchorfile>group___http_auth.html</anchorfile>
@@ -1578,6 +1571,13 @@
       <anchorfile>group___http_auth.html</anchorfile>
       <anchor>gad3645d7419bde032ac01eb1cb4e3c316</anchor>
       <arglist>(HttpConn *conn)</arglist>
+    </member>
+    <member kind="function">
+      <type>HttpRole *</type>
+      <name>httpLookupRole</name>
+      <anchorfile>group___http_auth.html</anchorfile>
+      <anchor>ga3dcf0a572a1842431ee3f6849a1c9bf0</anchor>
+      <arglist>(HttpAuth *auth, cchar *name)</arglist>
     </member>
     <member kind="function">
       <type>HttpUser *</type>

@@ -263,7 +263,6 @@ PUBLIC void httpSetDir(HttpRoute *route, cchar *name, cchar *value)
 
 PUBLIC void httpSetDefaultDirs(HttpRoute *route)
 {
-    //  MOB - cache may need to be relative for chroot to work
     httpSetDir(route, "cache", 0);
     httpSetDir(route, "client", 0);
     httpSetDir(route, "paks", "paks");
@@ -1463,7 +1462,6 @@ PUBLIC int httpInitParser()
 
     httpAddConfig("app", parseAll);
     httpAddConfig("app.http", parseHttp);
-    //  MOB - should have Http in all names
     httpAddConfig("app.http.auth", parseAuth);
     httpAddConfig("app.http.auth.login", parseAuthLogin);
     httpAddConfig("app.http.auth.realm", parseAuthRealm);

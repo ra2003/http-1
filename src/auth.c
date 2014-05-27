@@ -602,23 +602,6 @@ PUBLIC HttpAuthType *httpLookupAuthType(cchar *type)
 }
 
 
-PUBLIC HttpRole *httpCreateRole(HttpAuth *auth, cchar *name, cchar *abilities)
-{
-    HttpRole    *role;
-    char        *ability, *tok;
-
-    if ((role = mprAllocObj(HttpRole, manageRole)) == 0) {
-        return 0;
-    }
-    role->name = sclone(name);
-    role->abilities = mprCreateHash(0, 0);
-    for (ability = stok(sclone(abilities), " \t", &tok); ability; ability = stok(NULL, " \t", &tok)) {
-        mprAddKey(role->abilities, ability, role);
-    }
-    return role;
-}
-
-
 static void manageRole(HttpRole *role, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
@@ -628,22 +611,33 @@ static void manageRole(HttpRole *role, int flags)
 }
 
 
-PUBLIC int httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
+PUBLIC HttpRole *httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
 {
     HttpRole    *role;
+    char        *ability, *tok;
 
     GRADUATE_HASH(auth, roles);
-    if (mprLookupKey(auth->roles, name)) {
-        return MPR_ERR_ALREADY_EXISTS;
+    if ((role = mprLookupKey(auth->roles, name)) == 0) {
+        if ((role = mprAllocObj(HttpRole, manageRole)) == 0) {
+            return 0;
+        }
+        role->name = sclone(name);
     }
-    if ((role = httpCreateRole(auth, name, abilities)) == 0) {
-        return MPR_ERR_MEMORY;
+    role->abilities = mprCreateHash(0, 0);
+    for (ability = stok(sclone(abilities), " \t", &tok); ability; ability = stok(NULL, " \t", &tok)) {
+        mprAddKey(role->abilities, ability, role);
     }
     if (mprAddKey(auth->roles, name, role) == 0) {
-        return MPR_ERR_MEMORY;
+        return 0;
     }
     mprLog(5, "Role \"%s\" has abilities: %s", role->name, abilities);
-    return 0;
+    return role;
+}
+
+
+PUBLIC HttpRole *httpLookupRole(HttpAuth *auth, cchar *role)
+{
+    return mprLookupKey(auth->roles, role);
 }
 
 

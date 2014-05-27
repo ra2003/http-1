@@ -411,7 +411,7 @@ PUBLIC void httpSetAuthOrder(HttpAuth *auth, int order)
 
 
 /*
-    Form login service routine. Called in response to a form-based login request.
+    Form login service routine. Called in response to a form-based login request. Only used when httpSetAuthForm is utilized.
     The password is clear-text so this must be used over SSL to be secure.
  */
 static void loginServiceProc(HttpConn *conn)

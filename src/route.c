@@ -69,7 +69,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->auth = httpCreateAuth();
     route->defaultLanguage = sclone("en");
     route->home = route->documents = mprGetCurrentPath();
-    route->flags = HTTP_ROUTE_STEALTH | HTTP_ROUTE_XSRF;
+    route->flags = HTTP_ROUTE_STEALTH;
 #if ME_DEBUG
     route->flags |= HTTP_ROUTE_SHOW_ERRORS;
     route->keepSource = 1;
@@ -615,8 +615,9 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
             }
         }
     }
-    httpSetParam(conn, "prefix", route->prefix);
-
+    if (route->prefix[0]) {
+        httpSetParam(conn, "prefix", route->prefix);
+    }
     if ((rc = selectHandler(conn, route)) != HTTP_ROUTE_OK) {
         return rc;
     }

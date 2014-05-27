@@ -397,6 +397,12 @@ static void parseAuthType(HttpRoute *route, cchar *key, MprJson *prop)
     if (httpSetAuthType(route->auth, prop->value, 0) < 0) {
         httpParseError(route, "The %s AuthType is not available on this platform", prop->value);
     }
+    if (smatch(prop->value, "basic") || smatch(prop->value, "digest")) {
+        /*
+            These are implemented by the browser, so we can use a global auth-condition
+         */
+        httpAddRouteCondition(route, "auth", 0, 0);
+    }
 }
 
 

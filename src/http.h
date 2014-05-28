@@ -192,6 +192,7 @@ struct HttpWebSocket;
 #endif
 
 #ifndef ME_HTTP_LOG
+    /* Host, "-" username time requeset-line response-status bytes-written local-host */
     #define ME_HTTP_LOG_FORMAT     "%h %l %u %t \"%r\" %>s %b %n"
 #endif
 
@@ -5391,9 +5392,9 @@ PUBLIC bool httpTokenizev(HttpRoute *route, cchar *str, cchar *fmt, va_list args
 PUBLIC bool httpGetBoolToken(cchar *tok);
 
 /**
-    Configure the route access log
+    Configure the route request log
     @param route Route to modify
-    @param path Path for route access log file.
+    @param path Path for route request log file.
     @param size Maximum size of the log file before archiving
     @param backup Set to true to create a backup of the log file if archiving.
     @param format Log file format

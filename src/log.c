@@ -1,5 +1,5 @@
 /*
-    log.c -- Http request access logging
+    log.c -- Http logging
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
@@ -88,13 +88,16 @@ PUBLIC MprFile *httpOpenRouteLog(HttpRoute *route)
 
 PUBLIC void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
 {
+    static int  skipCheck = 0;
+
     lock(MPR);
     if (route->logBackup > 0) {
-        //  OPT - don't check this on every write
-        httpBackupRouteLog(route);
-        if (!route->log && !httpOpenRouteLog(route)) {
-            unlock(MPR);
-            return;
+        if ((++skipCheck % 50) == 0) {
+            httpBackupRouteLog(route);
+            if (!route->log && !httpOpenRouteLog(route)) {
+                unlock(MPR);
+                return;
+            }
         }
     }
     if (mprWriteFile(route->log, (char*) buf, len) != len) {
@@ -157,6 +160,10 @@ PUBLIC void httpLogRequest(HttpConn *conn)
 
         case 'h':                           /* Remote host */
             mprPutStringToBuf(buf, conn->ip);
+            break;
+
+        case 'l':                           /* user identity - unknown */
+            mprPutCharToBuf(buf, '-');
             break;
 
         case 'n':                           /* Local host */

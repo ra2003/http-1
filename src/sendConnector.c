@@ -205,13 +205,10 @@ static void addToSendVector(HttpQueue *q, char *ptr, ssize bytes)
  */
 static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
 {
-    HttpTx      *tx;
     HttpConn    *conn;
     int         item;
 
     conn = q->conn;
-    tx = conn->tx;
-
     assert(q->count >= 0);
     assert(q->ioIndex < (ME_MAX_IOVEC - 2));
 

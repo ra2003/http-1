@@ -1161,14 +1161,11 @@ static void measure(HttpConn *conn)
 {
     MprTicks    elapsed;
     HttpTx      *tx;
-    cchar       *uri;
 
     tx = conn->tx;
     if (conn->rx == 0 || tx == 0) {
         return;
     }
-    uri = httpServerConn(conn) ? conn->rx->uri : tx->parsedUri->path;
-
     if (httpShouldTrace(conn, HTTP_TRACE_COMPLETE)) {
         elapsed = mprGetTicks() - conn->started;
 #if MPR_HIGH_RES_TIMER

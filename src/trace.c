@@ -203,6 +203,8 @@ PUBLIC void httpTracePacket(HttpConn *conn, int event, HttpPacket *packet, cchar
             msg = "tx headers";
         } else if (event == HTTP_TRACE_TX_BODY) {
             msg = "tx body";
+        } else {
+            msg = 0;
         }
     }
     if (packet->prefix) {

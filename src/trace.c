@@ -117,7 +117,19 @@ PUBLIC void httpSetTraceLogger(HttpTrace *trace, HttpTraceLogger callback)
 
 PUBLIC void httpSetTraceType(HttpTrace *trace, cchar *type)
 {
-    httpSetTraceFormatter(trace, (type && smatch(type, "common")) ? httpCommonTraceFormatter : httpDetailTraceFormatter);
+    HttpTraceFormatter  formatter;
+    int                 i;
+
+    if (type && smatch(type, "common")) {
+        for (i = HTTP_TRACE_5; i < HTTP_TRACE_MAX_ITEM; i++) {
+            trace->levels[i] = 6;
+        }
+        trace->levels[HTTP_TRACE_COMPLETE] = 0;
+        formatter = httpCommonTraceFormatter;
+    } else {
+       formatter = httpDetailTraceFormatter;
+    }
+    httpSetTraceFormatter(trace, formatter);
 }
 
 
@@ -308,9 +320,14 @@ static int backupTraceLogFile(HttpTrace *trace)
 {
     MprPath     info;
 
-    if (trace->backupCount > 0) {
+    assert(trace->path);
+
+    if (trace->file == MPR->logFile) {
+        return 0;
+    }
+    if (trace->backupCount > 0 || (trace->flags & MPR_LOG_ANEW)) {
         lock(trace);
-        if (trace->parent && trace->parent->file == trace->file) {
+        if (trace->path && trace->parent && smatch(trace->parent->path, trace->path)) {
             unlock(trace);
             return backupTraceLogFile(trace->parent);
         }
@@ -320,8 +337,9 @@ static int backupTraceLogFile(HttpTrace *trace)
                 mprCloseFile(trace->file);
                 trace->file = 0;
             }
-            mprBackupLog(trace->path, trace->backupCount);
-            trace->flags &= ~MPR_LOG_ANEW;
+            if (trace->backupCount > 0) {
+                mprBackupLog(trace->path, trace->backupCount);
+            }
         }
         unlock(trace);
     }
@@ -338,17 +356,25 @@ PUBLIC int httpOpenTraceLogFile(HttpTrace *trace)
     int         mode;
 
     if (!trace->file && trace->path) {
-        backupTraceLogFile(trace);
-        mode = O_CREAT | O_WRONLY | O_TEXT;
-        if (smatch(trace->path, "stdout")) {
-            file = MPR->stdOutput;
-        } else if (smatch(trace->path, "stderr")) {
-            file = MPR->stdError;
-        } else if ((file = mprOpenFile(trace->path, mode, 0664)) == 0) {
-            mprError("Cannot open log file %s", trace->path);
-            return MPR_ERR_CANT_OPEN;
+        if (smatch(trace->path, "-")) {
+            file = MPR->logFile;
+        } else {
+            backupTraceLogFile(trace);
+            mode = O_CREAT | O_WRONLY | O_TEXT;
+            if (trace->flags & MPR_LOG_ANEW) {
+                mode |= O_TRUNC;
+            }
+            if (smatch(trace->path, "stdout")) {
+                file = MPR->stdOutput;
+            } else if (smatch(trace->path, "stderr")) {
+                file = MPR->stdError;
+            } else if ((file = mprOpenFile(trace->path, mode, 0664)) == 0) {
+                mprError("Cannot open log file %s", trace->path);
+                return MPR_ERR_CANT_OPEN;
+            }
         }
         trace->file = file;
+        trace->flags &= ~MPR_LOG_ANEW;
     }
     return 0;
 }

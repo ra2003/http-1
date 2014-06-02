@@ -1443,6 +1443,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     httpSetTraceType(route->trace, type);
     httpSetTraceLogFile(route->trace, location, size, backup, format, anew ? MPR_LOG_ANEW : 0);
     httpSetTraceFormat(route->trace, format);
+    httpSetTraceLevel(level);
     httpSetTraceLevels(route->trace, tlevels, size);
 }
 

@@ -235,7 +235,7 @@ PUBLIC void httpSetSendConnector(HttpConn *conn, cchar *path)
     tx->flags |= HTTP_TX_SENDFILE;
     tx->filename = sclone(path);
 #else
-    mprError("Send connector not available if ROMFS enabled");
+    mprError("http config", "Send connector not available if ROMFS enabled");
 #endif
 }
 

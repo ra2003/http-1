@@ -38,7 +38,7 @@ MAIN(testMain, int argc, char **argv, char **envp)
     mpr = mprCreate(argc, argv, MPR_USER_EVENTS_THREAD);
 
     if ((ts = mprCreateTestService(mpr)) == 0) {
-        mprError("Can't create test service");
+        mprError("http test", "Cannot create test service");
         exit(2);
     }
     if (mprParseTestArgs(ts, argc, argv, 0) < 0) {
@@ -58,7 +58,7 @@ MAIN(testMain, int argc, char **argv, char **envp)
         Need a background event thread as we use the main thread to run the tests.
      */
     if (mprStart(mpr)) {
-        mprError("Can't start mpr services");
+        mprError("http test", "Cannot start mpr services");
         exit(4);
     }
 

@@ -104,6 +104,7 @@ PUBLIC Http *httpCreate(int flags)
     http->monitorMaxPeriod = 0;
     http->monitorMinPeriod = MAXINT;
     http->secret = mprGetRandomString(HTTP_MAX_SECRET);
+    http->trace = httpCreateTrace(0);
     http->localPlatform = slower(sfmt("%s-%s-%s", ME_OS, ME_CPU, ME_PROFILE));
     httpSetPlatform(http->localPlatform);
 
@@ -201,6 +202,7 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->statusCodes);
         mprMark(http->timer);
         mprMark(http->timestamp);
+        mprMark(http->trace);
         mprMark(http->user);
 
         /*
@@ -329,7 +331,7 @@ static bool isIdle(bool traceRequests)
             if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
                 if (traceRequests && lastTrace < now) {
                     if (conn->rx) {
-                        mprLog(2, "http: Request for \"%s\" is still active", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
+                        mprLog("http", MPR_INFO, "Request for \"%s\" is still active", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
                     }
                     lastTrace = now;
                 }
@@ -573,7 +575,7 @@ static void httpTimer(Http *http, MprEvent *event)
        OPT - could check for expired connections every 10 seconds.
      */
     lock(http->connections);
-    mprTrace(7, "httpTimer: %d active connections", mprGetListLength(http->connections));
+    mprDebug("http", 5, "httpTimer: %d active connections", mprGetListLength(http->connections));
     for (active = 0, next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; active++) {
         limits = conn->limits;
         if (!conn->timeoutEvent) {
@@ -613,7 +615,7 @@ static void httpTimer(Http *http, MprEvent *event)
         for (next = 0; (module = mprGetNextItem(MPR->moduleService->modules, &next)) != 0; ) {
             if (module->timeout) {
                 if (module->lastActivity + module->timeout < http->now) {
-                    mprLog(2, "Unloading inactive module %s", module->name);
+                    mprLog("http", 2, "Unloading inactive module %s", module->name);
                     if ((stage = httpLookupStage(http, module->name)) != 0) {
                         if (mprUnloadModule(module) < 0)  {
                             active++;
@@ -649,7 +651,7 @@ static void httpTimer(Http *http, MprEvent *event)
 
 static void timestamp()
 {
-    mprLog(0, "Time: %s", mprGetDate(NULL));
+    mprLog("http", 0, "Time: %s", mprGetDate(NULL));
 }
 
 
@@ -916,16 +918,6 @@ PUBLIC bool httpConfigure(HttpConfigureProc proc, void *data, MprTicks timeout)
 }
 
 
-PUBLIC void httpSetRequestLogCallback(HttpRequestCallback callback)
-{
-    Http    *http;
-
-    if ((http = MPR->httpService) != 0) {
-        http->logCallback = callback;
-    }
-}
-
-
 PUBLIC int httpApplyUserGroup() 
 {
 #if ME_UNIX_LIKE
@@ -963,7 +955,7 @@ PUBLIC int httpApplyUserGroup()
             }
         }
         groups = mprGetBufStart(gbuf);
-        mprLog(MPR_INFO, "Running as user \"%s\" (%d), group \"%s\" (%d)%s", http->user, http->uid, 
+        mprLog("http", MPR_INFO, "Running as user \"%s\" (%d), group \"%s\" (%d)%s", http->user, http->uid, 
             http->group, http->gid, groups);
     }
 #endif
@@ -981,13 +973,13 @@ PUBLIC void httpGetUserGroup()
     http = MPR->httpService;
     http->uid = getuid();
     if ((pp = getpwuid(http->uid)) == 0) {
-        mprError("Cannot read user credentials: %d. Check your /etc/passwd file.", http->uid);
+        mprCritical("http", "Cannot read user credentials: %d. Check your /etc/passwd file.", http->uid);
     } else {
         http->user = sclone(pp->pw_name);
     }
     http->gid = getgid();
     if ((gp = getgrgid(http->gid)) == 0) {
-        mprError("Cannot read group credentials: %d. Check your /etc/group file", http->gid);
+        mprCritical("http", "Cannot read group credentials: %d. Check your /etc/group file", http->gid);
     } else {
         http->group = sclone(gp->gr_name);
     }
@@ -1007,7 +999,7 @@ PUBLIC int httpSetUserAccount(cchar *newUser)
 #if ME_UNIX_LIKE
         /* Only change user if root */
         if (getuid() != 0) {
-            mprLog(2, "Running as user account \"%s\"", http->user);
+            mprLog("http", MPR_INFO, "Running as user account \"%s\"", http->user);
             return 0;
         }
 #endif
@@ -1025,14 +1017,14 @@ PUBLIC int httpSetUserAccount(cchar *newUser)
     if (snumber(newUser)) {
         http->uid = atoi(newUser);
         if ((pp = getpwuid(http->uid)) == 0) {
-            mprError("Bad user id: %d", http->uid);
+            mprCritical("http", "Bad user id: %d", http->uid);
             return MPR_ERR_CANT_ACCESS;
         }
         newUser = pp->pw_name;
 
     } else {
         if ((pp = getpwnam(newUser)) == 0) {
-            mprError("Bad user name: %s", newUser);
+            mprCritical("http", "Bad user name: %s", newUser);
             return MPR_ERR_CANT_ACCESS;
         }
         http->uid = pp->pw_uid;
@@ -1083,14 +1075,14 @@ PUBLIC int httpSetGroupAccount(cchar *newGroup)
     if (snumber(newGroup)) {
         http->gid = atoi(newGroup);
         if ((gp = getgrgid(http->gid)) == 0) {
-            mprError("Bad group id: %d", http->gid);
+            mprCritical("http", "Bad group id: %d", http->gid);
             return MPR_ERR_CANT_ACCESS;
         }
         newGroup = gp->gr_name;
 
     } else {
         if ((gp = getgrnam(newGroup)) == 0) {
-            mprError("Bad group name: %s", newGroup);
+            mprCritical("http", "Bad group name: %s", newGroup);
             return MPR_ERR_CANT_ACCESS;
         }
         http->gid = gp->gr_gid;
@@ -1111,28 +1103,28 @@ PUBLIC int httpApplyChangedUser()
     if (http->userChanged && http->uid >= 0) {
         if (http->gid >= 0 && http->groupChanged) {
             if (setgroups(0, NULL) == -1) {
-                mprError("Cannot clear supplemental groups");
+                mprCritical("http", "Cannot clear supplemental groups");
             }
             if (setgid(http->gid) == -1) {
-                mprError("Cannot change group to %s: %d\n"
+                mprCritical("http", "Cannot change group to %s: %d\n"
                     "WARNING: This is a major security exposure", http->group, http->gid);
             }
         } else {
             struct passwd   *pp;
             if ((pp = getpwuid(http->uid)) == 0) {
-                mprError("Cannot get user entry for id: %d", http->uid);
+                mprCritical("http", "Cannot get user entry for id: %d", http->uid);
                 return MPR_ERR_CANT_ACCESS;
             }
-            mprLog(4, "Initgroups for %s GID %d", http->user, pp->pw_gid);
+            mprLog("http", 4, "Initgroups for %s GID %d", http->user, pp->pw_gid);
             if (initgroups(http->user, pp->pw_gid) == -1) {
-                mprError("Cannot initgroups for %s, errno: %d", http->user, errno);
+                mprCritical("http", "Cannot initgroups for %s, errno: %d", http->user, errno);
             }
         }
         if ((setuid(http->uid)) != 0) {
-            mprError("Cannot change user to: %s: %d\n"
+            mprCritical("http", "Cannot change user to: %s: %d\n"
                 "WARNING: This is a major security exposure", http->user, http->uid);
             if (getuid() != 0) {
-                mprError("Log in as administrator/root and retry");
+                mprCritical("http", "Log in as administrator/root and retry");
             }
             return MPR_ERR_BAD_STATE;
 #if LINUX && PR_SET_DUMPABLE
@@ -1154,10 +1146,10 @@ PUBLIC int httpApplyChangedGroup()
     http = MPR->httpService;
     if (http->groupChanged && http->gid >= 0) {
         if (setgid(http->gid) != 0) {
-            mprError("Cannot change group to %s: %d\n"
+            mprCritical("http", "Cannot change group to %s: %d\n"
                 "WARNING: This is a major security exposure", http->group, http->gid);
             if (getuid() != 0) {
-                mprError("Log in as administrator/root and retry");
+                mprCritical("http", "Log in as administrator/root and retry");
             }
             return MPR_ERR_BAD_STATE;
 #if LINUX && PR_SET_DUMPABLE
@@ -1216,7 +1208,7 @@ PUBLIC int httpSetPlatform(cchar *platform)
         return MPR_ERR_BAD_ARGS;
     }
     http->platform = platform ? sclone(platform) : http->localPlatform;
-    mprLog(2, "Using platform %s", http->platform);
+    mprLog("http", MPR_INFO, "Using platform %s", http->platform);
     return 0;
 }
 
@@ -1234,7 +1226,7 @@ PUBLIC int httpSetPlatformDir(cchar *path)
     } else {
         http->platformDir = mprGetPathDir(mprGetPathDir(mprGetAppPath()));
     }
-    mprLog(2, "Using platform directory \"%s\"", mprGetRelPath(http->platformDir, 0));
+    mprLog("http", MPR_INFO, "Using platform directory \"%s\"", mprGetRelPath(http->platformDir, 0));
     return 0;
 }
 

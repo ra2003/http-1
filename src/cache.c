@@ -93,7 +93,7 @@ static void readyCacheHandler(HttpQueue *q)
     tx = conn->tx;
 
     if (tx->cachedContent) {
-        mprTrace(3, "cacheHandler: write cached content for '%s'", conn->rx->uri);
+        httpTrace(conn, HTTP_TRACE_INFO, "Save cached content");
         if ((data = setHeadersFromCache(conn, tx->cachedContent)) != 0) {
             tx->length = slen(data);
             httpWriteString(q, data);
@@ -106,7 +106,6 @@ static void readyCacheHandler(HttpQueue *q)
 static int matchCacheFilter(HttpConn *conn, HttpRoute *route, int dir)
 {
     if ((dir & HTTP_STAGE_TX) && conn->tx->cacheBuffer) {
-        mprTrace(3, "cacheFilter: Cache response content for '%s'", conn->rx->uri);
         return HTTP_ROUTE_OK;
     }
     return HTTP_ROUTE_OMIT_FILTER;
@@ -142,7 +141,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
      */
     if (mprLookupKey(conn->tx->headers, "X-SendCache") != 0) {
         if (fetchCachedResponse(conn)) {
-            mprLog(3, "cacheFilter: write cached content for '%s'", conn->rx->uri);
+            httpTrace(conn, HTTP_TRACE_INFO, "Save cached content");
             cachedData = setHeadersFromCache(conn, tx->cachedContent);
             tx->length = slen(cachedData);
         }
@@ -182,8 +181,8 @@ static void outgoingCacheFilterService(HttpQueue *q)
                     tx->cacheBufferLength += size;
                 } else {
                     tx->cacheBuffer = 0;
-                    mprLog(3, "cacheFilter: Item too big to cache %d bytes, limit %d", tx->cacheBufferLength + size,
-                        conn->limits->cacheItemSize);
+                    httpTrace(conn, HTTP_TRACE_INFO, "Item too big to cache; size=%d, limit=%d", 
+                        tx->cacheBufferLength + size, conn->limits->cacheItemSize);
                 }
             }
             foundDataPacket = 1;
@@ -302,7 +301,7 @@ static bool fetchCachedResponse(HttpConn *conn)
     key = makeCacheKey(conn);
     if ((value = httpGetHeader(conn, "Cache-Control")) != 0 && 
             (scontains(value, "max-age=0") == 0 || scontains(value, "no-cache") == 0)) {
-        mprLog(3, "Client reload. Cache-control header '%s' rejects use of cached content.", value);
+        httpTrace(conn, HTTP_TRACE_INFO, "Client reload");
 
     } else if ((tx->cachedContent = mprReadCache(conn->host->responseCache, key, &modified, 0)) != 0) {
         /*
@@ -329,13 +328,13 @@ static bool fetchCachedResponse(HttpConn *conn)
             }
         }
         status = (canUseClientCache && cacheOk) ? HTTP_CODE_NOT_MODIFIED : HTTP_CODE_OK;
-        mprLog(3, "cacheHandler: Use cached content for %s, status %d", key, status);
+        httpTrace(conn, HTTP_TRACE_INFO, "Use cached content; key=%s, status=%d", key, status);
         httpSetStatus(conn, status);
         httpSetHeader(conn, "Etag", mprGetMD5(key));
         httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
         return 1;
     }
-    mprLog(3, "cacheHandler: No cached content for %s", key);
+    httpTrace(conn, HTTP_TRACE_INFO, "No cached content; key=%s", key);
     return 0;
 }
 
@@ -370,10 +369,10 @@ PUBLIC ssize httpWriteCached(HttpConn *conn)
     }
     cacheKey = makeCacheKey(conn);
     if ((content = mprReadCache(conn->host->responseCache, cacheKey, &modified, 0)) == 0) {
-        mprLog(3, "No cached data for ", cacheKey);
+        httpTrace(conn, HTTP_TRACE_INFO, "No response data in cache; key=%s", cacheKey);
         return 0;
     }
-    mprLog(5, "Used cached ", cacheKey);
+    httpTrace(conn, HTTP_TRACE_INFO, "Used cached response; key=", cacheKey);
     data = setHeadersFromCache(conn, content);
     httpSetHeader(conn, "Etag", mprGetMD5(cacheKey));
     httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
@@ -486,17 +485,6 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
     cache->serverLifespan = serverLifespan;
     cache->flags = flags;
     mprAddItem(route->caching, cache);
-
-#if KEEP
-    mprTrace(3, "Caching route %s for methods %s, URIs %s, extensions %s, types %s, client lifespan %d, server lifespan %d", 
-        route->name,
-        (methods) ? methods: "*",
-        (uris) ? uris: "*",
-        (extensions) ? extensions: "*",
-        (types) ? types: "*",
-        cache->clientLifespan / MPR_TICKS_PER_SEC);
-        cache->serverLifespan / MPR_TICKS_PER_SEC);
-#endif
 }
 
 

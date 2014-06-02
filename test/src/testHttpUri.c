@@ -20,7 +20,7 @@ static bool normalize(MprTestGroup *gp, char *uri, char *expectedUri)
     if (smatch(expectedUri, validated)) {
         return 1;
     } else {
-        mprLog(0, "\nUri \"%s\" validated to \"%s\" instead of \"%s\"\n", uri, validated, expectedUri);
+        mprDebug("http test", 0, "\nUri \"%s\" validated to \"%s\" instead of \"%s\"\n", uri, validated, expectedUri);
         return 0;
     }
 }
@@ -34,7 +34,7 @@ static bool validate(MprTestGroup *gp, char *uri, char *expectedUri)
     if (smatch(expectedUri, validated)) {
         return 1;
     } else {
-        mprLog(0, "\nUri \"%s\" validated to \"%s\" instead of \"%s\"\n", uri, validated, expectedUri);
+        mprDebug("http test", 0, "\nUri \"%s\" validated to \"%s\" instead of \"%s\"\n", uri, validated, expectedUri);
         return 0;
     }
 }

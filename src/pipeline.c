@@ -60,9 +60,6 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         for (next = 0; (filter = mprGetNextItem(route->outputStages, &next)) != 0; ) {
             if (matchFilter(conn, filter, route, HTTP_STAGE_TX) == HTTP_ROUTE_OK) {
                 mprAddItem(tx->outputPipeline, filter);
-                if (rx->traceLevel >= 0) {
-                    mprLog(rx->traceLevel, "Select output filter: \"%s\"", filter->name);
-                }
                 hasOutputFilters = 1;
             }
         }
@@ -70,16 +67,14 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     if (tx->connector == 0) {
 #if !ME_ROM
         if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !hasOutputFilters && 
-                !conn->secure && httpShouldTrace(conn, HTTP_TRACE_TX, HTTP_TRACE_BODY, tx->ext) < 0) {
+                !conn->secure && !httpShouldTrace(conn, HTTP_TRACE_TX_BODY)) {
             tx->connector = http->sendConnector;
         } else 
 #endif
         tx->connector = (route && route->connector) ? route->connector : http->netConnector;
     }
     mprAddItem(tx->outputPipeline, tx->connector);
-    if (rx->traceLevel >= 0) {
-        mprLog(rx->traceLevel + 1, "Select connector: \"%s\"", tx->connector->name);
-    }
+
     /*  Create the outgoing queue heads and open the queues */
     q = tx->queue[HTTP_QUEUE_TX];
     for (next = 0; (stage = mprGetNextItem(tx->outputPipeline, &next)) != 0; ) {

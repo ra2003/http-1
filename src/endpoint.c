@@ -164,7 +164,7 @@ static bool validateEndpoint(HttpEndpoint *endpoint)
     HttpHost    *host;
 
     if ((host = mprGetFirstItem(endpoint->hosts)) == 0) {
-        mprError("Missing host object on endpoint");
+        mprError("http config", "Missing host object on endpoint");
         return 0;
     }
     return 1;
@@ -207,9 +207,9 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
     proto = endpoint->ssl ? "HTTPS" : "HTTP";
     ip = *endpoint->ip ? endpoint->ip : "*";
     if (mprIsSocketV6(endpoint->sock)) {
-        mprLog(2, "Started %s service on \"[%s]:%d\"", proto, ip, endpoint->port);
+        mprLog("http", MPR_INFO, "Started %s service on \"[%s]:%d\"", proto, ip, endpoint->port);
     } else {
-        mprLog(2, "Started %s service on \"%s:%d\"", proto, ip, endpoint->port);
+        mprLog("http", MPR_INFO, "Started %s service on \"%s:%d\"", proto, ip, endpoint->port);
     }
     return 0;
 }
@@ -287,10 +287,6 @@ PUBLIC void httpMatchHost(HttpConn *conn)
         httpError(conn, HTTP_CODE_NOT_FOUND, "No host to serve request. Searching for %s", conn->rx->hostHeader);
         conn->host = mprGetFirstItem(endpoint->hosts);
         return;
-    }
-    if (conn->rx->traceLevel >= 0) {
-        mprLog(conn->rx->traceLevel, "Use endpoint: %s:%d", endpoint->ip, endpoint->port);
-        mprLog(conn->rx->traceLevel, "Use host %s", host->name ? host->name : "default");
     }
     conn->host = host;
 }

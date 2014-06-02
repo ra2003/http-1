@@ -85,7 +85,7 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
     len = strlen(pat);
     if (sncaselesscmp(rx->mimeType, pat, len) == 0) {
         rx->upload = 1;
-        mprTrace(5, "matchUpload for %s", rx->uri);
+        httpTrace(conn, HTTP_TRACE_INFO, "Enable upload filter; uri=%s", rx->uri);
         return HTTP_ROUTE_OK;
     }
     return HTTP_ROUTE_OMIT_FILTER;
@@ -121,7 +121,6 @@ static int openUpload(HttpQueue *q)
     conn = q->conn;
     rx = conn->rx;
 
-    mprTrace(5, "Open upload filter");
     if ((up = mprAllocObj(Upload, manageUpload)) == 0) {
         return MPR_ERR_MEMORY;
     }
@@ -131,7 +130,7 @@ static int openUpload(HttpQueue *q)
 
     uploadDir = getUploadDir(rx->route);
     httpSetParam(conn, "UPLOAD_DIR", uploadDir);
-    mprTrace(5, "Upload directory is %s", uploadDir);
+    httpTrace(conn, HTTP_TRACE_5, "Upload directory; path=%s", uploadDir);
 
     if ((boundary = strstr(rx->mimeType, "boundary=")) != 0) {
         boundary += 9;
@@ -208,8 +207,6 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
         httpPutPacketToNext(q, packet);
         return;
     }
-    mprTrace(7, "uploadIncomingData: %d bytes", httpGetPacketLength(packet));
-
     /*
         Put the packet data onto the service queue for buffering. This aggregates input data incase we don't have
         a complete mime record yet.
@@ -333,7 +330,6 @@ static int processUploadHeader(HttpQueue *q, char *line)
         up->contentState = HTTP_UPLOAD_CONTENT_DATA;
         return 0;
     }
-    mprTrace(7, "Header line: %s", line);
 
     headerTok = line;
     stok(line, ": ", &rest);
@@ -384,7 +380,8 @@ static int processUploadHeader(HttpQueue *q, char *line)
                         "Cannot create upload temp file %s. Check upload temp dir %s", up->tmpPath, uploadDir);
                     return MPR_ERR_CANT_OPEN;
                 }
-                mprTrace(5, "File upload of: %s stored as %s", up->clientFilename, up->tmpPath);
+                httpTrace(conn, HTTP_TRACE_INFO, "File upload; clientFilename=%s localFilename=%s", 
+                    up->clientFilename, up->tmpPath);
 
                 up->file = mprOpenFile(up->tmpPath, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
                 if (up->file == 0) {
@@ -403,7 +400,6 @@ static int processUploadHeader(HttpQueue *q, char *line)
 
     } else if (scaselesscmp(headerTok, "Content-Type") == 0) {
         if (up->clientFilename) {
-            mprTrace(5, "Set files[%s][CONTENT_TYPE] = %s", up->id, rest);
             up->currentFile->contentType = sclone(rest);
         }
     }
@@ -482,7 +478,6 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
         }
         file->size += len;
         conn->rx->bytesUploaded += len;
-        mprTrace(7, "uploadFilter: Wrote %d bytes to %s", len, up->tmpPath);
     }
     return 0;
 }
@@ -518,7 +513,6 @@ static int processUploadData(HttpQueue *q)
     }
     bp = getBoundary(mprGetBufStart(content), size, up->boundary, up->boundaryLen, &pureData);
     if (bp == 0) {
-        mprTrace(7, "uploadFilter: Got boundary filename %x", up->clientFilename);
         if (up->clientFilename) {
             /*
                 No signature found yet. probably more data to come. Must handle split boundaries.
@@ -560,7 +554,7 @@ static int processUploadData(HttpQueue *q)
                 Normal string form data variables
              */
             data[dataLen] = '\0'; 
-            mprLog(3, "uploadFilter: form[%s] = %s", up->id, data);
+            httpTrace(conn, HTTP_TRACE_RX_BODY, "upload form; form[%s]=\"%s\"", up->id, data);
             key = mprUriDecode(up->id);
             data = mprUriDecode(data);
             httpSetParam(conn, key, data);

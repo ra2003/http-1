@@ -143,7 +143,6 @@ PUBLIC bool httpIsQueueSuspended(HttpQueue *q)
 
 PUBLIC void httpSuspendQueue(HttpQueue *q)
 {
-    mprTrace(7, "Suspend q %s", q->name);
     q->flags |= HTTP_QUEUE_SUSPENDED;
 }
 
@@ -152,7 +151,6 @@ PUBLIC bool httpIsSuspendQueue(HttpQueue *q)
 {
     return q->flags & HTTP_QUEUE_SUSPENDED;
 }
-
 
 
 /*
@@ -368,7 +366,6 @@ PUBLIC void httpServiceQueue(HttpQueue *q)
         }
         if (!(q->flags & HTTP_QUEUE_SUSPENDED)) {
             q->servicing = 1;
-            mprTrace(7, "Service queue %s", q->name);
             q->service(q);
             if (q->flags & HTTP_QUEUE_RESERVICE) {
                 q->flags &= ~HTTP_QUEUE_RESERVICE;

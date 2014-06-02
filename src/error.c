@@ -134,7 +134,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         conn->error++;
         httpOmitBody(conn);
         conn->errorMsg = formatErrorv(conn, status, fmt, args);
-        mprLog(2, "Error: %s", conn->errorMsg);
+        httpTrace(conn, HTTP_TRACE_ERROR, "Error: %s", conn->errorMsg);
 
         HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
         if (httpServerConn(conn)) {

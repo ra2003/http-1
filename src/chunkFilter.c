@@ -23,7 +23,6 @@ PUBLIC int httpOpenChunkFilter(Http *http)
 {
     HttpStage     *filter;
 
-    mprTrace(5, "Open chunk filter");
     if ((filter = httpCreateFilter(http, "chunkFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -106,8 +105,6 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
         return 0;
 
     case HTTP_CHUNK_DATA:
-        mprTrace(7, "chunkFilter: data %d bytes, rx->remainingContent %d", 
-            httpGetPacketLength(packet), rx->remainingContent);
         if (rx->remainingContent > 0) {
             return (ssize) min(rx->remainingContent, mprGetBufLength(buf));
         }
@@ -157,7 +154,6 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
         /* Remaining content is set to the next chunk size */
         rx->remainingContent = chunkSize;
         rx->chunkState = (chunkSize == 0) ? HTTP_CHUNK_EOF : HTTP_CHUNK_DATA;
-        mprTrace(7, "chunkFilter: start incoming chunk of %d bytes", chunkSize);
         return min(chunkSize, mprGetBufLength(buf));
 
     default:

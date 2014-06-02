@@ -54,12 +54,12 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
         }
         if ((res = pam_authenticate(pamh, PAM_DISALLOW_NULL_AUTHTOK)) != PAM_SUCCESS) {
             pam_end(pamh, PAM_SUCCESS);
-            mprTrace(5, "httpPamVerifyUser failed to verify %s", username);
+            mprDebug("http pam", 5, "httpPamVerifyUser failed to verify %s", username);
             return 0;
         }
         pam_end(pamh, PAM_SUCCESS);
     }
-    mprTrace(5, "httpPamVerifyUser verified %s", username);
+    mprDebug("http pam", 5, "httpPamVerifyUser verified %s", username);
 
     if (!conn->user) {
         conn->user = mprLookupKey(conn->rx->route->auth->userCache, username);
@@ -80,7 +80,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
             }
 #if ME_DEBUG
             mprAddNullToBuf(abilities);
-            mprTrace(5, "Create temp user \"%s\" with abilities: %s", username, mprGetBufStart(abilities));
+            mprDebug("http pam", 5, "Create temp user \"%s\" with abilities: %s", username, mprGetBufStart(abilities));
 #endif
             /*
                 Create a user and map groups to roles and expand to abilities

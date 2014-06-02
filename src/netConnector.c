@@ -28,7 +28,6 @@ PUBLIC int httpOpenNetConnector(Http *http)
 {
     HttpStage     *stage;
 
-    mprTrace(5, "Open net connector");
     if ((stage = httpCreateConnector(http, "netConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -106,14 +105,16 @@ static void netOutgoingService(HttpQueue *q)
         written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
         if (written < 0) {
             errCode = mprGetError();
-            mprTrace(6, "netConnector: wrote %d, errno %d, qflags %x", (int) written, errCode, q->flags);
+            httpTrace(conn, HTTP_TRACE_ERROR, "Connector write error; wrote=%d, errno=%d, qflags=%x", 
+                (int) written, errCode, q->flags);
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
                 /*  Socket full, wait for an I/O event */
                 tx->writeBlocked = 1;
                 break;
             }
             if (errCode == EPROTO && conn->secure) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Can't negotiate SSL with server: %s", conn->sock->errorMsg);
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, 
+                    "Can't negotiate SSL with server: %s", conn->sock->errorMsg);
             } else if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Can't write. errno %d", errCode);
             } else {
@@ -123,7 +124,6 @@ static void netOutgoingService(HttpQueue *q)
             break;
 
         } else if (written > 0) {
-            mprTrace(6, "netConnector: wrote %d, ask %d, qflags %x", (int) written, q->ioCount, q->flags);
             tx->bytesWritten += written;
             freeNetPackets(q, written);
             adjustNetVec(q, written);
@@ -133,7 +133,6 @@ static void netOutgoingService(HttpQueue *q)
         }
     }
     if (q->first && q->first->flags & HTTP_PACKET_END) {
-        mprTrace(6, "netConnector: end of stream. Finalize connector");
         httpFinalizeConnector(conn);
     }
 }
@@ -214,9 +213,9 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     if (httpGetPacketLength(packet) > 0) {
         addToNetVector(q, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
     }
-    item = (packet->flags & HTTP_PACKET_HEADER) ? HTTP_TRACE_HEADER : HTTP_TRACE_BODY;
-    if (httpShouldTrace(conn, HTTP_TRACE_TX, item, tx->ext) >= 0) {
-        httpTraceContent(conn, HTTP_TRACE_TX, item, packet, 0, (ssize) tx->bytesWritten);
+    item = (packet->flags & HTTP_PACKET_HEADER) ? HTTP_TRACE_TX_HEADERS : HTTP_TRACE_TX_BODY;
+    if (httpShouldTrace(conn, item)) {
+        httpTracePacket(conn, item, packet, 0);
     }
 }
 

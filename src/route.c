@@ -84,6 +84,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->workers = -1;
     route->prefix = MPR->emptyString;
     route->serverPrefix = MPR->emptyString;
+    route->trace = http->trace;
 
     route->headers = mprCreateList(-1, MPR_LIST_STABLE);
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
@@ -112,7 +113,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     }
     route->mimeTypes = MPR->mimeTypes;
     route->mutex = mprCreateLock();
-    httpInitTrace(route->trace);
 
     if ((route->mimeTypes = mprCreateMimeTypes("mime.types")) == 0) {
         route->mimeTypes = MPR->mimeTypes;
@@ -172,12 +172,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->lifespan = parent->lifespan;
     route->limits = parent->limits;
     route->loaded = parent->loaded;
-    route->log = parent->log;
-    route->logBackup = parent->logBackup;
-    route->logFlags = parent->logFlags;
-    route->logFormat = parent->logFormat;
-    route->logPath = parent->logPath;
-    route->logSize = parent->logSize;
     route->map = parent->map;
     route->methods = parent->methods;
     route->mimeTypes = parent->mimeTypes;
@@ -201,8 +195,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->target = parent->target;
     route->targetRule = parent->targetRule;
     route->tokens = parent->tokens;
-    route->trace[0] = parent->trace[0];
-    route->trace[1] = parent->trace[1];
+    route->trace = parent->trace;
     route->update = parent->update;
     route->updates = parent->updates;
     route->vars = parent->vars;
@@ -214,8 +207,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
 static void manageRoute(HttpRoute *route, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
-        httpManageTrace(&route->trace[0], flags);
-        httpManageTrace(&route->trace[1], flags);
         mprMark(route->auth);
         mprMark(route->caching);
         mprMark(route->client);
@@ -245,9 +236,6 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->inputStages);
         mprMark(route->languages);
         mprMark(route->limits);
-        mprMark(route->log);
-        mprMark(route->logFormat);
-        mprMark(route->logPath);
         mprMark(route->map);
         mprMark(route->methods);
         mprMark(route->mimeTypes);
@@ -272,6 +260,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->target);
         mprMark(route->targetRule);
         mprMark(route->tokens);
+        mprMark(route->trace);
         mprMark(route->tplate);
         mprMark(route->updates);
         mprMark(route->vars);
@@ -366,14 +355,8 @@ PUBLIC int httpStartRoute(HttpRoute *route)
 #if !ME_ROM
     if (!(route->flags & HTTP_ROUTE_STARTED)) {
         route->flags |= HTTP_ROUTE_STARTED;
-        if (route->logPath && (!route->parent || route->logPath != route->parent->logPath)) {
-            if (route->logBackup > 0) {
-                httpBackupRouteLog(route);
-            }
-            if ((route->log = mprOpenFile(route->logPath, O_CREAT | O_APPEND | O_WRONLY | O_TEXT, 0664)) == 0) {
-                mprError("Cannot open log file %s", route->logPath);
-                return MPR_ERR_CANT_OPEN;
-            }
+        if (route->trace != route->trace->parent) {
+            httpOpenTraceLogFile(route->trace);
         }
     }
 #endif
@@ -383,7 +366,6 @@ PUBLIC int httpStartRoute(HttpRoute *route)
 
 PUBLIC void httpStopRoute(HttpRoute *route)
 {
-    route->log = 0;
 }
 
 
@@ -439,14 +421,9 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
         httpError(conn, HTTP_CODE_BAD_METHOD, "Cannot find suitable route for request method");
         return;
     }
-    if (rx->traceLevel >= 0) {
-        mprLog(rx->traceLevel, "Select route \"%s\" target \"%s\"", route->name, route->targetRule);
-    }
     rx->route = route;
     conn->limits = route->limits;
-
-    conn->trace[0] = route->trace[0];
-    conn->trace[1] = route->trace[1];
+    conn->trace = route->trace;
 
     if (rewrites >= ME_MAX_REWRITE) {
         httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
@@ -454,9 +431,6 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
     if (tx->finalized) {
         /* Pass handler can transmit the error */
         tx->handler = conn->http->passHandler;
-    }
-    if (rx->traceLevel >= 0) {
-        mprLog(rx->traceLevel, "Select handler: \"%s\" for uri \"%s\"", tx->handler->name, rx->uri);
     }
     if (tx->handler->module) {
         tx->handler->module->lastActivity = conn->lastActivity;
@@ -514,8 +488,6 @@ static int matchRequestUri(HttpConn *conn, HttpRoute *route)
     if (route->patternCompiled) {
         rx->matchCount = pcre_exec(route->patternCompiled, NULL, rx->pathInfo, (int) slen(rx->pathInfo), 0, 0, 
             rx->matches, sizeof(rx->matches) / sizeof(int));
-        mprTrace(6, "Test route pattern \"%s\", regexp %s, pathInfo %s", route->name, route->optimizedPattern, rx->pathInfo);
-
         if (route->flags & HTTP_ROUTE_NOT) {
             if (rx->matchCount > 0) {
                 return HTTP_ROUTE_REJECT;
@@ -531,7 +503,6 @@ static int matchRequestUri(HttpConn *conn, HttpRoute *route)
         /* Pattern compilation failed */
         return HTTP_ROUTE_REJECT;
     }
-    mprTrace(6, "Check route methods \"%s\"", route->name);
     if (!mprLookupKey(route->methods, rx->method)) {
         if (!mprLookupKey(route->methods, "*")) {
             if (!(rx->flags & HTTP_HEAD && mprLookupKey(route->methods, "GET"))) {
@@ -562,7 +533,6 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
 
     if (route->requestHeaders) {
         for (next = 0; (op = mprGetNextItem(route->requestHeaders, &next)) != 0; ) {
-            mprTrace(6, "Test route \"%s\" header \"%s\"", route->name, op->name);
             if ((header = httpGetHeader(conn, op->name)) != 0) {
                 count = pcre_exec(op->mdata, NULL, header, (int) slen(header), 0, 0, 
                     matched, sizeof(matched) / sizeof(int)); 
@@ -578,7 +548,6 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     }
     if (route->params) {
         for (next = 0; (op = mprGetNextItem(route->params, &next)) != 0; ) {
-            mprTrace(6, "Test route \"%s\" field \"%s\"", route->name, op->name);
             if ((field = httpGetParam(conn, op->name, "")) != 0) {
                 count = pcre_exec(op->mdata, NULL, field, (int) slen(field), 0, 0, 
                     matched, sizeof(matched) / sizeof(int)); 
@@ -594,7 +563,6 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     }
     if (route->conditions) {
         for (next = 0; (condition = mprGetNextItem(route->conditions, &next)) != 0; ) {
-            mprTrace(6, "Test route \"%s\" condition \"%s\"", route->name, condition->name);
             rc = testCondition(conn, route, condition);
             if (rc == HTTP_ROUTE_REROUTE) {
                 return rc;
@@ -609,7 +577,6 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     }
     if (route->updates) {
         for (next = 0; (update = mprGetNextItem(route->updates, &next)) != 0; ) {
-            mprTrace(6, "Run route \"%s\" update \"%s\"", route->name, update->name);
             if ((rc = updateRequest(conn, route, update)) == HTTP_ROUTE_REROUTE) {
                 return rc;
             }
@@ -717,7 +684,7 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
                 }
                 path = mprReplacePathExt(filename, ext);
                 if (mprGetPathInfo(path, info) == 0) {
-                    mprLog(3, "Mapping content to %s", path);
+                    httpTrace(conn, HTTP_TRACE_INFO, "Mapping content, from=%s to=%s", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");
@@ -2130,7 +2097,6 @@ static int testCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *conditio
         httpError(conn, -1, "Cannot find route condition rule %s", condition->name);
         return 0;
     }
-    mprTrace(6, "run condition on route %s condition %s", route->name, condition->name);
     return (*proc)(conn, route, condition);
 }
 
@@ -2209,7 +2175,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
                 if (route->auth && route->auth->type) {
                     (route->auth->type->askLogin)(conn);
                 } else {
-                    httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
+                    httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied, login required");
                 }
                 /* Request has been denied and a response generated. So OK to accept this route. */
             }
@@ -2217,7 +2183,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!httpCanUser(conn, NULL)) {
-        mprLog(2, "Access denied. User is not authorized for access.");
+        httpTrace(conn, HTTP_TRACE_ERROR, "Access denied, user is not authorized for access.");
         if (!conn->tx->finalized) {
             if (route->auth && route->auth->type) {
                 (route->auth->type->askLogin)(conn);
@@ -2363,7 +2329,6 @@ static int updateRequest(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         httpError(conn, -1, "Cannot find route update rule %s", op->name);
         return HTTP_ROUTE_OK;
     }
-    mprTrace(6, "run update on route %s update %s", route->name, op->name);
     return (*proc)(conn, route, op);
 }
 
@@ -2990,7 +2955,7 @@ static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, i
                         mprPutSubStringToBuf(result, &str[matches[submatch]], matches[submatch + 1] - matches[submatch]);
                     }
                 } else {
-                    mprError("Bad replacement $ specification in page");
+                    mprDebug("http route", 5, "Bad replacement $ specification in page");
                     return 0;
                 }
             }
@@ -3148,7 +3113,7 @@ PUBLIC bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list arg
                 }
                 break;
             default:
-                mprError("Unknown token pattern %%\"%c\"", *f);
+                mprDebug("http route", 5, "Unknown token pattern %%\"%c\"", *f);
                 break;
             }
             tok = etok;
@@ -3160,7 +3125,7 @@ PUBLIC bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list arg
          */
         for (; tok < end && isspace((uchar) *tok); tok++) ;
         if (*tok && *tok != '#') {
-            mprError("Extra unparsed text: \"%s\"", tok);
+            mprDebug("http route", 5, "Extra unparsed text: \"%s\"", tok);
             return 0;
         }
     }
@@ -3190,13 +3155,13 @@ PUBLIC bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list arg
                 case 'W':
                     break;
                 default:
-                    mprError("Unknown token pattern %%\"%c\"", *f);
+                    mprDebug("http route", 5, "Unknown token pattern %%\"%c\"", *f);
                     break;
                 }
             }
         }
         if (*f) {
-            mprError("Missing directive parameters");
+            mprDebug("http route", 5, "Missing directive parameters");
             return 0;
         }
     }

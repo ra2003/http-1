@@ -88,7 +88,7 @@ static void testBasicHttpGet(MprTestGroup *gp)
         status = httpGetStatus(conn);
         tassert(status == 200 || status == 302);
         if (status != 200 && status != 302) {
-            mprLog(0, "HTTP response status %d", status);
+            mprLog("http test", 0, "HTTP response status %d", status);
         }
         tassert(httpGetError(conn) != 0);
         length = httpGetContentLength(conn);
@@ -120,7 +120,7 @@ static void testSecureHttpGet(MprTestGroup *gp)
         status = httpGetStatus(conn);
         tassert(status == 200 || status == 301 || status == 302);
         if (status != 200 && status != 301 && status != 302) {
-            mprLog(0, "HTTP response status %d", status);
+            mprLog("http test", 0, "HTTP response status %d", status);
         }
     }
     httpDestroy(http);

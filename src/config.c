@@ -112,7 +112,7 @@ static void blendMode(HttpRoute *route, MprJson *config)
     mode = mprGetJson(config, "app.mode");
     if (!mode) {
         mode = sclone("debug");
-        mprLog(3, "Route \"%s\" running in \"%s\" mode", route->name, mode);
+        mprLog("http config", 3, "Route \"%s\" running in \"%s\" mode", route->name, mode);
     }
     if ((currentMode = mprGetJsonObj(config, sfmt("app.modes.%s", mode))) != 0) {
         app = mprLookupJsonObj(config, "app");
@@ -226,7 +226,7 @@ static void postParse(HttpRoute *route)
         clientCopy(route, client, mappings);
         mprSetJson(client, "prefix", route->prefix);
         route->client = mprJsonToString(client, MPR_JSON_QUOTES);
-        mprTrace(6, "Client Config: for %s, %s", route->name, mprJsonToString(client, MPR_JSON_PRETTY));
+        mprDebug("http config", 5, "Client Config: for %s, %s", route->name, mprJsonToString(client, MPR_JSON_PRETTY));
     }
 
     httpAddHostToEndpoints(route->host);
@@ -238,8 +238,6 @@ static void postParse(HttpRoute *route)
     for (nextHost = 0; (host = mprGetNextItem(http->hosts, &nextHost)) != 0; ) {
         for (nextRoute = 0; (rp = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
             if (!mprLookupKey(rp->extensions, "")) {
-                mprLog(4, "Route %s in host %s is missing a catch-all handler. "
-                    "Adding: AddHandler fileHandler \"\"", rp->name, host->name);
                 httpAddRouteHandler(rp, "fileHandler", "");
                 httpAddRouteIndex(rp, "index.html");
             }
@@ -999,8 +997,6 @@ static void parseHttp(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-
-
 /*
     Must only be called directly via parseHttp as all other http.* keys must have already been processed.
  */
@@ -1011,7 +1007,7 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     if (route->loaded) {
-        mprLog(0, "Skip reloading routes - must reboot if routes are modified");
+        mprLog("http config", 1, "Skip reloading routes - must reboot if routes are modified");
         return;
     }
     if (prop->type & MPR_JSON_STRING) {
@@ -1088,7 +1084,7 @@ static void parseServerChroot(HttpRoute *route, cchar *key, MprJson *prop)
     }
     if (route->http->flags & HTTP_UTILITY) {
         /* Not running a web server but rather a utility like the "esp" generator program */
-        mprLog(MPR_INFO, "Change directory to: \"%s\"", home);
+        mprLog("http config", MPR_INFO, "Change directory to: \"%s\"", home);
     } else {
         if (chroot(home) < 0) {
             if (errno == EPERM) {
@@ -1098,10 +1094,10 @@ static void parseServerChroot(HttpRoute *route, cchar *key, MprJson *prop)
             }
             return;
         }
-        mprLog(MPR_INFO, "Chroot to: \"%s\"", home);
+        mprLog("http config", MPR_INFO, "Chroot to: \"%s\"", home);
     }
 #else
-    mprLog(MPR_INFO, "Chroot directive not supported on this operating system\n");
+    mprLog("http config", MPR_INFO, "Chroot directive not supported on this operating system\n");
 #endif
 } 
 
@@ -1185,12 +1181,11 @@ static void parseServerLog(HttpRoute *route, cchar *key, MprJson *prop)
     size = (ssize) httpGetNumber(mprGetJson(prop, "size"));
     timestamp = httpGetNumber(mprGetJson(prop, "location"));
 
-    if (size < (10 * 1000)) {
-        httpParseError(route, "Size is too small. Must be larger than 10K");
-        return;
+    if (size < HTTP_TRACE_MIN_LOG_SIZE) {
+        size = HTTP_TRACE_MIN_LOG_SIZE;
     }
     if (location == 0) {
-        httpParseError(route, "Missing filename");
+        httpParseError(route, "Missing location");
         return;
     }
     if (!smatch(location, "stdout") && !smatch(location, "stderr")) {
@@ -1203,7 +1198,7 @@ static void parseServerLog(HttpRoute *route, cchar *key, MprJson *prop)
         return;
     }
     mprSetLogLevel(level);
-    mprLogHeader();
+    mprLogConfig();
     if (timestamp) {
         httpSetTimestamp(timestamp);
     }
@@ -1395,47 +1390,60 @@ static void parseTimeoutsSession(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-/*
-    Used for rx and tx
- */
-static void parseTraceRx(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
 {
+    MprTicks    timestamp;
     MprJson     *levels;
-    cchar       *include, *exclude;
+    cchar       *location;
     ssize       size;
-    int         i, dir, larray[HTTP_TRACE_MAX_ITEM];
+    cchar       *format, *type;
+    char        level, tlevels[HTTP_TRACE_MAX_ITEM];
+    int         anew, backup;
 
-    include = exclude = 0;
-    dir = HTTP_TRACE_RX;
-    size = MAXINT;
-    
-    include = getList(mprGetJsonObj(prop, "include"));
-    exclude = getList(mprGetJsonObj(prop, "exclude"));
     size = (ssize) httpGetNumber(mprGetJson(prop, "size"));
-    dir = smatch(prop->name, "rx") ? HTTP_TRACE_RX : HTTP_TRACE_TX;
+    format = mprGetJson(prop, "format");
+    type = mprGetJson(prop, "type");
+    location = mprGetJson(prop, "location");
+    level = (char) stoi(mprGetJson(prop, "level"));
+    backup = (int) stoi(mprGetJson(prop, "backup"));
+    anew = smatch(mprGetJson(prop, "anew"), "true");
+    size = (ssize) httpGetNumber(mprGetJson(prop, "size"));
+    timestamp = httpGetNumber(mprGetJson(prop, "location"));
 
-    for (i = 0; i < HTTP_TRACE_MAX_ITEM; i++) {
-        larray[i] = 0;
+    if (level < 0) {
+        level = 0;
+    } else if (level > 5) {
+        level = 5;
     }
+    if (size < (10 * 1000)) {
+        httpParseError(route, "Size is too small. Must be larger than 10K");
+        return;
+    }
+    if (location == 0) {
+        httpParseError(route, "Missing filename");
+        return;
+    }
+    if (!smatch(location, "stdout") && !smatch(location, "stderr")) {
+        location = httpMakePath(route, 0, location);
+    }
+    memset(tlevels, 0, sizeof(tlevels));
     if ((levels = mprGetJsonObj(prop, "levels")) != 0) {
-        larray[HTTP_TRACE_CONN] = (int) stoi(mprGetJson(levels, "conn"));
-        larray[HTTP_TRACE_FIRST] = (int) stoi(mprGetJson(levels, "first"));
-        larray[HTTP_TRACE_HEADER] = (int) stoi(mprGetJson(levels, "headers"));
-        larray[HTTP_TRACE_BODY] = (int) stoi(mprGetJson(levels, "body"));
-        larray[HTTP_TRACE_LIMITS] = (int) stoi(mprGetJson(levels, "limits"));
-        larray[HTTP_TRACE_TIME] = (int) stoi(mprGetJson(levels, "time"));
-    } else {
-        if (dir == HTTP_TRACE_RX) {
-            larray[HTTP_TRACE_CONN] = 5;
-            larray[HTTP_TRACE_FIRST] = 2;
-            larray[HTTP_TRACE_HEADER] = 4;
-            larray[HTTP_TRACE_BODY] = 4;
-        } else {
-            larray[HTTP_TRACE_HEADER] = 4;
-            larray[HTTP_TRACE_BODY] = 5;
-        }
+        tlevels[HTTP_TRACE_CONN] = (char) stoi(mprGetJson(levels, "conn"));
+        tlevels[HTTP_TRACE_ERROR] = (char) stoi(mprGetJson(levels, "errors"));
+        tlevels[HTTP_TRACE_INFO] = (char) stoi(mprGetJson(levels, "info"));
+        tlevels[HTTP_TRACE_RX_FIRST] = (char) stoi(mprGetJson(levels, "rx.first"));
+        tlevels[HTTP_TRACE_RX_HEADERS] = (char) stoi(mprGetJson(levels, "rx.headers"));
+        tlevels[HTTP_TRACE_RX_BODY] = (char) stoi(mprGetJson(levels, "rx.body"));
+        tlevels[HTTP_TRACE_TX_FIRST] = (char) stoi(mprGetJson(levels, "tx.first"));
+        tlevels[HTTP_TRACE_TX_HEADERS] = (char) stoi(mprGetJson(levels, "tx.headers"));
+        tlevels[HTTP_TRACE_TX_BODY] = (char) stoi(mprGetJson(levels, "tx.body"));
+        tlevels[HTTP_TRACE_COMPLETE] = (char) stoi(mprGetJson(levels, "complete"));
     }
-    httpSetRouteTraceFilter(route, dir, larray, size, include, exclude);
+    route->trace = httpCreateTrace(route->trace);
+    httpSetTraceType(route->trace, type);
+    httpSetTraceLogFile(route->trace, location, size, backup, format, anew ? MPR_LOG_ANEW : 0);
+    httpSetTraceFormat(route->trace, format);
+    httpSetTraceLevels(route->trace, tlevels, size);
 }
 
 
@@ -1568,9 +1576,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.timeouts.inactivity", parseTimeoutsInactivity);
     httpAddConfig("app.http.timeouts.request", parseTimeoutsRequest);
     httpAddConfig("app.http.timeouts.session", parseTimeoutsSession);
-    httpAddConfig("app.http.trace", parseAll);
-    httpAddConfig("app.http.trace.rx", parseTraceRx);
-    httpAddConfig("app.http.trace.tx", parseTraceRx);
+    httpAddConfig("app.http.trace", parseTrace);
     httpAddConfig("app.http.update", parseUpdate);
     httpAddConfig("app.http.xsrf", parseXsrf);
     httpAddConfig("directories", parseDirectories);

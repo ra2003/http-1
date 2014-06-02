@@ -20,7 +20,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     HttpUri     *uri;
     MprSocket   *sp;
     char        *ip;
-    int         port, rc, level;
+    int         port, rc;
 
     assert(conn);
 
@@ -43,7 +43,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
             mprCloseSocket(conn->sock, 0);
             conn->sock = 0;
         } else {
-            mprLog(4, "Http: reusing keep-alive socket on: %s:%d", ip, port);
+            httpTrace(conn, HTTP_TRACE_INFO, "Reuse socket; keepAliveCount=%d", conn->keepAliveCount);
         }
     }
     if (conn->sock) {
@@ -73,7 +73,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         peerName = isdigit(uri->host[0]) ? 0 : uri->host;
         if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
-            mprLog(2, "Cannot upgrade socket for SSL: %s", conn->errorMsg);
+            httpTrace(conn, HTTP_TRACE_ERROR, "Cannot upgrade socket; error=\"%s\"", conn->errorMsg);
             return 0;
         }
     }
@@ -84,8 +84,8 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         return 0;
     }
 #endif
-    if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
-        mprLog(level, "### Outgoing connection to %s:%d", conn->ip, conn->port);
+    if (httpShouldTrace(conn, HTTP_TRACE_CONN)) {
+        httpTrace(conn, HTTP_TRACE_CONN, "open connection; address=%s:%d", conn->ip, conn->port);
     }
     return conn;
 }
@@ -131,7 +131,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
         return MPR_ERR_BAD_STATE;
     }
-    mprLog(4, "Http: client request: %s %s", method, uri);
+    httpTrace(conn, HTTP_TRACE_INFO, "Connect; method=%s uri=%s", method, uri);
 
     if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
         /* WARNING: this will erase headers */
@@ -461,7 +461,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     int         justOne;
 
     if (httpServerConn(conn)) {
-        mprError("Should not call httpWait on the server side");
+        mprError("http client", "Should not call httpWait on the server side");
         return MPR_ERR_BAD_STATE;
     }
     if (state == 0) {

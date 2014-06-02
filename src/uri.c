@@ -851,7 +851,7 @@ PUBLIC bool httpValidUriChars(cchar *uri)
     }
     pos = strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%");
     if (pos < slen(uri)) {
-        mprTrace(3, "Bad character in URI at %s", &uri[pos]);
+        mprDebug("http uri", 3, "Bad character in URI at %s", &uri[pos]);
         return 0;
     }
     return 1;

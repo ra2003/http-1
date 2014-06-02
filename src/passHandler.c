@@ -18,7 +18,6 @@ static void handleTrace(HttpConn *conn);
 
 static void startPass(HttpQueue *q)
 {
-    mprTrace(5, "Start passHandler");
     if (q->conn->rx->flags & HTTP_TRACE) {
         handleTrace(q->conn);
     }
@@ -62,6 +61,7 @@ static void handleTrace(HttpConn *conn)
     headers = q->first;
     tx->flags |= HTTP_TX_NO_LENGTH;
     httpWriteHeaders(q, headers);
+    httpDiscardData(conn, HTTP_QUEUE_TX);
     traceData = httpCreateDataPacket(httpGetPacketLength(headers) + 128);
     tx->flags &= ~(HTTP_TX_NO_LENGTH | HTTP_TX_HEADERS_CREATED);
     q->count -= httpGetPacketLength(headers);

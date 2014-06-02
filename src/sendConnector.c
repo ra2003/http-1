@@ -27,7 +27,6 @@ PUBLIC int httpOpenSendConnector(Http *http)
 {
     HttpStage     *stage;
 
-    mprTrace(5, "Open send connector");
     if ((stage = httpCreateConnector(http, "sendConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -122,6 +121,8 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     written = mprSendFileToSocket(conn->sock, file, q->ioPos, q->ioCount, q->iovec, q->ioIndex, NULL, 0);
     if (written < 0) {
         errCode = mprGetError();
+        httpTrace(conn, HTTP_TRACE_ERROR, "Connector write error; wrote=%d errno=%d qflags=%x", 
+            (int) written, errCode, q->flags);
         if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
             /*  Socket full, wait for an I/O event */
             tx->writeBlocked = 1;
@@ -138,9 +139,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
         freeSendPackets(q, written);
         adjustSendVec(q, written);
     }
-    mprTrace(6, "sendConnector: wrote %d, qflags %x", (int) written, q->flags);
     if (q->first && q->first->flags & HTTP_PACKET_END) {
-        mprTrace(6, "sendConnector: end of stream. Finalize connector");
         httpFinalizeConnector(conn);
     }
 }
@@ -229,9 +228,9 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
             Header packets have actual content. File data packets are virtual and only have a count.
          */
         addToSendVector(q, mprGetBufStart(packet->content), httpGetPacketLength(packet));
-        item = (packet->flags & HTTP_PACKET_HEADER) ? HTTP_TRACE_HEADER : HTTP_TRACE_BODY;
-        if (httpShouldTrace(conn, HTTP_TRACE_TX, item, tx->ext) >= 0) {
-            httpTraceContent(conn, HTTP_TRACE_TX, item, packet, 0, tx->bytesWritten);
+        item = (packet->flags & HTTP_PACKET_HEADER) ? HTTP_TRACE_TX_HEADERS : HTTP_TRACE_TX_BODY;
+        if (httpShouldTrace(conn, item)) {
+            httpTracePacket(conn, item, packet, 0);
         }
     }
 }

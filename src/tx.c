@@ -75,6 +75,7 @@ static void manageTx(HttpTx *tx, int flags)
         mprMark(tx->handler);
         mprMark(tx->headers);
         mprMark(tx->method);
+        mprMark(tx->mimeType);
         mprMark(tx->outputPipeline);
         mprMark(tx->outputRanges);
         mprMark(tx->parsedUri);
@@ -461,7 +462,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
                 if (endpoint) {
                     target->port = endpoint->port;
                 } else if (smatch(target->scheme, "https")) {
-                    mprError("Missing secure endpoint to use with https redirection");
+                    httpTrace(conn, HTTP_TRACE_ERROR, "Missing secure endpoint to use with https redirection");
                 }
             }
         }
@@ -484,7 +485,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n<p>The document has moved <a href=\"%s\">here</a>.</p></body></html>\r\n",
             msg, msg, targetUri);
-        mprLog(3, "httpRedirect: %d %s", status, targetUri);
+        httpTrace(conn, HTTP_TRACE_INFO, "redirect; status=%d uri=%s", status, targetUri);
     } else {
         httpFormatResponse(conn, 
             "<!DOCTYPE html>\r\n"
@@ -613,7 +614,6 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     HttpRange   *range;
     MprKeyValue *item;
     MprOff      length;
-    cchar       *mimeType;
     int         next;
 
     assert(packet->flags == HTTP_PACKET_HEADER);
@@ -628,13 +628,12 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     httpAddHeaderString(conn, "Date", conn->http->currentDate);
 
     if (tx->ext && route) {
-        if ((mimeType = (char*) mprLookupMime(route->mimeTypes, tx->ext)) != 0) {
-            if (conn->error) {
-                httpAddHeaderString(conn, "Content-Type", "text/html");
-            } else {
-                httpAddHeaderString(conn, "Content-Type", mimeType);
-            }
+        if (conn->error) {
+            tx->mimeType = sclone("text/html");
+        } else if ((tx->mimeType = (char*) mprLookupMime(route->mimeTypes, tx->ext)) == 0) {
+            tx->mimeType = sclone("text/html");
         }
+        httpAddHeaderString(conn, "Content-Type", tx->mimeType);
     }
     if (tx->etag) {
         httpAddHeader(conn, "ETag", "%s", tx->etag);
@@ -671,7 +670,8 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
                 httpSetHeader(conn, "Content-Range", "bytes %Ld-%Ld/*", range->start, range->end - 1);
             }
         } else {
-            httpSetHeader(conn, "Content-Type", "multipart/byteranges; boundary=%s", tx->rangeBoundary);
+            tx->mimeType = sfmt("Content-Type", "multipart/byteranges; boundary=%s", tx->rangeBoundary);
+            httpSetHeader(conn, "Content-Type", tx->mimeType);
         }
         httpSetHeader(conn, "Accept-Ranges", "bytes");
     }
@@ -723,7 +723,6 @@ PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
 }
 
 
-
 /*
     Set the filename. The filename may be outside the route documents. So caller must take care.
     This will update HttpTx.ext and HttpTx.fileInfo.
@@ -744,7 +743,6 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         tx->filename = 0;
         tx->ext = 0;
         info->checked = info->valid = 0;
-        mprTrace(7, "httpSetFilename clear filename");
         return;
     }
     if (!(tx->flags & HTTP_TX_NO_CHECK)) {
@@ -764,7 +762,8 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
     }
     tx->filename = sclone(filename);
-    mprTrace(7, "httpSetFilename uri \"%s\", filename: \"%s\", extension: \"%s\"", conn->rx->uri, tx->filename, tx->ext);
+    httpTrace(conn, HTTP_TRACE_5, "Set filename; filename=\"%s\" uri=%s extension=%s", 
+        tx->filename, conn->rx->uri, tx->ext);
 }
 
 
@@ -783,7 +782,8 @@ PUBLIC void httpSetStatus(HttpConn *conn, int status)
 
 PUBLIC void httpSetContentType(HttpConn *conn, cchar *mimeType)
 {
-    httpSetHeaderString(conn, "Content-Type", mimeType);
+    conn->tx->mimeType = sclone(mimeType);
+    httpSetHeaderString(conn, "Content-Type", conn->tx->mimeType);
 }
 
 
@@ -793,9 +793,9 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
     HttpConn    *conn;
     HttpTx      *tx;
     HttpUri     *parsedUri;
+    HttpPacket  *altPacket;
     MprKey      *kp;
     MprBuf      *buf;
-    int         level;
 
     assert(packet->flags == HTTP_PACKET_HEADER);
 
@@ -846,10 +846,6 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
             }
         }
     }
-    if ((level = httpShouldTrace(conn, HTTP_TRACE_TX, HTTP_TRACE_FIRST, tx->ext)) >= mprGetLogLevel(tx)) {
-        mprAddNullToBuf(buf);
-        mprLog(level, "  %s", mprGetBufStart(buf));
-    }
     mprPutStringToBuf(buf, "\r\n");
 
     /* 
@@ -871,15 +867,20 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
     if (tx->length >= 0 || tx->chunkSize <= 0) {
         mprPutStringToBuf(buf, "\r\n");
     }
-    if (tx->altBody) {
-        /* Error responses are emitted here */
-        mprPutStringToBuf(buf, tx->altBody);
-        httpDiscardQueueData(tx->queue[HTTP_QUEUE_TX]->nextQ, 0);
-    }
     tx->headerSize = mprGetBufLength(buf);
     tx->flags |= HTTP_TX_HEADERS_CREATED;
     tx->authType = conn->authType;
     q->count += httpGetPacketLength(packet);
+
+    if (tx->altBody) {
+        /* Error responses are emitted here */
+        httpDiscardQueueData(tx->queue[HTTP_QUEUE_TX]->nextQ, 0);
+        altPacket = httpCreateDataPacket(slen(tx->altBody));
+        mprPutStringToBuf(altPacket->content, tx->altBody);
+        packet = httpGetPacket(q);
+        httpPutBackPacket(q, altPacket);
+        httpPutBackPacket(q, packet);
+    }
 }
 
 
@@ -920,7 +921,6 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
     tx->responded = 1;
 
     for (totalWritten = 0; len > 0; ) {
-        mprTrace(7, "httpWriteBlock q_count %d, q_max %d", q->count, q->max);
         if (conn->state >= HTTP_STATE_FINALIZED) {
             return MPR_ERR_CANT_WRITE;
         }

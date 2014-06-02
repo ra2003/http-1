@@ -171,7 +171,6 @@ PUBLIC int httpAddBodyParams(HttpConn *conn)
             content = q->first->content;
             if (rx->form || rx->upload) {
                 mprAddNullToBuf(content);
-                mprTrace(6, "Form body data: length %d, \"%s\"", mprGetBufLength(content), mprGetBufStart(content));
                 addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
 
             } else if (sstarts(rx->mimeType, "application/json")) {

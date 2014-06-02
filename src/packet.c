@@ -455,7 +455,8 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
         if (offset < (httpGetPacketLength(orig) / 2)) {
             /*
                 A large packet will often be resized by splitting into chunks that the downstream queues will accept. 
-                To optimize, we allocate a new packet content buffer and the tail packet keeps the trimmed original packet buffer.
+                To optimize, we allocate a new packet content buffer and the tail packet keeps the trimmed 
+                original packet buffer.
              */
             if ((tail = httpCreateDataPacket(0)) == 0) {
                 return 0;

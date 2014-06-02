@@ -1,5 +1,5 @@
 /*
-    log.c -- Http logging
+    commonLog.c -- Http Common Log Format Request Tracing
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
@@ -9,123 +9,30 @@
 #include    "http.h"
 
 /************************************ Code ************************************/
-
-PUBLIC int httpSetRouteLog(HttpRoute *route, cchar *path, ssize size, int backup, cchar *format, int flags)
-{
-    char    *src, *dest;
-
-    assert(route);
-    assert(path && *path);
-    assert(format);
-
-    if (format == NULL || *format == '\0') {
-        format = ME_HTTP_LOG_FORMAT;
-    }
-    route->logFlags = flags;
-    route->logSize = size;
-    route->logBackup = backup;
-    route->logPath = sclone(path);
-    route->logFormat = sclone(format);
-
-    for (src = dest = route->logFormat; *src; src++) {
-        if (*src == '\\' && src[1] != '\\') {
-            continue;
-        }
-        *dest++ = *src;
-    }
-    *dest = '\0';
-    if (route->logBackup > 0) {
-        httpBackupRouteLog(route);
-    }
-    route->logFlags &= ~MPR_LOG_ANEW;
-    if (!httpOpenRouteLog(route)) {
-        return MPR_ERR_CANT_OPEN;
-    }
-    return 0;
-}
-
-
-PUBLIC void httpBackupRouteLog(HttpRoute *route)
-{
-    MprPath     info;
-
-    assert(route->logBackup);
-    assert(route->logSize > 100);
-
-    if (route->parent && route->parent->log == route->log) {
-        httpBackupRouteLog(route->parent);
-        return;
-    }
-    lock(route);
-    mprGetPathInfo(route->logPath, &info);
-    if (info.valid && ((route->logFlags & MPR_LOG_ANEW) || info.size > route->logSize || route->logSize <= 0)) {
-        if (route->log) {
-            mprCloseFile(route->log);
-            route->log = 0;
-        }
-        mprBackupLog(route->logPath, route->logBackup);
-        route->logFlags &= ~MPR_LOG_ANEW;
-    }
-    unlock(route);
-}
-
-
-PUBLIC MprFile *httpOpenRouteLog(HttpRoute *route)
-{
-    MprFile     *file;
-    int         mode;
-
-    assert(route->log == 0);
-    mode = O_CREAT | O_WRONLY | O_TEXT;
-    if ((file = mprOpenFile(route->logPath, mode, 0664)) == 0) {
-        mprError("Cannot open log file %s", route->logPath);
-        return 0;
-    }
-    route->log = file;
-    return file;
-}
-
-
-PUBLIC void httpWriteRouteLog(HttpRoute *route, cchar *buf, ssize len)
-{
-    static int  skipCheck = 0;
-
-    lock(MPR);
-    if (route->logBackup > 0) {
-        if ((++skipCheck % 50) == 0) {
-            httpBackupRouteLog(route);
-            if (!route->log && !httpOpenRouteLog(route)) {
-                unlock(MPR);
-                return;
-            }
-        }
-    }
-    if (mprWriteFile(route->log, (char*) buf, len) != len) {
-        mprError("Cannot write to access log %s", route->logPath);
-        mprCloseFile(route->log);
-        route->log = 0;
-    }
-    unlock(MPR);
-}
-
-
-PUBLIC void httpLogRequest(HttpConn *conn)
+/*
+    Common Log Formatter (NCSA)
+    This formatter only emits messages for the TRACE_COMPLETE message. 
+ */
+PUBLIC void httpCommonTraceFormatter(HttpConn *conn, int event, cchar *msgUnused, cchar *bufUnused, ssize lenUnused)
 {
     HttpRx      *rx;
     HttpTx      *tx;
-    HttpRoute   *route;
+    HttpTrace   *trace;
     MprBuf      *buf;
-    char        keyBuf[80], *timeText, *fmt, *cp, *qualifier, *value, c;
+    cchar       *fmt, *cp, *qualifier, *timeText, *value;
+    char        c, keyBuf[80];
     int         len;
 
-    if ((rx = conn->rx) == 0) {
+    assert(conn);
+    assert(event >= 0);
+
+    if (event != HTTP_TRACE_COMPLETE) {
         return;
     }
+    rx = conn->rx;
     tx = conn->tx;
-    if ((route = rx->route) == 0 || route->log == 0) {
-        return;
-    }
-    fmt = route->logFormat;
+    trace = conn->trace;
+    fmt = trace->format;
     if (fmt == 0) {
         fmt = ME_HTTP_LOG_FORMAT;
     }
@@ -193,23 +100,20 @@ PUBLIC void httpLogRequest(HttpConn *conn)
             mprPutStringToBuf(buf, conn->username ? conn->username : "-");
             break;
 
-        case '{':                           /* Header line */
+        case '{':                           /* Header line "{header}i" */
             qualifier = fmt;
-            if ((cp = strchr(qualifier, '}')) != 0) {
+            if ((cp = schr(qualifier, '}')) != 0) {
                 fmt = &cp[1];
-                *cp = '\0';
-                c = *fmt++;
                 scopy(keyBuf, sizeof(keyBuf), "HTTP_");
-                scopy(&keyBuf[5], sizeof(keyBuf) - 5, qualifier);
-                switch (c) {
+                sncopy(&keyBuf[5], sizeof(keyBuf) - 5, qualifier, qualifier - cp);
+                switch (*fmt++) {
                 case 'i':
                     value = (char*) mprLookupKey(rx->headers, supper(keyBuf));
                     mprPutStringToBuf(buf, value ? value : "-");
                     break;
                 default:
-                    mprPutStringToBuf(buf, qualifier);
+                    mprPutSubStringToBuf(buf, qualifier, qualifier - cp);
                 }
-                *cp = '}';
 
             } else {
                 mprPutCharToBuf(buf, c);
@@ -229,10 +133,8 @@ PUBLIC void httpLogRequest(HttpConn *conn)
         }
     }
     mprPutCharToBuf(buf, '\n');
-    mprAddNullToBuf(buf);
-    httpWriteRouteLog(route, mprGetBufStart(buf), mprGetBufLength(buf));
+    httpWriteTrace(conn, mprBufToString(buf), mprGetBufLength(buf));
 }
-
 
 /*
     @copy   default

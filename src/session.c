@@ -149,7 +149,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
             cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
             httpSetCookie(conn, cookie, rx->session->id, "/", NULL, rx->session->lifespan, flags);
-            mprLog(3, "session: create new cookie %s=%s", cookie, rx->session->id);
+            httpTrace(conn, HTTP_TRACE_INFO, "Create new session cookie; %s=%s", cookie, rx->session->id);
 
             if ((rx->route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
                 httpSetSessionVar(conn, ME_XSRF_COOKIE, rx->securityToken);
@@ -191,7 +191,7 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
         if ((kp = mprLookupKeyEntry(sp->data, key)) != 0) {
             if (kp->type == MPR_JSON_OBJ) {
                 /* Wrong type */
-                mprTrace(0, "Session var is an object");
+                mprDebug("http session", 0, "Session var is an object");
                 return defaultValue;
             } else {
                 result = kp->data;
@@ -284,7 +284,7 @@ PUBLIC int httpWriteSession(HttpConn *conn)
     if ((sp = conn->rx->session) != 0) {
         if (sp->dirty) {
             if (mprWriteCache(sp->cache, sp->id, mprSerialize(sp->data, 0), 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
-                mprError("Cannot persist session cache");
+                mprError("http session", "Cannot persist session cache");
                 return MPR_ERR_CANT_WRITE;
             }
             sp->dirty = 0;
@@ -386,14 +386,16 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
         if (!requestToken) {
             requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
             if (!requestToken) {
-                mprLog(4, "Missing security token in request");
+                httpTrace(conn, HTTP_TRACE_ERROR, "Missing security token in request");
             }
         }
         if (!smatch(sessionToken, requestToken)) {
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.
              */
-            mprLog(4, "Security token in request: %s does not match session token %s", requestToken, sessionToken);
+            httpTrace(conn, HTTP_TRACE_ERROR, 
+                "Security token in request does not match session token; requestToken=%s securityToken=%s",
+                requestToken, sessionToken);
             httpAddSecurityToken(conn, 1);
             return 0;
         }

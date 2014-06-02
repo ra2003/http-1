@@ -78,7 +78,7 @@ PUBLIC bool httpAuthenticate(HttpConn *conn)
                 return 0;
             }
         }
-        mprLog(5, "Using cached authentication data for user %s", username);
+        httpTrace(conn, HTTP_TRACE_ERROR, "Using cached authentication data; user=%s", username);
         conn->username = username;
         rx->authenticated = 1;
     }
@@ -141,11 +141,11 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!username || !*username) {
-        mprTrace(5, "httpLogin missing username");
+        httpTrace(conn, HTTP_TRACE_ERROR, "httpLogin missing username");
         return 0;
     }
     if (!auth->store) {
-        mprError("No AuthStore defined");
+        mprError("http auth", "No AuthStore defined");
         return 0;
     }
     if ((verifyUser = auth->verifyUser) == 0) {
@@ -202,7 +202,8 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
 
     auth = conn->rx->route->auth;
     if (auth->permittedUsers && !mprLookupKey(auth->permittedUsers, conn->username)) {
-        mprLog(2, "User \"%s\" is not specified as a permitted user to access %s", conn->username, conn->rx->pathInfo);
+        httpTrace(conn, HTTP_TRACE_ERROR, "User not permitted for access; name=%s uri=%s", 
+            conn->username, conn->rx->pathInfo);
         return 0;
     }
     if (!auth->abilities && !abilities) {
@@ -214,13 +215,14 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
         return 0;
     }
     if (!conn->user && (conn->user = mprLookupKey(auth->userCache, conn->username)) == 0) {
-        mprLog(2, "Cannot find user %s", conn->username);
+        httpTrace(conn, HTTP_TRACE_ERROR, "Cannot find user; name=%s", conn->username);
         return 0;
     }
     if (abilities) {
         for (ability = stok(sclone(abilities), " \t,", &tok); abilities; abilities = stok(NULL, " \t,", &tok)) {
             if (!mprLookupKey(conn->user->abilities, ability)) {
-                mprLog(2, "User \"%s\" does not possess the required ability: \"%s\" to access %s", 
+                httpTrace(conn, HTTP_TRACE_ERROR, 
+                    "User does not possess the required ability; name=%s ability=%s uri= %s", 
                     conn->username, ability, conn->rx->pathInfo);
                 return 0;
             }
@@ -228,7 +230,8 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
     } else {
         for (ITERATE_KEYS(auth->abilities, kp)) {
             if (!mprLookupKey(conn->user->abilities, kp->key)) {
-                mprLog(2, "User \"%s\" does not possess the required ability: \"%s\" to access %s", 
+                httpTrace(conn, HTTP_TRACE_ERROR, 
+                    "User does not possess the required ability; name=%s ability=%s uri=%s", 
                     conn->username, kp->key, conn->rx->pathInfo);
                 return 0;
             }
@@ -548,11 +551,11 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
     if (smatch(store, "system")) {
 #if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
         if (auth->type && smatch(auth->type->name, "digest")) {
-            mprError("Cannot use the PAM password store with digest authentication");
+            mprError("http auth", "Cannot use the PAM password store with digest authentication");
             return MPR_ERR_BAD_ARGS;
         }
 #else
-        mprError("PAM is not supported in the current configuration");
+        mprError("http auth", "PAM is not supported in the current configuration");
         return MPR_ERR_BAD_ARGS;
 #endif
     }
@@ -630,7 +633,7 @@ PUBLIC HttpRole *httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
     if (mprAddKey(auth->roles, name, role) == 0) {
         return 0;
     }
-    mprLog(5, "Role \"%s\" has abilities: %s", role->name, abilities);
+    mprDebug("http auth", 5, "Role \"%s\" defined, abilities=\"%s\"", role->name, abilities);
     return role;
 }
 
@@ -747,7 +750,7 @@ PUBLIC void httpComputeUserAbilities(HttpAuth *auth, HttpUser *user)
             mprPutToBuf(buf, "%s ", ap->key);
         }
         mprAddNullToBuf(buf);
-        mprLog(5, "User \"%s\" has abilities: %s", user->name, mprGetBufStart(buf));
+        mprDebug("http auth", 5, "User \"%s\" has abilities: %s", user->name, mprGetBufStart(buf));
     }
 #endif
 }
@@ -778,7 +781,7 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!conn->user && (conn->user = mprLookupKey(auth->userCache, username)) == 0) {
-        mprLog(5, "configVerifyUser: Unknown user \"%s\" for route %s", username, rx->route->name);
+        httpTrace(conn, HTTP_TRACE_ERROR, "Unknown user; name=%s", username);
         return 0;
     }
     if (password) {
@@ -796,9 +799,9 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
             success = smatch(password, requiredPassword);
         }
         if (success) {
-            mprLog(5, "User \"%s\" authenticated for route %s", username, rx->route->name);
+            httpTrace(conn, HTTP_TRACE_INFO, "User authenticated; name =\"%s\"", username);
         } else {
-            mprLog(5, "Password for user \"%s\" failed to authenticate for route %s", username, rx->route->name);
+            httpTrace(conn, HTTP_TRACE_ERROR, "Password failed to authenticate; user=%s", username);
         }
         return success;
     }

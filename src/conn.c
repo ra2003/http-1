@@ -39,15 +39,16 @@ PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatche
         host = mprGetFirstItem(endpoint->hosts);
         if (host && (route = host->defaultRoute) != 0) {
             conn->limits = route->limits;
-            conn->trace[0] = route->trace[0];
-            conn->trace[1] = route->trace[1];
+            conn->trace = route->trace;
         } else {
+            //  TODO - better to guarantee we always have a host and default Route
+            assert(0);
             conn->limits = http->serverLimits;
-            httpInitTrace(conn->trace);
+            conn->trace = http->trace;
         }
     } else {
         conn->limits = http->clientLimits;
-        httpInitTrace(conn->trace);
+        conn->trace = http->trace;
     }
     conn->keepAliveCount = conn->limits->keepAliveMax;
     conn->serviceq = httpCreateQueueHead(conn, "serviceq");
@@ -87,7 +88,6 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
             httpClosePipeline(conn);
         }
         if (conn->sock) {
-            mprLog(4, "Closing socket connection");
             mprCloseSocket(conn->sock, 0);
         }
         if (conn->dispatcher && conn->dispatcher->flags & MPR_DISPATCHER_AUTO) {
@@ -134,8 +134,6 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->ip);
         mprMark(conn->protocol);
         mprMark(conn->protocols);
-        httpManageTrace(&conn->trace[0], flags);
-        httpManageTrace(&conn->trace[1], flags);
         mprMark(conn->headersCallbackArg);
 
         mprMark(conn->authType);
@@ -177,9 +175,9 @@ static void connTimeout(HttpConn *conn, MprEvent *event)
     assert(conn->rx);
 
     limits = conn->limits;
-    msg = 0;
     assert(limits);
-    mprLog(5, "Inactive connection timed out");
+    msg = 0;
+    httpTrace(conn, HTTP_TRACE_INFO, "Inactive connection timed out");
 
     if (conn->timeoutCallback) {
         (conn->timeoutCallback)(conn);
@@ -195,13 +193,10 @@ static void connTimeout(HttpConn *conn, MprEvent *event)
         } else if (conn->timeout == HTTP_REQUEST_TIMEOUT) {
             msg = sfmt("%s exceeded timeout %Ld sec", prefix, limits->requestTimeout / 1000);
         }
-        if (conn->rx && (conn->state > HTTP_STATE_CONNECTED)) {
-            mprTrace(5, "  State %d, uri %s", conn->state, conn->rx->uri);
-        }
         if (conn->state < HTTP_STATE_FIRST) {
             httpDisconnect(conn);
             if (msg) {
-                mprLog(5, msg);
+                httpTrace(conn, HTTP_TRACE_INFO, msg);
             }
         } else {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, msg);
@@ -338,7 +333,6 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     HttpAddress *address;
     MprSocket   *sock;
     int64       value;
-    int         level;
 
     assert(event);
     assert(event->dispatcher);
@@ -363,19 +357,21 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     conn->ip = sclone(sock->ip);
 
     if ((value = httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1)) > conn->limits->connectionsMax) {
-        mprLog(2, "Too many concurrent connections %d/%d", (int) value, conn->limits->connectionsMax);
+        httpTrace(conn, HTTP_TRACE_ERROR, "Too many concurrent connections; active=%d max=%d", 
+            (int) value, conn->limits->connectionsMax);
         httpDestroyConn(conn);
         return 0;
     }
     if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
-        mprLog(2, "Too many concurrent clients %d/%d", mprGetHashLength(http->addresses), conn->limits->clientMax);
+        httpTrace(conn, HTTP_TRACE_ERROR, "Too many concurrent clients; active=%d max=%d", 
+            mprGetHashLength(http->addresses), conn->limits->clientMax);
         httpDestroyConn(conn);
         return 0;
     }
     address = conn->address;
     if (address && address->banUntil) {
         if (address->banUntil < http->now) {
-            mprLog(1, "Remove ban on client %s at %s", sock->ip, mprGetDate(0));
+            httpTrace(conn, HTTP_TRACE_INFO, "Remove ban on client; address=%s date=%s", sock->ip, mprGetDate(0));
             address->banUntil = 0;
         } else {
             if (address->banStatus) {
@@ -389,7 +385,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     }
     if (endpoint->ssl) {
         if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
-            mprLog(2, "Cannot upgrade socket for SSL: %s", sock->errorMsg);
+            httpTrace(conn, HTTP_TRACE_ERROR, "Cannot upgrade socket; error=\"%s\"", sock->errorMsg);
             mprCloseSocket(sock, 0);
             httpMonitorEvent(conn, HTTP_COUNTER_SSL_ERRORS, 1); 
             httpDestroyConn(conn);
@@ -400,12 +396,9 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 
-    if ((level = httpShouldTrace(conn, HTTP_TRACE_RX, HTTP_TRACE_CONN, NULL)) >= 0) {
-        mprLog(level, "### Incoming connection from %s:%d to %s:%d %s", 
-            conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure ? "(secure)" : "");
-        if (endpoint->ssl) {
-            mprLog(level, "Upgrade to TLS");
-        }
+    if (httpShouldTrace(conn, HTTP_TRACE_CONN)) {
+        httpTrace(conn, HTTP_TRACE_CONN, "Accept connection; date=%s from=%s:%d to=%s:%d secure=%d", 
+             mprGetDate(HTTP_TRACE_DATE), conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure);
     }
     event->mask = MPR_READABLE;
     event->timestamp = conn->http->now;
@@ -433,7 +426,7 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
     assert(conn->tx);
     assert(conn->rx);
 
-    mprTrace(6, "httpIOEvent for fd %d, mask %d", conn->sock->fd, event->mask);
+    mprDebug("http connection", 5, "IO event, fd=%d, mask=%d", conn->sock->fd, event->mask);
     if ((event->mask & MPR_WRITABLE) && conn->connectorq) {
         httpResumeQueue(conn->connectorq);
     }
@@ -447,7 +440,6 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
                 conn->keepAliveCount = 0;
                 conn->lastRead = 0;
             }
-            mprTrace(6, "http: readEvent read socket %d bytes", conn->lastRead);
         }
     }
     /*
@@ -816,28 +808,9 @@ PUBLIC void httpSetState(HttpConn *conn, int targetState)
 }
 
 
-#if ME_MPR_TRACING
-static char *events[] = {
-    "undefined", "state-change", "readable", "writable", "error", "destroy", "app-open", "app-close",
-};
-static char *states[] = {
-    "undefined", "begin", "connected", "first", "parsed", "content", "ready", "running", "finalized", "complete",
-};
-#endif
-
-
 PUBLIC void httpNotify(HttpConn *conn, int event, int arg)
 {
     if (conn->notifier) {
-        if (MPR->logLevel >= 6) {
-            if (event == HTTP_EVENT_STATE) {
-                mprTrace(6, "Event: change to state \"%s\"", states[conn->state]);
-            } else if (event < 0 || event > HTTP_EVENT_MAX) {
-                mprTrace(6, "Event: \"%d\" in state \"%s\"", event, states[conn->state]);
-            } else {
-                mprTrace(6, "Event: \"%s\" in state \"%s\"", events[event], states[conn->state]);
-            }
-        }
         (conn->notifier)(conn, event, arg);
     }
 }
@@ -901,13 +874,14 @@ PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
     }
     if (mprGetRemainingTicks(conn->started, requestTimeout) < 0) {
         if (requestTimeout != timeout) {
-            mprLog(4, "http: Request duration exceeded timeout of %d secs", requestTimeout / 1000);
+            httpTrace(conn, HTTP_TRACE_ERROR, "Request duration exceeded; timeout=%d", requestTimeout / 1000);
         }
         return 1;
     }
     if (mprGetRemainingTicks(conn->lastActivity, inactivityTimeout) < 0) {
         if (inactivityTimeout != timeout) {
-            mprLog(4, "http: Request timed out due to inactivity of %d secs", inactivityTimeout / 1000);
+            httpTrace(conn, HTTP_TRACE_ERROR, "Request cancelled due to inactivity; timeout=%d", 
+                inactivityTimeout / 1000);
         }
         return 1;
     }

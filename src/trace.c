@@ -146,7 +146,7 @@ PUBLIC void httpTrace(HttpConn *conn, int event, cchar *fmt, ...)
 
     if (httpShouldTrace(conn, event) && !conn->rx->skipTrace) {
         va_start(ap, fmt);
-        httpFormatTrace(conn, HTTP_TRACE_MSG, sfmtv(fmt, ap), 0, 0);
+        httpFormatTrace(conn, event, sfmtv(fmt, ap), 0, 0);
         va_end(ap);
     }
 }

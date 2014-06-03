@@ -246,12 +246,12 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
         return MPR_ERR_BAD_ARGS;
     }
     if ((counterIndex = mprLookupStringItem(http->counters, counterName)) < 0) {
-        mprError("Cannot find counter %s", counterName);
+        mprLog("http monitor", 0, "Cannot find counter %s", 0, counterName);
         return MPR_ERR_CANT_FIND;
     }
     for (ITERATE_ITEMS(http->monitors, mp, next)) {
         if (mp->counterIndex == counterIndex) {
-            mprError("Monitor already exists for counter %s", counterName);
+            mprLog("http monitor", 0, "Monitor already exists for counter %s", counterName);
             return MPR_ERR_ALREADY_EXISTS;
         }
     }
@@ -264,7 +264,7 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     tok = sclone(defenses);
     while ((def = stok(tok, " \t", &tok)) != 0) {
         if ((defense = mprLookupKey(http->defenses, def)) == 0) {
-            mprError("Cannot find Defense \"%s\"", def);
+            mprLog("http monitor", 0, "Cannot find Defense \"%s\"", def);
             return MPR_ERR_CANT_FIND;
         }
         mprAddItem(defenseList, defense);
@@ -570,12 +570,12 @@ static void cmdRemedy(MprHash *args)
     cmd->stdoutBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
     cmd->stderrBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
     if (mprStartCmd(cmd, argc, argv, NULL, MPR_CMD_DETACH | MPR_CMD_IN) < 0) {
-        mprError("Cannot start command: %s", command);
+        mprLog("http monitor", 0, "Cannot start command: %s", command);
         return;
     }
     mprLog("http monitor", 4, "Cmd data: \n%s", data);
     if (data && mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
-        mprError("Cannot write to command: %s", command);
+        mprLog("http monitor", 0, "Cannot write to command: %s", command);
         return;
     }
     mprFinalizeCmd(cmd);
@@ -583,7 +583,8 @@ static void cmdRemedy(MprHash *args)
         rc = mprWaitForCmd(cmd, ME_HTTP_REMEDY_TIMEOUT);
         status = mprGetCmdExitStatus(cmd);
         if (rc < 0 || status != 0) {
-            mprError("Remedy failed. Error: %s\nResult: %s", mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf));
+            mprLog("http monitor", 0, "Remedy failed. Error: %s\nResult: %s", 
+                mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf));
             return;
         }
         mprDestroyCmd(cmd);
@@ -636,12 +637,12 @@ static void httpRemedy(MprHash *args)
     }
     msg = smatch(method, "POST") ? mprLookupKey(args, "MESSAGE") : 0;
     if ((conn = httpRequest(method, uri, msg, &err)) == 0) {
-        mprError("%s", err);
+        mprLog("http monitory remedy", 0, "%s", err);
         return;
     }
     status = httpGetStatus(conn);
     if (status != HTTP_CODE_OK) {
-        mprError("Remedy URI %s responded with http status %d\n%s", uri, status);
+        mprLog("http monitor remedy", 0, "Remedy URI %s responded with http status %d\n%s", uri, status);
     }
 }
 
@@ -655,7 +656,7 @@ static void logRemedy(MprHash *args)
 
 static void restartRemedy(MprHash *args)
 {
-    mprError("http monitor", "RestartRemedy: Restarting ...");
+    mprLog("http monitor", 0, "RestartRemedy: Restarting ...");
     mprRestart();
 }
 

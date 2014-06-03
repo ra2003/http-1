@@ -371,7 +371,7 @@ PUBLIC int httpOpenTraceLogFile(HttpTrace *trace)
             } else if (smatch(trace->path, "stderr")) {
                 file = MPR->stdError;
             } else if ((file = mprOpenFile(trace->path, mode, 0664)) == 0) {
-                mprError("Cannot open log file %s", trace->path);
+                mprLog("http trace", 0, "Cannot open log file %s", trace->path);
                 return MPR_ERR_CANT_OPEN;
             }
         }

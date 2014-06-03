@@ -40,7 +40,7 @@ static void httpParseError(HttpRoute *route, cchar *fmt, ...)
 
     va_start(args, fmt);
     msg = sfmtv(fmt, args);
-    mprError("%s", msg);
+    mprLog("http config", 0, "%s", msg);
     va_end(args);
     route->error = 1;
 }
@@ -94,7 +94,7 @@ static int testConfig(HttpRoute *route, cchar *path)
         return 0;
     }
     if (!mprPathExists(path, R_OK)) {
-        mprError("Cannot find %s", path);
+        mprLog("http config", 0, "Cannot find %s", path);
         return MPR_ERR_CANT_READ;
     }
     return 0;
@@ -128,11 +128,11 @@ PUBLIC int parseFile(HttpRoute *route, cchar *path)
     cchar       *data, *errorMsg;
 
     if ((data = mprReadPathContents(path, NULL)) == 0) {
-        mprError("Cannot read configuration from \"%s\"", path);
+        mprLog("http config", 0, "Cannot read configuration from \"%s\"", path);
         return MPR_ERR_CANT_READ;
     }
     if ((config = mprParseJsonEx(data, 0, 0, 0, &errorMsg)) == 0) {
-        mprError("Cannot parse %s: error %s", path, errorMsg);
+        mprLog("http config", 0, "Cannot parse %s: error %s", path, errorMsg);
         return MPR_ERR_CANT_READ;
     }
     if (route->config == 0) {
@@ -966,7 +966,7 @@ PUBLIC void httpAddRouteSet(HttpRoute *route, cchar *set)
     if ((proc = mprLookupKey(route->http->routeSets, set)) != 0) {
         (proc)(route, set);
     } else {
-        mprError("Cannot find route set \"%s\"", set);
+        mprLog("http config", 0, "Cannot find route set \"%s\"", set);
     }
 }
 

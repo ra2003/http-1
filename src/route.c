@@ -758,7 +758,7 @@ PUBLIC int httpAddRouteCondition(HttpRoute *route, cchar *name, cchar *details, 
             return MPR_ERR_BAD_SYNTAX;
         }
         if ((op->mdata = pcre_compile2(pattern, 0, 0, &errMsg, &column, NULL)) == 0) {
-            mprError("http route", "Cannot compile condition match pattern. Error %s at column %d", errMsg, column); 
+            mprLog("http route", 0, "Cannot compile condition match pattern. Error %s at column %d", errMsg, column); 
             return MPR_ERR_BAD_SYNTAX;
         }
         op->details = finalizeReplacement(route, value);
@@ -783,13 +783,14 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
 
     for (ITERATE_ITEMS(route->outputStages, stage, next)) {
         if (smatch(stage->name, name)) {
-            mprError("http route", "Stage \"%s\" is already configured for the route \"%s\". Ignoring.", name, route->name); 
+            mprLog("http route", 0, "Stage \"%s\" is already configured for the route \"%s\". Ignoring.", 
+                name, route->name); 
             return 0;
         }
     }
     stage = httpLookupStage(route->http, name);
     if (stage == 0) {
-        mprError("http route", "Cannot find filter %s", name); 
+        mprLog("http route", 0, "Cannot find filter %s", name); 
         return MPR_ERR_CANT_FIND;
     }
     /*
@@ -841,15 +842,15 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
 
     http = route->http;
     if ((handler = httpLookupStage(http, name)) == 0) {
-        mprError("http route", "Cannot find stage %s", name); 
+        mprLog("http route", 0, "Cannot find stage %s", name); 
         return MPR_ERR_CANT_FIND;
     }
     if (route->handler) {
-        mprError("http route", "Cannot add handler \"%s\" to route \"%s\" once SetHandler used.", 
+        mprLog("http route", 0, "Cannot add handler \"%s\" to route \"%s\" once SetHandler used.", 
             handler->name, route->name);
     }
     if (!extensions && !handler->match) {
-        mprError("http route", "Adding handler \"%s\" without extensions to match", handler->name);
+        mprLog("http route", 0, "Adding handler \"%s\" without extensions to match", handler->name);
     }
     if (extensions) {
         /*
@@ -870,7 +871,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
                 }
                 prior = mprLookupKey(route->extensions, word);
                 if (prior && prior != handler) {
-                    mprError("http route", "Route \"%s\" has multiple handlers defined for extension \"%s\". "
+                    mprLog("http route", 0, "Route \"%s\" has multiple handlers defined for extension \"%s\". "
                             "Handlers: \"%s\", \"%s\".", route->name, word, handler->name, 
                             ((HttpStage*) mprLookupKey(route->extensions, word))->name);
                 } else {
@@ -962,7 +963,7 @@ PUBLIC void httpAddRouteParam(HttpRoute *route, cchar *field, cchar *value, int 
         return;
     }
     if ((op->mdata = pcre_compile2(value, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprError("http route", "Cannot compile field pattern. Error %s at column %d", errMsg, column); 
+        mprLog("http route", 0, "Cannot compile field pattern. Error %s at column %d", errMsg, column); 
     } else {
         mprAddItem(route->params, op);
     }
@@ -987,7 +988,7 @@ PUBLIC void httpAddRouteRequestHeaderCheck(HttpRoute *route, cchar *header, ccha
         return;
     }
     if ((op->mdata = pcre_compile2(pattern, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprError("http route", "Cannot compile header pattern. Error %s at column %d", errMsg, column); 
+        mprLog("http route", 0, "Cannot compile header pattern. Error %s at column %d", errMsg, column); 
     } else {
         mprAddItem(route->requestHeaders, op);
     }
@@ -1222,7 +1223,7 @@ PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
 
     stage = httpLookupStage(route->http, name);
     if (stage == 0) {
-        mprError("http route", "Cannot find connector %s", name); 
+        mprLog("http route", 0, "Cannot find connector %s", name); 
         return MPR_ERR_CANT_FIND;
     }
     route->connector = stage;
@@ -1285,7 +1286,7 @@ PUBLIC int httpSetRouteHandler(HttpRoute *route, cchar *name)
     assert(name && *name);
 
     if ((handler = httpLookupStage(route->http, name)) == 0) {
-        mprError("http route", "Cannot find handler %s", name); 
+        mprLog("http route", 0, "Cannot find handler %s", name); 
         return MPR_ERR_CANT_FIND;
     }
     route->handler = handler;
@@ -1730,7 +1731,7 @@ static void finalizePattern(HttpRoute *route)
         free(route->patternCompiled);
     }
     if ((route->patternCompiled = pcre_compile2(route->optimizedPattern, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprError("http route", "Cannot compile route. Error %s at column %d", errMsg, column); 
+        mprLog("http route", 0, "Cannot compile route. Error %s at column %d", errMsg, column); 
     }
     route->flags |= HTTP_ROUTE_FREE_PATTERN;
 }
@@ -1788,7 +1789,7 @@ static char *finalizeReplacement(HttpRoute *route, cchar *str)
                             mprPutCharToBuf(buf, '$');
                             mprPutStringToBuf(buf, token);
                         } else {
-                            mprError("http route", "Cannot find token \"%s\" in template \"%s\"", token, route->pattern);
+                            mprLog("http route", 0, "Cannot find token \"%s\" in template \"%s\"", token, route->pattern);
                         }
                     }
                 }
@@ -2349,7 +2350,7 @@ static int cmdUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     if ((status = mprRunCmd(cmd, command, NULL, NULL, &out, &err, -1, 0)) != 0) {
         /* Don't call httpError, just set errorMsg which can be retrieved via: ${request:error} */
         conn->errorMsg = sfmt("Command failed: %s\nStatus: %d\n%s\n%s", command, status, out, err);
-        mprError("http route", "%s", conn->errorMsg);
+        mprLog("http route", 0, "%s", conn->errorMsg);
         /* Continue */
     }
     return HTTP_ROUTE_OK;

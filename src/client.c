@@ -382,7 +382,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
 
     file = mprOpenFile(path, O_RDONLY | O_BINARY, 0);
     if (file == 0) {
-        mprError("Cannot open %s", path);
+        mprLog("http client", 0, "Cannot open %s", path);
         return MPR_ERR_CANT_OPEN;
     }
     mprAddRoot(file);
@@ -461,7 +461,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     int         justOne;
 
     if (httpServerConn(conn)) {
-        mprError("http client", "Should not call httpWait on the server side");
+        mprLog("http client", 0, "Should not call httpWait on the server side");
         return MPR_ERR_BAD_STATE;
     }
     if (state == 0) {

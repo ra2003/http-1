@@ -89,7 +89,7 @@ PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule 
 
     if ((stage = httpLookupStage(http, name)) != 0) {
         if (!(stage->flags & HTTP_STAGE_UNLOADED)) {
-            mprError("Stage %s already exists", name);
+            mprLog("http", 0, "Stage %s already exists", name);
             return 0;
         }
     } else if ((stage = mprAllocObj(HttpStage, manageStage)) == 0) {

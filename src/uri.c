@@ -780,7 +780,7 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
             }
         }
         if (!tplate) {
-            mprError("Cannot find template for URI %s", target);
+            mprLog("http", 0, "Cannot find template for URI %s", target);
             target = "/";
         }
     }

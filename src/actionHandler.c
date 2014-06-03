@@ -36,7 +36,7 @@ PUBLIC void httpDefineAction(cchar *name, HttpAction action)
     HttpStage   *stage;
 
     if ((stage = httpLookupStage(MPR->httpService, "actionHandler")) == 0) {
-        mprError("http action", "Cannot find actionHandler");
+        mprLog("http action", 0, "Cannot find actionHandler");
         return;
     }
     mprAddKey(stage->stageData, name, action);

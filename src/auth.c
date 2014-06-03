@@ -145,7 +145,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         return 0;
     }
     if (!auth->store) {
-        mprError("http auth", "No AuthStore defined");
+        mprLog("http auth", 0, "No AuthStore defined");
         return 0;
     }
     if ((verifyUser = auth->verifyUser) == 0) {
@@ -154,7 +154,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         }
     }
     if (!verifyUser) {
-        mprError("No user verification routine defined on route %s", rx->route->name);
+        mprLog("http auth", 0, "No user verification routine defined on route %s", rx->route->name);
         return 0;
     }
     if (auth->username && *auth->username) {
@@ -551,11 +551,11 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
     if (smatch(store, "system")) {
 #if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
         if (auth->type && smatch(auth->type->name, "digest")) {
-            mprError("http auth", "Cannot use the PAM password store with digest authentication");
+            mprLog("critical http auth", 0, "Cannot use the PAM password store with digest authentication");
             return MPR_ERR_BAD_ARGS;
         }
 #else
-        mprError("http auth", "PAM is not supported in the current configuration");
+        mprLog("critical http auth", 0, "PAM is not supported in the current configuration");
         return MPR_ERR_BAD_ARGS;
 #endif
     }
@@ -577,7 +577,7 @@ PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
 
     http = MPR->httpService;
     if ((auth->type = mprLookupKey(http->authTypes, type)) == 0) {
-        mprError("Cannot find auth type %s", type);
+        mprLog("critical http auth", 0, "Cannot find auth type %s", type);
         return MPR_ERR_CANT_FIND;
     }
     if (!auth->store) {

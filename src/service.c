@@ -927,7 +927,7 @@ PUBLIC int httpApplyUserGroup()
     if (http->userChanged || http->groupChanged) {
         if (!smatch(MPR->logPath, "stdout") && !smatch(MPR->logPath, "stderr")) {
             if (chown(MPR->logPath, http->uid, http->gid) < 0) {
-                mprError("Cannot change ownership on %s", MPR->logPath);
+                mprLog("critical http", 0, "Cannot change ownership on %s", MPR->logPath);
             }
         }
     }
@@ -973,13 +973,13 @@ PUBLIC void httpGetUserGroup()
     http = MPR->httpService;
     http->uid = getuid();
     if ((pp = getpwuid(http->uid)) == 0) {
-        mprCritical("http", "Cannot read user credentials: %d. Check your /etc/passwd file.", http->uid);
+        mprLog("critical http", 0, "Cannot read user credentials: %d. Check your /etc/passwd file.", http->uid);
     } else {
         http->user = sclone(pp->pw_name);
     }
     http->gid = getgid();
     if ((gp = getgrgid(http->gid)) == 0) {
-        mprCritical("http", "Cannot read group credentials: %d. Check your /etc/group file", http->gid);
+        mprLog("critical http", 0, "Cannot read group credentials: %d. Check your /etc/group file", http->gid);
     } else {
         http->group = sclone(gp->gr_name);
     }
@@ -1017,14 +1017,14 @@ PUBLIC int httpSetUserAccount(cchar *newUser)
     if (snumber(newUser)) {
         http->uid = atoi(newUser);
         if ((pp = getpwuid(http->uid)) == 0) {
-            mprCritical("http", "Bad user id: %d", http->uid);
+            mprLog("critical http", 0, "Bad user id: %d", http->uid);
             return MPR_ERR_CANT_ACCESS;
         }
         newUser = pp->pw_name;
 
     } else {
         if ((pp = getpwnam(newUser)) == 0) {
-            mprCritical("http", "Bad user name: %s", newUser);
+            mprLog("critical http", 0, "Bad user name: %s", newUser);
             return MPR_ERR_CANT_ACCESS;
         }
         http->uid = pp->pw_uid;
@@ -1075,14 +1075,14 @@ PUBLIC int httpSetGroupAccount(cchar *newGroup)
     if (snumber(newGroup)) {
         http->gid = atoi(newGroup);
         if ((gp = getgrgid(http->gid)) == 0) {
-            mprCritical("http", "Bad group id: %d", http->gid);
+            mprLog("critical http", 0, "Bad group id: %d", http->gid);
             return MPR_ERR_CANT_ACCESS;
         }
         newGroup = gp->gr_name;
 
     } else {
         if ((gp = getgrnam(newGroup)) == 0) {
-            mprCritical("http", "Bad group name: %s", newGroup);
+            mprLog("critical http", 0, "Bad group name: %s", newGroup);
             return MPR_ERR_CANT_ACCESS;
         }
         http->gid = gp->gr_gid;
@@ -1103,29 +1103,26 @@ PUBLIC int httpApplyChangedUser()
     if (http->userChanged && http->uid >= 0) {
         if (http->gid >= 0 && http->groupChanged) {
             if (setgroups(0, NULL) == -1) {
-                mprCritical("http", "Cannot clear supplemental groups");
+                mprLog("critical http", 0, "Cannot clear supplemental groups");
             }
             if (setgid(http->gid) == -1) {
-                mprCritical("http", "Cannot change group to %s: %d\n"
+                mprLog("critical http", 0, "Cannot change group to %s: %d"
                     "WARNING: This is a major security exposure", http->group, http->gid);
             }
         } else {
             struct passwd   *pp;
             if ((pp = getpwuid(http->uid)) == 0) {
-                mprCritical("http", "Cannot get user entry for id: %d", http->uid);
+                mprLog("critical http", 0, "Cannot get user entry for id: %d", http->uid);
                 return MPR_ERR_CANT_ACCESS;
             }
             mprLog("http", 4, "Initgroups for %s GID %d", http->user, pp->pw_gid);
             if (initgroups(http->user, pp->pw_gid) == -1) {
-                mprCritical("http", "Cannot initgroups for %s, errno: %d", http->user, errno);
+                mprLog("critical http", 0, "Cannot initgroups for %s, errno: %d", http->user, errno);
             }
         }
         if ((setuid(http->uid)) != 0) {
-            mprCritical("http", "Cannot change user to: %s: %d\n"
+            mprLog("critical http", 0, "Cannot change user to: %s: %d"
                 "WARNING: This is a major security exposure", http->user, http->uid);
-            if (getuid() != 0) {
-                mprCritical("http", "Log in as administrator/root and retry");
-            }
             return MPR_ERR_BAD_STATE;
 #if LINUX && PR_SET_DUMPABLE
         } else {
@@ -1146,10 +1143,10 @@ PUBLIC int httpApplyChangedGroup()
     http = MPR->httpService;
     if (http->groupChanged && http->gid >= 0) {
         if (setgid(http->gid) != 0) {
-            mprCritical("http", "Cannot change group to %s: %d\n"
+            mprLog("critical http", 0, "Cannot change group to %s: %d\n"
                 "WARNING: This is a major security exposure", http->group, http->gid);
             if (getuid() != 0) {
-                mprCritical("http", "Log in as administrator/root and retry");
+                mprLog("critical http", 0, "Log in as administrator/root and retry");
             }
             return MPR_ERR_BAD_STATE;
 #if LINUX && PR_SET_DUMPABLE

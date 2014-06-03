@@ -284,7 +284,7 @@ PUBLIC int httpWriteSession(HttpConn *conn)
     if ((sp = conn->rx->session) != 0) {
         if (sp->dirty) {
             if (mprWriteCache(sp->cache, sp->id, mprSerialize(sp->data, 0), 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
-                mprError("http session", "Cannot persist session cache");
+                mprLog("http session", 0, "Cannot persist session cache");
                 return MPR_ERR_CANT_WRITE;
             }
             sp->dirty = 0;

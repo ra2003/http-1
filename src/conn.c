@@ -398,7 +398,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 
     if (httpShouldTrace(conn, HTTP_TRACE_CONN)) {
         httpTrace(conn, HTTP_TRACE_CONN, "Accept connection; date=%s from=%s:%d to=%s:%d secure=%d", 
-             mprGetDate(HTTP_TRACE_DATE), conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure);
+             mprGetDate(MPR_LOG_DATE), conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure);
     }
     event->mask = MPR_READABLE;
     event->timestamp = conn->http->now;

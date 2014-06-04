@@ -309,6 +309,7 @@ PUBLIC void httpDetailTraceFormatter(HttpConn *conn, int event, cchar *msg, ccha
     client = conn->address ? conn->address->seqno : 0;
     sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
     fmt(prefix, sizeof(prefix), "\n<%d-%d-%d-%d> ", client, sessionSeqno, conn->seqno, conn->rx->seqno);
+    lock(conn->trace);
     httpWriteTrace(conn, prefix, slen(prefix));
     httpWriteTrace(conn, msg, slen(msg));
 
@@ -321,6 +322,7 @@ PUBLIC void httpDetailTraceFormatter(HttpConn *conn, int event, cchar *msg, ccha
     } else {
         httpWriteTrace(conn, "\n", 1);
     }
+    unlock(conn->trace);
 }
 
 

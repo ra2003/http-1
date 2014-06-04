@@ -426,7 +426,6 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
     assert(conn->tx);
     assert(conn->rx);
 
-    mprDebug("http connection", 5, "IO event, fd=%d, mask=%d", conn->sock->fd, event->mask);
     if ((event->mask & MPR_WRITABLE) && conn->connectorq) {
         httpResumeQueue(conn->connectorq);
     }

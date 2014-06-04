@@ -536,7 +536,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
         for (next = 0; (op = mprGetNextItem(route->requestHeaders, &next)) != 0; ) {
             if ((header = httpGetHeader(conn, op->name)) != 0) {
                 count = pcre_exec(op->mdata, NULL, header, (int) slen(header), 0, 0, 
-                    matched, sizeof(matched) / sizeof(int)); 
+                    matched, sizeof(matched) / sizeof(int));
                 result = count > 0;
                 if (op->flags & HTTP_ROUTE_NOT) {
                     result = !result;
@@ -551,7 +551,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
         for (next = 0; (op = mprGetNextItem(route->params, &next)) != 0; ) {
             if ((field = httpGetParam(conn, op->name, "")) != 0) {
                 count = pcre_exec(op->mdata, NULL, field, (int) slen(field), 0, 0, 
-                    matched, sizeof(matched) / sizeof(int)); 
+                    matched, sizeof(matched) / sizeof(int));
                 result = count > 0;
                 if (op->flags & HTTP_ROUTE_NOT) {
                     result = !result;
@@ -759,7 +759,7 @@ PUBLIC int httpAddRouteCondition(HttpRoute *route, cchar *name, cchar *details, 
             return MPR_ERR_BAD_SYNTAX;
         }
         if ((op->mdata = pcre_compile2(pattern, 0, 0, &errMsg, &column, NULL)) == 0) {
-            mprLog("http route", 0, "Cannot compile condition match pattern. Error %s at column %d", errMsg, column); 
+            mprLog("http route", 0, "Cannot compile condition match pattern. Error %s at column %d", errMsg, column);
             return MPR_ERR_BAD_SYNTAX;
         }
         op->details = finalizeReplacement(route, value);
@@ -785,13 +785,13 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     for (ITERATE_ITEMS(route->outputStages, stage, next)) {
         if (smatch(stage->name, name)) {
             mprLog("http route", 0, "Stage \"%s\" is already configured for the route \"%s\". Ignoring.", 
-                name, route->name); 
+                name, route->name);
             return 0;
         }
     }
     stage = httpLookupStage(route->http, name);
     if (stage == 0) {
-        mprLog("http route", 0, "Cannot find filter %s", name); 
+        mprLog("http route", 0, "Cannot find filter %s", name);
         return MPR_ERR_CANT_FIND;
     }
     /*
@@ -843,7 +843,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
 
     http = route->http;
     if ((handler = httpLookupStage(http, name)) == 0) {
-        mprLog("http route", 0, "Cannot find stage %s", name); 
+        mprLog("http route", 0, "Cannot find stage %s", name);
         return MPR_ERR_CANT_FIND;
     }
     if (route->handler) {
@@ -964,7 +964,7 @@ PUBLIC void httpAddRouteParam(HttpRoute *route, cchar *field, cchar *value, int 
         return;
     }
     if ((op->mdata = pcre_compile2(value, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprLog("http route", 0, "Cannot compile field pattern. Error %s at column %d", errMsg, column); 
+        mprLog("http route", 0, "Cannot compile field pattern. Error %s at column %d", errMsg, column);
     } else {
         mprAddItem(route->params, op);
     }
@@ -989,7 +989,7 @@ PUBLIC void httpAddRouteRequestHeaderCheck(HttpRoute *route, cchar *header, ccha
         return;
     }
     if ((op->mdata = pcre_compile2(pattern, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprLog("http route", 0, "Cannot compile header pattern. Error %s at column %d", errMsg, column); 
+        mprLog("http route", 0, "Cannot compile header pattern. Error %s at column %d", errMsg, column);
     } else {
         mprAddItem(route->requestHeaders, op);
     }
@@ -1224,7 +1224,7 @@ PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
 
     stage = httpLookupStage(route->http, name);
     if (stage == 0) {
-        mprLog("http route", 0, "Cannot find connector %s", name); 
+        mprLog("http route", 0, "Cannot find connector %s", name);
         return MPR_ERR_CANT_FIND;
     }
     route->connector = stage;
@@ -1287,7 +1287,7 @@ PUBLIC int httpSetRouteHandler(HttpRoute *route, cchar *name)
     assert(name && *name);
 
     if ((handler = httpLookupStage(route->http, name)) == 0) {
-        mprLog("http route", 0, "Cannot find handler %s", name); 
+        mprLog("http route", 0, "Cannot find handler %s", name);
         return MPR_ERR_CANT_FIND;
     }
     route->handler = handler;
@@ -1732,7 +1732,7 @@ static void finalizePattern(HttpRoute *route)
         free(route->patternCompiled);
     }
     if ((route->patternCompiled = pcre_compile2(route->optimizedPattern, 0, 0, &errMsg, &column, NULL)) == 0) {
-        mprLog("http route", 0, "Cannot compile route. Error %s at column %d", errMsg, column); 
+        mprLog("http route", 0, "Cannot compile route. Error %s at column %d", errMsg, column);
     }
     route->flags |= HTTP_ROUTE_FREE_PATTERN;
 }
@@ -2285,7 +2285,7 @@ static int matchCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     assert(op);
 
     str = expandTokens(conn, op->details);
-    count = pcre_exec(op->mdata, NULL, str, (int) slen(str), 0, 0, matched, sizeof(matched) / sizeof(int)); 
+    count = pcre_exec(op->mdata, NULL, str, (int) slen(str), 0, 0, matched, sizeof(matched) / sizeof(int));
     if (count > 0) {
         return HTTP_ROUTE_OK;
     }

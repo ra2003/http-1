@@ -208,9 +208,9 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
     proto = endpoint->ssl ? "HTTPS" : "HTTP";
     ip = *endpoint->ip ? endpoint->ip : "*";
     if (mprIsSocketV6(endpoint->sock)) {
-        mprLog("http", MPR_INFO, "Started %s service on \"[%s]:%d\"", proto, ip, endpoint->port);
+        mprLog("http", MPR_INFO, "Started %s service on [%s]:%d", proto, ip, endpoint->port);
     } else {
-        mprLog("http", MPR_INFO, "Started %s service on \"%s:%d\"", proto, ip, endpoint->port);
+        mprLog("http", MPR_INFO, "Started %s service on %s:%d", proto, ip, endpoint->port);
     }
     return 0;
 }

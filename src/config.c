@@ -249,6 +249,7 @@ static void postParse(HttpRoute *route)
 }
 
 
+#if MOVED
 PUBLIC cchar *httpGetDir(HttpRoute *route, cchar *name)
 {
     cchar   *key;
@@ -274,6 +275,7 @@ PUBLIC void httpSetDefaultDirs(HttpRoute *route)
     httpSetDir(route, "client", 0);
     httpSetDir(route, "paks", "paks");
 }
+#endif
 
 /**************************************** Parser Callbacks ****************************************/
 
@@ -1174,6 +1176,10 @@ static void parseServerLog(HttpRoute *route, cchar *key, MprJson *prop)
     ssize       size;
     int         level, anew, backup;
 
+    if (mprGetCmdlineLogging()) {
+        mprLog("http config", 4, "Already logging. Ignoring log configuration");
+        return;
+    }
     location = mprGetJson(prop, "location");
     level = (int) stoi(mprGetJson(prop, "level"));
     backup = (int) stoi(mprGetJson(prop, "backup"));
@@ -1399,6 +1405,10 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     char        level, tlevels[HTTP_TRACE_MAX_ITEM];
     int         anew, backup;
 
+    if (route->trace && route->trace->flags & MPR_LOG_CMDLINE) {
+        mprLog("http config", 4, "Already tracing. Ignoring trace configuration");
+        return;
+    }
     size = (ssize) httpGetNumber(mprGetJson(prop, "size"));
     format = mprGetJson(prop, "format");
     type = mprGetJson(prop, "type");
@@ -1418,7 +1428,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
         return;
     }
     if (location == 0) {
-        httpParseError(route, "Missing filename");
+        httpParseError(route, "Missing trace filename");
         return;
     }
     if (!smatch(location, "stdout") && !smatch(location, "stderr")) {

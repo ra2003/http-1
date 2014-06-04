@@ -114,8 +114,8 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
     Http        *http;
     HttpRx      *rx;
     cchar       *cookie, *data, *id;
-    static int  nextSession = 0;
-    int         flags;
+    static int  seqno = 0;
+    int         flags, thisSeqno;
 
     assert(conn);
     rx = conn->rx;
@@ -129,13 +129,12 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             }
         }
         if (!rx->session && create) {
-            /* 
-                Thread race here on nextSession++ not critical 
-             */
-            id = sfmt("%08x%08x%d", PTOI(conn->data) + PTOI(conn), (int) mprGetTicks(), nextSession++);
-            id = mprGetMD5WithPrefix(id, slen(id), "::http.session::");
-
             lock(http);
+            thisSeqno = seqno++;
+            id = sfmt("%08x%08x%d", PTOI(conn->data) + PTOI(conn), (int) mprGetTicks(), thisSeqno);
+            id = mprGetMD5WithPrefix(id, slen(id), "-http.session-");
+            id = sfmt("%d%s", thisSeqno, mprGetMD5WithPrefix(id, slen(id), "::http.session::"));
+
             mprGetCacheStats(http->sessionCache, &http->activeSessions, NULL);
             if (http->activeSessions >= conn->limits->sessionMax) {
                 unlock(http);

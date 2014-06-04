@@ -333,7 +333,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
          */
         httpJoinPacketForService(q, packet, 0);
     }
-    mprDebug("http websockets", 5, "webSocketFilter: incoming data, state %d, frame state %d, length: %d", 
+    httpTracePacket(conn, HTTP_TRACE_RX_BODY, packet, "WebSocket: state=%d frame=%d length=%d", 
         ws->state, ws->frameState, httpGetPacketLength(packet));
 
     if (packet->flags & HTTP_PACKET_END) {
@@ -559,7 +559,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
 
     if (3 <= MPR->logLevel) {
         mprAddNullToBuf(content);
-        mprLog("http websockets", 3, "WebSocket: %d: receive \"%s\" (%d) frame, last %d, length %d",
+        mprDebug("http websockets", 3, "WebSocket: %d: receive \"%s\" (%d) frame, last %d, length %d",
              ws->rxSeq++, codetxt[packet->type], packet->type, packet->last, mprGetBufLength(content));
     }
     validated = 0;
@@ -922,7 +922,9 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             if (packet->type == WS_MSG_TEXT && packet->content) {
                 mprAddNullToBuf(packet->content);
-                mprDebug("http websockets", 4, "webSocketFilter: Send text \"%s\"", packet->content->start);
+#if UNUSED
+                httpTracePacket(conn, HTTP_TRACE_TX_BODY, packet, "websockets);
+#endif
             }
             if (httpClientConn(conn)) {
                 mprGetRandomBytes(dataMask, sizeof(dataMask), 0);
@@ -937,7 +939,7 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            mprLog("http websockets", 3, "WebSocket: %d: send \"%s\" (%d) frame, last %d, length %d",
+            httpTracePacket(conn, HTTP_TRACE_TX_BODY, packet, "WebSocket: seqno=%d send=%s type=%d last=%d length=%d",
                 ws->txSeq++, codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
         }
         httpPutPacketToNext(q, packet);

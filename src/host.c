@@ -135,43 +135,43 @@ static void printRoute(HttpRoute *route, int next, bool full)
     pattern = (route->pattern && *route->pattern) ? route->pattern : "^/";
     target = (route->target && *route->target) ? route->target : "$&";
     if (full) {
-        mprLog("http route", 0, "\n%d. %s\n", next, route->name);
-        mprLog("http route", 0, "    Pattern:      %s\n", pattern);
-        mprLog("http route", 0, "    StartSegment: %s\n", route->startSegment);
-        mprLog("http route", 0, "    StartsWith:   %s\n", route->startWith);
-        mprLog("http route", 0, "    RegExp:       %s\n", route->optimizedPattern);
-        mprLog("http route", 0, "    Methods:      %s\n", methods);
-        mprLog("http route", 0, "    Prefix:       %s\n", route->prefix);
-        mprLog("http route", 0, "    Target:       %s\n", target);
-        mprLog("http route", 0, "    Home:         %s\n", route->home);
-        mprLog("http route", 0, "    Documents:    %s\n", route->documents);
-        mprLog("http route", 0, "    Source:       %s\n", route->sourceName);
-        mprLog("http route", 0, "    Template:     %s\n", route->tplate);
+        mprLog("", 1, "\n%d. %s\n", next, route->name);
+        mprLog("", 1, "    Pattern:      %s\n", pattern);
+        mprLog("", 1, "    StartSegment: %s\n", route->startSegment);
+        mprLog("", 1, "    StartsWith:   %s\n", route->startWith);
+        mprLog("", 1, "    RegExp:       %s\n", route->optimizedPattern);
+        mprLog("", 1, "    Methods:      %s\n", methods);
+        mprLog("", 1, "    Prefix:       %s\n", route->prefix);
+        mprLog("", 1, "    Target:       %s\n", target);
+        mprLog("", 1, "    Home:         %s\n", route->home);
+        mprLog("", 1, "    Documents:    %s\n", route->documents);
+        mprLog("", 1, "    Source:       %s\n", route->sourceName);
+        mprLog("", 1, "    Template:     %s\n", route->tplate);
         if (route->indexes) {
-            mprLog("http route", 0, "    Indexes       ");
+            mprLog("", 1, "    Indexes       ");
             for (ITERATE_ITEMS(route->indexes, index, nextIndex)) {
-                mprLog("http route", 0, "%s ", index);
+                mprLog("", 1, "%s ", index);
             }
         }
-        mprLog("http route", 0, "\n    Next Group    %d\n", route->nextGroup);
+        mprLog("", 1, "\n    Next Group    %d\n", route->nextGroup);
         if (route->handler) {
-            mprLog("http route", 0, "    Handler:      %s\n", route->handler->name);
+            mprLog("", 1, "    Handler:      %s\n", route->handler->name);
         }
         if (full) {
             if (route->extensions) {
                 for (ITERATE_KEYS(route->extensions, kp)) {
                     handler = (HttpStage*) kp->data;
-                    mprLog("http route", 0, "    Extension:    %s => %s\n", kp->key, handler->name);
+                    mprLog("", 1, "    Extension:    %s => %s\n", kp->key, handler->name);
                 }
             }
             if (route->handlers) {
                 for (ITERATE_ITEMS(route->handlers, handler, nextIndex)) {
-                    mprLog("http route", 0, "    Handler:      %s\n", handler->name);
+                    mprLog("", 1, "    Handler:      %s\n", handler->name);
                 }
             }
         }
     } else {
-        mprLog("http route", 0, "%-30s %-16s %-50s %-14s", route->name, methods ? methods : "*", pattern, target);
+        mprLog(0, 1, "%-30s %-16s %-50s %-14s", route->name, methods ? methods : "*", pattern, target);
     }
 }
 
@@ -185,7 +185,7 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
         host = httpGetDefaultHost();
     }
     if (!full) {
-        mprLog("http route", 0, "%-30s %-16s %-50s %-14s\n", "Name", "Methods", "Pattern", "Target");
+        mprLog(0, 1, "%-30s %-16s %-50s %-14s", "Name", "Methods", "Pattern", "Target");
     }
     for (foundDefault = next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
         printRoute(route, next - 1, full);
@@ -199,7 +199,6 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
     if (!foundDefault && host->defaultRoute) {
         printRoute(host->defaultRoute, next - 1, full);
     }
-    mprLog("http route", 0, "\n");
 }
 
 

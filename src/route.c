@@ -118,6 +118,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
         route->mimeTypes = MPR->mimeTypes;
     }
     definePathVars(route);
+    httpSetDefaultDirs(route);
     return route;
 }
 
@@ -3188,6 +3189,33 @@ static char *trimQuotes(char *str)
         return snclone(&str[1], len - 2);
     }
     return sclone(str);
+}
+
+
+PUBLIC cchar *httpGetDir(HttpRoute *route, cchar *name)
+{
+    cchar   *key;
+
+    key = sjoin(supper(name), "_DIR", NULL);
+    return httpGetRouteVar(route, key);
+}
+
+
+PUBLIC void httpSetDir(HttpRoute *route, cchar *name, cchar *value)
+{
+    if (value == 0) {
+        value = name;
+    }
+    value = mprJoinPath(route->documents, value);
+    httpSetRouteVar(route, sjoin(supper(name), "_DIR", NULL), httpMakePath(route, 0, value));
+}
+
+
+PUBLIC void httpSetDefaultDirs(HttpRoute *route)
+{
+    httpSetDir(route, "cache", 0);
+    httpSetDir(route, "client", 0);
+    httpSetDir(route, "paks", "paks");
 }
 
 

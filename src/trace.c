@@ -167,7 +167,7 @@ PUBLIC void httpTraceContent(HttpConn *conn, int event, cchar *buf, ssize len, c
     }
     if ((event == HTTP_TRACE_RX_BODY && (conn->rx->bytesRead >= conn->trace->size)) ||
         (event == HTTP_TRACE_TX_BODY && (conn->tx->bytesWritten >= conn->trace->size))) {
-        if (!conn->rx->skipTrace) {
+        if (!conn->rx->skipTrace && !conn->rx->webSocket) {
             conn->rx->skipTrace = 1;
             httpTrace(conn, event, "Abbreviating body trace");
         }
@@ -190,6 +190,17 @@ PUBLIC void httpTracePacket(HttpConn *conn, int event, HttpPacket *packet, cchar
     assert(conn);
     assert(packet);
 
+    if (packet->prefix) {
+        mprAddNullToBuf(packet->prefix);
+        if (event == HTTP_TRACE_RX_BODY) {
+            msg = "rx body";
+        } else if (event == HTTP_TRACE_TX_BODY) {
+            msg = "tx prefix";
+        } else {
+            msg = 0;
+        }
+        httpTraceContent(conn, event, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix), msg);
+    }
     if (fmt) {
         va_start(ap, fmt);
         msg = sfmtv(fmt, ap);
@@ -206,10 +217,6 @@ PUBLIC void httpTracePacket(HttpConn *conn, int event, HttpPacket *packet, cchar
         } else {
             msg = 0;
         }
-    }
-    if (packet->prefix) {
-        mprAddNullToBuf(packet->prefix);
-        httpTraceContent(conn, event, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix), msg);
     }
     if (packet->content) {
         mprAddNullToBuf(packet->content);
@@ -293,14 +300,15 @@ static cchar *makePrintable(HttpConn *conn, int event, cchar *buf, ssize *lenp)
 PUBLIC void httpDetailTraceFormatter(HttpConn *conn, int event, cchar *msg, cchar *buf, ssize len)
 {
     char    *boundary, prefix[64];
-    int     client;
+    int     client, sessionSeqno;
 
     assert(conn);
     assert(event >= 0);
     assert(msg && *msg);
 
     client = conn->address ? conn->address->seqno : 0;
-    fmt(prefix, sizeof(prefix), "\n<%d-%d-%d> ", client, conn->seqno, conn->rx->seqno);
+    sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
+    fmt(prefix, sizeof(prefix), "\n<%d-%d-%d-%d> ", client, sessionSeqno, conn->seqno, conn->rx->seqno);
     httpWriteTrace(conn, prefix, slen(prefix));
     httpWriteTrace(conn, msg, slen(msg));
 
@@ -382,20 +390,23 @@ PUBLIC int httpOpenTraceLogFile(HttpTrace *trace)
 }
 
 
-PUBLIC int httpStartTracing(cchar *path)
+/*
+    Start tracing when instructed via a command line option. No backup, max size or custom format.
+ */
+PUBLIC int httpStartTracing(cchar *traceSpec)
 {
     Http        *http;
     HttpTrace   *trace;
     char        *lspec;
 
-    if ((http = MPR->httpService) == 0 || http->trace == 0) {
+    if ((http = MPR->httpService) == 0 || http->trace == 0 || traceSpec == 0 || *traceSpec == '\0') {
         return MPR_ERR_BAD_STATE;
     }
     trace = http->trace;
-    trace->path = stok(sclone(path), ":", &lspec);
+    trace->flags = MPR_LOG_ANEW | MPR_LOG_CMDLINE;
+    trace->path = stok(sclone(traceSpec), ":", &lspec);
     http->traceLevel = (int) stoi(lspec);
-    httpSetTraceLogFile(trace, trace->path, 0, 0, 0, 0);
-    return 0;
+    return httpOpenTraceLogFile(trace);
 }
 
 
@@ -413,8 +424,8 @@ PUBLIC int httpSetTraceLogFile(HttpTrace *trace, cchar *path, ssize size, int ba
     trace->backupCount = backup;
     trace->flags = flags;
     trace->format = sclone(format);
-    trace->path = sclone(path);
     trace->size = size;
+    trace->path = sclone(path);
     return httpOpenTraceLogFile(trace);
 }
 

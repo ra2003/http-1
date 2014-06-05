@@ -73,9 +73,13 @@ PUBLIC void httpSetTraceFormat(HttpTrace *trace, cchar *format)
 }
 
 
-PUBLIC void httpSetTraceFormatter(HttpTrace *trace, HttpTraceFormatter callback)
+PUBLIC HttpTraceFormatter httpSetTraceFormatter(HttpTrace *trace, HttpTraceFormatter callback)
 {
+    HttpTraceFormatter  prior;
+
+    prior = trace->formatter;
     trace->formatter = callback;
+    return prior;
 }
 
 
@@ -245,7 +249,7 @@ PUBLIC void httpWriteTrace(HttpConn *conn, cchar *buf, ssize len)
     This will use the tx or rx mime type if possible.
     Skips UTF encoding prefixes
  */
-static cchar *makePrintable(HttpConn *conn, int event, cchar *buf, ssize *lenp)
+PUBLIC cchar *httpMakePrintable(HttpConn *conn, int event, cchar *buf, ssize *lenp)
 {
     cchar   *start, *cp, *digits;
     char    *data, *dp;
@@ -308,15 +312,16 @@ PUBLIC void httpDetailTraceFormatter(HttpConn *conn, int event, cchar *msg, ccha
 
     client = conn->address ? conn->address->seqno : 0;
     sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-    fmt(prefix, sizeof(prefix), "\n<%d-%d-%d-%d> ", client, sessionSeqno, conn->seqno, conn->rx->seqno);
+    fmt(prefix, sizeof(prefix), "\n<%s %d-%d-%d-%d> ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno, 
+        conn->seqno, conn->rx->seqno);
     lock(conn->trace);
     httpWriteTrace(conn, prefix, slen(prefix));
     httpWriteTrace(conn, msg, slen(msg));
 
     if (buf) {
-        boundary = ", --details--\n";
+        boundary = "; --details--\n";
         httpWriteTrace(conn, boundary, slen(boundary));
-        buf = makePrintable(conn, event, buf, &len);
+        buf = httpMakePrintable(conn, event, buf, &len);
         httpWriteTrace(conn, buf, len);
         httpWriteTrace(conn, &boundary[2], slen(boundary) - 2);
     } else {

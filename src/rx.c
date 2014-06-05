@@ -1157,28 +1157,6 @@ static bool getOutput(HttpConn *conn)
 }
 
 
-static void measure(HttpConn *conn)
-{
-    MprTicks    elapsed;
-    HttpTx      *tx;
-
-    tx = conn->tx;
-    if (conn->rx == 0 || tx == 0) {
-        return;
-    }
-    if (httpShouldTrace(conn, HTTP_TRACE_COMPLETE)) {
-        elapsed = mprGetTicks() - conn->started;
-#if MPR_HIGH_RES_TIMER
-        if (elapsed < 1000) {
-            httpTrace(conn, HTTP_TRACE_COMPLETE, "request complete; msec=%,Ld ticks=%,Ld ticks", 
-                elapsed, mprGetHiResTicks() - conn->startMark);
-        } else
-#endif
-            httpTrace(conn, HTTP_TRACE_COMPLETE, "request complete; msec=%,Ld", elapsed);
-    }
-}
-
-
 static void createErrorRequest(HttpConn *conn)
 {
     HttpRx      *rx;
@@ -1280,6 +1258,28 @@ static bool processFinalized(HttpConn *conn)
         createErrorRequest(conn);
     }
     return 1;
+}
+
+
+static void measure(HttpConn *conn)
+{
+    MprTicks    elapsed;
+    HttpTx      *tx;
+
+    tx = conn->tx;
+    if (conn->rx == 0 || tx == 0) {
+        return;
+    }
+    if (httpShouldTrace(conn, HTTP_TRACE_COMPLETE)) {
+        elapsed = mprGetTicks() - conn->started;
+#if MPR_HIGH_RES_TIMER
+        if (elapsed < 1000) {
+            httpTrace(conn, HTTP_TRACE_COMPLETE, "request complete; msec=%,Ld ticks=%,Ld ticks", 
+                elapsed, mprGetHiResTicks() - conn->startMark);
+        } else
+#endif
+            httpTrace(conn, HTTP_TRACE_COMPLETE, "request complete; msec=%,Ld", elapsed);
+    }
 }
 
 

@@ -463,7 +463,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 if (httpServerConn(conn)) {
                     httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
                 }
-                httpTrace(conn, HTTP_TRACE_ERROR, "webSocketFilter: Incoming message is too large; size=%d max=%d", 
+                httpTrace(conn, HTTP_TRACE_ERROR, "WebSockets: Incoming message is too large; size=%d max=%d", 
                     len, limits->webSocketsMessageSize);
                 error = WS_STATUS_MESSAGE_TOO_LARGE;
                 break;
@@ -660,7 +660,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
                 }
             }
         }
-        httpTrace(conn, HTTP_TRACE_INFO, "WebSocket receive close packet; status=%d, reason=\"%s\" closing=%d", 
+        httpTrace(conn, HTTP_TRACE_INFO, "WebSockets receive close packet; status=%d, reason=\"%s\" closing=%d", 
             ws->closeStatus, ws->closeReason, ws->closing);
         if (ws->closing) {
             httpDisconnect(conn);
@@ -855,7 +855,7 @@ PUBLIC ssize httpSendClose(HttpConn *conn, int status, cchar *reason)
     if (reason) {
         scopy(&msg[2], len - 2, reason);
     }
-    httpTrace(conn, HTTP_TRACE_INFO, "WebSocket send close packet, status %d reason \"%s\"", status, reason);
+    httpTrace(conn, HTTP_TRACE_INFO, "WebSockets send close packet, status %d reason \"%s\"", status, reason);
     return httpSendBlock(conn, WS_MSG_CLOSE, msg, len, HTTP_BUFFER);
 }
 

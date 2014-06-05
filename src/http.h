@@ -648,10 +648,11 @@ PUBLIC int httpOpenTraceLogFile(HttpTrace *trace);
     @description The trace formatter should 
     @param trace Trace object to configure
     @param callback Formatter callback 
+    @return Prior trace formatter
     @ingroup HttpTrace
     @stability Prototype
  */
-PUBLIC void httpSetTraceFormatter(HttpTrace *trace, HttpTraceFormatter callback);
+PUBLIC HttpTraceFormatter httpSetTraceFormatter(HttpTrace *trace, HttpTraceFormatter callback);
 
 /**
     Set the logging format
@@ -813,6 +814,11 @@ PUBLIC void httpWriteTrace(struct HttpConn *conn, cchar *buf, ssize len);
     @stability Evolving
  */
 PUBLIC void httpWriteTraceLogFile(struct HttpConn *conn, cchar *buf, ssize len);
+
+/*
+    Internal
+ */
+PUBLIC cchar *httpMakePrintable(struct HttpConn *conn, int event, cchar *buf, ssize *lenp);
 
 /************************************ Http **********************************/
 /** 

@@ -24,7 +24,7 @@ static void startAction(HttpQueue *q)
 
     name = conn->rx->pathInfo;
     if ((action = mprLookupKey(conn->tx->handler->stageData, name)) == 0) {
-        httpError(conn, HTTP_TRACE_ERROR, "Cannot find action: %s", name);
+        httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot find action: %s", name);
     } else {
         (*action)(conn);
     }

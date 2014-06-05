@@ -127,6 +127,7 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->pool);
         mprMark(conn->mark);
         mprMark(conn->data);
+        mprMark(conn->reqData);
         mprMark(conn->grid);
         mprMark(conn->record);
         mprMark(conn->boundary);
@@ -174,10 +175,9 @@ static void connTimeout(HttpConn *conn, MprEvent *event)
     assert(conn->tx);
     assert(conn->rx);
 
+    msg = 0;
     limits = conn->limits;
     assert(limits);
-    msg = 0;
-    httpTrace(conn, HTTP_TRACE_INFO, "Inactive connection timed out");
 
     if (conn->timeoutCallback) {
         (conn->timeoutCallback)(conn);
@@ -891,6 +891,12 @@ PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
 PUBLIC void httpSetConnData(HttpConn *conn, void *data)
 {
     conn->data = data;
+}
+
+
+PUBLIC void httpSetConnReqData(HttpConn *conn, void *data)
+{
+    conn->reqData = data;
 }
 
 /*

@@ -2847,7 +2847,7 @@ PUBLIC void httpSetIOCallback(struct HttpConn *conn, HttpIOCallback fn);
     @stability Internal
  */
 typedef struct HttpConn {
-    /*  Ordered for debugability */
+    /*  Ordered for debugability and packing */
 
     int             state;                  /**< Connection state */
     int             error;                  /**< A connection and/or request error has occurred */
@@ -2885,6 +2885,7 @@ typedef struct HttpConn {
     void            *ejs;                   /**< Embedding VM */
     void            *pool;                  /**< Pool of VMs */
     void            *mark;                  /**< Reference for GC marking */
+    void            *reqData;               /**< Extended request data - Used by ESP */
     void            *data;                  /**< Custom data for request - must be a managed reference */
     void            *grid;                  /**< Current request database grid for MVC apps */
     void            *record;                /**< Current request database record for MVC apps */
@@ -2895,36 +2896,39 @@ typedef struct HttpConn {
     char            *protocol;              /**< HTTP protocol */
     char            *protocols;             /**< Supported WebSocket protocols (clients) */
 
-    int             async;                  /**< Connection is in async mode (non-blocking) */
     int             delay;                  /**< Delay servicing request due to defense strategy */
-    int             borrowed;               /**< Connection has been borrowed */
-    int             destroyed;              /**< Connection has been destroyed */
-    int             followRedirects;        /**< Follow redirects for client requests */
     int             keepAliveCount;         /**< Count of remaining Keep-Alive requests for this connection */
-    int             mustClose;              /**< Peer explicitly requested the connection be closed via "Connection: close" */
-    int             http10;                 /**< Using legacy HTTP/1.0 */
-    int             ownDispatcher;          /**< Own the dispatcher and should destroy when closing connection */
     int             port;                   /**< Remote port */
     int             retries;                /**< Client request retries */
-    int             secure;                 /**< Using https */
     int             seqno;                  /**< Unique connection sequence number */
     int             timeout;                /**< Connection timeout indication */
     int             totalRequests;          /**< Total number of requests serviced */
-    int             upgraded;               /**< Request protocol upgraded */
-    int             worker;                 /**< Use worker */
+
+    bool            async;                  /**< Connection is in async mode (non-blocking) */
+    bool            borrowed;               /**< Connection has been borrowed */
+    bool            destroyed;              /**< Connection has been destroyed */
+    bool            suppressTrace;          /**< Do not trace this connection */
+    bool            followRedirects;        /**< Follow redirects for client requests */
+    bool            mustClose;              /**< Peer explicitly requested the connection be closed via "Connection: close" */
+    bool            http10;                 /**< Using legacy HTTP/1.0 */
+    bool            ownDispatcher;          /**< Own the dispatcher and should destroy when closing connection */
+    bool            secure;                 /**< Using https */
+    bool            upgraded;               /**< Request protocol upgraded */
+    bool            worker;                 /**< Use worker */
 
     HttpTrace       *trace;                 /**< Tracing configuration */
 
     /*  
         Authentication
      */
-    int             authRequested;          /**< Authorization requested based on user credentials */
     char            *authType;              /**< Type of authentication: set to basic, digest, post or a custom name */
     void            *authData;              /**< Authorization state data */
     cchar           *username;              /**< Supplied user name */
     cchar           *password;              /**< Password for client requests (only) */
-    int             encoded;                /**< True if the password is MD5(username:realm:password) */
     struct HttpUser *user;                  /**< Authorized User record for access checking */
+
+    bool            authRequested;          /**< Authorization requested based on user credentials */
+    bool            encoded;                /**< True if the password is MD5(username:realm:password) */
 
     HttpTimeoutCallback timeoutCallback;    /**< Request and inactivity timeout callback */
     HttpIOCallback  ioCallback;             /**< I/O event callback */
@@ -3385,6 +3389,7 @@ PUBLIC void httpSetConnContext(HttpConn *conn, void *context);
 
 /**
     Set the connection data field
+    @description The data field is a managed reference that applications can use to retain their own per connection state.
     @param conn HttpConn object created via #httpCreateConn
     @param data Data object to associate with the connection. Must be a managed memory reference.
     @stability Stable

@@ -1,6 +1,6 @@
 /*
     uploadFilter.c - Upload file filter.
-    The upload filter processes post data according to RFC-1867 ("multipart/form-data" post data). 
+    The upload filter processes post data according to RFC-1867 ("multipart/form-data" post data).
     It saves the uploaded files in a configured upload directory.
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
@@ -57,10 +57,10 @@ PUBLIC int httpOpenUploadFilter(Http *http)
         return MPR_ERR_CANT_CREATE;
     }
     http->uploadFilter = filter;
-    filter->match = matchUpload; 
-    filter->open = openUpload; 
-    filter->close = closeUpload; 
-    filter->incoming = incomingUpload; 
+    filter->match = matchUpload;
+    filter->open = openUpload;
+    filter->close = closeUpload;
+    filter->incoming = incomingUpload;
     return 0;
 }
 
@@ -85,7 +85,6 @@ static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
     len = strlen(pat);
     if (sncaselesscmp(rx->mimeType, pat, len) == 0) {
         rx->upload = 1;
-        httpTrace(conn, HTTP_TRACE_INFO, "Enable upload filter; uri=%s", rx->uri);
         return HTTP_ROUTE_OK;
     }
     return HTTP_ROUTE_OMIT_FILTER;
@@ -130,7 +129,6 @@ static int openUpload(HttpQueue *q)
 
     uploadDir = getUploadDir(rx->route);
     httpSetParam(conn, "UPLOAD_DIR", uploadDir);
-    httpTrace(conn, HTTP_TRACE_5, "Upload directory; path=%s", uploadDir);
 
     if ((boundary = strstr(rx->mimeType, "boundary=")) != 0) {
         boundary += 9;
@@ -225,7 +223,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
             line = mprGetBufStart(content);
             if ((nextTok = memchr(line, '\n', mprGetBufLength(content))) == 0) {
                 /* Incomplete line */
-                break; 
+                break;
             }
             *nextTok++ = '\0';
             mprAdjustBufStart(content, (int) (nextTok - line));
@@ -264,8 +262,8 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
     assert(q->count >= 0);
 
     if (httpGetPacketLength(packet) == 0) {
-        /* 
-            Quicker to remove the buffer so the packets don't have to be joined the next time 
+        /*
+            Quicker to remove the buffer so the packets don't have to be joined the next time
          */
         httpGetPacket(q);
     } else {
@@ -343,7 +341,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
             >>blank line
             Field Data
             ---boundary
- 
+
             Content-Disposition: form-data; name="field1" ->
                 filename="user.file"
             >>blank line
@@ -376,12 +374,11 @@ static int processUploadHeader(HttpQueue *q, char *line)
                 uploadDir = getUploadDir(rx->route);
                 up->tmpPath = mprGetTempPath(uploadDir);
                 if (up->tmpPath == 0) {
-                    httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, 
+                    httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Cannot create upload temp file %s. Check upload temp dir %s", up->tmpPath, uploadDir);
                     return MPR_ERR_CANT_OPEN;
                 }
-                httpTrace(conn, HTTP_TRACE_INFO, "File upload; clientFilename=%s localFilename=%s", 
-                    up->clientFilename, up->tmpPath);
+                httpTrace(conn, "info", "File upload", "clientFilename:%s, filename:%s", up->clientFilename, up->tmpPath);
 
                 up->file = mprOpenFile(up->tmpPath, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
                 if (up->file == 0) {
@@ -472,7 +469,7 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
          */
         rc = mprWriteFile(up->file, data, len);
         if (rc != len) {
-            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, 
+            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Cannot write to upload temp file %s, rc %d, errno %d", up->tmpPath, rc, mprGetOsError());
             return MPR_ERR_CANT_WRITE;
         }
@@ -553,8 +550,10 @@ static int processUploadData(HttpQueue *q)
             /*
                 Normal string form data variables
              */
-            data[dataLen] = '\0'; 
-            httpTrace(conn, HTTP_TRACE_RX_BODY, "upload form; form[%s]=\"%s\"", up->id, data);
+            data[dataLen] = '\0';
+#if KEEP
+            httpTrace(conn, "info", 0, "\"%s\": \"%s\"", up->id, data);
+#endif
             key = mprUriDecode(up->id);
             data = mprUriDecode(data);
             httpSetParam(conn, key, data);
@@ -592,7 +591,7 @@ static int processUploadData(HttpQueue *q)
 
 /*
     Find the boundary signature in memory. Returns pointer to the first match.
- */ 
+ */
 static char *getBoundary(char *buf, ssize bufLen, char *boundary, ssize boundaryLen, bool *pureData)
 {
     char    *cp, *endp;
@@ -630,7 +629,7 @@ static char *getBoundary(char *buf, ssize bufLen, char *boundary, ssize boundary
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

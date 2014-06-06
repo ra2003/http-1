@@ -685,7 +685,7 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
                 }
                 path = mprReplacePathExt(filename, ext);
                 if (mprGetPathInfo(path, info) == 0) {
-                    httpTrace(conn, HTTP_TRACE_INFO, "Mapping content, from=%s to=%s", filename, path);
+                    httpTrace(conn, "info", "Mapping content", "originalFilename:\"%s\", filename:\"%s\"", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");
@@ -2186,7 +2186,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!httpCanUser(conn, NULL)) {
-        httpTrace(conn, HTTP_TRACE_ERROR, "Access denied, user is not authorized for access.");
+        httpTrace(conn, "error", "Access denied, user is not authorized for access", 0);
         if (!conn->tx->finalized) {
             if (route->auth && route->auth->type) {
                 (route->auth->type->askLogin)(conn);

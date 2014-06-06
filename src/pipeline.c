@@ -67,7 +67,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     if (tx->connector == 0) {
 #if !ME_ROM
         if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !hasOutputFilters && 
-                !conn->secure && !httpShouldTrace(conn, HTTP_TRACE_TX_BODY)) {
+                !conn->secure && !httpShouldTrace(conn, "txBody")) {
             tx->connector = http->sendConnector;
         } else 
 #endif

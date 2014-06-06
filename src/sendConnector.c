@@ -1,8 +1,8 @@
 /*
-    sendConnector.c -- Send file connector. 
+    sendConnector.c -- Send file connector.
 
-    The Sendfile connector supports the optimized transmission of whole static files. It uses operating system 
-    sendfile APIs to eliminate reading the document into user space and multiple socket writes. The send connector 
+    The Sendfile connector supports the optimized transmission of whole static files. It uses operating system
+    sendfile APIs to eliminate reading the document into user space and multiple socket writes. The send connector
     is not a general purpose connector. It cannot handle dynamic data or ranged requests. It does support chunked requests.
 
     Copyright (c) All Rights Reserved. See details at the end of the file.
@@ -32,7 +32,7 @@ PUBLIC int httpOpenSendConnector(Http *http)
     }
     stage->open = httpSendOpen;
     stage->close = sendClose;
-    stage->outgoingService = httpSendOutgoingService; 
+    stage->outgoingService = httpSendOutgoingService;
     http->sendConnector = stage;
     return 0;
 }
@@ -114,15 +114,14 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
         buildSendVec(q);
     }
     /*
-        No need to loop around as send file tries to write as much of the file as possible. 
+        No need to loop around as send file tries to write as much of the file as possible.
         If not eof, will always have the socket blocked.
      */
     file = q->ioFile ? tx->file : 0;
     written = mprSendFileToSocket(conn->sock, file, q->ioPos, q->ioCount, q->iovec, q->ioIndex, NULL, 0);
     if (written < 0) {
         errCode = mprGetError();
-        httpTrace(conn, HTTP_TRACE_ERROR, "Connector write error; wrote=%d errno=%d qflags=%x", 
-            (int) written, errCode, q->flags);
+        httpTrace(conn, "error", "Connector write error", "errno:%d", errCode);
         if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
             /*  Socket full, wait for an I/O event */
             tx->writeBlocked = 1;
@@ -146,8 +145,8 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
 
 
 /*
-    Build the IO vector. This connector uses the send file API which permits multiple IO blocks to be written with 
-    file data. This is used to write transfer the headers and chunk encoding boundaries. Return the count of bytes to 
+    Build the IO vector. This connector uses the send file API which permits multiple IO blocks to be written with
+    file data. This is used to write transfer the headers and chunk encoding boundaries. Return the count of bytes to
     be written. Return -1 for EOF.
  */
 static MprOff buildSendVec(HttpQueue *q)
@@ -160,8 +159,8 @@ static MprOff buildSendVec(HttpQueue *q)
 
     /*
         Examine each packet and accumulate as many packets into the I/O vector as possible. Can only have one data packet at
-        a time due to the limitations of the sendfile API (on Linux). And the data packet must be after all the 
-        vector entries. Leave the packets on the queue for now, they are removed after the IO is complete for the 
+        a time due to the limitations of the sendfile API (on Linux). And the data packet must be after all the
+        vector entries. Leave the packets on the queue for now, they are removed after the IO is complete for the
         entire packet.
      */
     for (packet = prev = q->first; packet && !(packet->flags & HTTP_PACKET_END); packet = packet->next) {
@@ -205,8 +204,8 @@ static void addToSendVector(HttpQueue *q, char *ptr, ssize bytes)
  */
 static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
 {
-    HttpConn    *conn;
-    int         item;
+    HttpConn     *conn;
+    cchar        *event;
 
     conn = q->conn;
     assert(q->count >= 0);
@@ -225,9 +224,9 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
             Header packets have actual content. File data packets are virtual and only have a count.
          */
         addToSendVector(q, mprGetBufStart(packet->content), httpGetPacketLength(packet));
-        item = (packet->flags & HTTP_PACKET_HEADER) ? HTTP_TRACE_TX_HEADERS : HTTP_TRACE_TX_BODY;
-        if (httpShouldTrace(conn, item)) {
-            httpTracePacket(conn, item, packet, 0);
+        event = (packet->flags & HTTP_PACKET_HEADER) ? "txHeaders" : "txBody";
+        if (httpShouldTrace(conn, event)) {
+            httpTracePacket(conn, event, packet, 0, 0, 0);
         }
     }
 }
@@ -335,7 +334,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q) {}
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

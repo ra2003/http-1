@@ -38,12 +38,12 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         port = (uri->secure) ? 443 : 80;
     }
     if (conn && conn->sock) {
-        if (conn->keepAliveCount-- <= 0 || port != conn->port || strcmp(ip, conn->ip) != 0 || 
+        if (conn->keepAliveCount-- <= 0 || port != conn->port || strcmp(ip, conn->ip) != 0 ||
                 uri->secure != (conn->sock->ssl != 0) || conn->sock->ssl != ssl) {
             mprCloseSocket(conn->sock, 0);
             conn->sock = 0;
         } else {
-            httpTrace(conn, HTTP_TRACE_INFO, "Reuse socket; keepAliveCount=%d", conn->keepAliveCount);
+            httpTrace(conn, "info", "Reuse socket", "keepAlive:%d", conn->keepAliveCount);
         }
     }
     if (conn->sock) {
@@ -73,7 +73,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         peerName = isdigit(uri->host[0]) ? 0 : uri->host;
         if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
-            httpTrace(conn, HTTP_TRACE_ERROR, "Cannot upgrade socket; error=\"%s\"", conn->errorMsg);
+            httpTrace(conn, "error", sfmt("Cannot upgrade socket, %s", conn->errorMsg), 0);
             return 0;
         }
     }
@@ -84,8 +84,8 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         return 0;
     }
 #endif
-    if (httpShouldTrace(conn, HTTP_TRACE_CONN)) {
-        httpTrace(conn, HTTP_TRACE_CONN, "open connection; address=%s:%d", conn->ip, conn->port);
+    if (httpShouldTrace(conn, "connection")) {
+        httpTrace(conn, "connection", 0, "peer:%s:%d", conn->ip, conn->port);
     }
     return conn;
 }
@@ -131,7 +131,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
         return MPR_ERR_BAD_STATE;
     }
-    httpTrace(conn, HTTP_TRACE_INFO, "Connect; method=%s uri=%s", method, uri);
+    httpTrace(conn, "info", "Connect", "method:%s, uri:%s", method, uri);
 
     if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
         /* WARNING: this will erase headers */
@@ -187,7 +187,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
             }
             return 1;
         }
-    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && 
+    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY &&
             conn->followRedirects) {
         if (rx->redirect) {
             *url = rx->redirect;
@@ -212,7 +212,7 @@ PUBLIC void httpEnableUpload(HttpConn *conn)
 
 /*
     Read data. If sync mode, this will block. If async, will never block.
-    Will return what data is available up to the requested size. 
+    Will return what data is available up to the requested size.
     Timeout in milliseconds to wait. Set to -1 to use the default inactivity timeout. Set to zero to wait forever.
     Returns a count of bytes read. Returns zero if no data. EOF if returns zero and conn->state is > HTTP_STATE_CONTENT.
  */
@@ -331,7 +331,7 @@ PUBLIC char *httpReadString(HttpConn *conn)
 }
 
 
-/*  
+/*
     Issue a client http request.
     Assumes the Mpr and Http services are created and initialized.
  */
@@ -349,7 +349,7 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
     conn = httpCreateConn(http, NULL, NULL);
     mprAddRoot(conn);
 
-    /* 
+    /*
        Open a connection to issue the request. Then finalize the request output - this forces the request out.
      */
     if (httpConnect(conn, method, uri, NULL) < 0) {
@@ -431,7 +431,7 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
                 return MPR_ERR_CANT_OPEN;
             }
             name = mprGetPathBase(path);
-            rc += httpWrite(conn->writeq, "%s\r\nContent-Disposition: form-data; name=\"file%d\"; filename=\"%s\"\r\n", 
+            rc += httpWrite(conn->writeq, "%s\r\nContent-Disposition: form-data; name=\"file%d\"; filename=\"%s\"\r\n",
                 conn->boundary, next - 1, name);
             if ((type = mprLookupMime(MPR->mimeTypes, path)) != 0) {
                 rc += httpWrite(conn->writeq, "Content-Type: %s\r\n", mprLookupMime(MPR->mimeTypes, path));
@@ -452,7 +452,7 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
     Wait for the connection to reach a given state.
     Should only be used on the client side.
     @param state Desired state. Set to zero if you want to wait for one I/O event.
-    @param timeout Timeout in msec. If timeout is zero, wait forever. If timeout is < 0, use default inactivity 
+    @param timeout Timeout in msec. If timeout is zero, wait forever. If timeout is < 0, use default inactivity
         and duration timeouts.
  */
 PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
@@ -518,7 +518,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

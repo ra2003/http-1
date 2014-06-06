@@ -217,7 +217,7 @@ static void postParse(HttpRoute *route)
     }
     http = route->http;
     route->mode = mprGetJson(route->config, "app.mode");
-    
+
     /*
         Create a subset, optimized configuration to send to the client
      */
@@ -278,7 +278,7 @@ PUBLIC void httpSetDefaultDirs(HttpRoute *route)
 /**************************************** Parser Callbacks ****************************************/
 
 
-static void parseKey(HttpRoute *route, cchar *key, MprJson *prop) 
+static void parseKey(HttpRoute *route, cchar *key, MprJson *prop)
 {
     Http                *http;
     HttpParseCallback   parser;
@@ -306,7 +306,7 @@ static void parseDirectories(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         if (smatch(child->name, "documents")) {
             httpSetRouteDocuments(route, child->value);
@@ -345,7 +345,7 @@ static void parseAuthRequireRoles(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         httpSetAuthRequiredAbilities(route->auth, prop->value);
     }
@@ -356,7 +356,7 @@ static void parseAuthRequireUsers(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
-    
+
     if (prop->type & MPR_JSON_STRING) {
         if (smatch(prop->value, "*")) {
             httpSetAuthAnyValidUser(route->auth);
@@ -380,13 +380,25 @@ static void parseAuthRoles(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         if (httpAddRole(route->auth, child->name, getList(child)) < 0) {
             httpParseError(route, "Cannot add role %s", child->name);
             break;
         }
     }
+}
+
+
+static void parseAuthSessionCookie(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpSetRouteCookie(route, prop->value);
+}
+
+
+static void parseAuthSessionVisibility(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpSetRouteSessionVisibility(route, scaselessmatch(prop->value, "visible"));
 }
 
 
@@ -417,7 +429,7 @@ static void parseAuthUsers(HttpRoute *route, cchar *key, MprJson *prop)
     MprJson     *child;
     cchar       *roles, *password;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         password = mprGetJson(child, "password");
         roles = getList(mprGetJsonObj(child, "roles"));
@@ -435,7 +447,7 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
     MprTicks    clientLifespan, serverLifespan;
     cchar       *methods, *extensions, *uris, *mimeTypes, *client, *server;
     int         flags, ji;
-    
+
     clientLifespan = serverLifespan = 0;
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         flags = 0;
@@ -469,7 +481,7 @@ static void parseContentCombine(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         if (smatch(child->value, "c")) {
             route->combine = 1;
@@ -483,7 +495,7 @@ static void parseContentCompress(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         if (mprGetJson(route->config, sfmt("app.http.content.minify[@ = '%s']", child->value))) {
             httpAddRouteMapping(route, child->value, "${1}.gz, min.${1}.gz, min.${1}");
@@ -508,7 +520,7 @@ static void parseContentMinify(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         /*
             Compressed and minified is handled in parseContentCompress
@@ -1076,7 +1088,7 @@ static void parseServerChroot(HttpRoute *route, cchar *key, MprJson *prop)
 {
 #if ME_UNIX_LIKE
     char        *home;
-    
+
     home = httpMakePath(route, 0, prop->value);
     if (chdir(home) < 0) {
         httpParseError(route, "Cannot change working directory to %s", home);
@@ -1099,14 +1111,14 @@ static void parseServerChroot(HttpRoute *route, cchar *key, MprJson *prop)
 #else
     mprLog("http config", MPR_INFO, "Chroot directive not supported on this operating system\n");
 #endif
-} 
+}
 
 
 static void parseServerDefenses(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         httpAddDefenseFromJson(child->name, 0, child);
     }
@@ -1143,7 +1155,7 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
             httpSecureEndpoint(endpoint, route->ssl);
             if (!host->secureEndpoint) {
                 httpSetHostSecureEndpoint(host, endpoint);
-            } 
+            }
         }
         /*
             Single stack networks cannot support IPv4 and IPv6 with one socket. So create a specific IPv6 endpoint.
@@ -1215,7 +1227,7 @@ static void parseServerMonitors(HttpRoute *route, cchar *key, MprJson *prop)
     MprTicks    period;
     cchar       *counter, *expression, *limit, *relation, *defenses;
     int         ji;
-    
+
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         defenses = mprGetJson(child, "defenses");
         expression = mprGetJson(child, "expression");
@@ -1254,7 +1266,7 @@ static void parseSource(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseSsl(HttpRoute *route, cchar *key, MprJson *prop)
 {
     HttpRoute   *parent;
-    
+
     parent = route->parent;
     if (route->ssl == 0) {
         if (parent && parent->ssl) {
@@ -1331,7 +1343,7 @@ static void parseStealth(HttpRoute *route, cchar *key, MprJson *prop)
         close:      [immediate]
         redirect:   status URI
         run:        ${DOCUMENT_ROOT}/${request:uri}
-        run:        ${controller}-${name} 
+        run:        ${controller}-${name}
         write:      [-r] status "Hello World\r\n"
 */
 static void parseTarget(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1396,12 +1408,12 @@ static void parseTimeoutsSession(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    MprJson     *levels;
+    MprJson     *levels, *child;
     cchar       *location;
     ssize       size;
-    cchar       *format, *type;
-    char        level, tlevels[HTTP_TRACE_MAX_ITEM];
-    int         anew, backup;
+    cchar       *format, *formatter;
+    char        level;
+    int         anew, backup, ji;
 
     if (route->trace && route->trace->flags & MPR_LOG_CMDLINE) {
         mprLog("http config", 4, "Already tracing. Ignoring trace configuration");
@@ -1409,7 +1421,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     }
     size = (ssize) httpGetNumber(mprGetJson(prop, "size"));
     format = mprGetJson(prop, "format");
-    type = mprGetJson(prop, "type");
+    formatter = mprGetJson(prop, "formatter");
     location = mprGetJson(prop, "location");
     level = (char) stoi(mprGetJson(prop, "level"));
     backup = (int) stoi(mprGetJson(prop, "backup"));
@@ -1432,25 +1444,17 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     if (!smatch(location, "stdout") && !smatch(location, "stderr")) {
         location = httpMakePath(route, 0, location);
     }
-    memset(tlevels, 0, sizeof(tlevels));
     if ((levels = mprGetJsonObj(prop, "levels")) != 0) {
-        tlevels[HTTP_TRACE_CONN] = (char) stoi(mprGetJson(levels, "conn"));
-        tlevels[HTTP_TRACE_ERROR] = (char) stoi(mprGetJson(levels, "errors"));
-        tlevels[HTTP_TRACE_INFO] = (char) stoi(mprGetJson(levels, "info"));
-        tlevels[HTTP_TRACE_RX_FIRST] = (char) stoi(mprGetJson(levels, "rx.first"));
-        tlevels[HTTP_TRACE_RX_HEADERS] = (char) stoi(mprGetJson(levels, "rx.headers"));
-        tlevels[HTTP_TRACE_RX_BODY] = (char) stoi(mprGetJson(levels, "rx.body"));
-        tlevels[HTTP_TRACE_TX_FIRST] = (char) stoi(mprGetJson(levels, "tx.first"));
-        tlevels[HTTP_TRACE_TX_HEADERS] = (char) stoi(mprGetJson(levels, "tx.headers"));
-        tlevels[HTTP_TRACE_TX_BODY] = (char) stoi(mprGetJson(levels, "tx.body"));
-        tlevels[HTTP_TRACE_COMPLETE] = (char) stoi(mprGetJson(levels, "complete"));
+        for (ITERATE_CONFIG(route, prop, child, ji)) {
+            httpSetTraceEventLevel(route->trace, child->name, (int) stoi(child->value));
+        }
     }
     route->trace = httpCreateTrace(route->trace);
-    httpSetTraceType(route->trace, type);
+    httpSetTraceFormatterName(route->trace, formatter);
     httpSetTraceLogFile(route->trace, location, size, backup, format, anew ? MPR_LOG_ANEW : 0);
     httpSetTraceFormat(route->trace, format);
+    httpSetTraceSize(route->trace, size);
     httpSetTraceLevel(level);
-    httpSetTraceLevels(route->trace, tlevels, size);
 }
 
 
@@ -1477,7 +1481,7 @@ static void parseInclude(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-PUBLIC int httpInitParser() 
+PUBLIC int httpInitParser()
 {
     Http    *http;
 
@@ -1493,6 +1497,8 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.auth.require.roles", parseAuthRequireRoles);
     httpAddConfig("app.http.auth.require.users", parseAuthRequireUsers);
     httpAddConfig("app.http.auth.roles", parseAuthRoles);
+    httpAddConfig("app.http.auth.session.cookie", parseAuthSessionCookie);
+    httpAddConfig("app.http.auth.session.vibility", parseAuthSessionVisibility);
     httpAddConfig("app.http.auth.store", parseAuthStore);
     httpAddConfig("app.http.auth.type", parseAuthType);
     httpAddConfig("app.http.auth.users", parseAuthUsers);
@@ -1590,7 +1596,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("include", parseInclude);
 
     return 0;
-} 
+}
 
 /*
     @copy   default
@@ -1598,7 +1604,7 @@ PUBLIC int httpInitParser()
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

@@ -147,7 +147,7 @@ PUBLIC void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
 }
 
 
-/* 
+/*
    Append a header. If already defined, the value is catenated to the pre-existing value after a ", " separator.
    As per the HTTP/1.1 spec. Except for Set-Cookie which HTTP permits multiple headers but not of the same cookie. Ugh!
  */
@@ -197,7 +197,7 @@ PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
 }
 
 
-/* 
+/*
    Append a header string. If already defined, the value is catenated to the pre-existing value after a ", " separator.
    As per the HTTP/1.1 spec.
  */
@@ -267,7 +267,7 @@ PUBLIC void httpFinalizeConnector(HttpConn *conn)
 /*
     Finalize the request. This means the caller is totally completed with the request. They have sent all
     output and have read all input. Further input can be discarded. Note that output may not yet have drained from
-    the socket and so the connection state will not be transitioned to FINALIIZED until that happens and all 
+    the socket and so the connection state will not be transitioned to FINALIIZED until that happens and all
     remaining input has been dealt with.
  */
 PUBLIC void httpFinalize(HttpConn *conn)
@@ -287,7 +287,7 @@ PUBLIC void httpFinalize(HttpConn *conn)
 
 
 /*
-    This means the caller has generated the entire transmit body. Note: the data may not yet have drained from 
+    This means the caller has generated the entire transmit body. Note: the data may not yet have drained from
     the pipeline or socket and the caller may not have read a response.
  */
 PUBLIC void httpFinalizeOutput(HttpConn *conn)
@@ -453,7 +453,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         target = httpCreateUri(targetUri, 0);
         base = rx->parsedUri;
         /*
-            Support URIs without a host:  https:///path. This is used to redirect onto the same host but with a 
+            Support URIs without a host:  https:///path. This is used to redirect onto the same host but with a
             different scheme. So find a suitable local endpoint to supply the port for the scheme.
         */
         if (!target->port && (target->scheme && !smatch(target->scheme, base->scheme))) {
@@ -462,7 +462,8 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
                 if (endpoint) {
                     target->port = endpoint->port;
                 } else if (smatch(target->scheme, "https")) {
-                    httpTrace(conn, HTTP_TRACE_ERROR, "Missing secure endpoint to use with https redirection");
+                    //  MOB - should this be mprLog
+                    httpTrace(conn, "error", "Missing secure endpoint to use with https redirection", 0);
                 }
             }
         }
@@ -480,14 +481,14 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         target = httpCompleteUri(target, base);
         targetUri = httpUriToString(target, 0);
         httpSetHeader(conn, "Location", "%s", targetUri);
-        httpFormatResponse(conn, 
+        httpFormatResponse(conn,
             "<!DOCTYPE html>\r\n"
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n<p>The document has moved <a href=\"%s\">here</a>.</p></body></html>\r\n",
             msg, msg, targetUri);
-        httpTrace(conn, HTTP_TRACE_INFO, "redirect; status=%d uri=%s", status, targetUri);
+        httpTrace(conn, "info", "redirect", "status:%d, location:%s", status, targetUri);
     } else {
-        httpFormatResponse(conn, 
+        httpFormatResponse(conn,
             "<!DOCTYPE html>\r\n"
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n</body></html>\r\n",
@@ -555,10 +556,10 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     secure = (conn->secure & (flags & HTTP_COOKIE_SECURE)) ? "; secure" : "";
     httponly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
 
-    /* 
+    /*
        Allow multiple cookie headers. Even if the same name. Later definitions take precedence.
      */
-    httpAppendHeader(conn, "Set-Cookie", 
+    httpAppendHeader(conn, "Set-Cookie",
         sjoin(name, "=", value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
     if ((cp = mprLookupKey(conn->tx->headers, "Cache-Control")) == 0 || !scontains(cp, "no-cache")) {
         httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
@@ -623,7 +624,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     route = rx->route;
 
     /*
-        Mandatory headers that must be defined here use httpSetHeader which overwrites existing values. 
+        Mandatory headers that must be defined here use httpSetHeader which overwrites existing values.
      */
     httpAddHeaderString(conn, "Date", conn->http->currentDate);
 
@@ -693,7 +694,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         if (route->flags & HTTP_ROUTE_CORS) {
             setCorsHeaders(conn);
         }
-        /* 
+        /*
             Apply route headers
          */
         for (ITERATE_ITEMS(route->headers, item, next)) {
@@ -762,8 +763,7 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
     }
     tx->filename = sclone(filename);
-    httpTrace(conn, HTTP_TRACE_5, "Set filename; filename=\"%s\" uri=%s extension=%s", 
-        tx->filename, conn->rx->uri, tx->ext);
+    httpTrace(conn, "info", "Set filename", "filename:\"%s\", extension:%s", tx->filename, tx->ext);
 }
 
 
@@ -831,7 +831,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         parsedUri = tx->parsedUri;
         if (http->proxyHost && *http->proxyHost) {
             if (parsedUri->query && *parsedUri->query) {
-                mprPutToBuf(buf, "http://%s:%d%s?%s %s", http->proxyHost, http->proxyPort, 
+                mprPutToBuf(buf, "http://%s:%d%s?%s %s", http->proxyHost, http->proxyPort,
                     parsedUri->path, parsedUri->query, conn->protocol);
             } else {
                 mprPutToBuf(buf, "http://%s:%d%s %s", http->proxyHost, http->proxyPort, parsedUri->path, conn->protocol);
@@ -848,7 +848,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
     }
     mprPutStringToBuf(buf, "\r\n");
 
-    /* 
+    /*
         Output headers
      */
     kp = mprGetFirstKey(conn->tx->headers);
@@ -861,7 +861,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         mprPutStringToBuf(packet->content, "\r\n");
         kp = mprGetNextKey(conn->tx->headers, kp);
     }
-    /* 
+    /*
         By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter
      */
     if (tx->length >= 0 || tx->chunkSize <= 0) {
@@ -994,7 +994,7 @@ PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

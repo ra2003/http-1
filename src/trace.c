@@ -18,6 +18,7 @@ static void manageTrace(HttpTrace *trace, int flags)
         mprMark(trace->format);
         mprMark(trace->mutex);
         mprMark(trace->path);
+        mprMark(trace->events);
     }
 }
 
@@ -33,8 +34,6 @@ static void manageTrace(HttpTrace *trace, int flags)
 PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
 {
     HttpTrace   *trace;
-    char        *levels;
-    int         i;
 
     if ((trace = mprAllocObj(HttpTrace, manageTrace)) == 0) {
         return 0;
@@ -43,21 +42,20 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
         *trace = *parent;
         trace->parent = parent;
     } else {
-        levels = trace->levels;
-        for (i = 0; i <= HTTP_TRACE_5; i++) {
-            levels[i] = i;
+        if ((trace->events = mprCreateHash(0, MPR_HASH_STATIC_VALUES)) == 0) {
+            return 0;
         }
-        levels[HTTP_TRACE_RX_FIRST] = 2;
-        levels[HTTP_TRACE_ERROR] = 2;
-        levels[HTTP_TRACE_CONN] = 3;
-        levels[HTTP_TRACE_RX_HEADERS] = 3;
-        levels[HTTP_TRACE_TX_FIRST] = 3;
-        levels[HTTP_TRACE_TX_HEADERS] = 3;
-        levels[HTTP_TRACE_INFO] = 3;
-        levels[HTTP_TRACE_RX_BODY] = 5;
-        levels[HTTP_TRACE_TX_BODY] = 5;
-        levels[HTTP_TRACE_COMPLETE] = 4;
-        
+        mprAddKey(trace->events, "rxFirst", ITOP(2));
+        mprAddKey(trace->events, "error", ITOP(2));
+        mprAddKey(trace->events, "connection", ITOP(3));
+        mprAddKey(trace->events, "rxHeaders", ITOP(3));
+        mprAddKey(trace->events, "txFirst", ITOP(3));
+        mprAddKey(trace->events, "txHeaders", ITOP(3));
+        mprAddKey(trace->events, "info", ITOP(3));
+        mprAddKey(trace->events, "complete", ITOP(4));
+        mprAddKey(trace->events, "rxBody", ITOP(5));
+        mprAddKey(trace->events, "txBody", ITOP(5));
+
         trace->size = HTTP_TRACE_MAX_SIZE;
         trace->formatter = httpDetailTraceFormatter;
         trace->logger = httpWriteTraceLogFile;
@@ -97,19 +95,16 @@ PUBLIC void httpSetTraceLevel(int level)
 }
 
 
-PUBLIC void httpSetTraceLevels(HttpTrace *trace, char *levels, ssize bodySize)
+PUBLIC void httpSetTraceEventLevel(HttpTrace *trace, cchar *event, int level)
 {
-    int     i;
-
     assert(trace);
-    assert(levels);
+    mprAddKey(trace->events, event, ITOP(level));
+}
 
-    for (i = HTTP_TRACE_5 + 1;  i < HTTP_TRACE_MAX_ITEM; i++) {
-        if (levels[i] >= 0) {
-            trace->levels[i] = levels[i];
-        }
-    }
-    trace->bodySize = bodySize;
+
+PUBLIC void httpSetTraceSize(HttpTrace *trace, ssize size)
+{
+    trace->bodySize = size;
 }
 
 
@@ -119,16 +114,15 @@ PUBLIC void httpSetTraceLogger(HttpTrace *trace, HttpTraceLogger callback)
 }
 
 
-PUBLIC void httpSetTraceType(HttpTrace *trace, cchar *type)
+PUBLIC void httpSetTraceFormatterName(HttpTrace *trace, cchar *name)
 {
     HttpTraceFormatter  formatter;
-    int                 i;
 
-    if (type && smatch(type, "common")) {
-        for (i = HTTP_TRACE_5; i < HTTP_TRACE_MAX_ITEM; i++) {
-            trace->levels[i] = 6;
+    if (name && smatch(name, "common")) {
+        if ((trace->events = mprCreateHash(0, MPR_HASH_STATIC_VALUES)) == 0) {
+            return;
         }
-        trace->levels[HTTP_TRACE_COMPLETE] = 0;
+        mprAddKey(trace->events, "complete", ITOP(0));
         formatter = httpCommonTraceFormatter;
     } else {
        formatter = httpDetailTraceFormatter;
@@ -140,26 +134,28 @@ PUBLIC void httpSetTraceType(HttpTrace *trace, cchar *type)
 /*
     Trace a simple message
  */
-PUBLIC void httpTrace(HttpConn *conn, int event, cchar *fmt, ...)
+PUBLIC void httpTrace(HttpConn *conn, cchar *event, cchar *msg, cchar *values, ...)
 {
     va_list     ap;
 
     assert(conn);
-    assert(event >= 0);
-    assert(fmt && *fmt);
+    assert(event && *event);
 
     if (httpShouldTrace(conn, event) && !conn->rx->skipTrace) {
-        va_start(ap, fmt);
-        httpFormatTrace(conn, event, sfmtv(fmt, ap), 0, 0);
-        va_end(ap);
+        if (values) {
+            va_start(ap, values);
+            values = sfmtv(values, ap);
+            va_end(ap);
+        }
+        httpFormatTrace(conn, event, msg, values, 0, 0);
     }
 }
 
 
 /*
     Trace body content
- */ 
-PUBLIC void httpTraceContent(HttpConn *conn, int event, cchar *buf, ssize len, cchar *fmt, ...)
+ */
+PUBLIC void httpTraceContent(HttpConn *conn, cchar *event, cchar *buf, ssize len, cchar *msg, cchar *values, ...)
 {
     va_list     ap;
 
@@ -169,69 +165,52 @@ PUBLIC void httpTraceContent(HttpConn *conn, int event, cchar *buf, ssize len, c
     if (!httpShouldTrace(conn, event) || conn->rx->skipTrace) {
         return;
     }
-    if ((event == HTTP_TRACE_RX_BODY && (conn->rx->bytesRead >= conn->trace->size)) ||
-        (event == HTTP_TRACE_TX_BODY && (conn->tx->bytesWritten >= conn->trace->size))) {
+    if ((smatch(event, "rx.body") && (conn->rx->bytesRead >= conn->trace->size)) ||
+        (smatch(event, "tx.body") && (conn->tx->bytesWritten >= conn->trace->size))) {
         if (!conn->rx->skipTrace && !conn->rx->webSocket) {
             conn->rx->skipTrace = 1;
-            httpTrace(conn, event, "Abbreviating body trace");
+            httpTrace(conn, event, "Abbreviating body trace", 0);
         }
         return;
     }
-    va_start(ap, fmt);
-    httpFormatTrace(conn, event | HTTP_TRACE_CONTENT, sfmtv(fmt, ap), buf, len);
-    va_end(ap);
+    if (values) {
+        va_start(ap, values);
+        values = sfmtv(values, ap);
+        va_end(ap);
+    }
+    httpFormatTrace(conn, event, msg, values, buf, len);
 }
 
 
 /*
-    Trace a packet 
+    Trace a packet
  */
-PUBLIC void httpTracePacket(HttpConn *conn, int event, HttpPacket *packet, cchar *fmt, ...)
+PUBLIC void httpTracePacket(HttpConn *conn, cchar *event, HttpPacket *packet, cchar *msg, cchar *values, ...)
 {
     va_list     ap;
-    cchar       *msg;
 
     assert(conn);
     assert(packet);
 
     if (packet->prefix) {
         mprAddNullToBuf(packet->prefix);
-        if (event == HTTP_TRACE_RX_BODY) {
-            msg = "rx body";
-        } else if (event == HTTP_TRACE_TX_BODY) {
-            msg = "tx prefix";
-        } else {
-            msg = 0;
-        }
-        httpTraceContent(conn, event, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix), msg);
+        httpTraceContent(conn, event, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix), 0, 0);
     }
-    if (fmt) {
-        va_start(ap, fmt);
-        msg = sfmtv(fmt, ap);
+    if (values) {
+        va_start(ap, values);
+        values = sfmtv(values, ap);
         va_end(ap);
-    } else {
-        if (event == HTTP_TRACE_RX_HEADERS) {
-            msg = "rx headers";
-        } else if (event == HTTP_TRACE_RX_BODY) {
-            msg = "rx body";
-        } else if (event == HTTP_TRACE_TX_HEADERS) {
-            msg = "tx headers";
-        } else if (event == HTTP_TRACE_TX_BODY) {
-            msg = "tx body";
-        } else {
-            msg = 0;
-        }
     }
     if (packet->content) {
         mprAddNullToBuf(packet->content);
-        httpTraceContent(conn, event, mprGetBufStart(packet->content), httpGetPacketLength(packet), msg);
+        httpTraceContent(conn, event, mprGetBufStart(packet->content), httpGetPacketLength(packet), msg, values);
     }
 }
 
 
-PUBLIC void httpFormatTrace(HttpConn *conn, int event, cchar *msg, cchar *buf, ssize len)
+PUBLIC void httpFormatTrace(HttpConn *conn, cchar *event, cchar *msg, cchar *values, cchar *buf, ssize len)
 {
-    (conn->trace->formatter)(conn, event, msg, buf, len);
+    (conn->trace->formatter)(conn, event, msg, values, buf, len);
 }
 
 
@@ -249,7 +228,7 @@ PUBLIC void httpWriteTrace(HttpConn *conn, cchar *buf, ssize len)
     This will use the tx or rx mime type if possible.
     Skips UTF encoding prefixes
  */
-PUBLIC cchar *httpMakePrintable(HttpConn *conn, int event, cchar *buf, ssize *lenp)
+PUBLIC cchar *httpMakePrintable(HttpConn *conn, cchar *event, cchar *buf, ssize *lenp)
 {
     cchar   *start, *cp, *digits;
     char    *data, *dp;
@@ -257,13 +236,13 @@ PUBLIC cchar *httpMakePrintable(HttpConn *conn, int event, cchar *buf, ssize *le
     int     i;
 
     /*
-        Fast path, check the mime type
-     */ 
-    if (event == HTTP_TRACE_RX_BODY) {
+        MOB - need faster way to do this
+     */
+    if (smatch(event, "rx.body")) {
         if (sstarts(mprLookupMime(0, conn->rx->mimeType), "text/")) {
             return buf;
         }
-    } else if (event == HTTP_TRACE_TX_BODY) {
+    } else if (smatch(event, "tx.body")) {
         if (sstarts(mprLookupMime(0, conn->tx->mimeType), "text/")) {
             return buf;
         }
@@ -301,18 +280,18 @@ PUBLIC cchar *httpMakePrintable(HttpConn *conn, int event, cchar *buf, ssize *le
 /*
     Format a detailed request message
  */
-PUBLIC void httpDetailTraceFormatter(HttpConn *conn, int event, cchar *msg, cchar *buf, ssize len)
+PUBLIC void httpDetailTraceFormatter(HttpConn *conn, cchar *event, cchar *msg, cchar *values, cchar *buf, ssize len)
 {
     char    *boundary, prefix[64];
     int     client, sessionSeqno;
 
     assert(conn);
-    assert(event >= 0);
+    assert(event);
     assert(msg && *msg);
 
     client = conn->address ? conn->address->seqno : 0;
     sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-    fmt(prefix, sizeof(prefix), "\n<%s %d-%d-%d-%d> ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno, 
+    fmt(prefix, sizeof(prefix), "\n<%s %d-%d-%d-%d> ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno,
         conn->seqno, conn->rx->seqno);
     lock(conn->trace);
     httpWriteTrace(conn, prefix, slen(prefix));
@@ -467,7 +446,7 @@ PUBLIC void httpWriteTraceLogFile(HttpConn *conn, cchar *buf, ssize len)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

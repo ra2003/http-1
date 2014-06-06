@@ -163,7 +163,7 @@ PUBLIC void httpProtocol(HttpConn *conn)
             canProceed = 0;
             break;
         }
-        /* 
+        /*
             This may block briefly if GC is due
          */
         httpServiceQueues(conn, HTTP_BLOCK);
@@ -210,8 +210,8 @@ static bool parseIncoming(HttpConn *conn)
          */
         conn->activeRequest = 1;
         if ((value = httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, 1)) >= limits->requestsPerClientMax) {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE, 
-                "Too many concurrent requests for client: %s %d/%d", conn->ip, (int) value, 
+            httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE,
+                "Too many concurrent requests for client: %s %d/%d", conn->ip, (int) value,
                 limits->requestsPerClientMax);
             return 0;
         }
@@ -231,14 +231,14 @@ static bool parseIncoming(HttpConn *conn)
      */
     if ((end = sncontains(start, "\r\n\r\n", len)) == 0 && (end = sncontains(start, "\n\n", len)) == 0) {
         if (len >= limits->headerSize) {
-            httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, 
+            httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Header too big. Length %d vs limit %d", len, limits->headerSize);
         }
         return 0;
     }
     len = end - start;
     if (len >= limits->headerSize) {
-        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Header too big. Length %d vs limit %d", len, 
+        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Header too big. Length %d vs limit %d", len,
             limits->headerSize);
         return 0;
     }
@@ -259,7 +259,7 @@ static bool parseIncoming(HttpConn *conn)
             return 0;
         }
     } else if (rx->status != HTTP_CODE_CONTINUE) {
-        /* 
+        /*
             Ignore Expect status responses. NOTE: Clients have already created their Tx pipeline.
          */
         httpCreateRxPipeline(conn, conn->http->clientRoute);
@@ -301,7 +301,7 @@ static bool mapMethod(HttpConn *conn)
     rx = conn->rx;
     if (rx->flags & HTTP_POST && (method = httpGetParam(conn, "-http-method-", 0)) != 0) {
         if (!scaselessmatch(method, rx->method)) {
-            httpTrace(conn, HTTP_TRACE_INFO, "Change method; from=%s to=%s uri=%s", rx->method, method, rx->uri);
+            httpTrace(conn, "info", "Change method", "originalMethod:%s, method:%s", rx->method, method);
             httpSetMethod(conn, method);
             return 1;
         }
@@ -340,17 +340,17 @@ static void traceRequest(HttpConn *conn, HttpPacket *packet)
     /*
         If tracing header, do entire header including first line
      */
-    if (httpShouldTrace(conn, HTTP_TRACE_RX_HEADERS)) {
+    if (httpShouldTrace(conn, "rxHeaders")) {
         endp = strstr((char*) content->start, "\r\n\r\n");
         len = (endp) ? (int) (endp - content->start + 4) : 0;
-        httpTraceContent(conn, HTTP_TRACE_RX_HEADERS, content->start, len, "rx headers");
+        httpTraceContent(conn, "rxHeaders", content->start, len, 0, 0);
 
-    } else if (httpShouldTrace(conn, HTTP_TRACE_RX_FIRST)) {
+    } else if (httpShouldTrace(conn, "rxFirst")) {
         endp = strstr((char*) content->start, "\r\n");
         len = (endp) ? (int) (endp - content->start + 2) : 0;
         if (len > 0) {
             content->start[len - 2] = '\0';
-            httpTrace(conn, HTTP_TRACE_RX_FIRST, "rx; request=\"%s\"", content->start);
+            httpTrace(conn, "rxFirst", "; rxFirst:\"%s\"", content->start, 0);
             content->start[len - 2] = '\r';
         }
     }
@@ -439,7 +439,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty URI");
         return 0;
     } else if (len >= limits->uriSize) {
-        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
+        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_URL_TOO_LARGE,
             "Bad request. URI too long. Length %d vs limit %d", len, limits->uriSize);
         return 0;
     }
@@ -487,11 +487,11 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
     tx = conn->tx;
     traced = 0;
 
-    if (httpShouldTrace(conn, HTTP_TRACE_RX_HEADERS)) {
+    if (httpShouldTrace(conn, "rxHeaders")) {
         content = packet->content;
         endp = strstr((char*) content->start, "\r\n\r\n");
         len = (endp) ? (int) (endp - content->start + 4) : 0;
-        httpTraceContent(conn, HTTP_TRACE_RX_HEADERS, content->start, len, "response headers");
+        httpTraceContent(conn, "rxHeaders", content->start, len, 0, 0);
         traced = 1;
     }
     protocol = conn->protocol = supper(getToken(conn, 0));
@@ -514,13 +514,12 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
 
     len = slen(rx->statusMessage);
     if (len >= conn->limits->uriSize) {
-        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE, 
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE,
             "Bad response. Status message too long. Length %d vs limit %d", len, conn->limits->uriSize);
         return 0;
     }
-    if (!traced && httpShouldTrace(conn, HTTP_TRACE_RX_FIRST)) {
-        httpTrace(conn, HTTP_TRACE_RX_FIRST, "response; protocol=%s status=%d message=\"%s\"", 
-            protocol, rx->status, rx->statusMessage);
+    if (!traced && httpShouldTrace(conn, "rxFirst")) {
+        httpTrace(conn, "rxFirst", 0, "protocol:%s, status:%d", protocol, rx->status);
     }
     return 1;
 }
@@ -660,7 +659,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                         rx->form = scontains(rx->mimeType, "application/x-www-form-urlencoded") != 0;
                         rx->upload = scontains(rx->mimeType, "multipart/form-data") != 0;
                     }
-                } else { 
+                } else {
                     rx->form = rx->upload = 0;
                 }
             } else if (strcasecmp(key, "cookie") == 0) {
@@ -756,7 +755,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                         conn->keepAliveCount = ME_MAX_KEEP_ALIVE;
                     }
                     /*
-                        IMPORTANT: Deliberately close client connections one request early. This encourages a client-led 
+                        IMPORTANT: Deliberately close client connections one request early. This encourages a client-led
                         termination and may help relieve excessive server-side TIME_WAIT conditions.
                      */
                     if (httpClientConn(conn) && conn->keepAliveCount == 1) {
@@ -802,7 +801,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             if (strcasecmp(key, "transfer-encoding") == 0) {
                 if (scaselesscmp(value, "chunked") == 0 && !conn->http10) {
                     /*
-                        remainingContent will be revised by the chunk filter as chunks are processed and will 
+                        remainingContent will be revised by the chunk filter as chunks are processed and will
                         be set to zero when the last chunk has been received.
                      */
                     rx->flags |= HTTP_CHUNKED;
@@ -857,7 +856,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
         }
     }
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
-        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
             "Request form of %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveFormSize);
     }
     if (conn->error) {
@@ -878,7 +877,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
     }
     if (!(rx->flags & HTTP_CHUNKED)) {
         /*
-            Step over "\r\n" after headers. 
+            Step over "\r\n" after headers.
             Don't do this if chunked so chunking can parse a single chunk delimiter of "\r\nSIZE ...\r\n"
          */
         mprAdjustBufStart(content, 2);
@@ -922,10 +921,10 @@ static bool processParsed(HttpConn *conn)
         if (rx->streaming) {
             httpCreatePipeline(conn);
 
-            httpTrace(conn, HTTP_TRACE_4, "Select route; route=%s handler=%s target=%s endpoint=%s:%d host=%s", 
-                rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port, 
+            httpTrace(conn, "info", 0,
+                "route:%s, handler:%s, target:\"%s\", endpoint:\"%s:%d\", host:\"%s\"",
+                rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
                 conn->host->name ? conn->host->name : "default");
-    
             /*
                 Delay starting uploads until the files are extracted.
              */
@@ -1000,15 +999,15 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
      */
     size = rx->bytesRead - rx->bytesUploaded;
     if (size >= conn->limits->receiveBodySize) {
-        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
             "Receive body of %,Ld bytes (sofar) is too big. Limit %,Ld", size, conn->limits->receiveBodySize);
 
     } else if (rx->form && size >= conn->limits->receiveFormSize) {
-        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE, 
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
             "Receive form of %,Ld bytes (sofar) is too big. Limit %,Ld", size, conn->limits->receiveFormSize);
     }
-    if (packet && httpShouldTrace(conn, HTTP_TRACE_RX_BODY)) {
-        httpTraceContent(conn, HTTP_TRACE_RX_BODY, packet->content->start, nbytes, "receive body");
+    if (packet && httpShouldTrace(conn, "rxBody")) {
+        httpTraceContent(conn, "rxBody", packet->content->start, nbytes, 0, 0);
     }
     if (rx->eof) {
         if ((rx->remainingContent > 0 && (rx->length > 0 || !conn->mustClose)) ||
@@ -1171,8 +1170,7 @@ static void createErrorRequest(HttpConn *conn)
     if (!rx->headerPacket) {
         return;
     }
-    httpTrace(conn, HTTP_TRACE_INFO, "Create error document; doc=%s status=%d uri=%s", 
-        tx->errorDocument, tx->status, rx->uri);
+    httpTrace(conn, "info", "Redirect to error document", "location:\"%s\", status:%d", tx->errorDocument, tx->status, rx->uri);
 
     originalUri = rx->uri;
     conn->rx = httpCreateRx(conn);
@@ -1270,15 +1268,15 @@ static void measure(HttpConn *conn)
     if (conn->rx == 0 || tx == 0) {
         return;
     }
-    if (httpShouldTrace(conn, HTTP_TRACE_COMPLETE)) {
+    if (httpShouldTrace(conn, "complete")) {
         elapsed = mprGetTicks() - conn->started;
 #if MPR_HIGH_RES_TIMER
         if (elapsed < 1000) {
-            httpTrace(conn, HTTP_TRACE_COMPLETE, "request complete; msec=%,Ld ticks=%,Ld ticks", 
+            httpTrace(conn, "complete", 0, "elapsed:%,Ld, elapsedTicks:%,Ld",
                 elapsed, mprGetHiResTicks() - conn->startMark);
         } else
 #endif
-            httpTrace(conn, HTTP_TRACE_COMPLETE, "request complete; msec=%,Ld", elapsed);
+            httpTrace(conn, "complete", 0, "elapsed:%,Ld", elapsed);
     }
 }
 
@@ -1286,9 +1284,9 @@ static void measure(HttpConn *conn)
 static bool processCompletion(HttpConn *conn)
 {
     HttpRx      *rx;
-    
+
     rx = conn->rx;
-    
+
     if (rx->session) {
         httpWriteSession(conn);
     }
@@ -1581,7 +1579,7 @@ PUBLIC ssize httpGetReadCount(HttpConn *conn)
 }
 
 
-PUBLIC bool httpIsEof(HttpConn *conn) 
+PUBLIC bool httpIsEof(HttpConn *conn)
 {
     return conn->rx == 0 || conn->rx->eof;
 }
@@ -1601,7 +1599,7 @@ PUBLIC cchar *httpGetBodyInput(HttpConn *conn)
     if (q->first) {
         httpJoinPackets(q, -1);
         if ((content = q->first->content) != 0) {
-            mprAddNullToBuf(content); 
+            mprAddNullToBuf(content);
             return mprGetBufStart(content);
         }
     }
@@ -1633,7 +1631,7 @@ static void addMatchEtag(HttpConn *conn, char *etag)
 /*
     Get the next input token. The content buffer is advanced to the next token. This routine always returns a
     non-zero token. The empty string means the delimiter was not found. The delimiter is a string to match and not
-    a set of characters. If null, it means use white space (space or tab) as a delimiter. 
+    a set of characters. If null, it means use white space (space or tab) as a delimiter.
  */
 static char *getToken(HttpConn *conn, cchar *delim)
 {
@@ -1916,8 +1914,8 @@ PUBLIC HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *default
 
 
 /*
-    Trim extra path information after the uri extension. This is used by CGI and PHP only. The strategy is to 
-    heuristically find the script name in the uri. This is assumed to be the original uri up to and including 
+    Trim extra path information after the uri extension. This is used by CGI and PHP only. The strategy is to
+    heuristically find the script name in the uri. This is assumed to be the original uri up to and including
     first path component containing a "." Any path information after that is regarded as extra path.
     WARNING: Extra path is an old, unreliable, CGI specific technique. Do not use directories with embedded periods.
  */
@@ -1928,7 +1926,7 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn)
     ssize       len;
 
     rx = conn->rx;
-    if (!(rx->flags & (HTTP_OPTIONS | HTTP_TRACE))) { 
+    if (!(rx->flags & (HTTP_OPTIONS | HTTP_TRACE))) {
         if ((cp = strchr(rx->pathInfo, '.')) != 0 && (extra = strchr(cp, '/')) != 0) {
             len = extra - rx->pathInfo;
             if (0 < len && len < slen(rx->pathInfo)) {
@@ -1970,7 +1968,7 @@ static int sendContinue(HttpConn *conn)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

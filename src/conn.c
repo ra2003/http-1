@@ -196,7 +196,7 @@ static void connTimeout(HttpConn *conn, MprEvent *event)
         if (conn->state < HTTP_STATE_FIRST) {
             httpDisconnect(conn);
             if (msg) {
-                httpTrace(conn, HTTP_TRACE_INFO, msg);
+                httpTrace(conn, "info", msg, 0);
             }
         } else {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, msg);
@@ -210,11 +210,11 @@ static void connTimeout(HttpConn *conn, MprEvent *event)
 }
 
 
-PUBLIC void httpScheduleConnTimeout(HttpConn *conn) 
+PUBLIC void httpScheduleConnTimeout(HttpConn *conn)
 {
     if (!conn->timeoutEvent && !conn->destroyed) {
-        /* 
-            Will run on the HttpConn dispatcher unless shutting down and it is destroyed already 
+        /*
+            Will run on the HttpConn dispatcher unless shutting down and it is destroyed already
          */
         conn->timeoutEvent = mprCreateEvent(conn->dispatcher, "connTimeout", 0, connTimeout, conn, 0);
     }
@@ -275,8 +275,8 @@ static bool prepForNext(HttpConn *conn)
 
 
 #if KEEP
-/* 
-    Eat remaining input incase last request did not consume all data 
+/*
+    Eat remaining input incase last request did not consume all data
  */
 static void consumeLastRequest(HttpConn *conn)
 {
@@ -323,8 +323,8 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders)
 
 
 /*
-    Accept a new client connection on a new socket. 
-    This will come in on a worker thread with a new dispatcher dedicated to this connection. 
+    Accept a new client connection on a new socket.
+    This will come in on a worker thread with a new dispatcher dedicated to this connection.
  */
 PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 {
@@ -357,25 +357,24 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     conn->ip = sclone(sock->ip);
 
     if ((value = httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1)) > conn->limits->connectionsMax) {
-        httpTrace(conn, HTTP_TRACE_ERROR, "Too many concurrent connections; active=%d max=%d", 
-            (int) value, conn->limits->connectionsMax);
+        httpTrace(conn, "error", "Too many concurrent connections", "active:%d, max:%d", (int) value, conn->limits->connectionsMax);
         httpDestroyConn(conn);
         return 0;
     }
     if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
-        httpTrace(conn, HTTP_TRACE_ERROR, "Too many concurrent clients; active=%d max=%d", 
-            mprGetHashLength(http->addresses), conn->limits->clientMax);
+        httpTrace(conn, "error", "Too many concurrent clients", "active:%d, max:%d", mprGetHashLength(http->addresses), 
+            conn->limits->clientMax);
         httpDestroyConn(conn);
         return 0;
     }
     address = conn->address;
     if (address && address->banUntil) {
         if (address->banUntil < http->now) {
-            httpTrace(conn, HTTP_TRACE_INFO, "Remove ban on client; address=%s date=%s", sock->ip, mprGetDate(0));
+            httpTrace(conn, "info", "Remove ban on client", "peer:\"%s:%d\"", conn->ip, conn->port);
             address->banUntil = 0;
         } else {
             if (address->banStatus) {
-                httpError(conn, HTTP_CLOSE | address->banStatus, 
+                httpError(conn, HTTP_CLOSE | address->banStatus,
                     "Connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
             } else {
                 httpDestroyConn(conn);
@@ -385,9 +384,9 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     }
     if (endpoint->ssl) {
         if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
-            httpTrace(conn, HTTP_TRACE_ERROR, "Cannot upgrade socket; error=\"%s\"", sock->errorMsg);
+            httpTrace(conn, "error", sfmt("Cannot upgrade socket: %s", sock->errorMsg), 0);
             mprCloseSocket(sock, 0);
-            httpMonitorEvent(conn, HTTP_COUNTER_SSL_ERRORS, 1); 
+            httpMonitorEvent(conn, HTTP_COUNTER_SSL_ERRORS, 1);
             httpDestroyConn(conn);
             return 0;
         }
@@ -396,9 +395,9 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 
-    if (httpShouldTrace(conn, HTTP_TRACE_CONN)) {
-        httpTrace(conn, HTTP_TRACE_CONN, "Accept connection; date=%s from=%s:%d to=%s:%d secure=%d", 
-             mprGetDate(MPR_LOG_DATE), conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure);
+    if (httpShouldTrace(conn, "connection")) {
+        httpTrace(conn, "connection", 0, "peer:\"%s:%d\", endpoint:\"%s:%d\", secure:%d", 
+             conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure);
     }
     event->mask = MPR_READABLE;
     event->timestamp = conn->http->now;
@@ -408,7 +407,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 
 
 /*
-    IO event handler. This is invoked by the wait subsystem in response to I/O events. It is also invoked via 
+    IO event handler. This is invoked by the wait subsystem in response to I/O events. It is also invoked via
     relay when an accept event is received by the server. Initially the conn->dispatcher will be set to the
     server->dispatcher and the first I/O event will be handled on the server thread (or main thread). A request handler
     may create a new conn->dispatcher and transfer execution to a worker thread if required.
@@ -486,9 +485,9 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     }
     eventMask = 0;
     if (rx) {
-        if (conn->connError || (tx->writeBlocked) || 
-           (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) || 
-           (httpQueuesNeedService(conn)) || 
+        if (conn->connError || (tx->writeBlocked) ||
+           (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) ||
+           (httpQueuesNeedService(conn)) ||
            (mprSocketHasBufferedWrite(sp)) ||
            (rx->eof && tx->finalized && conn->state < HTTP_STATE_FINALIZED)) {
             if (!mprSocketHandshaking(sp)) {
@@ -591,7 +590,7 @@ PUBLIC MprSocket *httpStealSocket(HttpConn *conn)
 /*
     Steal the O/S socket handle a connection's socket. This disconnects the socket handle from management by the connection.
     It is the callers responsibility to call close() on the Socket when required.
-    Note: this does not change the state of the connection. 
+    Note: this does not change the state of the connection.
  */
 PUBLIC Socket httpStealSocketHandle(HttpConn *conn)
 {
@@ -800,7 +799,7 @@ PUBLIC void httpSetState(HttpConn *conn, int targetState)
         /* Prevent regressions */
         return;
     }
-    for (state = conn->state + 1; state <= targetState; state++) { 
+    for (state = conn->state + 1; state <= targetState; state++) {
         conn->state = state;
         HTTP_NOTIFY(conn, HTTP_EVENT_STATE, state);
     }
@@ -852,7 +851,7 @@ PUBLIC HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
 /*
     Test if a request has expired relative to the default inactivity and request timeout limits.
     Set timeout to a non-zero value to apply an overriding smaller timeout
-    Set timeout to a value in msec. If timeout is zero, override default limits and wait forever. 
+    Set timeout to a value in msec. If timeout is zero, override default limits and wait forever.
     If timeout is < 0, use default inactivity and duration timeouts. If timeout is > 0, then use this timeout as an additional
     timeout.
  */
@@ -873,14 +872,13 @@ PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
     }
     if (mprGetRemainingTicks(conn->started, requestTimeout) < 0) {
         if (requestTimeout != timeout) {
-            httpTrace(conn, HTTP_TRACE_ERROR, "Request duration exceeded; timeout=%d", requestTimeout / 1000);
+            httpTrace(conn, "error", "Request duration exceeded", "timeout:%d", requestTimeout / 1000);
         }
         return 1;
     }
     if (mprGetRemainingTicks(conn->lastActivity, inactivityTimeout) < 0) {
         if (inactivityTimeout != timeout) {
-            httpTrace(conn, HTTP_TRACE_ERROR, "Request cancelled due to inactivity; timeout=%d", 
-                inactivityTimeout / 1000);
+            httpTrace(conn, "error", "Request cancelled due to inactivity", "timeout:%d", inactivityTimeout / 1000);
         }
         return 1;
     }
@@ -905,7 +903,7 @@ PUBLIC void httpSetConnReqData(HttpConn *conn, void *data)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

@@ -148,7 +148,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
             cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
             httpSetCookie(conn, cookie, rx->session->id, "/", NULL, rx->session->lifespan, flags);
-            httpTrace(conn, HTTP_TRACE_INFO, "Create new session cookie; %s=%s", cookie, rx->session->id);
+            httpTrace(conn, "info", "Create new session cookie", "cookie:%s, session:%s", cookie, rx->session->id);
 
             if ((rx->route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
                 httpSetSessionVar(conn, ME_XSRF_COOKIE, rx->securityToken);
@@ -385,15 +385,14 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
         if (!requestToken) {
             requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
             if (!requestToken) {
-                httpTrace(conn, HTTP_TRACE_ERROR, "Missing security token in request");
+                httpTrace(conn, "error", "Missing security token in request", 0);
             }
         }
         if (!smatch(sessionToken, requestToken)) {
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.
              */
-            httpTrace(conn, HTTP_TRACE_ERROR, 
-                "Security token in request does not match session token; requestToken=%s securityToken=%s",
+            httpTrace(conn, "error", "Security token in request does not match session token", "xsrf:%s, sessionXsrf:%s",
                 requestToken, sessionToken);
             httpAddSecurityToken(conn, 1);
             return 0;

@@ -1,8 +1,8 @@
 /*
-    netConnector.c -- General network connector. 
+    netConnector.c -- General network connector.
 
     The Network connector handles output data (only) from upstream handlers and filters. It uses vectored writes to
-    aggregate output packets into fewer actual I/O requests to the O/S. 
+    aggregate output packets into fewer actual I/O requests to the O/S.
 
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
@@ -105,15 +105,14 @@ static void netOutgoingService(HttpQueue *q)
         written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
         if (written < 0) {
             errCode = mprGetError();
-            httpTrace(conn, HTTP_TRACE_ERROR, "Connector write error; wrote=%d, errno=%d, qflags=%x", 
-                (int) written, errCode, q->flags);
+            httpTrace(conn, "error", "Connector write error", "errno:%d", errCode);
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
                 /*  Socket full, wait for an I/O event */
                 tx->writeBlocked = 1;
                 break;
             }
             if (errCode == EPROTO && conn->secure) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, 
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR,
                     "Can't negotiate SSL with server: %s", conn->sock->errorMsg);
             } else if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Can't write. errno %d", errCode);
@@ -151,7 +150,7 @@ static MprOff buildNetVec(HttpQueue *q)
     tx = conn->tx;
 
     /*
-        Examine each packet and accumulate as many packets into the I/O vector as possible. Leave the packets on the queue 
+        Examine each packet and accumulate as many packets into the I/O vector as possible. Leave the packets on the queue
         for now, they are removed after the IO is complete for the entire packet.
      */
     for (packet = prev = q->first; packet && !(packet->flags & HTTP_PACKET_END); packet = packet->next) {
@@ -198,7 +197,7 @@ static void addToNetVector(HttpQueue *q, char *ptr, ssize bytes)
 static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
 {
     HttpConn    *conn;
-    int         item;
+    cchar       *event;
 
     conn = q->conn;
     assert(q->count >= 0);
@@ -210,9 +209,9 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     if (httpGetPacketLength(packet) > 0) {
         addToNetVector(q, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
     }
-    item = (packet->flags & HTTP_PACKET_HEADER) ? HTTP_TRACE_TX_HEADERS : HTTP_TRACE_TX_BODY;
-    if (httpShouldTrace(conn, item)) {
-        httpTracePacket(conn, item, packet, 0);
+    event = (packet->flags & HTTP_PACKET_HEADER) ? "txHeaders" : "txBody";
+    if (httpShouldTrace(conn, event)) {
+        httpTracePacket(conn, event, packet, 0, 0);
     }
 }
 
@@ -315,7 +314,7 @@ static void adjustNetVec(HttpQueue *q, ssize written)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

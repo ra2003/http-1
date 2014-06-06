@@ -11,9 +11,10 @@
 /************************************ Code ************************************/
 /*
     Common Log Formatter (NCSA)
-    This formatter only emits messages for the TRACE_COMPLETE message. 
+    This formatter only emits messages for the TRACE_COMPLETE message.
  */
-PUBLIC void httpCommonTraceFormatter(HttpConn *conn, int event, cchar *msgUnused, cchar *bufUnused, ssize lenUnused)
+PUBLIC void httpCommonTraceFormatter(HttpConn *conn, cchar *event, cchar *msgUnused, cchar *valuesUnused,
+    cchar *bufUnused, ssize lenUnused)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -24,9 +25,9 @@ PUBLIC void httpCommonTraceFormatter(HttpConn *conn, int event, cchar *msgUnused
     int         len;
 
     assert(conn);
-    assert(event >= 0);
+    assert(event);
 
-    if (event != HTTP_TRACE_COMPLETE) {
+    if (!smatch(event, "complete")) {
         return;
     }
     rx = conn->rx;
@@ -58,7 +59,7 @@ PUBLIC void httpCommonTraceFormatter(HttpConn *conn, int event, cchar *msgUnused
                 mprPutCharToBuf(buf, '-');
             } else {
                 mprPutIntToBuf(buf, tx->bytesWritten);
-            } 
+            }
             break;
 
         case 'B':                           /* Bytes written (minus headers) */
@@ -142,7 +143,7 @@ PUBLIC void httpCommonTraceFormatter(HttpConn *conn, int event, cchar *msgUnused
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

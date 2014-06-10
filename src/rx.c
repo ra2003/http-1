@@ -301,7 +301,7 @@ static bool mapMethod(HttpConn *conn)
     rx = conn->rx;
     if (rx->flags & HTTP_POST && (method = httpGetParam(conn, "-http-method-", 0)) != 0) {
         if (!scaselessmatch(method, rx->method)) {
-            httpTrace(conn, "info", "Change method", "originalMethod:%s, method:%s", rx->method, method);
+            httpTrace(conn, "info", 0, "originalMethod=%s, method=%s", rx->method, method);
             httpSetMethod(conn, method);
             return 1;
         }
@@ -343,14 +343,14 @@ static void traceRequest(HttpConn *conn, HttpPacket *packet)
     if (httpShouldTrace(conn, "rxHeaders")) {
         endp = strstr((char*) content->start, "\r\n\r\n");
         len = (endp) ? (int) (endp - content->start + 4) : 0;
-        httpTraceContent(conn, "rxHeaders", content->start, len, 0, 0);
+        httpTraceContent(conn, "rxHeaders", content->start, len, 0, "peer=%s", conn->ip);
 
     } else if (httpShouldTrace(conn, "rxFirst")) {
         endp = strstr((char*) content->start, "\r\n");
         len = (endp) ? (int) (endp - content->start + 2) : 0;
         if (len > 0) {
             content->start[len - 2] = '\0';
-            httpTrace(conn, "rxFirst", "; rxFirst:\"%s\"", content->start, 0);
+            httpTraceContent(conn, "rxFirst", content->start, len - 2, 0, "peer=%s", conn->ip);
             content->start[len - 2] = '\r';
         }
     }
@@ -519,7 +519,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         return 0;
     }
     if (!traced && httpShouldTrace(conn, "rxFirst")) {
-        httpTrace(conn, "rxFirst", 0, "protocol:%s, status:%d", protocol, rx->status);
+        httpTrace(conn, "rxFirst", 0, "protocol=%s, status=%d", protocol, rx->status);
     }
     return 1;
 }
@@ -922,7 +922,7 @@ static bool processParsed(HttpConn *conn)
             httpCreatePipeline(conn);
 
             httpTrace(conn, "info", 0,
-                "route:%s, handler:%s, target:\"%s\", endpoint:\"%s:%d\", host:\"%s\"",
+                "route=%s, handler=%s, target=\"%s\", endpoint=%s:%d, host=%s",
                 rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
                 conn->host->name ? conn->host->name : "default");
             /*
@@ -1170,7 +1170,7 @@ static void createErrorRequest(HttpConn *conn)
     if (!rx->headerPacket) {
         return;
     }
-    httpTrace(conn, "info", "Redirect to error document", "location:\"%s\", status:%d", tx->errorDocument, tx->status, rx->uri);
+    httpTrace(conn, "info", "Redirect to error document", "location=%s, status=%d", tx->errorDocument, tx->status, rx->uri);
 
     originalUri = rx->uri;
     conn->rx = httpCreateRx(conn);
@@ -1272,11 +1272,11 @@ static void measure(HttpConn *conn)
         elapsed = mprGetTicks() - conn->started;
 #if MPR_HIGH_RES_TIMER
         if (elapsed < 1000) {
-            httpTrace(conn, "complete", 0, "elapsed:%,Ld, elapsedTicks:%,Ld",
-                elapsed, mprGetHiResTicks() - conn->startMark);
+            httpTrace(conn, "complete", 0, "elapsed=%Ld, elapsedTicks=%Ld, sent=%Ld",
+                elapsed, mprGetHiResTicks() - conn->startMark, tx->bytesWritten);
         } else
 #endif
-            httpTrace(conn, "complete", 0, "elapsed:%,Ld", elapsed);
+            httpTrace(conn, "complete", 0, "elapsed=%Ld, sent=%Ld", elapsed, tx->bytesWritten);
     }
 }
 

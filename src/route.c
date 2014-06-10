@@ -685,7 +685,7 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
                 }
                 path = mprReplacePathExt(filename, ext);
                 if (mprGetPathInfo(path, info) == 0) {
-                    httpTrace(conn, "info", "Mapping content", "originalFilename:\"%s\", filename:\"%s\"", filename, path);
+                    httpTrace(conn, "info", 0, "originalFilename=\"%s\", filename=\"%s\"", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");

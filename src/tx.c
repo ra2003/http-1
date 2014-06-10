@@ -486,7 +486,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n<p>The document has moved <a href=\"%s\">here</a>.</p></body></html>\r\n",
             msg, msg, targetUri);
-        httpTrace(conn, "info", "redirect", "status:%d, location:%s", status, targetUri);
+        httpTrace(conn, "info", "redirect", "status=%d, location=%s", status, targetUri);
     } else {
         httpFormatResponse(conn,
             "<!DOCTYPE html>\r\n"
@@ -763,7 +763,7 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
     }
     tx->filename = sclone(filename);
-    httpTrace(conn, "info", "Set filename", "filename:\"%s\", extension:%s", tx->filename, tx->ext);
+    httpTrace(conn, "info", 0, "filename=\"%s\"", tx->filename);
 }
 
 

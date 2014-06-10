@@ -280,29 +280,36 @@ PUBLIC cchar *httpMakePrintable(HttpConn *conn, cchar *event, cchar *buf, ssize 
 /*
     Format a detailed request message
  */
-PUBLIC void httpDetailTraceFormatter(HttpConn *conn, cchar *event, cchar *msg, cchar *values, cchar *buf, ssize len)
+PUBLIC void httpDetailTraceFormatter(HttpConn *conn, cchar *event, cchar *msg, cchar *values, cchar *data, ssize len)
 {
-    char    *boundary, prefix[64];
+    char    *boundary, buf[256];
     int     client, sessionSeqno;
 
     assert(conn);
     assert(event);
-    assert(msg && *msg);
 
     client = conn->address ? conn->address->seqno : 0;
     sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-    fmt(prefix, sizeof(prefix), "\n<%s %d-%d-%d-%d> ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno,
-        conn->seqno, conn->rx->seqno);
+    fmt(buf, sizeof(buf), "\n%s %d-%d-%d-%d ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno, conn->seqno, 
+            conn->rx->seqno, event);
     lock(conn->trace);
-    httpWriteTrace(conn, prefix, slen(prefix));
-    httpWriteTrace(conn, msg, slen(msg));
-
-    if (buf) {
-        boundary = "; --details--\n";
+    httpWriteTrace(conn, buf, slen(buf));
+    if (msg) {
+        msg = fmt(buf, sizeof(buf), "%s msg=\"%s\", ", event, msg);
+        httpWriteTrace(conn, buf, slen(buf));
+    } else {
+        msg = fmt(buf, sizeof(buf), "%s, ", event);
+        httpWriteTrace(conn, buf, slen(buf));
+    }
+    if (values) {
+        httpWriteTrace(conn, values, slen(values));
+    }
+    if (data) {
+        boundary = " --details--\n";
         httpWriteTrace(conn, boundary, slen(boundary));
-        buf = httpMakePrintable(conn, event, buf, &len);
-        httpWriteTrace(conn, buf, len);
-        httpWriteTrace(conn, &boundary[2], slen(boundary) - 2);
+        data = httpMakePrintable(conn, event, data, &len);
+        httpWriteTrace(conn, data, len);
+        httpWriteTrace(conn, &boundary[1], slen(boundary) - 1);
     } else {
         httpWriteTrace(conn, "\n", 1);
     }

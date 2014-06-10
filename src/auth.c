@@ -78,7 +78,7 @@ PUBLIC bool httpAuthenticate(HttpConn *conn)
                 return 0;
             }
         }
-        httpTrace(conn, "error", "Using cached authentication data", "username:%s", username);
+        httpTrace(conn, "error", "Using cached authentication data", "username=%s", username);
         conn->username = username;
         rx->authenticated = 1;
     }
@@ -202,7 +202,7 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
 
     auth = conn->rx->route->auth;
     if (auth->permittedUsers && !mprLookupKey(auth->permittedUsers, conn->username)) {
-        httpTrace(conn, "error", "User not permitted for access", "username:%s", conn->username);
+        httpTrace(conn, "error", "User not permitted for access", "username=%s", conn->username);
         return 0;
     }
     if (!auth->abilities && !abilities) {
@@ -214,13 +214,13 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
         return 0;
     }
     if (!conn->user && (conn->user = mprLookupKey(auth->userCache, conn->username)) == 0) {
-        httpTrace(conn, "error", "Cannot find user", "username:%s", conn->username);
+        httpTrace(conn, "error", "Cannot find user", "username=%s", conn->username);
         return 0;
     }
     if (abilities) {
         for (ability = stok(sclone(abilities), " \t,", &tok); abilities; abilities = stok(NULL, " \t,", &tok)) {
             if (!mprLookupKey(conn->user->abilities, ability)) {
-                httpTrace(conn, "error", "User does not possess the required ability", "username:%s, ability:%s", 
+                httpTrace(conn, "error", "User does not possess the required ability", "username=%s, ability=%s", 
                     conn->username, ability);
                 return 0;
             }
@@ -228,7 +228,7 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
     } else {
         for (ITERATE_KEYS(auth->abilities, kp)) {
             if (!mprLookupKey(conn->user->abilities, kp->key)) {
-                httpTrace(conn, "error", "User does not possess the required ability", "username:%s, ability:%s", 
+                httpTrace(conn, "error", "User does not possess the required ability", "username=%s, ability=%s", 
                     conn->username, kp->key);
                 return 0;
             }
@@ -778,7 +778,7 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!conn->user && (conn->user = mprLookupKey(auth->userCache, username)) == 0) {
-        httpTrace(conn, "error", "Unknown user", "username:%s", username);
+        httpTrace(conn, "error", "Unknown user", "username=%s", username);
         return 0;
     }
     if (password) {
@@ -796,9 +796,9 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
             success = smatch(password, requiredPassword);
         }
         if (success) {
-            httpTrace(conn, "info", "User authenticated", "username:%s", username);
+            httpTrace(conn, "info", "User authenticated", "username=%s", username);
         } else {
-            httpTrace(conn, "error", "Password failed to authenticate", "username:%s", username);
+            httpTrace(conn, "error", "Password failed to authenticate", "username=%s", username);
         }
         return success;
     }

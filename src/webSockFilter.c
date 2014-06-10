@@ -333,7 +333,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
          */
         httpJoinPacketForService(q, packet, 0);
     }
-    httpTracePacket(conn, "rxBody", packet, "WebSockets", "state:%d, frame:%d, length:%d",
+    httpTracePacket(conn, "rxBody", packet, "WebSockets", "state%d, frame%d, length%d",
         ws->state, ws->frameState, httpGetPacketLength(packet));
 
     if (packet->flags & HTTP_PACKET_END) {
@@ -355,7 +355,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
         switch (ws->frameState) {
         case WS_CLOSED:
             if (httpGetPacketLength(packet) > 0) {
-                httpTrace(conn, "error", "WebSockets closed: ignore incoming packet", 0);
+                httpTrace(conn, "error", "WebSockets closed, ignore incoming packet", 0);
             }
             httpFinalize(conn);
             httpSetState(conn, HTTP_STATE_FINALIZED);
@@ -370,31 +370,31 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             fp = content->start;
             if (GET_RSV(*fp) != 0) {
                 error = WS_STATUS_PROTOCOL_ERROR;
-                httpTrace(conn, "error", "WebSockets protocol error: bad reserved field", 0);
+                httpTrace(conn, "error", "WebSockets protocol error, bad reserved field", 0);
                 break;
             }
             packet->last = GET_FIN(*fp);
             opcode = GET_CODE(*fp);
             if (opcode == WS_MSG_CONT) {
                 if (!ws->currentMessageType) {
-                    httpTrace(conn, "error", "WebSockets protocol error: continuation frame but not prior message", 0);
+                    httpTrace(conn, "error", "WebSockets protocol error, continuation frame but not prior message", 0);
                     error = WS_STATUS_PROTOCOL_ERROR;
                     break;
                 }
             } else if (opcode < WS_MSG_CONTROL && ws->currentMessageType) {
-                httpTrace(conn, "error", "WebSockets protocol error: data frame received but expected a continuation frame", 0);
+                httpTrace(conn, "error", "WebSockets protocol error, data frame received but expected a continuation frame", 0);
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
             }
             if (opcode > WS_MSG_PONG) {
-                httpTrace(conn, "error", "WebSockets protocol error: bad frame opcode", 0);
+                httpTrace(conn, "error", "WebSockets protocol error, bad frame opcode", 0);
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
             }
             packet->type = opcode;
             if (opcode >= WS_MSG_CONTROL && !packet->last) {
                 /* Control frame, must not be fragmented */
-                httpTrace(conn, "error", "WebSockets protocol error: fragmented control frame", 0);
+                httpTrace(conn, "error", "WebSockets protocol error, fragmented control frame", 0);
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
             }
@@ -421,7 +421,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             }
             if (packet->type >= WS_MSG_CONTROL && len > WS_MAX_CONTROL) {
                 /* Too big */
-                httpTrace(conn, "error", "WebSockets protocol error: control frame too big", 0);
+                httpTrace(conn, "error", "WebSockets protocol error, control frame too big", 0);
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
             }
@@ -462,7 +462,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 if (httpServerConn(conn)) {
                     httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
                 }
-                httpTrace(conn, "error", "WebSockets incoming message is too large", "wsLength:%d, wsMaxLength:%d",
+                httpTrace(conn, "error", "WebSockets incoming message is too large", "wsLength=%d, wsMaxLength=%d",
                     len, limits->webSocketsMessageSize);
                 error = WS_STATUS_MESSAGE_TOO_LARGE;
                 break;
@@ -512,7 +512,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             break;
 
         default:
-            httpTrace(conn, "error", "WebSockets protocol error: unknown frame state", 0);
+            httpTrace(conn, "error", "WebSockets protocol error, unknown frame state", 0);
             error = WS_STATUS_PROTOCOL_ERROR;
             break;
         }
@@ -520,7 +520,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             /*
                 Notify of the error and send a close to the peer. The peer may or may not be still there.
              */
-            httpTrace(conn, "error", "Websockets error", "webSocketError:%d", error);
+            httpTrace(conn, "error", "Websockets error", "webSocketError=%d", error);
             HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, error);
             httpSendClose(conn, error, NULL);
             ws->frameState = WS_CLOSED;
@@ -556,7 +556,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
     assert(content);
 
     mprAddNullToBuf(content);
-    httpTrace(conn, "info", "WebSockets receive", "wsSeq:%d, wsTypeName:%s, wsType:%d, wsLast:%d, wsLength:%d",
+    httpTrace(conn, "info", "WebSockets receive", "wsSeq=%d, wsTypeName=%s, wsType=%d, wsLast=%d, wsLength=%d",
          ws->rxSeq++, codetxt[packet->type], packet->type, packet->last, mprGetBufLength(content));
 
     switch (packet->type) {
@@ -645,7 +645,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
                 (1004 <= ws->closeStatus && ws->closeStatus <= 1006) ||
                 (1012 <= ws->closeStatus && ws->closeStatus <= 1016) ||
                 (1100 <= ws->closeStatus && ws->closeStatus <= 2999)) {
-                httpTrace(conn, "error", "Websockets bad close", "wsCloseStatus:%d", ws->closeStatus);
+                httpTrace(conn, "error", "Websockets bad close", "wsCloseStatus=%d", ws->closeStatus);
                 return WS_STATUS_PROTOCOL_ERROR;
             }
             mprAdjustBufStart(content, 2);
@@ -659,7 +659,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
                 }
             }
         }
-        httpTrace(conn, "info", "WebSockets receive close packet", "wsCloseStatus:%d, wsCloseReason:\"%s\" wsClosing:%d",
+        httpTrace(conn, "info", "WebSockets receive close packet", "wsCloseStatus=%d, wsCloseReason=\"%s\", wsClosing=%d",
             ws->closeStatus, ws->closeReason, ws->closing);
         if (ws->closing) {
             httpDisconnect(conn);
@@ -685,7 +685,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         break;
 
     default:
-        httpTrace(conn, "error", "Websockets bad message", "wsType:%d", packet->type);
+        httpTrace(conn, "error", "Websockets bad message", "wsType=%d", packet->type);
         ws->state = WS_STATE_CLOSED;
         return WS_STATUS_PROTOCOL_ERROR;
     }
@@ -733,7 +733,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     }
     if (type != WS_MSG_CONT && type != WS_MSG_TEXT && type != WS_MSG_BINARY && type != WS_MSG_CLOSE &&
             type != WS_MSG_PING && type != WS_MSG_PONG) {
-        httpTrace(conn, "error", "Websockets bad message", "wsType:%d", type);
+        httpTrace(conn, "error", "Websockets bad message", "wsType=%d", type);
         return MPR_ERR_BAD_ARGS;
     }
     q = conn->writeq;
@@ -747,7 +747,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         if (httpServerConn(conn)) {
             httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
         }
-        httpTrace(conn, "error", "Outgoing websockets message is too large", "wsLength:%d, wsMaxLength:%d",
+        httpTrace(conn, "error", "Outgoing websockets message is too large", "wsLength=%d, wsMaxLength=%d",
             len, conn->limits->webSocketsMessageSize);
         return MPR_ERR_WONT_FIT;
     }
@@ -854,7 +854,7 @@ PUBLIC ssize httpSendClose(HttpConn *conn, int status, cchar *reason)
     if (reason) {
         scopy(&msg[2], len - 2, reason);
     }
-    httpTrace(conn, "info", "WebSockets send close packet", "wsCloseStatus:%d, wsCloseReason:\"%s\"", status, reason);
+    httpTrace(conn, "info", "WebSockets send close packet", "wsCloseStatus=%d, wsCloseReason=\"%s\"", status, reason);
     return httpSendBlock(conn, WS_MSG_CLOSE, msg, len, HTTP_BUFFER);
 }
 

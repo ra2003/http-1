@@ -181,7 +181,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
                     tx->cacheBufferLength += size;
                 } else {
                     tx->cacheBuffer = 0;
-                    httpTrace(conn, "info", "Item too big to cache", "size:%d, limit:%d", tx->cacheBufferLength + size, 
+                    httpTrace(conn, "info", "Item too big to cache", "size=%d, limit=%d", tx->cacheBufferLength + size, 
                         conn->limits->cacheItemSize);
                 }
             }
@@ -328,13 +328,13 @@ static bool fetchCachedResponse(HttpConn *conn)
             }
         }
         status = (canUseClientCache && cacheOk) ? HTTP_CODE_NOT_MODIFIED : HTTP_CODE_OK;
-        httpTrace(conn, "info", "Use cached content", "key:%s, status:%d", key, status);
+        httpTrace(conn, "info", "Use cached content", "key=%s, status=%d", key, status);
         httpSetStatus(conn, status);
         httpSetHeader(conn, "Etag", mprGetMD5(key));
         httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
         return 1;
     }
-    httpTrace(conn, "info", "No cached content", "key:%s", key);
+    httpTrace(conn, "info", "No cached content", "key=%s", key);
     return 0;
 }
 
@@ -369,10 +369,10 @@ PUBLIC ssize httpWriteCached(HttpConn *conn)
     }
     cacheKey = makeCacheKey(conn);
     if ((content = mprReadCache(conn->host->responseCache, cacheKey, &modified, 0)) == 0) {
-        httpTrace(conn, "info", "No response data in cache", "key:%s", cacheKey);
+        httpTrace(conn, "info", "No response data in cache", "key=%s", cacheKey);
         return 0;
     }
-    httpTrace(conn, "info", "Used cached response", "key:%s", cacheKey);
+    httpTrace(conn, "info", "Used cached response", "key=%s", cacheKey);
     data = setHeadersFromCache(conn, content);
     httpSetHeader(conn, "Etag", mprGetMD5(cacheKey));
     httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));

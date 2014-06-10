@@ -43,7 +43,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
             mprCloseSocket(conn->sock, 0);
             conn->sock = 0;
         } else {
-            httpTrace(conn, "info", "Reuse socket", "keepAlive:%d", conn->keepAliveCount);
+            httpTrace(conn, "info", "Reuse socket", "keepAlive=%d", conn->keepAliveCount);
         }
     }
     if (conn->sock) {
@@ -85,7 +85,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     }
 #endif
     if (httpShouldTrace(conn, "connection")) {
-        httpTrace(conn, "connection", 0, "peer:%s:%d", conn->ip, conn->port);
+        httpTrace(conn, "connection", 0, "peer=%s:%d", conn->ip, conn->port);
     }
     return conn;
 }
@@ -131,7 +131,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
         return MPR_ERR_BAD_STATE;
     }
-    httpTrace(conn, "info", "Connect", "method:%s, uri:%s", method, uri);
+    httpTrace(conn, "info", "Connect", "method=%s, uri=%s", method, uri);
 
     if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
         /* WARNING: this will erase headers */

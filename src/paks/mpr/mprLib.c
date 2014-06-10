@@ -15864,9 +15864,9 @@ PUBLIC void mprDefaultLogHandler(cchar *tags, int level, cchar *msg)
     if (MPR->logPath) {
         if (level == 0 || tags) {
             if (level == 0) {
-                fmt(tbuf, sizeof(tbuf), "<%s %d error %s> ", mprGetDate(MPR_LOG_DATE), level, tags ? tags : "");
+                fmt(tbuf, sizeof(tbuf), "%s %d error %s, ", mprGetDate(MPR_LOG_DATE), level, tags ? tags : "");
             } else {
-                fmt(tbuf, sizeof(tbuf), "<%s %d %s> ", mprGetDate(MPR_LOG_DATE), level, tags ? tags : "");
+                fmt(tbuf, sizeof(tbuf), "%s %d %s, ", mprGetDate(MPR_LOG_DATE), level, tags ? tags : "");
             }
             mprWriteFileString(file, tbuf);
             len = slen(tbuf);
@@ -15875,7 +15875,7 @@ PUBLIC void mprDefaultLogHandler(cchar *tags, int level, cchar *msg)
                 mprWriteFile(file, "                                          ", width - len);
             }
         } else {
-            mprWriteFileString(file, "> ");
+            mprWriteFileString(file, ", ");
         }
     } else {
         if (level == 0) {
@@ -23249,7 +23249,6 @@ PUBLIC int mprUpgradeSocket(MprSocket *sp, MprSsl *ssl, cchar *peerName)
         }
         ssl->providerName = providerName;
     }
-    mprLog("mpr socket", 4, "Using SSL provider: %s", ssl->providerName);
     sp->provider = ssl->provider;
 #if KEEP
     /* session resumption can cause problems with Nagle. However, appweb opens sockets with nodelay by default */

@@ -121,7 +121,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     written = mprSendFileToSocket(conn->sock, file, q->ioPos, q->ioCount, q->iovec, q->ioIndex, NULL, 0);
     if (written < 0) {
         errCode = mprGetError();
-        httpTrace(conn, "error", "Connector write error", "errno:%d", errCode);
+        httpTrace(conn, "error", "Connector write error", "errno=%d", errCode);
         if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
             /*  Socket full, wait for an I/O event */
             tx->writeBlocked = 1;

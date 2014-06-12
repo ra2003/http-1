@@ -417,7 +417,7 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
         return (clone) ? httpCloneUri(base, 0) : base;
     }
     if (!(target->path && target->path[0] == '/') || !((base->path && base->path[0] == '/'))) {
-        /* If target is relative, just use it. If base is relative, can't use it because we don't know where it is */
+        /* If target is relative, just use it. If base is relative, cannot use it because we don't know where it is */
         return (clone) ? httpCloneUri(target, 0) : target;
     }
     if (base->scheme && target->scheme && scmp(base->scheme, target->scheme) != 0) {
@@ -780,7 +780,7 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
             }
         }
         if (!tplate) {
-            mprLog("http", 0, "Cannot find template for URI %s", target);
+            mprLog("error http", 0, "Cannot find template for URI %s", target);
             target = "/";
         }
     }
@@ -851,7 +851,6 @@ PUBLIC bool httpValidUriChars(cchar *uri)
     }
     pos = strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%");
     if (pos < slen(uri)) {
-        mprDebug("http uri", 3, "Bad character in URI at %s", &uri[pos]);
         return 0;
     }
     return 1;

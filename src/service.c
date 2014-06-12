@@ -331,7 +331,7 @@ static bool isIdle(bool traceRequests)
             if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
                 if (traceRequests && lastTrace < now) {
                     if (conn->rx) {
-                        mprLog("http", MPR_INFO, "Request for \"%s\" is still active", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
+                        mprLog("info http", 2, "Request for \"%s\" is still active", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
                     }
                     lastTrace = now;
                 }
@@ -614,7 +614,7 @@ static void httpTimer(Http *http, MprEvent *event)
         for (next = 0; (module = mprGetNextItem(MPR->moduleService->modules, &next)) != 0; ) {
             if (module->timeout) {
                 if (module->lastActivity + module->timeout < http->now) {
-                    mprLog("http", 2, "Unloading inactive module %s", module->name);
+                    mprLog("info http", 2, "Unloading inactive module %s", module->name);
                     if ((stage = httpLookupStage(http, module->name)) != 0) {
                         if (mprUnloadModule(module) < 0)  {
                             active++;
@@ -650,7 +650,7 @@ static void httpTimer(Http *http, MprEvent *event)
 
 static void timestamp()
 {
-    mprLog("http", 0, "Time: %s", mprGetDate(NULL));
+    mprLog("info http", 0, "Time: %s", mprGetDate(NULL));
 }
 
 
@@ -954,7 +954,7 @@ PUBLIC int httpApplyUserGroup()
             }
         }
         groups = mprGetBufStart(gbuf);
-        mprLog("http", MPR_INFO, "Running as user \"%s\" (%d), group \"%s\" (%d)%s", http->user, http->uid, 
+        mprLog("info http", 2, "Running as user \"%s\" (%d), group \"%s\" (%d)%s", http->user, http->uid, 
             http->group, http->gid, groups);
     }
 #endif
@@ -998,7 +998,7 @@ PUBLIC int httpSetUserAccount(cchar *newUser)
 #if ME_UNIX_LIKE
         /* Only change user if root */
         if (getuid() != 0) {
-            mprLog("http", MPR_INFO, "Running as user account \"%s\"", http->user);
+            mprLog("info http", 2, "Running as user account \"%s\"", http->user);
             return 0;
         }
 #endif
@@ -1204,7 +1204,7 @@ PUBLIC int httpSetPlatform(cchar *platform)
         return MPR_ERR_BAD_ARGS;
     }
     http->platform = platform ? sclone(platform) : http->localPlatform;
-    mprLog("http", MPR_INFO, "Using platform %s", http->platform);
+    mprLog("info http", 2, "Using platform %s", http->platform);
     return 0;
 }
 
@@ -1222,7 +1222,7 @@ PUBLIC int httpSetPlatformDir(cchar *path)
     } else {
         http->platformDir = mprGetPathDir(mprGetPathDir(mprGetAppPath()));
     }
-    mprLog("http", MPR_INFO, "Using platform directory \"%s\"", mprGetRelPath(http->platformDir, 0));
+    mprLog("info http", 2, "Using platform directory \"%s\"", mprGetRelPath(http->platformDir, 0));
     return 0;
 }
 

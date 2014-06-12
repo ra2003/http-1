@@ -43,7 +43,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
             mprCloseSocket(conn->sock, 0);
             conn->sock = 0;
         } else {
-            httpTrace(conn, "info", "Reuse socket", "keepAlive=%d", conn->keepAliveCount);
+            httpTrace(conn, "context", "Reuse socket", "keepAlive=%d", conn->keepAliveCount);
         }
     }
     if (conn->sock) {
@@ -60,11 +60,15 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     conn->sock = sp;
     conn->ip = sclone(ip);
     conn->port = port;
+#if UNUSED
     conn->secure = uri->secure;
+#endif
     conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : 0;
 
 #if ME_COM_SSL
-    /* Must be done even if using keep alive for repeat SSL requests */
+    /* 
+        Must be done even if using keep alive for repeat SSL requests 
+     */
     if (uri->secure) {
         char *peerName;
         if (ssl == 0) {
@@ -75,6 +79,11 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
             conn->errorMsg = sp->errorMsg;
             httpTrace(conn, "error", sfmt("Cannot upgrade socket, %s", conn->errorMsg), 0);
             return 0;
+        }
+        if (sp->peerCert) {
+            httpTrace(conn, "context", "Connection secured with peer certificate",
+                "secure=true, cipher=%s, peerName=\"%s\", subject=\"%s\", issuer=\"%s\"",
+                sp->cipher, sp->peerName, sp->peerCert, sp->peerCertIssuer);
         }
     }
 #endif
@@ -131,7 +140,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
         return MPR_ERR_BAD_STATE;
     }
-    httpTrace(conn, "info", "Connect", "method=%s, uri=%s", method, uri);
+    httpTrace(conn, "context", "Connect", "method=%s, uri=%s", method, uri);
 
     if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
         /* WARNING: this will erase headers */
@@ -382,7 +391,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
 
     file = mprOpenFile(path, O_RDONLY | O_BINARY, 0);
     if (file == 0) {
-        mprLog("http client", 0, "Cannot open %s", path);
+        mprLog("error http client", 0, "Cannot open %s", path);
         return MPR_ERR_CANT_OPEN;
     }
     mprAddRoot(file);
@@ -461,7 +470,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     int         justOne;
 
     if (httpServerConn(conn)) {
-        mprLog("http client", 0, "Should not call httpWait on the server side");
+        mprLog("error http client", 0, "Should not call httpWait on the server side");
         return MPR_ERR_BAD_STATE;
     }
     if (state == 0) {

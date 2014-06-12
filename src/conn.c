@@ -371,7 +371,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     address = conn->address;
     if (address && address->banUntil) {
         if (address->banUntil < http->now) {
-            httpTrace(conn, "info", "Remove ban on client", "peer=%s:%d", conn->ip, conn->port);
+            httpTrace(conn, "context", "Remove ban on client", "peer=%s:%d", conn->ip, conn->port);
             address->banUntil = 0;
         } else {
             if (address->banStatus) {
@@ -391,19 +391,41 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
             httpDestroyConn(conn);
             return 0;
         }
-        conn->secure = 1;
     }
     assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 
     if (httpShouldTrace(conn, "connection")) {
-        httpTrace(conn, "connection", 0, "peer=%s:%d, endpoint=%s:%d, secure=%d", 
-             conn->ip, conn->port, sock->acceptIp, sock->acceptPort, conn->secure);
+        httpTrace(conn, "connection", 0, "peer=%s, endpoint=%s:%d", conn->ip, sock->acceptIp, sock->acceptPort);
     }
     event->mask = MPR_READABLE;
     event->timestamp = conn->http->now;
     (conn->ioCallback)(conn, event);
     return conn;
+}
+
+
+/*
+    Read data from the peer. This will use the existing conn->input packet or allocate a new packet if required to 
+    hold the data. The number of bytes read is stored in conn->lastRead. SSL connections are traced.
+    Socket error messages are stored in conn->errorMsg.
+ */
+static void readPeerData(HttpConn *conn)
+{
+    HttpPacket  *packet;
+    ssize       size;
+
+    if ((packet = getPacket(conn, &size)) != 0) {
+        conn->lastRead = mprReadSocket(conn->sock, mprGetBufEnd(packet->content), size);
+        if (conn->lastRead > 0) {
+            mprAdjustBufEnd(packet->content, conn->lastRead);
+        } else if (conn->lastRead < 0 && mprIsSocketEof(conn->sock)) {
+            conn->errorMsg = conn->sock->errorMsg;
+            conn->keepAliveCount = 0;
+            conn->lastRead = 0;
+            httpTrace(conn, "close", sfmt("%s", conn->errorMsg), 0);
+        }
+    }
 }
 
 
@@ -415,9 +437,9 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
  */
 PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
 {
-    HttpPacket  *packet;
-    ssize       size;
+    MprSocket   *sp;
 
+    sp = conn->sock;
     if (conn->destroyed) {
         /* Connection has been destroyed */
         return;
@@ -430,15 +452,17 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
         httpResumeQueue(conn->connectorq);
     }
     if (event->mask & MPR_READABLE) {
-        if ((packet = getPacket(conn, &size)) != 0) {
-            conn->lastRead = mprReadSocket(conn->sock, mprGetBufEnd(packet->content), size);
-            if (conn->lastRead > 0) {
-                mprAdjustBufEnd(packet->content, conn->lastRead);
-            } else if (conn->lastRead < 0 && mprIsSocketEof(conn->sock)) {
-                conn->errorMsg = conn->sock->errorMsg;
-                conn->keepAliveCount = 0;
-                conn->lastRead = 0;
-            }
+        readPeerData(conn);
+    }
+    if (sp->secured && !conn->secure) {
+        conn->secure = 1;
+        if (sp->peerCert) {
+            httpTrace(conn, "context", "Connection secured with peer certificate", 
+                "secure=true, cipher=%s, peerName=\"%s\", subject=\"%s\", issuer=\"%s\"", 
+                sp->cipher, sp->peerName, sp->peerCert, sp->peerCertIssuer);
+        } else {
+            httpTrace(conn, "context", "Connection secured without peer certificate", 
+                "secure=true, cipher=%s", sp->cipher);
         }
     }
     /*

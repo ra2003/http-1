@@ -25,10 +25,10 @@ static void manageTrace(HttpTrace *trace, int flags)
 
 /*
     Initialize trace to default levels:
-    Levels 0-5: Normal numeric trace levels
+    Levels 0-5: Numeric trace levels
     Level 2: rx first line, errors
-    Level 3: rx headers, tx headers
-    Level 4: info, time measurements
+    Level 3: tx first line
+    Level 4: connection, rx headers, tx headers, context, completions
     Level 5: rx/tx body
  */
 PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
@@ -47,12 +47,13 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
         }
         mprAddKey(trace->events, "rxFirst", ITOP(2));
         mprAddKey(trace->events, "error", ITOP(2));
-        mprAddKey(trace->events, "connection", ITOP(3));
-        mprAddKey(trace->events, "rxHeaders", ITOP(3));
         mprAddKey(trace->events, "txFirst", ITOP(3));
-        mprAddKey(trace->events, "txHeaders", ITOP(3));
-        mprAddKey(trace->events, "info", ITOP(3));
+        mprAddKey(trace->events, "connection", ITOP(4));
+        mprAddKey(trace->events, "rxHeaders", ITOP(4));
+        mprAddKey(trace->events, "txHeaders", ITOP(4));
+        mprAddKey(trace->events, "context", ITOP(4));
         mprAddKey(trace->events, "complete", ITOP(4));
+        mprAddKey(trace->events, "close", ITOP(4));
         mprAddKey(trace->events, "rxBody", ITOP(5));
         mprAddKey(trace->events, "txBody", ITOP(5));
 
@@ -92,6 +93,16 @@ PUBLIC void httpSetTraceLevel(int level)
     }
     http = MPR->httpService;
     http->traceLevel = level;
+}
+
+
+//  MOB order
+PUBLIC int httpGetTraceLevel()
+{
+    Http    *http;
+
+    http = MPR->httpService;
+    return http->traceLevel;
 }
 
 
@@ -291,17 +302,19 @@ PUBLIC void httpDetailTraceFormatter(HttpConn *conn, cchar *event, cchar *msg, c
     client = conn->address ? conn->address->seqno : 0;
     sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
     fmt(buf, sizeof(buf), "\n%s %d-%d-%d-%d ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno, conn->seqno, 
-            conn->rx->seqno, event);
+        conn->rx->seqno);
     lock(conn->trace);
     httpWriteTrace(conn, buf, slen(buf));
     if (msg) {
-        msg = fmt(buf, sizeof(buf), "%s msg=\"%s\", ", event, msg);
+        //  MOB - what if msg contains commas?
+        msg = fmt(buf, sizeof(buf), "%s, msg=\"%s\", ", event, msg);
         httpWriteTrace(conn, buf, slen(buf));
     } else {
         msg = fmt(buf, sizeof(buf), "%s, ", event);
         httpWriteTrace(conn, buf, slen(buf));
     }
     if (values) {
+        //  MOB - what if msg contains commas?
         httpWriteTrace(conn, values, slen(values));
     }
     if (data) {
@@ -372,7 +385,7 @@ PUBLIC int httpOpenTraceLogFile(HttpTrace *trace)
             } else if (smatch(trace->path, "stderr")) {
                 file = MPR->stdError;
             } else if ((file = mprOpenFile(trace->path, mode, 0664)) == 0) {
-                mprLog("http trace", 0, "Cannot open log file %s", trace->path);
+                mprLog("error http trace", 0, "Cannot open log file %s", trace->path);
                 return MPR_ERR_CANT_OPEN;
             }
         }

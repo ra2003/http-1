@@ -107,6 +107,13 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         }
     }
     tx->flags |= HTTP_TX_PIPELINE;
+
+    if (conn->endpoint && httpShouldTrace(conn, "context")) {
+        httpTrace(conn, "context", 0,
+            "route=%s, handler=%s, target=\"%s\", endpoint=%s:%d, host=%s, referrer=%s, filename=%s",
+            rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
+            conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "", tx->filename ? tx->filename : "");
+    }
 }
 
 
@@ -235,7 +242,7 @@ PUBLIC void httpSetSendConnector(HttpConn *conn, cchar *path)
     tx->flags |= HTTP_TX_SENDFILE;
     tx->filename = sclone(path);
 #else
-    mprLog("http config", 0, "Send connector not available if ROMFS enabled");
+    mprLog("error http config", 0, "Send connector not available if ROMFS enabled");
 #endif
 }
 

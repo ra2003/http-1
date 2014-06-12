@@ -91,7 +91,7 @@ static void invokeDefenses(HttpMonitor *monitor, MprHash *args)
                 sd->suppressUntil = http->now + defense->suppressPeriod;
             }
         }
-        mprLog("http monitor", 4, "Defense \"%s\" running remedy \"%s\".", defense->name, defense->remedy);
+        mprLog("info http monitor", 2, "Defense \"%s\" running remedy \"%s\".", defense->name, defense->remedy);
 
         /*  WARNING: yields */
         remedyProc(args);
@@ -128,7 +128,7 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
         period = monitor->period / 1000;
         address = ip ? sfmt(" %s", ip) : "";
         msg = sfmt(fmt, address, monitor->counterName, counter->value, period, monitor->limit);
-        mprLog("http monitor", 3, "%s", msg);
+        mprLog("info http monitor", 4, "%s", msg);
 
         subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
@@ -155,7 +155,7 @@ PUBLIC void httpPruneMonitors()
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
         if (address->banUntil && address->banUntil < http->now) {
-            mprLog("http monitor", 1, "Remove ban on client %s at %s", kp->key, mprGetDate(0));
+            mprLog("info http monitor", 1, "Remove ban on client %s at %s", kp->key, mprGetDate(0));
             address->banUntil = 0;
         }
         if ((address->updated + period) < http->now && address->banUntil == 0) {
@@ -246,12 +246,12 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
         return MPR_ERR_BAD_ARGS;
     }
     if ((counterIndex = mprLookupStringItem(http->counters, counterName)) < 0) {
-        mprLog("http monitor", 0, "Cannot find counter %s", 0, counterName);
+        mprLog("error http monitor", 0, "Cannot find counter %s", 0, counterName);
         return MPR_ERR_CANT_FIND;
     }
     for (ITERATE_ITEMS(http->monitors, mp, next)) {
         if (mp->counterIndex == counterIndex) {
-            mprLog("http monitor", 0, "Monitor already exists for counter %s", counterName);
+            mprLog("error http monitor", 0, "Monitor already exists for counter %s", counterName);
             return MPR_ERR_ALREADY_EXISTS;
         }
     }
@@ -264,7 +264,7 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     tok = sclone(defenses);
     while ((def = stok(tok, " \t", &tok)) != 0) {
         if ((defense = mprLookupKey(http->defenses, def)) == 0) {
-            mprLog("http monitor", 0, "Cannot find Defense \"%s\"", def);
+            mprLog("error http monitor", 0, "Cannot find Defense \"%s\"", def);
             return MPR_ERR_CANT_FIND;
         }
         mprAddItem(defenseList, defense);
@@ -472,21 +472,21 @@ PUBLIC void httpDumpCounters()
     int             i;
 
     http = MPR->httpService;
-    mprLog("http monitor", 0, "Monitor Counters:\n");
-    mprLog("http monitor", 0, "Memory counter     %,Ld\n", mprGetMem());
-    mprLog("http monitor", 0, "Active processes   %,Ld\n", mprGetListLength(MPR->cmdService->cmds));
-    mprLog("http monitor", 0, "Active clients     %,Ld\n", mprGetHashLength(http->addresses));
+    mprLog(0, 0, "Monitor Counters:\n");
+    mprLog(0, 0, "Memory counter     %,Ld\n", mprGetMem());
+    mprLog(0, 0, "Active processes   %,Ld\n", mprGetListLength(MPR->cmdService->cmds));
+    mprLog(0, 0, "Active clients     %,Ld\n", mprGetHashLength(http->addresses));
 
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
-        mprLog("http monitor", 0, "Client             %s\n", kp->key);
+        mprLog(0, 0, "Client             %s\n", kp->key);
         for (i = 0; i < address->ncounters; i++) {
             counter = &address->counters[i];
             name = mprGetItem(http->counters, i);
             if (name == NULL) {
                 break;
             }
-            mprLog("http monitor", 0, "  Counter          %s = %,Ld\n", name, counter->value);
+            mprLog(0, 0, "  Counter          %s = %,Ld\n", name, counter->value);
         }
     }
     unlock(http->addresses);
@@ -503,11 +503,11 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
 
     http = MPR->httpService;
     if ((address = mprLookupKey(http->addresses, ip)) == 0) {
-        mprLog("http monitor", 1, "Cannot find client %s to ban", ip);
+        mprLog("error http monitor", 1, "Cannot find client %s to ban", ip);
         return MPR_ERR_CANT_FIND;
     }
     if (address->banUntil < http->now) {
-        mprLog("http monitor", 1, "Client %s banned for %Ld secs at %s", ip, period / 1000, mprGetDate(0));
+        mprLog("info http monitor", 1, "Client %s banned for %Ld secs at %s", ip, period / 1000, mprGetDate(0));
     }
     banUntil = http->now + period;
     address->banUntil = max(banUntil, address->banUntil);
@@ -561,7 +561,7 @@ static void cmdRemedy(MprHash *args)
         data = stok(command, "|", &command);
         data = stemplate(data, args);
     }
-    mprLog("http monitor", 1, "Run cmd remedy: %s", command);
+    mprLog("info http monitor run", 1, "Remedy: %s", command);
     command = strim(command, " \t", MPR_TRIM_BOTH);
     if ((background = (sends(command, "&"))) != 0) {
         command = strim(command, "&", MPR_TRIM_END);
@@ -570,12 +570,12 @@ static void cmdRemedy(MprHash *args)
     cmd->stdoutBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
     cmd->stderrBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
     if (mprStartCmd(cmd, argc, argv, NULL, MPR_CMD_DETACH | MPR_CMD_IN) < 0) {
-        mprLog("http monitor", 0, "Cannot start command: %s", command);
+        mprLog("error http monitor", 0, "Cannot start command: %s", command);
         return;
     }
-    mprLog("http monitor", 4, "Cmd data: \n%s", data);
+    mprLog("info http monitor run", 4, "Cmd data: \n%s", data);
     if (data && mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
-        mprLog("http monitor", 0, "Cannot write to command: %s", command);
+        mprLog("error http monitor", 0, "Cannot write to command: %s", command);
         return;
     }
     mprFinalizeCmd(cmd);
@@ -583,7 +583,7 @@ static void cmdRemedy(MprHash *args)
         rc = mprWaitForCmd(cmd, ME_HTTP_REMEDY_TIMEOUT);
         status = mprGetCmdExitStatus(cmd);
         if (rc < 0 || status != 0) {
-            mprLog("http monitor", 0, "Remedy failed. Error: %s\nResult: %s", 
+            mprLog("error http monitor", 0, "Remedy failed. Error: %s\nResult: %s", 
                 mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf));
             return;
         }
@@ -607,8 +607,7 @@ static void delayRemedy(MprHash *args)
             address->delayUntil = max(delayUntil, address->delayUntil);
             delay = (int) lookupTicks(args, "DELAY", ME_HTTP_DELAY);
             address->delay = max(delay, address->delay);
-            mprLog("http monitor", 2, "%s", mprLookupKey(args, "MESSAGE"));
-            mprLog("http monitor", 2, "Initiate delay of %d for IP address %s", address->delay, ip);
+            mprLog("info http monitor delay", 2, "Initiate delay of %d for IP address %s", address->delay, ip);
         }
     }
 }
@@ -637,12 +636,12 @@ static void httpRemedy(MprHash *args)
     }
     msg = smatch(method, "POST") ? mprLookupKey(args, "MESSAGE") : 0;
     if ((conn = httpRequest(method, uri, msg, &err)) == 0) {
-        mprLog("http monitory remedy", 0, "%s", err);
+        mprLog("error http monitory remedy", 0, "%s", err);
         return;
     }
     status = httpGetStatus(conn);
     if (status != HTTP_CODE_OK) {
-        mprLog("http monitor remedy", 0, "Remedy URI %s responded with http status %d\n%s", uri, status);
+        mprLog("error http monitor remedy", 0, "Remedy URI %s responded with http status %d\n%s", uri, status);
     }
 }
 
@@ -650,13 +649,13 @@ static void httpRemedy(MprHash *args)
 /* TODO - message already logged at level 2 */
 static void logRemedy(MprHash *args)
 {
-    mprLog("http monitor", 0, "%s", mprLookupKey(args, "MESSAGE"));
+    mprLog("info http monitor", 0, "%s", mprLookupKey(args, "MESSAGE"));
 }
 
 
 static void restartRemedy(MprHash *args)
 {
-    mprLog("http monitor", 0, "RestartRemedy: Restarting ...");
+    mprLog("info http monitor", 0, "RestartRemedy: Restarting ...");
     mprRestart();
 }
 

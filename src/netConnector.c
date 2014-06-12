@@ -105,7 +105,6 @@ static void netOutgoingService(HttpQueue *q)
         written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
         if (written < 0) {
             errCode = mprGetError();
-            httpTrace(conn, "error", "Connector write error", "errno=%d", errCode);
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
                 /*  Socket full, wait for an I/O event */
                 tx->writeBlocked = 1;
@@ -113,13 +112,14 @@ static void netOutgoingService(HttpQueue *q)
             }
             if (errCode == EPROTO && conn->secure) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR,
-                    "Can't negotiate SSL with server: %s", conn->sock->errorMsg);
+                    "Cannot negotiate SSL with server: %s", conn->sock->errorMsg);
             } else if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Can't write. errno %d", errCode);
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Cannot write. errno %d", errCode);
             } else {
                 httpDisconnect(conn);
             }
             httpFinalizeConnector(conn);
+            httpTrace(conn, "error", "Connector write error", "errno=%d", errCode);
             break;
 
         } else if (written > 0) {
@@ -197,7 +197,6 @@ static void addToNetVector(HttpQueue *q, char *ptr, ssize bytes)
 static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
 {
     HttpConn    *conn;
-    cchar       *event;
 
     conn = q->conn;
     assert(q->count >= 0);
@@ -209,9 +208,8 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     if (httpGetPacketLength(packet) > 0) {
         addToNetVector(q, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
     }
-    event = (packet->flags & HTTP_PACKET_HEADER) ? "txHeaders" : "txBody";
-    if (httpShouldTrace(conn, event)) {
-        httpTracePacket(conn, event, packet, 0, 0);
+    if (packet->flags & HTTP_PACKET_DATA && httpShouldTrace(conn, "txBody")) {
+        httpTracePacket(conn, "txBody", packet, 0, "length=%Ld", httpGetPacketLength(packet));
     }
 }
 

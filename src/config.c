@@ -40,7 +40,7 @@ static void httpParseError(HttpRoute *route, cchar *fmt, ...)
 
     va_start(args, fmt);
     msg = sfmtv(fmt, args);
-    mprLog("http config", 0, "%s", msg);
+    mprLog("error http config", 0, "%s", msg);
     va_end(args);
     route->error = 1;
 }
@@ -94,7 +94,7 @@ static int testConfig(HttpRoute *route, cchar *path)
         return 0;
     }
     if (!mprPathExists(path, R_OK)) {
-        mprLog("http config", 0, "Cannot find %s", path);
+        mprLog("error http config", 0, "Cannot find %s", path);
         return MPR_ERR_CANT_READ;
     }
     return 0;
@@ -112,7 +112,7 @@ static void blendMode(HttpRoute *route, MprJson *config)
     mode = mprGetJson(config, "app.mode");
     if (!mode) {
         mode = sclone("debug");
-        mprLog("http config", 3, "Route \"%s\" running in \"%s\" mode", route->name, mode);
+        mprLog("info http config", 3, "Route \"%s\" running in \"%s\" mode", route->name, mode);
     }
     if ((currentMode = mprGetJsonObj(config, sfmt("app.modes.%s", mode))) != 0) {
         app = mprLookupJsonObj(config, "app");
@@ -128,11 +128,11 @@ PUBLIC int parseFile(HttpRoute *route, cchar *path)
     cchar       *data, *errorMsg;
 
     if ((data = mprReadPathContents(path, NULL)) == 0) {
-        mprLog("http config", 0, "Cannot read configuration from \"%s\"", path);
+        mprLog("error http config", 0, "Cannot read configuration from \"%s\"", path);
         return MPR_ERR_CANT_READ;
     }
     if ((config = mprParseJsonEx(data, 0, 0, 0, &errorMsg)) == 0) {
-        mprLog("http config", 0, "Cannot parse %s: error %s", path, errorMsg);
+        mprLog("error http config", 0, "Cannot parse %s: error %s", path, errorMsg);
         return MPR_ERR_CANT_READ;
     }
     if (route->config == 0) {
@@ -978,7 +978,7 @@ PUBLIC void httpAddRouteSet(HttpRoute *route, cchar *set)
     if ((proc = mprLookupKey(route->http->routeSets, set)) != 0) {
         (proc)(route, set);
     } else {
-        mprLog("http config", 0, "Cannot find route set \"%s\"", set);
+        mprLog("error http config", 0, "Cannot find route set \"%s\"", set);
     }
 }
 
@@ -1019,7 +1019,7 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     if (route->loaded) {
-        mprLog("http config", 1, "Skip reloading routes - must reboot if routes are modified");
+        mprLog("warn http config", 1, "Skip reloading routes - must reboot if routes are modified");
         return;
     }
     if (prop->type & MPR_JSON_STRING) {
@@ -1096,7 +1096,7 @@ static void parseServerChroot(HttpRoute *route, cchar *key, MprJson *prop)
     }
     if (route->http->flags & HTTP_UTILITY) {
         /* Not running a web server but rather a utility like the "esp" generator program */
-        mprLog("http config", MPR_INFO, "Change directory to: \"%s\"", home);
+        mprLog("info http config", 2, "Change directory to: \"%s\"", home);
     } else {
         if (chroot(home) < 0) {
             if (errno == EPERM) {
@@ -1106,10 +1106,10 @@ static void parseServerChroot(HttpRoute *route, cchar *key, MprJson *prop)
             }
             return;
         }
-        mprLog("http config", MPR_INFO, "Chroot to: \"%s\"", home);
+        mprLog("info http config", 2, "Chroot to: \"%s\"", home);
     }
 #else
-    mprLog("http config", MPR_INFO, "Chroot directive not supported on this operating system\n");
+    mprLog("info http config", 2, "Chroot directive not supported on this operating system\n");
 #endif
 }
 
@@ -1187,7 +1187,7 @@ static void parseServerLog(HttpRoute *route, cchar *key, MprJson *prop)
     int         level, anew, backup;
 
     if (mprGetCmdlineLogging()) {
-        mprLog("http config", 4, "Already logging. Ignoring log configuration");
+        mprLog("warn http config", 4, "Already logging. Ignoring log configuration");
         return;
     }
     location = mprGetJson(prop, "location");
@@ -1231,7 +1231,7 @@ static void parseServerMonitors(HttpRoute *route, cchar *key, MprJson *prop)
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         defenses = mprGetJson(child, "defenses");
         expression = mprGetJson(child, "expression");
-        period = httpGetNumber(mprGetJson(child, "period"));
+        period = httpGetTicks(mprGetJson(child, "period"));
 
         if (!httpTokenize(route, expression, "%S %S %S", &counter, &relation, &limit)) {
             httpParseError(route, "Cannot add monitor: %s", prop->name);
@@ -1416,7 +1416,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     int         anew, backup, ji;
 
     if (route->trace && route->trace->flags & MPR_LOG_CMDLINE) {
-        mprLog("http config", 4, "Already tracing. Ignoring trace configuration");
+        mprLog("info http config", 4, "Already tracing. Ignoring trace configuration");
         return;
     }
     size = (ssize) httpGetNumber(mprGetJson(prop, "size"));

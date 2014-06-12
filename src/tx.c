@@ -462,8 +462,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
                 if (endpoint) {
                     target->port = endpoint->port;
                 } else if (smatch(target->scheme, "https")) {
-                    //  MOB - should this be mprLog
-                    httpTrace(conn, "error", "Missing secure endpoint to use with https redirection", 0);
+                    mprLog("error", 0, "Missing secure endpoint to use with https redirection");
                 }
             }
         }
@@ -486,7 +485,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n<p>The document has moved <a href=\"%s\">here</a>.</p></body></html>\r\n",
             msg, msg, targetUri);
-        httpTrace(conn, "info", "redirect", "status=%d, location=%s", status, targetUri);
+        httpTrace(conn, "context", "redirect", "status=%d, location=%s", status, targetUri);
     } else {
         httpFormatResponse(conn,
             "<!DOCTYPE html>\r\n"
@@ -763,7 +762,11 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
     }
     tx->filename = sclone(filename);
-    httpTrace(conn, "info", 0, "filename=\"%s\"", tx->filename);
+
+    if (tx->flags & HTTP_TX_PIPELINE) {
+        /* Filename being revised after pipeline created */
+        httpTrace(conn, "context", 0, "filename=\"%s\"", tx->filename);
+    }
 }
 
 
@@ -825,6 +828,10 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         mprPutIntToBuf(buf, tx->status);
         mprPutCharToBuf(buf, ' ');
         mprPutStringToBuf(buf, httpLookupStatus(http, tx->status));
+        if (httpShouldTrace(conn, "txFirst")) {
+            httpTrace(conn, "txFirst", 0, "status=%d, protocol=%s", tx->status, conn->protocol);
+        }
+
     } else {
         mprPutStringToBuf(buf, tx->method);
         mprPutCharToBuf(buf, ' ');
@@ -845,6 +852,9 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
                 mprPutStringToBuf(buf, conn->protocol);
             }
         }
+        if (httpShouldTrace(conn, "txFirst")) {
+            httpTrace(conn, "txFirst", 0, "method=%s, uri=%s, protocol=%s", tx->method, parsedUri->path, conn->protocol);
+        }
     }
     mprPutStringToBuf(buf, "\r\n");
 
@@ -861,6 +871,10 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         mprPutStringToBuf(packet->content, "\r\n");
         kp = mprGetNextKey(conn->tx->headers, kp);
     }
+    if (httpShouldTrace(conn, "txHeaders")) {
+        httpTracePacket(conn, "txHeaders", packet, 0, 0);
+    }
+
     /*
         By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter
      */

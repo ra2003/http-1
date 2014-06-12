@@ -93,7 +93,10 @@ static void readyCacheHandler(HttpQueue *q)
     tx = conn->tx;
 
     if (tx->cachedContent) {
-        httpTrace(conn, "info", "Using cached content", 0);
+#if KEEP
+        /* Duplicate */
+        httpTrace(conn, "context", "Using cached content", 0);
+#endif
         if ((data = setHeadersFromCache(conn, tx->cachedContent)) != 0) {
             tx->length = slen(data);
             httpWriteString(q, data);
@@ -141,7 +144,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
      */
     if (mprLookupKey(conn->tx->headers, "X-SendCache") != 0) {
         if (fetchCachedResponse(conn)) {
-            httpTrace(conn, "info", "Using cached content", 0);
+            httpTrace(conn, "context", "Using cached content", 0);
             cachedData = setHeadersFromCache(conn, tx->cachedContent);
             tx->length = slen(cachedData);
         }
@@ -181,7 +184,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
                     tx->cacheBufferLength += size;
                 } else {
                     tx->cacheBuffer = 0;
-                    httpTrace(conn, "info", "Item too big to cache", "size=%d, limit=%d", tx->cacheBufferLength + size, 
+                    httpTrace(conn, "context", "Item too big to cache", "size=%d, limit=%d", tx->cacheBufferLength + size, 
                         conn->limits->cacheItemSize);
                 }
             }
@@ -301,7 +304,7 @@ static bool fetchCachedResponse(HttpConn *conn)
     key = makeCacheKey(conn);
     if ((value = httpGetHeader(conn, "Cache-Control")) != 0 && 
             (scontains(value, "max-age=0") == 0 || scontains(value, "no-cache") == 0)) {
-        httpTrace(conn, "info", "Client reload", 0);
+        httpTrace(conn, "context", "Client reload", 0);
 
     } else if ((tx->cachedContent = mprReadCache(conn->host->responseCache, key, &modified, 0)) != 0) {
         /*
@@ -328,13 +331,13 @@ static bool fetchCachedResponse(HttpConn *conn)
             }
         }
         status = (canUseClientCache && cacheOk) ? HTTP_CODE_NOT_MODIFIED : HTTP_CODE_OK;
-        httpTrace(conn, "info", "Use cached content", "key=%s, status=%d", key, status);
+        httpTrace(conn, "context", "Use cached content", "key=%s, status=%d", key, status);
         httpSetStatus(conn, status);
         httpSetHeader(conn, "Etag", mprGetMD5(key));
         httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
         return 1;
     }
-    httpTrace(conn, "info", "No cached content", "key=%s", key);
+    httpTrace(conn, "context", "No cached content", "key=%s", key);
     return 0;
 }
 
@@ -369,10 +372,10 @@ PUBLIC ssize httpWriteCached(HttpConn *conn)
     }
     cacheKey = makeCacheKey(conn);
     if ((content = mprReadCache(conn->host->responseCache, cacheKey, &modified, 0)) == 0) {
-        httpTrace(conn, "info", "No response data in cache", "key=%s", cacheKey);
+        httpTrace(conn, "context", "No response data in cache", "key=%s", cacheKey);
         return 0;
     }
-    httpTrace(conn, "info", "Used cached response", "key=%s", cacheKey);
+    httpTrace(conn, "context", "Used cached response", "key=%s", cacheKey);
     data = setHeadersFromCache(conn, content);
     httpSetHeader(conn, "Etag", mprGetMD5(cacheKey));
     httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
@@ -421,8 +424,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
     cache = 0;
     if (!route->caching) {
         if (route->handler) {
-            mprLog("http cache", 0, "Caching handler disabled because SetHandler used in route %s. Use AddHandler instead",
-                route->name);
+            mprLog("error http cache", 0, "Caching handler disabled because SetHandler used in route %s. Use AddHandler instead", route->name);
         }
         httpAddRouteHandler(route, "cacheHandler", NULL);
         httpAddRouteFilter(route, "cacheFilter", "", HTTP_STAGE_TX);

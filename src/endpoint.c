@@ -164,7 +164,7 @@ static bool validateEndpoint(HttpEndpoint *endpoint)
     HttpHost    *host;
 
     if ((host = mprGetFirstItem(endpoint->hosts)) == 0) {
-        mprLog("http config", 0, "Missing host object on endpoint");
+        mprLog("error http config", 0, "Missing host object on endpoint");
         return 0;
     }
     return 1;
@@ -189,10 +189,10 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
     if (mprListenOnSocket(endpoint->sock, endpoint->ip, endpoint->port, 
                 MPR_SOCKET_NODELAY | MPR_SOCKET_THREAD) == SOCKET_ERROR) {
         if (mprGetError() == EADDRINUSE) {
-            mprLog("http", 0, "Cannot open a socket on %s:%d, socket already bound.", 
+            mprLog("error http", 0, "Cannot open a socket on %s:%d, socket already bound.", 
                 *endpoint->ip ? endpoint->ip : "*", endpoint->port);
         } else {
-            mprLog("http", 0, "Cannot open a socket on %s:%d", *endpoint->ip ? endpoint->ip : "*", endpoint->port);
+            mprLog("error http", 0, "Cannot open a socket on %s:%d", *endpoint->ip ? endpoint->ip : "*", endpoint->port);
         }
         return MPR_ERR_CANT_OPEN;
     }
@@ -208,9 +208,9 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
     proto = endpoint->ssl ? "HTTPS" : "HTTP";
     ip = *endpoint->ip ? endpoint->ip : "*";
     if (mprIsSocketV6(endpoint->sock)) {
-        mprLog("http", MPR_INFO, "Started %s service on [%s]:%d", proto, ip, endpoint->port);
+        mprLog("info http", 2, "Started %s service on [%s]:%d", proto, ip, endpoint->port);
     } else {
-        mprLog("http", MPR_INFO, "Started %s service on %s:%d", proto, ip, endpoint->port);
+        mprLog("info http", 2, "Started %s service on %s:%d", proto, ip, endpoint->port);
     }
     return 0;
 }
@@ -278,7 +278,7 @@ PUBLIC void httpMatchHost(HttpConn *conn)
     listenSock = conn->sock->listenSock;
 
     if ((endpoint = httpLookupEndpoint(http, listenSock->ip, listenSock->port)) == 0) {
-        mprLog("http", 0, "No listening endpoint for request from %s:%d", listenSock->ip, listenSock->port);
+        mprLog("error http", 0, "No listening endpoint for request from %s:%d", listenSock->ip, listenSock->port);
         mprCloseSocket(conn->sock, 0);
         return;
     }
@@ -364,7 +364,7 @@ PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
     endpoint->ssl = ssl;
     return 0;
 #else
-    mprLog("http", 0, "Configuration lacks SSL support");
+    mprLog("error http", 0, "Configuration lacks SSL support");
     return MPR_ERR_BAD_STATE;
 #endif
 }

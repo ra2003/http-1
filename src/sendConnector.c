@@ -121,7 +121,6 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     written = mprSendFileToSocket(conn->sock, file, q->ioPos, q->ioCount, q->iovec, q->ioIndex, NULL, 0);
     if (written < 0) {
         errCode = mprGetError();
-        httpTrace(conn, "error", "Connector write error", "errno=%d", errCode);
         if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
             /*  Socket full, wait for an I/O event */
             tx->writeBlocked = 1;
@@ -133,6 +132,8 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
             }
             httpFinalizeConnector(conn);
         }
+        httpTrace(conn, "error", "Connector write error", "errno=%d", errCode);
+
     } else if (written > 0) {
         tx->bytesWritten += written;
         freeSendPackets(q, written);
@@ -205,7 +206,6 @@ static void addToSendVector(HttpQueue *q, char *ptr, ssize bytes)
 static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
 {
     HttpConn     *conn;
-    cchar        *event;
 
     conn = q->conn;
     assert(q->count >= 0);
@@ -224,9 +224,9 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
             Header packets have actual content. File data packets are virtual and only have a count.
          */
         addToSendVector(q, mprGetBufStart(packet->content), httpGetPacketLength(packet));
-        event = (packet->flags & HTTP_PACKET_HEADER) ? "txHeaders" : "txBody";
-        if (httpShouldTrace(conn, event)) {
-            httpTracePacket(conn, event, packet, 0, 0, 0);
+
+        if (packet->flags & HTTP_PACKET_DATA && httpShouldTrace(conn, "txHeaders")) {
+            httpTracePacket(conn, "txHeaders", packet, 0, "length=%Ld", httpGetPacketLength(packet));
         }
     }
 }

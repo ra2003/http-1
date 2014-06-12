@@ -301,7 +301,7 @@ static bool mapMethod(HttpConn *conn)
     rx = conn->rx;
     if (rx->flags & HTTP_POST && (method = httpGetParam(conn, "-http-method-", 0)) != 0) {
         if (!scaselessmatch(method, rx->method)) {
-            httpTrace(conn, "info", 0, "originalMethod=%s, method=%s", rx->method, method);
+            httpTrace(conn, "context", 0, "originalMethod=%s, method=%s", rx->method, method);
             httpSetMethod(conn, method);
             return 1;
         }
@@ -342,17 +342,8 @@ static void traceRequest(HttpConn *conn, HttpPacket *packet)
      */
     if (httpShouldTrace(conn, "rxHeaders")) {
         endp = strstr((char*) content->start, "\r\n\r\n");
-        len = (endp) ? (int) (endp - content->start + 4) : 0;
-        httpTraceContent(conn, "rxHeaders", content->start, len, 0, "peer=%s", conn->ip);
-
-    } else if (httpShouldTrace(conn, "rxFirst")) {
-        endp = strstr((char*) content->start, "\r\n");
         len = (endp) ? (int) (endp - content->start + 2) : 0;
-        if (len > 0) {
-            content->start[len - 2] = '\0';
-            httpTraceContent(conn, "rxFirst", content->start, len - 2, 0, "peer=%s", conn->ip);
-            content->start[len - 2] = '\r';
-        }
+        httpTraceContent(conn, "rxHeaders", content->start, len, 0, "peer=%s", conn->ip);
     }
 }
 
@@ -426,6 +417,11 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 
     rx = conn->rx;
     limits = conn->limits;
+
+    /*
+        These are initially set when the connection is accepted via httpAddConn.
+        Revise to mark a new request.
+     */
     conn->startMark = mprGetHiResTicks();
     conn->started = conn->http->now;
 
@@ -465,6 +461,10 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     }
     conn->http->totalRequests++;
     httpSetState(conn, HTTP_STATE_FIRST);
+
+    if (httpShouldTrace(conn, "rxFirst") && !httpShouldTrace(conn, "rxHeaders")) {
+        httpTrace(conn, "rxFirst", 0, "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, conn->protocol, conn->ip);
+    }
     return 1;
 }
 
@@ -519,7 +519,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         return 0;
     }
     if (!traced && httpShouldTrace(conn, "rxFirst")) {
-        httpTrace(conn, "rxFirst", 0, "protocol=%s, status=%d", protocol, rx->status);
+        httpTrace(conn, "rxFirst", 0, "status=%d, protocol=%s", rx->status, protocol);
     }
     return 1;
 }
@@ -920,11 +920,6 @@ static bool processParsed(HttpConn *conn)
         }
         if (rx->streaming) {
             httpCreatePipeline(conn);
-
-            httpTrace(conn, "info", 0,
-                "route=%s, handler=%s, target=\"%s\", endpoint=%s:%d, host=%s",
-                rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
-                conn->host->name ? conn->host->name : "default");
             /*
                 Delay starting uploads until the files are extracted.
              */
@@ -1170,7 +1165,7 @@ static void createErrorRequest(HttpConn *conn)
     if (!rx->headerPacket) {
         return;
     }
-    httpTrace(conn, "info", "Redirect to error document", "location=%s, status=%d", tx->errorDocument, tx->status, rx->uri);
+    httpTrace(conn, "context", "Redirect to error document", "location=%s, status=%d", tx->errorDocument, tx->status, rx->uri);
 
     originalUri = rx->uri;
     conn->rx = httpCreateRx(conn);
@@ -1608,7 +1603,7 @@ PUBLIC cchar *httpGetBodyInput(HttpConn *conn)
 
 
 /*
-    Set the connector as write blocked and can't proceed.
+    Set the connector as write blocked and cannot proceed.
  */
 PUBLIC void httpSocketBlocked(HttpConn *conn)
 {
@@ -1784,7 +1779,7 @@ static bool parseRange(HttpConn *conn, char *value)
         }
         next = range->next;
         if (range->start < 0 && next) {
-            /* This range goes to the end, so can't have another range afterwards */
+            /* This range goes to the end, so cannot have another range afterwards */
             return 0;
         }
         if (next) {

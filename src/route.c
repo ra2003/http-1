@@ -2185,7 +2185,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!httpCanUser(conn, NULL)) {
-        httpTrace(conn, "error", "Access denied, user is not authorized for access", 0);
+        httpTrace(conn, "error", "Access denied, user is not authorized for access", 0, 0);
         if (!conn->tx->finalized) {
             if (route->auth && route->auth->type) {
                 (route->auth->type->askLogin)(conn);

@@ -98,7 +98,7 @@ static void testBasicHttpGet(MprTestGroup *gp)
 }
 
 
-#if BIT_FEATURE_SSL && (BIT_FEATURE_MATRIXSSL || BIT_FEATURE_OPENSSL)
+#if ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
 static void testSecureHttpGet(MprTestGroup *gp)
 {
     TestHttp    *th;
@@ -112,11 +112,11 @@ static void testSecureHttpGet(MprTestGroup *gp)
     th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
     tassert(conn != 0);
 
-    rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
+    rc = httpConnect(conn, "GET", "https://www.embedthis.com/", NULL);
     tassert(rc >= 0);
     if (rc >= 0) {
         httpFinalize(conn);
-        httpWait(conn, HTTP_STATE_COMPLETE, MPR_TIMEOUT_SOCKETS);
+        httpWait(conn, HTTP_STATE_COMPLETE, 10 * 1000);
         status = httpGetStatus(conn);
         tassert(status == 200 || status == 301 || status == 302);
         if (status != 200 && status != 301 && status != 302) {
@@ -190,7 +190,7 @@ MprTestDef testHttpGen = {
     {
         MPR_TEST(0, testCreateHttp),
         MPR_TEST(0, testBasicHttpGet),
-#if BIT_FEATURE_SSL
+#if ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
         MPR_TEST(0, testSecureHttpGet),
 #endif
         MPR_TEST(0, testStealSocket),

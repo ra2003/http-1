@@ -22,14 +22,29 @@ static void manageTrace(HttpTrace *trace, int flags)
     }
 }
 
-
 /*
+    Usage cases:
+        server:
+            1. request                              rxFirst
+            2. request + completion with status:    rxFirst, completion         Put tx-status in completion
+            3. Request and response headers
+            4. (3) + rx body
+            5. Full body
+
+        client
+            1. Request                              txFirst
+            2. request + completion with status     txFirst,  completion
+            3. Request and response headers
+            4. (3) + tx body
+            5. Full body
+
     Initialize trace to default levels:
     Levels 0-5: Numeric trace levels
-    Level 2: rx first line, errors
-    Level 3: tx first line
-    Level 4: connection, rx headers, tx headers, context, completions
-    Level 5: rx/tx body
+    Level 1: rx first line, errors
+    Level 2: tx first line
+    Level 3: connection, rx headers, tx headers, context, completions
+    Level 4: rx body
+    Level 5: tx body
  */
 PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
 {
@@ -45,17 +60,15 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
         if ((trace->events = mprCreateHash(0, MPR_HASH_STATIC_VALUES)) == 0) {
             return 0;
         }
-        mprAddKey(trace->events, "rxFirst", ITOP(2));
-        mprAddKey(trace->events, "error", ITOP(2));
-        mprAddKey(trace->events, "txFirst", ITOP(3));
-        mprAddKey(trace->events, "connection", ITOP(4));
-        mprAddKey(trace->events, "rxHeaders", ITOP(4));
-        mprAddKey(trace->events, "txHeaders", ITOP(4));
-        mprAddKey(trace->events, "context", ITOP(4));
-        mprAddKey(trace->events, "complete", ITOP(4));
-        mprAddKey(trace->events, "close", ITOP(4));
-        mprAddKey(trace->events, "rxBody", ITOP(5));
-        mprAddKey(trace->events, "txBody", ITOP(5));
+        mprAddKey(trace->events, "first", ITOP(1));
+        mprAddKey(trace->events, "error", ITOP(1));
+        mprAddKey(trace->events, "complete", ITOP(2));
+        mprAddKey(trace->events, "connection", ITOP(3));
+        mprAddKey(trace->events, "headers", ITOP(3));
+        mprAddKey(trace->events, "context", ITOP(3));
+        mprAddKey(trace->events, "close", ITOP(3));
+        mprAddKey(trace->events, "rx", ITOP(4));
+        mprAddKey(trace->events, "tx", ITOP(5));
 
         trace->size = HTTP_TRACE_MAX_SIZE;
         trace->formatter = httpDetailTraceFormatter;
@@ -113,9 +126,9 @@ PUBLIC void httpSetTraceEventLevel(HttpTrace *trace, cchar *event, int level)
 }
 
 
-PUBLIC void httpSetTraceSize(HttpTrace *trace, ssize size)
+PUBLIC void httpSetTraceContentSize(HttpTrace *trace, ssize size)
 {
-    trace->bodySize = size;
+    trace->maxContent = size;
 }
 
 
@@ -145,14 +158,14 @@ PUBLIC void httpSetTraceFormatterName(HttpTrace *trace, cchar *name)
 /*
     Trace a simple message
  */
-PUBLIC void httpTrace(HttpConn *conn, cchar *event, cchar *msg, cchar *values, ...)
+PUBLIC void httpTraceProc(HttpConn *conn, cchar *event, cchar *msg, cchar *values, ...)
 {
     va_list     ap;
 
     assert(conn);
     assert(event && *event);
 
-    if (httpShouldTrace(conn, event) && !conn->rx->skipTrace) {
+    if (!conn->rx->skipTrace) {
         if (values) {
             va_start(ap, values);
             values = sfmtv(values, ap);
@@ -180,7 +193,7 @@ PUBLIC void httpTraceContent(HttpConn *conn, cchar *event, cchar *buf, ssize len
         (smatch(event, "tx.body") && (conn->tx->bytesWritten >= conn->trace->size))) {
         if (!conn->rx->skipTrace && !conn->rx->webSocket) {
             conn->rx->skipTrace = 1;
-            httpTrace(conn, event, "Abbreviating body trace", 0);
+            httpTrace(conn, event, "Abbreviating body trace", 0, 0);
         }
         return;
     }
@@ -246,9 +259,6 @@ PUBLIC cchar *httpMakePrintable(HttpConn *conn, cchar *event, cchar *buf, ssize 
     ssize   len;
     int     i;
 
-    /*
-        MOB - need faster way to do this
-     */
     if (smatch(event, "rx.body")) {
         if (sstarts(mprLookupMime(0, conn->rx->mimeType), "text/")) {
             return buf;
@@ -265,6 +275,7 @@ PUBLIC cchar *httpMakePrintable(HttpConn *conn, cchar *event, cchar *buf, ssize 
         start += 3;
         *lenp -= 3;
     }
+    //  MOB - must enforce trace->maxContent
     for (i = 0; i < len; i++) {
         if (!isprint((uchar) start[i]) && start[i] != '\n' && start[i] != '\r' && start[i] != '\t') {
             data = mprAlloc(len * 3 + ((len / 16) + 1) + 1);

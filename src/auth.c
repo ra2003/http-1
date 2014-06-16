@@ -141,7 +141,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!username || !*username) {
-        httpTrace(conn, "context", "httpLogin missing username", 0);
+        httpTrace(conn, "context", "httpLogin missing username", 0, 0);
         return 0;
     }
     if (!auth->store) {

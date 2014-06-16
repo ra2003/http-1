@@ -60,9 +60,6 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     conn->sock = sp;
     conn->ip = sclone(ip);
     conn->port = port;
-#if UNUSED
-    conn->secure = uri->secure;
-#endif
     conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : 0;
 
 #if ME_COM_SSL
@@ -77,7 +74,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         peerName = isdigit(uri->host[0]) ? 0 : uri->host;
         if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
-            httpTrace(conn, "error", sfmt("Cannot upgrade socket, %s", conn->errorMsg), 0);
+            httpTrace(conn, "error", sfmt("Cannot upgrade socket, %s", conn->errorMsg), 0, 0);
             return 0;
         }
         if (sp->peerCert) {
@@ -93,9 +90,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         return 0;
     }
 #endif
-    if (httpShouldTrace(conn, "connection")) {
-        httpTrace(conn, "connection", 0, "peer=%s:%d", conn->ip, conn->port);
-    }
+    httpTrace(conn, "connection", 0, "peer=%s:%d", conn->ip, conn->port);
     return conn;
 }
 
@@ -140,8 +135,6 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
         return MPR_ERR_BAD_STATE;
     }
-    httpTrace(conn, "context", "Connect", "method=%s, uri=%s", method, uri);
-
     if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
         /* WARNING: this will erase headers */
         httpPrepClientConn(conn, 0);

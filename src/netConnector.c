@@ -208,8 +208,8 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     if (httpGetPacketLength(packet) > 0) {
         addToNetVector(q, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
     }
-    if (packet->flags & HTTP_PACKET_DATA && httpShouldTrace(conn, "txBody")) {
-        httpTracePacket(conn, "txBody", packet, 0, "length=%Ld", httpGetPacketLength(packet));
+    if (packet->flags & HTTP_PACKET_DATA) {
+        httpTracePacket(conn, "tx", packet, 0, "length=%Ld", httpGetPacketLength(packet));
     }
 }
 

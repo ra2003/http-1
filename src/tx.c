@@ -828,9 +828,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         mprPutIntToBuf(buf, tx->status);
         mprPutCharToBuf(buf, ' ');
         mprPutStringToBuf(buf, httpLookupStatus(http, tx->status));
-        if (httpShouldTrace(conn, "txFirst")) {
-            httpTrace(conn, "txFirst", 0, "status=%d, protocol=%s", tx->status, conn->protocol);
-        }
+        /* Server tracing of status happens in the "complete" event */
 
     } else {
         mprPutStringToBuf(buf, tx->method);
@@ -852,8 +850,8 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
                 mprPutStringToBuf(buf, conn->protocol);
             }
         }
-        if (httpShouldTrace(conn, "txFirst")) {
-            httpTrace(conn, "txFirst", 0, "method=%s, uri=%s, protocol=%s", tx->method, parsedUri->path, conn->protocol);
+        if (!httpShouldTrace(conn, "headers")) {
+            httpTrace(conn, "first", 0, "method=%s, uri=%s, protocol=%s", tx->method, parsedUri->path, conn->protocol);
         }
     }
     mprPutStringToBuf(buf, "\r\n");
@@ -871,9 +869,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         mprPutStringToBuf(packet->content, "\r\n");
         kp = mprGetNextKey(conn->tx->headers, kp);
     }
-    if (httpShouldTrace(conn, "txHeaders")) {
-        httpTracePacket(conn, "txHeaders", packet, 0, 0);
-    }
+    httpTracePacket(conn, "headers", packet, 0, 0);
 
     /*
         By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter

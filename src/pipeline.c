@@ -66,8 +66,8 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     }
     if (tx->connector == 0) {
 #if !ME_ROM
-        if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !hasOutputFilters && 
-                !conn->secure && !httpShouldTrace(conn, "txBody")) {
+        if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !hasOutputFilters && !conn->secure && 
+                !httpTracing(conn)) {
             tx->connector = http->sendConnector;
         } else 
 #endif
@@ -108,11 +108,12 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     }
     tx->flags |= HTTP_TX_PIPELINE;
 
-    if (conn->endpoint && httpShouldTrace(conn, "context")) {
+    if (conn->endpoint) {
         httpTrace(conn, "context", 0,
             "route=%s, handler=%s, target=\"%s\", endpoint=%s:%d, host=%s, referrer=%s, filename=%s",
             rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
-            conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "", tx->filename ? tx->filename : "");
+            conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "", 
+            tx->filename ? tx->filename : "");
     }
 }
 

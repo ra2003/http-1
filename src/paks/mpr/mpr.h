@@ -7976,8 +7976,8 @@ typedef struct MprSsl {
     bool            configured;         /**< Set if this SSL configuration has been processed */
     bool            verifyPeer;         /**< Verify the peer verificate */
     bool            verifyIssuer;       /**< Set if the certificate issuer should be also verified */
-    bool            verifyDepth;        /**< Set if the cert chain depth should be verified */
     bool            changed;            /**< Set if there is a change in the SSL config. Reset by providers */
+    int             verifyDepth;        /**< Cert chain depth that should be verified */
     int             protocols;          /**< SSL protocols */
     MprMutex        *mutex;             /**< Multithread sync */
 } MprSsl;

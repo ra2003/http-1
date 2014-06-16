@@ -42,18 +42,20 @@ MAIN(testMain, int argc, char **argv, char **envp)
         exit(2);
     }
     if (mprParseTestArgs(ts, argc, argv, 0) < 0) {
+        mprLog("http test", 0, "Cannot parse args");
         exit(3);
     }
     if (mprAddTestGroup(ts, &master) == 0) {
+        mprLog("http test", 0, "Cannot add test group");
         exit(4);
     }
 
-#if BIT_FEATURE_SSL && (BIT_FEATURE_MATRIXSSL || BIT_FEATURE_OPENSSL)
-    if (!mprLoadSsl(0)) {
+#if ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
+    if (mprLoadSsl(0) < 0) {
+        mprLog("http test", 0, "Cannot load SSL");
         exit(5);
     }
 #endif
-
     /*
         Need a background event thread as we use the main thread to run the tests.
      */

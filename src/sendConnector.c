@@ -225,8 +225,8 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
          */
         addToSendVector(q, mprGetBufStart(packet->content), httpGetPacketLength(packet));
 
-        if (packet->flags & HTTP_PACKET_DATA && httpShouldTrace(conn, "txHeaders")) {
-            httpTracePacket(conn, "txHeaders", packet, 0, "length=%Ld", httpGetPacketLength(packet));
+        if (packet->flags & HTTP_PACKET_DATA) {
+            httpTracePacket(conn, "headers", packet, 0, "length=%Ld", httpGetPacketLength(packet));
         }
     }
 }

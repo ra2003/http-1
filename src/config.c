@@ -1410,7 +1410,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *levels, *child;
     cchar       *location;
-    ssize       size;
+    ssize       size, maxContent;
     cchar       *format, *formatter;
     char        level;
     int         anew, backup, ji;
@@ -1426,7 +1426,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     level = (char) stoi(mprGetJson(prop, "level"));
     backup = (int) stoi(mprGetJson(prop, "backup"));
     anew = smatch(mprGetJson(prop, "anew"), "true");
-    size = (ssize) httpGetNumber(mprGetJson(prop, "size"));
+    maxContent = (ssize) httpGetNumber(mprGetJson(prop, "content"));
 
     if (level < 0) {
         level = 0;
@@ -1434,7 +1434,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
         level = 5;
     }
     if (size < (10 * 1000)) {
-        httpParseError(route, "Size is too small. Must be larger than 10K");
+        httpParseError(route, "Trace log size is too small. Must be larger than 10K");
         return;
     }
     if (location == 0) {
@@ -1453,7 +1453,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     httpSetTraceFormatterName(route->trace, formatter);
     httpSetTraceLogFile(route->trace, location, size, backup, format, anew ? MPR_LOG_ANEW : 0);
     httpSetTraceFormat(route->trace, format);
-    httpSetTraceSize(route->trace, size);
+    httpSetTraceContentSize(route->trace, maxContent);
     httpSetTraceLevel(level);
 }
 

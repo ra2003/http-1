@@ -385,7 +385,7 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
         if (!requestToken) {
             requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
             if (!requestToken) {
-                httpTrace(conn, "error", "Missing security token in request", 0);
+                httpTrace(conn, "error", "Missing security token in request", 0, 0);
             }
         }
         if (!smatch(sessionToken, requestToken)) {

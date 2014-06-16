@@ -102,8 +102,8 @@
 #ifndef ME_HTTP_WEB_SOCKETS
     #define ME_HTTP_WEB_SOCKETS 1
 #endif
-#ifndef ME_MAKEME
-    #define ME_MAKEME "0.8.0"
+#ifndef ME_ME
+    #define ME_ME "~0.8"
 #endif
 #ifndef ME_NAME
     #define ME_NAME "http"
@@ -190,7 +190,7 @@
 
 /* Profile */
 #ifndef ME_CONFIG_CMD
-    #define ME_CONFIG_CMD "me -d -q -platform macosx-x64-default -configure . -with est -gen xcode"
+    #define ME_CONFIG_CMD "me -d -q -platform macosx-x64-default -configure . -gen xcode"
 #endif
 #ifndef ME_HTTP_PRODUCT
     #define ME_HTTP_PRODUCT 1
@@ -221,7 +221,7 @@
     #define ME_COM_CC 1
 #endif
 #ifndef ME_COM_EST
-    #define ME_COM_EST 1
+    #define ME_COM_EST 0
 #endif
 #ifndef ME_COM_LIB
     #define ME_COM_LIB 1
@@ -236,7 +236,7 @@
     #define ME_COM_NANOSSL 0
 #endif
 #ifndef ME_COM_OPENSSL
-    #define ME_COM_OPENSSL 0
+    #define ME_COM_OPENSSL 1
 #endif
 #ifndef ME_COM_OSDEP
     #define ME_COM_OSDEP 1

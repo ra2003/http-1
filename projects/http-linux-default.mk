@@ -13,10 +13,10 @@ CONFIG                ?= $(OS)-$(ARCH)-$(PROFILE)
 LBIN                  ?= $(CONFIG)/bin
 PATH                  := $(LBIN):$(PATH)
 
-ME_COM_EST            ?= 0
+ME_COM_EST            ?= 1
 ME_COM_MATRIXSSL      ?= 0
 ME_COM_NANOSSL        ?= 0
-ME_COM_OPENSSL        ?= 1
+ME_COM_OPENSSL        ?= 0
 ME_COM_PCRE           ?= 1
 ME_COM_SSL            ?= 1
 ME_COM_VXWORKS        ?= 0
@@ -80,6 +80,9 @@ ME_SRC_PREFIX         ?= $(ME_ROOT_PREFIX)$(NAME)-$(VERSION)
 
 TARGETS               += $(CONFIG)/bin/ca.crt
 TARGETS               += $(CONFIG)/bin/http
+ifeq ($(ME_COM_EST),1)
+    TARGETS           += $(CONFIG)/bin/libest.so
+endif
 TARGETS               += $(CONFIG)/bin/libmprssl.so
 TARGETS               += $(CONFIG)/bin/testHttp
 
@@ -127,6 +130,7 @@ clean:
 	rm -f "$(CONFIG)/obj/digest.o"
 	rm -f "$(CONFIG)/obj/endpoint.o"
 	rm -f "$(CONFIG)/obj/error.o"
+	rm -f "$(CONFIG)/obj/estLib.o"
 	rm -f "$(CONFIG)/obj/host.o"
 	rm -f "$(CONFIG)/obj/http.o"
 	rm -f "$(CONFIG)/obj/log.o"
@@ -159,6 +163,7 @@ clean:
 	rm -f "$(CONFIG)/obj/webSockFilter.o"
 	rm -f "$(CONFIG)/bin/ca.crt"
 	rm -f "$(CONFIG)/bin/http"
+	rm -f "$(CONFIG)/bin/libest.so"
 	rm -f "$(CONFIG)/bin/libhttp.so"
 	rm -f "$(CONFIG)/bin/libmpr.so"
 	rm -f "$(CONFIG)/bin/libmprssl.so"
@@ -764,184 +769,216 @@ $(CONFIG)/bin/http: $(DEPS_46)
 #
 $(CONFIG)/inc/est.h: $(DEPS_47)
 	@echo '      [Copy] $(CONFIG)/inc/est.h'
+	mkdir -p "$(CONFIG)/inc"
+	cp src/paks/est/est.h $(CONFIG)/inc/est.h
+
+#
+#   estLib.o
+#
+DEPS_48 += $(CONFIG)/inc/me.h
+DEPS_48 += $(CONFIG)/inc/est.h
+DEPS_48 += $(CONFIG)/inc/osdep.h
+
+$(CONFIG)/obj/estLib.o: \
+    src/paks/est/estLib.c $(DEPS_48)
+	@echo '   [Compile] $(CONFIG)/obj/estLib.o'
+	$(CC) -c -o $(CONFIG)/obj/estLib.o $(CFLAGS) $(DFLAGS) $(IFLAGS) src/paks/est/estLib.c
+
+ifeq ($(ME_COM_EST),1)
+#
+#   libest
+#
+DEPS_49 += $(CONFIG)/inc/est.h
+DEPS_49 += $(CONFIG)/inc/me.h
+DEPS_49 += $(CONFIG)/inc/osdep.h
+DEPS_49 += $(CONFIG)/obj/estLib.o
+
+$(CONFIG)/bin/libest.so: $(DEPS_49)
+	@echo '      [Link] $(CONFIG)/bin/libest.so'
+	$(CC) -shared -o $(CONFIG)/bin/libest.so $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/estLib.o" $(LIBS) 
+endif
 
 #
 #   mprSsl.o
 #
-DEPS_48 += $(CONFIG)/inc/me.h
-DEPS_48 += $(CONFIG)/inc/mpr.h
-DEPS_48 += $(CONFIG)/inc/est.h
+DEPS_50 += $(CONFIG)/inc/me.h
+DEPS_50 += $(CONFIG)/inc/mpr.h
+DEPS_50 += $(CONFIG)/inc/est.h
 
 $(CONFIG)/obj/mprSsl.o: \
-    src/paks/mpr/mprSsl.c $(DEPS_48)
+    src/paks/mpr/mprSsl.c $(DEPS_50)
 	@echo '   [Compile] $(CONFIG)/obj/mprSsl.o'
 	$(CC) -c -o $(CONFIG)/obj/mprSsl.o $(CFLAGS) $(DFLAGS) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" "-I$(ME_COM_MATRIXSSL_PATH)" "-I$(ME_COM_MATRIXSSL_PATH)/matrixssl" "-I$(ME_COM_NANOSSL_PATH)/src" src/paks/mpr/mprSsl.c
 
 #
 #   libmprssl
 #
-DEPS_49 += $(CONFIG)/inc/mpr.h
-DEPS_49 += $(CONFIG)/inc/me.h
-DEPS_49 += $(CONFIG)/inc/osdep.h
-DEPS_49 += $(CONFIG)/obj/mprLib.o
-DEPS_49 += $(CONFIG)/bin/libmpr.so
-DEPS_49 += $(CONFIG)/inc/est.h
-DEPS_49 += $(CONFIG)/obj/mprSsl.o
+DEPS_51 += $(CONFIG)/inc/mpr.h
+DEPS_51 += $(CONFIG)/inc/me.h
+DEPS_51 += $(CONFIG)/inc/osdep.h
+DEPS_51 += $(CONFIG)/obj/mprLib.o
+DEPS_51 += $(CONFIG)/bin/libmpr.so
+DEPS_51 += $(CONFIG)/inc/est.h
+DEPS_51 += $(CONFIG)/obj/estLib.o
+ifeq ($(ME_COM_EST),1)
+    DEPS_51 += $(CONFIG)/bin/libest.so
+endif
+DEPS_51 += $(CONFIG)/obj/mprSsl.o
 
-LIBS_49 += -lmpr
+LIBS_51 += -lmpr
 ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_49 += -lssl
-    LIBPATHS_49 += -L$(ME_COM_OPENSSL_PATH)
+    LIBS_51 += -lssl
+    LIBPATHS_51 += -L$(ME_COM_OPENSSL_PATH)
 endif
 ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_49 += -lcrypto
-    LIBPATHS_49 += -L$(ME_COM_OPENSSL_PATH)
+    LIBS_51 += -lcrypto
+    LIBPATHS_51 += -L$(ME_COM_OPENSSL_PATH)
 endif
 ifeq ($(ME_COM_EST),1)
-    LIBS_49 += -lest
+    LIBS_51 += -lest
 endif
 ifeq ($(ME_COM_MATRIXSSL),1)
-    LIBS_49 += -lmatrixssl
-    LIBPATHS_49 += -L$(ME_COM_MATRIXSSL_PATH)
+    LIBS_51 += -lmatrixssl
+    LIBPATHS_51 += -L$(ME_COM_MATRIXSSL_PATH)
 endif
 ifeq ($(ME_COM_NANOSSL),1)
-    LIBS_49 += -lssls
-    LIBPATHS_49 += -L$(ME_COM_NANOSSL_PATH)/bin
+    LIBS_51 += -lssls
+    LIBPATHS_51 += -L$(ME_COM_NANOSSL_PATH)/bin
 endif
 
-$(CONFIG)/bin/libmprssl.so: $(DEPS_49)
+$(CONFIG)/bin/libmprssl.so: $(DEPS_51)
 	@echo '      [Link] $(CONFIG)/bin/libmprssl.so'
-	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS)    "$(CONFIG)/obj/mprSsl.o" $(LIBPATHS_49) $(LIBS_49) $(LIBS_49) $(LIBS) 
+	$(CC) -shared -o $(CONFIG)/bin/libmprssl.so $(LDFLAGS) $(LIBPATHS)    "$(CONFIG)/obj/mprSsl.o" $(LIBPATHS_51) $(LIBS_51) $(LIBS_51) $(LIBS) 
 
 #
 #   testHttp.o
 #
-DEPS_50 += $(CONFIG)/inc/me.h
-DEPS_50 += $(CONFIG)/inc/mpr.h
+DEPS_52 += $(CONFIG)/inc/me.h
+DEPS_52 += $(CONFIG)/inc/mpr.h
 
 $(CONFIG)/obj/testHttp.o: \
-    test/src/testHttp.c $(DEPS_50)
+    test/src/testHttp.c $(DEPS_52)
 	@echo '   [Compile] $(CONFIG)/obj/testHttp.o'
 	$(CC) -c -o $(CONFIG)/obj/testHttp.o $(CFLAGS) $(DFLAGS) $(IFLAGS) test/src/testHttp.c
 
 #
 #   testHttpGen.o
 #
-DEPS_51 += $(CONFIG)/inc/me.h
-DEPS_51 += $(CONFIG)/inc/http.h
+DEPS_53 += $(CONFIG)/inc/me.h
+DEPS_53 += $(CONFIG)/inc/http.h
 
 $(CONFIG)/obj/testHttpGen.o: \
-    test/src/testHttpGen.c $(DEPS_51)
+    test/src/testHttpGen.c $(DEPS_53)
 	@echo '   [Compile] $(CONFIG)/obj/testHttpGen.o'
 	$(CC) -c -o $(CONFIG)/obj/testHttpGen.o $(CFLAGS) $(DFLAGS) $(IFLAGS) test/src/testHttpGen.c
 
 #
 #   testHttpUri.o
 #
-DEPS_52 += $(CONFIG)/inc/me.h
-DEPS_52 += $(CONFIG)/inc/http.h
+DEPS_54 += $(CONFIG)/inc/me.h
+DEPS_54 += $(CONFIG)/inc/http.h
 
 $(CONFIG)/obj/testHttpUri.o: \
-    test/src/testHttpUri.c $(DEPS_52)
+    test/src/testHttpUri.c $(DEPS_54)
 	@echo '   [Compile] $(CONFIG)/obj/testHttpUri.o'
 	$(CC) -c -o $(CONFIG)/obj/testHttpUri.o $(CFLAGS) $(DFLAGS) $(IFLAGS) test/src/testHttpUri.c
 
 #
 #   testHttp
 #
-DEPS_53 += $(CONFIG)/inc/mpr.h
-DEPS_53 += $(CONFIG)/inc/me.h
-DEPS_53 += $(CONFIG)/inc/osdep.h
-DEPS_53 += $(CONFIG)/obj/mprLib.o
-DEPS_53 += $(CONFIG)/bin/libmpr.so
-DEPS_53 += $(CONFIG)/inc/pcre.h
-DEPS_53 += $(CONFIG)/obj/pcre.o
+DEPS_55 += $(CONFIG)/inc/mpr.h
+DEPS_55 += $(CONFIG)/inc/me.h
+DEPS_55 += $(CONFIG)/inc/osdep.h
+DEPS_55 += $(CONFIG)/obj/mprLib.o
+DEPS_55 += $(CONFIG)/bin/libmpr.so
+DEPS_55 += $(CONFIG)/inc/pcre.h
+DEPS_55 += $(CONFIG)/obj/pcre.o
 ifeq ($(ME_COM_PCRE),1)
-    DEPS_53 += $(CONFIG)/bin/libpcre.so
+    DEPS_55 += $(CONFIG)/bin/libpcre.so
 endif
-DEPS_53 += $(CONFIG)/inc/http.h
-DEPS_53 += $(CONFIG)/obj/actionHandler.o
-DEPS_53 += $(CONFIG)/obj/auth.o
-DEPS_53 += $(CONFIG)/obj/basic.o
-DEPS_53 += $(CONFIG)/obj/cache.o
-DEPS_53 += $(CONFIG)/obj/chunkFilter.o
-DEPS_53 += $(CONFIG)/obj/client.o
-DEPS_53 += $(CONFIG)/obj/config.o
-DEPS_53 += $(CONFIG)/obj/conn.o
-DEPS_53 += $(CONFIG)/obj/digest.o
-DEPS_53 += $(CONFIG)/obj/endpoint.o
-DEPS_53 += $(CONFIG)/obj/error.o
-DEPS_53 += $(CONFIG)/obj/host.o
-DEPS_53 += $(CONFIG)/obj/log.o
-DEPS_53 += $(CONFIG)/obj/monitor.o
-DEPS_53 += $(CONFIG)/obj/netConnector.o
-DEPS_53 += $(CONFIG)/obj/packet.o
-DEPS_53 += $(CONFIG)/obj/pam.o
-DEPS_53 += $(CONFIG)/obj/passHandler.o
-DEPS_53 += $(CONFIG)/obj/pipeline.o
-DEPS_53 += $(CONFIG)/obj/queue.o
-DEPS_53 += $(CONFIG)/obj/rangeFilter.o
-DEPS_53 += $(CONFIG)/obj/route.o
-DEPS_53 += $(CONFIG)/obj/rx.o
-DEPS_53 += $(CONFIG)/obj/sendConnector.o
-DEPS_53 += $(CONFIG)/obj/service.o
-DEPS_53 += $(CONFIG)/obj/session.o
-DEPS_53 += $(CONFIG)/obj/stage.o
-DEPS_53 += $(CONFIG)/obj/trace.o
-DEPS_53 += $(CONFIG)/obj/tx.o
-DEPS_53 += $(CONFIG)/obj/uploadFilter.o
-DEPS_53 += $(CONFIG)/obj/uri.o
-DEPS_53 += $(CONFIG)/obj/var.o
-DEPS_53 += $(CONFIG)/obj/webSockFilter.o
-DEPS_53 += $(CONFIG)/bin/libhttp.so
-DEPS_53 += $(CONFIG)/obj/testHttp.o
-DEPS_53 += $(CONFIG)/obj/testHttpGen.o
-DEPS_53 += $(CONFIG)/obj/testHttpUri.o
+DEPS_55 += $(CONFIG)/inc/http.h
+DEPS_55 += $(CONFIG)/obj/actionHandler.o
+DEPS_55 += $(CONFIG)/obj/auth.o
+DEPS_55 += $(CONFIG)/obj/basic.o
+DEPS_55 += $(CONFIG)/obj/cache.o
+DEPS_55 += $(CONFIG)/obj/chunkFilter.o
+DEPS_55 += $(CONFIG)/obj/client.o
+DEPS_55 += $(CONFIG)/obj/config.o
+DEPS_55 += $(CONFIG)/obj/conn.o
+DEPS_55 += $(CONFIG)/obj/digest.o
+DEPS_55 += $(CONFIG)/obj/endpoint.o
+DEPS_55 += $(CONFIG)/obj/error.o
+DEPS_55 += $(CONFIG)/obj/host.o
+DEPS_55 += $(CONFIG)/obj/log.o
+DEPS_55 += $(CONFIG)/obj/monitor.o
+DEPS_55 += $(CONFIG)/obj/netConnector.o
+DEPS_55 += $(CONFIG)/obj/packet.o
+DEPS_55 += $(CONFIG)/obj/pam.o
+DEPS_55 += $(CONFIG)/obj/passHandler.o
+DEPS_55 += $(CONFIG)/obj/pipeline.o
+DEPS_55 += $(CONFIG)/obj/queue.o
+DEPS_55 += $(CONFIG)/obj/rangeFilter.o
+DEPS_55 += $(CONFIG)/obj/route.o
+DEPS_55 += $(CONFIG)/obj/rx.o
+DEPS_55 += $(CONFIG)/obj/sendConnector.o
+DEPS_55 += $(CONFIG)/obj/service.o
+DEPS_55 += $(CONFIG)/obj/session.o
+DEPS_55 += $(CONFIG)/obj/stage.o
+DEPS_55 += $(CONFIG)/obj/trace.o
+DEPS_55 += $(CONFIG)/obj/tx.o
+DEPS_55 += $(CONFIG)/obj/uploadFilter.o
+DEPS_55 += $(CONFIG)/obj/uri.o
+DEPS_55 += $(CONFIG)/obj/var.o
+DEPS_55 += $(CONFIG)/obj/webSockFilter.o
+DEPS_55 += $(CONFIG)/bin/libhttp.so
+DEPS_55 += $(CONFIG)/obj/testHttp.o
+DEPS_55 += $(CONFIG)/obj/testHttpGen.o
+DEPS_55 += $(CONFIG)/obj/testHttpUri.o
 
-LIBS_53 += -lhttp
-LIBS_53 += -lmpr
+LIBS_55 += -lhttp
+LIBS_55 += -lmpr
 ifeq ($(ME_COM_PCRE),1)
-    LIBS_53 += -lpcre
+    LIBS_55 += -lpcre
 endif
 
-$(CONFIG)/bin/testHttp: $(DEPS_53)
+$(CONFIG)/bin/testHttp: $(DEPS_55)
 	@echo '      [Link] $(CONFIG)/bin/testHttp'
-	$(CC) -o $(CONFIG)/bin/testHttp $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/testHttp.o" "$(CONFIG)/obj/testHttpGen.o" "$(CONFIG)/obj/testHttpUri.o" $(LIBPATHS_53) $(LIBS_53) $(LIBS_53) $(LIBS) $(LIBS) 
+	$(CC) -o $(CONFIG)/bin/testHttp $(LDFLAGS) $(LIBPATHS) "$(CONFIG)/obj/testHttp.o" "$(CONFIG)/obj/testHttpGen.o" "$(CONFIG)/obj/testHttpUri.o" $(LIBPATHS_55) $(LIBS_55) $(LIBS_55) $(LIBS) $(LIBS) 
 
 #
 #   stop
 #
-stop: $(DEPS_54)
+stop: $(DEPS_56)
 
 #
 #   installBinary
 #
-installBinary: $(DEPS_55)
+installBinary: $(DEPS_57)
 
 #
 #   start
 #
-start: $(DEPS_56)
+start: $(DEPS_58)
 
 #
 #   install
 #
-DEPS_57 += stop
-DEPS_57 += installBinary
-DEPS_57 += start
+DEPS_59 += stop
+DEPS_59 += installBinary
+DEPS_59 += start
 
-install: $(DEPS_57)
+install: $(DEPS_59)
 
 #
 #   uninstall
 #
-DEPS_58 += stop
+DEPS_60 += stop
 
-uninstall: $(DEPS_58)
+uninstall: $(DEPS_60)
 
 #
 #   version
 #
-version: $(DEPS_59)
+version: $(DEPS_61)
 	echo 5.0.0
 

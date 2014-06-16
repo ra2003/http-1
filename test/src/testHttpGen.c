@@ -112,7 +112,7 @@ static void testSecureHttpGet(MprTestGroup *gp)
     th->conn = conn = httpCreateConn(http, NULL, gp->dispatcher);
     tassert(conn != 0);
 
-    rc = httpConnect(conn, "GET", "https://www.embedthis.com/", NULL);
+    rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
     tassert(rc >= 0);
     if (rc >= 0) {
         httpFinalize(conn);

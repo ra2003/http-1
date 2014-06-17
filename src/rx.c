@@ -379,17 +379,27 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     cchar       *endp;
     MprBuf      *content;
     ssize       len;
+    bool        traceRequired = 0;
 
     rx = conn->rx;
     limits = conn->limits;
 
     /*
-        These are initially set when the connection is accepted via httpAddConn.
-        Revise to mark a new request.
+        These are initially set when the connection is accepted via httpAddConn. Revise to mark a new request.
      */
     conn->startMark = mprGetHiResTicks();
     conn->started = conn->http->now;
 
+    if (httpTracing(conn)) {
+        if (httpShouldTrace(conn, "headers")) {
+            content = packet->content;
+            endp = strstr((char*) content->start, "\r\n\r\n");
+            len = (endp) ? (int) (endp - content->start + 2) : 0;
+            httpTraceContent(conn, "headers", content->start, len, 0, "peer=%s", conn->ip);
+        } else {
+            traceRequired = 1;
+        }
+    }
     rx->originalMethod = rx->method = supper(getToken(conn, 0));
     parseMethod(conn);
 
@@ -425,20 +435,9 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     }
     conn->http->totalRequests++;
     httpSetState(conn, HTTP_STATE_FIRST);
-
-    if (httpTracing(conn)) {
-        /*
-            Trace either just the first line or the entire headers
-         */
-        if (!httpShouldTrace(conn, "headers")) {
-            httpTrace(conn, "first", 0, "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, 
-                conn->protocol, conn->ip);
-        } else {
-            content = packet->content;
-            endp = strstr((char*) content->start, "\r\n\r\n");
-            len = (endp) ? (int) (endp - content->start + 2) : 0;
-            httpTraceContent(conn, "headers", content->start, len, 0, "peer=%s", conn->ip);
-        }
+    if (traceRequired) {
+        httpTrace(conn, "first", 0, "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, 
+            conn->protocol, conn->ip);
     }
     return 1;
 }

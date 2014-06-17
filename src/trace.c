@@ -22,30 +22,6 @@ static void manageTrace(HttpTrace *trace, int flags)
     }
 }
 
-/*
-    Usage cases:
-        server:
-            1. request                              rxFirst
-            2. request + completion with status:    rxFirst, completion         Put tx-status in completion
-            3. Request and response headers
-            4. (3) + rx body
-            5. Full body
-
-        client
-            1. Request                              txFirst
-            2. request + completion with status     txFirst,  completion
-            3. Request and response headers
-            4. (3) + tx body
-            5. Full body
-
-    Initialize trace to default levels:
-    Levels 0-5: Numeric trace levels
-    Level 1: rx first line, errors
-    Level 2: tx first line
-    Level 3: connection, rx headers, tx headers, context, completions
-    Level 4: rx body
-    Level 5: tx body
- */
 PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
 {
     HttpTrace   *trace;

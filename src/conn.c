@@ -393,7 +393,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 
-    httpTrace(conn, "connection", 0, "peer=%s, endpoint=%s:%d", conn->ip, sock->acceptIp, sock->acceptPort);
+    httpTrace(conn, "connection", "new connection", "peer=%s, endpoint=%s:%d", conn->ip, sock->acceptIp, sock->acceptPort);
     
     event->mask = MPR_READABLE;
     event->timestamp = conn->http->now;
@@ -454,11 +454,11 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
     if (sp->secured && !conn->secure) {
         conn->secure = 1;
         if (sp->peerCert) {
-            httpTrace(conn, "context", "Connection secured with peer certificate", 
+            httpTrace(conn, "connection", "Connection secured with peer certificate", 
                 "secure=true, cipher=%s, peerName=\"%s\", subject=\"%s\", issuer=\"%s\"", 
                 sp->cipher, sp->peerName, sp->peerCert, sp->peerCertIssuer);
         } else {
-            httpTrace(conn, "context", "Connection secured without peer certificate", 
+            httpTrace(conn, "connection", "Connection secured without peer certificate", 
                 "secure=true, cipher=%s", sp->cipher);
         }
     }

@@ -134,11 +134,13 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->protocol);
         mprMark(conn->protocols);
         mprMark(conn->headersCallbackArg);
+        mprMark(conn->trace);
 
         mprMark(conn->authType);
         mprMark(conn->authData);
         mprMark(conn->username);
         mprMark(conn->password);
+        mprMark(conn->user);
     }
 }
 

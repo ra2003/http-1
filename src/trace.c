@@ -192,8 +192,10 @@ PUBLIC void httpTracePacket(HttpConn *conn, cchar *event, HttpPacket *packet, cc
     assert(conn);
     assert(packet);
 
+    if (!httpShouldTrace(conn, event) || conn->rx->skipTrace) {
+        return;
+    }
     if (packet->prefix) {
-        mprAddNullToBuf(packet->prefix);
         httpTraceContent(conn, event, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix), 0, 0);
     }
     if (values) {
@@ -202,7 +204,6 @@ PUBLIC void httpTracePacket(HttpConn *conn, cchar *event, HttpPacket *packet, cc
         va_end(ap);
     }
     if (packet->content) {
-        mprAddNullToBuf(packet->content);
         httpTraceContent(conn, event, mprGetBufStart(packet->content), httpGetPacketLength(packet), msg, values);
     }
 }

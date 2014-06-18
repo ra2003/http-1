@@ -395,7 +395,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
             content = packet->content;
             endp = strstr((char*) content->start, "\r\n\r\n");
             len = (endp) ? (int) (endp - content->start + 2) : 0;
-            httpTraceContent(conn, "headers", content->start, len, 0, "peer=%s", conn->ip);
+            httpTraceContent(conn, "headers", content->start, len, "rx", "peer=%s", conn->ip);
         } else {
             traceRequired = 1;
         }
@@ -436,8 +436,8 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     conn->http->totalRequests++;
     httpSetState(conn, HTTP_STATE_FIRST);
     if (traceRequired) {
-        httpTrace(conn, "first", 0, "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, 
-            conn->protocol, conn->ip);
+        httpTrace(conn, "first", 0, "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, conn->protocol, 
+            conn->ip);
     }
     return 1;
 }
@@ -465,7 +465,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         content = packet->content;
         endp = strstr((char*) content->start, "\r\n\r\n");
         len = (endp) ? (int) (endp - content->start + 4) : 0;
-        httpTraceContent(conn, "headers", content->start, len, 0, 0);
+        httpTraceContent(conn, "headers", content->start, len, "rx", 0);
         traced = 1;
     }
     protocol = conn->protocol = supper(getToken(conn, 0));
@@ -1254,11 +1254,11 @@ static bool processCompletion(HttpConn *conn)
         received = rx->headerPacketLength + rx->bytesRead;
 #if MPR_HIGH_RES_TIMER
         httpTrace(conn, 
-            "complete", 0, "status=%d, error=%d, connError=%d, elapsed=%Ld, elapsedTicks=%Ld, received=%Ld, sent=%Ld", 
+            "complete", 0, "status=%d, error=%d, connError=%d, elapsed=%Lu, elapsedTicks=%Lu, received=%Ld, sent=%Ld", 
             status, conn->error, conn->connError, elapsed, mprGetHiResTicks() - conn->startMark, 
             received, tx->bytesWritten);
 #else
-        httpTrace(conn, "complete", 0, "status=%d, error=%d, connError=%d, elapsed=%Ld, received=%Ld, sent=%Ld", 
+        httpTrace(conn, "complete", 0, "status=%d, error=%d, connError=%d, elapsed=%Lu, received=%Ld, sent=%Ld", 
             status, conn->error, conn->connError, elapsed, received, tx->bytesWritten);
 #endif
     }

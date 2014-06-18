@@ -912,12 +912,12 @@ static void outgoingWebSockService(HttpQueue *q)
                     *prefix++ = SET_LEN(len, i);
                 }
             }
+#if KEEP
             if (packet->type == WS_MSG_TEXT && packet->content) {
                 mprAddNullToBuf(packet->content);
-#if KEEP
-                httpTracePacket(conn, HTTP_TRACE_TX_BODY, packet, "websockets", 0);
-#endif
+                httpTracePacket(conn, "tx", packet, "websockets", 0);
             }
+#endif
             if (httpClientConn(conn)) {
                 mprGetRandomBytes(dataMask, sizeof(dataMask), 0);
                 for (i = 0; i < 4; i++) {

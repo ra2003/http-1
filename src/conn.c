@@ -422,7 +422,7 @@ static void readPeerData(HttpConn *conn)
             conn->errorMsg = conn->sock->errorMsg;
             conn->keepAliveCount = 0;
             conn->lastRead = 0;
-            httpTrace(conn, "close", sfmt("%s", conn->errorMsg), 0, 0);
+            httpTrace(conn, "close", conn->errorMsg, 0, 0);
         }
     }
 }

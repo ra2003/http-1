@@ -116,12 +116,12 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
 
     if (monitor->expr == '>') {
         if (counter->value > monitor->limit) {
-            fmt = "Monitor%s for \"%s\". Value %Ld per %Ld secs exceeds limit of %Ld.";
+            fmt = "Monitor%s for \"%s\". Value %lld per %lld secs exceeds limit of %lld.";
         }
 
     } else if (monitor->expr == '>') {
         if (counter->value < monitor->limit) {
-            fmt = "Monitor%s for \"%s\". Value %Ld per %Ld secs outside limit of %Ld.";
+            fmt = "Monitor%s for \"%s\". Value %lld per %lld secs outside limit of %lld.";
         }
     }
     if (fmt) {
@@ -132,7 +132,7 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
 
         subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
-            sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %Ld, MESSAGE: '%s', PERIOD: %Ld, SUBJECT: '%s', VALUE: %Ld }", 
+            sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %lld, MESSAGE: '%s', PERIOD: %lld, SUBJECT: '%s', VALUE: %lld }", 
             monitor->counterName, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, counter->value));
         /*  
             WARNING: may yield depending on remedy
@@ -246,7 +246,7 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
         return MPR_ERR_BAD_ARGS;
     }
     if ((counterIndex = mprLookupStringItem(http->counters, counterName)) < 0) {
-        mprLog("error http monitor", 0, "Cannot find counter %s", 0, counterName);
+        mprLog("error http monitor", 0, "Cannot find counter %s", counterName);
         return MPR_ERR_CANT_FIND;
     }
     for (ITERATE_ITEMS(http->monitors, mp, next)) {
@@ -473,9 +473,9 @@ PUBLIC void httpDumpCounters()
 
     http = MPR->httpService;
     mprLog(0, 0, "Monitor Counters:\n");
-    mprLog(0, 0, "Memory counter     %,Ld\n", mprGetMem());
-    mprLog(0, 0, "Active processes   %,Ld\n", mprGetListLength(MPR->cmdService->cmds));
-    mprLog(0, 0, "Active clients     %,Ld\n", mprGetHashLength(http->addresses));
+    mprLog(0, 0, "Memory counter     %'zd\n", mprGetMem());
+    mprLog(0, 0, "Active processes   %zd\n", mprGetListLength(MPR->cmdService->cmds));
+    mprLog(0, 0, "Active clients     %d\n", mprGetHashLength(http->addresses));
 
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
@@ -486,7 +486,7 @@ PUBLIC void httpDumpCounters()
             if (name == NULL) {
                 break;
             }
-            mprLog(0, 0, "  Counter          %s = %,Ld\n", name, counter->value);
+            mprLog(0, 0, "  Counter          %s = %'lld\n", name, counter->value);
         }
     }
     unlock(http->addresses);
@@ -507,7 +507,7 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
         return MPR_ERR_CANT_FIND;
     }
     if (address->banUntil < http->now) {
-        mprLog("info http monitor", 1, "Client %s banned for %Ld secs at %s", ip, period / 1000, mprGetDate(0));
+        mprLog("info http monitor", 1, "Client %s banned for %lld secs at %s", ip, period / 1000, mprGetDate(0));
     }
     banUntil = http->now + period;
     address->banUntil = max(banUntil, address->banUntil);
@@ -641,7 +641,7 @@ static void httpRemedy(MprHash *args)
     }
     status = httpGetStatus(conn);
     if (status != HTTP_CODE_OK) {
-        mprLog("error http monitor remedy", 0, "Remedy URI %s responded with http status %d\n%s", uri, status);
+        mprLog("error http monitor remedy", 0, "Remedy URI %s responded with http status %d", uri, status);
     }
 }
 

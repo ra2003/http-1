@@ -58,7 +58,7 @@ PUBLIC int httpSendOpen(HttpQueue *q)
         assert(tx->fileInfo.valid);
         if (tx->fileInfo.size > conn->limits->transmissionBodySize) {
             httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
-                "Http transmission aborted. File size exceeds max body of %,Ld bytes", conn->limits->transmissionBodySize);
+                "Http transmission aborted. File size exceeds max body of %'zd bytes", conn->limits->transmissionBodySize);
             return MPR_ERR_CANT_OPEN;
         }
         tx->file = mprOpenFile(tx->filename, O_RDONLY | O_BINARY, 0);
@@ -102,7 +102,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     }
     if ((tx->bytesWritten + q->ioCount) > conn->limits->transmissionBodySize) {
         httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE | ((tx->bytesWritten) ? HTTP_ABORT : 0),
-            "Http transmission aborted. Exceeded max body of %,Ld bytes", conn->limits->transmissionBodySize);
+            "Http transmission aborted. Exceeded max body of %'zd bytes", conn->limits->transmissionBodySize);
         if (tx->bytesWritten) {
             httpFinalizeConnector(conn);
             return;
@@ -132,7 +132,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
             }
             httpFinalizeConnector(conn);
         }
-        httpTrace(conn, "error", "Connector write error", "errno=%d", errCode);
+        httpTrace(conn, "error", "io", "msg=\"Connector write error\", errno=%d", errCode);
 
     } else if (written > 0) {
         tx->bytesWritten += written;
@@ -226,7 +226,8 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
         addToSendVector(q, mprGetBufStart(packet->content), httpGetPacketLength(packet));
 
         if (packet->flags & HTTP_PACKET_DATA) {
-            httpTracePacket(conn, "headers", packet, 0, "length=%Ld", httpGetPacketLength(packet));
+            httpTracePacket(conn, "headers", conn->endpoint ? "response-headers" : "request-headers",
+                packet, "length=%zd", httpGetPacketLength(packet));
         }
     }
 }

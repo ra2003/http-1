@@ -69,7 +69,7 @@ static void netOutgoingService(HttpQueue *q)
     }
     if ((tx->bytesWritten + q->count) > conn->limits->transmissionBodySize) {
         httpLimitError(conn, HTTP_CODE_REQUEST_TOO_LARGE | ((tx->bytesWritten) ? HTTP_ABORT : 0),
-            "Http transmission aborted. Exceeded transmission max body of %,Ld bytes", conn->limits->transmissionBodySize);
+            "Http transmission aborted. Exceeded transmission max body of %'zd bytes", conn->limits->transmissionBodySize);
         if (tx->bytesWritten) {
             httpFinalizeConnector(conn);
             return;
@@ -119,7 +119,7 @@ static void netOutgoingService(HttpQueue *q)
                 httpDisconnect(conn);
             }
             httpFinalizeConnector(conn);
-            httpTrace(conn, "error", "Connector write error", "errno=%d", errCode);
+            httpTrace(conn, "error", "io", "msg=\"Connector write error\", errno=%d", errCode);
             break;
 
         } else if (written > 0) {
@@ -209,7 +209,7 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
         addToNetVector(q, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
     }
     if (packet->flags & HTTP_PACKET_DATA) {
-        httpTracePacket(conn, "tx", packet, 0, "length=%Ld", httpGetPacketLength(packet));
+        httpTracePacket(conn, "body", "tx", packet, "length=%zd", httpGetPacketLength(packet));
     }
 }
 

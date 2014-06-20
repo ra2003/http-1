@@ -685,7 +685,7 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
                 }
                 path = mprReplacePathExt(filename, ext);
                 if (mprGetPathInfo(path, info) == 0) {
-                    httpTrace(conn, "context", 0, "originalFilename=\"%s\", filename=\"%s\"", filename, path);
+                    httpTrace(conn, "context", "map", "originalFilename=\"%s\", filename=\"%s\"", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");
@@ -2185,7 +2185,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!httpCanUser(conn, NULL)) {
-        httpTrace(conn, "error", "Access denied, user is not authorized for access", 0, 0);
+        httpTrace(conn, "error", "authenticate", "msg=\"Access denied, user is not authorized for access\"");
         if (!conn->tx->finalized) {
             if (route->auth && route->auth->type) {
                 (route->auth->type->askLogin)(conn);
@@ -2306,9 +2306,9 @@ static int secureCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         /* Negative age means subDomains == true */
         age = stoi(op->details);
         if (age < 0) {
-            httpAddHeader(conn, "Strict-Transport-Security", "max-age=%Ld; includeSubDomains", -age / MPR_TICKS_PER_SEC);
+            httpAddHeader(conn, "Strict-Transport-Security", "max-age=%lld; includeSubDomains", -age / MPR_TICKS_PER_SEC);
         } else if (age > 0) {
-            httpAddHeader(conn, "Strict-Transport-Security", "max-age=%Ld", age / MPR_TICKS_PER_SEC);
+            httpAddHeader(conn, "Strict-Transport-Security", "max-age=%lld", age / MPR_TICKS_PER_SEC);
         }
     }
     if (!conn->secure) {

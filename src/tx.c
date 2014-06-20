@@ -506,7 +506,7 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
         return;
     }
     tx->length = length;
-    httpSetHeader(conn, "Content-Length", "%Ld", tx->length);
+    httpSetHeader(conn, "Content-Length", "%zd", tx->length);
 }
 
 
@@ -558,7 +558,7 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     /*
        Allow multiple cookie headers. Even if the same name. Later definitions take precedence.
      */
-    httpAppendHeader(conn, "Set-Cookie",
+    httpAppendHeaderString(conn, "Set-Cookie",
         sjoin(name, "=", value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
     if ((cp = mprLookupKey(conn->tx->headers, "Cache-Control")) == 0 || !scontains(cp, "no-cache")) {
         httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
@@ -643,7 +643,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         conn->tx->flags |= HTTP_TX_NO_BODY;
         httpDiscardData(conn, HTTP_QUEUE_TX);
         if (tx->chunkSize <= 0) {
-            httpAddHeader(conn, "Content-Length", "%Ld", length);
+            httpAddHeader(conn, "Content-Length", "%zd", length);
         }
 
     } else if (tx->length < 0 && tx->chunkSize > 0) {
@@ -651,27 +651,28 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
 
     } else if (httpServerConn(conn)) {
         /* Server must not emit a content length header for 1XX, 204 and 304 status */
-        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304 || tx->flags & HTTP_TX_NO_LENGTH)) {
+        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304 || 
+                tx->flags & HTTP_TX_NO_LENGTH)) {
             if (length >= 0) {
-                httpAddHeader(conn, "Content-Length", "%Ld", length);
+                httpAddHeader(conn, "Content-Length", "%zd", length);
             }
         }
 
     } else if (tx->length > 0) {
         /* client with body */
-        httpAddHeader(conn, "Content-Length", "%Ld", length);
+        httpAddHeader(conn, "Content-Length", "%zd", length);
     }
     if (tx->outputRanges) {
         if (tx->outputRanges->next == 0) {
             range = tx->outputRanges;
             if (tx->entityLength > 0) {
-                httpSetHeader(conn, "Content-Range", "bytes %Ld-%Ld/%Ld", range->start, range->end - 1, tx->entityLength);
+                httpSetHeader(conn, "Content-Range", "bytes %zd-%zd/%zd", range->start, range->end - 1, tx->entityLength);
             } else {
-                httpSetHeader(conn, "Content-Range", "bytes %Ld-%Ld/*", range->start, range->end - 1);
+                httpSetHeader(conn, "Content-Range", "bytes %zd-%zd/*", range->start, range->end - 1);
             }
         } else {
-            tx->mimeType = sfmt("Content-Type", "multipart/byteranges; boundary=%s", tx->rangeBoundary);
-            httpSetHeader(conn, "Content-Type", tx->mimeType);
+            tx->mimeType = sfmt("multipart/byteranges; boundary=%s", tx->rangeBoundary);
+            httpSetHeaderString(conn, "Content-Type", tx->mimeType);
         }
         httpSetHeader(conn, "Accept-Ranges", "bytes");
     }
@@ -685,7 +686,8 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         if (--conn->keepAliveCount > 0) {
             assert(conn->keepAliveCount >= 1);
             httpAddHeaderString(conn, "Connection", "Keep-Alive");
-            httpAddHeader(conn, "Keep-Alive", "timeout=%Ld, max=%d", conn->limits->inactivityTimeout / 1000, conn->keepAliveCount);
+            httpAddHeader(conn, "Keep-Alive", "timeout=%lld, max=%d", conn->limits->inactivityTimeout / 1000, 
+                conn->keepAliveCount);
         } else {
             /* Tell the peer to close the connection */
             httpAddHeaderString(conn, "Connection", "close");
@@ -759,13 +761,13 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
     mprGetPathInfo(filename, info);
     if (info->valid) {
         //  OPT - using inodes mean this is harder to cache when served from multiple servers.
-        tx->etag = sfmt("\"%Lx-%Lx-%Lx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
+        tx->etag = sfmt("\"%llx-%llx-%llx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
     }
     tx->filename = sclone(filename);
 
     if (tx->flags & HTTP_TX_PIPELINE) {
         /* Filename being revised after pipeline created */
-        httpTrace(conn, "context", 0, "filename=\"%s\"", tx->filename);
+        httpTrace(conn, "context", "document", "filename=\"%s\"", tx->filename);
     }
 }
 
@@ -852,7 +854,8 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         }
         if (!httpShouldTrace(conn, "headers")) {
             /* Client side trace */
-            httpTrace(conn, "first", 0, "method=%s, uri=%s, protocol=%s", tx->method, parsedUri->path, conn->protocol);
+            httpTrace(conn, "request", "status", "method=%s, uri=%s, protocol=%s", 
+                tx->method, parsedUri->path, conn->protocol);
         }
     }
     mprPutStringToBuf(buf, "\r\n");
@@ -870,7 +873,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         mprPutStringToBuf(packet->content, "\r\n");
         kp = mprGetNextKey(conn->tx->headers, kp);
     }
-    httpTracePacket(conn, "headers", packet, "tx", 0);
+    httpTracePacket(conn, "context", "tx-headers", packet, 0);
 
     /*
         By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter

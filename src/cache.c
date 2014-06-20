@@ -95,7 +95,7 @@ static void readyCacheHandler(HttpQueue *q)
     if (tx->cachedContent) {
 #if KEEP
         /* Duplicate */
-        httpTrace(conn, "context", "Using cached content", 0);
+        httpTrace(conn, "context", "cache", "msg=\"Using cached content\"");
 #endif
         if ((data = setHeadersFromCache(conn, tx->cachedContent)) != 0) {
             tx->length = slen(data);
@@ -144,7 +144,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
      */
     if (mprLookupKey(conn->tx->headers, "X-SendCache") != 0) {
         if (fetchCachedResponse(conn)) {
-            httpTrace(conn, "context", "Using cached content", 0, 0);
+            httpTrace(conn, "context", "cache", "msg=\"Using cached content\"");
             cachedData = setHeadersFromCache(conn, tx->cachedContent);
             tx->length = slen(cachedData);
         }
@@ -184,8 +184,8 @@ static void outgoingCacheFilterService(HttpQueue *q)
                     tx->cacheBufferLength += size;
                 } else {
                     tx->cacheBuffer = 0;
-                    httpTrace(conn, "context", "Item too big to cache", "size=%d, limit=%d", tx->cacheBufferLength + size, 
-                        conn->limits->cacheItemSize);
+                    httpTrace(conn, "context", "cache", "msg=\"Item too big to cache\", size=%zu, limit=%zu",
+                        tx->cacheBufferLength + size, conn->limits->cacheItemSize);
                 }
             }
             foundDataPacket = 1;
@@ -272,14 +272,15 @@ static void cacheAtClient(HttpConn *conn)
     if (!mprLookupKey(tx->headers, "Cache-Control")) {
         if ((value = mprLookupKey(conn->tx->headers, "Cache-Control")) != 0) {
             if (strstr(value, "max-age") == 0) {
-                httpAppendHeader(conn, "Cache-Control", "public, max-age=%Ld", cache->clientLifespan / MPR_TICKS_PER_SEC);
+                httpAppendHeader(conn, "Cache-Control", "public, max-age=%lld", cache->clientLifespan / MPR_TICKS_PER_SEC);
             }
         } else {
-            httpAddHeader(conn, "Cache-Control", "public, max-age=%Ld", cache->clientLifespan / MPR_TICKS_PER_SEC);
+            httpAddHeader(conn, "Cache-Control", "public, max-age=%lld", cache->clientLifespan / MPR_TICKS_PER_SEC);
             /* 
                 Old HTTP/1.0 clients don't understand Cache-Control 
              */
-            httpAddHeader(conn, "Expires", "%s", mprFormatUniversalTime(MPR_HTTP_DATE, mprGetTime() + cache->clientLifespan));
+            httpAddHeaderString(conn, "Expires", mprFormatUniversalTime(MPR_HTTP_DATE, 
+                mprGetTime() + cache->clientLifespan));
         }
     }
 }
@@ -304,7 +305,7 @@ static bool fetchCachedResponse(HttpConn *conn)
     key = makeCacheKey(conn);
     if ((value = httpGetHeader(conn, "Cache-Control")) != 0 && 
             (scontains(value, "max-age=0") == 0 || scontains(value, "no-cache") == 0)) {
-        httpTrace(conn, "context", "Client reload", 0, 0);
+        httpTrace(conn, "context", "cache", "msg=\"Client reload\"");
 
     } else if ((tx->cachedContent = mprReadCache(conn->host->responseCache, key, &modified, 0)) != 0) {
         /*
@@ -331,13 +332,13 @@ static bool fetchCachedResponse(HttpConn *conn)
             }
         }
         status = (canUseClientCache && cacheOk) ? HTTP_CODE_NOT_MODIFIED : HTTP_CODE_OK;
-        httpTrace(conn, "context", "Use cached content", "key=%s, status=%d", key, status);
+        httpTrace(conn, "context", "cache", "msg=\"Use cached content\", key=%s, status=%d", key, status);
         httpSetStatus(conn, status);
-        httpSetHeader(conn, "Etag", mprGetMD5(key));
-        httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
+        httpSetHeaderString(conn, "Etag", mprGetMD5(key));
+        httpSetHeaderString(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
         return 1;
     }
-    httpTrace(conn, "context", "No cached content", "key=%s", key);
+    httpTrace(conn, "context", "cache", "msg=\"No cached content\", key=%s", key);
     return 0;
 }
 
@@ -372,13 +373,13 @@ PUBLIC ssize httpWriteCached(HttpConn *conn)
     }
     cacheKey = makeCacheKey(conn);
     if ((content = mprReadCache(conn->host->responseCache, cacheKey, &modified, 0)) == 0) {
-        httpTrace(conn, "context", "No response data in cache", "key=%s", cacheKey);
+        httpTrace(conn, "context", "cache", "msg=\"No response data in cache\", key=%s", cacheKey);
         return 0;
     }
-    httpTrace(conn, "context", "Used cached response", "key=%s", cacheKey);
+    httpTrace(conn, "context", "cache", "msg=\"Used cached response\", key=%s", cacheKey);
     data = setHeadersFromCache(conn, content);
-    httpSetHeader(conn, "Etag", mprGetMD5(cacheKey));
-    httpSetHeader(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
+    httpSetHeaderString(conn, "Etag", mprGetMD5(cacheKey));
+    httpSetHeaderString(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
     conn->tx->cacheBuffer = 0;
     httpWriteString(conn->writeq, data);
     httpFinalizeOutput(conn);

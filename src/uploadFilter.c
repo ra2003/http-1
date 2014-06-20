@@ -378,7 +378,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
                         "Cannot create upload temp file %s. Check upload temp dir %s", up->tmpPath, uploadDir);
                     return MPR_ERR_CANT_OPEN;
                 }
-                httpTrace(conn, "context", "File upload", "clientFilename=%s, filename=%s", up->clientFilename, up->tmpPath);
+                httpTrace(conn, "context", "upload", "clientFilename=%s, filename=%s", up->clientFilename, up->tmpPath);
 
                 up->file = mprOpenFile(up->tmpPath, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
                 if (up->file == 0) {
@@ -460,7 +460,8 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
         /*
             Abort the connection as we don't want the load of receiving the entire body
          */
-        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Uploaded file exceeds maximum %,Ld", limits->uploadSize);
+        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Uploaded file exceeds maximum %'zd", 
+            limits->uploadSize);
         return MPR_ERR_CANT_WRITE;
     }
     if (len > 0) {
@@ -470,7 +471,7 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
         rc = mprWriteFile(up->file, data, len);
         if (rc != len) {
             httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR,
-                "Cannot write to upload temp file %s, rc %d, errno %d", up->tmpPath, rc, mprGetOsError());
+                "Cannot write to upload temp file %s, rc %zd, errno %d", up->tmpPath, rc, mprGetOsError());
             return MPR_ERR_CANT_WRITE;
         }
         file->size += len;
@@ -552,7 +553,7 @@ static int processUploadData(HttpQueue *q)
              */
             data[dataLen] = '\0';
 #if KEEP
-            httpTrace(conn, "context", 0, "\"%s\"=\"%s\"", up->id, data);
+            httpTrace(conn, "context", "upload", "\"%s\"=\"%s\"", up->id, data);
 #endif
             key = mprUriDecode(up->id);
             data = mprUriDecode(data);

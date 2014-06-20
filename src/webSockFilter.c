@@ -107,6 +107,13 @@ static bool validateText(HttpConn *conn, HttpPacket *packet);
 static void webSockPing(HttpConn *conn);
 static void webSockTimeout(HttpConn *conn);
 
+static void traceErrorProc(HttpConn *conn, cchar *fmt, ...);
+
+#define traceError(conn, ...) \
+    if (conn->http->traceLevel > 0 && PTOI(mprLookupKey(conn->trace->events, "error")) <= conn->http->traceLevel) { \
+        traceErrorProc(conn, __VA_ARGS__); \
+    } else
+
 /*********************************** Code *************************************/
 /*
    WebSocket Filter initialization
@@ -220,12 +227,12 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
         httpSetStatus(conn, HTTP_CODE_SWITCHING);
         httpSetHeader(conn, "Connection", "Upgrade");
         httpSetHeader(conn, "Upgrade", "WebSocket");
-        httpSetHeader(conn, "Sec-WebSocket-Accept", mprGetSHABase64(sjoin(key, WS_MAGIC, NULL)));
+        httpSetHeaderString(conn, "Sec-WebSocket-Accept", mprGetSHABase64(sjoin(key, WS_MAGIC, NULL)));
         if (ws->subProtocol && *ws->subProtocol) {
-            httpSetHeader(conn, "Sec-WebSocket-Protocol", ws->subProtocol);
+            httpSetHeaderString(conn, "Sec-WebSocket-Protocol", ws->subProtocol);
         }
-        httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
-        httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->inactivityTimeout / MPR_TICKS_PER_SEC);
+        httpSetHeader(conn, "X-Request-Timeout", "%lld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
+        httpSetHeader(conn, "X-Inactivity-Timeout", "%lld", conn->limits->inactivityTimeout / MPR_TICKS_PER_SEC);
 
         if (route->webSocketsPingPeriod) {
             ws->pingEvent = mprCreateEvent(conn->dispatcher, "webSocket", route->webSocketsPingPeriod,
@@ -333,7 +340,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
          */
         httpJoinPacketForService(q, packet, 0);
     }
-    httpTracePacket(conn, "rx", packet, "WebSockets", "state%d, frame%d, length%d",
+    httpTracePacket(conn, "rx", "websockets", packet, "state=%d, frame=%d, length=%zu",
         ws->state, ws->frameState, httpGetPacketLength(packet));
 
     if (packet->flags & HTTP_PACKET_END) {
@@ -355,7 +362,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
         switch (ws->frameState) {
         case WS_CLOSED:
             if (httpGetPacketLength(packet) > 0) {
-                httpTrace(conn, "error", "WebSockets closed, ignore incoming packet", 0, 0);
+                traceError(conn, "Closed, ignore incoming packet");
             }
             httpFinalize(conn);
             httpSetState(conn, HTTP_STATE_FINALIZED);
@@ -370,31 +377,31 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             fp = content->start;
             if (GET_RSV(*fp) != 0) {
                 error = WS_STATUS_PROTOCOL_ERROR;
-                httpTrace(conn, "error", "WebSockets protocol error, bad reserved field", 0, 0);
+                traceError(conn, "Protocol error, bad reserved field");
                 break;
             }
             packet->last = GET_FIN(*fp);
             opcode = GET_CODE(*fp);
             if (opcode == WS_MSG_CONT) {
                 if (!ws->currentMessageType) {
-                    httpTrace(conn, "error", "WebSockets protocol error, continuation frame but not prior message", 0, 0);
+                    traceError(conn, "Protocol error, continuation frame but not prior message");
                     error = WS_STATUS_PROTOCOL_ERROR;
                     break;
                 }
             } else if (opcode < WS_MSG_CONTROL && ws->currentMessageType) {
-                httpTrace(conn, "error", "WebSockets protocol error, data frame received but expected a continuation frame", 0, 0);
+                traceError(conn, "Protocol error, data frame received but expected a continuation frame");
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
             }
             if (opcode > WS_MSG_PONG) {
-                httpTrace(conn, "error", "WebSockets protocol error, bad frame opcode", 0, 0);
+                traceError(conn, "Protocol error, bad frame opcode");
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
             }
             packet->type = opcode;
             if (opcode >= WS_MSG_CONTROL && !packet->last) {
                 /* Control frame, must not be fragmented */
-                httpTrace(conn, "error", "WebSockets protocol error, fragmented control frame", 0, 0);
+                traceError(conn, "Protocol error, fragmented control frame");
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
             }
@@ -421,7 +428,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             }
             if (packet->type >= WS_MSG_CONTROL && len > WS_MAX_CONTROL) {
                 /* Too big */
-                httpTrace(conn, "error", "WebSockets protocol error, control frame too big", 0, 0);
+                traceError(conn, "Protocol error, control frame too big");
                 error = WS_STATUS_PROTOCOL_ERROR;
                 break;
             }
@@ -462,8 +469,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 if (httpServerConn(conn)) {
                     httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
                 }
-                httpTrace(conn, "error", "WebSockets incoming message is too large", "wsLength=%d, wsMaxLength=%d",
-                    len, limits->webSocketsMessageSize);
+                traceError(conn, "Incoming message is too large, length %zd, max %zd", len, limits->webSocketsMessageSize);
                 error = WS_STATUS_MESSAGE_TOO_LARGE;
                 break;
             }
@@ -512,7 +518,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             break;
 
         default:
-            httpTrace(conn, "error", "WebSockets protocol error, unknown frame state", 0, 0);
+            traceError(conn, "Protocol error, unknown frame state");
             error = WS_STATUS_PROTOCOL_ERROR;
             break;
         }
@@ -520,7 +526,6 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             /*
                 Notify of the error and send a close to the peer. The peer may or may not be still there.
              */
-            httpTrace(conn, "error", "Websockets error", "webSocketError=%d", error);
             HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, error);
             httpSendClose(conn, error, NULL);
             ws->frameState = WS_CLOSED;
@@ -556,12 +561,12 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
     assert(content);
 
     mprAddNullToBuf(content);
-    httpTrace(conn, "context", "WebSockets receive", "wsSeq=%d, wsTypeName=%s, wsType=%d, wsLast=%d, wsLength=%d",
+    httpTrace(conn, "context", "websockets-receive", "wsSeq=%d, wsTypeName=%s, wsType=%d, wsLast=%d, wsLength=%zu",
          ws->rxSeq++, codetxt[packet->type], packet->type, packet->last, mprGetBufLength(content));
 
     switch (packet->type) {
     case WS_MSG_TEXT:
-        httpTracePacket(conn, "rx", packet, "WebSockets receive text", 0);
+        httpTracePacket(conn, "rx", "websockets-text", packet, 0);
         /* Fall through */
 
     case WS_MSG_BINARY:
@@ -575,7 +580,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         }
         if (packet->type == WS_MSG_CONT) {
             if (!ws->currentMessageType) {
-                httpTrace(conn, "error", "Websockets bad continuation packet", 0, 0);
+                traceError(conn, "Bad continuation packet");
                 return WS_STATUS_PROTOCOL_ERROR;
             }
             packet->type = ws->currentMessageType;
@@ -601,7 +606,8 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             }
         }
         /*
-            Send what we have if preserving frames or the current messages is over the packet limit size. Otherwise, keep buffering.
+            Send what we have if preserving frames or the current messages is over the packet limit size. 
+            Otherwise, keep buffering.
          */
         for (ws->tailMessage = 0; packet; packet = ws->tailMessage, ws->tailMessage = 0) {
             if (!ws->preserveFrames && (httpGetPacketLength(packet) > limits->webSocketsPacketSize)) {
@@ -632,7 +638,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         if (httpGetPacketLength(packet) == 0) {
             ws->closeStatus = WS_STATUS_OK;
         } else if (httpGetPacketLength(packet) < 2) {
-            httpTrace(conn, "error", "Websockets missing close status", 0, 0);
+            traceError(conn, "Missing close status");
             return WS_STATUS_PROTOCOL_ERROR;
         } else {
             ws->closeStatus = ((uchar) cp[0]) << 8 | (uchar) cp[1];
@@ -645,7 +651,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
                 (1004 <= ws->closeStatus && ws->closeStatus <= 1006) ||
                 (1012 <= ws->closeStatus && ws->closeStatus <= 1016) ||
                 (1100 <= ws->closeStatus && ws->closeStatus <= 2999)) {
-                httpTrace(conn, "error", "Websockets bad close", "wsCloseStatus=%d", ws->closeStatus);
+                traceError(conn, "Bad close status %d", ws->closeStatus);
                 return WS_STATUS_PROTOCOL_ERROR;
             }
             mprAdjustBufStart(content, 2);
@@ -653,14 +659,14 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
                 ws->closeReason = mprCloneBufMem(content);
                 if (!rx->route || !rx->route->ignoreEncodingErrors) {
                     if (validUTF8(conn, ws->closeReason, slen(ws->closeReason)) != UTF8_ACCEPT) {
-                        httpTrace(conn, "error", "Websockets text packet has invalid UTF8", 0, 0);
+                        traceError(conn, "Text packet has invalid UTF8");
                         return WS_STATUS_INVALID_UTF8;
                     }
                 }
             }
         }
-        httpTrace(conn, "context", "WebSockets receive close packet", "wsCloseStatus=%d, wsCloseReason=\"%s\", wsClosing=%d",
-            ws->closeStatus, ws->closeReason, ws->closing);
+        httpTrace(conn, "context", "websockets-close", 
+            "wsCloseStatus=%d, wsCloseReason=\"%s\", wsClosing=%d", ws->closeStatus, ws->closeReason, ws->closing);
         if (ws->closing) {
             httpDisconnect(conn);
         } else {
@@ -685,7 +691,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         break;
 
     default:
-        httpTrace(conn, "error", "Websockets bad message", "wsType=%d", packet->type);
+        traceError(conn, "Bad message type %d", packet->type);
         ws->state = WS_STATE_CLOSED;
         return WS_STATUS_PROTOCOL_ERROR;
     }
@@ -710,7 +716,8 @@ PUBLIC ssize httpSend(HttpConn *conn, cchar *fmt, ...)
 
 
 /*
-    Send a block of data with the specified message type. Set flags to HTTP_MORE to indicate there is more data for this message.
+    Send a block of data with the specified message type. Set flags to HTTP_MORE to indicate there is more data 
+    for this message.
  */
 PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int flags)
 {
@@ -733,7 +740,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
     }
     if (type != WS_MSG_CONT && type != WS_MSG_TEXT && type != WS_MSG_BINARY && type != WS_MSG_CLOSE &&
             type != WS_MSG_PING && type != WS_MSG_PONG) {
-        httpTrace(conn, "error", "Websockets bad message", "wsType=%d", type);
+        traceError(conn, "Bad message type %d", type);
         return MPR_ERR_BAD_ARGS;
     }
     q = conn->writeq;
@@ -747,8 +754,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         if (httpServerConn(conn)) {
             httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
         }
-        httpTrace(conn, "error", "Outgoing websockets message is too large", "wsLength=%d, wsMaxLength=%d",
-            len, conn->limits->webSocketsMessageSize);
+        traceError(conn, "Outgoing message is too large, length %zd max %zd", len, conn->limits->webSocketsMessageSize);
         return MPR_ERR_WONT_FIT;
     }
     totalWritten = 0;
@@ -844,8 +850,8 @@ PUBLIC ssize httpSendClose(HttpConn *conn, int status, cchar *reason)
     len = 2;
     if (reason) {
         if (slen(reason) >= 124) {
-            reason = "WebSockets reason message was too big";
-            httpTrace(conn, "error", reason, 0, 0);
+            reason = "WebSockets close message was too big";
+            traceError(conn, reason);
         }
         len += slen(reason) + 1;
     }
@@ -854,7 +860,7 @@ PUBLIC ssize httpSendClose(HttpConn *conn, int status, cchar *reason)
     if (reason) {
         scopy(&msg[2], len - 2, reason);
     }
-    httpTrace(conn, "context", "WebSockets send close packet", "wsCloseStatus=%d, wsCloseReason=\"%s\"", status, reason);
+    httpTrace(conn, "context", "websockets-send-close", "wsCloseStatus=%d, wsCloseReason=\"%s\"", status, reason);
     return httpSendBlock(conn, WS_MSG_CLOSE, msg, len, HTTP_BUFFER);
 }
 
@@ -915,7 +921,7 @@ static void outgoingWebSockService(HttpQueue *q)
 #if KEEP
             if (packet->type == WS_MSG_TEXT && packet->content) {
                 mprAddNullToBuf(packet->content);
-                httpTracePacket(conn, "tx", packet, "websockets", 0);
+                httpTracePacket(conn, "tx", "websockets", packet, 0);
             }
 #endif
             if (httpClientConn(conn)) {
@@ -931,8 +937,8 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            httpTracePacket(conn, "tx", packet, 
-                "WebSockets", "wsSeqno:%d, wsTypeName:\"%s\", wsType:%d, wsLast:%d, wsLength:%d",
+            httpTracePacket(conn, "tx", "websockets", packet, 
+                "wsSeqno=%d, wsTypeName=\"%s\", wsType=%d, wsLast=%d, wsLength=%zd",
                 ws->txSeq++, codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
         }
         httpPutPacketToNext(q, packet);
@@ -940,7 +946,7 @@ static void outgoingWebSockService(HttpQueue *q)
 }
 
 
-PUBLIC char *httpGetWebSocketCloseReason(HttpConn *conn)
+PUBLIC cchar *httpGetWebSocketCloseReason(HttpConn *conn)
 {
     HttpWebSocket   *ws;
 
@@ -1067,7 +1073,7 @@ static int validUTF8(HttpConn *conn, cchar *str, ssize len)
          */
         state = utfTable[256 + (state * 16) + type];
         if (state == UTF8_REJECT) {
-            httpTrace(conn, "error", "Invalid UTF8", "offset=%d", cp - (uchar*) str);
+            traceError(conn, "Invalid UTF8 at offset %d", cp - (uchar*) str);
             break;
         }
     }
@@ -1107,7 +1113,7 @@ static bool validateText(HttpConn *conn, HttpPacket *packet)
         valid = state != UTF8_REJECT;
     }
     if (!valid) {
-        httpTrace(conn, "error", "WebSocket text packet has invalid UTF8", 0, 0);
+        traceError(conn, "Text packet has invalid UTF8");
     }
     return valid;
 }
@@ -1147,11 +1153,11 @@ PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
     httpSetHeader(conn, "Connection", "Upgrade");
     mprGetRandomBytes(num, sizeof(num), 0);
     tx->webSockKey = mprEncode64Block(num, sizeof(num));
-    httpSetHeader(conn, "Sec-WebSocket-Key", tx->webSockKey);
-    httpSetHeader(conn, "Sec-WebSocket-Protocol", conn->protocols ? conn->protocols : "chat");
-    httpSetHeader(conn, "Sec-WebSocket-Version", "13");
-    httpSetHeader(conn, "X-Request-Timeout", "%Ld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
-    httpSetHeader(conn, "X-Inactivity-Timeout", "%Ld", conn->limits->inactivityTimeout / MPR_TICKS_PER_SEC);
+    httpSetHeaderString(conn, "Sec-WebSocket-Key", tx->webSockKey);
+    httpSetHeaderString(conn, "Sec-WebSocket-Protocol", conn->protocols ? conn->protocols : "chat");
+    httpSetHeaderString(conn, "Sec-WebSocket-Version", "13");
+    httpSetHeader(conn, "X-Request-Timeout", "%lld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
+    httpSetHeader(conn, "X-Inactivity-Timeout", "%lld", conn->limits->inactivityTimeout / MPR_TICKS_PER_SEC);
 
     conn->upgraded = 1;
     conn->keepAliveCount = 0;
@@ -1198,6 +1204,20 @@ PUBLIC bool httpVerifyWebSocketsHandshake(HttpConn *conn)
     }
     rx->webSocket->state = WS_STATE_OPEN;
     return 1;
+}
+
+
+static void traceErrorProc(HttpConn *conn, cchar *fmt, ...)
+{
+    HttpWebSocket   *ws;
+    va_list         args;
+
+    ws = conn->rx->webSocket;
+    va_start(args, fmt);
+    ws->errorMsg = sfmtv(fmt, args);
+    va_end(args);
+
+    httpTrace(conn, "error", "websockets-error", "msg=\"%s\"", ws->errorMsg);
 }
 
 #endif /* ME_HTTP_WEB_SOCKETS */

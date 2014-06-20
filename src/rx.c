@@ -232,14 +232,14 @@ static bool parseIncoming(HttpConn *conn)
     if ((end = sncontains(start, "\r\n\r\n", len)) == 0 && (end = sncontains(start, "\n\n", len)) == 0) {
         if (len >= limits->headerSize) {
             httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
-                "Header too big. Length %d vs limit %d", len, limits->headerSize);
+                "Header too big. Length %zd vs limit %zd", len, limits->headerSize);
         }
         return 0;
     }
     rx->headerPacketLength = len = end - start;
 
     if (len >= limits->headerSize) {
-        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Header too big. Length %d vs limit %d", len,
+        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Header too big. Length %zd vs limit %zd", len,
             limits->headerSize);
         return 0;
     }
@@ -302,7 +302,7 @@ static bool mapMethod(HttpConn *conn)
     rx = conn->rx;
     if (rx->flags & HTTP_POST && (method = httpGetParam(conn, "-http-method-", 0)) != 0) {
         if (!scaselessmatch(method, rx->method)) {
-            httpTrace(conn, "context", 0, "originalMethod=%s, method=%s", rx->method, method);
+            httpTrace(conn, "context", "method", "originalMethod=%s, method=%s", rx->method, method);
             httpSetMethod(conn, method);
             return 1;
         }
@@ -395,7 +395,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
             content = packet->content;
             endp = strstr((char*) content->start, "\r\n\r\n");
             len = (endp) ? (int) (endp - content->start + 2) : 0;
-            httpTraceContent(conn, "headers", content->start, len, "rx", "peer=%s", conn->ip);
+            httpTraceContent(conn, "context", "rx-headers", content->start, len, "peer=%s", conn->ip);
         } else {
             traceRequired = 1;
         }
@@ -410,7 +410,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
         return 0;
     } else if (len >= limits->uriSize) {
         httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_URL_TOO_LARGE,
-            "Bad request. URI too long. Length %d vs limit %d", len, limits->uriSize);
+            "Bad request. URI too long. Length %zd vs limit %zd", len, limits->uriSize);
         return 0;
     }
     protocol = conn->protocol = supper(getToken(conn, "\r\n"));
@@ -436,8 +436,8 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     conn->http->totalRequests++;
     httpSetState(conn, HTTP_STATE_FIRST);
     if (traceRequired) {
-        httpTrace(conn, "first", 0, "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, conn->protocol, 
-            conn->ip);
+        httpTrace(conn, "request", "request", "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, 
+                conn->protocol, conn->ip);
     }
     return 1;
 }
@@ -465,7 +465,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         content = packet->content;
         endp = strstr((char*) content->start, "\r\n\r\n");
         len = (endp) ? (int) (endp - content->start + 4) : 0;
-        httpTraceContent(conn, "headers", content->start, len, "rx", 0);
+        httpTraceContent(conn, "context", "rx-headers", content->start, len, "rx");
         traced = 1;
     }
     protocol = conn->protocol = supper(getToken(conn, 0));
@@ -489,11 +489,11 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
     len = slen(rx->statusMessage);
     if (len >= conn->limits->uriSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_URL_TOO_LARGE,
-            "Bad response. Status message too long. Length %d vs limit %d", len, conn->limits->uriSize);
+            "Bad response. Status message too long. Length %zd vs limit %zd", len, conn->limits->uriSize);
         return 0;
     }
     if (httpTracing(conn) && !traced) {
-        httpTrace(conn, "first", 0, "status=%d, protocol=%s", rx->status, protocol);
+        httpTrace(conn, "request", "response", "status=%d, protocol=%s", rx->status, protocol);
     }
     return 1;
 }
@@ -831,7 +831,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
     }
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Request form of %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveFormSize);
+            "Request form of %'zd bytes is too big. Limit %'zd", rx->length, conn->limits->receiveFormSize);
     }
     if (conn->error) {
         /* Cannot continue with keep-alive as the headers have not been correctly parsed */
@@ -889,7 +889,7 @@ static bool processParsed(HttpConn *conn)
          */
         if (!rx->upload && rx->length >= conn->limits->receiveBodySize) {
             httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-                "Request content length %,Ld bytes is too big. Limit %,Ld", rx->length, conn->limits->receiveBodySize);
+                "Request content length %'zd bytes is too big. Limit %'zd", rx->length, conn->limits->receiveBodySize);
             return 0;
         }
         if (rx->streaming) {
@@ -969,14 +969,14 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
     size = rx->bytesRead - rx->bytesUploaded;
     if (size >= conn->limits->receiveBodySize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Receive body of %,Ld bytes (sofar) is too big. Limit %,Ld", size, conn->limits->receiveBodySize);
+            "Receive body of %'zd bytes (sofar) is too big. Limit %'zd", size, conn->limits->receiveBodySize);
 
     } else if (rx->form && size >= conn->limits->receiveFormSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Receive form of %,Ld bytes (sofar) is too big. Limit %,Ld", size, conn->limits->receiveFormSize);
+            "Receive form of %'zd bytes (sofar) is too big. Limit %'zd", size, conn->limits->receiveFormSize);
     }
     if (packet) {
-        httpTraceContent(conn, "rx", packet->content->start, nbytes, 0, 0);
+        httpTraceContent(conn, "body", "rx", packet->content->start, nbytes, 0);
     }
     if (rx->eof) {
         if ((rx->remainingContent > 0 && (rx->length > 0 || !conn->mustClose)) ||
@@ -1139,7 +1139,7 @@ static void createErrorRequest(HttpConn *conn)
     if (!rx->headerPacket) {
         return;
     }
-    httpTrace(conn, "context", "Redirect to error document", "location=%s, status=%d", tx->errorDocument, tx->status, rx->uri);
+    httpTrace(conn, "context", "errordoc", "location=%s, status=%d", tx->errorDocument, tx->status);
 
     originalUri = rx->uri;
     conn->rx = httpCreateRx(conn);
@@ -1254,11 +1254,12 @@ static bool processCompletion(HttpConn *conn)
         received = rx->headerPacketLength + rx->bytesRead;
 #if MPR_HIGH_RES_TIMER
         httpTrace(conn, 
-            "complete", 0, "status=%d, error=%d, connError=%d, elapsed=%Lu, elapsedTicks=%Lu, received=%Ld, sent=%Ld", 
+            "result", "completion", 
+            "status=%d, error=%d, connError=%d, elapsed=%llu, elapsedTicks=%llu, received=%lld, sent=%lld", 
             status, conn->error, conn->connError, elapsed, mprGetHiResTicks() - conn->startMark, 
             received, tx->bytesWritten);
 #else
-        httpTrace(conn, "complete", 0, "status=%d, error=%d, connError=%d, elapsed=%Lu, received=%Ld, sent=%Ld", 
+        httpTrace(conn, "result", "completion", "status=%d, error=%d, connError=%d, elapsed=%llu, received=%lld, sent=%lld", 
             status, conn->error, conn->connError, elapsed, received, tx->bytesWritten);
 #endif
     }

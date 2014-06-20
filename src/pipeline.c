@@ -109,7 +109,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     tx->flags |= HTTP_TX_PIPELINE;
 
     if (conn->endpoint) {
-        httpTrace(conn, "context", 0,
+        httpTrace(conn, "context", "pipeline",
             "route=%s, handler=%s, target=\"%s\", endpoint=%s:%d, host=%s, referrer=%s, filename=%s",
             rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
             conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "", 

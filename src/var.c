@@ -91,7 +91,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
             mprSetJson(params, sfmt("FILE_%d_CLIENT_FILENAME", index), up->clientFilename);
             mprSetJson(params, sfmt("FILE_%d_CONTENT_TYPE", index), up->contentType);
             mprSetJson(params, sfmt("FILE_%d_NAME", index), kp->key);
-            mprSetJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%d", up->size));
+            mprSetJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%zd", up->size));
         }
     }
     if (conn->http->envCallback) {

@@ -13,7 +13,7 @@
     Common Log Formatter (NCSA)
     This formatter only emits messages for the TRACE_COMPLETE message.
  */
-PUBLIC void httpCommonTraceFormatter(HttpConn *conn, cchar *event, cchar *msgUnused, cchar *valuesUnused,
+PUBLIC void httpCommonTraceFormatter(HttpConn *conn, cchar *type, cchar *event, cchar *valuesUnused,
     cchar *bufUnused, ssize lenUnused)
 {
     HttpRx      *rx;

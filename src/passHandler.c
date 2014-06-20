@@ -67,7 +67,7 @@ static void handleTrace(HttpConn *conn)
     q->count -= httpGetPacketLength(headers);
     assert(q->count == 0);
     mprFlushBuf(headers->content);
-    mprPutToBuf(traceData->content, mprGetBufStart(q->first->content));
+    mprPutStringToBuf(traceData->content, mprGetBufStart(q->first->content));
     httpSetContentType(conn, "message/http");
     httpPutForService(q, traceData, HTTP_DELAY_SERVICE);
     httpFinalize(conn);

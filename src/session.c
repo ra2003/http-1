@@ -148,7 +148,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
             cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
             httpSetCookie(conn, cookie, rx->session->id, "/", NULL, rx->session->lifespan, flags);
-            httpTrace(conn, "context", "Create new session cookie", "cookie=%s, session=%s", cookie, rx->session->id);
+            httpTrace(conn, "context", "create-session", "cookie=%s, session=%s", cookie, rx->session->id);
 
             if ((rx->route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
                 httpSetSessionVar(conn, ME_XSRF_COOKIE, rx->securityToken);
@@ -367,7 +367,7 @@ PUBLIC int httpAddSecurityToken(HttpConn *conn, bool recreate)
 
     securityToken = httpGetSecurityToken(conn, recreate);
     httpSetCookie(conn, ME_XSRF_COOKIE, securityToken, "/", NULL,  0, 0);
-    httpSetHeader(conn, ME_XSRF_HEADER, securityToken);
+    httpSetHeaderString(conn, ME_XSRF_HEADER, securityToken);
     return 0;
 }
 
@@ -385,14 +385,15 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
         if (!requestToken) {
             requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
             if (!requestToken) {
-                httpTrace(conn, "error", "Missing security token in request", 0, 0);
+                httpTrace(conn, "error", "xsrf-error", "msg=\"Missing security token in request\"");
             }
         }
         if (!smatch(sessionToken, requestToken)) {
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.
              */
-            httpTrace(conn, "error", "Security token in request does not match session token", "xsrf=%s, sessionXsrf=%s",
+            httpTrace(conn, "error", "xsrf-error", 
+                "msg=\"Security token in request does not match session token\", xsrf=%s, sessionXsrf=%s", 
                 requestToken, sessionToken);
             httpAddSecurityToken(conn, 1);
             return 0;

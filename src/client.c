@@ -43,12 +43,16 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
             mprCloseSocket(conn->sock, 0);
             conn->sock = 0;
         } else {
-            httpTrace(conn, "context", "Reuse socket", "keepAlive=%d", conn->keepAliveCount);
+            httpTrace(conn, "context", "connection", "msg=\"Reuse socket\", keepAlive=%d", conn->keepAliveCount);
         }
     }
     if (conn->sock) {
         return conn;
     }
+
+    /*
+        New socket
+     */
     if ((sp = mprCreateSocket()) == 0) {
         httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Cannot create socket for %s", uri->uri);
         return 0;
@@ -74,11 +78,12 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         peerName = isdigit(uri->host[0]) ? 0 : uri->host;
         if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
-            httpTrace(conn, "error", sfmt("Cannot upgrade socket, %s", conn->errorMsg), 0, 0);
+            httpTrace(conn, "error", "connection", "msg=\"Cannot upgrade socket, %s\"", conn->errorMsg);
             return 0;
         }
         if (sp->peerCert) {
-            httpTrace(conn, "context", "Connection secured with peer certificate",
+            httpTrace(conn, "context", "connection", 
+                "msg=\"Connection secured with peer certificate\"," \
                 "secure=true, cipher=%s, peerName=\"%s\", subject=\"%s\", issuer=\"%s\"",
                 sp->cipher, sp->peerName, sp->peerCert, sp->peerCertIssuer);
         }
@@ -90,7 +95,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         return 0;
     }
 #endif
-    httpTrace(conn, "connection", 0, "peer=%s:%d", conn->ip, conn->port);
+    httpTrace(conn, "context", "connection", "peer=%s:%d", conn->ip, conn->port);
     return conn;
 }
 
@@ -207,7 +212,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
  */
 PUBLIC void httpEnableUpload(HttpConn *conn)
 {
-    conn->boundary = sfmt("--BOUNDARY--%Ld", conn->http->now);
+    conn->boundary = sfmt("--BOUNDARY--%lld", conn->http->now);
     httpSetHeader(conn, "Content-Type", "multipart/form-data; boundary=%s", &conn->boundary[2]);
 }
 

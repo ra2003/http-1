@@ -197,7 +197,7 @@ static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range)
     packet->flags |= HTTP_PACKET_RANGE;
     mprPutToBuf(packet->content, 
         "\r\n--%s\r\n"
-        "Content-Range: bytes %Ld-%Ld/%s\r\n\r\n",
+        "Content-Range: bytes %zd-%zd/%s\r\n\r\n",
         tx->rangeBoundary, range->start, range->end - 1, length);
     return packet;
 }

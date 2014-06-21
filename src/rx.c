@@ -831,7 +831,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
     }
     if (rx->form && rx->length >= conn->limits->receiveFormSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Request form of %'zd bytes is too big. Limit %'zd", rx->length, conn->limits->receiveFormSize);
+            "Request form of %'lld bytes is too big. Limit %'lld", rx->length, conn->limits->receiveFormSize);
     }
     if (conn->error) {
         /* Cannot continue with keep-alive as the headers have not been correctly parsed */
@@ -889,7 +889,7 @@ static bool processParsed(HttpConn *conn)
          */
         if (!rx->upload && rx->length >= conn->limits->receiveBodySize) {
             httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-                "Request content length %'zd bytes is too big. Limit %'zd", rx->length, conn->limits->receiveBodySize);
+                "Request content length %'lld bytes is too big. Limit %'lld", rx->length, conn->limits->receiveBodySize);
             return 0;
         }
         if (rx->streaming) {
@@ -969,11 +969,11 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
     size = rx->bytesRead - rx->bytesUploaded;
     if (size >= conn->limits->receiveBodySize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Receive body of %'zd bytes (sofar) is too big. Limit %'zd", size, conn->limits->receiveBodySize);
+            "Receive body of %'lld bytes (sofar) is too big. Limit %'lld", size, conn->limits->receiveBodySize);
 
     } else if (rx->form && size >= conn->limits->receiveFormSize) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Receive form of %'zd bytes (sofar) is too big. Limit %'zd", size, conn->limits->receiveFormSize);
+            "Receive form of %'lld bytes (sofar) is too big. Limit %'lld", size, conn->limits->receiveFormSize);
     }
     if (packet) {
         httpTraceContent(conn, "body", "rx", packet->content->start, nbytes, 0);

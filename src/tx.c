@@ -189,7 +189,7 @@ PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
                 mprAddDuplicateKey(conn->tx->headers, key, value);
             }
         } else {
-            setHdr(conn, key, sfmt("%s, %s", kp->data, value));
+            setHdr(conn, key, sfmt("%s, %s", (char*) kp->data, value));
         }
     } else {
         setHdr(conn, key, value);
@@ -506,7 +506,7 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
         return;
     }
     tx->length = length;
-    httpSetHeader(conn, "Content-Length", "%zd", tx->length);
+    httpSetHeader(conn, "Content-Length", "%lld", tx->length);
 }
 
 
@@ -643,7 +643,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         conn->tx->flags |= HTTP_TX_NO_BODY;
         httpDiscardData(conn, HTTP_QUEUE_TX);
         if (tx->chunkSize <= 0) {
-            httpAddHeader(conn, "Content-Length", "%zd", length);
+            httpAddHeader(conn, "Content-Length", "%lld", length);
         }
 
     } else if (tx->length < 0 && tx->chunkSize > 0) {
@@ -654,21 +654,21 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304 || 
                 tx->flags & HTTP_TX_NO_LENGTH)) {
             if (length >= 0) {
-                httpAddHeader(conn, "Content-Length", "%zd", length);
+                httpAddHeader(conn, "Content-Length", "%lld", length);
             }
         }
 
     } else if (tx->length > 0) {
         /* client with body */
-        httpAddHeader(conn, "Content-Length", "%zd", length);
+        httpAddHeader(conn, "Content-Length", "%lld", length);
     }
     if (tx->outputRanges) {
         if (tx->outputRanges->next == 0) {
             range = tx->outputRanges;
             if (tx->entityLength > 0) {
-                httpSetHeader(conn, "Content-Range", "bytes %zd-%zd/%zd", range->start, range->end - 1, tx->entityLength);
+                httpSetHeader(conn, "Content-Range", "bytes %lld-%lld/%lld", range->start, range->end - 1, tx->entityLength);
             } else {
-                httpSetHeader(conn, "Content-Range", "bytes %zd-%zd/*", range->start, range->end - 1);
+                httpSetHeader(conn, "Content-Range", "bytes %lld-%lld/*", range->start, range->end - 1);
             }
         } else {
             tx->mimeType = sfmt("multipart/byteranges; boundary=%s", tx->rangeBoundary);

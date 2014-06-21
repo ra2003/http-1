@@ -649,7 +649,7 @@ static void httpRemedy(MprHash *args)
 /* TODO - message already logged at level 2 */
 static void logRemedy(MprHash *args)
 {
-    mprLog("info http monitor", 0, "%s", mprLookupKey(args, "MESSAGE"));
+    mprLog("info http monitor", 0, "%s", (char*) mprLookupKey(args, "MESSAGE"));
 }
 
 

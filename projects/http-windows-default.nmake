@@ -146,7 +146,6 @@ clean:
 	if exist "$(CONFIG)\obj\estLib.obj" del /Q "$(CONFIG)\obj\estLib.obj"
 	if exist "$(CONFIG)\obj\host.obj" del /Q "$(CONFIG)\obj\host.obj"
 	if exist "$(CONFIG)\obj\http.obj" del /Q "$(CONFIG)\obj\http.obj"
-	if exist "$(CONFIG)\obj\log.obj" del /Q "$(CONFIG)\obj\log.obj"
 	if exist "$(CONFIG)\obj\makerom.obj" del /Q "$(CONFIG)\obj\makerom.obj"
 	if exist "$(CONFIG)\obj\monitor.obj" del /Q "$(CONFIG)\obj\monitor.obj"
 	if exist "$(CONFIG)\obj\mprLib.obj" del /Q "$(CONFIG)\obj\mprLib.obj"
@@ -440,368 +439,355 @@ $(CONFIG)\obj\host.obj: \
 	"$(CC)" -c -Fo$(CONFIG)\obj\host.obj -Fd$(CONFIG)\obj\host.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\host.c
 
 #
-#   log.obj
+#   monitor.obj
 #
 DEPS_23 = $(DEPS_23) $(CONFIG)\inc\me.h
 DEPS_23 = $(DEPS_23) $(CONFIG)\inc\http.h
 
-$(CONFIG)\obj\log.obj: \
-    src\log.c $(DEPS_23)
-	@echo '   [Compile] $(CONFIG)/obj/log.obj'
-	"$(CC)" -c -Fo$(CONFIG)\obj\log.obj -Fd$(CONFIG)\obj\log.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\log.c
-
-#
-#   monitor.obj
-#
-DEPS_24 = $(DEPS_24) $(CONFIG)\inc\me.h
-DEPS_24 = $(DEPS_24) $(CONFIG)\inc\http.h
-
 $(CONFIG)\obj\monitor.obj: \
-    src\monitor.c $(DEPS_24)
+    src\monitor.c $(DEPS_23)
 	@echo '   [Compile] $(CONFIG)/obj/monitor.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\monitor.obj -Fd$(CONFIG)\obj\monitor.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\monitor.c
 
 #
 #   netConnector.obj
 #
-DEPS_25 = $(DEPS_25) $(CONFIG)\inc\me.h
-DEPS_25 = $(DEPS_25) $(CONFIG)\inc\http.h
+DEPS_24 = $(DEPS_24) $(CONFIG)\inc\me.h
+DEPS_24 = $(DEPS_24) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\netConnector.obj: \
-    src\netConnector.c $(DEPS_25)
+    src\netConnector.c $(DEPS_24)
 	@echo '   [Compile] $(CONFIG)/obj/netConnector.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\netConnector.obj -Fd$(CONFIG)\obj\netConnector.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\netConnector.c
 
 #
 #   packet.obj
 #
-DEPS_26 = $(DEPS_26) $(CONFIG)\inc\me.h
-DEPS_26 = $(DEPS_26) $(CONFIG)\inc\http.h
+DEPS_25 = $(DEPS_25) $(CONFIG)\inc\me.h
+DEPS_25 = $(DEPS_25) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\packet.obj: \
-    src\packet.c $(DEPS_26)
+    src\packet.c $(DEPS_25)
 	@echo '   [Compile] $(CONFIG)/obj/packet.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\packet.obj -Fd$(CONFIG)\obj\packet.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\packet.c
 
 #
 #   pam.obj
 #
-DEPS_27 = $(DEPS_27) $(CONFIG)\inc\me.h
-DEPS_27 = $(DEPS_27) $(CONFIG)\inc\http.h
+DEPS_26 = $(DEPS_26) $(CONFIG)\inc\me.h
+DEPS_26 = $(DEPS_26) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\pam.obj: \
-    src\pam.c $(DEPS_27)
+    src\pam.c $(DEPS_26)
 	@echo '   [Compile] $(CONFIG)/obj/pam.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\pam.obj -Fd$(CONFIG)\obj\pam.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pam.c
 
 #
 #   passHandler.obj
 #
-DEPS_28 = $(DEPS_28) $(CONFIG)\inc\me.h
-DEPS_28 = $(DEPS_28) $(CONFIG)\inc\http.h
+DEPS_27 = $(DEPS_27) $(CONFIG)\inc\me.h
+DEPS_27 = $(DEPS_27) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\passHandler.obj: \
-    src\passHandler.c $(DEPS_28)
+    src\passHandler.c $(DEPS_27)
 	@echo '   [Compile] $(CONFIG)/obj/passHandler.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\passHandler.obj -Fd$(CONFIG)\obj\passHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\passHandler.c
 
 #
 #   pipeline.obj
 #
-DEPS_29 = $(DEPS_29) $(CONFIG)\inc\me.h
-DEPS_29 = $(DEPS_29) $(CONFIG)\inc\http.h
+DEPS_28 = $(DEPS_28) $(CONFIG)\inc\me.h
+DEPS_28 = $(DEPS_28) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\pipeline.obj: \
-    src\pipeline.c $(DEPS_29)
+    src\pipeline.c $(DEPS_28)
 	@echo '   [Compile] $(CONFIG)/obj/pipeline.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\pipeline.obj -Fd$(CONFIG)\obj\pipeline.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pipeline.c
 
 #
 #   queue.obj
 #
-DEPS_30 = $(DEPS_30) $(CONFIG)\inc\me.h
-DEPS_30 = $(DEPS_30) $(CONFIG)\inc\http.h
+DEPS_29 = $(DEPS_29) $(CONFIG)\inc\me.h
+DEPS_29 = $(DEPS_29) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\queue.obj: \
-    src\queue.c $(DEPS_30)
+    src\queue.c $(DEPS_29)
 	@echo '   [Compile] $(CONFIG)/obj/queue.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\queue.obj -Fd$(CONFIG)\obj\queue.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\queue.c
 
 #
 #   rangeFilter.obj
 #
-DEPS_31 = $(DEPS_31) $(CONFIG)\inc\me.h
-DEPS_31 = $(DEPS_31) $(CONFIG)\inc\http.h
+DEPS_30 = $(DEPS_30) $(CONFIG)\inc\me.h
+DEPS_30 = $(DEPS_30) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\rangeFilter.obj: \
-    src\rangeFilter.c $(DEPS_31)
+    src\rangeFilter.c $(DEPS_30)
 	@echo '   [Compile] $(CONFIG)/obj/rangeFilter.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\rangeFilter.obj -Fd$(CONFIG)\obj\rangeFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\rangeFilter.c
 
 #
 #   route.obj
 #
-DEPS_32 = $(DEPS_32) $(CONFIG)\inc\me.h
-DEPS_32 = $(DEPS_32) $(CONFIG)\inc\http.h
+DEPS_31 = $(DEPS_31) $(CONFIG)\inc\me.h
+DEPS_31 = $(DEPS_31) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\route.obj: \
-    src\route.c $(DEPS_32)
+    src\route.c $(DEPS_31)
 	@echo '   [Compile] $(CONFIG)/obj/route.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\route.obj -Fd$(CONFIG)\obj\route.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\route.c
 
 #
 #   rx.obj
 #
-DEPS_33 = $(DEPS_33) $(CONFIG)\inc\me.h
-DEPS_33 = $(DEPS_33) $(CONFIG)\inc\http.h
+DEPS_32 = $(DEPS_32) $(CONFIG)\inc\me.h
+DEPS_32 = $(DEPS_32) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\rx.obj: \
-    src\rx.c $(DEPS_33)
+    src\rx.c $(DEPS_32)
 	@echo '   [Compile] $(CONFIG)/obj/rx.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\rx.obj -Fd$(CONFIG)\obj\rx.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\rx.c
 
 #
 #   sendConnector.obj
 #
-DEPS_34 = $(DEPS_34) $(CONFIG)\inc\me.h
-DEPS_34 = $(DEPS_34) $(CONFIG)\inc\http.h
+DEPS_33 = $(DEPS_33) $(CONFIG)\inc\me.h
+DEPS_33 = $(DEPS_33) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\sendConnector.obj: \
-    src\sendConnector.c $(DEPS_34)
+    src\sendConnector.c $(DEPS_33)
 	@echo '   [Compile] $(CONFIG)/obj/sendConnector.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\sendConnector.obj -Fd$(CONFIG)\obj\sendConnector.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\sendConnector.c
 
 #
 #   service.obj
 #
-DEPS_35 = $(DEPS_35) $(CONFIG)\inc\me.h
-DEPS_35 = $(DEPS_35) $(CONFIG)\inc\http.h
+DEPS_34 = $(DEPS_34) $(CONFIG)\inc\me.h
+DEPS_34 = $(DEPS_34) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\service.obj: \
-    src\service.c $(DEPS_35)
+    src\service.c $(DEPS_34)
 	@echo '   [Compile] $(CONFIG)/obj/service.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\service.obj -Fd$(CONFIG)\obj\service.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\service.c
 
 #
 #   session.obj
 #
-DEPS_36 = $(DEPS_36) $(CONFIG)\inc\me.h
-DEPS_36 = $(DEPS_36) $(CONFIG)\inc\http.h
+DEPS_35 = $(DEPS_35) $(CONFIG)\inc\me.h
+DEPS_35 = $(DEPS_35) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\session.obj: \
-    src\session.c $(DEPS_36)
+    src\session.c $(DEPS_35)
 	@echo '   [Compile] $(CONFIG)/obj/session.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\session.obj -Fd$(CONFIG)\obj\session.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\session.c
 
 #
 #   stage.obj
 #
-DEPS_37 = $(DEPS_37) $(CONFIG)\inc\me.h
-DEPS_37 = $(DEPS_37) $(CONFIG)\inc\http.h
+DEPS_36 = $(DEPS_36) $(CONFIG)\inc\me.h
+DEPS_36 = $(DEPS_36) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\stage.obj: \
-    src\stage.c $(DEPS_37)
+    src\stage.c $(DEPS_36)
 	@echo '   [Compile] $(CONFIG)/obj/stage.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\stage.obj -Fd$(CONFIG)\obj\stage.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\stage.c
 
 #
 #   trace.obj
 #
-DEPS_38 = $(DEPS_38) $(CONFIG)\inc\me.h
-DEPS_38 = $(DEPS_38) $(CONFIG)\inc\http.h
+DEPS_37 = $(DEPS_37) $(CONFIG)\inc\me.h
+DEPS_37 = $(DEPS_37) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\trace.obj: \
-    src\trace.c $(DEPS_38)
+    src\trace.c $(DEPS_37)
 	@echo '   [Compile] $(CONFIG)/obj/trace.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\trace.obj -Fd$(CONFIG)\obj\trace.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\trace.c
 
 #
 #   tx.obj
 #
-DEPS_39 = $(DEPS_39) $(CONFIG)\inc\me.h
-DEPS_39 = $(DEPS_39) $(CONFIG)\inc\http.h
+DEPS_38 = $(DEPS_38) $(CONFIG)\inc\me.h
+DEPS_38 = $(DEPS_38) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\tx.obj: \
-    src\tx.c $(DEPS_39)
+    src\tx.c $(DEPS_38)
 	@echo '   [Compile] $(CONFIG)/obj/tx.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\tx.obj -Fd$(CONFIG)\obj\tx.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\tx.c
 
 #
 #   uploadFilter.obj
 #
-DEPS_40 = $(DEPS_40) $(CONFIG)\inc\me.h
-DEPS_40 = $(DEPS_40) $(CONFIG)\inc\http.h
+DEPS_39 = $(DEPS_39) $(CONFIG)\inc\me.h
+DEPS_39 = $(DEPS_39) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\uploadFilter.obj: \
-    src\uploadFilter.c $(DEPS_40)
+    src\uploadFilter.c $(DEPS_39)
 	@echo '   [Compile] $(CONFIG)/obj/uploadFilter.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\uploadFilter.obj -Fd$(CONFIG)\obj\uploadFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\uploadFilter.c
 
 #
 #   uri.obj
 #
-DEPS_41 = $(DEPS_41) $(CONFIG)\inc\me.h
-DEPS_41 = $(DEPS_41) $(CONFIG)\inc\http.h
+DEPS_40 = $(DEPS_40) $(CONFIG)\inc\me.h
+DEPS_40 = $(DEPS_40) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\uri.obj: \
-    src\uri.c $(DEPS_41)
+    src\uri.c $(DEPS_40)
 	@echo '   [Compile] $(CONFIG)/obj/uri.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\uri.obj -Fd$(CONFIG)\obj\uri.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\uri.c
 
 #
 #   var.obj
 #
-DEPS_42 = $(DEPS_42) $(CONFIG)\inc\me.h
-DEPS_42 = $(DEPS_42) $(CONFIG)\inc\http.h
+DEPS_41 = $(DEPS_41) $(CONFIG)\inc\me.h
+DEPS_41 = $(DEPS_41) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\var.obj: \
-    src\var.c $(DEPS_42)
+    src\var.c $(DEPS_41)
 	@echo '   [Compile] $(CONFIG)/obj/var.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\var.obj -Fd$(CONFIG)\obj\var.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\var.c
 
 #
 #   webSockFilter.obj
 #
-DEPS_43 = $(DEPS_43) $(CONFIG)\inc\me.h
-DEPS_43 = $(DEPS_43) $(CONFIG)\inc\http.h
+DEPS_42 = $(DEPS_42) $(CONFIG)\inc\me.h
+DEPS_42 = $(DEPS_42) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\webSockFilter.obj: \
-    src\webSockFilter.c $(DEPS_43)
+    src\webSockFilter.c $(DEPS_42)
 	@echo '   [Compile] $(CONFIG)/obj/webSockFilter.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\webSockFilter.obj -Fd$(CONFIG)\obj\webSockFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\webSockFilter.c
 
 #
 #   libhttp
 #
-DEPS_44 = $(DEPS_44) $(CONFIG)\inc\mpr.h
-DEPS_44 = $(DEPS_44) $(CONFIG)\inc\me.h
-DEPS_44 = $(DEPS_44) $(CONFIG)\inc\osdep.h
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\mprLib.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\bin\libmpr.dll
-DEPS_44 = $(DEPS_44) $(CONFIG)\inc\pcre.h
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\pcre.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\inc\mpr.h
+DEPS_43 = $(DEPS_43) $(CONFIG)\inc\me.h
+DEPS_43 = $(DEPS_43) $(CONFIG)\inc\osdep.h
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\mprLib.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\bin\libmpr.dll
+DEPS_43 = $(DEPS_43) $(CONFIG)\inc\pcre.h
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\pcre.obj
 !IF "$(ME_COM_PCRE)" == "1"
-DEPS_44 = $(DEPS_44) $(CONFIG)\bin\libpcre.dll
+DEPS_43 = $(DEPS_43) $(CONFIG)\bin\libpcre.dll
 !ENDIF
-DEPS_44 = $(DEPS_44) $(CONFIG)\inc\http.h
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\actionHandler.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\auth.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\basic.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\cache.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\chunkFilter.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\client.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\config.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\conn.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\digest.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\endpoint.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\error.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\host.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\log.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\monitor.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\netConnector.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\packet.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\pam.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\passHandler.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\pipeline.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\queue.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\rangeFilter.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\route.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\rx.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\sendConnector.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\service.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\session.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\stage.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\trace.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\tx.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\uploadFilter.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\uri.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\var.obj
-DEPS_44 = $(DEPS_44) $(CONFIG)\obj\webSockFilter.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\inc\http.h
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\actionHandler.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\auth.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\basic.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\cache.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\chunkFilter.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\client.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\config.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\conn.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\digest.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\endpoint.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\error.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\host.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\monitor.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\netConnector.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\packet.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\pam.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\passHandler.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\pipeline.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\queue.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\rangeFilter.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\route.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\rx.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\sendConnector.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\service.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\session.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\stage.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\trace.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\tx.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\uploadFilter.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\uri.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\var.obj
+DEPS_43 = $(DEPS_43) $(CONFIG)\obj\webSockFilter.obj
 
-LIBS_44 = $(LIBS_44) libmpr.lib
+LIBS_43 = $(LIBS_43) libmpr.lib
 !IF "$(ME_COM_PCRE)" == "1"
-LIBS_44 = $(LIBS_44) libpcre.lib
+LIBS_43 = $(LIBS_43) libpcre.lib
 !ENDIF
 
-$(CONFIG)\bin\libhttp.dll: $(DEPS_44)
+$(CONFIG)\bin\libhttp.dll: $(DEPS_43)
 	@echo '      [Link] $(CONFIG)/bin/libhttp.dll'
-	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\actionHandler.obj" "$(CONFIG)\obj\auth.obj" "$(CONFIG)\obj\basic.obj" "$(CONFIG)\obj\cache.obj" "$(CONFIG)\obj\chunkFilter.obj" "$(CONFIG)\obj\client.obj" "$(CONFIG)\obj\config.obj" "$(CONFIG)\obj\conn.obj" "$(CONFIG)\obj\digest.obj" "$(CONFIG)\obj\endpoint.obj" "$(CONFIG)\obj\error.obj" "$(CONFIG)\obj\host.obj" "$(CONFIG)\obj\log.obj" "$(CONFIG)\obj\monitor.obj" "$(CONFIG)\obj\netConnector.obj" "$(CONFIG)\obj\packet.obj" "$(CONFIG)\obj\pam.obj" "$(CONFIG)\obj\passHandler.obj" "$(CONFIG)\obj\pipeline.obj" "$(CONFIG)\obj\queue.obj" "$(CONFIG)\obj\rangeFilter.obj" "$(CONFIG)\obj\route.obj" "$(CONFIG)\obj\rx.obj" "$(CONFIG)\obj\sendConnector.obj" "$(CONFIG)\obj\service.obj" "$(CONFIG)\obj\session.obj" "$(CONFIG)\obj\stage.obj" "$(CONFIG)\obj\trace.obj" "$(CONFIG)\obj\tx.obj" "$(CONFIG)\obj\uploadFilter.obj" "$(CONFIG)\obj\uri.obj" "$(CONFIG)\obj\var.obj" "$(CONFIG)\obj\webSockFilter.obj" $(LIBPATHS_44) $(LIBS_44) $(LIBS_44) $(LIBS) 
+	"$(LD)" -dll -out:$(CONFIG)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\actionHandler.obj" "$(CONFIG)\obj\auth.obj" "$(CONFIG)\obj\basic.obj" "$(CONFIG)\obj\cache.obj" "$(CONFIG)\obj\chunkFilter.obj" "$(CONFIG)\obj\client.obj" "$(CONFIG)\obj\config.obj" "$(CONFIG)\obj\conn.obj" "$(CONFIG)\obj\digest.obj" "$(CONFIG)\obj\endpoint.obj" "$(CONFIG)\obj\error.obj" "$(CONFIG)\obj\host.obj" "$(CONFIG)\obj\monitor.obj" "$(CONFIG)\obj\netConnector.obj" "$(CONFIG)\obj\packet.obj" "$(CONFIG)\obj\pam.obj" "$(CONFIG)\obj\passHandler.obj" "$(CONFIG)\obj\pipeline.obj" "$(CONFIG)\obj\queue.obj" "$(CONFIG)\obj\rangeFilter.obj" "$(CONFIG)\obj\route.obj" "$(CONFIG)\obj\rx.obj" "$(CONFIG)\obj\sendConnector.obj" "$(CONFIG)\obj\service.obj" "$(CONFIG)\obj\session.obj" "$(CONFIG)\obj\stage.obj" "$(CONFIG)\obj\trace.obj" "$(CONFIG)\obj\tx.obj" "$(CONFIG)\obj\uploadFilter.obj" "$(CONFIG)\obj\uri.obj" "$(CONFIG)\obj\var.obj" "$(CONFIG)\obj\webSockFilter.obj" $(LIBPATHS_43) $(LIBS_43) $(LIBS_43) $(LIBS) 
 
 #
 #   http.obj
 #
-DEPS_45 = $(DEPS_45) $(CONFIG)\inc\me.h
-DEPS_45 = $(DEPS_45) $(CONFIG)\inc\http.h
+DEPS_44 = $(DEPS_44) $(CONFIG)\inc\me.h
+DEPS_44 = $(DEPS_44) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\http.obj: \
-    src\http.c $(DEPS_45)
+    src\http.c $(DEPS_44)
 	@echo '   [Compile] $(CONFIG)/obj/http.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\http.obj -Fd$(CONFIG)\obj\http.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\http.c
 
 #
 #   httpcmd
 #
-DEPS_46 = $(DEPS_46) $(CONFIG)\inc\mpr.h
-DEPS_46 = $(DEPS_46) $(CONFIG)\inc\me.h
-DEPS_46 = $(DEPS_46) $(CONFIG)\inc\osdep.h
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\mprLib.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\bin\libmpr.dll
-DEPS_46 = $(DEPS_46) $(CONFIG)\inc\pcre.h
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\pcre.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\inc\mpr.h
+DEPS_45 = $(DEPS_45) $(CONFIG)\inc\me.h
+DEPS_45 = $(DEPS_45) $(CONFIG)\inc\osdep.h
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\mprLib.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\bin\libmpr.dll
+DEPS_45 = $(DEPS_45) $(CONFIG)\inc\pcre.h
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\pcre.obj
 !IF "$(ME_COM_PCRE)" == "1"
-DEPS_46 = $(DEPS_46) $(CONFIG)\bin\libpcre.dll
+DEPS_45 = $(DEPS_45) $(CONFIG)\bin\libpcre.dll
 !ENDIF
-DEPS_46 = $(DEPS_46) $(CONFIG)\inc\http.h
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\actionHandler.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\auth.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\basic.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\cache.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\chunkFilter.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\client.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\config.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\conn.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\digest.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\endpoint.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\error.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\host.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\log.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\monitor.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\netConnector.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\packet.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\pam.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\passHandler.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\pipeline.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\queue.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\rangeFilter.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\route.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\rx.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\sendConnector.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\service.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\session.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\stage.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\trace.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\tx.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\uploadFilter.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\uri.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\var.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\webSockFilter.obj
-DEPS_46 = $(DEPS_46) $(CONFIG)\bin\libhttp.dll
-DEPS_46 = $(DEPS_46) $(CONFIG)\obj\http.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\inc\http.h
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\actionHandler.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\auth.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\basic.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\cache.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\chunkFilter.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\client.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\config.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\conn.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\digest.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\endpoint.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\error.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\host.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\monitor.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\netConnector.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\packet.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\pam.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\passHandler.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\pipeline.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\queue.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\rangeFilter.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\route.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\rx.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\sendConnector.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\service.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\session.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\stage.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\trace.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\tx.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\uploadFilter.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\uri.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\var.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\webSockFilter.obj
+DEPS_45 = $(DEPS_45) $(CONFIG)\bin\libhttp.dll
+DEPS_45 = $(DEPS_45) $(CONFIG)\obj\http.obj
 
-LIBS_46 = $(LIBS_46) libhttp.lib
-LIBS_46 = $(LIBS_46) libmpr.lib
+LIBS_45 = $(LIBS_45) libhttp.lib
+LIBS_45 = $(LIBS_45) libmpr.lib
 !IF "$(ME_COM_PCRE)" == "1"
-LIBS_46 = $(LIBS_46) libpcre.lib
+LIBS_45 = $(LIBS_45) libpcre.lib
 !ENDIF
 
-$(CONFIG)\bin\http.exe: $(DEPS_46)
+$(CONFIG)\bin\http.exe: $(DEPS_45)
 	@echo '      [Link] $(CONFIG)/bin/http.exe'
-	"$(LD)" -out:$(CONFIG)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\http.obj" $(LIBPATHS_46) $(LIBS_46) $(LIBS_46) $(LIBS) 
+	"$(LD)" -out:$(CONFIG)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\http.obj" $(LIBPATHS_45) $(LIBS_45) $(LIBS_45) $(LIBS) 
 
 #
 #   est.h
 #
-$(CONFIG)\inc\est.h: $(DEPS_47)
+$(CONFIG)\inc\est.h: $(DEPS_46)
 	@echo '      [Copy] $(CONFIG)/inc/est.h'
 	if not exist "$(CONFIG)\inc" md "$(CONFIG)\inc"
 	copy /Y src\paks\est\est.h $(CONFIG)\inc\est.h
@@ -809,12 +795,12 @@ $(CONFIG)\inc\est.h: $(DEPS_47)
 #
 #   estLib.obj
 #
-DEPS_48 = $(DEPS_48) $(CONFIG)\inc\me.h
-DEPS_48 = $(DEPS_48) $(CONFIG)\inc\est.h
-DEPS_48 = $(DEPS_48) $(CONFIG)\inc\osdep.h
+DEPS_47 = $(DEPS_47) $(CONFIG)\inc\me.h
+DEPS_47 = $(DEPS_47) $(CONFIG)\inc\est.h
+DEPS_47 = $(DEPS_47) $(CONFIG)\inc\osdep.h
 
 $(CONFIG)\obj\estLib.obj: \
-    src\paks\est\estLib.c $(DEPS_48)
+    src\paks\est\estLib.c $(DEPS_47)
 	@echo '   [Compile] $(CONFIG)/obj/estLib.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\estLib.obj -Fd$(CONFIG)\obj\estLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\paks\est\estLib.c
 
@@ -822,12 +808,12 @@ $(CONFIG)\obj\estLib.obj: \
 #
 #   libest
 #
-DEPS_49 = $(DEPS_49) $(CONFIG)\inc\est.h
-DEPS_49 = $(DEPS_49) $(CONFIG)\inc\me.h
-DEPS_49 = $(DEPS_49) $(CONFIG)\inc\osdep.h
-DEPS_49 = $(DEPS_49) $(CONFIG)\obj\estLib.obj
+DEPS_48 = $(DEPS_48) $(CONFIG)\inc\est.h
+DEPS_48 = $(DEPS_48) $(CONFIG)\inc\me.h
+DEPS_48 = $(DEPS_48) $(CONFIG)\inc\osdep.h
+DEPS_48 = $(DEPS_48) $(CONFIG)\obj\estLib.obj
 
-$(CONFIG)\bin\libest.dll: $(DEPS_49)
+$(CONFIG)\bin\libest.dll: $(DEPS_48)
 	@echo '      [Link] $(CONFIG)/bin/libest.dll'
 	"$(LD)" -dll -out:$(CONFIG)\bin\libest.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\estLib.obj" $(LIBS) 
 !ENDIF
@@ -835,189 +821,188 @@ $(CONFIG)\bin\libest.dll: $(DEPS_49)
 #
 #   mprSsl.obj
 #
-DEPS_50 = $(DEPS_50) $(CONFIG)\inc\me.h
-DEPS_50 = $(DEPS_50) $(CONFIG)\inc\mpr.h
-DEPS_50 = $(DEPS_50) $(CONFIG)\inc\est.h
+DEPS_49 = $(DEPS_49) $(CONFIG)\inc\me.h
+DEPS_49 = $(DEPS_49) $(CONFIG)\inc\mpr.h
+DEPS_49 = $(DEPS_49) $(CONFIG)\inc\est.h
 
 $(CONFIG)\obj\mprSsl.obj: \
-    src\paks\mpr\mprSsl.c $(DEPS_50)
+    src\paks\mpr\mprSsl.c $(DEPS_49)
 	@echo '   [Compile] $(CONFIG)/obj/mprSsl.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\mprSsl.obj -Fd$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" "-I$(ME_COM_MATRIXSSL_PATH)" "-I$(ME_COM_MATRIXSSL_PATH)\matrixssl" "-I$(ME_COM_NANOSSL_PATH)\src" src\paks\mpr\mprSsl.c
 
 #
 #   libmprssl
 #
-DEPS_51 = $(DEPS_51) $(CONFIG)\inc\mpr.h
-DEPS_51 = $(DEPS_51) $(CONFIG)\inc\me.h
-DEPS_51 = $(DEPS_51) $(CONFIG)\inc\osdep.h
-DEPS_51 = $(DEPS_51) $(CONFIG)\obj\mprLib.obj
-DEPS_51 = $(DEPS_51) $(CONFIG)\bin\libmpr.dll
-DEPS_51 = $(DEPS_51) $(CONFIG)\inc\est.h
-DEPS_51 = $(DEPS_51) $(CONFIG)\obj\estLib.obj
+DEPS_50 = $(DEPS_50) $(CONFIG)\inc\mpr.h
+DEPS_50 = $(DEPS_50) $(CONFIG)\inc\me.h
+DEPS_50 = $(DEPS_50) $(CONFIG)\inc\osdep.h
+DEPS_50 = $(DEPS_50) $(CONFIG)\obj\mprLib.obj
+DEPS_50 = $(DEPS_50) $(CONFIG)\bin\libmpr.dll
+DEPS_50 = $(DEPS_50) $(CONFIG)\inc\est.h
+DEPS_50 = $(DEPS_50) $(CONFIG)\obj\estLib.obj
 !IF "$(ME_COM_EST)" == "1"
-DEPS_51 = $(DEPS_51) $(CONFIG)\bin\libest.dll
+DEPS_50 = $(DEPS_50) $(CONFIG)\bin\libest.dll
 !ENDIF
-DEPS_51 = $(DEPS_51) $(CONFIG)\obj\mprSsl.obj
+DEPS_50 = $(DEPS_50) $(CONFIG)\obj\mprSsl.obj
 
-LIBS_51 = $(LIBS_51) libmpr.lib
+LIBS_50 = $(LIBS_50) libmpr.lib
 !IF "$(ME_COM_OPENSSL)" == "1"
-LIBS_51 = $(LIBS_51) libeay32.lib
-LIBPATHS_51 = $(LIBPATHS_51) -libpath:$(ME_COM_OPENSSL_PATH)
+LIBS_50 = $(LIBS_50) libeay32.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_OPENSSL_PATH)
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
-LIBS_51 = $(LIBS_51) libssleay32.lib
-LIBPATHS_51 = $(LIBPATHS_51) -libpath:$(ME_COM_OPENSSL_PATH)
+LIBS_50 = $(LIBS_50) libssleay32.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_OPENSSL_PATH)
 !ENDIF
 !IF "$(ME_COM_EST)" == "1"
-LIBS_51 = $(LIBS_51) libest.lib
+LIBS_50 = $(LIBS_50) libest.lib
 !ENDIF
 !IF "$(ME_COM_MATRIXSSL)" == "1"
-LIBS_51 = $(LIBS_51) libmatrixssl.lib
-LIBPATHS_51 = $(LIBPATHS_51) -libpath:$(ME_COM_MATRIXSSL_PATH)
+LIBS_50 = $(LIBS_50) libmatrixssl.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_MATRIXSSL_PATH)
 !ENDIF
 !IF "$(ME_COM_NANOSSL)" == "1"
-LIBS_51 = $(LIBS_51) libssls.lib
-LIBPATHS_51 = $(LIBPATHS_51) -libpath:$(ME_COM_NANOSSL_PATH)/bin
+LIBS_50 = $(LIBS_50) libssls.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_NANOSSL_PATH)/bin
 !ENDIF
 
-$(CONFIG)\bin\libmprssl.dll: $(DEPS_51)
+$(CONFIG)\bin\libmprssl.dll: $(DEPS_50)
 	@echo '      [Link] $(CONFIG)/bin/libmprssl.dll'
-	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS)    "$(CONFIG)\obj\mprSsl.obj" $(LIBPATHS_51) $(LIBS_51) $(LIBS_51) $(LIBS) 
+	"$(LD)" -dll -out:$(CONFIG)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS)    "$(CONFIG)\obj\mprSsl.obj" $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS) 
 
 #
 #   testHttp.obj
 #
-DEPS_52 = $(DEPS_52) $(CONFIG)\inc\me.h
-DEPS_52 = $(DEPS_52) $(CONFIG)\inc\mpr.h
+DEPS_51 = $(DEPS_51) $(CONFIG)\inc\me.h
+DEPS_51 = $(DEPS_51) $(CONFIG)\inc\mpr.h
 
 $(CONFIG)\obj\testHttp.obj: \
-    test\src\testHttp.c $(DEPS_52)
+    test\src\testHttp.c $(DEPS_51)
 	@echo '   [Compile] $(CONFIG)/obj/testHttp.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\testHttp.obj -Fd$(CONFIG)\obj\testHttp.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) test\src\testHttp.c
 
 #
 #   testHttpGen.obj
 #
-DEPS_53 = $(DEPS_53) $(CONFIG)\inc\me.h
-DEPS_53 = $(DEPS_53) $(CONFIG)\inc\http.h
+DEPS_52 = $(DEPS_52) $(CONFIG)\inc\me.h
+DEPS_52 = $(DEPS_52) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\testHttpGen.obj: \
-    test\src\testHttpGen.c $(DEPS_53)
+    test\src\testHttpGen.c $(DEPS_52)
 	@echo '   [Compile] $(CONFIG)/obj/testHttpGen.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\testHttpGen.obj -Fd$(CONFIG)\obj\testHttpGen.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) test\src\testHttpGen.c
 
 #
 #   testHttpUri.obj
 #
-DEPS_54 = $(DEPS_54) $(CONFIG)\inc\me.h
-DEPS_54 = $(DEPS_54) $(CONFIG)\inc\http.h
+DEPS_53 = $(DEPS_53) $(CONFIG)\inc\me.h
+DEPS_53 = $(DEPS_53) $(CONFIG)\inc\http.h
 
 $(CONFIG)\obj\testHttpUri.obj: \
-    test\src\testHttpUri.c $(DEPS_54)
+    test\src\testHttpUri.c $(DEPS_53)
 	@echo '   [Compile] $(CONFIG)/obj/testHttpUri.obj'
 	"$(CC)" -c -Fo$(CONFIG)\obj\testHttpUri.obj -Fd$(CONFIG)\obj\testHttpUri.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) test\src\testHttpUri.c
 
 #
 #   testHttp
 #
-DEPS_55 = $(DEPS_55) $(CONFIG)\inc\mpr.h
-DEPS_55 = $(DEPS_55) $(CONFIG)\inc\me.h
-DEPS_55 = $(DEPS_55) $(CONFIG)\inc\osdep.h
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\mprLib.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\bin\libmpr.dll
-DEPS_55 = $(DEPS_55) $(CONFIG)\inc\pcre.h
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\pcre.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\inc\mpr.h
+DEPS_54 = $(DEPS_54) $(CONFIG)\inc\me.h
+DEPS_54 = $(DEPS_54) $(CONFIG)\inc\osdep.h
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\mprLib.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\bin\libmpr.dll
+DEPS_54 = $(DEPS_54) $(CONFIG)\inc\pcre.h
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\pcre.obj
 !IF "$(ME_COM_PCRE)" == "1"
-DEPS_55 = $(DEPS_55) $(CONFIG)\bin\libpcre.dll
+DEPS_54 = $(DEPS_54) $(CONFIG)\bin\libpcre.dll
 !ENDIF
-DEPS_55 = $(DEPS_55) $(CONFIG)\inc\http.h
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\actionHandler.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\auth.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\basic.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\cache.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\chunkFilter.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\client.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\config.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\conn.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\digest.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\endpoint.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\error.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\host.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\log.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\monitor.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\netConnector.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\packet.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\pam.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\passHandler.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\pipeline.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\queue.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\rangeFilter.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\route.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\rx.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\sendConnector.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\service.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\session.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\stage.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\trace.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\tx.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\uploadFilter.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\uri.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\var.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\webSockFilter.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\bin\libhttp.dll
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\testHttp.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\testHttpGen.obj
-DEPS_55 = $(DEPS_55) $(CONFIG)\obj\testHttpUri.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\inc\http.h
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\actionHandler.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\auth.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\basic.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\cache.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\chunkFilter.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\client.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\config.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\conn.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\digest.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\endpoint.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\error.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\host.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\monitor.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\netConnector.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\packet.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\pam.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\passHandler.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\pipeline.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\queue.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\rangeFilter.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\route.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\rx.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\sendConnector.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\service.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\session.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\stage.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\trace.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\tx.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\uploadFilter.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\uri.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\var.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\webSockFilter.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\bin\libhttp.dll
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\testHttp.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\testHttpGen.obj
+DEPS_54 = $(DEPS_54) $(CONFIG)\obj\testHttpUri.obj
 
-LIBS_55 = $(LIBS_55) libhttp.lib
-LIBS_55 = $(LIBS_55) libmpr.lib
+LIBS_54 = $(LIBS_54) libhttp.lib
+LIBS_54 = $(LIBS_54) libmpr.lib
 !IF "$(ME_COM_PCRE)" == "1"
-LIBS_55 = $(LIBS_55) libpcre.lib
+LIBS_54 = $(LIBS_54) libpcre.lib
 !ENDIF
 
-$(CONFIG)\bin\testHttp.exe: $(DEPS_55)
+$(CONFIG)\bin\testHttp.exe: $(DEPS_54)
 	@echo '      [Link] $(CONFIG)/bin/testHttp.exe'
-	"$(LD)" -out:$(CONFIG)\bin\testHttp.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\testHttp.obj" "$(CONFIG)\obj\testHttpGen.obj" "$(CONFIG)\obj\testHttpUri.obj" $(LIBPATHS_55) $(LIBS_55) $(LIBS_55) $(LIBS) 
+	"$(LD)" -out:$(CONFIG)\bin\testHttp.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(CONFIG)\obj\testHttp.obj" "$(CONFIG)\obj\testHttpGen.obj" "$(CONFIG)\obj\testHttpUri.obj" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) 
 
 #
 #   stop
 #
-stop: $(DEPS_56)
+stop: $(DEPS_55)
 #  Omit build script stop
 
 #
 #   installBinary
 #
-installBinary: $(DEPS_57)
+installBinary: $(DEPS_56)
 #  Omit build script installBinary
 
 #
 #   start
 #
-start: $(DEPS_58)
+start: $(DEPS_57)
 #  Omit build script start
 
 #
 #   install
 #
-DEPS_59 = $(DEPS_59) stop
-DEPS_59 = $(DEPS_59) installBinary
-DEPS_59 = $(DEPS_59) start
+DEPS_58 = $(DEPS_58) stop
+DEPS_58 = $(DEPS_58) installBinary
+DEPS_58 = $(DEPS_58) start
 
-install: $(DEPS_59)
+install: $(DEPS_58)
 #  Omit build script install
 
 #
 #   uninstall
 #
-DEPS_60 = $(DEPS_60) stop
+DEPS_59 = $(DEPS_59) stop
 
-uninstall: $(DEPS_60)
+uninstall: $(DEPS_59)
 #  Omit build script uninstall
 
 #
 #   version
 #
-version: $(DEPS_61)
+version: $(DEPS_60)
 	echo 5.0.0
 

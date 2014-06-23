@@ -189,19 +189,19 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
         when = 0;
         parseDigestNonce(dp->nonce, &secret, &realm, &when);
         if (!smatch(secret, secret)) {
-            httpTrace(conn, "error", "authenticate", "msg=\"Access denied, Nonce mismatch\"");
+            httpTrace(conn, "auth.digest.error", "error", "msg=\"Access denied, Nonce mismatch\"");
             return MPR_ERR_BAD_STATE;
 
         } else if (!smatch(realm, rx->route->auth->realm)) {
-            httpTrace(conn, "error", "authenticate", "msg=\"Access denied, Realm mismatch\"");
+            httpTrace(conn, "auth.digest.error", "error", "msg=\"Access denied, Realm mismatch\"");
             return MPR_ERR_BAD_STATE;
 
         } else if (dp->qop && !smatch(dp->qop, "auth")) {
-            httpTrace(conn, "error", "authenticate", "msg=\"Access denied, Bad qop\"");
+            httpTrace(conn, "auth.digest.error", "error", "msg=\"Access denied, Bad qop\"");
             return MPR_ERR_BAD_STATE;
 
         } else if ((when + (5 * 60)) < time(0)) {
-            httpTrace(conn, "error", "authenticate", "msg=\"Access denied, Nonce is stale\"");
+            httpTrace(conn, "auth.digest.error", "error", "msg=\"Access denied, Nonce is stale\"");
             return MPR_ERR_BAD_STATE;
         }
         rx->passwordDigest = calcDigest(conn, dp, *username);
@@ -249,7 +249,7 @@ PUBLIC void httpDigestLogin(HttpConn *conn)
     } else {
         /* qop value of null defaults to "auth" */
         httpSetHeader(conn, "WWW-Authenticate", "Digest realm=\"%s\", domain=\"%s\", "
-            "qop=\"auth\", nonce=\"%s\", opaque=\"%s\", algorithm=\"MD5\", stale=\"FALSE\"", 
+            "qop=\"auth\", nonce=\"%s\", opaque=\"%s\", algorithm=\"MD5\", stale=\"FALSE\"",
             auth->realm, "/", nonce, opaque);
     }
     httpSetContentType(conn, "text/plain");
@@ -262,7 +262,7 @@ PUBLIC void httpDigestLogin(HttpConn *conn)
     Must first get a 401 response to get the authData.
  */
 PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *password)
-{ 
+{
     Http        *http;
     HttpTx      *tx;
     HttpDigest  *dp;
@@ -281,7 +281,7 @@ PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *passwor
         digest = mprGetMD5(sfmt("%s:%s:%s:%s:%s:%s", ha1, dp->nonce, dp->nc, cnonce, dp->qop, ha2));
         httpAddHeader(conn, "Authorization", "Digest username=\"%s\", realm=\"%s\", domain=\"%s\", "
             "algorithm=\"MD5\", qop=\"%s\", cnonce=\"%s\", nc=\"%s\", nonce=\"%s\", opaque=\"%s\", "
-            "stale=\"FALSE\", uri=\"%s\", response=\"%s\"", username, dp->realm, dp->domain, dp->qop, 
+            "stale=\"FALSE\", uri=\"%s\", response=\"%s\"", username, dp->realm, dp->domain, dp->qop,
             cnonce, dp->nc, dp->nonce, dp->opaque, tx->parsedUri->path, digest);
     } else {
         digest = mprGetMD5(sfmt("%s:%s:%s", ha1, dp->nonce, ha2));
@@ -294,7 +294,7 @@ PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *passwor
 
 /*
     Create a nonce value for digest authentication (RFC 2617)
- */ 
+ */
 static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm)
 {
     static int64 next = 0;
@@ -314,14 +314,14 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
     *secret = stok(decoded, ":", &tok);
     *realm = stok(NULL, ":", &tok);
     whenStr = stok(NULL, ":", &tok);
-    *when = (MprTime) stoiradix(whenStr, 16, NULL); 
+    *when = (MprTime) stoiradix(whenStr, 16, NULL);
     return 0;
 }
 
 
 /*
     Get a password digest using the MD5 algorithm -- See RFC 2617 to understand this code.
- */ 
+ */
 static char *calcDigest(HttpConn *conn, HttpDigest *dp, cchar *username)
 {
     HttpAuth    *auth;
@@ -343,7 +343,7 @@ static char *calcDigest(HttpConn *conn, HttpDigest *dp, cchar *username)
 
     /*
         HA2
-     */ 
+     */
 #if PROTOTYPE || 1
     if (conn->rx->route->flags & HTTP_ROUTE_DOTNET_DIGEST_FIX) {
         char *uri = stok(sclone(dp->uri), "?", 0);
@@ -372,7 +372,7 @@ static char *calcDigest(HttpConn *conn, HttpDigest *dp, cchar *username)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

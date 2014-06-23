@@ -132,7 +132,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
             }
             httpFinalizeConnector(conn);
         }
-        httpTrace(conn, "error", "io", "msg=\"Connector write error\", errno=%d", errCode);
+        httpTrace(conn, "connection.io.error", "error", "msg=\"Connector write error\", errno=%d", errCode);
 
     } else if (written > 0) {
         tx->bytesWritten += written;
@@ -224,10 +224,8 @@ static void addPacketForSend(HttpQueue *q, HttpPacket *packet)
             Header packets have actual content. File data packets are virtual and only have a count.
          */
         addToSendVector(q, mprGetBufStart(packet->content), httpGetPacketLength(packet));
-
-        if (packet->flags & HTTP_PACKET_DATA) {
-            httpTracePacket(conn, "headers", conn->endpoint ? "response-headers" : "request-headers",
-                packet, "length=%zd", httpGetPacketLength(packet));
+        if (httpTracing(conn) && packet->flags & HTTP_PACKET_DATA) {
+            httpTraceBody(conn, 1, packet, -1);
         }
     }
 }

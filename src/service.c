@@ -331,7 +331,8 @@ static bool isIdle(bool traceRequests)
             if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
                 if (traceRequests && lastTrace < now) {
                     if (conn->rx) {
-                        mprLog("info http", 2, "Request for \"%s\" is still active", conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
+                        mprLog("info http", 2, "Request for \"%s\" is still active", 
+                            conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
                     }
                     lastTrace = now;
                 }
@@ -681,7 +682,7 @@ PUBLIC void httpAddConn(Http *http, HttpConn *conn)
     updateCurrentDate();
 
     lock(http);
-    conn->seqno = (int) http->totalConnections++;
+    conn->seqno = (int) ++http->totalConnections;
     if (!http->timer) {
 #if ME_DEBUG
         if (!mprGetDebugMode())

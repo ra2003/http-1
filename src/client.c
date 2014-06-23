@@ -43,7 +43,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
             mprCloseSocket(conn->sock, 0);
             conn->sock = 0;
         } else {
-            httpTrace(conn, "context", "connection", "msg=\"Reuse socket\", keepAlive=%d", conn->keepAliveCount);
+            httpTrace(conn, "connection.reuse", "context", "keepAlive=%d", conn->keepAliveCount);
         }
     }
     if (conn->sock) {
@@ -67,8 +67,8 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : 0;
 
 #if ME_COM_SSL
-    /* 
-        Must be done even if using keep alive for repeat SSL requests 
+    /*
+        Must be done even if using keep alive for repeat SSL requests
      */
     if (uri->secure) {
         char *peerName;
@@ -78,11 +78,11 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         peerName = isdigit(uri->host[0]) ? 0 : uri->host;
         if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
-            httpTrace(conn, "error", "connection", "msg=\"Cannot upgrade socket, %s\"", conn->errorMsg);
+            httpTrace(conn, "connection.upgrade.error", "error", "msg=\"Cannot perform SSL upgrade, %s\"", conn->errorMsg);
             return 0;
         }
         if (sp->peerCert) {
-            httpTrace(conn, "context", "connection", 
+            httpTrace(conn, "context", "connection.ssl",
                 "msg=\"Connection secured with peer certificate\"," \
                 "secure=true, cipher=%s, peerName=\"%s\", subject=\"%s\", issuer=\"%s\"",
                 sp->cipher, sp->peerName, sp->peerCert, sp->peerCertIssuer);
@@ -95,7 +95,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         return 0;
     }
 #endif
-    httpTrace(conn, "context", "connection", "peer=%s:%d", conn->ip, conn->port);
+    httpTrace(conn, "connection.peer", "context", "peer=%s:%d", conn->ip, conn->port);
     return conn;
 }
 

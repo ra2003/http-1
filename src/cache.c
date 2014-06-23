@@ -1,7 +1,7 @@
 /*
-    cache.c -- Http request route caching 
+    cache.c -- Http request route caching
 
-    Caching operates as both a handler and an output filter. If acceptable cached content is found, the 
+    Caching operates as both a handler and an output filter. If acceptable cached content is found, the
     cacheHandler will serve it instead of the normal handler. If no content is acceptable and caching is enabled
     for the request, the cacheFilter will capture and save the response.
 
@@ -33,7 +33,7 @@ PUBLIC int httpOpenCacheHandler(Http *http)
     HttpStage     *handler, *filter;
 
     /*
-        Create the cache handler to serve cached content 
+        Create the cache handler to serve cached content
      */
     if ((handler = httpCreateHandler(http, "cacheHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
@@ -83,7 +83,7 @@ static int matchCacheHandler(HttpConn *conn, HttpRoute *route, int dir)
 }
 
 
-static void readyCacheHandler(HttpQueue *q) 
+static void readyCacheHandler(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpTx      *tx;
@@ -93,10 +93,6 @@ static void readyCacheHandler(HttpQueue *q)
     tx = conn->tx;
 
     if (tx->cachedContent) {
-#if KEEP
-        /* Duplicate */
-        httpTrace(conn, "context", "cache", "msg=\"Using cached content\"");
-#endif
         if ((data = setHeadersFromCache(conn, tx->cachedContent)) != 0) {
             tx->length = slen(data);
             httpWriteString(q, data);
@@ -140,11 +136,11 @@ static void outgoingCacheFilterService(HttpQueue *q)
 
     /*
         This routine will save cached responses to tx->cacheBuffer.
-        It will also send cached data if the X-SendCache header is present. Normal caching is done by cacheHandler
+        It will also send cached data if the X-SendCache header is present. Normal caching is done by cacheHandler.
      */
     if (mprLookupKey(conn->tx->headers, "X-SendCache") != 0) {
         if (fetchCachedResponse(conn)) {
-            httpTrace(conn, "context", "cache", "msg=\"Using cached content\"");
+            httpTrace(conn, "cache.sendcache", "context", "msg=\"Using cached content\"");
             cachedData = setHeadersFromCache(conn, tx->cachedContent);
             tx->length = slen(cachedData);
         }
@@ -184,7 +180,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
                     tx->cacheBufferLength += size;
                 } else {
                     tx->cacheBuffer = 0;
-                    httpTrace(conn, "context", "cache", "msg=\"Item too big to cache\", size=%zu, limit=%zu",
+                    httpTrace(conn, "cache.big", "context", "msg=\"Item too big to cache\", size=%zu, limit=%zu",
                         tx->cacheBufferLength + size, conn->limits->cacheItemSize);
                 }
             }
@@ -276,10 +272,10 @@ static void cacheAtClient(HttpConn *conn)
             }
         } else {
             httpAddHeader(conn, "Cache-Control", "public, max-age=%lld", cache->clientLifespan / MPR_TICKS_PER_SEC);
-            /* 
-                Old HTTP/1.0 clients don't understand Cache-Control 
+            /*
+                Old HTTP/1.0 clients don't understand Cache-Control
              */
-            httpAddHeaderString(conn, "Expires", mprFormatUniversalTime(MPR_HTTP_DATE, 
+            httpAddHeaderString(conn, "Expires", mprFormatUniversalTime(MPR_HTTP_DATE,
                 mprGetTime() + cache->clientLifespan));
         }
     }
@@ -303,9 +299,9 @@ static bool fetchCachedResponse(HttpConn *conn)
         Transparent caching. Manual caching must manually call httpWriteCached()
      */
     key = makeCacheKey(conn);
-    if ((value = httpGetHeader(conn, "Cache-Control")) != 0 && 
+    if ((value = httpGetHeader(conn, "Cache-Control")) != 0 &&
             (scontains(value, "max-age=0") == 0 || scontains(value, "no-cache") == 0)) {
-        httpTrace(conn, "context", "cache", "msg=\"Client reload\"");
+        httpTrace(conn, "cache.reload", "context", "msg=\"Client reload\"");
 
     } else if ((tx->cachedContent = mprReadCache(conn->host->responseCache, key, &modified, 0)) != 0) {
         /*
@@ -332,13 +328,13 @@ static bool fetchCachedResponse(HttpConn *conn)
             }
         }
         status = (canUseClientCache && cacheOk) ? HTTP_CODE_NOT_MODIFIED : HTTP_CODE_OK;
-        httpTrace(conn, "context", "cache", "msg=\"Use cached content\", key=%s, status=%d", key, status);
+        httpTrace(conn, "cache.cached", "context", "msg=\"Use cached content\", key=%s, status=%d", key, status);
         httpSetStatus(conn, status);
         httpSetHeaderString(conn, "Etag", mprGetMD5(key));
         httpSetHeaderString(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
         return 1;
     }
-    httpTrace(conn, "context", "cache", "msg=\"No cached content\", key=%s", key);
+    httpTrace(conn, "cache.none", "context", "msg=\"No cached content\", key=%s", key);
     return 0;
 }
 
@@ -354,11 +350,11 @@ static void saveCachedResponse(HttpConn *conn)
 
     buf = tx->cacheBuffer;
     tx->cacheBuffer = 0;
-    /* 
+    /*
         Truncate modified time to get a 1 sec resolution. This is the resolution for If-Modified headers.
      */
     modified = mprGetTime() / MPR_TICKS_PER_SEC * MPR_TICKS_PER_SEC;
-    mprWriteCache(conn->host->responseCache, makeCacheKey(conn), mprGetBufStart(buf), modified, 
+    mprWriteCache(conn->host->responseCache, makeCacheKey(conn), mprGetBufStart(buf), modified,
         tx->cache->serverLifespan, 0, 0);
 }
 
@@ -373,10 +369,10 @@ PUBLIC ssize httpWriteCached(HttpConn *conn)
     }
     cacheKey = makeCacheKey(conn);
     if ((content = mprReadCache(conn->host->responseCache, cacheKey, &modified, 0)) == 0) {
-        httpTrace(conn, "context", "cache", "msg=\"No response data in cache\", key=%s", cacheKey);
+        httpTrace(conn, "cache.none", "context", "msg=\"No response data in cache\", key=%s", cacheKey);
         return 0;
     }
-    httpTrace(conn, "context", "cache", "msg=\"Used cached response\", key=%s", cacheKey);
+    httpTrace(conn, "cache.cached", "context", "msg=\"Used cached response\", key=%s", cacheKey);
     data = setHeadersFromCache(conn, content);
     httpSetHeaderString(conn, "Etag", mprGetMD5(cacheKey));
     httpSetHeaderString(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
@@ -411,12 +407,12 @@ PUBLIC ssize httpUpdateCache(HttpConn *conn, cchar *uri, cchar *data, MprTicks l
 /*
     Add cache configuration to the route. This can be called multiple times.
     Uris, extensions and methods may optionally provide a space or comma separated list of items.
-    If URI is NULL or "*", cache all URIs for this route. Otherwise, cache only the given URIs. 
+    If URI is NULL or "*", cache all URIs for this route. Otherwise, cache only the given URIs.
     The URIs may contain an ordered set of request parameters. For example: "/user/show?name=john&posts=true"
     Note: the URI should not include the route prefix (scriptName)
     The extensions should not contain ".". The methods may contain "*" for all methods.
  */
-PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *extensions, cchar *types, 
+PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *extensions, cchar *types,
         MprTicks clientLifespan, MprTicks serverLifespan, int flags)
 {
     HttpCache   *cache;
@@ -548,7 +544,7 @@ static cchar *setHeadersFromCache(HttpConn *conn, cchar *content)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

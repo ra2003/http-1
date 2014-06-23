@@ -2,7 +2,123 @@
     trace.c -- Trace data
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
 
-    - How to record timestamps in log file?
+    Event type default levels:
+
+        request: 1
+        result:  2
+        context: 3
+        form:    4
+        body:    5
+        debug:   5
+
+    Event names object model:
+
+    auth
+        check
+        digest
+            error           # error
+        login
+            authenticated   # context
+            error           # error
+
+    cache
+        sendcache           # context
+        cached              # context
+        big                 # context
+        none                # context
+        reload              # context
+
+    connection
+        accept
+            error           # error
+            new             # context
+        peer                # context
+        reuse               # context
+        upgrade
+            error           # error
+        ssl
+        close
+        io
+            error           # error
+
+    timeout
+        inactivity
+        duration
+        parse
+
+    request
+        error
+        pipeline
+        completion          # result
+        map
+        method
+        errordoc
+        session
+            create
+            MOB - destory session
+        xsrf
+            error
+        redirect
+        document
+            error
+        upload
+            file
+        websockets
+            data            # body
+            error
+
+    rx
+        first
+            client          # result
+            server          # request
+        headers
+            client          # context
+            server          # context
+
+        body
+            form            # form
+            data            # body
+
+        websockets      
+            packet          # context
+            data            # body
+            close           # body
+            error           # error
+
+    tx
+        first
+            client          # request
+        headers
+            client          # context
+            server          # context
+
+        body
+            form            # form
+            data            # body
+
+        websockets      
+            close           # body
+            packet          # body
+
+    monitor
+        ban
+            remove
+        delay
+            start
+            stop
+
+    esp
+        email
+            error
+        error
+        singular
+            clear
+            set
+        xsrf
+            error
+
+    cgi
+        error
  */
 
 /********************************* Includes ***********************************/
@@ -22,6 +138,9 @@ static void manageTrace(HttpTrace *trace, int flags)
     }
 }
 
+/*
+    Parent may be null
+ */
 PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
 {
     HttpTrace   *trace;
@@ -36,21 +155,13 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
         if ((trace->events = mprCreateHash(0, MPR_HASH_STATIC_VALUES)) == 0) {
             return 0;
         }
-        /*
-            request
-                request, status
-                response
-            result
-                completion
-            context
-            form-body
-            form
-         */
         mprAddKey(trace->events, "request", ITOP(1));
         mprAddKey(trace->events, "result", ITOP(2));
+        mprAddKey(trace->events, "error", ITOP(2));
         mprAddKey(trace->events, "context", ITOP(3));
-        mprAddKey(trace->events, "form-body", ITOP(4));
+        mprAddKey(trace->events, "form", ITOP(4));
         mprAddKey(trace->events, "body", ITOP(5));
+        mprAddKey(trace->events, "debug", ITOP(5));
 
         trace->size = HTTP_TRACE_MAX_SIZE;
         trace->formatter = httpDetailTraceFormatter;
@@ -58,6 +169,28 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
         trace->mutex = mprCreateLock();
     }
     return trace;
+}
+
+
+PUBLIC void httpSetTraceContentSize(HttpTrace *trace, ssize size)
+{
+    trace->maxContent = size;
+}
+
+
+PUBLIC void httpSetTraceEventLevel(HttpTrace *trace, cchar *type, int level)
+{
+    assert(trace);
+    mprAddKey(trace->events, type, ITOP(level));
+}
+
+
+PUBLIC int httpGetTraceLevel()
+{
+    Http    *http;
+
+    http = MPR->httpService;
+    return http->traceLevel;
 }
 
 
@@ -74,49 +207,6 @@ PUBLIC HttpTraceFormatter httpSetTraceFormatter(HttpTrace *trace, HttpTraceForma
     prior = trace->formatter;
     trace->formatter = callback;
     return prior;
-}
-
-
-PUBLIC void httpSetTraceLevel(int level)
-{
-    Http    *http;
-
-    if (level < 0) {
-        level = 0;
-    } else if (level > 5) {
-        level = 5;
-    }
-    http = MPR->httpService;
-    http->traceLevel = level;
-}
-
-
-//  MOB order
-PUBLIC int httpGetTraceLevel()
-{
-    Http    *http;
-
-    http = MPR->httpService;
-    return http->traceLevel;
-}
-
-
-PUBLIC void httpSetTraceEventLevel(HttpTrace *trace, cchar *type, int level)
-{
-    assert(trace);
-    mprAddKey(trace->events, type, ITOP(level));
-}
-
-
-PUBLIC void httpSetTraceContentSize(HttpTrace *trace, ssize size)
-{
-    trace->maxContent = size;
-}
-
-
-PUBLIC void httpSetTraceLogger(HttpTrace *trace, HttpTraceLogger callback)
-{
-    trace->logger = callback;
 }
 
 
@@ -137,90 +227,139 @@ PUBLIC void httpSetTraceFormatterName(HttpTrace *trace, cchar *name)
 }
 
 
-PUBLIC void httpTraceError(HttpConn *conn, cchar *type, cchar *event, cchar *msg, ...)
+PUBLIC void httpSetTraceLevel(int level)
 {
-    va_list     ap;
+    Http    *http;
 
-    assert(conn);
-    assert(type && *type);
-    assert(event && *event);
-
-    if (!conn->rx->skipTrace) {
-        if (msg) {
-            va_start(ap, msg);
-            msg = sfmt("msg=\"%s\"", sfmtv(msg, ap));
-            va_end(ap);
-        }
-        httpFormatTrace(conn, type, event, msg, 0, 0);
+    if (level < 0) {
+        level = 0;
+    } else if (level > 5) {
+        level = 5;
     }
+    http = MPR->httpService;
+    http->traceLevel = level;
+}
+
+
+PUBLIC void httpSetTraceLogger(HttpTrace *trace, HttpTraceLogger callback)
+{
+    trace->logger = callback;
 }
 
 
 /*
-    Inner routine for httpTrace()
+    Internal convenience: Used for incoming and outgoing packets.
  */
-PUBLIC void httpTraceProc(HttpConn *conn, cchar *type, cchar *event, cchar *values, ...)
+PUBLIC bool httpTraceBody(HttpConn *conn, bool outgoing, HttpPacket *packet, ssize len)
 {
-    va_list     ap;
+    cchar   *event, *type;
 
-    assert(conn);
-    assert(type && *type);
-    assert(event && *event);
-
-    if (!conn->rx->skipTrace) {
-        if (values) {
-            va_start(ap, values);
-            values = sfmtv(values, ap);
-            va_end(ap);
-        }
-        httpFormatTrace(conn, type, event, values, 0, 0);
+    if (!conn) {
+        return 0;
     }
+    if (len < 0) {
+        len = httpGetPacketLength(packet);
+    }
+    if (outgoing) {
+        if (conn->endpoint) {
+            type = "body";
+            event = "tx.body.data";
+        } else {
+            if (sstarts(conn->tx->mimeType, "application/x-www-form-urlencoded")) {
+                type = "form";
+                event = "tx.body.form";
+            } else {
+                type = "body";
+                event = "tx.body.data";
+            }
+        }
+    } else {
+        if (conn->endpoint) {
+            if (conn->rx->form) {
+                type = "form";
+                event = "rx.body.form";
+            } else {
+                type = "body";
+                event = "rx.body.data";
+            }
+        } else {
+            type = "body";
+            event = "rx.body.data";
+        }
+    }
+    return httpTracePacket(conn, event, type, packet, "length=%zd", len);
 }
 
 
 /*
-    Trace body content
+    Trace request body content
  */
-PUBLIC void httpTraceContent(HttpConn *conn, cchar *type, cchar *event, cchar *buf, ssize len, cchar *values, ...)
+PUBLIC bool httpTraceContent(HttpConn *conn, cchar *event, cchar *type, cchar *buf, ssize len, cchar *values, ...)
 {
+    Http        *http;
+    HttpTrace   *trace;
     va_list     ap;
+    int         level;
 
     assert(conn);
     assert(buf);
 
-    if (!httpShouldTrace(conn, type) || conn->rx->skipTrace) {
-        return;
+    http = HTTP;
+    if (http->traceLevel == 0) {
+        return 0;
     }
-//  MOB - check
-    if ((smatch(event, "rx.body") && (conn->rx->bytesRead >= conn->trace->size)) ||
-        (smatch(event, "tx.body") && (conn->tx->bytesWritten >= conn->trace->size))) {
-        if (!conn->rx->skipTrace && !conn->rx->webSocket) {
-            conn->rx->skipTrace = 1;
-            httpTrace(conn, type, event, "msg=\"Abbreviating body trace\"");
+    if (conn) {
+        if (conn->rx->skipTrace) {
+            return 0;
         }
-        return;
+        trace = conn->trace;
+    } else {
+        trace = http->trace;
+    }
+    level = PTOI(mprLookupKey(trace->events, type));
+    if (level == 0 || level > http->traceLevel) {
+        return 0;
+    }
+    if (conn) {
+        if ((smatch(event, "rx.body.data") && (conn->rx->bytesRead >= conn->trace->size)) ||
+            (smatch(event, "tx.body.data") && (conn->tx->bytesWritten >= conn->trace->size))) {
+            if (!conn->rx->webSocket) {
+                conn->rx->skipTrace = 1;
+                httpTrace(conn, event, type, "msg=\"Abbreviating body trace\"");
+            }
+            return 0;
+        }
     }
     if (values) {
         va_start(ap, values);
         values = sfmtv(values, ap);
         va_end(ap);
     }
-    httpFormatTrace(conn, type, event, values, buf, len);
+    httpFormatTrace(trace, conn, event, type, values, buf, len);
+    return 1;
 }
 
 
-PUBLIC void httpTracePacket(HttpConn *conn, cchar *type, cchar *event, HttpPacket *packet, cchar *values, ...)
+/*
+    Trace any packet
+ */
+PUBLIC bool httpTracePacket(HttpConn *conn, cchar *event, cchar *type, HttpPacket *packet, cchar *values, ...)
 {
     va_list     ap;
+    int         level;
 
     assert(conn);
     assert(packet);
 
-    if (!httpShouldTrace(conn, type) || conn->rx->skipTrace) {
-        return;
+    if (!conn || conn->http->traceLevel == 0 || conn->rx->skipTrace) {
+        return 0;
+    }
+    level = PTOI(mprLookupKey(conn->trace->events, type));
+    if (level == 0 || level > conn->http->traceLevel) { \
+        return 0;
     }
     if (packet->prefix) {
-        httpTraceContent(conn, type, event, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix), 0);
+        httpTraceContent(conn, event, type, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix), 0);
     }
     if (values) {
         va_start(ap, values);
@@ -228,23 +367,57 @@ PUBLIC void httpTracePacket(HttpConn *conn, cchar *type, cchar *event, HttpPacke
         va_end(ap);
     }
     if (packet->content) {
-        httpTraceContent(conn, type, event, mprGetBufStart(packet->content), httpGetPacketLength(packet), "%s", values);
+        if (values) {
+            httpTraceContent(conn, event, type, mprGetBufStart(packet->content), httpGetPacketLength(packet), "%s", values);
+        } else {
+            httpTraceContent(conn, event, type, mprGetBufStart(packet->content), httpGetPacketLength(packet), 0);
+        }
     }
+    return 1;
 }
 
 
-PUBLIC void httpFormatTrace(HttpConn *conn, cchar *type, cchar *event, cchar *values, cchar *buf, ssize len)
+/*
+    Inner routine for httpTrace()
+    Conn may be null.
+ */
+PUBLIC bool httpTraceProc(HttpConn *conn, cchar *event, cchar *type, cchar *values, ...)
 {
-    (conn->trace->formatter)(conn, type, event, values, buf, len);
+    HttpTrace   *trace;
+    va_list     ap;
+
+    assert(conn);
+    assert(event && *event);
+    assert(type && *type);
+
+    if (conn && conn->rx->skipTrace) {
+        return 0;
+    }
+    trace = conn ? conn->trace : HTTP->trace;
+
+    if (values) {
+        va_start(ap, values);
+        values = sfmtv(values, ap);
+        va_end(ap);
+    }
+    httpFormatTrace(trace, conn, event, type, values, 0, 0);
+    return 1;
+}
+
+
+
+PUBLIC void httpFormatTrace(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, cchar *buf, ssize len)
+{
+    (trace->formatter)(trace, conn, event, type, values, buf, len);
 }
 
 
 /*
     Low-level write routine to be used only by formatters
  */
-PUBLIC void httpWriteTrace(HttpConn *conn, cchar *buf, ssize len)
+PUBLIC void httpWriteTrace(HttpTrace *trace, cchar *buf, ssize len)
 {
-    (conn->trace->logger)(conn, buf, len);
+    (trace->logger)(trace, buf, len);
 }
 
 
@@ -253,20 +426,22 @@ PUBLIC void httpWriteTrace(HttpConn *conn, cchar *buf, ssize len)
     This will use the tx or rx mime type if possible.
     Skips UTF encoding prefixes
  */
-PUBLIC cchar *httpMakePrintable(HttpConn *conn, cchar *type, cchar *event, cchar *buf, ssize *lenp)
+PUBLIC cchar *httpMakePrintable(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *buf, ssize *lenp)
 {
     cchar   *start, *cp, *digits;
     char    *data, *dp;
     ssize   len;
     int     i;
 
-    if (smatch(event, "rx.body")) {
-        if (sstarts(mprLookupMime(0, conn->rx->mimeType), "text/")) {
-            return buf;
-        }
-    } else if (smatch(event, "tx.body")) {
-        if (sstarts(mprLookupMime(0, conn->tx->mimeType), "text/")) {
-            return buf;
+    if (conn) {
+        if (smatch(event, "rx.body")) {
+            if (sstarts(mprLookupMime(0, conn->rx->mimeType), "text/")) {
+                return buf;
+            }
+        } else if (smatch(event, "tx.body")) {
+            if (sstarts(mprLookupMime(0, conn->tx->mimeType), "text/")) {
+                return buf;
+            }
         }
     }
     start = buf;
@@ -303,37 +478,41 @@ PUBLIC cchar *httpMakePrintable(HttpConn *conn, cchar *type, cchar *event, cchar
 /*
     Format a detailed request message
  */
-PUBLIC void httpDetailTraceFormatter(HttpConn *conn, cchar *type, cchar *event, cchar *values, cchar *data, ssize len)
+PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, cchar *data, ssize len)
 {
     char    *boundary, buf[256];
     int     client, sessionSeqno;
 
-    assert(conn);
-    assert(type);
+    assert(trace);
     assert(event);
+    assert(type);
 
-    client = conn->address ? conn->address->seqno : 0;
-    sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-    fmt(buf, sizeof(buf), "\n%s %d-%d-%d-%d ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno, conn->seqno, 
-        conn->rx->seqno);
-    lock(conn->trace);
-    httpWriteTrace(conn, buf, slen(buf));
-    fmt(buf, sizeof(buf), "%s %s, ", type, event);
-    httpWriteTrace(conn, buf, slen(buf));
+    if (conn) {
+        client = conn->address ? conn->address->seqno : 0;
+        sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
+        fmt(buf, sizeof(buf), "\n%s %d-%d-%d-%d ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno, conn->seqno,
+            conn->rx->seqno);
+    } else {
+        fmt(buf, sizeof(buf), "\n%s 0-0-0-0 ", mprGetDate(MPR_LOG_DATE));
+    }
+    lock(trace);
+    httpWriteTrace(trace, buf, slen(buf));
+    fmt(buf, sizeof(buf), "%s, ", event);
+    httpWriteTrace(trace, buf, slen(buf));
 
     if (values) {
-        httpWriteTrace(conn, values, slen(values));
+        httpWriteTrace(trace, values, slen(values));
     }
     if (data) {
         boundary = " --details--\n";
-        httpWriteTrace(conn, boundary, slen(boundary));
-        data = httpMakePrintable(conn, type, event, data, &len);
-        httpWriteTrace(conn, data, len);
-        httpWriteTrace(conn, &boundary[1], slen(boundary) - 1);
+        httpWriteTrace(trace, boundary, slen(boundary));
+        data = httpMakePrintable(trace, conn, event, data, &len);
+        httpWriteTrace(trace, data, len);
+        httpWriteTrace(trace, &boundary[1], slen(boundary) - 1);
     } else {
-        httpWriteTrace(conn, "\n", 1);
+        httpWriteTrace(trace, "\n", 1);
     }
-    unlock(conn->trace);
+    unlock(trace);
 }
 
 
@@ -446,12 +625,10 @@ PUBLIC int httpSetTraceLogFile(HttpTrace *trace, cchar *path, ssize size, int ba
 /*
     Write a message to the trace log
  */
-PUBLIC void httpWriteTraceLogFile(HttpConn *conn, cchar *buf, ssize len)
+PUBLIC void httpWriteTraceLogFile(HttpTrace *trace, cchar *buf, ssize len)
 {
-    HttpTrace   *trace;
     static int  skipCheck = 0;
 
-    trace = conn->trace;
     lock(trace);
     if (trace->backupCount > 0) {
         if ((++skipCheck % 50) == 0) {
@@ -466,6 +643,139 @@ PUBLIC void httpWriteTraceLogFile(HttpConn *conn, cchar *buf, ssize len)
     unlock(trace);
 }
 
+
+/*
+    Common Log Formatter (NCSA)
+    This formatter only emits messages only for connections at their complete event.
+ */
+PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *type, cchar *event, cchar *valuesUnused,
+    cchar *bufUnused, ssize lenUnused)
+{
+    HttpRx      *rx;
+    HttpTx      *tx;
+    MprBuf      *buf;
+    cchar       *fmt, *cp, *qualifier, *timeText, *value;
+    char        c, keyBuf[80];
+    int         len;
+
+    assert(trace);
+    assert(type && *type);
+    assert(event && *event);
+
+    if (!conn) {
+        return;
+    }
+    assert(type && *type);
+    assert(event && *event);
+
+    if (!smatch(event, "request.completion")) {
+        return;
+    }
+    rx = conn->rx;
+    tx = conn->tx;
+    fmt = trace->format;
+    if (fmt == 0) {
+        fmt = ME_HTTP_LOG_FORMAT;
+    }
+    len = ME_MAX_URI + 256;
+    buf = mprCreateBuf(len, len);
+
+    while ((c = *fmt++) != '\0') {
+        if (c != '%' || (c = *fmt++) == '%') {
+            mprPutCharToBuf(buf, c);
+            continue;
+        }
+        switch (c) {
+        case 'a':                           /* Remote IP */
+            mprPutStringToBuf(buf, conn->ip);
+            break;
+
+        case 'A':                           /* Local IP */
+            mprPutStringToBuf(buf, conn->sock->listenSock->ip);
+            break;
+
+        case 'b':
+            if (tx->bytesWritten == 0) {
+                mprPutCharToBuf(buf, '-');
+            } else {
+                mprPutIntToBuf(buf, tx->bytesWritten);
+            }
+            break;
+
+        case 'B':                           /* Bytes written (minus headers) */
+            mprPutIntToBuf(buf, (tx->bytesWritten - tx->headerSize));
+            break;
+
+        case 'h':                           /* Remote host */
+            mprPutStringToBuf(buf, conn->ip);
+            break;
+
+        case 'l':                           /* user identity - unknown */
+            mprPutCharToBuf(buf, '-');
+            break;
+
+        case 'n':                           /* Local host */
+            mprPutStringToBuf(buf, rx->parsedUri->host);
+            break;
+
+        case 'O':                           /* Bytes written (including headers) */
+            mprPutIntToBuf(buf, tx->bytesWritten);
+            break;
+
+        case 'r':                           /* First line of request */
+            mprPutToBuf(buf, "%s %s %s", rx->method, rx->uri, conn->protocol);
+            break;
+
+        case 's':                           /* Response code */
+            mprPutIntToBuf(buf, tx->status);
+            break;
+
+        case 't':                           /* Time */
+            mprPutCharToBuf(buf, '[');
+            timeText = mprFormatLocalTime(MPR_DEFAULT_DATE, mprGetTime());
+            mprPutStringToBuf(buf, timeText);
+            mprPutCharToBuf(buf, ']');
+            break;
+
+        case 'u':                           /* Remote username */
+            mprPutStringToBuf(buf, conn->username ? conn->username : "-");
+            break;
+
+        case '{':                           /* Header line "{header}i" */
+            qualifier = fmt;
+            if ((cp = schr(qualifier, '}')) != 0) {
+                fmt = &cp[1];
+                scopy(keyBuf, sizeof(keyBuf), "HTTP_");
+                sncopy(&keyBuf[5], sizeof(keyBuf) - 5, qualifier, qualifier - cp);
+                switch (*fmt++) {
+                case 'i':
+                    value = (char*) mprLookupKey(rx->headers, supper(keyBuf));
+                    mprPutStringToBuf(buf, value ? value : "-");
+                    break;
+                default:
+                    mprPutSubStringToBuf(buf, qualifier, qualifier - cp);
+                }
+
+            } else {
+                mprPutCharToBuf(buf, c);
+            }
+            break;
+
+        case '>':
+            if (*fmt == 's') {
+                fmt++;
+                mprPutIntToBuf(buf, tx->status);
+            }
+            break;
+
+        default:
+            mprPutCharToBuf(buf, c);
+            break;
+        }
+    }
+    mprPutCharToBuf(buf, '\n');
+    httpWriteTrace(trace, mprBufToString(buf), mprGetBufLength(buf));
+}
 
 /*
     @copy   default

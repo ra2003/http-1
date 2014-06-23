@@ -685,7 +685,8 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
                 }
                 path = mprReplacePathExt(filename, ext);
                 if (mprGetPathInfo(path, info) == 0) {
-                    httpTrace(conn, "context", "map", "originalFilename=\"%s\", filename=\"%s\"", filename, path);
+                    httpTrace(conn, "request.map", "context", 
+                        "originalFilename=\"%s\", filename=\"%s\"", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");
@@ -784,7 +785,8 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
 
     for (ITERATE_ITEMS(route->outputStages, stage, next)) {
         if (smatch(stage->name, name)) {
-            mprLog("warn http route", 0, "Stage \"%s\" is already configured for the route \"%s\". Ignoring.", name, route->name);
+            mprLog("warn http route", 0, "Stage \"%s\" is already configured for the route \"%s\". Ignoring.", 
+                name, route->name);
             return 0;
         }
     }
@@ -1789,7 +1791,8 @@ static char *finalizeReplacement(HttpRoute *route, cchar *str)
                             mprPutCharToBuf(buf, '$');
                             mprPutStringToBuf(buf, token);
                         } else {
-                            mprLog("error http route", 0, "Cannot find token \"%s\" in template \"%s\"", token, route->pattern);
+                            mprLog("error http route", 0, "Cannot find token \"%s\" in template \"%s\"", 
+                                token, route->pattern);
                         }
                     }
                 }
@@ -2185,7 +2188,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!httpCanUser(conn, NULL)) {
-        httpTrace(conn, "error", "authenticate", "msg=\"Access denied, user is not authorized for access\"");
+        httpTrace(conn, "auth.check", "error", "msg=\"Access denied, user is not authorized for access\"");
         if (!conn->tx->finalized) {
             if (route->auth && route->auth->type) {
                 (route->auth->type->askLogin)(conn);
@@ -2347,11 +2350,11 @@ static int cmdUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
     command = expandTokens(conn, op->details);
     cmd = mprCreateCmd(conn->dispatcher);
-    mprLog("info http route run", 4, "%s", command);
+    httpTrace(conn, "request.run", "context", "command=\"%s\"", command);
     if ((status = mprRunCmd(cmd, command, NULL, NULL, &out, &err, -1, 0)) != 0) {
         /* Don't call httpError, just set errorMsg which can be retrieved via: ${request:error} */
         conn->errorMsg = sfmt("Command failed: %s\nStatus: %d\n%s\n%s", command, status, out, err);
-        mprLog("error http route run", 0, "%s", conn->errorMsg);
+        httpTrace(conn, "request.run.error", "error", "command=\"%s\", error=\"%s\"", command, conn->errorMsg);
         /* Continue */
     }
     return HTTP_ROUTE_OK;

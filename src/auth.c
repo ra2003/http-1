@@ -78,7 +78,8 @@ PUBLIC bool httpAuthenticate(HttpConn *conn)
                 return 0;
             }
         }
-        httpTrace(conn, "context", "authenticate", "msg=\"Using cached authentication data\", username=%s", username);
+        httpTrace(conn, "auth.login.authenticated", "context", 
+            "msg=\"Using cached authentication data\", username=%s", username);
         conn->username = username;
         rx->authenticated = 1;
     }
@@ -141,7 +142,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!username || !*username) {
-        httpTrace(conn, "context", "login", "msg=\"missing username\"");
+        httpTrace(conn, "auth.login.error", "error", "msg=\"missing username\"");
         return 0;
     }
     if (!auth->store) {
@@ -183,7 +184,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
 /*
     Log the user out and remove the authentication username from the session state
  */
-PUBLIC void httpLogout(HttpConn *conn) 
+PUBLIC void httpLogout(HttpConn *conn)
 {
     conn->rx->authenticated = 0;
     httpDestroySession(conn);
@@ -377,7 +378,7 @@ PUBLIC void httpSetAuthAnyValidUser(HttpAuth *auth)
 
 
 /*
-    Can supply a roles or abilities in the "abilities" parameter 
+    Can supply a roles or abilities in the "abilities" parameter
  */
 PUBLIC void httpSetAuthRequiredAbilities(HttpAuth *auth, cchar *abilities)
 {
@@ -699,7 +700,7 @@ PUBLIC int httpRemoveUser(HttpAuth *auth, cchar *name)
 
 
 /*
-    Compute the set of user abilities from the user roles. Role strings can be either roles or abilities. 
+    Compute the set of user abilities from the user roles. Role strings can be either roles or abilities.
     Expand roles into the equivalent set of abilities.
  */
 static void computeAbilities(HttpAuth *auth, MprHash *abilities, cchar *role)
@@ -759,7 +760,7 @@ PUBLIC void httpComputeAllUserAbilities(HttpAuth *auth)
 
 
 /*
-    Verify the user password based on the users defined via the configuration files. 
+    Verify the user password based on the users defined via the configuration files.
     Password may be NULL only if using auto-login.
  */
 static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
@@ -772,12 +773,12 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!conn->user && (conn->user = mprLookupKey(auth->userCache, username)) == 0) {
-        httpTrace(conn, "context", "login", "msg=\"Unknown user\", username=%s", username);
+        httpTrace(conn, "auth.login.error", "error", "msg=\"Unknown user\", username=%s", username);
         return 0;
     }
     if (password) {
         requiredPassword = (rx->passwordDigest) ? rx->passwordDigest : conn->user->password;
-        if (sncmp(requiredPassword, "BF", 2) == 0 && slen(requiredPassword) > 4 && isdigit(requiredPassword[2]) && 
+        if (sncmp(requiredPassword, "BF", 2) == 0 && slen(requiredPassword) > 4 && isdigit(requiredPassword[2]) &&
                 requiredPassword[3] == ':') {
             /* Blowifsh */
             success = mprCheckPassword(sfmt("%s:%s:%s", username, auth->realm, password), conn->user->password);
@@ -790,9 +791,9 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
             success = smatch(password, requiredPassword);
         }
         if (success) {
-            httpTrace(conn, "context", "login", "msg=\"User authenticated\", username=%s", username);
+            httpTrace(conn, "auth.login.authenticated", "context", "msg=\"User authenticated\", username=%s", username);
         } else {
-            httpTrace(conn, "context", "login", "msg=\"Password failed to authenticate\", username=%s", username);
+            httpTrace(conn, "auth.login.error", "error", "msg=\"Password failed to authenticate\", username=%s", username);
         }
         return success;
     }
@@ -826,7 +827,7 @@ PUBLIC void httpSetConnUser(HttpConn *conn, HttpUser *user)
     Copyright (c) Embedthis Software LLC, 2003-2014. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

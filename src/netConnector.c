@@ -119,7 +119,7 @@ static void netOutgoingService(HttpQueue *q)
                 httpDisconnect(conn);
             }
             httpFinalizeConnector(conn);
-            httpTrace(conn, "error", "io", "msg=\"Connector write error\", errno=%d", errCode);
+            httpTrace(conn, "connection.io.error", "error", "msg=\"Connector write error\", errno=%d", errCode);
             break;
 
         } else if (written > 0) {
@@ -208,8 +208,8 @@ static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
     if (httpGetPacketLength(packet) > 0) {
         addToNetVector(q, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
     }
-    if (packet->flags & HTTP_PACKET_DATA) {
-        httpTracePacket(conn, "body", "tx", packet, "length=%zd", httpGetPacketLength(packet));
+    if (httpTracing(conn) && packet->flags & HTTP_PACKET_DATA) {
+        httpTraceBody(conn, 1, packet, -1);
     }
 }
 

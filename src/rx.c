@@ -48,7 +48,7 @@ PUBLIC HttpRx *httpCreateRx(HttpConn *conn)
     rx->needInputPipeline = httpClientConn(conn);
     rx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
     rx->chunkState = HTTP_CHUNK_UNCHUNKED;
-    rx->seqno = conn->totalRequests++;
+    rx->seqno = ++conn->totalRequests;
     return rx;
 }
 
@@ -272,12 +272,17 @@ static bool parseIncoming(HttpConn *conn)
     httpSetState(conn, HTTP_STATE_PARSED);
 
     if ((address = conn->address) != 0) {
-        if (address->delay && address->delayUntil > conn->http->now) {
-            /*
-                Defensive counter measure - go slow
-             */
-            mprCreateEvent(conn->dispatcher, "delayConn", conn->delay, delayAwake, conn, 0);
-            return 0;
+        if (address->delay) {
+            if (address->delayUntil > conn->http->now) {
+                /*
+                    Defensive counter measure - go slow
+                 */
+                mprCreateEvent(conn->dispatcher, "delayConn", conn->delay, delayAwake, conn, 0);
+                return 0;
+            } else {
+                address->delay = 0;
+                httpTrace(conn, "monitor.delay.stop", "context", "client=%s", conn->ip);
+            }
         }
     }
     return 1;
@@ -302,7 +307,7 @@ static bool mapMethod(HttpConn *conn)
     rx = conn->rx;
     if (rx->flags & HTTP_POST && (method = httpGetParam(conn, "-http-method-", 0)) != 0) {
         if (!scaselessmatch(method, rx->method)) {
-            httpTrace(conn, "context", "method", "originalMethod=%s, method=%s", rx->method, method);
+            httpTrace(conn, "request.method", "context", "originalMethod=%s, method=%s", rx->method, method);
             httpSetMethod(conn, method);
             return 1;
         }
@@ -379,7 +384,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     cchar       *endp;
     MprBuf      *content;
     ssize       len;
-    bool        traceRequired = 0;
+    bool        traced = 0;
 
     rx = conn->rx;
     limits = conn->limits;
@@ -391,14 +396,10 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     conn->started = conn->http->now;
 
     if (httpTracing(conn)) {
-        if (httpShouldTrace(conn, "headers")) {
-            content = packet->content;
-            endp = strstr((char*) content->start, "\r\n\r\n");
-            len = (endp) ? (int) (endp - content->start + 2) : 0;
-            httpTraceContent(conn, "context", "rx-headers", content->start, len, "peer=%s", conn->ip);
-        } else {
-            traceRequired = 1;
-        }
+        content = packet->content;
+        endp = strstr((char*) content->start, "\r\n\r\n");
+        len = (endp) ? (int) (endp - content->start + 2) : 0;
+        traced = httpTraceContent(conn, "rx.headers.server", "context", content->start, len, "peer=%s", conn->ip);
     }
     rx->originalMethod = rx->method = supper(getToken(conn, 0));
     parseMethod(conn);
@@ -435,8 +436,8 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     }
     conn->http->totalRequests++;
     httpSetState(conn, HTTP_STATE_FIRST);
-    if (traceRequired) {
-        httpTrace(conn, "request", "request", "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, 
+    if (httpTracing(conn) && !traced) {
+        httpTrace(conn, "rx.first.server", "request", "method=%s, uri=%s, protocol=%s, peer=%s", rx->method, rx->uri, 
                 conn->protocol, conn->ip);
     }
     return 1;
@@ -465,7 +466,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         content = packet->content;
         endp = strstr((char*) content->start, "\r\n\r\n");
         len = (endp) ? (int) (endp - content->start + 4) : 0;
-        httpTraceContent(conn, "context", "rx-headers", content->start, len, "rx");
+        httpTraceContent(conn, "rx.headers.client", "context", content->start, len, "rx");
         traced = 1;
     }
     protocol = conn->protocol = supper(getToken(conn, 0));
@@ -493,7 +494,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         return 0;
     }
     if (httpTracing(conn) && !traced) {
-        httpTrace(conn, "request", "response", "status=%d, protocol=%s", rx->status, protocol);
+        httpTrace(conn, "rx.first.client", "request", "status=%d, protocol=%s", rx->status, protocol);
     }
     return 1;
 }
@@ -975,8 +976,8 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
             "Receive form of %'lld bytes (sofar) is too big. Limit %'lld", size, conn->limits->receiveFormSize);
     }
-    if (packet) {
-        httpTraceContent(conn, "body", "rx", packet->content->start, nbytes, 0);
+    if (packet && httpTracing(conn)) {
+        httpTraceBody(conn, 0, packet, nbytes);
     }
     if (rx->eof) {
         if ((rx->remainingContent > 0 && (rx->length > 0 || !conn->mustClose)) ||
@@ -1139,7 +1140,7 @@ static void createErrorRequest(HttpConn *conn)
     if (!rx->headerPacket) {
         return;
     }
-    httpTrace(conn, "context", "errordoc", "location=%s, status=%d", tx->errorDocument, tx->status);
+    httpTrace(conn, "request.errordoc", "context", "location=%s, status=%d", tx->errorDocument, tx->status);
 
     originalUri = rx->uri;
     conn->rx = httpCreateRx(conn);
@@ -1254,12 +1255,13 @@ static bool processCompletion(HttpConn *conn)
         received = rx->headerPacketLength + rx->bytesRead;
 #if MPR_HIGH_RES_TIMER
         httpTrace(conn, 
-            "result", "completion", 
+            "request.completion", "result",
             "status=%d, error=%d, connError=%d, elapsed=%llu, elapsedTicks=%llu, received=%lld, sent=%lld", 
             status, conn->error, conn->connError, elapsed, mprGetHiResTicks() - conn->startMark, 
             received, tx->bytesWritten);
 #else
-        httpTrace(conn, "result", "completion", "status=%d, error=%d, connError=%d, elapsed=%llu, received=%lld, sent=%lld", 
+        httpTrace(conn, "request.completion", "result", 
+            "status=%d, error=%d, connError=%d, elapsed=%llu, received=%lld, sent=%lld", 
             status, conn->error, conn->connError, elapsed, received, tx->bytesWritten);
 #endif
     }

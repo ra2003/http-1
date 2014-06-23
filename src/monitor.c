@@ -91,7 +91,7 @@ static void invokeDefenses(HttpMonitor *monitor, MprHash *args)
                 sd->suppressUntil = http->now + defense->suppressPeriod;
             }
         }
-        mprLog("info http monitor", 2, "Defense \"%s\" running remedy \"%s\".", defense->name, defense->remedy);
+        httpTrace(0, "monitor.defense.invoke", "context", "defense=\"%s\", remedy=\"%s\".", defense->name, defense->remedy);
 
         /*  WARNING: yields */
         remedyProc(args);
@@ -128,7 +128,7 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
         period = monitor->period / 1000;
         address = ip ? sfmt(" %s", ip) : "";
         msg = sfmt(fmt, address, monitor->counterName, counter->value, period, monitor->limit);
-        mprLog("info http monitor", 4, "%s", msg);
+        httpTrace(0, "monitor.check", "context", "msg=\"%s\"", msg);
 
         subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
@@ -155,7 +155,7 @@ PUBLIC void httpPruneMonitors()
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
         if (address->banUntil && address->banUntil < http->now) {
-            mprLog("info http monitor", 1, "Remove ban on client %s at %s", kp->key, mprGetDate(0));
+            httpTrace(0, "monitor.ban.stop", "context", "client=%s", kp->key);
             address->banUntil = 0;
         }
         if ((address->updated + period) < http->now && address->banUntil == 0) {
@@ -366,7 +366,7 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
                 return 0;
             }
             address->ncounters = ncounters;
-            address->seqno = seqno++;
+            address->seqno = ++seqno;
             mprAddKey(http->addresses, conn->ip, address);
         }
         conn->address = address;
@@ -507,7 +507,7 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
         return MPR_ERR_CANT_FIND;
     }
     if (address->banUntil < http->now) {
-        mprLog("info http monitor", 1, "Client %s banned for %lld secs at %s", ip, period / 1000, mprGetDate(0));
+        httpTrace(NULL, "monitor.ban.start", "error", "client=%s, duration=%lld", ip, period / 1000);
     }
     banUntil = http->now + period;
     address->banUntil = max(banUntil, address->banUntil);
@@ -561,7 +561,6 @@ static void cmdRemedy(MprHash *args)
         data = stok(command, "|", &command);
         data = stemplate(data, args);
     }
-    mprLog("info http monitor run", 1, "Remedy: %s", command);
     command = strim(command, " \t", MPR_TRIM_BOTH);
     if ((background = (sends(command, "&"))) != 0) {
         command = strim(command, "&", MPR_TRIM_END);
@@ -569,22 +568,25 @@ static void cmdRemedy(MprHash *args)
     argc = mprMakeArgv(command, &argv, 0);
     cmd->stdoutBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
     cmd->stderrBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
+
+    httpTrace(0, "monitor.remedy.cmd", "context", "remedy=\"%s\"", command);
     if (mprStartCmd(cmd, argc, argv, NULL, MPR_CMD_DETACH | MPR_CMD_IN) < 0) {
-        mprLog("error http monitor", 0, "Cannot start command: %s", command);
+        httpTrace(0, "monitor.rememdy.cmd.error", "error", "msg=\"Cannot start command: %s\"", command);
         return;
     }
-    mprLog("info http monitor run", 4, "Cmd data: \n%s", data);
-    if (data && mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
-        mprLog("error http monitor", 0, "Cannot write to command: %s", command);
-        return;
+    if (data) {
+        if (mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
+            httpTrace(0, "monitor.remedy.cmd.error", "error", "msg=\"Cannot write to command: %s\"", command);
+            return;
+        }
     }
     mprFinalizeCmd(cmd);
     if (!background) {
         rc = mprWaitForCmd(cmd, ME_HTTP_REMEDY_TIMEOUT);
         status = mprGetCmdExitStatus(cmd);
         if (rc < 0 || status != 0) {
-            mprLog("error http monitor", 0, "Remedy failed. Error: %s\nResult: %s", 
-                mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf));
+            httpTrace(0, "monitor.remedy.cmd.error", "error", "msg=\"Remedy failed: %s. %s\", command=\"%s\"", 
+                mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf), command);
             return;
         }
         mprDestroyCmd(cmd);
@@ -607,7 +609,7 @@ static void delayRemedy(MprHash *args)
             address->delayUntil = max(delayUntil, address->delayUntil);
             delay = (int) lookupTicks(args, "DELAY", ME_HTTP_DELAY);
             address->delay = max(delay, address->delay);
-            mprLog("info http monitor delay", 2, "Initiate delay of %d for IP address %s", address->delay, ip);
+            httpTrace(0, "monitor.delay.start", "context", "client=%s, delay=%d", ip, address->delay);
         }
     }
 }
@@ -636,20 +638,21 @@ static void httpRemedy(MprHash *args)
     }
     msg = smatch(method, "POST") ? mprLookupKey(args, "MESSAGE") : 0;
     if ((conn = httpRequest(method, uri, msg, &err)) == 0) {
-        mprLog("error http monitory remedy", 0, "%s", err);
+        httpTrace(0, "monitor.remedy.http.error", "error", "msg=\"%s\"", err);
         return;
     }
     status = httpGetStatus(conn);
     if (status != HTTP_CODE_OK) {
-        mprLog("error http monitor remedy", 0, "Remedy URI %s responded with http status %d", uri, status);
+        httpTrace(0, "monitor.remedy.http.error", "error", "status=%d, uri=%s", status, uri);
     }
 }
 
-
-/* TODO - message already logged at level 2 */
+/*
+    Write to the error log
+ */
 static void logRemedy(MprHash *args)
 {
-    mprLog("info http monitor", 0, "%s", (char*) mprLookupKey(args, "MESSAGE"));
+    mprLog("error http monitor", 0, "%s", (char*) mprLookupKey(args, "MESSAGE"));
 }
 
 

@@ -340,7 +340,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
          */
         httpJoinPacketForService(q, packet, 0);
     }
-    httpTracePacket(conn, "rx", "websockets", packet, "state=%d, frame=%d, length=%zu",
+    httpTracePacket(conn, "body", "request.websockets.data", packet, "state=%d, frame=%d, length=%zu",
         ws->state, ws->frameState, httpGetPacketLength(packet));
 
     if (packet->flags & HTTP_PACKET_END) {
@@ -561,12 +561,12 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
     assert(content);
 
     mprAddNullToBuf(content);
-    httpTrace(conn, "context", "websockets-receive", "wsSeq=%d, wsTypeName=%s, wsType=%d, wsLast=%d, wsLength=%zu",
+    httpTrace(conn, "rx.websockets.packet", "body", "wsSeq=%d, wsTypeName=%s, wsType=%d, wsLast=%d, wsLength=%zu",
          ws->rxSeq++, codetxt[packet->type], packet->type, packet->last, mprGetBufLength(content));
 
     switch (packet->type) {
     case WS_MSG_TEXT:
-        httpTracePacket(conn, "rx", "websockets-text", packet, 0);
+        httpTracePacket(conn, "rx.body.websockets.data", "body", packet, 0);
         /* Fall through */
 
     case WS_MSG_BINARY:
@@ -665,7 +665,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
                 }
             }
         }
-        httpTrace(conn, "context", "websockets-close", 
+        httpTrace(conn, "rx.websockets.close", "context",
             "wsCloseStatus=%d, wsCloseReason=\"%s\", wsClosing=%d", ws->closeStatus, ws->closeReason, ws->closing);
         if (ws->closing) {
             httpDisconnect(conn);
@@ -860,7 +860,7 @@ PUBLIC ssize httpSendClose(HttpConn *conn, int status, cchar *reason)
     if (reason) {
         scopy(&msg[2], len - 2, reason);
     }
-    httpTrace(conn, "context", "websockets-send-close", "wsCloseStatus=%d, wsCloseReason=\"%s\"", status, reason);
+    httpTrace(conn, "tx.websockets.close", "context", "wsCloseStatus=%d, wsCloseReason=\"%s\"", status, reason);
     return httpSendBlock(conn, WS_MSG_CLOSE, msg, len, HTTP_BUFFER);
 }
 
@@ -918,12 +918,6 @@ static void outgoingWebSockService(HttpQueue *q)
                     *prefix++ = SET_LEN(len, i);
                 }
             }
-#if KEEP
-            if (packet->type == WS_MSG_TEXT && packet->content) {
-                mprAddNullToBuf(packet->content);
-                httpTracePacket(conn, "tx", "websockets", packet, 0);
-            }
-#endif
             if (httpClientConn(conn)) {
                 mprGetRandomBytes(dataMask, sizeof(dataMask), 0);
                 for (i = 0; i < 4; i++) {
@@ -937,7 +931,7 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            httpTracePacket(conn, "tx", "websockets", packet, 
+            httpTracePacket(conn, "tx.websockets.packet", "body", packet, 
                 "wsSeqno=%d, wsTypeName=\"%s\", wsType=%d, wsLast=%d, wsLength=%zd",
                 ws->txSeq++, codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
         }
@@ -1217,7 +1211,7 @@ static void traceErrorProc(HttpConn *conn, cchar *fmt, ...)
     ws->errorMsg = sfmtv(fmt, args);
     va_end(args);
 
-    httpTrace(conn, "error", "websockets-error", "msg=\"%s\"", ws->errorMsg);
+    httpTrace(conn, "rx.websockets.error", "error", "msg=\"%s\"", ws->errorMsg);
 }
 
 #endif /* ME_HTTP_WEB_SOCKETS */

@@ -134,7 +134,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         conn->error++;
         httpOmitBody(conn);
         conn->errorMsg = formatErrorv(conn, status, fmt, args);
-        httpTrace(conn, "error", "request-error", "msg=\"%s\"", conn->errorMsg);
+        httpTrace(conn, "request.error", "error", "msg=\"%s\"", conn->errorMsg);
         HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
         if (httpServerConn(conn)) {
             if (status == HTTP_CODE_NOT_FOUND) {

@@ -112,8 +112,8 @@ static void blendMode(HttpRoute *route, MprJson *config)
     mode = mprGetJson(config, "app.mode");
     if (!mode) {
         mode = sclone("debug");
-        mprLog("info http config", 3, "Route \"%s\" running in \"%s\" mode", route->name, mode);
     }
+    route->debug = smatch(mode, "debug");
     if ((currentMode = mprGetJsonObj(config, sfmt("app.modes.%s", mode))) != 0) {
         app = mprLookupJsonObj(config, "app");
         mprBlendJson(app, currentMode, MPR_JSON_OVERWRITE);

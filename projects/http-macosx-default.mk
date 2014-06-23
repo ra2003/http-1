@@ -852,6 +852,7 @@ $(CONFIG)/obj/testHttp.o: \
 #
 DEPS_52 += $(CONFIG)/inc/me.h
 DEPS_52 += $(CONFIG)/inc/http.h
+DEPS_52 += $(CONFIG)/inc/mpr.h
 
 $(CONFIG)/obj/testHttpGen.o: \
     test/src/testHttpGen.c $(DEPS_52)

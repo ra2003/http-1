@@ -55,7 +55,6 @@
         errordoc
         session
             create
-            MOB - destory session
         xsrf
             error
         redirect
@@ -132,6 +131,7 @@ static void manageTrace(HttpTrace *trace, int flags)
     if (flags & MPR_MANAGE_MARK) {
         mprMark(trace->file);
         mprMark(trace->format);
+        mprMark(trace->lastTime);
         mprMark(trace->mutex);
         mprMark(trace->path);
         mprMark(trace->events);
@@ -321,8 +321,8 @@ PUBLIC bool httpTraceContent(HttpConn *conn, cchar *event, cchar *type, cchar *b
         return 0;
     }
     if (conn) {
-        if ((smatch(event, "rx.body.data") && (conn->rx->bytesRead >= conn->trace->size)) ||
-            (smatch(event, "tx.body.data") && (conn->tx->bytesWritten >= conn->trace->size))) {
+        if ((smatch(event, "rx.body.data") && (conn->rx->bytesRead >= conn->trace->maxContent)) ||
+            (smatch(event, "tx.body.data") && (conn->tx->bytesWritten >= conn->trace->maxContent))) {
             if (!conn->rx->webSocket) {
                 conn->rx->skipTrace = 1;
                 httpTrace(conn, event, type, "msg=\"Abbreviating body trace\"");
@@ -406,7 +406,8 @@ PUBLIC bool httpTraceProc(HttpConn *conn, cchar *event, cchar *type, cchar *valu
 
 
 
-PUBLIC void httpFormatTrace(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, cchar *buf, ssize len)
+PUBLIC void httpFormatTrace(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, cchar *buf, 
+    ssize len)
 {
     (trace->formatter)(trace, conn, event, type, values, buf, len);
 }
@@ -451,7 +452,8 @@ PUBLIC cchar *httpMakePrintable(HttpTrace *trace, HttpConn *conn, cchar *event, 
         start += 3;
         *lenp -= 3;
     }
-    //  MOB - must enforce trace->maxContent
+    len = max(len, trace->maxContent);
+
     for (i = 0; i < len; i++) {
         if (!isprint((uchar) start[i]) && start[i] != '\n' && start[i] != '\r' && start[i] != '\t') {
             data = mprAlloc(len * 3 + ((len / 16) + 1) + 1);
@@ -478,8 +480,10 @@ PUBLIC cchar *httpMakePrintable(HttpTrace *trace, HttpConn *conn, cchar *event, 
 /*
     Format a detailed request message
  */
-PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, cchar *data, ssize len)
+PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, 
+    cchar *data, ssize len)
 {
+    MprTime now;
     char    *boundary, buf[256];
     int     client, sessionSeqno;
 
@@ -487,15 +491,20 @@ PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ev
     assert(event);
     assert(type);
 
+    lock(trace);
+    now = mprGetTime();
     if (conn) {
+        if (trace->lastMark < (now + TPS)) {
+            trace->lastTime = mprGetDate(MPR_LOG_DATE);
+            trace->lastMark = now;
+        }
         client = conn->address ? conn->address->seqno : 0;
         sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-        fmt(buf, sizeof(buf), "\n%s %d-%d-%d-%d ", mprGetDate(MPR_LOG_DATE), client, sessionSeqno, conn->seqno,
+        fmt(buf, sizeof(buf), "\n%s %d-%d-%d-%d ", trace->lastTime, client, sessionSeqno, conn->seqno,
             conn->rx->seqno);
     } else {
-        fmt(buf, sizeof(buf), "\n%s 0-0-0-0 ", mprGetDate(MPR_LOG_DATE));
+        fmt(buf, sizeof(buf), "\n%s 0-0-0-0 ", trace->lastTime);
     }
-    lock(trace);
     httpWriteTrace(trace, buf, slen(buf));
     fmt(buf, sizeof(buf), "%s, ", event);
     httpWriteTrace(trace, buf, slen(buf));

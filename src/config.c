@@ -46,25 +46,31 @@ static void httpParseError(HttpRoute *route, cchar *fmt, ...)
 }
 
 
+/*
+    Convert a JSON string to a space-separated C string
+ */
 static cchar *getList(MprJson *prop)
 {
-    char    *jstr, *cp;
+    char    *cp, *p;
 
     if (prop == 0) {
         return 0;
     }
-    if ((jstr = mprJsonToString(prop, 0)) == 0) {
+    if ((cp = mprJsonToString(prop, 0)) == 0) {
         return 0;
     }
-    if (*jstr == '[') {
-        jstr = strim(jstr, "[]", 0);
+    if (*cp == '[') {
+        cp = strim(cp, "[]", 0);
     }
-    for (cp = jstr; *cp; cp++) {
-        if (*cp == '"') {
-            *cp = ' ';
+    for (p = cp; *p; p++) {
+        if (*p == '"' || *p == ',') {
+            *p = ' ';
         }
     }
-    return jstr;
+    if (*cp == ' ') {
+        cp = strim(cp, " \t", 0);
+    }
+    return cp;
 }
 
 
@@ -328,10 +334,34 @@ static void parseAuth(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseAuthLogin(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseAuthLoginName(HttpRoute *route, cchar *key, MprJson *prop)
 {
     /* Automatic login as this user. Password not required */
-    httpSetAuthUsername(route->auth, mprGetJson(prop, "name"));
+    httpSetAuthUsername(route->auth, prop->value);
+}
+
+
+/*
+    Parse roles and compute abilities
+ */
+static void parseAuthLoginRoles(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    MprHash     *abilities;
+    MprKey      *kp;
+    MprJson     *child, *job;
+    int         ji;
+
+    abilities = mprCreateHash(0, 0);
+    for (ITERATE_CONFIG(route, prop, child, ji)) {
+        httpComputeRoleAbilities(route->auth, abilities, child->value);
+    }
+    if (mprGetHashLength(abilities) > 0) {
+        job = mprCreateJson(MPR_JSON_ARRAY);
+        for (ITERATE_KEYS(abilities, kp)) {
+            mprSetJson(job, "$", kp->key);
+        }
+        mprSetJsonObj(route->config, "app.http.auth.login.abilities", job);
+    }
 }
 
 
@@ -1491,7 +1521,9 @@ PUBLIC int httpInitParser()
     httpAddConfig("app", parseAll);
     httpAddConfig("app.http", parseHttp);
     httpAddConfig("app.http.auth", parseAuth);
-    httpAddConfig("app.http.auth.login", parseAuthLogin);
+    httpAddConfig("app.http.auth.login", parseAll);
+    httpAddConfig("app.http.auth.login.name", parseAuthLoginName);
+    httpAddConfig("app.http.auth.login.roles", parseAuthLoginRoles);
     httpAddConfig("app.http.auth.realm", parseAuthRealm);
     httpAddConfig("app.http.auth.require", parseAll);
     httpAddConfig("app.http.auth.require.roles", parseAuthRequireRoles);

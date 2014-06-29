@@ -147,16 +147,20 @@ static void manageConn(HttpConn *conn, int flags)
 
 PUBLIC void httpDisconnect(HttpConn *conn)
 {
+    HttpTx      *tx;
+
+    tx = conn->tx;
     if (conn->sock) {
         mprDisconnectSocket(conn->sock);
     }
     conn->connError++;
     conn->error++;
     conn->keepAliveCount = 0;
-    if (conn->tx) {
-        conn->tx->finalized = 1;
-        conn->tx->finalizedOutput = 1;
-        conn->tx->finalizedConnector = 1;
+    if (tx) {
+        tx->finalized = 1;
+        tx->finalizedOutput = 1;
+        tx->finalizedConnector = 1;
+        tx->responded = 1;
     }
     if (conn->rx) {
         httpSetEof(conn);

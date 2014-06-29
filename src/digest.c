@@ -8,6 +8,27 @@
 
 #include    "http.h"
 
+/********************************** Locals ************************************/
+/*
+    Per-request digest authorization data
+    @see HttpAuth
+    @ingroup HttpAuth
+    @stability Evolving
+ */
+typedef struct HttpDigest {
+    char    *algorithm;
+    char    *cnonce;
+    char    *domain;
+    char    *nc;
+    char    *nonce;
+    char    *opaque;
+    char    *qop;
+    char    *realm;
+    char    *stale;
+    char    *uri;
+} HttpDigest;
+
+
 /********************************** Forwards **********************************/
 
 static char *calcDigest(HttpConn *conn, HttpDigest *dp, cchar *username);

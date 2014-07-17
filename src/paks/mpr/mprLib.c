@@ -23243,6 +23243,7 @@ static void manageSsl(MprSsl *ssl, int flags)
 PUBLIC MprSsl *mprCreateSsl(int server)
 {
     MprSsl      *ssl;
+    char       *path;
 
     if ((ssl = mprAllocObj(MprSsl, manageSsl)) == 0) {
         return 0;
@@ -23259,9 +23260,14 @@ PUBLIC MprSsl *mprCreateSsl(int server)
         ssl->verifyIssuer = 0;
     } else {
         ssl->verifyDepth = 10;
-        ssl->verifyPeer = MPR->verifySsl;
-        ssl->verifyIssuer = MPR->verifySsl;
-        ssl->caFile = mprJoinPath(mprGetAppDir(), MPR_CA_CERT);
+        if (MPR->verifySsl) {
+            ssl->verifyPeer = MPR->verifySsl;
+            ssl->verifyIssuer = MPR->verifySsl;
+            path = mprJoinPath(mprGetAppDir(), MPR_CA_CERT);
+            if (mprPathExists(path, R_OK)) {
+                ssl->caFile = path;
+            }
+        }
     }
     ssl->mutex = mprCreateLock();
     return ssl;
@@ -23297,6 +23303,9 @@ PUBLIC int mprLoadSsl()
         return 0;
     }
     path = mprJoinPath(mprGetAppDir(), "libmprssl");
+    if (!mprPathExists(path, R_OK)) {
+        path = mprSearchForModule("libmprssl");
+    }
     if ((mp = mprCreateModule("sslModule", path, "mprSslInit", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }

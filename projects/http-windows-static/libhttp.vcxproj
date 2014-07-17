@@ -142,13 +142,13 @@
   <ItemDefinitionGroup>
   <Link>
     <AdditionalDependencies>libmpr.lib;libpcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    <AdditionalLibraryDirectories>$(OutDir);$(Cfg)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    <AdditionalLibraryDirectories>$(OutDir);build\$(Cfg)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
   </Link>
 
   <CustomBuildStep>
-    <Command>cd ..\..
-copy /Y src\http.h $(IncDir)
-cd projects\http-windows-static</Command>
+    <Command>cd ..\..\src
+copy /Y http.h $(IncDir)
+cd ..\projects\http-windows-static</Command>
     <Outputs>$(BinDir)\libhttp.lib</Outputs>
   </CustomBuildStep>
   </ItemDefinitionGroup>

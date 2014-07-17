@@ -57,14 +57,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "makerom", "http-windows-sta
 		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testHttp", "http-windows-static\testHttp.vcxproj", "{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
-	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{4A62BF6E-E3D0-4846-A8E4-945E9D816482} = {4A62BF6E-E3D0-4846-A8E4-945E9D816482}
-	EndProjectSection
-EndProject
 
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -146,14 +138,6 @@ Global
 {FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Release|Win32.Build.0 = Release|Win32
 {FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Release|x64.ActiveCfg = Release|x64
 {FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Release|x64.Build.0 = Release|x64
-{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}.Debug|Win32.ActiveCfg = Debug|Win32
-{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}.Debug|Win32.Build.0 = Debug|Win32
-{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}.Debug|x64.ActiveCfg = Debug|x64
-{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}.Debug|x64.Build.0 = Debug|x64
-{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}.Release|Win32.ActiveCfg = Release|Win32
-{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}.Release|Win32.Build.0 = Release|Win32
-{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}.Release|x64.ActiveCfg = Release|x64
-{CC06F105-2BBC-4162-AD97-4A30AEDC0B0B}.Release|x64.Build.0 = Release|x64
 EndGlobalSection
 
   GlobalSection(SolutionProperties) = preSolution

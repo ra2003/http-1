@@ -68,3 +68,5 @@ start.me
 macosx-x64*
 macosx-*.me
 linux-*
+/build/
+testme/

@@ -7,43 +7,42 @@
     objects = {
 
 /* Begin PBXAggregateTarget section */
-		0DA2790E0DA2A49A00000006 /* http-ca-crt */ = {
+		B3E0043CB3E013EE00000006 /* http-ca-crt */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A00000005 /* Build configuration list for PBXAggregateTarget "http-ca-crt" */;
+			buildConfigurationList = B3E0043CB3E013EE00000005 /* Build configuration list for PBXAggregateTarget "http-ca-crt" */;
 			buildPhases = (
-				0DA2790E0DA2A49A00000007,
+				B3E0043CB3E013EE00000007,
 			);
 			dependencies = (
-				0DA2790E0DA2A49A00000008 /* PBXTargetDependency Prep */,
+				B3E0043CB3E013EE00000008 /* PBXTargetDependency Prep */,
 			);
 			name = http-ca-crt;
 			productName = http-ca-crt;
 		};
-		0DA2790E0DA2A49A0000000A /* All */ = {
+		B3E0043CB3E013EE0000000A /* All */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A00000009 /* Build configuration list for PBXAggregateTarget "All" */;
+			buildConfigurationList = B3E0043CB3E013EE00000009 /* Build configuration list for PBXAggregateTarget "All" */;
 			buildPhases = (
 				
 			);
 			dependencies = (
-				0DA2790E0DA2A49A0000000B /* PBXTargetDependency http-ca-crt */,
-				0DA2790E0DA2A49A0000000C /* PBXTargetDependency httpcmd */,
-				0DA2790E0DA2A49A0000000D /* PBXTargetDependency libest */,
-				0DA2790E0DA2A49A0000000E /* PBXTargetDependency libhttp */,
-				0DA2790E0DA2A49A0000000F /* PBXTargetDependency libmpr */,
-				0DA2790E0DA2A49A00000010 /* PBXTargetDependency libmprssl */,
-				0DA2790E0DA2A49A00000011 /* PBXTargetDependency libpcre */,
-				0DA2790E0DA2A49A00000012 /* PBXTargetDependency makerom */,
-				0DA2790E0DA2A49A00000013 /* PBXTargetDependency testHttp */,
+				B3E0043CB3E013EE0000000B /* PBXTargetDependency http-ca-crt */,
+				B3E0043CB3E013EE0000000C /* PBXTargetDependency httpcmd */,
+				B3E0043CB3E013EE0000000D /* PBXTargetDependency libest */,
+				B3E0043CB3E013EE0000000E /* PBXTargetDependency libhttp */,
+				B3E0043CB3E013EE0000000F /* PBXTargetDependency libmpr */,
+				B3E0043CB3E013EE00000010 /* PBXTargetDependency libmprssl */,
+				B3E0043CB3E013EE00000011 /* PBXTargetDependency libpcre */,
+				B3E0043CB3E013EE00000012 /* PBXTargetDependency makerom */,
 			);
 			name = All;
 			productName = All;
 		};
-		0DA2790E0DA2A49A00000015 /* Prep */ = {
+		B3E0043CB3E013EE00000014 /* Prep */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A00000014 /* Build configuration list for PBXAggregateTarget "Prep" */;
+			buildConfigurationList = B3E0043CB3E013EE00000013 /* Build configuration list for PBXAggregateTarget "Prep" */;
 			buildPhases = (
-				0DA2790E0DA2A49A00000016,
+				B3E0043CB3E013EE00000015,
 			);
 			dependencies = (
 			);
@@ -53,345 +52,300 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		0DA2790E0DA2A49A00000017 /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000018 /* http.c */; };
-		0DA2790E0DA2A49A00000019 /* estLib.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000001A /* estLib.c */; };
-		0DA2790E0DA2A49A0000001B /* actionHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000001C /* actionHandler.c */; };
-		0DA2790E0DA2A49A0000001D /* auth.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000001E /* auth.c */; };
-		0DA2790E0DA2A49A0000001F /* basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000020 /* basic.c */; };
-		0DA2790E0DA2A49A00000021 /* cache.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000022 /* cache.c */; };
-		0DA2790E0DA2A49A00000023 /* chunkFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000024 /* chunkFilter.c */; };
-		0DA2790E0DA2A49A00000025 /* client.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000026 /* client.c */; };
-		0DA2790E0DA2A49A00000027 /* config.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000028 /* config.c */; };
-		0DA2790E0DA2A49A00000029 /* conn.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000002A /* conn.c */; };
-		0DA2790E0DA2A49A0000002B /* digest.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000002C /* digest.c */; };
-		0DA2790E0DA2A49A0000002D /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000002E /* endpoint.c */; };
-		0DA2790E0DA2A49A0000002F /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000030 /* error.c */; };
-		0DA2790E0DA2A49A00000031 /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000032 /* host.c */; };
-		0DA2790E0DA2A49A00000033 /* monitor.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000034 /* monitor.c */; };
-		0DA2790E0DA2A49A00000035 /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000036 /* netConnector.c */; };
-		0DA2790E0DA2A49A00000037 /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000038 /* packet.c */; };
-		0DA2790E0DA2A49A00000039 /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000003A /* pam.c */; };
-		0DA2790E0DA2A49A0000003B /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000003C /* passHandler.c */; };
-		0DA2790E0DA2A49A0000003D /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000003E /* pipeline.c */; };
-		0DA2790E0DA2A49A0000003F /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000040 /* queue.c */; };
-		0DA2790E0DA2A49A00000041 /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000042 /* rangeFilter.c */; };
-		0DA2790E0DA2A49A00000043 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000044 /* route.c */; };
-		0DA2790E0DA2A49A00000045 /* rx.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000046 /* rx.c */; };
-		0DA2790E0DA2A49A00000047 /* sendConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000048 /* sendConnector.c */; };
-		0DA2790E0DA2A49A00000049 /* service.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000004A /* service.c */; };
-		0DA2790E0DA2A49A0000004B /* session.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000004C /* session.c */; };
-		0DA2790E0DA2A49A0000004D /* stage.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000004E /* stage.c */; };
-		0DA2790E0DA2A49A0000004F /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000050 /* trace.c */; };
-		0DA2790E0DA2A49A00000051 /* tx.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000052 /* tx.c */; };
-		0DA2790E0DA2A49A00000053 /* uploadFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000054 /* uploadFilter.c */; };
-		0DA2790E0DA2A49A00000055 /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000056 /* uri.c */; };
-		0DA2790E0DA2A49A00000057 /* user.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000058 /* user.c */; };
-		0DA2790E0DA2A49A00000059 /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000005A /* var.c */; };
-		0DA2790E0DA2A49A0000005B /* webSockFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000005C /* webSockFilter.c */; };
-		0DA2790E0DA2A49A0000005D /* mprLib.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000005E /* mprLib.c */; };
-		0DA2790E0DA2A49A0000005F /* mprSsl.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000060 /* mprSsl.c */; };
-		0DA2790E0DA2A49A00000061 /* pcre.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000062 /* pcre.c */; };
-		0DA2790E0DA2A49A00000063 /* makerom.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000064 /* makerom.c */; };
-		0DA2790E0DA2A49A00000065 /* testHttp.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000066 /* testHttp.c */; };
-		0DA2790E0DA2A49A00000067 /* testHttpGen.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000068 /* testHttpGen.c */; };
-		0DA2790E0DA2A49A00000069 /* testHttpUri.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000006A /* testHttpUri.c */; };
-		0DA2790E0DA2A49A0000006B /* libhttp.a for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000006C; };
-		0DA2790E0DA2A49A0000006D /* libmpr.a for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000006E; };
-		0DA2790E0DA2A49A0000006F /* libpcre.a for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000070; };
-		0DA2790E0DA2A49A00000071 /* libmpr.a for libhttp */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000006E; };
-		0DA2790E0DA2A49A00000072 /* libpcre.a for libhttp */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000070; };
-		0DA2790E0DA2A49A00000073 /* libmpr.a for libmprssl */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000006E; };
-		0DA2790E0DA2A49A00000074 /* libest.a for libmprssl */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000075; };
-		0DA2790E0DA2A49A00000076 /* libmpr.a for makerom */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000006E; };
-		0DA2790E0DA2A49A00000077 /* libhttp.a for testHttp */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000006C; };
-		0DA2790E0DA2A49A00000078 /* libmpr.a for testHttp */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A0000006E; };
-		0DA2790E0DA2A49A00000079 /* libpcre.a for testHttp */ = {isa = PBXBuildFile; fileRef = 0DA2790E0DA2A49A00000070; };
+		B3E0043CB3E013EE00000016 /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000017 /* http.c */; };
+		B3E0043CB3E013EE00000018 /* estLib.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000019 /* estLib.c */; };
+		B3E0043CB3E013EE0000001A /* actionHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000001B /* actionHandler.c */; };
+		B3E0043CB3E013EE0000001C /* auth.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000001D /* auth.c */; };
+		B3E0043CB3E013EE0000001E /* basic.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000001F /* basic.c */; };
+		B3E0043CB3E013EE00000020 /* cache.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000021 /* cache.c */; };
+		B3E0043CB3E013EE00000022 /* chunkFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000023 /* chunkFilter.c */; };
+		B3E0043CB3E013EE00000024 /* client.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000025 /* client.c */; };
+		B3E0043CB3E013EE00000026 /* config.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000027 /* config.c */; };
+		B3E0043CB3E013EE00000028 /* conn.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000029 /* conn.c */; };
+		B3E0043CB3E013EE0000002A /* digest.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000002B /* digest.c */; };
+		B3E0043CB3E013EE0000002C /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000002D /* endpoint.c */; };
+		B3E0043CB3E013EE0000002E /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000002F /* error.c */; };
+		B3E0043CB3E013EE00000030 /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000031 /* host.c */; };
+		B3E0043CB3E013EE00000032 /* monitor.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000033 /* monitor.c */; };
+		B3E0043CB3E013EE00000034 /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000035 /* netConnector.c */; };
+		B3E0043CB3E013EE00000036 /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000037 /* packet.c */; };
+		B3E0043CB3E013EE00000038 /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000039 /* pam.c */; };
+		B3E0043CB3E013EE0000003A /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000003B /* passHandler.c */; };
+		B3E0043CB3E013EE0000003C /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000003D /* pipeline.c */; };
+		B3E0043CB3E013EE0000003E /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000003F /* queue.c */; };
+		B3E0043CB3E013EE00000040 /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000041 /* rangeFilter.c */; };
+		B3E0043CB3E013EE00000042 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000043 /* route.c */; };
+		B3E0043CB3E013EE00000044 /* rx.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000045 /* rx.c */; };
+		B3E0043CB3E013EE00000046 /* sendConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000047 /* sendConnector.c */; };
+		B3E0043CB3E013EE00000048 /* service.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000049 /* service.c */; };
+		B3E0043CB3E013EE0000004A /* session.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000004B /* session.c */; };
+		B3E0043CB3E013EE0000004C /* stage.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000004D /* stage.c */; };
+		B3E0043CB3E013EE0000004E /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000004F /* trace.c */; };
+		B3E0043CB3E013EE00000050 /* tx.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000051 /* tx.c */; };
+		B3E0043CB3E013EE00000052 /* uploadFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000053 /* uploadFilter.c */; };
+		B3E0043CB3E013EE00000054 /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000055 /* uri.c */; };
+		B3E0043CB3E013EE00000056 /* user.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000057 /* user.c */; };
+		B3E0043CB3E013EE00000058 /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000059 /* var.c */; };
+		B3E0043CB3E013EE0000005A /* webSockFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000005B /* webSockFilter.c */; };
+		B3E0043CB3E013EE0000005C /* mprLib.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000005D /* mprLib.c */; };
+		B3E0043CB3E013EE0000005E /* mprSsl.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000005F /* mprSsl.c */; };
+		B3E0043CB3E013EE00000060 /* pcre.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000061 /* pcre.c */; };
+		B3E0043CB3E013EE00000062 /* makerom.c in Sources */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000063 /* makerom.c */; };
+		B3E0043CB3E013EE00000064 /* libhttp.a for httpcmd */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000065; };
+		B3E0043CB3E013EE00000066 /* libmpr.a for httpcmd */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000067; };
+		B3E0043CB3E013EE00000068 /* libpcre.a for httpcmd */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000069; };
+		B3E0043CB3E013EE0000006A /* libmpr.a for libhttp */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000067; };
+		B3E0043CB3E013EE0000006B /* libpcre.a for libhttp */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000069; };
+		B3E0043CB3E013EE0000006C /* libmpr.a for libmprssl */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000067; };
+		B3E0043CB3E013EE0000006D /* libest.a for libmprssl */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE0000006E; };
+		B3E0043CB3E013EE0000006F /* libmpr.a for makerom */ = {isa = PBXBuildFile; fileRef = B3E0043CB3E013EE00000067; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		0DA2790E0DA2A49A0000007A /* PBXContainerItemProxy Prep from http-ca-crt */ = {
+		B3E0043CB3E013EE00000070 /* PBXContainerItemProxy Prep from http-ca-crt */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A0000007B /* PBXContainerItemProxy Prep from httpcmd */ = {
+		B3E0043CB3E013EE00000071 /* PBXContainerItemProxy Prep from httpcmd */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A0000007C /* PBXContainerItemProxy libmpr from httpcmd */ = {
+		B3E0043CB3E013EE00000072 /* PBXContainerItemProxy libmpr from httpcmd */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007D;
+			remoteGlobalIDString = B3E0043CB3E013EE00000073;
 			remoteInfo = libmpr;
 		};
-		0DA2790E0DA2A49A0000007E /* PBXContainerItemProxy libpcre from httpcmd */ = {
+		B3E0043CB3E013EE00000074 /* PBXContainerItemProxy libpcre from httpcmd */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007F;
+			remoteGlobalIDString = B3E0043CB3E013EE00000075;
 			remoteInfo = libpcre;
 		};
-		0DA2790E0DA2A49A00000080 /* PBXContainerItemProxy libhttp from httpcmd */ = {
+		B3E0043CB3E013EE00000076 /* PBXContainerItemProxy libhttp from httpcmd */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000081;
+			remoteGlobalIDString = B3E0043CB3E013EE00000077;
 			remoteInfo = libhttp;
 		};
-		0DA2790E0DA2A49A00000082 /* PBXContainerItemProxy Prep from libest */ = {
+		B3E0043CB3E013EE00000078 /* PBXContainerItemProxy Prep from libest */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A00000083 /* PBXContainerItemProxy Prep from libhttp */ = {
+		B3E0043CB3E013EE00000079 /* PBXContainerItemProxy Prep from libhttp */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A00000084 /* PBXContainerItemProxy libmpr from libhttp */ = {
+		B3E0043CB3E013EE0000007A /* PBXContainerItemProxy libmpr from libhttp */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007D;
+			remoteGlobalIDString = B3E0043CB3E013EE00000073;
 			remoteInfo = libmpr;
 		};
-		0DA2790E0DA2A49A00000085 /* PBXContainerItemProxy libpcre from libhttp */ = {
+		B3E0043CB3E013EE0000007B /* PBXContainerItemProxy libpcre from libhttp */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007F;
+			remoteGlobalIDString = B3E0043CB3E013EE00000075;
 			remoteInfo = libpcre;
 		};
-		0DA2790E0DA2A49A00000086 /* PBXContainerItemProxy Prep from libmpr */ = {
+		B3E0043CB3E013EE0000007C /* PBXContainerItemProxy Prep from libmpr */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A00000087 /* PBXContainerItemProxy Prep from libmprssl */ = {
+		B3E0043CB3E013EE0000007D /* PBXContainerItemProxy Prep from libmprssl */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A00000088 /* PBXContainerItemProxy libmpr from libmprssl */ = {
+		B3E0043CB3E013EE0000007E /* PBXContainerItemProxy libmpr from libmprssl */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007D;
+			remoteGlobalIDString = B3E0043CB3E013EE00000073;
 			remoteInfo = libmpr;
 		};
-		0DA2790E0DA2A49A00000089 /* PBXContainerItemProxy libest from libmprssl */ = {
+		B3E0043CB3E013EE0000007F /* PBXContainerItemProxy libest from libmprssl */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000008A;
+			remoteGlobalIDString = B3E0043CB3E013EE00000080;
 			remoteInfo = libest;
 		};
-		0DA2790E0DA2A49A0000008B /* PBXContainerItemProxy Prep from libpcre */ = {
+		B3E0043CB3E013EE00000081 /* PBXContainerItemProxy Prep from libpcre */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A0000008C /* PBXContainerItemProxy Prep from makerom */ = {
+		B3E0043CB3E013EE00000082 /* PBXContainerItemProxy Prep from makerom */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A0000008D /* PBXContainerItemProxy libmpr from makerom */ = {
+		B3E0043CB3E013EE00000083 /* PBXContainerItemProxy libmpr from makerom */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007D;
+			remoteGlobalIDString = B3E0043CB3E013EE00000073;
 			remoteInfo = libmpr;
 		};
-		0DA2790E0DA2A49A0000008E /* PBXContainerItemProxy Prep from testHttp */ = {
+		B3E0043CB3E013EE00000084 /* PBXContainerItemProxy Prep from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
+			remoteGlobalIDString = B3E0043CB3E013EE00000014;
 			remoteInfo = Prep;
 		};
-		0DA2790E0DA2A49A0000008F /* PBXContainerItemProxy libmpr from testHttp */ = {
+		B3E0043CB3E013EE00000085 /* PBXContainerItemProxy http-ca-crt from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007D;
-			remoteInfo = libmpr;
-		};
-		0DA2790E0DA2A49A00000090 /* PBXContainerItemProxy libpcre from testHttp */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007F;
-			remoteInfo = libpcre;
-		};
-		0DA2790E0DA2A49A00000091 /* PBXContainerItemProxy libhttp from testHttp */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000081;
-			remoteInfo = libhttp;
-		};
-		0DA2790E0DA2A49A00000092 /* PBXContainerItemProxy Prep from All */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000015;
-			remoteInfo = Prep;
-		};
-		0DA2790E0DA2A49A00000093 /* PBXContainerItemProxy http-ca-crt from All */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000006;
+			remoteGlobalIDString = B3E0043CB3E013EE00000006;
 			remoteInfo = http-ca-crt;
 		};
-		0DA2790E0DA2A49A00000094 /* PBXContainerItemProxy libmpr from All */ = {
+		B3E0043CB3E013EE00000086 /* PBXContainerItemProxy libmpr from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007D;
+			remoteGlobalIDString = B3E0043CB3E013EE00000073;
 			remoteInfo = libmpr;
 		};
-		0DA2790E0DA2A49A00000095 /* PBXContainerItemProxy libpcre from All */ = {
+		B3E0043CB3E013EE00000087 /* PBXContainerItemProxy libpcre from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000007F;
+			remoteGlobalIDString = B3E0043CB3E013EE00000075;
 			remoteInfo = libpcre;
 		};
-		0DA2790E0DA2A49A00000096 /* PBXContainerItemProxy libhttp from All */ = {
+		B3E0043CB3E013EE00000088 /* PBXContainerItemProxy libhttp from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000081;
+			remoteGlobalIDString = B3E0043CB3E013EE00000077;
 			remoteInfo = libhttp;
 		};
-		0DA2790E0DA2A49A00000097 /* PBXContainerItemProxy httpcmd from All */ = {
+		B3E0043CB3E013EE00000089 /* PBXContainerItemProxy httpcmd from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A00000098;
+			remoteGlobalIDString = B3E0043CB3E013EE0000008A;
 			remoteInfo = httpcmd;
 		};
-		0DA2790E0DA2A49A00000099 /* PBXContainerItemProxy libest from All */ = {
+		B3E0043CB3E013EE0000008B /* PBXContainerItemProxy libest from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000008A;
+			remoteGlobalIDString = B3E0043CB3E013EE00000080;
 			remoteInfo = libest;
 		};
-		0DA2790E0DA2A49A0000009A /* PBXContainerItemProxy libmprssl from All */ = {
+		B3E0043CB3E013EE0000008C /* PBXContainerItemProxy libmprssl from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000009B;
+			remoteGlobalIDString = B3E0043CB3E013EE0000008D;
 			remoteInfo = libmprssl;
 		};
-		0DA2790E0DA2A49A0000009C /* PBXContainerItemProxy makerom from All */ = {
+		B3E0043CB3E013EE0000008E /* PBXContainerItemProxy makerom from All */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
+			containerPortal = B3E0043CB3E013EE00000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000009D;
+			remoteGlobalIDString = B3E0043CB3E013EE0000008F;
 			remoteInfo = makerom;
-		};
-		0DA2790E0DA2A49A0000009E /* PBXContainerItemProxy testHttp from All */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0DA2790E0DA2A49A00000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0DA2790E0DA2A49A0000009F;
-			remoteInfo = testHttp;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0DA2790E0DA2A49A00000018 /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A0 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = macosx-x64-static/inc/me.h; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A1 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = macosx-x64-static/inc/http.h; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A2 /* httpcmd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
-		0DA2790E0DA2A49A0000001A /* estLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = estLib.c; path = src/paks/est/estLib.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A3 /* est.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = est.h; path = macosx-x64-static/inc/est.h; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A4 /* osdep.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = osdep.h; path = macosx-x64-static/inc/osdep.h; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000075 /* libest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libest.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		0DA2790E0DA2A49A0000001C /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A5 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = macosx-x64-static/inc/mpr.h; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000001E /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000020 /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000022 /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000024 /* chunkFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chunkFilter.c; path = src/chunkFilter.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000026 /* client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = client.c; path = src/client.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000028 /* config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = config.c; path = src/config.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000002A /* conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = conn.c; path = src/conn.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000002C /* digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = digest.c; path = src/digest.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000002E /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000030 /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000032 /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000034 /* monitor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = monitor.c; path = src/monitor.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000036 /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000038 /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000003A /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000003C /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000003E /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000040 /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000042 /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000044 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000046 /* rx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rx.c; path = src/rx.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000048 /* sendConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sendConnector.c; path = src/sendConnector.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000004A /* service.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = service.c; path = src/service.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000004C /* session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = session.c; path = src/session.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000004E /* stage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stage.c; path = src/stage.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000050 /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000052 /* tx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tx.c; path = src/tx.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000054 /* uploadFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uploadFilter.c; path = src/uploadFilter.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000056 /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = src/uri.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000058 /* user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = user.c; path = src/user.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000005A /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000005C /* webSockFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSockFilter.c; path = src/webSockFilter.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000006C /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		0DA2790E0DA2A49A0000005E /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/paks/mpr/mprLib.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000006E /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		0DA2790E0DA2A49A00000060 /* mprSsl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprSsl.c; path = src/paks/mpr/mprSsl.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A6 /* libmprssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmprssl.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		0DA2790E0DA2A49A00000062 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/paks/pcre/pcre.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A7 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = macosx-x64-static/inc/pcre.h; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000070 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		0DA2790E0DA2A49A00000064 /* makerom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = makerom.c; path = src/paks/mpr/makerom.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A8 /* makerom */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = makerom; sourceTree = BUILT_PRODUCTS_DIR; };
-		0DA2790E0DA2A49A00000066 /* testHttp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testHttp.c; path = test/src/testHttp.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A00000068 /* testHttpGen.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testHttpGen.c; path = test/src/testHttpGen.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A0000006A /* testHttpUri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testHttpUri.c; path = test/src/testHttpUri.c; sourceTree = "<group>"; };
-		0DA2790E0DA2A49A000000A9 /* testHttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = testHttp; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E0043CB3E013EE00000017 /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000090 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-static/inc/me.h; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000091 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = build/macosx-x64-static/inc/http.h; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000092 /* httpcmd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E0043CB3E013EE00000019 /* estLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = estLib.c; path = src/paks/est/estLib.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000093 /* est.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = est.h; path = build/macosx-x64-static/inc/est.h; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000094 /* osdep.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = osdep.h; path = build/macosx-x64-static/inc/osdep.h; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000006E /* libest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libest.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E0043CB3E013EE0000001B /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000095 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = build/macosx-x64-static/inc/mpr.h; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000001D /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000001F /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000021 /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000023 /* chunkFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chunkFilter.c; path = src/chunkFilter.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000025 /* client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = client.c; path = src/client.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000027 /* config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = config.c; path = src/config.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000029 /* conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = conn.c; path = src/conn.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000002B /* digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = digest.c; path = src/digest.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000002D /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000002F /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000031 /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000033 /* monitor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = monitor.c; path = src/monitor.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000035 /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000037 /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000039 /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000003B /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000003D /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000003F /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000041 /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000043 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000045 /* rx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rx.c; path = src/rx.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000047 /* sendConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sendConnector.c; path = src/sendConnector.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000049 /* service.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = service.c; path = src/service.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000004B /* session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = session.c; path = src/session.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000004D /* stage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stage.c; path = src/stage.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000004F /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000051 /* tx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tx.c; path = src/tx.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000053 /* uploadFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uploadFilter.c; path = src/uploadFilter.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000055 /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = src/uri.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000057 /* user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = user.c; path = src/user.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000059 /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE0000005B /* webSockFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSockFilter.c; path = src/webSockFilter.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000065 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E0043CB3E013EE0000005D /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/paks/mpr/mprLib.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000067 /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E0043CB3E013EE0000005F /* mprSsl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprSsl.c; path = src/paks/mpr/mprSsl.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000096 /* libmprssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmprssl.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E0043CB3E013EE00000061 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/paks/pcre/pcre.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000097 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = build/macosx-x64-static/inc/pcre.h; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000069 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E0043CB3E013EE00000063 /* makerom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = makerom.c; path = src/paks/mpr/makerom.c; sourceTree = "<group>"; };
+		B3E0043CB3E013EE00000098 /* makerom */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = makerom; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		0DA2790E0DA2A49A000000AA /* Frameworks and Libraries for httpcmd */ = {
+		B3E0043CB3E013EE00000099 /* Frameworks and Libraries for httpcmd */ = {
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
-				0DA2790E0DA2A49A0000006B /* libhttp */,
-				0DA2790E0DA2A49A0000006D /* libmpr */,
-				0DA2790E0DA2A49A0000006F /* libpcre */,				
+				B3E0043CB3E013EE00000064 /* libhttp */,
+				B3E0043CB3E013EE00000066 /* libmpr */,
+				B3E0043CB3E013EE00000068 /* libpcre */,				
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
-		0DA2790E0DA2A49A000000AB /* Frameworks and Libraries for libest */ = {
+		B3E0043CB3E013EE0000009A /* Frameworks and Libraries for libest */ = {
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
@@ -399,16 +353,16 @@
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
-		0DA2790E0DA2A49A000000AC /* Frameworks and Libraries for libhttp */ = {
+		B3E0043CB3E013EE0000009B /* Frameworks and Libraries for libhttp */ = {
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
-				0DA2790E0DA2A49A00000071 /* libmpr */,
-				0DA2790E0DA2A49A00000072 /* libpcre */,				
+				B3E0043CB3E013EE0000006A /* libmpr */,
+				B3E0043CB3E013EE0000006B /* libpcre */,				
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
-		0DA2790E0DA2A49A000000AD /* Frameworks and Libraries for libmpr */ = {
+		B3E0043CB3E013EE0000009C /* Frameworks and Libraries for libmpr */ = {
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
@@ -416,16 +370,16 @@
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
-		0DA2790E0DA2A49A000000AE /* Frameworks and Libraries for libmprssl */ = {
+		B3E0043CB3E013EE0000009D /* Frameworks and Libraries for libmprssl */ = {
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
-				0DA2790E0DA2A49A00000073 /* libmpr */,
-				0DA2790E0DA2A49A00000074 /* libest */,				
+				B3E0043CB3E013EE0000006C /* libmpr */,
+				B3E0043CB3E013EE0000006D /* libest */,				
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
-		0DA2790E0DA2A49A000000AF /* Frameworks and Libraries for libpcre */ = {
+		B3E0043CB3E013EE0000009E /* Frameworks and Libraries for libpcre */ = {
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
@@ -433,180 +387,154 @@
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
-		0DA2790E0DA2A49A000000B0 /* Frameworks and Libraries for makerom */ = {
+		B3E0043CB3E013EE0000009F /* Frameworks and Libraries for makerom */ = {
             isa = PBXFrameworksBuildPhase;
             buildActionMask = 2147483647;
             files = (
-				0DA2790E0DA2A49A00000076 /* libmpr */,				
-            );
-            runOnlyForDeploymentPostprocessing = 0;
-        };
-		0DA2790E0DA2A49A000000B1 /* Frameworks and Libraries for testHttp */ = {
-            isa = PBXFrameworksBuildPhase;
-            buildActionMask = 2147483647;
-            files = (
-				0DA2790E0DA2A49A00000077 /* libhttp */,
-				0DA2790E0DA2A49A00000078 /* libmpr */,
-				0DA2790E0DA2A49A00000079 /* libpcre */,				
+				B3E0043CB3E013EE0000006F /* libmpr */,				
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0DA2790E0DA2A49A000000B2 /* Top Group */ = {
+		B3E0043CB3E013EE000000A0 /* Top Group */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000B3 /* libest */,
-				0DA2790E0DA2A49A000000B4 /* libhttp */,
-				0DA2790E0DA2A49A000000B5 /* libmpr */,
-				0DA2790E0DA2A49A000000B6 /* libmprssl */,
-				0DA2790E0DA2A49A000000B7 /* libpcre */,
-				0DA2790E0DA2A49A000000B8 /* httpcmd */,
-				0DA2790E0DA2A49A000000B9 /* makerom */,
-				0DA2790E0DA2A49A000000BA /* testHttp */,
-				0DA2790E0DA2A49A000000BB /* Products */,
+				B3E0043CB3E013EE000000A1 /* libest */,
+				B3E0043CB3E013EE000000A2 /* libhttp */,
+				B3E0043CB3E013EE000000A3 /* libmpr */,
+				B3E0043CB3E013EE000000A4 /* libmprssl */,
+				B3E0043CB3E013EE000000A5 /* libpcre */,
+				B3E0043CB3E013EE000000A6 /* httpcmd */,
+				B3E0043CB3E013EE000000A7 /* makerom */,
+				B3E0043CB3E013EE000000A8 /* Products */,
 			);
             sourceTree = "<group>";
         };
-		0DA2790E0DA2A49A000000B8 /* httpcmd */ = {
+		B3E0043CB3E013EE000000A6 /* httpcmd */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000A0 /* me.h */,
-				0DA2790E0DA2A49A000000A1 /* http.h */,
-				0DA2790E0DA2A49A00000018 /* http.c */,
+				B3E0043CB3E013EE00000090 /* me.h */,
+				B3E0043CB3E013EE00000091 /* http.h */,
+				B3E0043CB3E013EE00000017 /* http.c */,
 			);
             name = "httpcmd";
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
-		0DA2790E0DA2A49A000000B3 /* libest */ = {
+		B3E0043CB3E013EE000000A1 /* libest */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000A0 /* me.h */,
-				0DA2790E0DA2A49A000000A3 /* est.h */,
-				0DA2790E0DA2A49A000000A4 /* osdep.h */,
-				0DA2790E0DA2A49A0000001A /* estLib.c */,
+				B3E0043CB3E013EE00000090 /* me.h */,
+				B3E0043CB3E013EE00000093 /* est.h */,
+				B3E0043CB3E013EE00000094 /* osdep.h */,
+				B3E0043CB3E013EE00000019 /* estLib.c */,
 			);
             name = "libest";
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
-		0DA2790E0DA2A49A000000B4 /* libhttp */ = {
+		B3E0043CB3E013EE000000A2 /* libhttp */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000A0 /* me.h */,
-				0DA2790E0DA2A49A000000A1 /* http.h */,
-				0DA2790E0DA2A49A000000A5 /* mpr.h */,
-				0DA2790E0DA2A49A0000001C /* actionHandler.c */,
-				0DA2790E0DA2A49A0000001E /* auth.c */,
-				0DA2790E0DA2A49A00000020 /* basic.c */,
-				0DA2790E0DA2A49A00000022 /* cache.c */,
-				0DA2790E0DA2A49A00000024 /* chunkFilter.c */,
-				0DA2790E0DA2A49A00000026 /* client.c */,
-				0DA2790E0DA2A49A00000028 /* config.c */,
-				0DA2790E0DA2A49A0000002A /* conn.c */,
-				0DA2790E0DA2A49A0000002C /* digest.c */,
-				0DA2790E0DA2A49A0000002E /* endpoint.c */,
-				0DA2790E0DA2A49A00000030 /* error.c */,
-				0DA2790E0DA2A49A00000032 /* host.c */,
-				0DA2790E0DA2A49A00000034 /* monitor.c */,
-				0DA2790E0DA2A49A00000036 /* netConnector.c */,
-				0DA2790E0DA2A49A00000038 /* packet.c */,
-				0DA2790E0DA2A49A0000003A /* pam.c */,
-				0DA2790E0DA2A49A0000003C /* passHandler.c */,
-				0DA2790E0DA2A49A0000003E /* pipeline.c */,
-				0DA2790E0DA2A49A00000040 /* queue.c */,
-				0DA2790E0DA2A49A00000042 /* rangeFilter.c */,
-				0DA2790E0DA2A49A00000044 /* route.c */,
-				0DA2790E0DA2A49A00000046 /* rx.c */,
-				0DA2790E0DA2A49A00000048 /* sendConnector.c */,
-				0DA2790E0DA2A49A0000004A /* service.c */,
-				0DA2790E0DA2A49A0000004C /* session.c */,
-				0DA2790E0DA2A49A0000004E /* stage.c */,
-				0DA2790E0DA2A49A00000050 /* trace.c */,
-				0DA2790E0DA2A49A00000052 /* tx.c */,
-				0DA2790E0DA2A49A00000054 /* uploadFilter.c */,
-				0DA2790E0DA2A49A00000056 /* uri.c */,
-				0DA2790E0DA2A49A00000058 /* user.c */,
-				0DA2790E0DA2A49A0000005A /* var.c */,
-				0DA2790E0DA2A49A0000005C /* webSockFilter.c */,
+				B3E0043CB3E013EE00000090 /* me.h */,
+				B3E0043CB3E013EE00000091 /* http.h */,
+				B3E0043CB3E013EE00000095 /* mpr.h */,
+				B3E0043CB3E013EE0000001B /* actionHandler.c */,
+				B3E0043CB3E013EE0000001D /* auth.c */,
+				B3E0043CB3E013EE0000001F /* basic.c */,
+				B3E0043CB3E013EE00000021 /* cache.c */,
+				B3E0043CB3E013EE00000023 /* chunkFilter.c */,
+				B3E0043CB3E013EE00000025 /* client.c */,
+				B3E0043CB3E013EE00000027 /* config.c */,
+				B3E0043CB3E013EE00000029 /* conn.c */,
+				B3E0043CB3E013EE0000002B /* digest.c */,
+				B3E0043CB3E013EE0000002D /* endpoint.c */,
+				B3E0043CB3E013EE0000002F /* error.c */,
+				B3E0043CB3E013EE00000031 /* host.c */,
+				B3E0043CB3E013EE00000033 /* monitor.c */,
+				B3E0043CB3E013EE00000035 /* netConnector.c */,
+				B3E0043CB3E013EE00000037 /* packet.c */,
+				B3E0043CB3E013EE00000039 /* pam.c */,
+				B3E0043CB3E013EE0000003B /* passHandler.c */,
+				B3E0043CB3E013EE0000003D /* pipeline.c */,
+				B3E0043CB3E013EE0000003F /* queue.c */,
+				B3E0043CB3E013EE00000041 /* rangeFilter.c */,
+				B3E0043CB3E013EE00000043 /* route.c */,
+				B3E0043CB3E013EE00000045 /* rx.c */,
+				B3E0043CB3E013EE00000047 /* sendConnector.c */,
+				B3E0043CB3E013EE00000049 /* service.c */,
+				B3E0043CB3E013EE0000004B /* session.c */,
+				B3E0043CB3E013EE0000004D /* stage.c */,
+				B3E0043CB3E013EE0000004F /* trace.c */,
+				B3E0043CB3E013EE00000051 /* tx.c */,
+				B3E0043CB3E013EE00000053 /* uploadFilter.c */,
+				B3E0043CB3E013EE00000055 /* uri.c */,
+				B3E0043CB3E013EE00000057 /* user.c */,
+				B3E0043CB3E013EE00000059 /* var.c */,
+				B3E0043CB3E013EE0000005B /* webSockFilter.c */,
 			);
             name = "libhttp";
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
-		0DA2790E0DA2A49A000000B5 /* libmpr */ = {
+		B3E0043CB3E013EE000000A3 /* libmpr */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000A0 /* me.h */,
-				0DA2790E0DA2A49A000000A5 /* mpr.h */,
-				0DA2790E0DA2A49A000000A4 /* osdep.h */,
-				0DA2790E0DA2A49A0000005E /* mprLib.c */,
+				B3E0043CB3E013EE00000090 /* me.h */,
+				B3E0043CB3E013EE00000095 /* mpr.h */,
+				B3E0043CB3E013EE00000094 /* osdep.h */,
+				B3E0043CB3E013EE0000005D /* mprLib.c */,
 			);
             name = "libmpr";
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
-		0DA2790E0DA2A49A000000B6 /* libmprssl */ = {
+		B3E0043CB3E013EE000000A4 /* libmprssl */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000A0 /* me.h */,
-				0DA2790E0DA2A49A000000A5 /* mpr.h */,
-				0DA2790E0DA2A49A000000A3 /* est.h */,
-				0DA2790E0DA2A49A00000060 /* mprSsl.c */,
+				B3E0043CB3E013EE00000090 /* me.h */,
+				B3E0043CB3E013EE00000095 /* mpr.h */,
+				B3E0043CB3E013EE00000093 /* est.h */,
+				B3E0043CB3E013EE0000005F /* mprSsl.c */,
 			);
             name = "libmprssl";
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
-		0DA2790E0DA2A49A000000B7 /* libpcre */ = {
+		B3E0043CB3E013EE000000A5 /* libpcre */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000A0 /* me.h */,
-				0DA2790E0DA2A49A000000A7 /* pcre.h */,
-				0DA2790E0DA2A49A00000062 /* pcre.c */,
+				B3E0043CB3E013EE00000090 /* me.h */,
+				B3E0043CB3E013EE00000097 /* pcre.h */,
+				B3E0043CB3E013EE00000061 /* pcre.c */,
 			);
             name = "libpcre";
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
-		0DA2790E0DA2A49A000000B9 /* makerom */ = {
+		B3E0043CB3E013EE000000A7 /* makerom */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000A0 /* me.h */,
-				0DA2790E0DA2A49A000000A5 /* mpr.h */,
-				0DA2790E0DA2A49A00000064 /* makerom.c */,
+				B3E0043CB3E013EE00000090 /* me.h */,
+				B3E0043CB3E013EE00000095 /* mpr.h */,
+				B3E0043CB3E013EE00000063 /* makerom.c */,
 			);
             name = "makerom";
             path = ..;
             sourceTree = SOURCE_ROOT;
         };
-		0DA2790E0DA2A49A000000BA /* testHttp */ = {
+		B3E0043CB3E013EE000000A8 /* Products */ = {
             isa = PBXGroup;
             children = (
-				0DA2790E0DA2A49A000000A0 /* me.h */,
-				0DA2790E0DA2A49A000000A5 /* mpr.h */,
-				0DA2790E0DA2A49A000000A1 /* http.h */,
-				0DA2790E0DA2A49A00000066 /* testHttp.c */,
-				0DA2790E0DA2A49A00000068 /* testHttpGen.c */,
-				0DA2790E0DA2A49A0000006A /* testHttpUri.c */,
-			);
-            name = "testHttp";
-            path = ..;
-            sourceTree = SOURCE_ROOT;
-        };
-		0DA2790E0DA2A49A000000BB /* Products */ = {
-            isa = PBXGroup;
-            children = (
-				0DA2790E0DA2A49A000000A2 /* httpcmd */,
-				0DA2790E0DA2A49A00000075 /* libest */,
-				0DA2790E0DA2A49A0000006C /* libhttp */,
-				0DA2790E0DA2A49A0000006E /* libmpr */,
-				0DA2790E0DA2A49A000000A6 /* libmprssl */,
-				0DA2790E0DA2A49A00000070 /* libpcre */,
-				0DA2790E0DA2A49A000000A8 /* makerom */,
-				0DA2790E0DA2A49A000000A9 /* testHttp */,
+				B3E0043CB3E013EE00000092 /* httpcmd */,
+				B3E0043CB3E013EE0000006E /* libest */,
+				B3E0043CB3E013EE00000065 /* libhttp */,
+				B3E0043CB3E013EE00000067 /* libmpr */,
+				B3E0043CB3E013EE00000096 /* libmprssl */,
+				B3E0043CB3E013EE00000069 /* libpcre */,
+				B3E0043CB3E013EE00000098 /* makerom */,
 			);
             name = "Products";
             path = ..;
@@ -615,176 +543,156 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0DA2790E0DA2A49A00000098 /* httpcmd */ = {
+		B3E0043CB3E013EE0000008A /* httpcmd */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A000000BD /* Build configuration list for PBXNativeTarget "httpcmd" */;
+			buildConfigurationList = B3E0043CB3E013EE000000AA /* Build configuration list for PBXNativeTarget "httpcmd" */;
 			buildPhases = (
-				0DA2790E0DA2A49A000000BC /* Sources */,
-				0DA2790E0DA2A49A000000AA /* Frameworks */,
+				B3E0043CB3E013EE000000A9 /* Sources */,
+				B3E0043CB3E013EE00000099 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0DA2790E0DA2A49A000000BE /* Prep */,
-				0DA2790E0DA2A49A000000BF /* libmpr */,
-				0DA2790E0DA2A49A000000C0 /* libpcre */,
-				0DA2790E0DA2A49A000000C1 /* libhttp */,				
+				B3E0043CB3E013EE000000AB /* Prep */,
+				B3E0043CB3E013EE000000AC /* libmpr */,
+				B3E0043CB3E013EE000000AD /* libpcre */,
+				B3E0043CB3E013EE000000AE /* libhttp */,				
 			);
 			name = httpcmd;
 			productName = http;
-			productReference = 0DA2790E0DA2A49A000000A2 /* httpcmd */;
+			productReference = B3E0043CB3E013EE00000092 /* httpcmd */;
 			productType = "com.apple.product-type.tool";
 		};
-		0DA2790E0DA2A49A0000008A /* libest */ = {
+		B3E0043CB3E013EE00000080 /* libest */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A000000C3 /* Build configuration list for PBXNativeTarget "libest" */;
+			buildConfigurationList = B3E0043CB3E013EE000000B0 /* Build configuration list for PBXNativeTarget "libest" */;
 			buildPhases = (
-				0DA2790E0DA2A49A000000C2 /* Sources */,
-				0DA2790E0DA2A49A000000AB /* Frameworks */,
+				B3E0043CB3E013EE000000AF /* Sources */,
+				B3E0043CB3E013EE0000009A /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0DA2790E0DA2A49A000000C4 /* Prep */,				
+				B3E0043CB3E013EE000000B1 /* Prep */,				
 			);
 			name = libest;
 			productName = http;
-			productReference = 0DA2790E0DA2A49A00000075 /* libest */;
+			productReference = B3E0043CB3E013EE0000006E /* libest */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		0DA2790E0DA2A49A00000081 /* libhttp */ = {
+		B3E0043CB3E013EE00000077 /* libhttp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A000000C6 /* Build configuration list for PBXNativeTarget "libhttp" */;
+			buildConfigurationList = B3E0043CB3E013EE000000B3 /* Build configuration list for PBXNativeTarget "libhttp" */;
 			buildPhases = (
-				0DA2790E0DA2A49A000000C5 /* Sources */,
-				0DA2790E0DA2A49A000000AC /* Frameworks */,
+				B3E0043CB3E013EE000000B2 /* Sources */,
+				B3E0043CB3E013EE0000009B /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0DA2790E0DA2A49A000000C7 /* Prep */,
-				0DA2790E0DA2A49A000000C8 /* libmpr */,
-				0DA2790E0DA2A49A000000C9 /* libpcre */,				
+				B3E0043CB3E013EE000000B4 /* Prep */,
+				B3E0043CB3E013EE000000B5 /* libmpr */,
+				B3E0043CB3E013EE000000B6 /* libpcre */,				
 			);
 			name = libhttp;
 			productName = http;
-			productReference = 0DA2790E0DA2A49A0000006C /* libhttp */;
+			productReference = B3E0043CB3E013EE00000065 /* libhttp */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		0DA2790E0DA2A49A0000007D /* libmpr */ = {
+		B3E0043CB3E013EE00000073 /* libmpr */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A000000CB /* Build configuration list for PBXNativeTarget "libmpr" */;
+			buildConfigurationList = B3E0043CB3E013EE000000B8 /* Build configuration list for PBXNativeTarget "libmpr" */;
 			buildPhases = (
-				0DA2790E0DA2A49A000000CA /* Sources */,
-				0DA2790E0DA2A49A000000AD /* Frameworks */,
+				B3E0043CB3E013EE000000B7 /* Sources */,
+				B3E0043CB3E013EE0000009C /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0DA2790E0DA2A49A000000CC /* Prep */,				
+				B3E0043CB3E013EE000000B9 /* Prep */,				
 			);
 			name = libmpr;
 			productName = http;
-			productReference = 0DA2790E0DA2A49A0000006E /* libmpr */;
+			productReference = B3E0043CB3E013EE00000067 /* libmpr */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		0DA2790E0DA2A49A0000009B /* libmprssl */ = {
+		B3E0043CB3E013EE0000008D /* libmprssl */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A000000CE /* Build configuration list for PBXNativeTarget "libmprssl" */;
+			buildConfigurationList = B3E0043CB3E013EE000000BB /* Build configuration list for PBXNativeTarget "libmprssl" */;
 			buildPhases = (
-				0DA2790E0DA2A49A000000CD /* Sources */,
-				0DA2790E0DA2A49A000000AE /* Frameworks */,
+				B3E0043CB3E013EE000000BA /* Sources */,
+				B3E0043CB3E013EE0000009D /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0DA2790E0DA2A49A000000CF /* Prep */,
-				0DA2790E0DA2A49A000000D0 /* libmpr */,
-				0DA2790E0DA2A49A000000D1 /* libest */,				
+				B3E0043CB3E013EE000000BC /* Prep */,
+				B3E0043CB3E013EE000000BD /* libmpr */,
+				B3E0043CB3E013EE000000BE /* libest */,				
 			);
 			name = libmprssl;
 			productName = http;
-			productReference = 0DA2790E0DA2A49A000000A6 /* libmprssl */;
+			productReference = B3E0043CB3E013EE00000096 /* libmprssl */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		0DA2790E0DA2A49A0000007F /* libpcre */ = {
+		B3E0043CB3E013EE00000075 /* libpcre */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A000000D3 /* Build configuration list for PBXNativeTarget "libpcre" */;
+			buildConfigurationList = B3E0043CB3E013EE000000C0 /* Build configuration list for PBXNativeTarget "libpcre" */;
 			buildPhases = (
-				0DA2790E0DA2A49A000000D2 /* Sources */,
-				0DA2790E0DA2A49A000000AF /* Frameworks */,
+				B3E0043CB3E013EE000000BF /* Sources */,
+				B3E0043CB3E013EE0000009E /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0DA2790E0DA2A49A000000D4 /* Prep */,				
+				B3E0043CB3E013EE000000C1 /* Prep */,				
 			);
 			name = libpcre;
 			productName = http;
-			productReference = 0DA2790E0DA2A49A00000070 /* libpcre */;
+			productReference = B3E0043CB3E013EE00000069 /* libpcre */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		0DA2790E0DA2A49A0000009D /* makerom */ = {
+		B3E0043CB3E013EE0000008F /* makerom */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A000000D6 /* Build configuration list for PBXNativeTarget "makerom" */;
+			buildConfigurationList = B3E0043CB3E013EE000000C3 /* Build configuration list for PBXNativeTarget "makerom" */;
 			buildPhases = (
-				0DA2790E0DA2A49A000000D5 /* Sources */,
-				0DA2790E0DA2A49A000000B0 /* Frameworks */,
+				B3E0043CB3E013EE000000C2 /* Sources */,
+				B3E0043CB3E013EE0000009F /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0DA2790E0DA2A49A000000D7 /* Prep */,
-				0DA2790E0DA2A49A000000D8 /* libmpr */,				
+				B3E0043CB3E013EE000000C4 /* Prep */,
+				B3E0043CB3E013EE000000C5 /* libmpr */,				
 			);
 			name = makerom;
 			productName = http;
-			productReference = 0DA2790E0DA2A49A000000A8 /* makerom */;
-			productType = "com.apple.product-type.tool";
-		};
-		0DA2790E0DA2A49A0000009F /* testHttp */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 0DA2790E0DA2A49A000000DA /* Build configuration list for PBXNativeTarget "testHttp" */;
-			buildPhases = (
-				0DA2790E0DA2A49A000000D9 /* Sources */,
-				0DA2790E0DA2A49A000000B1 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				0DA2790E0DA2A49A000000DB /* Prep */,
-				0DA2790E0DA2A49A000000DC /* libmpr */,
-				0DA2790E0DA2A49A000000DD /* libpcre */,
-				0DA2790E0DA2A49A000000DE /* libhttp */,				
-			);
-			name = testHttp;
-			productName = http;
-			productReference = 0DA2790E0DA2A49A000000A9 /* testHttp */;
+			productReference = B3E0043CB3E013EE00000098 /* makerom */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		0DA2790E0DA2A49A00000007 /* ShellScript for http-ca-crt */ = {
+		B3E0043CB3E013EE00000007 /* ShellScript for http-ca-crt */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-../src/paks/est/ca.crt
+/Users/mob/git/http/src/paks/est/ca.crt
 			);
 			outputPaths = (
-../macosx-x64-static/bin/ca.crt
+../build/macosx-x64-static/bin/ca.crt
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "PATH=$PATH:/usr/local/bin
 cd ..
-mkdir -p macosx-x64-static/bin
-cp -r src/paks/est/ca.crt macosx-x64-static/bin/ca.crt
+mkdir -p build/macosx-x64-static/bin
+cp -r src/paks/est/ca.crt build/macosx-x64-static/bin/ca.crt
 ";
 		};
-		0DA2790E0DA2A49A00000016 /* ShellScript for Prep */ = {
+		B3E0043CB3E013EE00000015 /* ShellScript for Prep */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -799,10 +707,29 @@ cp -r src/paks/est/ca.crt macosx-x64-static/bin/ca.crt
 			shellPath = /bin/bash;
 			shellScript = "PATH=$PATH:/usr/local/bin
 [ ! -x ${INC_DIR} ] && mkdir -p ${INC_DIR} ${OBJ_DIR} ${LIB_DIR} ${BIN_DIR}
-[ ! -f ${INC_DIR}/me.h ] && cp http-macosx-static-me.h ${INC_DIR}/me.h
-[ ! -f ${INC_DIR}/osdep.h ] && cp ${SRC_DIR}/src/paks/osdep/osdep.h ${INC_DIR}/osdep.h
-if ! diff ${INC_DIR}/me.h http-macosx-static-me.h >/dev/null ; then
+[ ! -f ${INC_DIR}/me.h -a -f cp http-macosx-static-me.h ] && cp http-macosx-static-me.h ${INC_DIR}/me.h
+if [ -f http-macosx-static-me.h ] ; then
+if ! diff ${INC_DIR}/me.h http-macosx-static-me.h >/dev/null 2>&1 ; then
 cp http-macosx-static-me.h ${INC_DIR}/me.h
+fi
+fi
+if [ ../src/paks/est/est.h -nt ${OUT_DIR}/inc/est.h ] ; then
+cp ../src/paks/est/est.h ${OUT_DIR}/inc/est.h
+fi
+if [ ../src/http.h -nt ${OUT_DIR}/inc/http.h ] ; then
+cp ../src/http.h ${OUT_DIR}/inc/http.h
+fi
+if [ ${OUT_DIR}/inc/me.h -nt ${OUT_DIR}/inc/me.h ] ; then
+cp ${OUT_DIR}/inc/me.h ${OUT_DIR}/inc/me.h
+fi
+if [ ../src/paks/mpr/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
+cp ../src/paks/mpr/mpr.h ${OUT_DIR}/inc/mpr.h
+fi
+if [ ../src/paks/osdep/osdep.h -nt ${OUT_DIR}/inc/osdep.h ] ; then
+cp ../src/paks/osdep/osdep.h ${OUT_DIR}/inc/osdep.h
+fi
+if [ ../src/paks/pcre/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
+cp ../src/paks/pcre/pcre.h ${OUT_DIR}/inc/pcre.h
 fi
 if [ ../src/paks/est/est.h -nt ${OUT_DIR}/inc/est.h ] ; then
 cp ../src/paks/est/est.h ${OUT_DIR}/inc/est.h
@@ -820,295 +747,259 @@ fi";
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXProject section */
-		0DA2790E0DA2A49A00000001 /* Project object */ = {
+		B3E0043CB3E013EE00000001 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0430;
 				ORGANIZATIONNAME = "embedthis";
 			};
-			buildConfigurationList = 0DA2790E0DA2A49A00000002 /* Build configuration list for PBXProject "http" */;
+			buildConfigurationList = B3E0043CB3E013EE00000002 /* Build configuration list for PBXProject "http" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 			);
-			mainGroup = 0DA2790E0DA2A49A000000B2;
-			productRefGroup = 0DA2790E0DA2A49A000000BB /* Products */;
+			mainGroup = B3E0043CB3E013EE000000A0;
+			productRefGroup = B3E0043CB3E013EE000000A8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0DA2790E0DA2A49A0000000A /* All */,
-				0DA2790E0DA2A49A00000015 /* Prep */,
-				0DA2790E0DA2A49A0000008A /* libest */,
-				0DA2790E0DA2A49A00000081 /* libhttp */,
-				0DA2790E0DA2A49A0000007D /* libmpr */,
-				0DA2790E0DA2A49A0000009B /* libmprssl */,
-				0DA2790E0DA2A49A0000007F /* libpcre */,
-				0DA2790E0DA2A49A00000098 /* httpcmd */,
-				0DA2790E0DA2A49A0000009D /* makerom */,
-				0DA2790E0DA2A49A0000009F /* testHttp */,
-				0DA2790E0DA2A49A00000006 /* http-ca-crt */,
+				B3E0043CB3E013EE0000000A /* All */,
+				B3E0043CB3E013EE00000014 /* Prep */,
+				B3E0043CB3E013EE00000080 /* libest */,
+				B3E0043CB3E013EE00000077 /* libhttp */,
+				B3E0043CB3E013EE00000073 /* libmpr */,
+				B3E0043CB3E013EE0000008D /* libmprssl */,
+				B3E0043CB3E013EE00000075 /* libpcre */,
+				B3E0043CB3E013EE0000008A /* httpcmd */,
+				B3E0043CB3E013EE0000008F /* makerom */,
+				B3E0043CB3E013EE00000006 /* http-ca-crt */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		0DA2790E0DA2A49A000000BC /* httpcmd Sources */ = {
+		B3E0043CB3E013EE000000A9 /* httpcmd Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0DA2790E0DA2A49A00000017 /* http.c in Sources */,
+				B3E0043CB3E013EE00000016 /* http.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		0DA2790E0DA2A49A000000C2 /* libest Sources */ = {
+		B3E0043CB3E013EE000000AF /* libest Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0DA2790E0DA2A49A00000019 /* estLib.c in Sources */,
+				B3E0043CB3E013EE00000018 /* estLib.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		0DA2790E0DA2A49A000000C5 /* libhttp Sources */ = {
+		B3E0043CB3E013EE000000B2 /* libhttp Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0DA2790E0DA2A49A0000001B /* actionHandler.c in Sources */,
-				0DA2790E0DA2A49A0000001D /* auth.c in Sources */,
-				0DA2790E0DA2A49A0000001F /* basic.c in Sources */,
-				0DA2790E0DA2A49A00000021 /* cache.c in Sources */,
-				0DA2790E0DA2A49A00000023 /* chunkFilter.c in Sources */,
-				0DA2790E0DA2A49A00000025 /* client.c in Sources */,
-				0DA2790E0DA2A49A00000027 /* config.c in Sources */,
-				0DA2790E0DA2A49A00000029 /* conn.c in Sources */,
-				0DA2790E0DA2A49A0000002B /* digest.c in Sources */,
-				0DA2790E0DA2A49A0000002D /* endpoint.c in Sources */,
-				0DA2790E0DA2A49A0000002F /* error.c in Sources */,
-				0DA2790E0DA2A49A00000031 /* host.c in Sources */,
-				0DA2790E0DA2A49A00000033 /* monitor.c in Sources */,
-				0DA2790E0DA2A49A00000035 /* netConnector.c in Sources */,
-				0DA2790E0DA2A49A00000037 /* packet.c in Sources */,
-				0DA2790E0DA2A49A00000039 /* pam.c in Sources */,
-				0DA2790E0DA2A49A0000003B /* passHandler.c in Sources */,
-				0DA2790E0DA2A49A0000003D /* pipeline.c in Sources */,
-				0DA2790E0DA2A49A0000003F /* queue.c in Sources */,
-				0DA2790E0DA2A49A00000041 /* rangeFilter.c in Sources */,
-				0DA2790E0DA2A49A00000043 /* route.c in Sources */,
-				0DA2790E0DA2A49A00000045 /* rx.c in Sources */,
-				0DA2790E0DA2A49A00000047 /* sendConnector.c in Sources */,
-				0DA2790E0DA2A49A00000049 /* service.c in Sources */,
-				0DA2790E0DA2A49A0000004B /* session.c in Sources */,
-				0DA2790E0DA2A49A0000004D /* stage.c in Sources */,
-				0DA2790E0DA2A49A0000004F /* trace.c in Sources */,
-				0DA2790E0DA2A49A00000051 /* tx.c in Sources */,
-				0DA2790E0DA2A49A00000053 /* uploadFilter.c in Sources */,
-				0DA2790E0DA2A49A00000055 /* uri.c in Sources */,
-				0DA2790E0DA2A49A00000057 /* user.c in Sources */,
-				0DA2790E0DA2A49A00000059 /* var.c in Sources */,
-				0DA2790E0DA2A49A0000005B /* webSockFilter.c in Sources */,
+				B3E0043CB3E013EE0000001A /* actionHandler.c in Sources */,
+				B3E0043CB3E013EE0000001C /* auth.c in Sources */,
+				B3E0043CB3E013EE0000001E /* basic.c in Sources */,
+				B3E0043CB3E013EE00000020 /* cache.c in Sources */,
+				B3E0043CB3E013EE00000022 /* chunkFilter.c in Sources */,
+				B3E0043CB3E013EE00000024 /* client.c in Sources */,
+				B3E0043CB3E013EE00000026 /* config.c in Sources */,
+				B3E0043CB3E013EE00000028 /* conn.c in Sources */,
+				B3E0043CB3E013EE0000002A /* digest.c in Sources */,
+				B3E0043CB3E013EE0000002C /* endpoint.c in Sources */,
+				B3E0043CB3E013EE0000002E /* error.c in Sources */,
+				B3E0043CB3E013EE00000030 /* host.c in Sources */,
+				B3E0043CB3E013EE00000032 /* monitor.c in Sources */,
+				B3E0043CB3E013EE00000034 /* netConnector.c in Sources */,
+				B3E0043CB3E013EE00000036 /* packet.c in Sources */,
+				B3E0043CB3E013EE00000038 /* pam.c in Sources */,
+				B3E0043CB3E013EE0000003A /* passHandler.c in Sources */,
+				B3E0043CB3E013EE0000003C /* pipeline.c in Sources */,
+				B3E0043CB3E013EE0000003E /* queue.c in Sources */,
+				B3E0043CB3E013EE00000040 /* rangeFilter.c in Sources */,
+				B3E0043CB3E013EE00000042 /* route.c in Sources */,
+				B3E0043CB3E013EE00000044 /* rx.c in Sources */,
+				B3E0043CB3E013EE00000046 /* sendConnector.c in Sources */,
+				B3E0043CB3E013EE00000048 /* service.c in Sources */,
+				B3E0043CB3E013EE0000004A /* session.c in Sources */,
+				B3E0043CB3E013EE0000004C /* stage.c in Sources */,
+				B3E0043CB3E013EE0000004E /* trace.c in Sources */,
+				B3E0043CB3E013EE00000050 /* tx.c in Sources */,
+				B3E0043CB3E013EE00000052 /* uploadFilter.c in Sources */,
+				B3E0043CB3E013EE00000054 /* uri.c in Sources */,
+				B3E0043CB3E013EE00000056 /* user.c in Sources */,
+				B3E0043CB3E013EE00000058 /* var.c in Sources */,
+				B3E0043CB3E013EE0000005A /* webSockFilter.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		0DA2790E0DA2A49A000000CA /* libmpr Sources */ = {
+		B3E0043CB3E013EE000000B7 /* libmpr Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0DA2790E0DA2A49A0000005D /* mprLib.c in Sources */,
+				B3E0043CB3E013EE0000005C /* mprLib.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		0DA2790E0DA2A49A000000CD /* libmprssl Sources */ = {
+		B3E0043CB3E013EE000000BA /* libmprssl Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0DA2790E0DA2A49A0000005F /* mprSsl.c in Sources */,
+				B3E0043CB3E013EE0000005E /* mprSsl.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		0DA2790E0DA2A49A000000D2 /* libpcre Sources */ = {
+		B3E0043CB3E013EE000000BF /* libpcre Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0DA2790E0DA2A49A00000061 /* pcre.c in Sources */,
+				B3E0043CB3E013EE00000060 /* pcre.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		0DA2790E0DA2A49A000000D5 /* makerom Sources */ = {
+		B3E0043CB3E013EE000000C2 /* makerom Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0DA2790E0DA2A49A00000063 /* makerom.c in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		0DA2790E0DA2A49A000000D9 /* testHttp Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				0DA2790E0DA2A49A00000065 /* testHttp.c in Sources */,
-				0DA2790E0DA2A49A00000067 /* testHttpGen.c in Sources */,
-				0DA2790E0DA2A49A00000069 /* testHttpUri.c in Sources */,
+				B3E0043CB3E013EE00000062 /* makerom.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		0DA2790E0DA2A49A00000008 /* PBXTargetDependency http-ca-crt depends on Prep */ = {
+		B3E0043CB3E013EE00000008 /* PBXTargetDependency http-ca-crt depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A0000007A /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE00000070 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000BE /* PBXTargetDependency httpcmd depends on Prep */ = {
+		B3E0043CB3E013EE000000AB /* PBXTargetDependency httpcmd depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A0000007B /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE00000071 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000BF /* PBXTargetDependency httpcmd depends on libmpr */ = {
+		B3E0043CB3E013EE000000AC /* PBXTargetDependency httpcmd depends on libmpr */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007D /* libmpr */;
-			targetProxy = 0DA2790E0DA2A49A0000007C /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000073 /* libmpr */;
+			targetProxy = B3E0043CB3E013EE00000072 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000C0 /* PBXTargetDependency httpcmd depends on libpcre */ = {
+		B3E0043CB3E013EE000000AD /* PBXTargetDependency httpcmd depends on libpcre */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007F /* libpcre */;
-			targetProxy = 0DA2790E0DA2A49A0000007E /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000075 /* libpcre */;
+			targetProxy = B3E0043CB3E013EE00000074 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000C1 /* PBXTargetDependency httpcmd depends on libhttp */ = {
+		B3E0043CB3E013EE000000AE /* PBXTargetDependency httpcmd depends on libhttp */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000081 /* libhttp */;
-			targetProxy = 0DA2790E0DA2A49A00000080 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000077 /* libhttp */;
+			targetProxy = B3E0043CB3E013EE00000076 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000C4 /* PBXTargetDependency libest depends on Prep */ = {
+		B3E0043CB3E013EE000000B1 /* PBXTargetDependency libest depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A00000082 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE00000078 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000C7 /* PBXTargetDependency libhttp depends on Prep */ = {
+		B3E0043CB3E013EE000000B4 /* PBXTargetDependency libhttp depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A00000083 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE00000079 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000C8 /* PBXTargetDependency libhttp depends on libmpr */ = {
+		B3E0043CB3E013EE000000B5 /* PBXTargetDependency libhttp depends on libmpr */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007D /* libmpr */;
-			targetProxy = 0DA2790E0DA2A49A00000084 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000073 /* libmpr */;
+			targetProxy = B3E0043CB3E013EE0000007A /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000C9 /* PBXTargetDependency libhttp depends on libpcre */ = {
+		B3E0043CB3E013EE000000B6 /* PBXTargetDependency libhttp depends on libpcre */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007F /* libpcre */;
-			targetProxy = 0DA2790E0DA2A49A00000085 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000075 /* libpcre */;
+			targetProxy = B3E0043CB3E013EE0000007B /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000CC /* PBXTargetDependency libmpr depends on Prep */ = {
+		B3E0043CB3E013EE000000B9 /* PBXTargetDependency libmpr depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A00000086 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE0000007C /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000CF /* PBXTargetDependency libmprssl depends on Prep */ = {
+		B3E0043CB3E013EE000000BC /* PBXTargetDependency libmprssl depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A00000087 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE0000007D /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000D0 /* PBXTargetDependency libmprssl depends on libmpr */ = {
+		B3E0043CB3E013EE000000BD /* PBXTargetDependency libmprssl depends on libmpr */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007D /* libmpr */;
-			targetProxy = 0DA2790E0DA2A49A00000088 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000073 /* libmpr */;
+			targetProxy = B3E0043CB3E013EE0000007E /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000D1 /* PBXTargetDependency libmprssl depends on libest */ = {
+		B3E0043CB3E013EE000000BE /* PBXTargetDependency libmprssl depends on libest */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000008A /* libest */;
-			targetProxy = 0DA2790E0DA2A49A00000089 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000080 /* libest */;
+			targetProxy = B3E0043CB3E013EE0000007F /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000D4 /* PBXTargetDependency libpcre depends on Prep */ = {
+		B3E0043CB3E013EE000000C1 /* PBXTargetDependency libpcre depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A0000008B /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE00000081 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000D7 /* PBXTargetDependency makerom depends on Prep */ = {
+		B3E0043CB3E013EE000000C4 /* PBXTargetDependency makerom depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A0000008C /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE00000082 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000D8 /* PBXTargetDependency makerom depends on libmpr */ = {
+		B3E0043CB3E013EE000000C5 /* PBXTargetDependency makerom depends on libmpr */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007D /* libmpr */;
-			targetProxy = 0DA2790E0DA2A49A0000008D /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000073 /* libmpr */;
+			targetProxy = B3E0043CB3E013EE00000083 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000DB /* PBXTargetDependency testHttp depends on Prep */ = {
+		B3E0043CB3E013EE000000C6 /* PBXTargetDependency All depends on Prep */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A0000008E /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000014 /* Prep */;
+			targetProxy = B3E0043CB3E013EE00000084 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000DC /* PBXTargetDependency testHttp depends on libmpr */ = {
+		B3E0043CB3E013EE0000000B /* PBXTargetDependency All depends on http-ca-crt */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007D /* libmpr */;
-			targetProxy = 0DA2790E0DA2A49A0000008F /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000006 /* http-ca-crt */;
+			targetProxy = B3E0043CB3E013EE00000085 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000DD /* PBXTargetDependency testHttp depends on libpcre */ = {
+		B3E0043CB3E013EE0000000F /* PBXTargetDependency All depends on libmpr */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007F /* libpcre */;
-			targetProxy = 0DA2790E0DA2A49A00000090 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000073 /* libmpr */;
+			targetProxy = B3E0043CB3E013EE00000086 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000DE /* PBXTargetDependency testHttp depends on libhttp */ = {
+		B3E0043CB3E013EE00000011 /* PBXTargetDependency All depends on libpcre */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000081 /* libhttp */;
-			targetProxy = 0DA2790E0DA2A49A00000091 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000075 /* libpcre */;
+			targetProxy = B3E0043CB3E013EE00000087 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A000000DF /* PBXTargetDependency All depends on Prep */ = {
+		B3E0043CB3E013EE0000000E /* PBXTargetDependency All depends on libhttp */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000015 /* Prep */;
-			targetProxy = 0DA2790E0DA2A49A00000092 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000077 /* libhttp */;
+			targetProxy = B3E0043CB3E013EE00000088 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A0000000B /* PBXTargetDependency All depends on http-ca-crt */ = {
+		B3E0043CB3E013EE0000000C /* PBXTargetDependency All depends on httpcmd */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000006 /* http-ca-crt */;
-			targetProxy = 0DA2790E0DA2A49A00000093 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE0000008A /* httpcmd */;
+			targetProxy = B3E0043CB3E013EE00000089 /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A0000000F /* PBXTargetDependency All depends on libmpr */ = {
+		B3E0043CB3E013EE0000000D /* PBXTargetDependency All depends on libest */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007D /* libmpr */;
-			targetProxy = 0DA2790E0DA2A49A00000094 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE00000080 /* libest */;
+			targetProxy = B3E0043CB3E013EE0000008B /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A00000011 /* PBXTargetDependency All depends on libpcre */ = {
+		B3E0043CB3E013EE00000010 /* PBXTargetDependency All depends on libmprssl */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000007F /* libpcre */;
-			targetProxy = 0DA2790E0DA2A49A00000095 /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE0000008D /* libmprssl */;
+			targetProxy = B3E0043CB3E013EE0000008C /* PBXContainerItemProxy */;
 		};
-		0DA2790E0DA2A49A0000000E /* PBXTargetDependency All depends on libhttp */ = {
+		B3E0043CB3E013EE00000012 /* PBXTargetDependency All depends on makerom */ = {
 			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000081 /* libhttp */;
-			targetProxy = 0DA2790E0DA2A49A00000096 /* PBXContainerItemProxy */;
-		};
-		0DA2790E0DA2A49A0000000C /* PBXTargetDependency All depends on httpcmd */ = {
-			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A00000098 /* httpcmd */;
-			targetProxy = 0DA2790E0DA2A49A00000097 /* PBXContainerItemProxy */;
-		};
-		0DA2790E0DA2A49A0000000D /* PBXTargetDependency All depends on libest */ = {
-			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000008A /* libest */;
-			targetProxy = 0DA2790E0DA2A49A00000099 /* PBXContainerItemProxy */;
-		};
-		0DA2790E0DA2A49A00000010 /* PBXTargetDependency All depends on libmprssl */ = {
-			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000009B /* libmprssl */;
-			targetProxy = 0DA2790E0DA2A49A0000009A /* PBXContainerItemProxy */;
-		};
-		0DA2790E0DA2A49A00000012 /* PBXTargetDependency All depends on makerom */ = {
-			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000009D /* makerom */;
-			targetProxy = 0DA2790E0DA2A49A0000009C /* PBXContainerItemProxy */;
-		};
-		0DA2790E0DA2A49A00000013 /* PBXTargetDependency All depends on testHttp */ = {
-			isa = PBXTargetDependency;
-			target = 0DA2790E0DA2A49A0000009F /* testHttp */;
-			targetProxy = 0DA2790E0DA2A49A0000009E /* PBXContainerItemProxy */;
+			target = B3E0043CB3E013EE0000008F /* makerom */;
+			targetProxy = B3E0043CB3E013EE0000008E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		0DA2790E0DA2A49A00000003 /* Debug */ = {
+		B3E0043CB3E013EE00000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 
@@ -1125,11 +1016,11 @@ fi";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 
-                OUT_DIR = "../macosx-x64-static";
-                BIN_DIR = "../macosx-x64-static/bin";
-                LIB_DIR = "../macosx-x64-static/bin";
-                INC_DIR = "../macosx-x64-static/inc";
-                OBJ_DIR = "../macosx-x64-static/obj";
+                OUT_DIR = "../build/macosx-x64-static";
+                BIN_DIR = "../build/macosx-x64-static/bin";
+                LIB_DIR = "../build/macosx-x64-static/bin";
+                INC_DIR = "../build/macosx-x64-static/inc";
+                OBJ_DIR = "../build/macosx-x64-static/obj";
                 SRC_DIR = "..";
 
                 CONFIGURATION_TEMP_DIR = "$(OBJ_DIR)/tmp/$(CONFIGURATION)";
@@ -1154,7 +1045,7 @@ fi";
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					"../macosx-x64-static/inc",
+					"/Users/mob/git/http/build/macosx-x64-static/inc",
 					"$(inherited)"
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1162,7 +1053,7 @@ fi";
 					"$(inherited)"
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"../macosx-x64-static/bin",
+					"/Users/mob/git/http/build/macosx-x64-static/bin",
 					"$(inherited)"
 				);
 				OTHER_LDFLAGS = (
@@ -1177,7 +1068,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A00000004 /* Release */ = {
+		B3E0043CB3E013EE00000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 
@@ -1194,11 +1085,11 @@ fi";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 
-                OUT_DIR = "../macosx-x64-static";
-                BIN_DIR = "../macosx-x64-static/bin";
-                LIB_DIR = "../macosx-x64-static/bin";
-                INC_DIR = "../macosx-x64-static/inc";
-                OBJ_DIR = "../macosx-x64-static/obj";
+                OUT_DIR = "../build/macosx-x64-static";
+                BIN_DIR = "../build/macosx-x64-static/bin";
+                LIB_DIR = "../build/macosx-x64-static/bin";
+                INC_DIR = "../build/macosx-x64-static/inc";
+                OBJ_DIR = "../build/macosx-x64-static/obj";
                 SRC_DIR = "..";
 
                 CONFIGURATION_TEMP_DIR = "$(OBJ_DIR)/tmp/$(CONFIGURATION)";
@@ -1224,12 +1115,12 @@ fi";
 				GCC_OPTIMIZATION_LEVEL = s;
                 GCC_WARN_UNINITIALIZED_AUTOS = NO;
 				HEADER_SEARCH_PATHS = (
-					"../macosx-x64-static/inc",
+					"/Users/mob/git/http/build/macosx-x64-static/inc",
 					"$(inherited)"
 				);
 
 				LIBRARY_SEARCH_PATHS = (
-					"../macosx-x64-static/bin",
+					"/Users/mob/git/http/build/macosx-x64-static/bin",
 					"$(inherited)"
 				);
 				OTHER_LDFLAGS = (
@@ -1244,7 +1135,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000E0 /* Debug */ = {
+		B3E0043CB3E013EE000000C7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = http-ca-crt;
@@ -1260,7 +1151,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000E1 /* Release */ = {
+		B3E0043CB3E013EE000000C8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = http-ca-crt;
@@ -1272,7 +1163,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000E2 /* Debug */ = {
+		B3E0043CB3E013EE000000C9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = httpcmd;
@@ -1288,7 +1179,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000E3 /* Release */ = {
+		B3E0043CB3E013EE000000CA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = httpcmd;
@@ -1300,7 +1191,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000E4 /* Debug */ = {
+		B3E0043CB3E013EE000000CB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libest;
@@ -1317,7 +1208,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000E5 /* Release */ = {
+		B3E0043CB3E013EE000000CC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libest;
@@ -1330,7 +1221,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000E6 /* Debug */ = {
+		B3E0043CB3E013EE000000CD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libhttp;
@@ -1349,7 +1240,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000E7 /* Release */ = {
+		B3E0043CB3E013EE000000CE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libhttp;
@@ -1364,7 +1255,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000E8 /* Debug */ = {
+		B3E0043CB3E013EE000000CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libmpr;
@@ -1381,7 +1272,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000E9 /* Release */ = {
+		B3E0043CB3E013EE000000D0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libmpr;
@@ -1394,7 +1285,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000EA /* Debug */ = {
+		B3E0043CB3E013EE000000D1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libmprssl;
@@ -1411,7 +1302,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000EB /* Release */ = {
+		B3E0043CB3E013EE000000D2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libmprssl;
@@ -1424,7 +1315,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000EC /* Debug */ = {
+		B3E0043CB3E013EE000000D3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libpcre;
@@ -1442,7 +1333,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000ED /* Release */ = {
+		B3E0043CB3E013EE000000D4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = libpcre;
@@ -1459,7 +1350,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000EE /* Debug */ = {
+		B3E0043CB3E013EE000000D5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = makerom;
@@ -1475,7 +1366,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000EF /* Release */ = {
+		B3E0043CB3E013EE000000D6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = makerom;
@@ -1487,35 +1378,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000F0 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = testHttp;
-
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"ME_DEBUG",
-					"$(inherited)"
-				);
-				OTHER_LDFLAGS = ();
-
-				MACH_O_TYPE = mh_execute;
-
-			};
-			name = Debug;
-		};
-		0DA2790E0DA2A49A000000F1 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = testHttp;
-
-				OTHER_LDFLAGS = ();
-
-				MACH_O_TYPE = mh_execute;
-
-			};
-			name = Release;
-		};
-		0DA2790E0DA2A49A000000F2 /* Debug */ = {
+		B3E0043CB3E013EE000000D7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = All;
@@ -1527,7 +1390,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000F3 /* Release */ = {
+		B3E0043CB3E013EE000000D8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = All;
@@ -1536,7 +1399,7 @@ fi";
 			};
 			name = Release;
 		};
-		0DA2790E0DA2A49A000000F4 /* Debug */ = {
+		B3E0043CB3E013EE000000D9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = Prep;
@@ -1548,7 +1411,7 @@ fi";
 			};
 			name = Debug;
 		};
-		0DA2790E0DA2A49A000000F5 /* Release */ = {
+		B3E0043CB3E013EE000000DA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = Prep;
@@ -1560,115 +1423,106 @@ fi";
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0DA2790E0DA2A49A00000002 /* Build configuration list for PBXProject "http" */ = {
+		B3E0043CB3E013EE00000002 /* Build configuration list for PBXProject "http" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A00000003 /* Debug */,
-				0DA2790E0DA2A49A00000004 /* Release */,
+				B3E0043CB3E013EE00000003 /* Debug */,
+				B3E0043CB3E013EE00000004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A00000005 /* Build configuration list for PBXNativeTarget "http-ca-crt" */ = {
+		B3E0043CB3E013EE00000005 /* Build configuration list for PBXNativeTarget "http-ca-crt" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000E0 /* Debug */,
-				0DA2790E0DA2A49A000000E1 /* Release */,
+				B3E0043CB3E013EE000000C7 /* Debug */,
+				B3E0043CB3E013EE000000C8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A000000BD /* Build configuration list for PBXNativeTarget "httpcmd" */ = {
+		B3E0043CB3E013EE000000AA /* Build configuration list for PBXNativeTarget "httpcmd" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000E2 /* Debug */,
-				0DA2790E0DA2A49A000000E3 /* Release */,
+				B3E0043CB3E013EE000000C9 /* Debug */,
+				B3E0043CB3E013EE000000CA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A000000C3 /* Build configuration list for PBXNativeTarget "libest" */ = {
+		B3E0043CB3E013EE000000B0 /* Build configuration list for PBXNativeTarget "libest" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000E4 /* Debug */,
-				0DA2790E0DA2A49A000000E5 /* Release */,
+				B3E0043CB3E013EE000000CB /* Debug */,
+				B3E0043CB3E013EE000000CC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A000000C6 /* Build configuration list for PBXNativeTarget "libhttp" */ = {
+		B3E0043CB3E013EE000000B3 /* Build configuration list for PBXNativeTarget "libhttp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000E6 /* Debug */,
-				0DA2790E0DA2A49A000000E7 /* Release */,
+				B3E0043CB3E013EE000000CD /* Debug */,
+				B3E0043CB3E013EE000000CE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A000000CB /* Build configuration list for PBXNativeTarget "libmpr" */ = {
+		B3E0043CB3E013EE000000B8 /* Build configuration list for PBXNativeTarget "libmpr" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000E8 /* Debug */,
-				0DA2790E0DA2A49A000000E9 /* Release */,
+				B3E0043CB3E013EE000000CF /* Debug */,
+				B3E0043CB3E013EE000000D0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A000000CE /* Build configuration list for PBXNativeTarget "libmprssl" */ = {
+		B3E0043CB3E013EE000000BB /* Build configuration list for PBXNativeTarget "libmprssl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000EA /* Debug */,
-				0DA2790E0DA2A49A000000EB /* Release */,
+				B3E0043CB3E013EE000000D1 /* Debug */,
+				B3E0043CB3E013EE000000D2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A000000D3 /* Build configuration list for PBXNativeTarget "libpcre" */ = {
+		B3E0043CB3E013EE000000C0 /* Build configuration list for PBXNativeTarget "libpcre" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000EC /* Debug */,
-				0DA2790E0DA2A49A000000ED /* Release */,
+				B3E0043CB3E013EE000000D3 /* Debug */,
+				B3E0043CB3E013EE000000D4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A000000D6 /* Build configuration list for PBXNativeTarget "makerom" */ = {
+		B3E0043CB3E013EE000000C3 /* Build configuration list for PBXNativeTarget "makerom" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000EE /* Debug */,
-				0DA2790E0DA2A49A000000EF /* Release */,
+				B3E0043CB3E013EE000000D5 /* Debug */,
+				B3E0043CB3E013EE000000D6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A000000DA /* Build configuration list for PBXNativeTarget "testHttp" */ = {
+		B3E0043CB3E013EE00000009 /* Build configuration list for PBXNativeTarget "All" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000F0 /* Debug */,
-				0DA2790E0DA2A49A000000F1 /* Release */,
+				B3E0043CB3E013EE000000D7 /* Debug */,
+				B3E0043CB3E013EE000000D8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0DA2790E0DA2A49A00000009 /* Build configuration list for PBXNativeTarget "All" */ = {
+		B3E0043CB3E013EE00000013 /* Build configuration list for PBXNativeTarget "Prep" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0DA2790E0DA2A49A000000F2 /* Debug */,
-				0DA2790E0DA2A49A000000F3 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		0DA2790E0DA2A49A00000014 /* Build configuration list for PBXNativeTarget "Prep" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				0DA2790E0DA2A49A000000F4 /* Debug */,
-				0DA2790E0DA2A49A000000F5 /* Release */,
+				B3E0043CB3E013EE000000D9 /* Debug */,
+				B3E0043CB3E013EE000000DA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 0DA2790E0DA2A49A00000001 /* Project object */;
+	rootObject = B3E0043CB3E013EE00000001 /* Project object */;
 }

@@ -5,6 +5,7 @@
 Me.load({
     blend: [
         "src/paks/*/*.me",
+        "src/http.me",
         "test/test.me",
         "doc/doc.me",
     ],
@@ -45,29 +46,6 @@ Me.load({
     },
 
     targets: {
-        libhttp: {
-            type: 'lib',
-            headers: [ 'src/*.h' ],
-            sources: [ 'src/*.c' ],
-            exclude: /http.c/,
-            depends: [ 'libmpr', 'libpcre' ],
-            components: [ 'pcre' ],
-            scripts: {
-                prebuild: `
-                    if (me.settings.compiler.hasPam && me.settings.http.pam) {
-                        me.target.libraries.push('pam')
-                    }
-                `,
-            },
-        },
-
-        httpcmd: {
-            path: '${BIN}/http${EXE}',
-            type: 'exe',
-            depends: [ 'libhttp' ],
-            sources: [ 'src/http.c' ],
-        },
-
         'http-ca-crt': {
             type: 'file',
             files: [ 'src/paks/est/ca.crt' ],

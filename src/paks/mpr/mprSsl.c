@@ -1617,9 +1617,17 @@ static OpenConfig *createOpenSslConfig(MprSocket *sp)
     RAND_bytes(resume, sizeof(resume));
     SSL_CTX_set_session_id_context(context, resume, sizeof(resume));
 
-    verifyMode = (sp->flags & MPR_SOCKET_SERVER && !ssl->verifyPeer) ? SSL_VERIFY_NONE : 
+#if UNUSED
+    verifyMode = (sp->flags & MPR_SOCKET_SERVER && !ssl->verifyPeer) ? SSL_VERIFY_NONE :
         SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
-
+#endif
+    if (ssl->verifyPeer && !(ssl->caFile || ssl->caPath)) {
+        sp->errorMsg = sfmt("Cannot verify peer due to undefined CA certificates");
+        SSL_CTX_free(context);
+        return 0;
+    }
+    verifyMode = ssl->verifyPeer ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT : SSL_VERIFY_NONE;
+    
     /*
         Configure the certificates
      */

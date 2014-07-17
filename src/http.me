@@ -1,0 +1,30 @@
+/*
+    http.me -- MakeMe file for the Embedthis Http Library
+ */
+
+Me.load({
+    targets: {
+        libhttp: {
+            type: 'lib',
+            headers: [ '*.h' ],
+            sources: [ '*.c' ],
+            exclude: /http.c/,
+            depends: [ 'libmpr', 'libpcre' ],
+            components: [ 'pcre' ],
+            scripts: {
+                prebuild: `
+                    if (me.settings.compiler.hasPam && me.settings.http.pam) {
+                        me.target.libraries.push('pam')
+                    }
+                `,
+            },
+        },
+
+        httpcmd: {
+            path: '${BIN}/http${EXE}',
+            type: 'exe',
+            depends: [ 'libhttp' ],
+            sources: [ 'http.c' ],
+        },
+    },
+})

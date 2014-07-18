@@ -1,5 +1,6 @@
 /**
-    gen.c - General tests for HTTP
+    gen.c.tst - General tests for HTTP
+
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
 
@@ -13,17 +14,6 @@
 static void initHttp()
 {
     MprSocket   *sp;
-
-    /*
-        Initialize MPR. Set module search path for find libmprssl.
-        Don't verify SSL peers as we have not set CA certificate locations
-     */
-    mprCreate(0, 0, 0);
-    mprSetModuleSearchPath(BIN);
-    mprVerifySslPeer(NULL, 0);
-    if (getenv("TM_DEBUGGER")) {
-        mprSetLogLevel(5);
-    }
 
     sp = mprCreateSocket(NULL);
     ttrue(sp);
@@ -161,7 +151,12 @@ static void stealSocket()
 }
 
 
-int main() {
+int main(int argc, char **argv)
+{
+    mprCreate(argc, argv, 0);
+    mprSetModuleSearchPath(BIN);
+    mprVerifySslPeer(NULL, 0);
+
     initHttp();
     createHttp();
     basicHttpGet();

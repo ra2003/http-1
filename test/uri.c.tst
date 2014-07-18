@@ -1,5 +1,6 @@
 /**
-    uri.c - tests for URIs
+    uri.c.tst - tests for URIs
+
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
 
@@ -9,17 +10,6 @@
 #include    "http.h"
 
 /************************************ Code ************************************/
-
-static void initHttp()
-{
-    mprCreate(0, 0, 0);
-    mprSetModuleSearchPath(BIN);
-    mprVerifySslPeer(NULL, 0);
-    if (getenv("TM_DEBUGGER")) {
-        mprSetLogLevel(5);
-    }
-}
-
 
 static void normalize(char *uri, char *expectedUri)
 {
@@ -267,8 +257,10 @@ static void testValidateUri()
 }
 
 
-int main() {
-    initHttp();
+int main(int argc, char **argv)
+{
+    mprCreate(argc, argv, 0);
+
     testCreateUri();
     testNormalizeUri();
     testValidateUri();

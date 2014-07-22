@@ -109,8 +109,10 @@
     <ClCompile Include="..\..\src\config.c" />
     <ClCompile Include="..\..\src\conn.c" />
     <ClCompile Include="..\..\src\digest.c" />
+    <ClCompile Include="..\..\src\dirHandler.c" />
     <ClCompile Include="..\..\src\endpoint.c" />
     <ClCompile Include="..\..\src\error.c" />
+    <ClCompile Include="..\..\src\fileHandler.c" />
     <ClCompile Include="..\..\src\host.c" />
     <ClCompile Include="..\..\src\monitor.c" />
     <ClCompile Include="..\..\src\netConnector.c" />

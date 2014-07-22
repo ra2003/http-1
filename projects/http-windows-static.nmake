@@ -21,7 +21,7 @@ ENTRY                 = _DllMainCRTStartup@12
 !ENDIF
 
 !IF "$(CONFIG)" == ""
-CONFIG                = build\$(OS)-$(ARCH)-$(PROFILE)
+CONFIG                = $(OS)-$(ARCH)-$(PROFILE)
 !ENDIF
 
 !IF "$(BUILD)" == ""
@@ -106,6 +106,7 @@ ME_SRC_PREFIX         = $(ME_VAPP_PREFIX)\src
 
 
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\ca.crt
+TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http-server.exe
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http.exe
 !IF "$(ME_COM_EST)" == "1"
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\libest.lib
@@ -132,9 +133,6 @@ prep:
 	@if not exist $(BUILD)\bin md $(BUILD)\bin
 	@if not exist $(BUILD)\inc md $(BUILD)\inc
 	@if not exist $(BUILD)\obj md $(BUILD)\obj
-[ ! -f ${BUILD}/inc/osdep.h ] && cp ${SRC}/src/paks/osdep/osdep.h ${BUILD}/inc/osdep.h
-	@if not exist $(BUILD copy src\paks\osdep\osdep.h $(BUILD)\inc\osdep.h
-
 	@if not exist $(BUILD)\inc\me.h copy projects\http-windows-static-me.h $(BUILD)\inc\me.h
 
 clean:
@@ -147,10 +145,13 @@ clean:
 	if exist "build\$(CONFIG)\obj\config.obj" del /Q "build\$(CONFIG)\obj\config.obj"
 	if exist "build\$(CONFIG)\obj\conn.obj" del /Q "build\$(CONFIG)\obj\conn.obj"
 	if exist "build\$(CONFIG)\obj\digest.obj" del /Q "build\$(CONFIG)\obj\digest.obj"
+	if exist "build\$(CONFIG)\obj\dirHandler.obj" del /Q "build\$(CONFIG)\obj\dirHandler.obj"
 	if exist "build\$(CONFIG)\obj\endpoint.obj" del /Q "build\$(CONFIG)\obj\endpoint.obj"
 	if exist "build\$(CONFIG)\obj\error.obj" del /Q "build\$(CONFIG)\obj\error.obj"
 	if exist "build\$(CONFIG)\obj\estLib.obj" del /Q "build\$(CONFIG)\obj\estLib.obj"
+	if exist "build\$(CONFIG)\obj\fileHandler.obj" del /Q "build\$(CONFIG)\obj\fileHandler.obj"
 	if exist "build\$(CONFIG)\obj\host.obj" del /Q "build\$(CONFIG)\obj\host.obj"
+	if exist "build\$(CONFIG)\obj\http-server.obj" del /Q "build\$(CONFIG)\obj\http-server.obj"
 	if exist "build\$(CONFIG)\obj\http.obj" del /Q "build\$(CONFIG)\obj\http.obj"
 	if exist "build\$(CONFIG)\obj\makerom.obj" del /Q "build\$(CONFIG)\obj\makerom.obj"
 	if exist "build\$(CONFIG)\obj\monitor.obj" del /Q "build\$(CONFIG)\obj\monitor.obj"
@@ -178,6 +179,10 @@ clean:
 	if exist "build\$(CONFIG)\obj\var.obj" del /Q "build\$(CONFIG)\obj\var.obj"
 	if exist "build\$(CONFIG)\obj\webSockFilter.obj" del /Q "build\$(CONFIG)\obj\webSockFilter.obj"
 	if exist "build\$(CONFIG)\bin\ca.crt" del /Q "build\$(CONFIG)\bin\ca.crt"
+	if exist "build\$(CONFIG)\bin\http-server.exe" del /Q "build\$(CONFIG)\bin\http-server.exe"
+	if exist "build\$(CONFIG)\bin\http-server.lib" del /Q "build\$(CONFIG)\bin\http-server.lib"
+	if exist "build\$(CONFIG)\bin\http-server.pdb" del /Q "build\$(CONFIG)\bin\http-server.pdb"
+	if exist "build\$(CONFIG)\bin\http-server.exp" del /Q "build\$(CONFIG)\bin\http-server.exp"
 	if exist "build\$(CONFIG)\bin\http.exe" del /Q "build\$(CONFIG)\bin\http.exe"
 	if exist "build\$(CONFIG)\bin\http.lib" del /Q "build\$(CONFIG)\bin\http.lib"
 	if exist "build\$(CONFIG)\bin\http.pdb" del /Q "build\$(CONFIG)\bin\http.pdb"
@@ -391,334 +396,293 @@ build\$(CONFIG)\obj\digest.obj: \
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\digest.obj -Fdbuild\$(CONFIG)\obj\digest.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\digest.c
 
 #
-#   endpoint.obj
+#   dirHandler.obj
 #
 DEPS_20 = $(DEPS_20) build\$(CONFIG)\inc\me.h
 DEPS_20 = $(DEPS_20) build\$(CONFIG)\inc\http.h
 
+build\$(CONFIG)\obj\dirHandler.obj: \
+    src\dirHandler.c $(DEPS_20)
+	@echo '   [Compile] build/$(CONFIG)/obj/dirHandler.obj'
+	"$(CC)" -c -Fobuild\$(CONFIG)\obj\dirHandler.obj -Fdbuild\$(CONFIG)\obj\dirHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\dirHandler.c
+
+#
+#   endpoint.obj
+#
+DEPS_21 = $(DEPS_21) build\$(CONFIG)\inc\me.h
+DEPS_21 = $(DEPS_21) build\$(CONFIG)\inc\http.h
+
 build\$(CONFIG)\obj\endpoint.obj: \
-    src\endpoint.c $(DEPS_20)
+    src\endpoint.c $(DEPS_21)
 	@echo '   [Compile] build/$(CONFIG)/obj/endpoint.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\endpoint.obj -Fdbuild\$(CONFIG)\obj\endpoint.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\endpoint.c
 
 #
 #   error.obj
 #
-DEPS_21 = $(DEPS_21) build\$(CONFIG)\inc\me.h
-DEPS_21 = $(DEPS_21) build\$(CONFIG)\inc\http.h
+DEPS_22 = $(DEPS_22) build\$(CONFIG)\inc\me.h
+DEPS_22 = $(DEPS_22) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\error.obj: \
-    src\error.c $(DEPS_21)
+    src\error.c $(DEPS_22)
 	@echo '   [Compile] build/$(CONFIG)/obj/error.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\error.obj -Fdbuild\$(CONFIG)\obj\error.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\error.c
 
 #
+#   fileHandler.obj
+#
+DEPS_23 = $(DEPS_23) build\$(CONFIG)\inc\me.h
+DEPS_23 = $(DEPS_23) build\$(CONFIG)\inc\http.h
+
+build\$(CONFIG)\obj\fileHandler.obj: \
+    src\fileHandler.c $(DEPS_23)
+	@echo '   [Compile] build/$(CONFIG)/obj/fileHandler.obj'
+	"$(CC)" -c -Fobuild\$(CONFIG)\obj\fileHandler.obj -Fdbuild\$(CONFIG)\obj\fileHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\fileHandler.c
+
+#
 #   host.obj
 #
-DEPS_22 = $(DEPS_22) build\$(CONFIG)\inc\me.h
-DEPS_22 = $(DEPS_22) build\$(CONFIG)\inc\http.h
+DEPS_24 = $(DEPS_24) build\$(CONFIG)\inc\me.h
+DEPS_24 = $(DEPS_24) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\host.obj: \
-    src\host.c $(DEPS_22)
+    src\host.c $(DEPS_24)
 	@echo '   [Compile] build/$(CONFIG)/obj/host.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\host.obj -Fdbuild\$(CONFIG)\obj\host.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\host.c
 
 #
 #   monitor.obj
 #
-DEPS_23 = $(DEPS_23) build\$(CONFIG)\inc\me.h
-DEPS_23 = $(DEPS_23) build\$(CONFIG)\inc\http.h
+DEPS_25 = $(DEPS_25) build\$(CONFIG)\inc\me.h
+DEPS_25 = $(DEPS_25) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\monitor.obj: \
-    src\monitor.c $(DEPS_23)
+    src\monitor.c $(DEPS_25)
 	@echo '   [Compile] build/$(CONFIG)/obj/monitor.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\monitor.obj -Fdbuild\$(CONFIG)\obj\monitor.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\monitor.c
 
 #
 #   netConnector.obj
 #
-DEPS_24 = $(DEPS_24) build\$(CONFIG)\inc\me.h
-DEPS_24 = $(DEPS_24) build\$(CONFIG)\inc\http.h
+DEPS_26 = $(DEPS_26) build\$(CONFIG)\inc\me.h
+DEPS_26 = $(DEPS_26) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\netConnector.obj: \
-    src\netConnector.c $(DEPS_24)
+    src\netConnector.c $(DEPS_26)
 	@echo '   [Compile] build/$(CONFIG)/obj/netConnector.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\netConnector.obj -Fdbuild\$(CONFIG)\obj\netConnector.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\netConnector.c
 
 #
 #   packet.obj
 #
-DEPS_25 = $(DEPS_25) build\$(CONFIG)\inc\me.h
-DEPS_25 = $(DEPS_25) build\$(CONFIG)\inc\http.h
+DEPS_27 = $(DEPS_27) build\$(CONFIG)\inc\me.h
+DEPS_27 = $(DEPS_27) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\packet.obj: \
-    src\packet.c $(DEPS_25)
+    src\packet.c $(DEPS_27)
 	@echo '   [Compile] build/$(CONFIG)/obj/packet.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\packet.obj -Fdbuild\$(CONFIG)\obj\packet.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\packet.c
 
 #
 #   pam.obj
 #
-DEPS_26 = $(DEPS_26) build\$(CONFIG)\inc\me.h
-DEPS_26 = $(DEPS_26) build\$(CONFIG)\inc\http.h
+DEPS_28 = $(DEPS_28) build\$(CONFIG)\inc\me.h
+DEPS_28 = $(DEPS_28) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\pam.obj: \
-    src\pam.c $(DEPS_26)
+    src\pam.c $(DEPS_28)
 	@echo '   [Compile] build/$(CONFIG)/obj/pam.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\pam.obj -Fdbuild\$(CONFIG)\obj\pam.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pam.c
 
 #
 #   passHandler.obj
 #
-DEPS_27 = $(DEPS_27) build\$(CONFIG)\inc\me.h
-DEPS_27 = $(DEPS_27) build\$(CONFIG)\inc\http.h
+DEPS_29 = $(DEPS_29) build\$(CONFIG)\inc\me.h
+DEPS_29 = $(DEPS_29) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\passHandler.obj: \
-    src\passHandler.c $(DEPS_27)
+    src\passHandler.c $(DEPS_29)
 	@echo '   [Compile] build/$(CONFIG)/obj/passHandler.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\passHandler.obj -Fdbuild\$(CONFIG)\obj\passHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\passHandler.c
 
 #
 #   pipeline.obj
 #
-DEPS_28 = $(DEPS_28) build\$(CONFIG)\inc\me.h
-DEPS_28 = $(DEPS_28) build\$(CONFIG)\inc\http.h
+DEPS_30 = $(DEPS_30) build\$(CONFIG)\inc\me.h
+DEPS_30 = $(DEPS_30) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\pipeline.obj: \
-    src\pipeline.c $(DEPS_28)
+    src\pipeline.c $(DEPS_30)
 	@echo '   [Compile] build/$(CONFIG)/obj/pipeline.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\pipeline.obj -Fdbuild\$(CONFIG)\obj\pipeline.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pipeline.c
 
 #
 #   queue.obj
 #
-DEPS_29 = $(DEPS_29) build\$(CONFIG)\inc\me.h
-DEPS_29 = $(DEPS_29) build\$(CONFIG)\inc\http.h
+DEPS_31 = $(DEPS_31) build\$(CONFIG)\inc\me.h
+DEPS_31 = $(DEPS_31) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\queue.obj: \
-    src\queue.c $(DEPS_29)
+    src\queue.c $(DEPS_31)
 	@echo '   [Compile] build/$(CONFIG)/obj/queue.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\queue.obj -Fdbuild\$(CONFIG)\obj\queue.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\queue.c
 
 #
 #   rangeFilter.obj
 #
-DEPS_30 = $(DEPS_30) build\$(CONFIG)\inc\me.h
-DEPS_30 = $(DEPS_30) build\$(CONFIG)\inc\http.h
+DEPS_32 = $(DEPS_32) build\$(CONFIG)\inc\me.h
+DEPS_32 = $(DEPS_32) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\rangeFilter.obj: \
-    src\rangeFilter.c $(DEPS_30)
+    src\rangeFilter.c $(DEPS_32)
 	@echo '   [Compile] build/$(CONFIG)/obj/rangeFilter.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\rangeFilter.obj -Fdbuild\$(CONFIG)\obj\rangeFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\rangeFilter.c
 
 #
 #   route.obj
 #
-DEPS_31 = $(DEPS_31) build\$(CONFIG)\inc\me.h
-DEPS_31 = $(DEPS_31) build\$(CONFIG)\inc\http.h
+DEPS_33 = $(DEPS_33) build\$(CONFIG)\inc\me.h
+DEPS_33 = $(DEPS_33) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\route.obj: \
-    src\route.c $(DEPS_31)
+    src\route.c $(DEPS_33)
 	@echo '   [Compile] build/$(CONFIG)/obj/route.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\route.obj -Fdbuild\$(CONFIG)\obj\route.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\route.c
 
 #
 #   rx.obj
 #
-DEPS_32 = $(DEPS_32) build\$(CONFIG)\inc\me.h
-DEPS_32 = $(DEPS_32) build\$(CONFIG)\inc\http.h
+DEPS_34 = $(DEPS_34) build\$(CONFIG)\inc\me.h
+DEPS_34 = $(DEPS_34) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\rx.obj: \
-    src\rx.c $(DEPS_32)
+    src\rx.c $(DEPS_34)
 	@echo '   [Compile] build/$(CONFIG)/obj/rx.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\rx.obj -Fdbuild\$(CONFIG)\obj\rx.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\rx.c
 
 #
 #   sendConnector.obj
 #
-DEPS_33 = $(DEPS_33) build\$(CONFIG)\inc\me.h
-DEPS_33 = $(DEPS_33) build\$(CONFIG)\inc\http.h
+DEPS_35 = $(DEPS_35) build\$(CONFIG)\inc\me.h
+DEPS_35 = $(DEPS_35) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\sendConnector.obj: \
-    src\sendConnector.c $(DEPS_33)
+    src\sendConnector.c $(DEPS_35)
 	@echo '   [Compile] build/$(CONFIG)/obj/sendConnector.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\sendConnector.obj -Fdbuild\$(CONFIG)\obj\sendConnector.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\sendConnector.c
 
 #
 #   service.obj
 #
-DEPS_34 = $(DEPS_34) build\$(CONFIG)\inc\me.h
-DEPS_34 = $(DEPS_34) build\$(CONFIG)\inc\http.h
+DEPS_36 = $(DEPS_36) build\$(CONFIG)\inc\me.h
+DEPS_36 = $(DEPS_36) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\service.obj: \
-    src\service.c $(DEPS_34)
+    src\service.c $(DEPS_36)
 	@echo '   [Compile] build/$(CONFIG)/obj/service.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\service.obj -Fdbuild\$(CONFIG)\obj\service.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\service.c
 
 #
 #   session.obj
 #
-DEPS_35 = $(DEPS_35) build\$(CONFIG)\inc\me.h
-DEPS_35 = $(DEPS_35) build\$(CONFIG)\inc\http.h
+DEPS_37 = $(DEPS_37) build\$(CONFIG)\inc\me.h
+DEPS_37 = $(DEPS_37) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\session.obj: \
-    src\session.c $(DEPS_35)
+    src\session.c $(DEPS_37)
 	@echo '   [Compile] build/$(CONFIG)/obj/session.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\session.obj -Fdbuild\$(CONFIG)\obj\session.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\session.c
 
 #
 #   stage.obj
 #
-DEPS_36 = $(DEPS_36) build\$(CONFIG)\inc\me.h
-DEPS_36 = $(DEPS_36) build\$(CONFIG)\inc\http.h
+DEPS_38 = $(DEPS_38) build\$(CONFIG)\inc\me.h
+DEPS_38 = $(DEPS_38) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\stage.obj: \
-    src\stage.c $(DEPS_36)
+    src\stage.c $(DEPS_38)
 	@echo '   [Compile] build/$(CONFIG)/obj/stage.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\stage.obj -Fdbuild\$(CONFIG)\obj\stage.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\stage.c
 
 #
 #   trace.obj
 #
-DEPS_37 = $(DEPS_37) build\$(CONFIG)\inc\me.h
-DEPS_37 = $(DEPS_37) build\$(CONFIG)\inc\http.h
+DEPS_39 = $(DEPS_39) build\$(CONFIG)\inc\me.h
+DEPS_39 = $(DEPS_39) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\trace.obj: \
-    src\trace.c $(DEPS_37)
+    src\trace.c $(DEPS_39)
 	@echo '   [Compile] build/$(CONFIG)/obj/trace.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\trace.obj -Fdbuild\$(CONFIG)\obj\trace.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\trace.c
 
 #
 #   tx.obj
 #
-DEPS_38 = $(DEPS_38) build\$(CONFIG)\inc\me.h
-DEPS_38 = $(DEPS_38) build\$(CONFIG)\inc\http.h
+DEPS_40 = $(DEPS_40) build\$(CONFIG)\inc\me.h
+DEPS_40 = $(DEPS_40) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\tx.obj: \
-    src\tx.c $(DEPS_38)
+    src\tx.c $(DEPS_40)
 	@echo '   [Compile] build/$(CONFIG)/obj/tx.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\tx.obj -Fdbuild\$(CONFIG)\obj\tx.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\tx.c
 
 #
 #   uploadFilter.obj
 #
-DEPS_39 = $(DEPS_39) build\$(CONFIG)\inc\me.h
-DEPS_39 = $(DEPS_39) build\$(CONFIG)\inc\http.h
+DEPS_41 = $(DEPS_41) build\$(CONFIG)\inc\me.h
+DEPS_41 = $(DEPS_41) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\uploadFilter.obj: \
-    src\uploadFilter.c $(DEPS_39)
+    src\uploadFilter.c $(DEPS_41)
 	@echo '   [Compile] build/$(CONFIG)/obj/uploadFilter.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\uploadFilter.obj -Fdbuild\$(CONFIG)\obj\uploadFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\uploadFilter.c
 
 #
 #   uri.obj
 #
-DEPS_40 = $(DEPS_40) build\$(CONFIG)\inc\me.h
-DEPS_40 = $(DEPS_40) build\$(CONFIG)\inc\http.h
+DEPS_42 = $(DEPS_42) build\$(CONFIG)\inc\me.h
+DEPS_42 = $(DEPS_42) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\uri.obj: \
-    src\uri.c $(DEPS_40)
+    src\uri.c $(DEPS_42)
 	@echo '   [Compile] build/$(CONFIG)/obj/uri.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\uri.obj -Fdbuild\$(CONFIG)\obj\uri.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\uri.c
 
 #
 #   user.obj
 #
-DEPS_41 = $(DEPS_41) build\$(CONFIG)\inc\me.h
-DEPS_41 = $(DEPS_41) build\$(CONFIG)\inc\http.h
+DEPS_43 = $(DEPS_43) build\$(CONFIG)\inc\me.h
+DEPS_43 = $(DEPS_43) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\user.obj: \
-    src\user.c $(DEPS_41)
+    src\user.c $(DEPS_43)
 	@echo '   [Compile] build/$(CONFIG)/obj/user.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\user.obj -Fdbuild\$(CONFIG)\obj\user.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\user.c
 
 #
 #   var.obj
 #
-DEPS_42 = $(DEPS_42) build\$(CONFIG)\inc\me.h
-DEPS_42 = $(DEPS_42) build\$(CONFIG)\inc\http.h
+DEPS_44 = $(DEPS_44) build\$(CONFIG)\inc\me.h
+DEPS_44 = $(DEPS_44) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\var.obj: \
-    src\var.c $(DEPS_42)
+    src\var.c $(DEPS_44)
 	@echo '   [Compile] build/$(CONFIG)/obj/var.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\var.obj -Fdbuild\$(CONFIG)\obj\var.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\var.c
 
 #
 #   webSockFilter.obj
 #
-DEPS_43 = $(DEPS_43) build\$(CONFIG)\inc\me.h
-DEPS_43 = $(DEPS_43) build\$(CONFIG)\inc\http.h
+DEPS_45 = $(DEPS_45) build\$(CONFIG)\inc\me.h
+DEPS_45 = $(DEPS_45) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\webSockFilter.obj: \
-    src\webSockFilter.c $(DEPS_43)
+    src\webSockFilter.c $(DEPS_45)
 	@echo '   [Compile] build/$(CONFIG)/obj/webSockFilter.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\webSockFilter.obj -Fdbuild\$(CONFIG)\obj\webSockFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\webSockFilter.c
 
 #
 #   libhttp
-#
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\inc\mpr.h
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\inc\me.h
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\inc\osdep.h
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\mprLib.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\bin\libmpr.lib
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\inc\pcre.h
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\pcre.obj
-!IF "$(ME_COM_PCRE)" == "1"
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\bin\libpcre.lib
-!ENDIF
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\inc\http.h
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\actionHandler.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\auth.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\basic.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\cache.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\chunkFilter.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\client.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\config.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\conn.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\digest.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\endpoint.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\error.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\host.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\monitor.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\netConnector.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\packet.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\pam.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\passHandler.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\pipeline.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\queue.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\rangeFilter.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\route.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\rx.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\sendConnector.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\service.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\session.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\stage.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\trace.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\tx.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\uploadFilter.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\uri.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\user.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\var.obj
-DEPS_44 = $(DEPS_44) build\$(CONFIG)\obj\webSockFilter.obj
-
-build\$(CONFIG)\bin\libhttp.lib: $(DEPS_44)
-	@echo '      [Link] build/$(CONFIG)/bin/libhttp.lib'
-	"lib.exe" -nologo -out:build\$(CONFIG)\bin\libhttp.lib "build\$(CONFIG)\obj\actionHandler.obj" "build\$(CONFIG)\obj\auth.obj" "build\$(CONFIG)\obj\basic.obj" "build\$(CONFIG)\obj\cache.obj" "build\$(CONFIG)\obj\chunkFilter.obj" "build\$(CONFIG)\obj\client.obj" "build\$(CONFIG)\obj\config.obj" "build\$(CONFIG)\obj\conn.obj" "build\$(CONFIG)\obj\digest.obj" "build\$(CONFIG)\obj\endpoint.obj" "build\$(CONFIG)\obj\error.obj" "build\$(CONFIG)\obj\host.obj" "build\$(CONFIG)\obj\monitor.obj" "build\$(CONFIG)\obj\netConnector.obj" "build\$(CONFIG)\obj\packet.obj" "build\$(CONFIG)\obj\pam.obj" "build\$(CONFIG)\obj\passHandler.obj" "build\$(CONFIG)\obj\pipeline.obj" "build\$(CONFIG)\obj\queue.obj" "build\$(CONFIG)\obj\rangeFilter.obj" "build\$(CONFIG)\obj\route.obj" "build\$(CONFIG)\obj\rx.obj" "build\$(CONFIG)\obj\sendConnector.obj" "build\$(CONFIG)\obj\service.obj" "build\$(CONFIG)\obj\session.obj" "build\$(CONFIG)\obj\stage.obj" "build\$(CONFIG)\obj\trace.obj" "build\$(CONFIG)\obj\tx.obj" "build\$(CONFIG)\obj\uploadFilter.obj" "build\$(CONFIG)\obj\uri.obj" "build\$(CONFIG)\obj\user.obj" "build\$(CONFIG)\obj\var.obj" "build\$(CONFIG)\obj\webSockFilter.obj"
-
-#
-#   http.obj
-#
-DEPS_45 = $(DEPS_45) build\$(CONFIG)\inc\me.h
-DEPS_45 = $(DEPS_45) build\$(CONFIG)\inc\http.h
-
-build\$(CONFIG)\obj\http.obj: \
-    src\http.c $(DEPS_45)
-	@echo '   [Compile] build/$(CONFIG)/obj/http.obj'
-	"$(CC)" -c -Fobuild\$(CONFIG)\obj\http.obj -Fdbuild\$(CONFIG)\obj\http.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\http.c
-
-#
-#   httpcmd
 #
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\inc\mpr.h
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\inc\me.h
@@ -740,8 +704,10 @@ DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\client.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\config.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\conn.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\digest.obj
+DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\dirHandler.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\endpoint.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\error.obj
+DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\fileHandler.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\host.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\monitor.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\netConnector.obj
@@ -764,23 +730,161 @@ DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\uri.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\user.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\var.obj
 DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\webSockFilter.obj
-DEPS_46 = $(DEPS_46) build\$(CONFIG)\bin\libhttp.lib
-DEPS_46 = $(DEPS_46) build\$(CONFIG)\obj\http.obj
 
-LIBS_46 = $(LIBS_46) libhttp.lib
-LIBS_46 = $(LIBS_46) libmpr.lib
+build\$(CONFIG)\bin\libhttp.lib: $(DEPS_46)
+	@echo '      [Link] build/$(CONFIG)/bin/libhttp.lib'
+	"lib.exe" -nologo -out:build\$(CONFIG)\bin\libhttp.lib "build\$(CONFIG)\obj\actionHandler.obj" "build\$(CONFIG)\obj\auth.obj" "build\$(CONFIG)\obj\basic.obj" "build\$(CONFIG)\obj\cache.obj" "build\$(CONFIG)\obj\chunkFilter.obj" "build\$(CONFIG)\obj\client.obj" "build\$(CONFIG)\obj\config.obj" "build\$(CONFIG)\obj\conn.obj" "build\$(CONFIG)\obj\digest.obj" "build\$(CONFIG)\obj\dirHandler.obj" "build\$(CONFIG)\obj\endpoint.obj" "build\$(CONFIG)\obj\error.obj" "build\$(CONFIG)\obj\fileHandler.obj" "build\$(CONFIG)\obj\host.obj" "build\$(CONFIG)\obj\monitor.obj" "build\$(CONFIG)\obj\netConnector.obj" "build\$(CONFIG)\obj\packet.obj" "build\$(CONFIG)\obj\pam.obj" "build\$(CONFIG)\obj\passHandler.obj" "build\$(CONFIG)\obj\pipeline.obj" "build\$(CONFIG)\obj\queue.obj" "build\$(CONFIG)\obj\rangeFilter.obj" "build\$(CONFIG)\obj\route.obj" "build\$(CONFIG)\obj\rx.obj" "build\$(CONFIG)\obj\sendConnector.obj" "build\$(CONFIG)\obj\service.obj" "build\$(CONFIG)\obj\session.obj" "build\$(CONFIG)\obj\stage.obj" "build\$(CONFIG)\obj\trace.obj" "build\$(CONFIG)\obj\tx.obj" "build\$(CONFIG)\obj\uploadFilter.obj" "build\$(CONFIG)\obj\uri.obj" "build\$(CONFIG)\obj\user.obj" "build\$(CONFIG)\obj\var.obj" "build\$(CONFIG)\obj\webSockFilter.obj"
+
+#
+#   http-server.obj
+#
+DEPS_47 = $(DEPS_47) build\$(CONFIG)\inc\me.h
+DEPS_47 = $(DEPS_47) build\$(CONFIG)\inc\http.h
+
+build\$(CONFIG)\obj\http-server.obj: \
+    test\http-server.c $(DEPS_47)
+	@echo '   [Compile] build/$(CONFIG)/obj/http-server.obj'
+	"$(CC)" -c -Fobuild\$(CONFIG)\obj\http-server.obj -Fdbuild\$(CONFIG)\obj\http-server.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) test\http-server.c
+
+#
+#   http-server
+#
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\mpr.h
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\me.h
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\osdep.h
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\mprLib.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\bin\libmpr.lib
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\pcre.h
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\pcre.obj
 !IF "$(ME_COM_PCRE)" == "1"
-LIBS_46 = $(LIBS_46) libpcre.lib
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\bin\libpcre.lib
+!ENDIF
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\http.h
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\actionHandler.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\auth.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\basic.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\cache.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\chunkFilter.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\client.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\config.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\conn.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\digest.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\dirHandler.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\endpoint.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\error.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\fileHandler.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\host.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\monitor.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\netConnector.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\packet.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\pam.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\passHandler.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\pipeline.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\queue.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\rangeFilter.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\route.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\rx.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\sendConnector.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\service.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\session.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\stage.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\trace.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\tx.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\uploadFilter.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\uri.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\user.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\var.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\webSockFilter.obj
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\bin\libhttp.lib
+DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\http-server.obj
+
+LIBS_48 = $(LIBS_48) libhttp.lib
+LIBS_48 = $(LIBS_48) libmpr.lib
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_48 = $(LIBS_48) libpcre.lib
 !ENDIF
 
-build\$(CONFIG)\bin\http.exe: $(DEPS_46)
+build\$(CONFIG)\bin\http-server.exe: $(DEPS_48)
+	@echo '      [Link] build/$(CONFIG)/bin/http-server.exe'
+	"$(LD)" -out:build\$(CONFIG)\bin\http-server.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "build\$(CONFIG)\obj\http-server.obj" $(LIBPATHS_48) $(LIBS_48) $(LIBS_48) $(LIBS) 
+
+#
+#   http.obj
+#
+DEPS_49 = $(DEPS_49) build\$(CONFIG)\inc\me.h
+DEPS_49 = $(DEPS_49) build\$(CONFIG)\inc\http.h
+
+build\$(CONFIG)\obj\http.obj: \
+    src\http.c $(DEPS_49)
+	@echo '   [Compile] build/$(CONFIG)/obj/http.obj'
+	"$(CC)" -c -Fobuild\$(CONFIG)\obj\http.obj -Fdbuild\$(CONFIG)\obj\http.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\http.c
+
+#
+#   httpcmd
+#
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\mpr.h
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\me.h
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\osdep.h
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\mprLib.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\bin\libmpr.lib
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\pcre.h
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\pcre.obj
+!IF "$(ME_COM_PCRE)" == "1"
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\bin\libpcre.lib
+!ENDIF
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\http.h
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\actionHandler.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\auth.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\basic.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\cache.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\chunkFilter.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\client.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\config.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\conn.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\digest.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\dirHandler.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\endpoint.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\error.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\fileHandler.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\host.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\monitor.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\netConnector.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\packet.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\pam.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\passHandler.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\pipeline.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\queue.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\rangeFilter.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\route.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\rx.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\sendConnector.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\service.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\session.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\stage.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\trace.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\tx.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\uploadFilter.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\uri.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\user.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\var.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\webSockFilter.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\bin\libhttp.lib
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\http.obj
+
+LIBS_50 = $(LIBS_50) libhttp.lib
+LIBS_50 = $(LIBS_50) libmpr.lib
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_50 = $(LIBS_50) libpcre.lib
+!ENDIF
+
+build\$(CONFIG)\bin\http.exe: $(DEPS_50)
 	@echo '      [Link] build/$(CONFIG)/bin/http.exe'
-	"$(LD)" -out:build\$(CONFIG)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "build\$(CONFIG)\obj\http.obj" $(LIBPATHS_46) $(LIBS_46) $(LIBS_46) $(LIBS) 
+	"$(LD)" -out:build\$(CONFIG)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "build\$(CONFIG)\obj\http.obj" $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS) 
 
 #
 #   est.h
 #
-build\$(CONFIG)\inc\est.h: $(DEPS_47)
+build\$(CONFIG)\inc\est.h: $(DEPS_51)
 	@echo '      [Copy] build/$(CONFIG)/inc/est.h'
 	if not exist "build\$(CONFIG)\inc" md "build\$(CONFIG)\inc"
 	copy /Y src\paks\est\est.h build\$(CONFIG)\inc\est.h
@@ -788,12 +892,12 @@ build\$(CONFIG)\inc\est.h: $(DEPS_47)
 #
 #   estLib.obj
 #
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\me.h
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\est.h
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\osdep.h
+DEPS_52 = $(DEPS_52) build\$(CONFIG)\inc\me.h
+DEPS_52 = $(DEPS_52) build\$(CONFIG)\inc\est.h
+DEPS_52 = $(DEPS_52) build\$(CONFIG)\inc\osdep.h
 
 build\$(CONFIG)\obj\estLib.obj: \
-    src\paks\est\estLib.c $(DEPS_48)
+    src\paks\est\estLib.c $(DEPS_52)
 	@echo '   [Compile] build/$(CONFIG)/obj/estLib.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\estLib.obj -Fdbuild\$(CONFIG)\obj\estLib.pdb -nologo -GR- -Zi -Od -MDd $(DFLAGS) $(IFLAGS) src\paks\est\estLib.c
 
@@ -801,12 +905,12 @@ build\$(CONFIG)\obj\estLib.obj: \
 #
 #   libest
 #
-DEPS_49 = $(DEPS_49) build\$(CONFIG)\inc\est.h
-DEPS_49 = $(DEPS_49) build\$(CONFIG)\inc\me.h
-DEPS_49 = $(DEPS_49) build\$(CONFIG)\inc\osdep.h
-DEPS_49 = $(DEPS_49) build\$(CONFIG)\obj\estLib.obj
+DEPS_53 = $(DEPS_53) build\$(CONFIG)\inc\est.h
+DEPS_53 = $(DEPS_53) build\$(CONFIG)\inc\me.h
+DEPS_53 = $(DEPS_53) build\$(CONFIG)\inc\osdep.h
+DEPS_53 = $(DEPS_53) build\$(CONFIG)\obj\estLib.obj
 
-build\$(CONFIG)\bin\libest.lib: $(DEPS_49)
+build\$(CONFIG)\bin\libest.lib: $(DEPS_53)
 	@echo '      [Link] build/$(CONFIG)/bin/libest.lib'
 	"lib.exe" -nologo -out:build\$(CONFIG)\bin\libest.lib "build\$(CONFIG)\obj\estLib.obj"
 !ENDIF
@@ -814,73 +918,73 @@ build\$(CONFIG)\bin\libest.lib: $(DEPS_49)
 #
 #   mprSsl.obj
 #
-DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\me.h
-DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\mpr.h
-DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\est.h
+DEPS_54 = $(DEPS_54) build\$(CONFIG)\inc\me.h
+DEPS_54 = $(DEPS_54) build\$(CONFIG)\inc\mpr.h
+DEPS_54 = $(DEPS_54) build\$(CONFIG)\inc\est.h
 
 build\$(CONFIG)\obj\mprSsl.obj: \
-    src\paks\mpr\mprSsl.c $(DEPS_50)
+    src\paks\mpr\mprSsl.c $(DEPS_54)
 	@echo '   [Compile] build/$(CONFIG)/obj/mprSsl.obj'
 	"$(CC)" -c -Fobuild\$(CONFIG)\obj\mprSsl.obj -Fdbuild\$(CONFIG)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" "-I$(ME_COM_MATRIXSSL_PATH)" "-I$(ME_COM_MATRIXSSL_PATH)\matrixssl" "-I$(ME_COM_NANOSSL_PATH)\src" src\paks\mpr\mprSsl.c
 
 #
 #   libmprssl
 #
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\inc\mpr.h
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\inc\me.h
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\inc\osdep.h
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\obj\mprLib.obj
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\bin\libmpr.lib
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\inc\est.h
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\obj\estLib.obj
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\inc\mpr.h
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\inc\me.h
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\inc\osdep.h
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\obj\mprLib.obj
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\bin\libmpr.lib
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\inc\est.h
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\obj\estLib.obj
 !IF "$(ME_COM_EST)" == "1"
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\bin\libest.lib
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\bin\libest.lib
 !ENDIF
-DEPS_51 = $(DEPS_51) build\$(CONFIG)\obj\mprSsl.obj
+DEPS_55 = $(DEPS_55) build\$(CONFIG)\obj\mprSsl.obj
 
-build\$(CONFIG)\bin\libmprssl.lib: $(DEPS_51)
+build\$(CONFIG)\bin\libmprssl.lib: $(DEPS_55)
 	@echo '      [Link] build/$(CONFIG)/bin/libmprssl.lib'
 	"lib.exe" -nologo -out:build\$(CONFIG)\bin\libmprssl.lib "build\$(CONFIG)\obj\mprSsl.obj"
 
 #
 #   stop
 #
-stop: $(DEPS_52)
+stop: $(DEPS_56)
 #  Omit build script stop
 
 #
 #   installBinary
 #
-installBinary: $(DEPS_53)
+installBinary: $(DEPS_57)
 #  Omit build script installBinary
 
 #
 #   start
 #
-start: $(DEPS_54)
+start: $(DEPS_58)
 #  Omit build script start
 
 #
 #   install
 #
-DEPS_55 = $(DEPS_55) stop
-DEPS_55 = $(DEPS_55) installBinary
-DEPS_55 = $(DEPS_55) start
+DEPS_59 = $(DEPS_59) stop
+DEPS_59 = $(DEPS_59) installBinary
+DEPS_59 = $(DEPS_59) start
 
-install: $(DEPS_55)
+install: $(DEPS_59)
 #  Omit build script install
 
 #
 #   uninstall
 #
-DEPS_56 = $(DEPS_56) stop
+DEPS_60 = $(DEPS_60) stop
 
-uninstall: $(DEPS_56)
+uninstall: $(DEPS_60)
 #  Omit build script uninstall
 
 #
 #   version
 #
-version: $(DEPS_57)
+version: $(DEPS_61)
 	echo 5.0.0
 

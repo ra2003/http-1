@@ -13,7 +13,7 @@
   </ItemDefinitionGroup>
 
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4a62bf6e-e3d0-4846-a8e4-945e9d816482}</ProjectGuid>
+    <ProjectGuid>{a1e9fc3d-94b6-45cd-8cce-31bec6cb5cda}</ProjectGuid>
     <RootNamespace />
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -38,19 +38,19 @@
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
 
@@ -83,88 +83,36 @@
     <_ProjectFileVersion>10</_ProjectFileVersion>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\libhttp\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ObjDir)\http-server\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\libhttp\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ObjDir)\http-server\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\libhttp\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ObjDir)\http-server\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PreBuildEvent</CustomBuildBeforeTargets>
 
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(BinDir)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\libhttp\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ObjDir)\http-server\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PreBuildEvent</CustomBuildBeforeTargets>
   </PropertyGroup>
   
   <ItemGroup>
-    <ClCompile Include="..\..\src\actionHandler.c" />
-    <ClCompile Include="..\..\src\auth.c" />
-    <ClCompile Include="..\..\src\basic.c" />
-    <ClCompile Include="..\..\src\cache.c" />
-    <ClCompile Include="..\..\src\chunkFilter.c" />
-    <ClCompile Include="..\..\src\client.c" />
-    <ClCompile Include="..\..\src\config.c" />
-    <ClCompile Include="..\..\src\conn.c" />
-    <ClCompile Include="..\..\src\digest.c" />
-    <ClCompile Include="..\..\src\dirHandler.c" />
-    <ClCompile Include="..\..\src\endpoint.c" />
-    <ClCompile Include="..\..\src\error.c" />
-    <ClCompile Include="..\..\src\fileHandler.c" />
-    <ClCompile Include="..\..\src\host.c" />
-    <ClCompile Include="..\..\src\monitor.c" />
-    <ClCompile Include="..\..\src\netConnector.c" />
-    <ClCompile Include="..\..\src\packet.c" />
-    <ClCompile Include="..\..\src\pam.c" />
-    <ClCompile Include="..\..\src\passHandler.c" />
-    <ClCompile Include="..\..\src\pipeline.c" />
-    <ClCompile Include="..\..\src\queue.c" />
-    <ClCompile Include="..\..\src\rangeFilter.c" />
-    <ClCompile Include="..\..\src\route.c" />
-    <ClCompile Include="..\..\src\rx.c" />
-    <ClCompile Include="..\..\src\sendConnector.c" />
-    <ClCompile Include="..\..\src\service.c" />
-    <ClCompile Include="..\..\src\session.c" />
-    <ClCompile Include="..\..\src\stage.c" />
-    <ClCompile Include="..\..\src\trace.c" />
-    <ClCompile Include="..\..\src\tx.c" />
-    <ClCompile Include="..\..\src\uploadFilter.c" />
-    <ClCompile Include="..\..\src\uri.c" />
-    <ClCompile Include="..\..\src\user.c" />
-    <ClCompile Include="..\..\src\var.c" />
-    <ClCompile Include="..\..\src\webSockFilter.c" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ClInclude Include="$(IncDir)\http.h" />
+    <ClCompile Include="..\..\test\http-server.c" />
   </ItemGroup>
 
   <ItemDefinitionGroup>
   <Link>
-    <AdditionalDependencies>libmpr.lib;libpcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    <AdditionalDependencies>libhttp.lib;libmpr.lib;libpcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <AdditionalLibraryDirectories>$(OutDir);build\$(Cfg)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
   </Link>
-
-  <CustomBuildStep>
-    <Command>cd ..\..\src
-copy /Y http.h $(IncDir)
-cd ..\projects\http-windows-default</Command>
-    <Outputs>$(BinDir)\libhttp.dll</Outputs>
-  </CustomBuildStep>
   </ItemDefinitionGroup>
 
 <ItemGroup>
-  <ProjectReference Include="libmpr.vcxproj">
-  <Project>d0b6be03-b4b0-4ccf-b01d-3777dcdb611a</Project>
-  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-  </ProjectReference>
-</ItemGroup>
-
-<ItemGroup>
-  <ProjectReference Include="libpcre.vcxproj">
-  <Project>b0bdf9c7-594a-4047-93f9-1da92f564ff2</Project>
+  <ProjectReference Include="libhttp.vcxproj">
+  <Project>4a62bf6e-e3d0-4846-a8e4-945e9d816482</Project>
   <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
   </ProjectReference>
 </ItemGroup>

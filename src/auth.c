@@ -23,6 +23,7 @@
 
 static void manageAuth(HttpAuth *auth, int flags);
 static void formLogin(HttpConn *conn);
+PUBLIC int formParse(HttpConn *conn, cchar **username, cchar **password);
 static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password);
 
 /*********************************** Code *************************************/
@@ -34,7 +35,7 @@ PUBLIC void httpInitAuth()
      */
     httpCreateAuthType("basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
     httpCreateAuthType("digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
-    httpCreateAuthType("form", formLogin, NULL, NULL);
+    httpCreateAuthType("form", formLogin, formParse, NULL);
 
     /*
         Stores: app, config, system
@@ -650,6 +651,14 @@ static void formLogin(HttpConn *conn)
     } else {
         httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
     }
+}
+
+
+PUBLIC int formParse(HttpConn *conn, cchar **username, cchar **password)
+{
+    *username = httpGetParam(conn, "username", 0);
+    *password = httpGetParam(conn, "password", 0);
+    return 0;
 }
 
 

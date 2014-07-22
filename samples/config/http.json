@@ -11,7 +11,7 @@
         "client": "client",
         "controllers": "controllers",
         "db": "db",
-        "documents":  ".",
+        "documents": ".",
         "home": ".",
         "layouts": "layouts",
         "lib": "client/lib",
@@ -229,6 +229,11 @@
                     Set to "app", "config" or "system".
                  */
                 store: "app",
+
+                /*
+                    Type of authentication protocol to use
+                 */
+                type: "basic|digest",
             },
             
             /*
@@ -283,6 +288,11 @@
             deleteUploads: true,
 
             /*
+                Documents to serve. Same as {directories: documents: 'DIR' }
+             */
+            documents: 'directory',
+
+            /*
                 Domain to service. This supports virtual hosting. If the name contains "*", it tests if the
                 request Host header contains the substring.
              */
@@ -329,6 +339,11 @@
                  */
                 set: { },
             },
+
+            /*
+                Home directory for the server. Same as {directories: home: 'DIR' }
+             */
+            home: 'directory',
 
             /*
                 List of index documents to serve for directory level requests
@@ -478,7 +493,7 @@
                     pattern: '^/auth/basic',
                     auth: {
                         realm: 'example.com',
-                        type: 'basic',
+                        type: 'basic|digest',
                     },
                 }
              */

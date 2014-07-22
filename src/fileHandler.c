@@ -18,7 +18,7 @@
 
 static void handleDeleteRequest(HttpQueue *q);
 static void handlePutRequest(HttpQueue *q);
-static int manageDir(HttpConn *conn);
+static int handleDirectory(HttpConn *conn);
 static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize size);
 
 /*********************************** Code *************************************/
@@ -42,7 +42,7 @@ static int rewriteFileHandler(HttpConn *conn)
         return HTTP_ROUTE_OK;
     }
     if (info->isDir) {
-        return manageDir(conn);
+        return handleDirectory(conn);
     }
     if (rx->flags & (HTTP_GET | HTTP_HEAD | HTTP_POST) && info->valid && tx->length < 0) {
         /*
@@ -416,7 +416,7 @@ static void handleDeleteRequest(HttpQueue *q)
 }
 
 
-static int manageDir(HttpConn *conn)
+static int handleDirectory(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;

@@ -7826,6 +7826,36 @@ PUBLIC int httpUpgradeWebSocket(HttpConn *conn);
  */
 PUBLIC bool httpWebSocketOrderlyClosed(HttpConn *conn);
 
+/************************************ Dir  *****************************************/
+/**
+    Directory object for the DirHandler
+    @defgroup HttpDir HttpDir
+    @stability Internal
+ */
+
+typedef struct HttpDir {
+#if KEEP
+    MprList         *dirList;
+    cchar           *defaultIcon;
+    MprList         *extList;
+    MprList         *ignoreList;
+#endif
+    bool            enabled;
+    int             fancyIndexing;
+    bool            foldersFirst;
+    cchar           *pattern;
+    char            *sortField;
+    int             sortOrder;              /* 1 == ascending, -1 descending */
+} HttpDir;
+
+/**
+    Get the HttpDir object for a route
+    @ingroup HttpDir
+    @stability Prototype
+    @internal
+ */
+PUBLIC HttpDir *httpGetDirObj(HttpRoute *route);
+
 /************************************ Misc *****************************************/
 /**
     Add an option to the options table

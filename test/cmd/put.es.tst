@@ -2,15 +2,16 @@
     put.tst - Test the put command
  */
 
-load("support.es")
+require support
+
+cleanDir('../web/tmp')
 
 //  PUT file
-cleanDir("web/tmp")
-run("http/test.dat /tmp/day.tmp")
-assert(exists("web/tmp/day.tmp"))
+http('test.dat /tmp/day.tmp')
+ttrue(Path('../web/tmp/day.tmp').exists)
 
 //  PUT files
-cleanDir("web/tmp")
-run("http/*.tst /tmp/")
-assert(exists("web/tmp/basic.tst"))
-cleanDir("web/tmp")
+http(Path('.').files('*.tst').join(' ') + ' /tmp/')
+ttrue(Path('../web/tmp/basic.es.tst').exists)
+
+cleanDir('../web/tmp')

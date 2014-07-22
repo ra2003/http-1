@@ -2,6 +2,7 @@
     basic.tst - Basic http tests
  */
 
-load("support.es")
+require support
 
-run("/index.html").match("Hello /index.html")
+let result = http("/index.html")
+http("/index.html").contains("Hello /index.html")

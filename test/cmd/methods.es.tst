@@ -2,8 +2,15 @@
     methods.tst - Test various http methods
  */
 
-load("support.es")
+require support
 
-//  Options/Trace
-run("--method OPTIONS /index.html")
-assert(run("--showCode -q --method TRACE /index.html").contains("406"))
+let data
+
+data = http('-s -q -m TRACE /index.html')
+ttrue(data.contains('HTTP/1.1 405'))
+
+data = http('-s -q -m OPTIONS /trace/index.html')
+ttrue(data.contains('HTTP/1.1 200'))
+
+data = http('-s -q -m TRACE /trace/index.html')
+ttrue(data.contains('HTTP/1.1 200'))

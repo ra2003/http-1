@@ -3,24 +3,12 @@
  */
 
 module support {
-    const HOST = App.getenv('TE_HTTP_URI') || "127.0.0.1:4100"
-
-    var httpcmd = Cmd.locate("http") + " --host " + HOST + " "
-    /*
-    if (test.verbose > 2) {
-        httpcmd += "-v "
-    }
-    */
+    require ejs.testme
 
     function http(args): String {
-        let result = Cmd.run(httpcmd + args)
+        let HOST = tget('TE_HTTP') || "127.0.0.1:4100"
+        let httpcmd = Cmd.locate("http") + " --host " + HOST + " "
+        let result = Cmd.run(httpcmd + args, {exception: false})
         return result.trim()
     }
-
-    /*
-
-    let http = tget('http')
-
-    Cmd.run(http + '
-    */
 }

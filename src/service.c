@@ -141,6 +141,8 @@ PUBLIC Http *httpCreate(int flags)
         httpOpenCacheHandler(http);
         httpOpenPassHandler(http);
         httpOpenActionHandler(http);
+        httpOpenDirHandler(http);
+        httpOpenFileHandler(http);
         http->serverLimits = httpCreateLimits(1);
         httpDefineRouteBuiltins();
         httpAddCounters();

@@ -2,10 +2,9 @@
     load.tst - Load tests
  */
 
-load("support.es")
+require support
 
-//  Load test
-if (test.depth > 2) {
-    run("-i 2000 /index.html")
-    run("-i 2000 /big.txt")
+if (tget('TM_DEPTH', 0) > 2) {
+    http("-i 2000 /index.html")
+    http("-i 2000 /big.txt")
 }

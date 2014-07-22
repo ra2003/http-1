@@ -2779,6 +2779,8 @@ PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet);
 PUBLIC int httpOpenActionHandler(Http *http);
 PUBLIC int httpOpenChunkFilter(Http *http);
 PUBLIC int httpOpenCacheHandler(Http *http);
+PUBLIC int httpOpenDirHandler(Http *http);
+PUBLIC int httpOpenFileHandler(Http *http);
 PUBLIC int httpOpenPassHandler(Http *http);
 PUBLIC int httpOpenRangeFilter(Http *http);
 PUBLIC int httpOpenNetConnector(Http *http);
@@ -3330,6 +3332,16 @@ PUBLIC void httpPrepClientConn(HttpConn *conn, bool keepHeaders);
     @stability Internal
  */
 PUBLIC void httpReadyHandler(HttpConn *conn);
+
+/**
+    Test if a directory listing should be rendered for the request.
+    @param conn Connection object
+    @return True if a directory listing is configured to be rendered for this request.
+    @ingroup HttpConn
+    @stability Internal
+    @internal
+ */
+PUBLIC bool httpRenderDirListing(HttpConn *conn);
 
 /**
     Test if a request has exceeded its timeout limits

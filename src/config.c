@@ -36,6 +36,7 @@ PUBLIC HttpParseCallback httpAddConfig(cchar *key, HttpParseCallback callback)
 
 static void httpParseError(HttpRoute *route, cchar *fmt, ...)
 {
+    HttpRoute   *rp;
     va_list     args;
     char        *msg;
 
@@ -44,6 +45,9 @@ static void httpParseError(HttpRoute *route, cchar *fmt, ...)
     mprLog("error http config", 0, "%s", msg);
     va_end(args);
     route->error = 1;
+    for (rp = route; rp; rp = rp->parent) {
+        rp->error = 1;
+    }
 }
 
 
@@ -300,11 +304,19 @@ static void parseKey(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseAll(HttpRoute *route, cchar *key, MprJson *prop)
 {
+    MprJson     *routes;
     MprJson     *child;
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         parseKey(route, key, child);
+    }
+
+    /*
+        Property order is not guaranteed, so must ensure routes are processed after all outer properties.
+     */
+    if ((routes = mprGetJsonObj(prop, "routes")) != 0) {
+        parseRoutes(route, key, routes);
     }
 }
 
@@ -585,6 +597,16 @@ static void parseDomain(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseDocuments(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (!mprPathExists(prop->value, X_OK)) {
+        httpParseError(route, "Cannot locate documents directory %s", prop->value);
+    } else {
+        httpSetRouteDocuments(route, prop->value);
+    }
+}
+
+
 static void parseErrors(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -635,6 +657,16 @@ static void parseHeadersSet(HttpRoute *route, cchar *key, MprJson *prop)
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         httpAddRouteResponseHeader(route, HTTP_ROUTE_SET_HEADER, child->name, child->value);
+    }
+}
+
+
+static void parseHome(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (!mprPathExists(prop->value, X_OK)) {
+        httpParseError(route, "Cannot locate home directory %s", prop->value);
+    } else {
+        httpSetRouteHome(route, prop->value);
     }
 }
 
@@ -1030,17 +1062,19 @@ static void setConfigDefaults(HttpRoute *route)
 
 static void parseHttp(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    MprJson     *routes;
 
     setConfigDefaults(route);
     parseAll(route, key, prop);
 
+#if MOVED
+    MprJson     *routes;
     /*
         Property order is not guaranteed, so must ensure routes are processed after all outer properties.
      */
     if ((routes = mprGetJsonObj(prop, "routes")) != 0) {
         parseRoutes(route, key, routes);
     }
+#endif
 }
 
 
@@ -1320,18 +1354,21 @@ static void parseSsl(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseSslAuthorityFile(HttpRoute *route, cchar *key, MprJson *prop)
 {
+    //  MOB - should verify exists
     mprSetSslCaFile(route->ssl, prop->value);
 }
 
 
 static void parseSslAuthorityDirectory(HttpRoute *route, cchar *key, MprJson *prop)
 {
+    //  MOB - should verify exists
     mprSetSslCaPath(route->ssl, prop->value);
 }
 
 
 static void parseSslCertificate(HttpRoute *route, cchar *key, MprJson *prop)
 {
+    //  MOB - should verify exists
     mprSetSslCertFile(route->ssl, prop->value);
 }
 
@@ -1344,6 +1381,7 @@ static void parseSslCiphers(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseSslKey(HttpRoute *route, cchar *key, MprJson *prop)
 {
+    //  MOB - should verify exists
     mprSetSslKeyFile(route->ssl, prop->value);
 }
 
@@ -1549,6 +1587,8 @@ PUBLIC int httpInitParser()
 #endif
     httpAddConfig("app.http.database", parseDatabase);
     httpAddConfig("app.http.deleteUploads", parseDeleteUploads);
+    httpAddConfig("app.http.directories", parseDirectories);
+    httpAddConfig("app.http.documents", parseDocuments);
     httpAddConfig("app.http.domain", parseDomain);
     httpAddConfig("app.http.errors", parseErrors);
     httpAddConfig("app.http.formats", parseAll);
@@ -1557,6 +1597,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.headers.add", parseHeadersAdd);
     httpAddConfig("app.http.headers.remove", parseHeadersRemove);
     httpAddConfig("app.http.headers.set", parseHeadersSet);
+    httpAddConfig("app.http.home", parseHome);
     httpAddConfig("app.http.indexes", parseIndexes);
     httpAddConfig("app.http.keep", parseKeep);
     httpAddConfig("app.http.languages", parseLanguages);
@@ -1589,7 +1630,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.params", parseParams);
     httpAddConfig("app.http.pattern", parsePattern);
     httpAddConfig("app.http.pipeline", parseAll);
-    httpAddConfig("app.http.pipeline.filter", parsePipelineFilters);
+    httpAddConfig("app.http.pipeline.filters", parsePipelineFilters);
     httpAddConfig("app.http.pipeline.handlers", parsePipelineHandlers);
     httpAddConfig("app.http.prefix", parsePrefix);
     httpAddConfig("app.http.redirect", parseRedirect);

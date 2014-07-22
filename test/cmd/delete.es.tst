@@ -2,11 +2,12 @@
     delete.tst - Test http delete
  */
 
-load("support.es")
+require support
 
-//  DELETE
-run("test.dat /tmp/test.dat")
-assert(Path("web/tmp/test.dat").exists)
-run("--method DELETE /tmp/test.dat")
-assert(!Path("web/tmp/test.dat").exists)
+//  PUT
+http("test.dat /tmp/test.dat")
+ttrue(Path("../web/tmp/test.dat").exists)
+
+http("--method DELETE /tmp/test.dat")
+ttrue(!Path("../web/tmp/test.dat").exists)
 

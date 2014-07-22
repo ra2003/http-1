@@ -4,8 +4,13 @@
 
 Me.load({
     targets: {
+        'http-server': {
+            type: 'exe',
+            depends: [ 'libhttp' ],
+            sources: [ 'http-server.c' ],
+        },
         test: {
-            action: `run('testme -v --depth ' + me.settings.depth, {noio: true})`,
+            action: `run('testme --depth ' + me.settings.depth, {noio: true})`,
             platforms: [ 'local' ],
         },
 

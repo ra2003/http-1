@@ -2,14 +2,14 @@
     chunked.tst - Test chunked transfers
  */
 
-load("support.es")
+require support
 
 //  Chunked get
-data = run("--chunk 256 /big.txt")
-assert(data.startsWith("012345678"))
-assert(data.endsWith("END"))
+data = http("--chunk 256 /big.txt")
+ttrue(data.startsWith("012345678"))
+ttrue(data.endsWith("END"))
 
 //  Chunked empty get
-data = run("--chunk 100 /empty.html")
-assert(data == "")
+data = http("--chunk 100 /empty.html")
+ttrue(data == "")
 

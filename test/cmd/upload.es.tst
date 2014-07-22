@@ -2,14 +2,17 @@
     upload.tst - Test http upload
  */
 
-load("support.es")
+require support
 
-//  Upload files
-data = run("--upload http/*.tst /upload.ejs")
-assert(data.contains('"clientFilename": "basic.tst"'))
-assert(data.contains('"clientFilename": "methods.tst"'))
+let uploadDir = Path('../web/tmp')
 
-//  Upload with form
-data = run("--upload --form 'name=John+Smith&address=300+Park+Avenue' http/*.tst /upload.ejs")
-assert(data.contains('"address": "300 Park Avenue"'))
-assert(data.contains('"clientFilename": "basic.tst"'))
+cleanDir(uploadDir)
+
+data = http("--upload support.es.com /upload/uploadFile.html")
+ttrue(data.contains('Upload Complete'))
+
+for each (file in uploadDir) {
+    ttrue(file.readString() == Path('support.es.com').readString())
+    break
+}
+cleanDir(uploadDir)

@@ -2,9 +2,9 @@
     empty.tst - Empty response
  */
 
-load("support.es")
+require support
 
 //  Empty get
-data = run("/empty.html")
-assert(data == "")
+data = http("/empty.html")
+ttrue(data == "")
 

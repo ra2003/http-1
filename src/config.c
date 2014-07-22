@@ -467,6 +467,20 @@ static void parseAuthType(HttpRoute *route, cchar *key, MprJson *prop)
             These are implemented by the browser, so we can use a global auth-condition
          */
         httpAddRouteCondition(route, "auth", 0, 0);
+
+#if DEPRECATED || 1
+    } else if (smatch(prop->value, "form")) {
+        /* Undocumented */
+        MprJson *parent;
+        cchar *auth, *loginForm, *loginService, *logoutService, *loggedInPage;
+        auth = mprTrimPathExt(key);
+        parent = mprGetJsonObj(route->config, auth);
+        loginForm = mprGetJson(parent, "loginForm");
+        loginService = mprGetJson(parent, "loginService");
+        logoutService = mprGetJson(parent, "logoutService");
+        loggedInPage = mprGetJson(parent, "loggedInPage");
+        httpSetAuthForm(route, loginForm, loginService, logoutService, loggedInPage);
+#endif
     }
 }
 

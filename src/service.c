@@ -228,6 +228,12 @@ static void manageHttp(Http *http, int flags)
 }
 
 
+PUBLIC Http *httpGetHttp()
+{
+    return HTTP;
+}
+
+
 PUBLIC int httpStartEndpoints()
 {
     HttpEndpoint    *endpoint;

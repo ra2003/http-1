@@ -24,7 +24,7 @@ static void netOutgoingService(HttpQueue *q);
 /*
     Initialize the net connector
  */
-PUBLIC int httpOpenNetConnector(Http *http)
+PUBLIC int httpOpenNetConnector()
 {
     HttpStage     *stage;
 
@@ -33,7 +33,7 @@ PUBLIC int httpOpenNetConnector(Http *http)
     }
     stage->close = netClose;
     stage->outgoingService = netOutgoingService;
-    http->netConnector = stage;
+    HTTP->netConnector = stage;
     return 0;
 }
 

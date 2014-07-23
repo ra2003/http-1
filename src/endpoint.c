@@ -135,9 +135,6 @@ static bool validateEndpoint(HttpEndpoint *endpoint)
     int         nextRoute;
 
     if ((host = mprGetFirstItem(endpoint->hosts)) == 0) {
-/* UNUSED
-        mprLog("error http config", 0, "Missing host object on endpoint %s:%d", endpoint->ip, endpoint->port);
-*/
         host = httpGetDefaultHost();
         httpAddHostToEndpoint(endpoint, host);
         if (!host->name) {

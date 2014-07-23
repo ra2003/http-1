@@ -24,14 +24,14 @@ static void startRange(HttpQueue *q);
 
 /*********************************** Code *************************************/
 
-PUBLIC int httpOpenRangeFilter(Http *http)
+PUBLIC int httpOpenRangeFilter()
 {
     HttpStage     *filter;
 
     if ((filter = httpCreateFilter("rangeFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->rangeFilter = filter;
+    HTTP->rangeFilter = filter;
     filter->match = matchRange; 
     filter->start = startRange; 
     filter->outgoingService = outgoingRangeService; 

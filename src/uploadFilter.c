@@ -49,14 +49,14 @@ static int  processUploadData(HttpQueue *q);
 
 /************************************* Code ***********************************/
 
-PUBLIC int httpOpenUploadFilter(Http *http)
+PUBLIC int httpOpenUploadFilter()
 {
     HttpStage     *filter;
 
     if ((filter = httpCreateFilter("uploadFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->uploadFilter = filter;
+    HTTP->uploadFilter = filter;
     filter->match = matchUpload;
     filter->open = openUpload;
     filter->close = closeUpload;

@@ -122,12 +122,12 @@ PUBLIC Http *httpCreate(int flags)
     httpGetUserGroup();
     httpInitParser();
     httpInitAuth();
-    httpOpenNetConnector(http);
-    httpOpenSendConnector(http);
-    httpOpenRangeFilter(http);
-    httpOpenChunkFilter(http);
+    httpOpenNetConnector();
+    httpOpenSendConnector();
+    httpOpenRangeFilter();
+    httpOpenChunkFilter();
 #if ME_HTTP_WEB_SOCKETS
-    httpOpenWebSockFilter(http);
+    httpOpenWebSockFilter();
 #endif
     mprSetIdleCallback(isIdle);
     mprAddTerminator(terminateHttp);
@@ -698,7 +698,7 @@ PUBLIC void httpAddConn(HttpConn *conn)
         if (!mprGetDebugMode())
 #endif
         {
-            http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, 0, 
+            http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
                 MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
         }
     }
@@ -725,7 +725,7 @@ PUBLIC char *httpGetDateString(MprPath *sbuf)
 }
 
 
-PUBLIC void *httpGetContext(Http *http)
+PUBLIC void *httpGetContext()
 {
     return HTTP->context;
 }
@@ -737,13 +737,13 @@ PUBLIC void httpSetContext(void *context)
 }
 
 
-PUBLIC int httpGetDefaultClientPort(Http *http)
+PUBLIC int httpGetDefaultClientPort()
 {
     return HTTP->defaultClientPort;
 }
 
 
-PUBLIC cchar *httpGetDefaultClientHost(Http *http)
+PUBLIC cchar *httpGetDefaultClientHost()
 {
     return HTTP->defaultClientHost;
 }

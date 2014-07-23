@@ -256,34 +256,6 @@ static void postParse(HttpRoute *route)
 }
 
 
-#if MOVED
-PUBLIC cchar *httpGetDir(HttpRoute *route, cchar *name)
-{
-    cchar   *key;
-
-    key = sjoin(supper(name), "_DIR", NULL);
-    return httpGetRouteVar(route, key);
-}
-
-
-PUBLIC void httpSetDir(HttpRoute *route, cchar *name, cchar *value)
-{
-    if (value == 0) {
-        value = name;
-    }
-    value = mprJoinPath(route->documents, value);
-    httpSetRouteVar(route, sjoin(supper(name), "_DIR", NULL), httpMakePath(route, 0, value));
-}
-
-
-PUBLIC void httpSetDefaultDirs(HttpRoute *route)
-{
-    httpSetDir(route, "cache", 0);
-    httpSetDir(route, "client", 0);
-    httpSetDir(route, "paks", "paks");
-}
-#endif
-
 /**************************************** Parser Callbacks ****************************************/
 
 
@@ -1073,16 +1045,6 @@ static void parseHttp(HttpRoute *route, cchar *key, MprJson *prop)
 
     setConfigDefaults(route);
     parseAll(route, key, prop);
-
-#if MOVED
-    MprJson     *routes;
-    /*
-        Property order is not guaranteed, so must ensure routes are processed after all outer properties.
-     */
-    if ((routes = mprGetJsonObj(prop, "routes")) != 0) {
-        parseRoutes(route, key, routes);
-    }
-#endif
 }
 
 

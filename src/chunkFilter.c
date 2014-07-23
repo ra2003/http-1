@@ -19,14 +19,14 @@ static void setChunkPrefix(HttpQueue *q, HttpPacket *packet);
 /* 
    Loadable module initialization
  */
-PUBLIC int httpOpenChunkFilter(Http *http)
+PUBLIC int httpOpenChunkFilter()
 {
     HttpStage     *filter;
 
     if ((filter = httpCreateFilter("chunkFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->chunkFilter = filter;
+    HTTP->chunkFilter = filter;
     filter->match = matchChunk; 
     filter->open = openChunk; 
     filter->outgoingService = outgoingChunkService; 

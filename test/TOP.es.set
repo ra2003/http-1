@@ -3,12 +3,14 @@
  */
 require ejs.unix
 
-print('set libraries http mpr')
-
 let json = Path('http.json').readJSON()
 let httpEndpoint = json.app.http.server.listen[0]
 let sslEndpoint = json.app.http.server.listen[1]
-tset('TM_HTTP', httpEndpoint)
-tset('TM_HTTPS', sslEndpoint)
+tset('libraries', 'http mpr')
+
+if (tphase() == 'Setup') {
+    tset('TM_HTTP', httpEndpoint)
+    tset('TM_HTTPS', sslEndpoint)
+}
 
 startStopService('http-server', {address: httpEndpoint})

@@ -49,7 +49,7 @@ static void basicHttpGet()
     http = httpCreate(HTTP_CLIENT_SIDE);
     ttrue(http != 0);
 
-    conn = httpCreateConn(http, NULL, 0);
+    conn = httpCreateConn(NULL, 0);
     rc = httpConnect(conn, "GET", "http://www.ibm.com/index.html", NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
@@ -76,7 +76,7 @@ static void secureHttpGet()
 
     http = httpCreate(HTTP_CLIENT_SIDE);
     ttrue(http != 0);
-    conn = httpCreateConn(http, NULL, 0);
+    conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
 
     rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
@@ -109,7 +109,7 @@ static void stealSocket()
     /*
         Test httpStealSocket
      */
-    conn = httpCreateConn(http, NULL, 0);
+    conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
     rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
     ttrue(rc >= 0);
@@ -133,7 +133,7 @@ static void stealSocket()
     /*
         Test httpStealSocketHandle
      */
-    conn = httpCreateConn(http, NULL, 0);
+    conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
     rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
     ttrue(rc >= 0);

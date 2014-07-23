@@ -118,16 +118,14 @@ static void traceErrorProc(HttpConn *conn, cchar *fmt, ...);
 /*
    WebSocket Filter initialization
  */
-PUBLIC int httpOpenWebSockFilter(Http *http)
+PUBLIC int httpOpenWebSockFilter()
 {
     HttpStage     *filter;
-
-    assert(http);
 
     if ((filter = httpCreateFilter("webSocketFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->webSocketFilter = filter;
+    HTTP->webSocketFilter = filter;
     filter->match = matchWebSock;
     filter->open = openWebSock;
     filter->ready = readyWebSock;

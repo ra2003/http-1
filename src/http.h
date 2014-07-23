@@ -324,7 +324,7 @@ typedef void (*HttpTimeoutCallback)(struct HttpConn *conn);
     @param proc Fork callback procedure
     @param arg Argument to supply when the callback is invoked.
     @ingroup HttpConn
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC void httpSetForkCallback(MprForkCallback proc, void *arg);
 
@@ -1061,10 +1061,9 @@ PUBLIC void httpDestroy();
 
 /**
     Get the http context object
-    @param http Http service object.
     @return The http context object defined via httpSetContext
     @ingroup Http
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC void *httpGetContext();
 
@@ -1109,7 +1108,7 @@ PUBLIC cchar *httpLookupStatus(int status);
     @param name The name of the host to find
     @return The corresponding host object
     @ingroup Http
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC struct HttpHost *httpLookupHost(cchar *name);
 
@@ -1119,7 +1118,7 @@ PUBLIC struct HttpHost *httpLookupHost(cchar *name);
     @param port Listening port number
     @return HttpEndpoint object
     @ingroup Http
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC struct HttpEndpoint *httpLookupEndpoint(cchar *ip, int port);
 
@@ -1148,7 +1147,7 @@ PUBLIC void httpSetContext(void *context);
     @description Define a default host to use for client connections if the URI does not specify a host
     @param host Host or IP address
     @ingroup Http
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC void httpSetDefaultClientHost(cchar *host);
 
@@ -1157,7 +1156,7 @@ PUBLIC void httpSetDefaultClientHost(cchar *host);
     @description Define a default port to use for client connections if the URI does not define a port
     @param port Integer port number
     @ingroup Http
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC void httpSetDefaultClientPort(int port);
 
@@ -1198,7 +1197,7 @@ PUBLIC int httpSetPlatformDir(cchar *platform);
     @param host Proxy host name or IP address
     @param port Proxy host port number.
     @ingroup Http
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC void httpSetProxy(cchar *host, int port);
 
@@ -1206,7 +1205,7 @@ PUBLIC void httpSetProxy(cchar *host, int port);
     Set the software description
     @param description String describing the Http software. By default, this is set to HTTP_NAME.
     @ingroup Http
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC void httpSetSoftware(cchar *description);
 
@@ -2630,13 +2629,12 @@ typedef struct HttpStage {
 
 } HttpStage;
 
-
 /**
     Create a clone of an existing state. This is used when creating filters configured to match certain extensions.
     @param stage Stage object to clone
     @return A new stage object
     @ingroup HttpStage
-    @stability Stable
+    @stability Evolving
 */
 PUBLIC HttpStage *httpCloneStage(HttpStage *stage);
 
@@ -2648,7 +2646,7 @@ PUBLIC HttpStage *httpCloneStage(HttpStage *stage);
     @param module Optional module object for loadable stages
     @return A new stage object
     @ingroup HttpStage
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC HttpStage *httpCreateConnector(cchar *name, MprModule *module);
 
@@ -2660,7 +2658,7 @@ PUBLIC HttpStage *httpCreateConnector(cchar *name, MprModule *module);
     @param module Optional module object for loadable stages
     @return A new stage object
     @ingroup HttpStage
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC HttpStage *httpCreateFilter(cchar *name, MprModule *module);
 
@@ -2673,7 +2671,7 @@ PUBLIC HttpStage *httpCreateFilter(cchar *name, MprModule *module);
     @param module Optional module object for loadable stages
     @return A new stage object
     @ingroup HttpStage
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC HttpStage *httpCreateHandler(cchar *name, MprModule *module);
 
@@ -2694,7 +2692,7 @@ PUBLIC HttpStage *httpCreateStage(cchar *name, int flags, MprModule *module);
     @param name Name of stage to locate
     @return Stage or NULL if not found
     @ingroup HttpStage
-    @stability Stable
+    @stability Evolving
 */
 PUBLIC struct HttpStage *httpLookupStage(cchar *name);
 
@@ -2745,7 +2743,7 @@ PUBLIC void httpHandleOptions(struct HttpConn *conn);
     @param name Name of the stage concerned
     @return Reference to the stage data block.
     @ingroup HttpStage
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC void *httpLookupStageData(cchar *name);
 

@@ -84,7 +84,7 @@
                     },
                     directories: {
                         /* Relative to documents or absolute */
-                        upload: 'tmp',
+                        upload: 'uploaded',
                     },
                 },
             ],

@@ -159,9 +159,11 @@ static void startFileHandler(HttpQueue *q)
     conn = q->conn;
     rx = conn->rx;
     tx = conn->tx;
-    assert(!tx->finalized);
     
-    if (rx->flags & HTTP_PUT) {
+    if (tx->finalized || conn->error) {
+        return;
+
+    } else if (rx->flags & HTTP_PUT) {
         handlePutRequest(q);
         
     } else if (rx->flags & HTTP_DELETE) {

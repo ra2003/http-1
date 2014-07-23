@@ -197,7 +197,9 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
     conn = q->conn;
     rx = conn->rx;
     up = q->queueData;
-
+    if (conn->error) {
+        return;
+    }
     if (httpGetPacketLength(packet) == 0) {
         if (up->contentState != HTTP_UPLOAD_CONTENT_END) {
             httpError(conn, HTTP_CODE_BAD_REQUEST, "Client supplied insufficient upload data");
@@ -374,6 +376,9 @@ static int processUploadHeader(HttpQueue *q, char *line)
                 uploadDir = getUploadDir(rx->route);
                 up->tmpPath = mprGetTempPath(uploadDir);
                 if (up->tmpPath == 0) {
+                    if (!mprPathExists(uploadDir, X_OK)) {
+                        mprLog("http error", 0, "Cannot access upload directory %s", uploadDir);
+                    }
                     httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Cannot create upload temp file %s. Check upload temp dir %s", up->tmpPath, uploadDir);
                     return MPR_ERR_CANT_OPEN;

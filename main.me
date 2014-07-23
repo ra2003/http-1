@@ -74,7 +74,7 @@ Me.load({
                 to:     '${src}/',
                 set:    'pak',
             },{
-                from:   'src/*.c',
+                from:   ['src/service.c', 'src/*.c'],
                 exclude: /http.c/,
                 to:     '${src}/httpLib.c',
                 cat:    true,

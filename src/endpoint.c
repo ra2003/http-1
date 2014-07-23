@@ -252,9 +252,7 @@ PUBLIC void httpMatchHost(HttpConn *conn)
     MprSocket       *listenSock;
     HttpEndpoint    *endpoint;
     HttpHost        *host;
-    Http            *http;
 
-    http = conn->http;
     listenSock = conn->sock->listenSock;
 
     if ((endpoint = httpLookupEndpoint(listenSock->ip, listenSock->port)) == 0) {

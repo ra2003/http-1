@@ -183,7 +183,7 @@ static void printRoute(HttpRoute *route, int next, bool full)
             }
         }
     } else {
-        mprLog(0, 1, "%-30s %-16s %-50s %-14s", route->name, methods ? methods : "*", pattern, target);
+        mprLog(0, 1, "%-30s %-22s %-50s %-14s", route->name, methods ? methods : "*", pattern, target);
     }
 }
 
@@ -197,7 +197,7 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
         host = httpGetDefaultHost();
     }
     if (!full) {
-        mprLog(0, 1, "%-30s %-16s %-50s %-14s", "Name", "Methods", "Pattern", "Target");
+        mprLog(0, 1, "%-30s %-22s %-50s %-14s", "Name", "Methods", "Pattern", "Target");
     }
     for (foundDefault = next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
         printRoute(route, next - 1, full);

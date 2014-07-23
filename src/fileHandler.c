@@ -483,14 +483,14 @@ static int handleDirectory(HttpConn *conn)
 /*  
     Loadable module initialization
  */
-PUBLIC int httpOpenFileHandler(Http *http)
+PUBLIC int httpOpenFileHandler()
 {
     HttpStage     *handler;
 
     /* 
         This handler serves requests without using thread workers.
      */
-    if ((handler = httpCreateHandler(http, "fileHandler", NULL)) == 0) {
+    if ((handler = httpCreateHandler("fileHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     handler->rewrite = rewriteFileHandler;
@@ -500,7 +500,7 @@ PUBLIC int httpOpenFileHandler(Http *http)
     handler->ready = readyFileHandler;
     handler->outgoingService = outgoingFileService;
     handler->incoming = incomingFile;
-    http->fileHandler = handler;
+    HTTP->fileHandler = handler;
     return 0;
 }
 

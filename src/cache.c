@@ -28,27 +28,27 @@ static cchar *setHeadersFromCache(HttpConn *conn, cchar *content);
 
 /************************************ Code ************************************/
 
-PUBLIC int httpOpenCacheHandler(Http *http)
+PUBLIC int httpOpenCacheHandler()
 {
     HttpStage     *handler, *filter;
 
     /*
         Create the cache handler to serve cached content
      */
-    if ((handler = httpCreateHandler(http, "cacheHandler", NULL)) == 0) {
+    if ((handler = httpCreateHandler("cacheHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->cacheHandler = handler;
+    HTTP->cacheHandler = handler;
     handler->match = matchCacheHandler;
     handler->ready = readyCacheHandler;
 
     /*
         Create the cache filter to capture and cache response content
      */
-    if ((filter = httpCreateFilter(http, "cacheFilter", NULL)) == 0) {
+    if ((filter = httpCreateFilter("cacheFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->cacheFilter = filter;
+    HTTP->cacheFilter = filter;
     filter->match = matchCacheFilter;
     filter->outgoingService = outgoingCacheFilterService;
     return 0;

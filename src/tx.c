@@ -447,7 +447,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         This may add "localhost" if the host is missing in the targetUri.
      */
     targetUri = httpLink(conn, targetUri);
-    msg = httpLookupStatus(conn->http, status);
+    msg = httpLookupStatus(status);
 
     if (300 <= status && status <= 399) {
         if (targetUri == 0) {
@@ -839,7 +839,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
         mprPutCharToBuf(buf, ' ');
         mprPutIntToBuf(buf, tx->status);
         mprPutCharToBuf(buf, ' ');
-        mprPutStringToBuf(buf, httpLookupStatus(http, tx->status));
+        mprPutStringToBuf(buf, httpLookupStatus(tx->status));
         /* Server tracing of status happens in the "complete" event */
 
     } else {

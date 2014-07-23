@@ -19,21 +19,18 @@ static int manageEndpoint(HttpEndpoint *endpoint, int flags);
 PUBLIC HttpEndpoint *httpCreateEndpoint(cchar *ip, int port, MprDispatcher *dispatcher)
 {
     HttpEndpoint    *endpoint;
-    Http            *http;
 
     if ((endpoint = mprAllocObj(HttpEndpoint, manageEndpoint)) == 0) {
         return 0;
     }
-    http = MPR->httpService;
-    endpoint->http = http;
+    endpoint->http = HTTP;
     endpoint->async = 1;
-    endpoint->http = http;
     endpoint->port = port;
     endpoint->ip = sclone(ip);
     endpoint->dispatcher = dispatcher;
     endpoint->hosts = mprCreateList(-1, MPR_LIST_STABLE);
     endpoint->mutex = mprCreateLock();
-    httpAddEndpoint(http, endpoint);
+    httpAddEndpoint(endpoint);
     return endpoint;
 }
 
@@ -44,7 +41,7 @@ PUBLIC void httpDestroyEndpoint(HttpEndpoint *endpoint)
         mprCloseSocket(endpoint->sock, 0);
         endpoint->sock = 0;
     }
-    httpRemoveEndpoint(MPR->httpService, endpoint);
+    httpRemoveEndpoint(endpoint);
 }
 
 
@@ -70,17 +67,20 @@ static int manageEndpoint(HttpEndpoint *endpoint, int flags)
  */
 PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(HttpHost *host, cchar *home, cchar *documents, cchar *ip, int port)
 {
-    Http            *http;
     HttpEndpoint    *endpoint;
     HttpRoute       *route;
 
-    http = MPR->httpService;
-
+    if (host == 0) {
+        host = httpGetDefaultHost();
+    }
+    if (host == 0) {
+        return 0;
+    }
     if (ip == 0 && port <= 0) {
         /*
             If no IP:PORT specified, find the first endpoint
          */
-        if ((endpoint = mprGetFirstItem(http->endpoints)) != 0) {
+        if ((endpoint = mprGetFirstItem(HTTP->endpoints)) != 0) {
             ip = endpoint->ip;
             port = endpoint->port;
         } else {
@@ -92,24 +92,17 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(HttpHost *host, cchar *home, c
                 return 0;
             }
         }
-    } else {
-        if ((endpoint = httpCreateEndpoint(ip, port, NULL)) == 0) {
-            return 0;
-        }
+    } else if ((endpoint = httpCreateEndpoint(ip, port, NULL)) == 0) {
+        return 0;
     }
-    if (!host) {
-        if ((host = httpCreateHost()) == 0) {
-            return 0;
-        }
-        if ((route = httpCreateRoute(host)) == 0) {
-            return 0;
-        }
-        httpSetHostDefaultRoute(host, route);
-    } else {
-        route = host->defaultRoute;
-    }
+    route = host->defaultRoute;
     httpAddHostToEndpoint(endpoint, host);
-    httpSetRouteDocuments(route, documents);
+    if (documents) {
+        httpSetRouteDocuments(route, documents);
+    }
+    if (home) {
+        httpSetRouteHome(route, home);
+    }
     httpFinalizeRoute(route);
     return endpoint;
 }
@@ -121,14 +114,12 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(HttpHost *host, cchar *home, c
 PUBLIC void httpAddHostToEndpoints(HttpHost *host)
 {
     HttpEndpoint    *endpoint;
-    Http            *http;
     int             next;
 
     if (host == 0) {
         return;
     }
-    http = MPR->httpService;
-    for (next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
+    for (next = 0; (endpoint = mprGetNextItem(HTTP->endpoints, &next)) != 0; ) {
         httpAddHostToEndpoint(endpoint, host);
         if (!host->name) {
             httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
@@ -137,35 +128,27 @@ PUBLIC void httpAddHostToEndpoints(HttpHost *host)
 }
 
 
-#if KEEP
-static int destroyEndpointConnections(HttpEndpoint *endpoint)
-{
-    HttpConn    *conn;
-    Http        *http;
-    int         next;
-
-    http = endpoint->http;
-    lock(http->connections);
-    for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
-        if (conn->endpoint == endpoint) {
-            /* Do not destroy conn here incase requests still running and code active with stack */
-            httpRemoveConn(http, conn);
-            next--;
-        }
-    }
-    unlock(http->connections);
-    return 0;
-}
-#endif
-
-
 static bool validateEndpoint(HttpEndpoint *endpoint)
 {
     HttpHost    *host;
+    HttpRoute   *route;
+    int         nextRoute;
 
     if ((host = mprGetFirstItem(endpoint->hosts)) == 0) {
-        mprLog("error http config", 0, "Missing host object on endpoint");
-        return 0;
+/* UNUSED
+        mprLog("error http config", 0, "Missing host object on endpoint %s:%d", endpoint->ip, endpoint->port);
+*/
+        host = httpGetDefaultHost();
+        httpAddHostToEndpoint(endpoint, host);
+        if (!host->name) {
+            httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
+        }
+        for (nextRoute = 0; (route = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
+            if (!mprLookupKey(route->extensions, "")) {
+                httpAddRouteHandler(route, "fileHandler", "");
+                httpAddRouteIndex(route, "index.html");
+            }
+        }
     }
     return 1;
 }
@@ -277,7 +260,7 @@ PUBLIC void httpMatchHost(HttpConn *conn)
     http = conn->http;
     listenSock = conn->sock->listenSock;
 
-    if ((endpoint = httpLookupEndpoint(http, listenSock->ip, listenSock->port)) == 0) {
+    if ((endpoint = httpLookupEndpoint(listenSock->ip, listenSock->port)) == 0) {
         mprLog("error http", 0, "No listening endpoint for request from %s:%d", listenSock->ip, listenSock->port);
         mprCloseSocket(conn->sock, 0);
         return;
@@ -373,16 +356,14 @@ PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
 {
     HttpEndpoint    *endpoint;
-    Http            *http;
     char            *ip;
     int             port, next, count;
 
-    http = MPR->httpService;
     mprParseSocketAddress(name, &ip, &port, NULL, -1);
     if (ip == 0) {
         ip = "";
     }
-    for (count = 0, next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
+    for (count = 0, next = 0; (endpoint = mprGetNextItem(HTTP->endpoints, &next)) != 0; ) {
         if (endpoint->port <= 0 || port <= 0 || endpoint->port == port) {
             assert(endpoint->ip);
             if (*endpoint->ip == '\0' || *ip == '\0' || scmp(endpoint->ip, ip) == 0) {

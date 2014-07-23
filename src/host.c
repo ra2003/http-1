@@ -24,9 +24,7 @@ static void manageHost(HttpHost *host, int flags);
 PUBLIC HttpHost *httpCreateHost()
 {
     HttpHost    *host;
-    Http        *http;
 
-    http = MPR->httpService;
     if ((host = mprAllocObj(HttpHost, manageHost)) == 0) {
         return 0;
     }
@@ -40,7 +38,7 @@ PUBLIC HttpHost *httpCreateHost()
     host->streams = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
     httpSetStreaming(host, "application/x-www-form-urlencoded", NULL, 0);
     httpSetStreaming(host, "application/json", NULL, 0);
-    httpAddHost(http, host);
+    httpAddHost(host);
     return host;
 }
 
@@ -48,9 +46,6 @@ PUBLIC HttpHost *httpCreateHost()
 PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
 {
     HttpHost    *host;
-    Http        *http;
-
-    http = MPR->httpService;
 
     if ((host = mprAllocObj(HttpHost, manageHost)) == 0) {
         return 0;
@@ -66,7 +61,7 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
     host->streams = parent->streams;
     host->secureEndpoint = parent->secureEndpoint;
     host->defaultEndpoint = parent->defaultEndpoint;
-    httpAddHost(http, host);
+    httpAddHost(host);
     return host;
 }
 
@@ -83,6 +78,23 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->secureEndpoint);
         mprMark(host->streams);
     }
+}
+
+
+PUBLIC HttpHost *httpCreateDefaultHost() 
+{
+    HttpHost    *host;
+    HttpRoute   *route;
+
+    if (defaultHost) {
+        return defaultHost;
+    }
+    defaultHost = host = httpCreateHost();
+    route = httpCreateRoute(host);
+    httpSetRouteName(route, "default");
+    httpSetHostDefaultRoute(host, route);
+    route->limits = route->http->serverLimits;
+    return host;
 }
 
 

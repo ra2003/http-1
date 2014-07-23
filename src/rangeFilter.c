@@ -28,7 +28,7 @@ PUBLIC int httpOpenRangeFilter(Http *http)
 {
     HttpStage     *filter;
 
-    if ((filter = httpCreateFilter(http, "rangeFilter", NULL)) == 0) {
+    if ((filter = httpCreateFilter("rangeFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->rangeFilter = filter;

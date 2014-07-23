@@ -20,10 +20,7 @@ static void stopMonitors();
 
 PUBLIC int httpAddCounter(cchar *name)
 {
-    Http    *http;
-
-    http = MPR->httpService;
-    return mprAddItem(http->counters, sclone(name));
+    return mprAddItem(HTTP->counters, sclone(name));
 }
 
 
@@ -31,7 +28,7 @@ PUBLIC void httpAddCounters()
 {
     Http    *http;
 
-    http = MPR->httpService;
+    http = HTTP;
     mprSetItem(http->counters, HTTP_COUNTER_ACTIVE_CLIENTS, sclone("ActiveClients"));
     mprSetItem(http->counters, HTTP_COUNTER_ACTIVE_CONNECTIONS, sclone("ActiveConnections"));
     mprSetItem(http->counters, HTTP_COUNTER_ACTIVE_REQUESTS, sclone("ActiveRequests"));
@@ -150,7 +147,7 @@ PUBLIC void httpPruneMonitors()
     MprTicks    period;
     MprKey      *kp;
 
-    http = MPR->httpService;
+    http = HTTP;
     period = max(http->monitorMaxPeriod, 15 * MPR_TICKS_PER_SEC);
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
@@ -177,7 +174,7 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
     HttpCounter     c, *counter;
     MprKey          *kp;
 
-    http = monitor->http;
+    http = HTTP;
     http->now = mprGetTicks();
 
     if (monitor->counterIndex == HTTP_COUNTER_MEMORY) {
@@ -241,7 +238,7 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     char            *tok;
     int             counterIndex, next;
 
-    http = MPR->httpService;
+    http = HTTP;
     if (period < HTTP_MONITOR_MIN_PERIOD) {
         return MPR_ERR_BAD_ARGS;
     }
@@ -300,7 +297,7 @@ static void startMonitors()
     if (mprGetDebugMode()) {
         return;
     }
-    http = MPR->httpService;
+    http = HTTP;
     lock(http);
     if (!http->monitorsStarted) {
         for (ITERATE_ITEMS(http->monitors, monitor, next)) {
@@ -320,7 +317,7 @@ static void stopMonitors()
     Http            *http;
     int             next;
 
-    http = MPR->httpService;
+    http = HTTP;
     lock(http);
     if (http->monitorsStarted) {
         for (ITERATE_ITEMS(http->monitors, monitor, next)) {
@@ -425,7 +422,7 @@ PUBLIC int httpAddDefense(cchar *name, cchar *remedy, cchar *remedyArgs)
 
     assert(name && *name);
 
-    http = MPR->httpService;
+    http = HTTP;
     args = mprCreateHash(0, MPR_HASH_STABLE);
     list = stolist(remedyArgs);
     for (ITERATE_ITEMS(list, arg, next)) {
@@ -449,7 +446,7 @@ PUBLIC int httpAddDefenseFromJson(cchar *name, cchar *remedy, MprJson *jargs)
 
     assert(name && *name);
 
-    http = MPR->httpService;
+    http = HTTP;
     args = mprCreateHash(0, MPR_HASH_STABLE);
     for (ITERATE_JSON(jargs, arg, next)) {
         mprAddKey(args, arg->name, arg->value);
@@ -471,7 +468,7 @@ PUBLIC void httpDumpCounters()
     cchar           *name;
     int             i;
 
-    http = MPR->httpService;
+    http = HTTP;
     mprLog(0, 0, "Monitor Counters:\n");
     mprLog(0, 0, "Memory counter     %'zd\n", mprGetMem());
     mprLog(0, 0, "Active processes   %d\n", mprGetListLength(MPR->cmdService->cmds));
@@ -501,7 +498,7 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
     HttpAddress     *address;
     MprTicks        banUntil;
 
-    http = MPR->httpService;
+    http = HTTP;
     if ((address = mprLookupKey(http->addresses, ip)) == 0) {
         mprLog("error http monitor", 1, "Cannot find client %s to ban", ip);
         return MPR_ERR_CANT_FIND;
@@ -602,7 +599,7 @@ static void delayRemedy(MprHash *args)
     cchar           *ip;
     int             delay;
 
-    http = MPR->httpService;
+    http = HTTP;
     if ((ip = mprLookupKey(args, "IP")) != 0) {
         if ((address = mprLookupKey(http->addresses, ip)) != 0) {
             delayUntil = http->now + lookupTicks(args, "PERIOD", ME_HTTP_DELAY_PERIOD);
@@ -665,10 +662,7 @@ static void restartRemedy(MprHash *args)
 
 PUBLIC int httpAddRemedy(cchar *name, HttpRemedyProc remedy)
 {
-    Http    *http;
-
-    http = MPR->httpService;
-    mprAddKey(http->remedies, name, remedy);
+    mprAddKey(HTTP->remedies, name, remedy);
     return 0;
 }
 

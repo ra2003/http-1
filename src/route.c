@@ -62,7 +62,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     Http        *http;
     HttpRoute   *route;
 
-    http = MPR->httpService;
+    http = HTTP;
     if ((route = mprAllocObj(HttpRoute, manageRoute)) == 0) {
         return 0;
     }
@@ -76,7 +76,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
 #endif
     route->update = 1;
     route->host = host;
-    route->http = MPR->httpService;
+    route->http = HTTP;
     route->lifespan = ME_MAX_CACHE_DURATION;
     route->pattern = MPR->emptyString;
     route->targetRule = sclone("run");
@@ -108,6 +108,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-Frame-Options", "SAMEORIGIN");
     httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-Content-Type-Options", "nosniff");
 
+//  MOB - review
     if (MPR->httpService) {
         route->limits = mprMemdup(http->serverLimits ? http->serverLimits : http->clientLimits, sizeof(HttpLimits));
     }
@@ -165,7 +166,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->headers = parent->headers;
     route->home = parent->home;
     route->host = parent->host;
-    route->http = MPR->httpService;
+    route->http = HTTP;
     route->indexes = parent->indexes;
     route->inputStages = parent->inputStages;
     route->keepSource = parent->keepSource;
@@ -790,7 +791,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
             return 0;
         }
     }
-    stage = httpLookupStage(route->http, name);
+    stage = httpLookupStage(name);
     if (stage == 0) {
         mprLog("error http route", 0, "Cannot find filter %s", name);
         return MPR_ERR_CANT_FIND;
@@ -798,7 +799,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     /*
         Clone an existing stage because each filter stores its own set of extensions to match against
      */
-    filter = httpCloneStage(route->http, stage);
+    filter = httpCloneStage(stage);
 
     if (extensions && *extensions) {
         filter->extensions = mprCreateHash(0, MPR_HASH_CASELESS | MPR_HASH_STABLE);
@@ -843,7 +844,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
     assert(route);
 
     http = route->http;
-    if ((handler = httpLookupStage(http, name)) == 0) {
+    if ((handler = httpLookupStage(name)) == 0) {
         mprLog("error http route", 0, "Cannot find stage %s", name);
         return MPR_ERR_CANT_FIND;
     }
@@ -1081,7 +1082,7 @@ PUBLIC void httpDefineRouteTarget(cchar *key, HttpRouteProc *proc)
     assert(key && *key);
     assert(proc);
 
-    mprAddKey(((Http*) MPR->httpService)->routeTargets, key, proc);
+    mprAddKey(HTTP->routeTargets, key, proc);
 }
 
 
@@ -1090,7 +1091,7 @@ PUBLIC void httpDefineRouteCondition(cchar *key, HttpRouteProc *proc)
     assert(key && *key);
     assert(proc);
 
-    mprAddKey(((Http*) MPR->httpService)->routeConditions, key, proc);
+    mprAddKey(HTTP->routeConditions, key, proc);
 }
 
 
@@ -1099,7 +1100,7 @@ PUBLIC void httpDefineRouteUpdate(cchar *key, HttpRouteProc *proc)
     assert(key && *key);
     assert(proc);
 
-    mprAddKey(((Http*) MPR->httpService)->routeUpdates, key, proc);
+    mprAddKey(HTTP->routeUpdates, key, proc);
 }
 
 
@@ -1223,7 +1224,7 @@ PUBLIC int httpSetRouteConnector(HttpRoute *route, cchar *name)
 
     assert(route);
 
-    stage = httpLookupStage(route->http, name);
+    stage = httpLookupStage(name);
     if (stage == 0) {
         mprLog("error http route", 0, "Cannot find connector %s", name);
         return MPR_ERR_CANT_FIND;
@@ -1287,7 +1288,7 @@ PUBLIC int httpSetRouteHandler(HttpRoute *route, cchar *name)
     assert(route);
     assert(name && *name);
 
-    if ((handler = httpLookupStage(route->http, name)) == 0) {
+    if ((handler = httpLookupStage(name)) == 0) {
         mprLog("error http route", 0, "Cannot find handler %s", name);
         return MPR_ERR_CANT_FIND;
     }
@@ -3349,7 +3350,7 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
             if (route->parent->limits) {
                 limits = route->parent->limits;
             } else {
-                limits = ((Http*) MPR->httpService)->serverLimits;
+                limits = HTTP->serverLimits;
             }
         }
         route->limits = mprMemdup(limits, sizeof(HttpLimits));

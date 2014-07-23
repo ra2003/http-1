@@ -80,14 +80,13 @@ PUBLIC void httpDefaultOutgoingServiceStage(HttpQueue *q)
 }
 
 
-PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule *module)
+PUBLIC HttpStage *httpCreateStage(cchar *name, int flags, MprModule *module)
 {
     HttpStage     *stage;
 
-    assert(http);
     assert(name && *name);
 
-    if ((stage = httpLookupStage(http, name)) != 0) {
+    if ((stage = httpLookupStage(name)) != 0) {
         if (!(stage->flags & HTTP_STAGE_UNLOADED)) {
             mprLog("error http", 0, "Stage %s already exists", name);
             return 0;
@@ -101,7 +100,7 @@ PUBLIC HttpStage *httpCreateStage(Http *http, cchar *name, int flags, MprModule 
     stage->outgoing = outgoing;
     stage->outgoingService = httpDefaultOutgoingServiceStage;
     stage->module = module;
-    httpAddStage(http, stage);
+    httpAddStage(stage);
     return stage;
 }
 
@@ -118,7 +117,7 @@ static void manageStage(HttpStage *stage, int flags)
 }
 
 
-PUBLIC HttpStage *httpCloneStage(Http *http, HttpStage *stage)
+PUBLIC HttpStage *httpCloneStage(HttpStage *stage)
 {
     HttpStage   *clone;
 
@@ -130,21 +129,21 @@ PUBLIC HttpStage *httpCloneStage(Http *http, HttpStage *stage)
 }
 
 
-PUBLIC HttpStage *httpCreateHandler(Http *http, cchar *name, MprModule *module)
+PUBLIC HttpStage *httpCreateHandler(cchar *name, MprModule *module)
 {
-    return httpCreateStage(http, name, HTTP_STAGE_HANDLER, module);
+    return httpCreateStage(name, HTTP_STAGE_HANDLER, module);
 }
 
 
-PUBLIC HttpStage *httpCreateFilter(Http *http, cchar *name, MprModule *module)
+PUBLIC HttpStage *httpCreateFilter(cchar *name, MprModule *module)
 {
-    return httpCreateStage(http, name, HTTP_STAGE_FILTER, module);
+    return httpCreateStage(name, HTTP_STAGE_FILTER, module);
 }
 
 
-PUBLIC HttpStage *httpCreateConnector(Http *http, cchar *name, MprModule *module)
+PUBLIC HttpStage *httpCreateConnector(cchar *name, MprModule *module)
 {
-    return httpCreateStage(http, name, HTTP_STAGE_CONNECTOR, module);
+    return httpCreateStage(name, HTTP_STAGE_CONNECTOR, module);
 }
 
 

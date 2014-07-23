@@ -344,16 +344,13 @@ PUBLIC char *httpReadString(HttpConn *conn)
  */
 PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
 {
-    Http        *http;
     HttpConn    *conn;
     ssize       len;
-
-    http = MPR->httpService;
 
     if (err) {
         *err = 0;
     }
-    conn = httpCreateConn(http, NULL, NULL);
+    conn = httpCreateConn(NULL, NULL);
     mprAddRoot(conn);
 
     /*

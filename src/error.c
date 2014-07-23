@@ -81,7 +81,7 @@ static void makeAltBody(HttpConn *conn, int status)
     tx = conn->tx;
     assert(rx && tx);
 
-    statusMsg = httpLookupStatus(conn->http, status);
+    statusMsg = httpLookupStatus(status);
     msg = "";
     if (rx && (!rx->route || rx->route->flags & HTTP_ROUTE_SHOW_ERRORS)) {
         msg = conn->errorMsg;
@@ -194,7 +194,7 @@ PUBLIC cchar *httpGetError(HttpConn *conn)
     if (conn->errorMsg) {
         return conn->errorMsg;
     } else if (conn->state >= HTTP_STATE_FIRST) {
-        return httpLookupStatus(conn->http, conn->rx->status);
+        return httpLookupStatus(conn->rx->status);
     } else {
         return "";
     }

@@ -27,7 +27,7 @@ PUBLIC int httpOpenSendConnector(Http *http)
 {
     HttpStage     *stage;
 
-    if ((stage = httpCreateConnector(http, "sendConnector", NULL)) == 0) {
+    if ((stage = httpCreateConnector("sendConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     stage->open = httpSendOpen;

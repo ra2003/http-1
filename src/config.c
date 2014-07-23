@@ -24,12 +24,10 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop);
 
 PUBLIC HttpParseCallback httpAddConfig(cchar *key, HttpParseCallback callback)
 {
-    Http                *http;
     HttpParseCallback   prior;
 
-    http = MPR->httpService;
-    prior = mprLookupKey(http->parsers, key);
-    mprAddKey(http->parsers, key, callback);
+    prior = mprLookupKey(HTTP->parsers, key);
+    mprAddKey(HTTP->parsers, key, callback);
     return prior;
 }
 
@@ -291,12 +289,10 @@ PUBLIC void httpSetDefaultDirs(HttpRoute *route)
 
 static void parseKey(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    Http                *http;
     HttpParseCallback   parser;
 
-    http = MPR->httpService;
     key = key ? sjoin(key, ".", prop->name, NULL) : prop->name;
-    if ((parser = mprLookupKey(http->parsers, key)) != 0) {
+    if ((parser = mprLookupKey(HTTP->parsers, key)) != 0) {
         parser(route, key, prop);
     }
 }
@@ -1039,12 +1035,10 @@ static void parseRouteName(HttpRoute *route, cchar *key, MprJson *prop)
 
 PUBLIC HttpRouteSetProc httpDefineRouteSet(cchar *name, HttpRouteSetProc fn)
 {
-    Http                *http;
     HttpRouteSetProc    prior;
 
-    http = MPR->httpService;
-    prior = mprLookupKey(http->routeSets, name);
-    mprAddKey(http->routeSets, name, fn);
+    prior = mprLookupKey(HTTP->routeSets, name);
+    mprAddKey(HTTP->routeSets, name, fn);
     return prior;
 }
 
@@ -1570,10 +1564,7 @@ static void parseInclude(HttpRoute *route, cchar *key, MprJson *prop)
 
 PUBLIC int httpInitParser()
 {
-    Http    *http;
-
-    http = MPR->httpService;
-    http->parsers = mprCreateHash(0, MPR_HASH_STATIC_VALUES);
+    HTTP->parsers = mprCreateHash(0, MPR_HASH_STATIC_VALUES);
 
     httpAddConfig("app", parseAll);
     httpAddConfig("app.http", parseHttp);

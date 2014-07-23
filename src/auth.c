@@ -213,7 +213,6 @@ PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
 
 PUBLIC HttpAuthStore *httpCreateAuthStore(cchar *name, HttpVerifyUser verifyUser)
 {
-    Http            *http;
     HttpAuthStore   *store;
 
     if ((store = mprAllocObj(HttpAuthStore, manageAuthStore)) == 0) {
@@ -221,8 +220,7 @@ PUBLIC HttpAuthStore *httpCreateAuthStore(cchar *name, HttpVerifyUser verifyUser
     }
     store->name = sclone(name);
     store->verifyUser = verifyUser;
-    http = MPR->httpService;
-    if (mprAddKey(http->authStores, name, store) == 0) {
+    if (mprAddKey(HTTP->authStores, name, store) == 0) {
         return 0;
     }
     return store;
@@ -232,10 +230,8 @@ PUBLIC HttpAuthStore *httpCreateAuthStore(cchar *name, HttpVerifyUser verifyUser
 
 PUBLIC int httpCreateAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth parseAuth, HttpSetAuth setAuth)
 {
-    Http            *http;
     HttpAuthType    *type;
 
-    http = MPR->httpService;
     if ((type = mprAllocObj(HttpAuthType, manageAuthType)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -244,7 +240,7 @@ PUBLIC int httpCreateAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth 
     type->parseAuth = parseAuth;
     type->setAuth = setAuth;
 
-    if (mprAddKey(http->authTypes, name, type) == 0) {
+    if (mprAddKey(HTTP->authTypes, name, type) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     return 0;
@@ -542,10 +538,7 @@ PUBLIC void httpSetAuthStoreSessions(HttpAuthStore *store, bool noSession)
 
 PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
 {
-    Http    *http;
-
-    http = MPR->httpService;
-    if ((auth->store = mprLookupKey(http->authStores, store)) == 0) {
+    if ((auth->store = mprLookupKey(HTTP->authStores, store)) == 0) {
         return MPR_ERR_CANT_FIND;
     }
     if (smatch(store, "system")) {
@@ -566,10 +559,7 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
 
 PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
 {
-    Http    *http;
-
-    http = MPR->httpService;
-    if ((auth->type = mprLookupKey(http->authTypes, type)) == 0) {
+    if ((auth->type = mprLookupKey(HTTP->authTypes, type)) == 0) {
         mprLog("critical http auth", 0, "Cannot find auth type %s", type);
         return MPR_ERR_CANT_FIND;
     }
@@ -591,10 +581,7 @@ PUBLIC void httpSetAuthUsername(HttpAuth *auth, cchar *username)
 
 PUBLIC HttpAuthType *httpLookupAuthType(cchar *type)
 {
-    Http    *http;
-
-    http = MPR->httpService;
-    return mprLookupKey(http->authTypes, type);
+    return mprLookupKey(HTTP->authTypes, type);
 }
 
 

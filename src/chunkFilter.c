@@ -23,7 +23,7 @@ PUBLIC int httpOpenChunkFilter(Http *http)
 {
     HttpStage     *filter;
 
-    if ((filter = httpCreateFilter(http, "chunkFilter", NULL)) == 0) {
+    if ((filter = httpCreateFilter("chunkFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->chunkFilter = filter;

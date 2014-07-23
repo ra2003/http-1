@@ -1274,10 +1274,8 @@ static bool processCompletion(HttpConn *conn)
 
 PUBLIC void httpSetRequestCallback(HttpRequestCallback callback)
 {
-    Http    *http;
-
-    if ((http = MPR->httpService) != 0) {
-        http->requestCallback = callback;
+    if (HTTP) {
+        HTTP->requestCallback = callback;
     }
 }
 

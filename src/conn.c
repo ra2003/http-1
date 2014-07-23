@@ -17,7 +17,7 @@ static bool prepForNext(HttpConn *conn);
 /*
     Create a new connection object
  */
-PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatcher *dispatcher)
+PUBLIC HttpConn *httpCreateConn(HttpEndpoint *endpoint, MprDispatcher *dispatcher)
 {
     HttpConn    *conn;
     HttpHost    *host;
@@ -26,12 +26,12 @@ PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatche
     if ((conn = mprAllocObj(HttpConn, manageConn)) == 0) {
         return 0;
     }
-    conn->protocol = http->protocol;
-    conn->http = http;
+    conn->protocol = HTTP->protocol;
+    conn->http = HTTP;
     conn->port = -1;
     conn->retries = HTTP_RETRIES;
     conn->endpoint = endpoint;
-    conn->lastActivity = http->now;
+    conn->lastActivity = HTTP->now;
     conn->ioCallback = httpIOEvent;
 
     if (endpoint) {
@@ -41,12 +41,12 @@ PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatche
             conn->limits = route->limits;
             conn->trace = route->trace;
         } else {
-            conn->limits = http->serverLimits;
-            conn->trace = http->trace;
+            conn->limits = HTTP->serverLimits;
+            conn->trace = HTTP->trace;
         }
     } else {
-        conn->limits = http->clientLimits;
-        conn->trace = http->trace;
+        conn->limits = HTTP->clientLimits;
+        conn->trace = HTTP->trace;
     }
     conn->keepAliveCount = conn->limits->keepAliveMax;
     conn->serviceq = httpCreateQueueHead(conn, "serviceq");
@@ -61,7 +61,7 @@ PUBLIC HttpConn *httpCreateConn(Http *http, HttpEndpoint *endpoint, MprDispatche
     conn->rx = httpCreateRx(conn);
     conn->tx = httpCreateTx(conn, NULL);
     httpSetState(conn, HTTP_STATE_BEGIN);
-    httpAddConn(http, conn);
+    httpAddConn(conn);
     return conn;
 }
 
@@ -80,7 +80,7 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
                 conn->activeRequest = 0;
             }
         }
-        httpRemoveConn(conn->http, conn);
+        httpRemoveConn(conn);
         conn->input = 0;
         if (conn->tx) {
             httpClosePipeline(conn);
@@ -353,7 +353,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
         mprCloseSocket(sock, 0);
         return 0;
     }
-    if ((conn = httpCreateConn(http, endpoint, event->dispatcher)) == 0) {
+    if ((conn = httpCreateConn(endpoint, event->dispatcher)) == 0) {
         mprCloseSocket(sock, 0);
         return 0;
     }
@@ -606,7 +606,7 @@ PUBLIC MprSocket *httpStealSocket(HttpConn *conn)
         sock = mprCloneSocket(conn->sock);
         (void) mprStealSocketHandle(conn->sock);
         mprRemoveSocketHandler(conn->sock);
-        httpRemoveConn(conn->http, conn);
+        httpRemoveConn(conn);
         httpDiscardData(conn, HTTP_QUEUE_TX);
         httpDiscardData(conn, HTTP_QUEUE_RX);
         httpSetState(conn, HTTP_STATE_COMPLETE);

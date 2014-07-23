@@ -600,31 +600,20 @@ PUBLIC HttpDir *httpGetDirObj(HttpRoute *route)
 /*
     Loadable module initialization
  */
-PUBLIC int httpOpenDirHandler(Http *http)
+PUBLIC int httpOpenDirHandler()
 {
     HttpStage   *handler;
     HttpDir     *dir;
 
-    if ((handler = httpCreateHandler(http, "dirHandler", NULL)) == 0) {
+    if ((handler = httpCreateHandler("dirHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     if ((handler->stageData = dir = mprAllocObj(HttpDir, manageDir)) == 0) {
         return MPR_ERR_MEMORY;
     }
     handler->start = startDir; 
-    http->dirHandler = handler;
+    HTTP->dirHandler = handler;
     dir->sortOrder = 1;
-
-#if MOB
-    /*
-        Declare configuration file directives
-     */
-    MaAppweb    *appweb;
-    appweb = httpGetContext(http);
-    maAddDirective(appweb, "IndexOrder", indexOrderDirective);
-    maAddDirective(appweb, "indexOptions", indexOptionsDirective);
-    maAddDirective(appweb, "Options", optionsDirective);
-#endif
     return 0;
 }
 

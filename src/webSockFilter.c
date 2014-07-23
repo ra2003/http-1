@@ -124,7 +124,7 @@ PUBLIC int httpOpenWebSockFilter(Http *http)
 
     assert(http);
 
-    if ((filter = httpCreateFilter(http, "webSocketFilter", NULL)) == 0) {
+    if ((filter = httpCreateFilter("webSocketFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->webSocketFilter = filter;

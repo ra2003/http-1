@@ -187,10 +187,7 @@ PUBLIC void httpSetTraceEventLevel(HttpTrace *trace, cchar *type, int level)
 
 PUBLIC int httpGetTraceLevel()
 {
-    Http    *http;
-
-    http = MPR->httpService;
-    return http->traceLevel;
+    return HTTP->traceLevel;
 }
 
 
@@ -229,15 +226,12 @@ PUBLIC void httpSetTraceFormatterName(HttpTrace *trace, cchar *name)
 
 PUBLIC void httpSetTraceLevel(int level)
 {
-    Http    *http;
-
     if (level < 0) {
         level = 0;
     } else if (level > 5) {
         level = 5;
     }
-    http = MPR->httpService;
-    http->traceLevel = level;
+    HTTP->traceLevel = level;
 }
 
 
@@ -596,18 +590,17 @@ PUBLIC int httpOpenTraceLogFile(HttpTrace *trace)
  */
 PUBLIC int httpStartTracing(cchar *traceSpec)
 {
-    Http        *http;
     HttpTrace   *trace;
     char        *lspec;
 
-    if ((http = MPR->httpService) == 0 || http->trace == 0 || traceSpec == 0 || *traceSpec == '\0') {
-        assert(http);
+    if (HTTP == 0 || HTTP->trace == 0 || traceSpec == 0 || *traceSpec == '\0') {
+        assert(HTTP);
         return MPR_ERR_BAD_STATE;
     }
-    trace = http->trace;
+    trace = HTTP->trace;
     trace->flags = MPR_LOG_ANEW | MPR_LOG_CMDLINE;
     trace->path = stok(sclone(traceSpec), ":", &lspec);
-    http->traceLevel = (int) stoi(lspec);
+    HTTP->traceLevel = (int) stoi(lspec);
     return httpOpenTraceLogFile(trace);
 }
 

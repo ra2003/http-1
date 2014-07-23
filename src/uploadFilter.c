@@ -53,7 +53,7 @@ PUBLIC int httpOpenUploadFilter(Http *http)
 {
     HttpStage     *filter;
 
-    if ((filter = httpCreateFilter(http, "uploadFilter", NULL)) == 0) {
+    if ((filter = httpCreateFilter("uploadFilter", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     http->uploadFilter = filter;

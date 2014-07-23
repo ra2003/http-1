@@ -35,7 +35,7 @@ PUBLIC void httpDefineAction(cchar *name, HttpAction action)
 {
     HttpStage   *stage;
 
-    if ((stage = httpLookupStage(MPR->httpService, "actionHandler")) == 0) {
+    if ((stage = httpLookupStage("actionHandler")) == 0) {
         mprLog("error http action", 0, "Cannot find actionHandler");
         return;
     }
@@ -43,14 +43,14 @@ PUBLIC void httpDefineAction(cchar *name, HttpAction action)
 }
 
 
-PUBLIC int httpOpenActionHandler(Http *http)
+PUBLIC int httpOpenActionHandler()
 {
     HttpStage     *stage;
 
-    if ((stage = httpCreateHandler(http, "actionHandler", NULL)) == 0) {
+    if ((stage = httpCreateHandler("actionHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->actionHandler = stage;
+    HTTP->actionHandler = stage;
     if ((stage->stageData = mprCreateHash(0, MPR_HASH_STATIC_VALUES)) == 0) {
         return MPR_ERR_MEMORY;
     }

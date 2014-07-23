@@ -74,21 +74,21 @@ static void handleTrace(HttpConn *conn)
 }
 
 
-PUBLIC int httpOpenPassHandler(Http *http)
+PUBLIC int httpOpenPassHandler()
 {
     HttpStage     *stage;
 
-    if ((stage = httpCreateHandler(http, "passHandler", NULL)) == 0) {
+    if ((stage = httpCreateHandler("passHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    http->passHandler = stage;
+    HTTP->passHandler = stage;
     stage->start = startPass;
     stage->ready = readyPass;
 
     /*
         PassHandler is an alias as the ErrorHandler too
      */
-    if ((stage = httpCreateHandler(http, "errorHandler", NULL)) == 0) {
+    if ((stage = httpCreateHandler("errorHandler", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     stage->start = startPass;

@@ -45,11 +45,7 @@ static HttpSession *allocSessionObj(HttpConn *conn, cchar *id, cchar *data)
 
 PUBLIC bool httpLookupSessionID(cchar *id)
 {
-    Http    *http;
-
-    http = MPR->httpService;
-    assert(http);
-    return mprLookupCache(http->sessionCache, id, 0, 0) != 0;
+    return mprLookupCache(HTTP->sessionCache, id, 0, 0) != 0;
 }
 
 
@@ -65,10 +61,7 @@ PUBLIC HttpSession *httpCreateSession(HttpConn *conn)
 
 PUBLIC void httpSetSessionNotify(MprCacheProc callback)
 {
-    Http        *http;
-
-    http = MPR->httpService;
-    mprSetCacheNotify(http->sessionCache, callback);
+    mprSetCacheNotify(HTTP->sessionCache, callback);
 }
 
 

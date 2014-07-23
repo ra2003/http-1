@@ -921,14 +921,22 @@ static void parsePipelineFilters(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+/*
+    pipeline: {
+        handlers: 'espHandler',
+        handlers: {
+            espHandler: [ '*' },
+        },
+    },
+ */
 static void parsePipelineHandlers(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     int         ji;
 
     if (prop->type & MPR_JSON_STRING) {
-        if (httpAddRouteHandler(route, prop->name, 0) < 0) {
-            httpParseError(route, "Cannot add handler %s", prop->name);
+        if (httpSetRouteHandler(route, prop->value) < 0) {
+            httpParseError(route, "Cannot add handler %s", prop->value);
         }
 
     } else {

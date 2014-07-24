@@ -14,4 +14,6 @@ if (tphase() == 'Setup') {
     tset('TM_HTTPS', sslEndpoint)
 }
 
-startStopService('http-server', {address: httpEndpoint})
+//  TODO - use TM_BIN
+let httpServer = Path(tget('TM_CFG')).join('bin/http-server')
+startStopService(httpServer, {address: httpEndpoint})

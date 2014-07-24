@@ -48,11 +48,10 @@ static void usageError();
 MAIN(http, int argc, char **argv, char **envp)
 {
     Mpr     *mpr;
-    cchar   *argp, *jail;
+    cchar   *argp;
     char    *logSpec, *traceSpec;
     int     argind;
 
-    jail = 0;
     logSpec = 0;
     traceSpec = 0;
 

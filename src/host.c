@@ -147,43 +147,43 @@ static void printRoute(HttpRoute *route, int next, bool full)
     pattern = (route->pattern && *route->pattern) ? route->pattern : "^/";
     target = (route->target && *route->target) ? route->target : "$&";
     if (full) {
-        mprLog(0, 1, "\n%d. %s\n", next, route->name);
-        mprLog(0, 1, "    Pattern:      %s\n", pattern);
-        mprLog(0, 1, "    StartSegment: %s\n", route->startSegment);
-        mprLog(0, 1, "    StartsWith:   %s\n", route->startWith);
-        mprLog(0, 1, "    RegExp:       %s\n", route->optimizedPattern);
-        mprLog(0, 1, "    Methods:      %s\n", methods);
-        mprLog(0, 1, "    Prefix:       %s\n", route->prefix);
-        mprLog(0, 1, "    Target:       %s\n", target);
-        mprLog(0, 1, "    Home:         %s\n", route->home);
-        mprLog(0, 1, "    Documents:    %s\n", route->documents);
-        mprLog(0, 1, "    Source:       %s\n", route->sourceName);
-        mprLog(0, 1, "    Template:     %s\n", route->tplate);
+        mprLog(0, 0, "\n%d. %s\n", next, route->name);
+        mprLog(0, 0, "    Pattern:      %s\n", pattern);
+        mprLog(0, 0, "    StartSegment: %s\n", route->startSegment);
+        mprLog(0, 0, "    StartsWith:   %s\n", route->startWith);
+        mprLog(0, 0, "    RegExp:       %s\n", route->optimizedPattern);
+        mprLog(0, 0, "    Methods:      %s\n", methods);
+        mprLog(0, 0, "    Prefix:       %s\n", route->prefix);
+        mprLog(0, 0, "    Target:       %s\n", target);
+        mprLog(0, 0, "    Home:         %s\n", route->home);
+        mprLog(0, 0, "    Documents:    %s\n", route->documents);
+        mprLog(0, 0, "    Source:       %s\n", route->sourceName);
+        mprLog(0, 0, "    Template:     %s\n", route->tplate);
         if (route->indexes) {
-            mprLog(0, 1, "    Indexes       ");
+            mprLog(0, 0, "    Indexes       ");
             for (ITERATE_ITEMS(route->indexes, index, nextIndex)) {
-                mprLog(0, 1, "%s ", index);
+                mprLog(0, 0, "%s ", index);
             }
         }
-        mprLog(0, 1, "\n    Next Group    %d\n", route->nextGroup);
+        mprLog(0, 0, "\n    Next Group    %d\n", route->nextGroup);
         if (route->handler) {
-            mprLog(0, 1, "    Handler:      %s\n", route->handler->name);
+            mprLog(0, 0, "    Handler:      %s\n", route->handler->name);
         }
         if (full) {
             if (route->extensions) {
                 for (ITERATE_KEYS(route->extensions, kp)) {
                     handler = (HttpStage*) kp->data;
-                    mprLog(0, 1, "    Extension:    %s => %s\n", kp->key, handler->name);
+                    mprLog(0, 0, "    Extension:    %s => %s\n", kp->key, handler->name);
                 }
             }
             if (route->handlers) {
                 for (ITERATE_ITEMS(route->handlers, handler, nextIndex)) {
-                    mprLog(0, 1, "    Handler:      %s\n", handler->name);
+                    mprLog(0, 0, "    Handler:      %s\n", handler->name);
                 }
             }
         }
     } else {
-        mprLog(0, 1, "%-30s %-22s %-50s %-14s", route->name, methods ? methods : "*", pattern, target);
+        mprLog(0, 0, "%-30s %-22s %-50s %-14s", route->name, methods ? methods : "*", pattern, target);
     }
 }
 
@@ -197,7 +197,7 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
         host = httpGetDefaultHost();
     }
     if (!full) {
-        mprLog(0, 1, "%-30s %-22s %-50s %-14s", "Name", "Methods", "Pattern", "Target");
+        mprLog(0, 0, "%-30s %-22s %-50s %-14s", "Name", "Methods", "Pattern", "Target");
     }
     for (foundDefault = next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
         printRoute(route, next - 1, full);

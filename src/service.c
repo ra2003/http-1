@@ -1237,7 +1237,6 @@ PUBLIC int httpSetPlatformDir(cchar *path)
     } else {
         http->platformDir = mprGetPathDir(mprGetPathDir(mprGetAppPath()));
     }
-    mprLog("info http", 2, "Using platform directory \"%s\"", mprGetRelPath(http->platformDir, 0));
     return 0;
 }
 

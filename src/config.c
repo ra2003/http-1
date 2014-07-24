@@ -1076,7 +1076,7 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
         key = sreplace(key, ".routes", "");
         for (ITERATE_CONFIG(route, prop, child, ji)) {
             if (child->type & MPR_JSON_STRING) {
-                httpAddRouteSet(route, prop->value);
+                httpAddRouteSet(route, child->value);
 
             } else if (child->type & MPR_JSON_OBJ) {
                 /*

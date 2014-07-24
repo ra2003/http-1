@@ -15,5 +15,5 @@ if (tphase() == 'Setup') {
 }
 
 //  TODO - use TM_BIN
-let httpServer = Path(tget('TM_CFG')).join('bin/http-server')
+let httpServer = Path(tget('TM_CFG')).join('bin/http-server').relative
 startStopService(httpServer, {address: httpEndpoint})

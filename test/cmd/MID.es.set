@@ -1,4 +1,17 @@
 /*
-    cmd.es.set
+    MID.es.set
  */
-// print("skip Under construction")
+require ejs.unix
+
+tset('libraries', 'http mpr')
+
+let json = Path('http.json').readJSON()
+let httpEndpoint = json.app.http.server.listen[0]
+let sslEndpoint = json.app.http.server.listen[1]
+
+if (tphase() == 'Setup') {
+    tset('TM_HTTP', httpEndpoint)
+    tset('TM_HTTPS', sslEndpoint)
+}
+
+startStopService('http-server', {address: httpEndpoint})

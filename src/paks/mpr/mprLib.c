@@ -9655,7 +9655,7 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
 {
     MprEventService     *es;
     MprTicks            expires, delay;
-    int                 signalled, wasRunning, runEvents, rc;
+    int                 wasRunning, runEvents, rc;
 
     es = MPR->eventService;
     es->now = mprGetTicks();
@@ -9668,47 +9668,38 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
         return MPR_ERR_BUSY;
     }
     expires = timeout < 0 ? (es->now + MPR_MAX_TIMEOUT) : (es->now + timeout);
-    runEvents = wasRunning = signalled = 0;
 
-    for (; es->now <= expires && !mprIsDestroying(); es->now = mprGetTicks()) {
-        lock(es);
-        wasRunning = isRunning(dispatcher);
-        runEvents = canRun(dispatcher);
-        if (runEvents) {
-            if (!wasRunning) {
-                queueDispatcher(es->runQ, dispatcher);
-            }
-            unlock(es);
-            if (dispatchEvents(dispatcher)) {
-                signalled++;
-                break;
-            }
-            lock(es);
+    lock(es);
+    wasRunning = isRunning(dispatcher);
+    runEvents = canRun(dispatcher);
+    if (runEvents) {
+        if (!wasRunning) {
+            queueDispatcher(es->runQ, dispatcher);
         }
-        delay = getDispatcherIdleTicks(dispatcher, expires - es->now);
-        dispatcher->flags |= MPR_DISPATCHER_WAITING;
         unlock(es);
-
-        mprYield(MPR_YIELD_STICKY);
-        rc = mprWaitForCond(dispatcher->cond, delay);
-        mprResetYield();
-        dispatcher->flags &= ~MPR_DISPATCHER_WAITING;
-
-        if (rc == 0) {
-            /* Condition was signalled */
-            if (runEvents) {
-                dispatchEvents(dispatcher);
-            }
-            signalled++;
-            break;
+        if (dispatchEvents(dispatcher)) {
+            return 0;
         }
-        es->now = mprGetTicks();
+        lock(es);
+    }
+    delay = getDispatcherIdleTicks(dispatcher, expires - es->now);
+
+    dispatcher->flags |= MPR_DISPATCHER_WAITING;
+    unlock(es);
+
+    mprYield(MPR_YIELD_STICKY);
+    rc = mprWaitForCond(dispatcher->cond, delay);
+    mprResetYield();
+    dispatcher->flags &= ~MPR_DISPATCHER_WAITING;
+
+    if (runEvents) {
+        dispatchEvents(dispatcher);
     }
     if (runEvents && !wasRunning) {
         dequeueDispatcher(dispatcher);
         mprScheduleDispatcher(dispatcher);
     }
-    return signalled ? 0 : MPR_ERR_TIMEOUT;
+    return 0;
 }
 
 
@@ -9858,16 +9849,15 @@ PUBLIC void mprScheduleDispatcher(MprDispatcher *dispatcher)
     }
     es = dispatcher->service;
     lock(es);
+    mustWakeWaitService = es->waiting;
+
     if (isRunning(dispatcher)) {
-        mustWakeWaitService = es->waiting;
         mustWakeCond = dispatcher->flags & MPR_DISPATCHER_WAITING;
 
+    } else if (isEmpty(dispatcher)) {
+        queueDispatcher(es->idleQ, dispatcher);
+        mustWakeCond = dispatcher->flags & MPR_DISPATCHER_WAITING;
     } else {
-        if (isEmpty(dispatcher)) {
-            queueDispatcher(es->idleQ, dispatcher);
-            unlock(es);
-            return;
-        }
         event = dispatcher->eventQ->next;
         mustWakeWaitService = mustWakeCond = 0;
         if (event->due > es->now) {

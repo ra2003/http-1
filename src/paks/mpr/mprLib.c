@@ -9648,7 +9648,7 @@ static bool canRun(MprDispatcher *dispatcher)
 /*
     Wait for an event to occur on the dispatcher and service the event. This is not called by mprServiceEvents.
     The dispatcher may be "started" and owned by the thread, or it may be unowned.
-    Return 0 if an event was signalled. Return MPR_ERR_TIMEOUT if no event was seen before the timeout.
+    WARNING: the event may have already happened by the time this API is invoked.
     WARNING: this will enable GC while sleeping.
  */
 PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
@@ -9668,6 +9668,7 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
         return MPR_ERR_BUSY;
     }
     expires = timeout < 0 ? (es->now + MPR_MAX_TIMEOUT) : (es->now + timeout);
+    runEvents = wasRunning = 0;
 
     lock(es);
     wasRunning = isRunning(dispatcher);
@@ -9683,7 +9684,6 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
         lock(es);
     }
     delay = getDispatcherIdleTicks(dispatcher, expires - es->now);
-
     dispatcher->flags |= MPR_DISPATCHER_WAITING;
     unlock(es);
 
@@ -9695,6 +9695,7 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
     if (runEvents) {
         dispatchEvents(dispatcher);
     }
+    es->now = mprGetTicks();
     if (runEvents && !wasRunning) {
         dequeueDispatcher(dispatcher);
         mprScheduleDispatcher(dispatcher);
@@ -9857,6 +9858,7 @@ PUBLIC void mprScheduleDispatcher(MprDispatcher *dispatcher)
     } else if (isEmpty(dispatcher)) {
         queueDispatcher(es->idleQ, dispatcher);
         mustWakeCond = dispatcher->flags & MPR_DISPATCHER_WAITING;
+
     } else {
         event = dispatcher->eventQ->next;
         mustWakeWaitService = mustWakeCond = 0;

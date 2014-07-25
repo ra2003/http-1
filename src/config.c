@@ -897,7 +897,7 @@ static void parsePipelineFilters(HttpRoute *route, cchar *key, MprJson *prop)
     int         flags, ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        if (prop->type & MPR_JSON_STRING) {
+        if (child->type & MPR_JSON_STRING) {
             flags = HTTP_STAGE_RX | HTTP_STAGE_TX;
             extensions = 0;
             name = child->value;

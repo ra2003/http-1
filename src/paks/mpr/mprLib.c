@@ -9646,7 +9646,8 @@ static bool canRun(MprDispatcher *dispatcher)
 
 
 /*
-    Wait for an event to occur and dispatch the event. This is not called by mprServiceEvents.
+    Wait for an event to occur on the dispatcher and service the event. This is not called by mprServiceEvents.
+    The dispatcher may be "started" and owned by the thread, or it may be unowned.
     Return 0 if an event was signalled. Return MPR_ERR_TIMEOUT if no event was seen before the timeout.
     WARNING: this will enable GC while sleeping.
  */
@@ -9654,7 +9655,7 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
 {
     MprEventService     *es;
     MprTicks            expires, delay;
-    int                 signalled, wasRunning, runEvents, nevents;
+    int                 signalled, wasRunning, runEvents, rc;
 
     es = MPR->eventService;
     es->now = mprGetTicks();
@@ -9667,35 +9668,34 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
         return MPR_ERR_BUSY;
     }
     expires = timeout < 0 ? (es->now + MPR_MAX_TIMEOUT) : (es->now + timeout);
-    signalled = 0;
-
-    lock(es);
-    wasRunning = isRunning(dispatcher);
-    runEvents = canRun(dispatcher);
-    if (runEvents && !wasRunning) {
-        queueDispatcher(es->runQ, dispatcher);
-    }
-    unlock(es);
+    runEvents = wasRunning = signalled = 0;
 
     for (; es->now <= expires && !mprIsDestroying(); es->now = mprGetTicks()) {
+        lock(es);
+        wasRunning = isRunning(dispatcher);
+        runEvents = canRun(dispatcher);
         if (runEvents) {
+            if (!wasRunning) {
+                queueDispatcher(es->runQ, dispatcher);
+            }
+            unlock(es);
             if (dispatchEvents(dispatcher)) {
                 signalled++;
                 break;
             }
+            lock(es);
         }
-        lock(es);
         delay = getDispatcherIdleTicks(dispatcher, expires - es->now);
         dispatcher->flags |= MPR_DISPATCHER_WAITING;
         unlock(es);
 
         mprYield(MPR_YIELD_STICKY);
-
-        nevents = mprWaitForCond(dispatcher->cond, delay);
+        rc = mprWaitForCond(dispatcher->cond, delay);
         mprResetYield();
         dispatcher->flags &= ~MPR_DISPATCHER_WAITING;
 
-        if (nevents == 0) {
+        if (rc == 0) {
+            /* Condition was signalled */
             if (runEvents) {
                 dispatchEvents(dispatcher);
             }
@@ -15917,13 +15917,8 @@ PUBLIC void mprDefaultLogHandler(cchar *tags, int level, cchar *msg)
         if (len < width) {
             mprWriteFile(file, "                                          ", width - len);
         }
-    } else if (tags) {
-        if (level == 0) {
-            fmt(tbuf, sizeof(tbuf), "%s: error: ", MPR->name);
-        } else {
-            fmt(tbuf, sizeof(tbuf), "%s: ", MPR->name);
-        }
-        mprWriteFileString(file, tbuf);
+    } else if (tags && level == 0) {
+        mprWriteFileString(file, "error: ");
     }
     mprWriteFileString(file, msg);
     mprWriteFileString(file, "\n");

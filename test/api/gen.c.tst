@@ -9,6 +9,7 @@
 #include    "testme.h"
 #include    "http.h"
 
+int timeout = 10 * 1000 * 1000;
 /************************************ Code ************************************/
 
 static void initHttp()
@@ -21,7 +22,7 @@ static void initHttp()
     /*
         Test if we have network connectivity. If not, then skip further tests.
      */
-    if (mprConnectSocket(sp, "www.google.com", 80, 0) < 0) {
+    if (mprConnectSocket(sp, "www.example.com", 80, 0) < 0) {
         tskip("no internet connection");
         exit(0);
     }
@@ -50,10 +51,10 @@ static void basicHttpGet()
     ttrue(http != 0);
 
     conn = httpCreateConn(NULL, 0);
-    rc = httpConnect(conn, "GET", "http://www.ibm.com/index.html", NULL);
+    rc = httpConnect(conn, "GET", "http://www.example.com/index.html", NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
-        httpWait(conn, HTTP_STATE_COMPLETE, 10 * 1000);
+        httpWait(conn, HTTP_STATE_COMPLETE, timeout);
         status = httpGetStatus(conn);
         ttrue(status == 200 || status == 302);
         if (status != 200 && status != 302) {
@@ -79,11 +80,11 @@ static void secureHttpGet()
     conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
 
-    rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
+    rc = httpConnect(conn, "GET", "https://www.example.com/", NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         httpFinalize(conn);
-        httpWait(conn, HTTP_STATE_COMPLETE, 10 * 1000);
+        httpWait(conn, HTTP_STATE_COMPLETE, timeout);
         status = httpGetStatus(conn);
         ttrue(status == 200 || status == 301 || status == 302);
         if (status != 200 && status != 301 && status != 302) {
@@ -111,7 +112,7 @@ static void stealSocket()
      */
     conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
-    rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
+    rc = httpConnect(conn, "GET", "https://www.example.com/", NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         ttrue(conn->sock != 0);
@@ -135,7 +136,7 @@ static void stealSocket()
      */
     conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
-    rc = httpConnect(conn, "GET", "https://www.ibm.com/", NULL);
+    rc = httpConnect(conn, "GET", "https://www.example.com/", NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         ttrue(conn->sock != 0);
@@ -157,6 +158,7 @@ int main(int argc, char **argv)
     mprSetModuleSearchPath(BIN);
     mprVerifySslPeer(NULL, 0);
 
+    mprSetDebugMode(1);
     initHttp();
     createHttp();
     basicHttpGet();

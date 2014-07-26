@@ -172,6 +172,7 @@ int main(int argc, char **argv)
     secureHttpGet();
 #endif
     stealSocket();
+    return 0;
 };
 
 /*

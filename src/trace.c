@@ -499,7 +499,9 @@ PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ev
     } else {
         fmt(buf, sizeof(buf), "\n%s 0-0-0-0 ", trace->lastTime);
     }
+#if KEEP
     httpWriteTrace(trace, buf, slen(buf));
+#endif
     fmt(buf, sizeof(buf), "%s, ", event);
     httpWriteTrace(trace, buf, slen(buf));
 

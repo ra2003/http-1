@@ -438,12 +438,11 @@ static void readPeerData(HttpConn *conn)
 
 
 /*
-    IO event handler. This is invoked by the wait subsystem in response to I/O events. It is also invoked via
-    relay when an accept event is received by the server. Initially the conn->dispatcher will be set to the
-    server->dispatcher and the first I/O event will be handled on the server thread (or main thread). A request handler
-    may create a new conn->dispatcher and transfer execution to a worker thread if required.
+    Handle IO on the connection. Initially the conn->dispatcher will be set to the server->dispatcher and the first 
+    I/O event will be handled on the server thread (or main thread). A request handler may create a new 
+    conn->dispatcher and transfer execution to a worker thread if required.
  */
-PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
+PUBLIC void httpIO(HttpConn *conn, int eventMask)
 {
     MprSocket   *sp;
 
@@ -452,14 +451,13 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
         /* Connection has been destroyed */
         return;
     }
-    assert(conn->dispatcher == event->dispatcher);
     assert(conn->tx);
     assert(conn->rx);
 
-    if ((event->mask & MPR_WRITABLE) && conn->connectorq) {
+    if ((eventMask & MPR_WRITABLE) && conn->connectorq) {
         httpResumeQueue(conn->connectorq);
     }
-    if (event->mask & MPR_READABLE) {
+    if (eventMask & MPR_READABLE) {
         readPeerData(conn);
     }
     if (sp->secured && !conn->secure) {
@@ -492,7 +490,17 @@ PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
 }
 
 
-PUBLIC void httpEnableConnEvents(HttpConn *conn)
+/*
+    Handle an IO event on the connection. This is invoked by the wait subsystem in response to I/O events. 
+    It is also invoked via relay when an accept event is received by the server. 
+*/
+PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
+{
+    httpIO(conn, event->mask);
+}
+
+
+PUBLIC int httpGetConnEventMask(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -504,18 +512,6 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     rx = conn->rx;
     tx = conn->tx;
 
-    if (mprShouldAbortRequests() || conn->borrowed) {
-        return;
-    }
-    /*
-        Used by ejs
-     */
-    if (conn->workerEvent) {
-        MprEvent *event = conn->workerEvent;
-        conn->workerEvent = 0;
-        mprQueueEvent(conn->dispatcher, event);
-        return;
-    }
     eventMask = 0;
     if (rx) {
         if (conn->connError || (tx->writeBlocked) ||
@@ -535,7 +531,25 @@ PUBLIC void httpEnableConnEvents(HttpConn *conn)
     } else {
         eventMask |= MPR_READABLE;
     }
-    httpSetupWaitHandler(conn, eventMask);
+    return eventMask;
+}
+
+
+PUBLIC void httpEnableConnEvents(HttpConn *conn)
+{
+    if (mprShouldAbortRequests() || conn->borrowed) {
+        return;
+    }
+    /*
+        Used by ejs
+     */
+    if (conn->workerEvent) {
+        MprEvent *event = conn->workerEvent;
+        conn->workerEvent = 0;
+        mprQueueEvent(conn->dispatcher, event);
+        return;
+    }
+    httpSetupWaitHandler(conn, httpGetConnEventMask(conn));
 }
 
 

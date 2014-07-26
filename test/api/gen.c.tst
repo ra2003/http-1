@@ -9,6 +9,7 @@
 #include    "testme.h"
 #include    "http.h"
 
+    //  MOB - how to manage
 int timeout = 10 * 1000 * 1000;
 /************************************ Code ************************************/
 
@@ -49,7 +50,9 @@ static void basicHttpGet()
 
     http = httpCreate(HTTP_CLIENT_SIDE);
     ttrue(http != 0);
-
+    if (tget("TM_DEBUG", 0)) {
+        httpStartTracing("stdout:4");
+    }
     conn = httpCreateConn(NULL, 0);
     rc = httpConnect(conn, "GET", "http://www.example.com/index.html", NULL);
     ttrue(rc >= 0);
@@ -158,7 +161,10 @@ int main(int argc, char **argv)
     mprSetModuleSearchPath(BIN);
     mprVerifySslPeer(NULL, 0);
 
-    mprSetDebugMode(1);
+    if (tget("TM_DEBUG", 0)) {
+        mprSetDebugMode(1);
+        mprStartLogging("stdout:4", 0);
+    }
     initHttp();
     createHttp();
     basicHttpGet();

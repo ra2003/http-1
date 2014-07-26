@@ -1332,22 +1332,31 @@ static void parseSsl(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseSslAuthorityFile(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    //  MOB - should verify exists
-    mprSetSslCaFile(route->ssl, prop->value);
+    if (!mprPathExists(prop->value, R_OK)) {
+        httpParseError(route, "Cannot find file %s", prop->value);
+    } else {
+        mprSetSslCaFile(route->ssl, prop->value);
+    }
 }
 
 
 static void parseSslAuthorityDirectory(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    //  MOB - should verify exists
-    mprSetSslCaPath(route->ssl, prop->value);
+    if (!mprPathExists(prop->value, R_OK)) {
+        httpParseError(route, "Cannot find file %s", prop->value);
+    } else {
+        mprSetSslCaPath(route->ssl, prop->value);
+    }
 }
 
 
 static void parseSslCertificate(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    //  MOB - should verify exists
-    mprSetSslCertFile(route->ssl, prop->value);
+    if (!mprPathExists(prop->value, R_OK)) {
+        httpParseError(route, "Cannot find file %s", prop->value);
+    } else {
+        mprSetSslCertFile(route->ssl, prop->value);
+    }
 }
 
 
@@ -1359,8 +1368,11 @@ static void parseSslCiphers(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseSslKey(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    //  MOB - should verify exists
-    mprSetSslKeyFile(route->ssl, prop->value);
+    if (!mprPathExists(prop->value, R_OK)) {
+        httpParseError(route, "Cannot find file %s", prop->value);
+    } else {
+        mprSetSslKeyFile(route->ssl, prop->value);
+    }
 }
 
 

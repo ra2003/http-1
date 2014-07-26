@@ -89,8 +89,8 @@
                 },
             ],
             ssl: {
-                certificate: 'crt/test.crt',
-                key: 'crt/test.key',
+                certificate: '../crt/test.crt',
+                key: '../crt/test.key',
             },
         },
     },

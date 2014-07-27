@@ -6169,13 +6169,10 @@ static void pollWinTimer(MprCmd *cmd, MprEvent *event)
  */
 PUBLIC int mprWaitForCmd(MprCmd *cmd, MprTicks timeout)
 {
-    MprThreadService    *ts;
-    MprTicks            expires, remaining, delay;
-    int64               dispatcherMark;
+    MprTicks    expires, remaining, delay;
+    int64       dispatcherMark;
 
     assert(cmd);
-    ts = MPR->threadService;
-
     if (timeout < 0) {
         timeout = MAXINT;
     }
@@ -9629,83 +9626,6 @@ PUBLIC int mprServiceEvents(MprTicks timeout, int flags)
 }
 
 
-#if SAVE
-/*
-    Must be called locked
- */
-static bool canRun(MprDispatcher *dispatcher)
-{
-    return !isRunning(dispatcher) || !dispatcher->owner || dispatcher->owner == mprGetCurrentOsThread();
-}
-
-
-/*
-    Wait for an event to occur on the dispatcher and service the event. This is not called by mprServiceEvents.
-    The dispatcher may be "started" and owned by the thread, or it may be unowned.
-    WARNING: the event may have already happened by the time this API is invoked.
-    WARNING: this will enable GC while sleeping.
- */
-PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
-{
-    MprEventService     *es;
-    MprTicks            expires, delay;
-    int                 wasRunning, runEvents;
-
-    es = MPR->eventService;
-    ts = MPR->threadService;
-    es->now = mprGetTicks();
-
-    if (dispatcher == NULL) {
-        dispatcher = MPR->dispatcher;
-    }
-    if (dispatcher->flags & MPR_DISPATCHER_WAITING) {
-        assert(!(dispatcher->flags & MPR_DISPATCHER_WAITING));
-        return MPR_ERR_BUSY;
-    }
-    expires = timeout < 0 ? (es->now + MPR_MAX_TIMEOUT) : (es->now + timeout);
-
-    lock(es);
-    wasRunning = isRunning(dispatcher);
-    runEvents = canRun(dispatcher);
-    if (runEvents) {
-        if (!wasRunning) {
-            queueDispatcher(es->runQ, dispatcher);
-        }
-        unlock(es);
-        if (dispatchEvents(dispatcher)) {
-            return 0;
-        }
-        lock(es);
-        delay = expires - es->now;
-    } else {
-        delay = 10;
-    }
-    delay = getDispatcherIdleTicks(dispatcher, delay);
-    dispatcher->flags |= MPR_DISPATCHER_WAITING;
-    unlock(es);
-
-    mprYield(MPR_YIELD_STICKY);
-    if (!ts->eventsThread && mprGetCurrentThread() == ts->mainThread) {
-        mprServiceEvents(delay, MPR_SERVICE_NO_BLOCK);
-    } else {
-        mprWaitForCond(dispatcher->cond, delay);
-    }
-    mprResetYield();
-    dispatcher->flags &= ~MPR_DISPATCHER_WAITING;
-
-    if (runEvents) {
-        dispatchEvents(dispatcher);
-    }
-    es->now = mprGetTicks();
-    if (runEvents && !wasRunning) {
-        dequeueDispatcher(dispatcher);
-        mprScheduleDispatcher(dispatcher);
-    }
-    return 0;
-}
-#else
-
-
 PUBLIC int64 mprGetEventMark(MprDispatcher *dispatcher)
 {
     int64   result;
@@ -9718,13 +9638,6 @@ PUBLIC int64 mprGetEventMark(MprDispatcher *dispatcher)
     return result;
 }
 
-
-#if UNUSED
-PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout)
-{
-    return mprWaitForEvent2(dispatcher, timeout, -1);
-}
-#endif
 
 /*
     Wait for an event to occur on the dispatcher and service the event. This is not called by mprServiceEvents.
@@ -9777,7 +9690,6 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout, int64 ma
     }
     return 0;
 }
-#endif
 
 
 PUBLIC void mprSignalCompletion(MprDispatcher *dispatcher)
@@ -9862,6 +9774,11 @@ PUBLIC int mprDispatchersAreIdle()
 }
 
 
+/*
+    Start the dispatcher by putting it on the runQ. This prevents the event service from 
+    starting any events in parallel. The invoking thread should service events directly by
+    calling mprServiceEvents or mprWaitForEvent.
+ */
 PUBLIC int mprStartDispatcher(MprDispatcher *dispatcher)
 {
     if (dispatcher->owner && dispatcher->owner != mprGetCurrentOsThread()) {
@@ -9891,26 +9808,6 @@ PUBLIC int mprStopDispatcher(MprDispatcher *dispatcher)
     mprScheduleDispatcher(dispatcher);
     return 0;
 }
-
-
-#if UNUSED
-/*
-    Relay an event to a dispatcher. This invokes the callback proc as though it was invoked from the given dispatcher. 
- */
-PUBLIC void mprRelayEvent(MprDispatcher *dispatcher, void *proc, void *data, MprEvent *event)
-{
-    if (mprStartDispatcher(dispatcher) < 0) {
-        return;
-    }
-    if (proc) {
-        if (event) {
-            event->timestamp = dispatcher->service->now;
-        }
-        ((MprEventProc) proc)(data, event);
-    }
-    mprStopDispatcher(dispatcher);
-}
-#endif
 
 
 /*

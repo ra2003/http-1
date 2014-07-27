@@ -5951,9 +5951,21 @@ PUBLIC void mprSetEventServiceSleep(MprTicks delay);
     @return Zero if successful and an event occurred before the timeout expired. Returns #MPR_ERR_TIMEOUT if no event
         is fired before the timeout expires.
     @ingroup MprDispatcher
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout, int64 mark);
+
+/**
+    Get an event mark for a dispatcher
+    @description An event mark indicates a point in time for a dispatcher. Event marks are incremented for each
+    event serviced. This API is used with #mprWaitForEvent to supply an event mark so that mprWaitForEvent can
+    detect if any events have been serviced since the mark was taken. This is important so that mprWaitForEvent
+    will not miss events that occur before or while invoking #mprWaitForEvent.
+    @param dispatcher Event dispatcher
+    @return Event mark 64 bit integer
+    @ingroup MprDispatcher
+    @stability Prototype
+*/
 PUBLIC int64 mprGetEventMark(MprDispatcher *dispatcher);
 
 /**
@@ -6101,19 +6113,6 @@ PUBLIC MprEvent *mprCreateTimerEvent(MprDispatcher *dispatcher, cchar *name, Mpr
     @stability Stable
  */
 PUBLIC void mprRescheduleEvent(MprEvent *event, MprTicks period);
-
-#if UNUSED 
-/**
-    Relay an event to a dispatcher. This invokes the callback proc as though it was invoked from the given dispatcher.
-    @param dispatcher Dispatcher object created via #mprCreateDispatcher
-    @param proc Procedure to invoke
-    @param data Argument to proc
-    @param event Event object
-    @internal
-    @stability Internal
- */
-PUBLIC void mprRelayEvent(MprDispatcher *dispatcher, void *proc, void *data, MprEvent *event);
-#endif
 
 /**
     Start a dispatcher by setting it on the run queue

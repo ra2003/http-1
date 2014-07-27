@@ -474,10 +474,6 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
         assert(!conn->endpoint);
         return MPR_ERR_BAD_STATE;
     }
-    if (conn->async) {
-        assert(!conn->async);
-        return MPR_ERR_BAD_STATE;
-    }
     if (conn->state <= HTTP_STATE_BEGIN) {
         return MPR_ERR_BAD_STATE;
     }

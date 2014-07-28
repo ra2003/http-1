@@ -1,5 +1,5 @@
 /*
-    MID.es.set
+    SETUP.es.set
  */
 require ejs.unix
 
@@ -14,5 +14,4 @@ if (tphase() == 'Setup') {
     tset('TM_HTTPS', sslEndpoint)
 }
 
-let httpServer = Path(tget('TM_BIN')).join('http-server').relative
-startStopService(httpServer, {address: httpEndpoint})
+startStopService('http-server', {address: httpEndpoint})

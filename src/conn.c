@@ -204,7 +204,7 @@ static void connTimeout(HttpConn *conn, MprEvent *mprEvent)
         if (conn->state < HTTP_STATE_FIRST) {
             httpDisconnect(conn);
             if (msg) {
-                httpTrace(conn, event, "error", "msg=\"%s\"", msg);
+                httpTrace(conn, event, "error", "msg: '%s'", msg);
             }
         } else {
             httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "%s", msg);
@@ -365,13 +365,13 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     conn->ip = sclone(sock->ip);
 
     if ((value = httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1)) > conn->limits->connectionsMax) {
-        httpTrace(conn, "connection.accept.error", "error", "msg=\"Too many concurrent connections\", active=%d, max=%d", 
+        httpTrace(conn, "connection.accept.error", "error", "msg: 'Too many concurrent connections', active: %d, max: %d", 
             (int) value, conn->limits->connectionsMax);
         httpDestroyConn(conn);
         return 0;
     }
     if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
-        httpTrace(conn, "connection.accept.error", "error", "msg=\"Too many concurrent clients\", active=%d, max=%d", 
+        httpTrace(conn, "connection.accept.error", "error", "msg: 'Too many concurrent clients', active: %d, max: %d", 
             mprGetHashLength(http->addresses), conn->limits->clientMax);
         httpDestroyConn(conn);
         return 0;
@@ -379,7 +379,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     address = conn->address;
     if (address && address->banUntil) {
         if (address->banUntil < http->now) {
-            httpTrace(conn, "monitor.ban.stop", "context", "client=%s", conn->ip);
+            httpTrace(conn, "monitor.ban.stop", "context", "client: '%s'", conn->ip);
             address->banUntil = 0;
         } else {
             if (address->banStatus) {
@@ -393,7 +393,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     }
     if (endpoint->ssl) {
         if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
-            httpTrace(conn, "connection.upgrade.error", "error", "msg=\"Cannot upgrade socket, %s\"", sock->errorMsg);
+            httpTrace(conn, "connection.upgrade.error", "error", "msg: 'Cannot upgrade socket, %s'", sock->errorMsg);
             mprCloseSocket(sock, 0);
             httpMonitorEvent(conn, HTTP_COUNTER_SSL_ERRORS, 1);
             httpDestroyConn(conn);
@@ -403,7 +403,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 
-    httpTrace(conn, "connection.accept.new", "context", "msg=\"new connection\", peer=%s, endpoint=%s:%d", 
+    httpTrace(conn, "connection.accept.new", "context", "msg: 'new connection', peer: '%s', endpoint: '%s:%d'", 
         conn->ip, sock->acceptIp, sock->acceptPort);
     
     event->mask = MPR_READABLE;
@@ -431,7 +431,7 @@ static void readPeerData(HttpConn *conn)
             conn->errorMsg = conn->sock->errorMsg;
             conn->keepAliveCount = 0;
             conn->lastRead = 0;
-            httpTrace(conn, "connection.close", "context", "msg=\"%s\"", conn->errorMsg ? conn->errorMsg : "");
+            httpTrace(conn, "connection.close", "context", "msg: '%s'", conn->errorMsg ? conn->errorMsg : "");
         }
     }
 }
@@ -463,12 +463,12 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
     if (sp->secured && !conn->secure) {
         conn->secure = 1;
         if (sp->peerCert) {
-            httpTrace(conn, "connection.ssl", "context", "msg=\"Connection secured with peer certificate\", " \
-                "secure=true, cipher=%s, peerName=\"%s\", subject=\"%s\", issuer=\"%s\"", 
+            httpTrace(conn, "connection.ssl", "context", "msg: 'Connection secured with peer certificate', " \
+                "secure: true, cipher: '%s', peerName: '%s', subject: '%s', issuer: '%s'", 
                 sp->cipher, sp->peerName, sp->peerCert, sp->peerCertIssuer);
         } else {
             httpTrace(conn, "connection.ssl", "context",
-                "msg=\"Connection secured without peer certificate\", secure=true, cipher=%s", sp->cipher);
+                "msg: 'Connection secured without peer certificate', secure: true, cipher: '%s'", sp->cipher);
         }
     }
     /*
@@ -920,14 +920,14 @@ PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
     if (mprGetRemainingTicks(conn->started, requestTimeout) < 0) {
         if (requestTimeout != timeout) {
             httpTrace(conn, "timeout.duration", "error",
-                "msg=\"Request cancelled exceeded max duration\", timeout=%lld", requestTimeout / 1000);
+                "msg: 'Request cancelled exceeded max duration', timeout: %lld", requestTimeout / 1000);
         }
         return 1;
     }
     if (mprGetRemainingTicks(conn->lastActivity, inactivityTimeout) < 0) {
         if (inactivityTimeout != timeout) {
             httpTrace(conn, "timeout.inactivity", "error", 
-                "msg=\"Request cancelled due to inactivity\", timeout=%lld", inactivityTimeout / 1000);
+                "msg: 'Request cancelled due to inactivity', timeout: %lld", inactivityTimeout / 1000);
         }
         return 1;
     }

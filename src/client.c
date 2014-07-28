@@ -43,7 +43,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
             mprCloseSocket(conn->sock, 0);
             conn->sock = 0;
         } else {
-            httpTrace(conn, "connection.reuse", "context", "keepAlive=%d", conn->keepAliveCount);
+            httpTrace(conn, "connection.reuse", "context", "keepAlive: %d", conn->keepAliveCount);
         }
     }
     if (conn->sock) {
@@ -78,13 +78,13 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         peerName = isdigit(uri->host[0]) ? 0 : uri->host;
         if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
-            httpTrace(conn, "connection.upgrade.error", "error", "msg=\"Cannot perform SSL upgrade, %s\"", conn->errorMsg);
+            httpTrace(conn, "connection.upgrade.error", "error", "msg: 'Cannot perform SSL upgrade, %s'", conn->errorMsg);
             return 0;
         }
         if (sp->peerCert) {
             httpTrace(conn, "context", "connection.ssl",
-                "msg=\"Connection secured with peer certificate\"," \
-                "secure=true, cipher=%s, peerName=\"%s\", subject=\"%s\", issuer=\"%s\"",
+                "msg: 'Connection secured with peer certificate', " \
+                "secure: true, cipher: '%s', peerName: '%s', subject: '%s', issuer: '%s'",
                 sp->cipher, sp->peerName, sp->peerCert, sp->peerCertIssuer);
         }
     }
@@ -95,7 +95,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         return 0;
     }
 #endif
-    httpTrace(conn, "connection.peer", "context", "peer=%s:%d", conn->ip, conn->port);
+    httpTrace(conn, "connection.peer", "context", "peer: '%s:%d'", conn->ip, conn->port);
     return conn;
 }
 

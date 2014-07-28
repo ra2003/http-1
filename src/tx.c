@@ -488,7 +488,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n<p>The document has moved <a href=\"%s\">here</a>.</p></body></html>\r\n",
             msg, msg, targetUri);
-        httpTrace(conn, "request.redirect", "context", "status=%d, location=%s", status, targetUri);
+        httpTrace(conn, "request.redirect", "context", "status: %d, location: '%s'", status, targetUri);
     } else {
         httpFormatResponse(conn,
             "<!DOCTYPE html>\r\n"
@@ -777,7 +777,7 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
 
     if (tx->flags & HTTP_TX_PIPELINE) {
         /* Filename being revised after pipeline created */
-        httpTrace(conn, "request.document", "context", "filename=\"%s\"", tx->filename);
+        httpTrace(conn, "request.document", "context", "filename: '%s'", tx->filename);
     }
 }
 
@@ -863,7 +863,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
             }
         }
         /* Client side trace */
-        httpTrace(conn, "tx.first.client", "request", "method=%s, uri=%s, protocol=%s", tx->method, 
+        httpTrace(conn, "tx.first.client", "request", "method: '%s', uri: '%s', protocol: '%s'", tx->method, 
             parsedUri->path, conn->protocol);
     }
     mprPutStringToBuf(buf, "\r\n");

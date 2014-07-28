@@ -686,7 +686,7 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
                 path = mprReplacePathExt(filename, ext);
                 if (mprGetPathInfo(path, info) == 0) {
                     httpTrace(conn, "request.map", "context", 
-                        "originalFilename=\"%s\", filename=\"%s\"", filename, path);
+                        "originalFilename: '%s', filename: '%s'", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");
@@ -2172,7 +2172,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!httpCanUser(conn, NULL)) {
-        httpTrace(conn, "auth.check", "error", "msg=\"Access denied, user is not authorized for access\"");
+        httpTrace(conn, "auth.check", "error", "msg: 'Access denied, user is not authorized for access'");
         if (!conn->tx->finalized) {
             if (route->auth && route->auth->type) {
                 (route->auth->type->askLogin)(conn);
@@ -2334,11 +2334,11 @@ static int cmdUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
     command = expandTokens(conn, op->details);
     cmd = mprCreateCmd(conn->dispatcher);
-    httpTrace(conn, "request.run", "context", "command=\"%s\"", command);
+    httpTrace(conn, "request.run", "context", "command: '%s'", command);
     if ((status = mprRunCmd(cmd, command, NULL, NULL, &out, &err, -1, 0)) != 0) {
         /* Don't call httpError, just set errorMsg which can be retrieved via: ${request:error} */
         conn->errorMsg = sfmt("Command failed: %s\nStatus: %d\n%s\n%s", command, status, out, err);
-        httpTrace(conn, "request.run.error", "error", "command=\"%s\", error=\"%s\"", command, conn->errorMsg);
+        httpTrace(conn, "request.run.error", "error", "command: '%s', error: '%s'", command, conn->errorMsg);
         /* Continue */
     }
     return HTTP_ROUTE_OK;

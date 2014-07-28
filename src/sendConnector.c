@@ -132,7 +132,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
             }
             httpFinalizeConnector(conn);
         }
-        httpTrace(conn, "connection.io.error", "error", "msg=\"Connector write error\", errno=%d", errCode);
+        httpTrace(conn, "connection.io.error", "error", "msg: 'Connector write error', errno: %d", errCode);
 
     } else if (written > 0) {
         tx->bytesWritten += written;

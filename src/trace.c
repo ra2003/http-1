@@ -132,6 +132,7 @@ static void manageTrace(HttpTrace *trace, int flags)
         mprMark(trace->file);
         mprMark(trace->format);
         mprMark(trace->lastTime);
+        mprMark(trace->buf);
         mprMark(trace->mutex);
         mprMark(trace->path);
         mprMark(trace->events);
@@ -281,7 +282,7 @@ PUBLIC bool httpTraceBody(HttpConn *conn, bool outgoing, HttpPacket *packet, ssi
             event = "rx.body.data";
         }
     }
-    return httpTracePacket(conn, event, type, packet, "length=%zd", len);
+    return httpTracePacket(conn, event, type, packet, "length: %zd", len);
 }
 
 
@@ -319,7 +320,7 @@ PUBLIC bool httpTraceContent(HttpConn *conn, cchar *event, cchar *type, cchar *b
             (smatch(event, "tx.body.data") && (conn->tx->bytesWritten >= conn->trace->maxContent))) {
             if (!conn->rx->webSocket) {
                 conn->rx->skipTrace = 1;
-                httpTrace(conn, event, type, "msg=\"Abbreviating body trace\"");
+                httpTrace(conn, event, type, "msg: 'Abbreviating body trace'");
             }
             return 0;
         }
@@ -477,46 +478,56 @@ PUBLIC cchar *httpMakePrintable(HttpTrace *trace, HttpConn *conn, cchar *event, 
 PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, 
     cchar *data, ssize len)
 {
-    MprTime now;
-    char    *boundary, buf[256];
-    int     client, sessionSeqno;
+    MprBuf      *buf;
+    MprTime     now;
+    char        *cp;
+    int         client, sessionSeqno;
 
     assert(trace);
     assert(event);
     assert(type);
 
     lock(trace);
-    now = mprGetTime();
+    if (!trace->buf) {
+        trace->buf = mprCreateBuf(0, 0);
+    }
+    buf = trace->buf;
+    mprFlushBuf(buf);
+
     if (conn) {
+        now = mprGetTime();
         if (trace->lastMark < (now + TPS)) {
             trace->lastTime = mprGetDate(MPR_LOG_DATE);
             trace->lastMark = now;
         }
         client = conn->address ? conn->address->seqno : 0;
         sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-        fmt(buf, sizeof(buf), "\n%s %d-%d-%d-%d ", trace->lastTime, client, sessionSeqno, conn->seqno,
-            conn->rx->seqno);
+        mprPutToBuf(buf, "\n%s: \n\ttime: %s\n\tfrom: %d-%d-%d-%d\n", event, trace->lastTime, client, sessionSeqno, 
+            conn->seqno, conn->rx->seqno);
     } else {
-        fmt(buf, sizeof(buf), "\n%s 0-0-0-0 ", trace->lastTime);
+        mprPutToBuf(buf, "\n%s: \n", event);
     }
-#if KEEP
-    httpWriteTrace(trace, buf, slen(buf));
-#endif
-    fmt(buf, sizeof(buf), "%s, ", event);
-    httpWriteTrace(trace, buf, slen(buf));
-
     if (values) {
-        httpWriteTrace(trace, values, slen(values));
+        mprPutCharToBuf(buf, '\t');
+        for (cp = (char*) values; *cp; cp++) {
+            if (cp[0] == ',' && cp[1] == ' ') {
+                cp[0] = '\n';
+                cp[1] = '\t';
+            }
+        }
+        mprPutStringToBuf(buf, values);
+        mprPutCharToBuf(buf, '\n');
     }
     if (data) {
-        boundary = " --details--\n";
-        httpWriteTrace(trace, boundary, slen(boundary));
+        mprPutStringToBuf(buf, "----\n");
         data = httpMakePrintable(trace, conn, event, data, &len);
-        httpWriteTrace(trace, data, len);
-        httpWriteTrace(trace, &boundary[1], slen(boundary) - 1);
-    } else {
-        httpWriteTrace(trace, "\n", 1);
+        mprPutBlockToBuf(buf, data, len);
+        if (len > 0 && data[len - 1] != '\n') {
+            mprPutCharToBuf(buf, '\n');
+        }
+        mprPutStringToBuf(buf, "----\n");
     }
+    httpWriteTrace(trace, mprGetBufStart(buf), mprGetBufLength(buf));
     unlock(trace);
 }
 

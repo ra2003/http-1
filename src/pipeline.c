@@ -110,7 +110,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
 
     if (conn->endpoint) {
         httpTrace(conn, "request.pipeline", "context",  
-            "route=%s, handler=%s, target=\"%s\", endpoint=%s:%d, host=%s, referrer=%s, filename=%s",
+            "route: '%s', handler: '%s', target: '%s', endpoint: '%s:%d', host: '%s', referrer: '%s', filename: '%s'",
             rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
             conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "", 
             tx->filename ? tx->filename : "");

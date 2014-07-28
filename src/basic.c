@@ -54,7 +54,7 @@ PUBLIC void httpBasicLogin(HttpConn *conn)
     auth = conn->rx->route->auth;
     httpSetHeader(conn, "WWW-Authenticate", "Basic realm=\"%s\"", auth->realm);
     httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
-    httpTrace(conn, "auth.basic.error", "error", "msg=\"Access denied, Login required\"");
+    httpTrace(conn, "auth.basic.error", "error", "msg: 'Access denied, Login required'");
 }
 
 

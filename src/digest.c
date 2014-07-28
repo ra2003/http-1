@@ -210,19 +210,19 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
         when = 0;
         parseDigestNonce(dp->nonce, &secret, &realm, &when);
         if (!smatch(secret, secret)) {
-            httpTrace(conn, "auth.digest.error", "error", "msg=\"Access denied, Nonce mismatch\"");
+            httpTrace(conn, "auth.digest.error", "error", "msg: 'Access denied, Nonce mismatch'");
             return MPR_ERR_BAD_STATE;
 
         } else if (!smatch(realm, rx->route->auth->realm)) {
-            httpTrace(conn, "auth.digest.error", "error", "msg=\"Access denied, Realm mismatch\"");
+            httpTrace(conn, "auth.digest.error", "error", "msg: 'Access denied, Realm mismatch'");
             return MPR_ERR_BAD_STATE;
 
         } else if (dp->qop && !smatch(dp->qop, "auth")) {
-            httpTrace(conn, "auth.digest.error", "error", "msg=\"Access denied, Bad qop\"");
+            httpTrace(conn, "auth.digest.error", "error", "msg: 'Access denied, Bad qop'");
             return MPR_ERR_BAD_STATE;
 
         } else if ((when + (5 * 60)) < time(0)) {
-            httpTrace(conn, "auth.digest.error", "error", "msg=\"Access denied, Nonce is stale\"");
+            httpTrace(conn, "auth.digest.error", "error", "msg: 'Access denied, Nonce is stale'");
             return MPR_ERR_BAD_STATE;
         }
         rx->passwordDigest = calcDigest(conn, dp, *username);

@@ -119,7 +119,7 @@ static void netOutgoingService(HttpQueue *q)
                 httpDisconnect(conn);
             }
             httpFinalizeConnector(conn);
-            httpTrace(conn, "connection.io.error", "error", "msg=\"Connector write error\", errno=%d", errCode);
+            httpTrace(conn, "connection.io.error", "error", "msg: 'Connector write error', errno: %d", errCode);
             break;
 
         } else if (written > 0) {

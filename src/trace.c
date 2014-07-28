@@ -446,7 +446,8 @@ PUBLIC cchar *httpMakePrintable(HttpTrace *trace, HttpConn *conn, cchar *event, 
         start += 3;
         *lenp -= 3;
     }
-    len = max(len, trace->maxContent);
+//  MOB - appweb-lts also
+    len = min(len, trace->maxContent);
 
     for (i = 0; i < len; i++) {
         if (!isprint((uchar) start[i]) && start[i] != '\n' && start[i] != '\r' && start[i] != '\t') {

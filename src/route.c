@@ -451,9 +451,8 @@ static int matchRoute(HttpConn *conn, HttpRoute *route)
     rx = conn->rx;
     savePathInfo = 0;
 
-    /*
-        Remove the route prefix. Restore after matching.
-     */
+    //  TODO - remove first test
+    assert(route->prefix);
     if (route->prefix && *route->prefix) {
         if (!sstarts(rx->pathInfo, route->prefix)) {
             return HTTP_ROUTE_REJECT;

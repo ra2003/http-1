@@ -566,7 +566,6 @@
             children = (
 				98ED959498EDA2E6000000A0 /* me.h */,
 				98ED959498EDA2E6000000A6 /* mpr.h */,
-				98ED959498EDA2E6000000A4 /* est.h */,
 				98ED959498EDA2E600000066 /* mprSsl.c */,
 			);
             name = "libmprssl";
@@ -1133,7 +1132,7 @@ fi";
                 /* Common Settings */
 				ALWAYS_SEARCH_USER_PATHS = NO;
                 ONLY_ACTIVE_ARCH = YES;
-                CURRENT_PROJECT_VERSION = 5.0;
+                CURRENT_PROJECT_VERSION = 5.1;
                 DYLIB_COMPATIBILITY_VERSION = "$(CURRENT_PROJECT_VERSION)";
                 DYLIB_CURRENT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1202,7 +1201,7 @@ fi";
                 /* Common Settings */
 				ALWAYS_SEARCH_USER_PATHS = NO;
                 ONLY_ACTIVE_ARCH = YES;
-                CURRENT_PROJECT_VERSION = 5.0;
+                CURRENT_PROJECT_VERSION = 5.1;
                 DYLIB_COMPATIBILITY_VERSION = "$(CURRENT_PROJECT_VERSION)";
                 DYLIB_CURRENT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;

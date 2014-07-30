@@ -3,7 +3,7 @@
 #
 
 NAME                  = http
-VERSION               = 5.0.0
+VERSION               = 5.1.0
 
 OS                    = windows
 PA                    = $(PROCESSOR_ARCHITECTURE)
@@ -940,7 +940,6 @@ build\$(CONFIG)\bin\libest.dll: $(DEPS_53)
 #
 DEPS_54 = $(DEPS_54) build\$(CONFIG)\inc\me.h
 DEPS_54 = $(DEPS_54) build\$(CONFIG)\inc\mpr.h
-DEPS_54 = $(DEPS_54) build\$(CONFIG)\inc\est.h
 
 build\$(CONFIG)\obj\mprSsl.obj: \
     src\paks\mpr\mprSsl.c $(DEPS_54)
@@ -1027,5 +1026,5 @@ uninstall: $(DEPS_60)
 #   version
 #
 version: $(DEPS_61)
-	echo 5.0.0
+	echo 5.1.0
 

@@ -3,7 +3,7 @@
 #
 
 NAME                  := http
-VERSION               := 5.0.0
+VERSION               := 5.1.0
 PROFILE               ?= default
 ARCH                  ?= $(shell echo $(WIND_HOST_TYPE) | sed 's/-.*//')
 CPU                   ?= $(subst X86,PENTIUM,$(shell echo $(ARCH) | tr a-z A-Z))
@@ -890,7 +890,6 @@ endif
 #
 DEPS_54 += build/$(CONFIG)/inc/me.h
 DEPS_54 += build/$(CONFIG)/inc/mpr.h
-DEPS_54 += build/$(CONFIG)/inc/est.h
 
 build/$(CONFIG)/obj/mprSsl.o: \
     src/paks/mpr/mprSsl.c $(DEPS_54)
@@ -968,5 +967,5 @@ uninstall: $(DEPS_60)
 #   version
 #
 version: $(DEPS_61)
-	echo 5.0.0
+	echo 5.1.0
 

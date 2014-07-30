@@ -34,7 +34,7 @@
     ],
     "dependencies": {
         "me-dev": "~0.8",
-        "mpr": "~5.0",
+        "mpr": "~5",
         "osdep": "~0.8",
         "pcre": "~1.0"
     },

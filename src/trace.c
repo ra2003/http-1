@@ -2,7 +2,7 @@
     trace.c -- Trace data
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
 
-    Event type default levels:
+    Event type default labels:
 
         request: 1
         result:  2
@@ -10,114 +10,6 @@
         form:    4
         body:    5
         debug:   5
-
-    Event names object model:
-
-    auth
-        check
-        digest
-            error           # error
-        login
-            authenticated   # context
-            error           # error
-
-    cache
-        sendcache           # context
-        cached              # context
-        big                 # context
-        none                # context
-        reload              # context
-
-    connection
-        accept
-            error           # error
-            new             # context
-        peer                # context
-        reuse               # context
-        upgrade
-            error           # error
-        ssl
-        close
-        io
-            error           # error
-
-    timeout
-        inactivity
-        duration
-        parse
-
-    request
-        error
-        pipeline
-        completion          # result
-        map
-        method
-        errordoc
-        session
-            create
-        xsrf
-            error
-        redirect
-        document
-            error
-        upload
-            file
-        websockets
-            data            # body
-            error
-
-    rx
-        first
-            client          # result
-            server          # request
-        headers
-            client          # context
-            server          # context
-
-        body
-            form            # form
-            data            # body
-
-        websockets      
-            packet          # context
-            data            # body
-            close           # body
-            error           # error
-
-    tx
-        first
-            client          # request
-        headers
-            client          # context
-            server          # context
-
-        body
-            form            # form
-            data            # body
-
-        websockets      
-            close           # body
-            packet          # body
-
-    monitor
-        ban
-            remove
-        delay
-            start
-            stop
-
-    esp
-        email
-            error
-        error
-        singular
-            clear
-            set
-        xsrf
-            error
-
-    cgi
-        error
  */
 
 /********************************* Includes ***********************************/
@@ -497,35 +389,35 @@ PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ev
     if (conn) {
         now = mprGetTime();
         if (trace->lastMark < (now + TPS)) {
-            trace->lastTime = mprGetDate(MPR_LOG_DATE);
+            trace->lastTime = mprGetDate("%T");
             trace->lastMark = now;
         }
         client = conn->address ? conn->address->seqno : 0;
         sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-        mprPutToBuf(buf, "\n%s: \n\ttime: %s\n\tfrom: %d-%d-%d-%d\n", event, trace->lastTime, client, sessionSeqno, 
-            conn->seqno, conn->rx->seqno);
+        mprPutToBuf(buf, "\n%s %d-%d-%d-%d %s", trace->lastTime, client, sessionSeqno, conn->seqno, conn->rx->seqno, event);
     } else {
-        mprPutToBuf(buf, "\n%s: \n", event);
+        mprPutToBuf(buf, "\n%s: %s", trace->lastTime, event);
     }
     if (values) {
-        mprPutCharToBuf(buf, '\t');
+        mprPutCharToBuf(buf, ' ');
         for (cp = (char*) values; *cp; cp++) {
-            if (cp[0] == ',' && cp[1] == ' ') {
-                cp[0] = '\n';
-                cp[1] = '\t';
+            if (cp[0] == ':') {
+                cp[0] = '=';
+            } else if (cp[0] == ',') {
+                cp[0] = ' ';
             }
         }
         mprPutStringToBuf(buf, values);
         mprPutCharToBuf(buf, '\n');
     }
     if (data) {
-        mprPutStringToBuf(buf, "----\n");
+        mprPutToBuf(buf, "\n----\n");
         data = httpMakePrintable(trace, conn, event, data, &len);
         mprPutBlockToBuf(buf, data, len);
         if (len > 0 && data[len - 1] != '\n') {
             mprPutCharToBuf(buf, '\n');
         }
-        mprPutStringToBuf(buf, "----\n");
+        mprPutToBuf(buf, "----\n");
     }
     httpWriteTrace(trace, mprGetBufStart(buf), mprGetBufLength(buf));
     unlock(trace);

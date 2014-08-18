@@ -281,7 +281,7 @@ static bool parseIncoming(HttpConn *conn)
                 return 0;
             } else {
                 address->delay = 0;
-                httpTrace(conn, "monitor.delay.stop", "context", "client: '%s'", conn->ip);
+                httpTrace(conn, "monitor.delay.stop", "context", "client:'%s'", conn->ip);
             }
         }
     }
@@ -307,7 +307,7 @@ static bool mapMethod(HttpConn *conn)
     rx = conn->rx;
     if (rx->flags & HTTP_POST && (method = httpGetParam(conn, "-http-method-", 0)) != 0) {
         if (!scaselessmatch(method, rx->method)) {
-            httpTrace(conn, "request.method", "context", "originalMethod: '%s', method: '%s'", rx->method, method);
+            httpTrace(conn, "request.method", "context", "originalMethod:'%s',method:'%s'", rx->method, method);
             httpSetMethod(conn, method);
             return 1;
         }
@@ -380,8 +380,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 {
     HttpRx      *rx;
     HttpLimits  *limits;
-    char        *uri, *protocol;
-    cchar       *endp;
+    char        *method, *uri, *protocol, *start;
     MprBuf      *content;
     ssize       len;
 
@@ -394,7 +393,10 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     conn->startMark = mprGetHiResTicks();
     conn->started = conn->http->now;
 
-    rx->originalMethod = rx->method = supper(getToken(conn, 0));
+    content = packet->content;
+    start = content->start;
+    method = getToken(conn, 0);
+    rx->originalMethod = rx->method = supper(method);
     parseMethod(conn);
 
     uri = getToken(conn, 0);
@@ -407,18 +409,16 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
             "Bad request. URI too long. Length %zd vs limit %zd", len, limits->uriSize);
         return 0;
     }
-    protocol = conn->protocol = supper(getToken(conn, "\r\n"));
-    if (strcmp(protocol, "HTTP/1.0") == 0) {
+    protocol = getToken(conn, "\r\n");
+    conn->protocol = supper(protocol);
+    if (strcmp(conn->protocol, "HTTP/1.0") == 0) {
         if (rx->flags & (HTTP_POST|HTTP_PUT)) {
             rx->remainingContent = MAXINT;
             rx->needInputPipeline = 1;
         }
         conn->http10 = 1;
         conn->mustClose = 1;
-        conn->protocol = protocol;
-    } else if (strcmp(protocol, "HTTP/1.1") == 0) {
-        conn->protocol = protocol;
-    } else {
+    } else if (strcmp(protocol, "HTTP/1.1") != 0) {
         conn->protocol = sclone("HTTP/1.1");
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
         return 0;
@@ -431,12 +431,13 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     httpSetState(conn, HTTP_STATE_FIRST);
 
     if (httpTracing(conn)) {
-        httpTrace(conn, "rx.first.server", "request", "method: '%s', uri: '%s', protocol: '%s', peer: '%s'", 
-            rx->method, rx->uri, conn->protocol, conn->ip);
-        content = packet->content;
-        endp = strstr((char*) content->start, "\r\n\r\n");
-        len = (endp) ? (int) (endp - content->start + 2) : 0;
-        httpTraceContent(conn, "rx.headers.server", "context", content->start, len, NULL);
+        httpTrace(conn, "rx.first.server", "request", "method:'%s',uri:'%s',protocol:'%s'", 
+            rx->method, rx->uri, conn->protocol);
+        uri[-1] = ' ';
+        protocol[-1] = ' ';
+        content->start[-2] = '\r';
+        content->start[-1] = '\n';
+        httpTraceContent(conn, "rx.headers.server", "context", start, rx->headerPacketLength, NULL);
     }
     return 1;
 }
@@ -483,7 +484,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         return 0;
     }
     if (httpTracing(conn)) {
-        httpTrace(conn, "rx.first.client", "request", "status: %d, protocol: '%s'", rx->status, protocol);
+        httpTrace(conn, "rx.first.client", "request", "status:%d,protocol:'%s'", rx->status, protocol);
         content = packet->content;
         endp = strstr((char*) content->start, "\r\n\r\n");
         len = (endp) ? (int) (endp - content->start + 4) : 0;
@@ -1134,7 +1135,7 @@ static void createErrorRequest(HttpConn *conn)
     if (!rx->headerPacket) {
         return;
     }
-    httpTrace(conn, "request.errordoc", "context", "location: '%s', status: %d", tx->errorDocument, tx->status);
+    httpTrace(conn, "request.errordoc", "context", "location:'%s',status:%d", tx->errorDocument, tx->status);
 
     originalUri = rx->uri;
     conn->rx = httpCreateRx(conn);
@@ -1250,12 +1251,12 @@ static bool processCompletion(HttpConn *conn)
 #if MPR_HIGH_RES_TIMER
         httpTrace(conn, 
             "request.completion", "result",
-            "status: %d, error: %d, connError: %d, elapsed: %llu, elapsedTicks: %llu, received: %lld, sent: %lld", 
+            "status:%d,error:%d,connError:%d,elapsed:%llu,elapsedTicks:%llu,received:%lld,sent:%lld",
             status, conn->error, conn->connError, elapsed, mprGetHiResTicks() - conn->startMark, 
             received, tx->bytesWritten);
 #else
         httpTrace(conn, "request.completion", "result", 
-            "status: %d, error: %d, connError: %d, elapsed: %llu, received: %lld, sent: %lld", 
+            "status:%d,error:%d,connError:%d,elapsed:%llu,received:%lld,sent:%lld",
             status, conn->error, conn->connError, elapsed, received, tx->bytesWritten);
 #endif
     }

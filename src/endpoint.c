@@ -188,9 +188,9 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
     proto = endpoint->ssl ? "HTTPS" : "HTTP";
     ip = *endpoint->ip ? endpoint->ip : "*";
     if (mprIsSocketV6(endpoint->sock)) {
-        mprLog("info http", 2, "Started %s service on [%s]:%d", proto, ip, endpoint->port);
+        mprLog("info http", HTTP->startLevel, "Started %s service on [%s]:%d", proto, ip, endpoint->port);
     } else {
-        mprLog("info http", 2, "Started %s service on %s:%d", proto, ip, endpoint->port);
+        mprLog("info http", HTTP->startLevel, "Started %s service on %s:%d", proto, ip, endpoint->port);
     }
     return 0;
 }
@@ -407,6 +407,11 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHea
     return 0;
 }
 
+
+PUBLIC void httpSetEndpointStartLevel(int level)
+{
+    HTTP->startLevel = level;
+}
 
 /*
     @copy   default

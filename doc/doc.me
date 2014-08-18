@@ -4,32 +4,17 @@
 
 Me.load({
     targets: {
-        patch: {
-            action: "
-                trace('Patch', 'Expand DSI')
-                let path = Path('dsi/head.html')
-                let settings = me.settings
-                path.write(path.readString().replace(/version\">.*</, 'version\">' + 
-                    settings.title + ' ' + settings.version + '<'))
-                for each (path in Path('.').files('**.html', {exclude: /Bare.html|dsi/})) {
-                    vtrace('Patch', path)
-                    Cmd('dsi -v -I. ' + path)
-                }
-            "
-        },
-
         api: {
-            action: "
+            action: `
                 apidoc('api/http.dox', '${SRC}/src/http.h', 'Http API', 'api/*.tags')
-                apiwrap(['api/http.html'])
-            ",
+            `,
         }, 
 
         'clean-doc': {
             type: 'clean',
-            action: "
+            action: `
                 rmdir(['../doc/api/html', '../doc/api/xml'])
-            "
+            `
         },
     
     },

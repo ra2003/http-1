@@ -59,7 +59,9 @@ Me.load({
 
         'api': {},
 
-        'clean-doc': {},
-
+        'clean-doc': {
+            type: 'clean',
+            action: `rmdir(['../doc/api/html', '../doc/api/xml'])`
+        },
     },
 })

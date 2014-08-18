@@ -9,13 +9,5 @@ Me.load({
                 apidoc('api/http.dox', '${SRC}/src/http.h', 'Http API', 'api/*.tags')
             `,
         }, 
-
-        'clean-doc': {
-            type: 'clean',
-            action: `
-                rmdir(['../doc/api/html', '../doc/api/xml'])
-            `
-        },
-    
     },
 })

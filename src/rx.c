@@ -975,9 +975,16 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
         httpTraceBody(conn, 0, packet, nbytes);
     }
     if (rx->eof) {
-        if (!conn->mustClose && 
-            ((rx->remainingContent > 0 && rx->length > 0) ||
-             (rx->chunkState && rx->chunkState != HTTP_CHUNK_EOF))) {
+#if GITHUB_BUG || 1
+        /*
+            GitHub is doing a 302 redirection with a "Transfer-Encoding" with a "Connection:close" header without any body
+         */
+        if (conn->mustClose && (rx->chunkState && rx->chunkState != HTTP_CHUNK_EOF)) {
+            rx->chunkState = HTTP_CHUNK_EOF;
+        }
+#endif
+        if ((rx->remainingContent > 0 && (rx->length > 0 || !conn->mustClose)) ||
+            (rx->chunkState && rx->chunkState != HTTP_CHUNK_EOF)) {
             /* Closing is the only way for HTTP/1.0 to signify the end of data */
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
             return 0;

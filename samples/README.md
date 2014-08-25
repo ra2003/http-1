@@ -3,11 +3,11 @@ Embedthis Http Samples
 
 To build the samples, you will need to install the MakeMe build tool from:
 
-* MakeMe - [http://embedthis.com/downloads/makeme/download.esp](http://embedthis.com/downloads/makeme/download.esp)
+* MakeMe - [https://embedthis.com/downloads/makeme/download.esp](https://embedthis.com/downloads/makeme/download.esp)
 
 The Pak tool may also be helpful to manage imported packages
 
-* Pak - [http://embedthis.com/downloads/pak/download.esp](http://embedthis.com/downloads/pak/download.esp)
+* Pak - [https://embedthis.com/downloads/pak/download.esp](https://embedthis.com/downloads/pak/download.esp)
 
 The following samples are available:
 
@@ -31,7 +31,7 @@ Licensing
 
 Please see: 
 
-http://embedthis.com/licensing/index.html
+https://embedthis.com/licensing/index.html
 
 Copyright
 ---

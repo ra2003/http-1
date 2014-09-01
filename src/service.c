@@ -1014,7 +1014,7 @@ PUBLIC int httpSetUserAccount(cchar *newUser)
 #if ME_UNIX_LIKE
         /* Only change user if root */
         if (getuid() != 0) {
-            mprLog("info http", 2, "Running as user account \"%s\"", http->user);
+            mprLog("info http", 2, "Running as user \"%s\"", http->user);
             return 0;
         }
 #endif

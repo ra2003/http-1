@@ -291,7 +291,7 @@ PUBLIC int httpIsEndpointAsync(HttpEndpoint *endpoint)
 }
 
 
-PUBLIC void httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
+PUBLIC int httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
 {
     assert(endpoint);
 
@@ -303,8 +303,11 @@ PUBLIC void httpSetEndpointAddress(HttpEndpoint *endpoint, cchar *ip, int port)
     }
     if (endpoint->sock) {
         httpStopEndpoint(endpoint);
-        httpStartEndpoint(endpoint);
+        if (httpStartEndpoint(endpoint) < 0) {
+            return MPR_ERR_CANT_OPEN;
+        }
     }
+    return 0;
 }
 
 
@@ -408,7 +411,7 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHea
 }
 
 
-PUBLIC void httpSetEndpointStartLevel(int level)
+PUBLIC void httpSetInfoLevel(int level)
 {
     HTTP->startLevel = level;
 }

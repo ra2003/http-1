@@ -10,13 +10,13 @@ Me.load({
             sources: [ 'http-server.c' ],
         },
         test: {
-            action: `run('testme --depth ' + me.settings.depth, {noio: true})`,
+            action: `run('testme --depth ' + me.settings.depth)`,
             platforms: [ 'local' ],
         },
 
         'clean-test': {
             type: 'clean',                                                                                 
-            action: `run('testme --clean')`
+            action: `Cmd.run('testme --clean')`
         },  
     },
 })

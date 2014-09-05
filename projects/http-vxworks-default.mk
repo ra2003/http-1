@@ -16,8 +16,6 @@ LBIN                  ?= $(BUILD)/bin
 PATH                  := $(LBIN):$(PATH)
 
 ME_COM_EST            ?= 1
-ME_COM_MATRIXSSL      ?= 0
-ME_COM_NANOSSL        ?= 0
 ME_COM_OPENSSL        ?= 0
 ME_COM_OSDEP          ?= 1
 ME_COM_PCRE           ?= 1
@@ -27,12 +25,6 @@ ME_COM_WINSDK         ?= 1
 ifeq ($(ME_COM_EST),1)
     ME_COM_SSL := 1
 endif
-ifeq ($(ME_COM_MATRIXSSL),1)
-    ME_COM_SSL := 1
-endif
-ifeq ($(ME_COM_NANOSSL),1)
-    ME_COM_SSL := 1
-endif
 ifeq ($(ME_COM_OPENSSL),1)
     ME_COM_SSL := 1
 endif
@@ -40,8 +32,6 @@ endif
 ME_COM_COMPILER_PATH  ?= cc$(subst x86,pentium,$(ARCH))
 ME_COM_LIB_PATH       ?= ar
 ME_COM_LINK_PATH      ?= ld
-ME_COM_MATRIXSSL_PATH ?= /usr/src/matrixssl
-ME_COM_NANOSSL_PATH   ?= /usr/src/nanossl
 ME_COM_OPENSSL_PATH   ?= /usr/src/openssl
 ME_COM_VXWORKS_PATH   ?= $(WIND_BASE)
 
@@ -49,7 +39,7 @@ export WIND_HOME      ?= $(WIND_BASE)/..
 export PATH           := $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin:$(PATH)
 
 CFLAGS                += -fno-builtin -fno-defer-pop -fvolatile -w
-DFLAGS                += -DVXWORKS -DRW_MULTI_THREAD -D_GNU_TOOL -DCPU=PENTIUM $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_COM_EST=$(ME_COM_EST) -DME_COM_MATRIXSSL=$(ME_COM_MATRIXSSL) -DME_COM_NANOSSL=$(ME_COM_NANOSSL) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_WINSDK=$(ME_COM_WINSDK) 
+DFLAGS                += -DVXWORKS -DRW_MULTI_THREAD -D_GNU_TOOL -DCPU=PENTIUM $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_COM_EST=$(ME_COM_EST) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_WINSDK=$(ME_COM_WINSDK) 
 IFLAGS                += "-Ibuild/$(CONFIG)/inc -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip"
 LDFLAGS               += '-Wl,-r'
 LIBPATHS              += -Lbuild/$(CONFIG)/bin
@@ -195,6 +185,8 @@ build/$(CONFIG)/bin/ca.crt: $(DEPS_1)
 #
 #   mpr.h
 #
+DEPS_2 += src/paks/mpr/mpr.h
+
 build/$(CONFIG)/inc/mpr.h: $(DEPS_2)
 	@echo '      [Copy] build/$(CONFIG)/inc/mpr.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -209,6 +201,8 @@ build/$(CONFIG)/inc/me.h: $(DEPS_3)
 #
 #   osdep.h
 #
+DEPS_4 += src/paks/osdep/osdep.h
+
 build/$(CONFIG)/inc/osdep.h: $(DEPS_4)
 	@echo '      [Copy] build/$(CONFIG)/inc/osdep.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -241,6 +235,8 @@ build/$(CONFIG)/bin/libmpr.out: $(DEPS_6)
 #
 #   pcre.h
 #
+DEPS_7 += src/paks/pcre/pcre.h
+
 build/$(CONFIG)/inc/pcre.h: $(DEPS_7)
 	@echo '      [Copy] build/$(CONFIG)/inc/pcre.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -273,6 +269,8 @@ endif
 #
 #   http.h
 #
+DEPS_10 += src/http.h
+
 build/$(CONFIG)/inc/http.h: $(DEPS_10)
 	@echo '      [Copy] build/$(CONFIG)/inc/http.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -855,6 +853,8 @@ build/$(CONFIG)/bin/http.out: $(DEPS_50)
 #
 #   est.h
 #
+DEPS_51 += src/paks/est/est.h
+
 build/$(CONFIG)/inc/est.h: $(DEPS_51)
 	@echo '      [Copy] build/$(CONFIG)/inc/est.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -895,7 +895,7 @@ DEPS_54 += build/$(CONFIG)/inc/mpr.h
 build/$(CONFIG)/obj/mprSsl.o: \
     src/paks/mpr/mprSsl.c $(DEPS_54)
 	@echo '   [Compile] build/$(CONFIG)/obj/mprSsl.o'
-	$(CC) -c -o build/$(CONFIG)/obj/mprSsl.o $(CFLAGS) $(DFLAGS) "-Ibuild/$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-I$(ME_COM_OPENSSL_PATH)/include" "-I$(ME_COM_MATRIXSSL_PATH)" "-I$(ME_COM_MATRIXSSL_PATH)/matrixssl" "-I$(ME_COM_NANOSSL_PATH)/src" src/paks/mpr/mprSsl.c
+	$(CC) -c -o build/$(CONFIG)/obj/mprSsl.o $(CFLAGS) $(DFLAGS) "-Ibuild/$(CONFIG)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" "-I$(ME_COM_OPENSSL_PATH)/include" src/paks/mpr/mprSsl.c
 
 #
 #   libmprssl
@@ -920,18 +920,10 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBS_55 += -lcrypto
     LIBPATHS_55 += -L$(ME_COM_OPENSSL_PATH)
 endif
-ifeq ($(ME_COM_MATRIXSSL),1)
-    LIBS_55 += -lmatrixssl
-    LIBPATHS_55 += -L$(ME_COM_MATRIXSSL_PATH)
-endif
-ifeq ($(ME_COM_NANOSSL),1)
-    LIBS_55 += -lssls
-    LIBPATHS_55 += -L$(ME_COM_NANOSSL_PATH)/bin
-endif
 
 build/$(CONFIG)/bin/libmprssl.out: $(DEPS_55)
 	@echo '      [Link] build/$(CONFIG)/bin/libmprssl.out'
-	$(CC) -r -o build/$(CONFIG)/bin/libmprssl.out $(LDFLAGS) $(LIBPATHS)    "build/$(CONFIG)/obj/mprSsl.o" $(LIBPATHS_55) $(LIBS_55) $(LIBS_55) $(LIBS) 
+	$(CC) -r -o build/$(CONFIG)/bin/libmprssl.out $(LDFLAGS) $(LIBPATHS)  "build/$(CONFIG)/obj/mprSsl.o" $(LIBPATHS_55) $(LIBS_55) $(LIBS_55) $(LIBS) 
 
 #
 #   stop

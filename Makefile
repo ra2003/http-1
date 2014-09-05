@@ -42,10 +42,10 @@ PATH	:= $(BIN):$(PATH)
 .EXPORT_ALL_VARIABLES:
 
 all compile:
-	$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
+	@$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
 
 clean clobber install uninstall run:
-	$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
+	@$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@
 
 version:
 	@$(MAKE) -f projects/$(NAME)-$(OS)-$(PROFILE).$(EXT) $@

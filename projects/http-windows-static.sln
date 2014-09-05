@@ -57,14 +57,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmprssl", "http-windows-s
 		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "makerom", "http-windows-static\makerom.vcxproj", "{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
-	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
-	EndProjectSection
-EndProject
 
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -146,14 +138,6 @@ Global
 {E79DD492-24AA-47FD-B537-3ED4901C2940}.Release|Win32.Build.0 = Release|Win32
 {E79DD492-24AA-47FD-B537-3ED4901C2940}.Release|x64.ActiveCfg = Release|x64
 {E79DD492-24AA-47FD-B537-3ED4901C2940}.Release|x64.Build.0 = Release|x64
-{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Debug|Win32.ActiveCfg = Debug|Win32
-{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Debug|Win32.Build.0 = Debug|Win32
-{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Debug|x64.ActiveCfg = Debug|x64
-{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Debug|x64.Build.0 = Debug|x64
-{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Release|Win32.ActiveCfg = Release|Win32
-{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Release|Win32.Build.0 = Release|Win32
-{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Release|x64.ActiveCfg = Release|x64
-{FCCE5BFE-5A63-4109-9295-A1027BF1B0E5}.Release|x64.Build.0 = Release|x64
 EndGlobalSection
 
   GlobalSection(SolutionProperties) = preSolution

@@ -15,8 +15,6 @@ LBIN                  ?= $(BUILD)/bin
 PATH                  := $(LBIN):$(PATH)
 
 ME_COM_EST            ?= 1
-ME_COM_MATRIXSSL      ?= 0
-ME_COM_NANOSSL        ?= 0
 ME_COM_OPENSSL        ?= 0
 ME_COM_OSDEP          ?= 1
 ME_COM_PCRE           ?= 1
@@ -27,24 +25,16 @@ ME_COM_WINSDK         ?= 1
 ifeq ($(ME_COM_EST),1)
     ME_COM_SSL := 1
 endif
-ifeq ($(ME_COM_MATRIXSSL),1)
-    ME_COM_SSL := 1
-endif
-ifeq ($(ME_COM_NANOSSL),1)
-    ME_COM_SSL := 1
-endif
 ifeq ($(ME_COM_OPENSSL),1)
     ME_COM_SSL := 1
 endif
 
 ME_COM_COMPILER_PATH  ?= clang
 ME_COM_LIB_PATH       ?= ar
-ME_COM_MATRIXSSL_PATH ?= /usr/src/matrixssl
-ME_COM_NANOSSL_PATH   ?= /usr/src/nanossl
 ME_COM_OPENSSL_PATH   ?= /usr/src/openssl
 
 CFLAGS                += -g -w
-DFLAGS                +=  $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_COM_EST=$(ME_COM_EST) -DME_COM_MATRIXSSL=$(ME_COM_MATRIXSSL) -DME_COM_NANOSSL=$(ME_COM_NANOSSL) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_VXWORKS=$(ME_COM_VXWORKS) -DME_COM_WINSDK=$(ME_COM_WINSDK) 
+DFLAGS                +=  $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_COM_EST=$(ME_COM_EST) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_VXWORKS=$(ME_COM_VXWORKS) -DME_COM_WINSDK=$(ME_COM_WINSDK) 
 IFLAGS                += "-Ibuild/$(CONFIG)/inc"
 LDFLAGS               += '-Wl,-rpath,@executable_path/' '-Wl,-rpath,@loader_path/'
 LIBPATHS              += -Lbuild/$(CONFIG)/bin
@@ -187,6 +177,8 @@ build/$(CONFIG)/bin/ca.crt: $(DEPS_1)
 #
 #   mpr.h
 #
+DEPS_2 += src/paks/mpr/mpr.h
+
 build/$(CONFIG)/inc/mpr.h: $(DEPS_2)
 	@echo '      [Copy] build/$(CONFIG)/inc/mpr.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -201,6 +193,8 @@ build/$(CONFIG)/inc/me.h: $(DEPS_3)
 #
 #   osdep.h
 #
+DEPS_4 += src/paks/osdep/osdep.h
+
 build/$(CONFIG)/inc/osdep.h: $(DEPS_4)
 	@echo '      [Copy] build/$(CONFIG)/inc/osdep.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -233,6 +227,8 @@ build/$(CONFIG)/bin/libmpr.a: $(DEPS_6)
 #
 #   pcre.h
 #
+DEPS_7 += src/paks/pcre/pcre.h
+
 build/$(CONFIG)/inc/pcre.h: $(DEPS_7)
 	@echo '      [Copy] build/$(CONFIG)/inc/pcre.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -265,6 +261,8 @@ endif
 #
 #   http.h
 #
+DEPS_10 += src/http.h
+
 build/$(CONFIG)/inc/http.h: $(DEPS_10)
 	@echo '      [Copy] build/$(CONFIG)/inc/http.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -859,6 +857,8 @@ build/$(CONFIG)/bin/http: $(DEPS_50)
 #
 #   est.h
 #
+DEPS_51 += src/paks/est/est.h
+
 build/$(CONFIG)/inc/est.h: $(DEPS_51)
 	@echo '      [Copy] build/$(CONFIG)/inc/est.h'
 	mkdir -p "build/$(CONFIG)/inc"
@@ -899,7 +899,7 @@ DEPS_54 += build/$(CONFIG)/inc/mpr.h
 build/$(CONFIG)/obj/mprSsl.o: \
     src/paks/mpr/mprSsl.c $(DEPS_54)
 	@echo '   [Compile] build/$(CONFIG)/obj/mprSsl.o'
-	$(CC) -c $(DFLAGS) -o build/$(CONFIG)/obj/mprSsl.o -arch $(CC_ARCH) $(CFLAGS) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" "-I$(ME_COM_MATRIXSSL_PATH)" "-I$(ME_COM_MATRIXSSL_PATH)/matrixssl" "-I$(ME_COM_NANOSSL_PATH)/src" src/paks/mpr/mprSsl.c
+	$(CC) -c $(DFLAGS) -o build/$(CONFIG)/obj/mprSsl.o -arch $(CC_ARCH) $(CFLAGS) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/paks/mpr/mprSsl.c
 
 #
 #   libmprssl

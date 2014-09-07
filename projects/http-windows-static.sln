@@ -6,15 +6,24 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http-ca-crt", "http-windows
 	ProjectSection(ProjectDependencies) = postProject
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
 	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{10CEA8FF-FB71-4D90-AB45-B2AE8E76BD49} = {10CEA8FF-FB71-4D90-AB45-B2AE8E76BD49}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmpr", "http-windows-static\libmpr.vcxproj", "{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
 	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpcre", "http-windows-static\libpcre.vcxproj", "{B0BDF9C7-594A-4047-93F9-1DA92F564FF2}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{B0BDF9C7-594A-4047-93F9-1DA92F564FF2} = {B0BDF9C7-594A-4047-93F9-1DA92F564FF2}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "http-windows-static\libhttp.vcxproj", "{4A62BF6E-E3D0-4846-A8E4-945E9D816482}"
@@ -27,13 +36,25 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "http-windows-sta
 	ProjectSection(ProjectDependencies) = postProject
 		{B0BDF9C7-594A-4047-93F9-1DA92F564FF2} = {B0BDF9C7-594A-4047-93F9-1DA92F564FF2}
 	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{4A62BF6E-E3D0-4846-A8E4-945E9D816482} = {4A62BF6E-E3D0-4846-A8E4-945E9D816482}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http-server", "http-windows-static\http-server.vcxproj", "{A1E9FC3D-94B6-45CD-8CCE-31BEC6CB5CDA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
+		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{B0BDF9C7-594A-4047-93F9-1DA92F564FF2} = {B0BDF9C7-594A-4047-93F9-1DA92F564FF2}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
 		{4A62BF6E-E3D0-4846-A8E4-945E9D816482} = {4A62BF6E-E3D0-4846-A8E4-945E9D816482}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{A1E9FC3D-94B6-45CD-8CCE-31BEC6CB5CDA} = {A1E9FC3D-94B6-45CD-8CCE-31BEC6CB5CDA}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "httpcmd", "http-windows-static\httpcmd.vcxproj", "{AF03968D-A485-4710-A544-7B72280D1444}"
@@ -41,12 +62,24 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "httpcmd", "http-windows-sta
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
+		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{B0BDF9C7-594A-4047-93F9-1DA92F564FF2} = {B0BDF9C7-594A-4047-93F9-1DA92F564FF2}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
 		{4A62BF6E-E3D0-4846-A8E4-945E9D816482} = {4A62BF6E-E3D0-4846-A8E4-945E9D816482}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{AF03968D-A485-4710-A544-7B72280D1444} = {AF03968D-A485-4710-A544-7B72280D1444}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libest", "http-windows-static\libest.vcxproj", "{3DF289A1-39C6-4738-A1C0-83282DD7E97D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{3DF289A1-39C6-4738-A1C0-83282DD7E97D} = {3DF289A1-39C6-4738-A1C0-83282DD7E97D}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmprssl", "http-windows-static\libmprssl.vcxproj", "{E79DD492-24AA-47FD-B537-3ED4901C2940}"
@@ -55,6 +88,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmprssl", "http-windows-s
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{3DF289A1-39C6-4738-A1C0-83282DD7E97D} = {3DF289A1-39C6-4738-A1C0-83282DD7E97D}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{E79DD492-24AA-47FD-B537-3ED4901C2940} = {E79DD492-24AA-47FD-B537-3ED4901C2940}
 	EndProjectSection
 EndProject
 

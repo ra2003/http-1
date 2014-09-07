@@ -149,7 +149,7 @@
 
   <CustomBuildStep>
     <Command>cd ..\..\src
-copy /Y http.h $(IncDir)
+copy /Y /B http.h $(IncDir)
 cd ..\projects\http-windows-static</Command>
     <Outputs>$(BinDir)\libhttp.lib</Outputs>
   </CustomBuildStep>

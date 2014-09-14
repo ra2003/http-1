@@ -30,9 +30,8 @@ typedef struct Upload {
     int             contentState;       /* Input states */
     char            *clientFilename;    /* Current file filename */
     char            *tmpPath;           /* Current temp filename for upload data */
-    char            *id;                /* Current name keyword value */
+    char            *name;              /* Form field name keyword value */
 } Upload;
-
 
 /********************************** Forwards **********************************/
 
@@ -151,7 +150,6 @@ static void manageUpload(Upload *up, int flags)
         mprMark(up->boundary);
         mprMark(up->clientFilename);
         mprMark(up->tmpPath);
-        mprMark(up->id);
     }
 }
 
@@ -168,12 +166,12 @@ static void closeUpload(HttpQueue *q)
     rx = q->conn->rx;
     up = q->queueData;
 
+    if (rx->autoDelete) {
+        httpRemoveAllUploadedFiles(q->conn);
+    }
     if (up->currentFile) {
         file = up->currentFile;
         file->filename = 0;
-    }
-    if (rx->autoDelete) {
-        httpRemoveAllUploadedFiles(q->conn);
     }
 }
 
@@ -351,7 +349,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
             ---boundary
          */
         key = rest;
-        up->id = up->clientFilename = 0;
+        up->name = up->clientFilename = 0;
         while (key && stok(key, ";\r\n", &nextPair)) {
 
             key = strim(key, " ", MPR_TRIM_BOTH);
@@ -362,10 +360,10 @@ static int processUploadHeader(HttpQueue *q, char *line)
                 /* Nothing to do */
 
             } else if (scaselesscmp(key, "name") == 0) {
-                up->id = sclone(value);
+                up->name = sclone(value);
 
             } else if (scaselesscmp(key, "filename") == 0) {
-                if (up->id == 0) {
+                if (up->name == 0) {
                     httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad upload state. Missing name field");
                     return MPR_ERR_BAD_STATE;
                 }
@@ -395,8 +393,10 @@ static int processUploadHeader(HttpQueue *q, char *line)
                     Create the files[id]
                  */
                 file = up->currentFile = mprAllocObj(HttpUploadFile, manageHttpUploadFile);
-                file->clientFilename = sclone(up->clientFilename);
-                file->filename = sclone(up->tmpPath);
+                file->clientFilename = up->clientFilename;
+                file->filename = up->tmpPath;
+                file->name = up->name;
+                httpAddUploadFile(conn, file);
             }
             key = nextPair;
         }
@@ -416,6 +416,7 @@ static void manageHttpUploadFile(HttpUploadFile *file, int flags)
         mprMark(file->filename);
         mprMark(file->clientFilename);
         mprMark(file->contentType);
+        mprMark(file->name);
     }
 }
 
@@ -435,16 +436,16 @@ static void defineFileFields(HttpQueue *q, Upload *up)
     }
     up = q->queueData;
     file = up->currentFile;
-    key = sjoin("FILE_CLIENT_FILENAME_", up->id, NULL);
+    key = sjoin("FILE_CLIENT_FILENAME_", up->name, NULL);
     httpSetParam(conn, key, file->clientFilename);
 
-    key = sjoin("FILE_CONTENT_TYPE_", up->id, NULL);
+    key = sjoin("FILE_CONTENT_TYPE_", up->name, NULL);
     httpSetParam(conn, key, file->contentType);
 
-    key = sjoin("FILE_FILENAME_", up->id, NULL);
+    key = sjoin("FILE_FILENAME_", up->name, NULL);
     httpSetParam(conn, key, file->filename);
 
-    key = sjoin("FILE_SIZE_", up->id, NULL);
+    key = sjoin("FILE_SIZE_", up->name, NULL);
     httpSetIntParam(conn, key, (int) file->size);
 }
 
@@ -550,7 +551,9 @@ static int processUploadData(HttpQueue *q)
             if (writeToFile(q, data, dataLen) < 0) {
                 return MPR_ERR_CANT_WRITE;
             }
-            httpAddUploadFile(conn, up->id, file);
+#if MOVED
+            httpAddUploadFile(conn, file);
+#endif
             defineFileFields(q, up);
 
         } else {
@@ -559,9 +562,9 @@ static int processUploadData(HttpQueue *q)
              */
             data[dataLen] = '\0';
 #if KEEP
-            httpTrace(conn, "request.upload.variables", "context", "'%s':'%s'", up->id, data);
+            httpTrace(conn, "request.upload.variables", "context", "'%s':'%s'", up->name, data);
 #endif
-            key = mprUriDecode(up->id);
+            key = mprUriDecode(up->name);
             data = mprUriDecode(data);
             httpSetParam(conn, key, data);
 
@@ -577,7 +580,7 @@ static int processUploadData(HttpQueue *q)
                 conn->rx->mimeType = sclone("application/x-www-form-urlencoded");
 
             }
-            mprPutToBuf(packet->content, "%s=%s", up->id, data);
+            mprPutToBuf(packet->content, "%s=%s", up->name, data);
         }
     }
     if (up->clientFilename) {

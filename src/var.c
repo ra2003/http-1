@@ -20,11 +20,10 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     HttpRx          *rx;
     HttpTx          *tx;
     HttpHost        *host;
-    HttpUploadFile  *up;
+    HttpUploadFile  *file;
     MprSocket       *sock;
     MprHash         *svars;
     MprJson         *params;
-    MprKey          *kp;
     int             index;
 
     rx = conn->rx;
@@ -85,13 +84,12 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     if (rx->files) {
         params = httpGetParams(conn);
         assert(params);
-        for (index = 0, kp = 0; (kp = mprGetNextKey(rx->files, kp)) != 0; index++) {
-            up = (HttpUploadFile*) kp->data;
-            mprSetJson(params, sfmt("FILE_%d_FILENAME", index), up->filename);
-            mprSetJson(params, sfmt("FILE_%d_CLIENT_FILENAME", index), up->clientFilename);
-            mprSetJson(params, sfmt("FILE_%d_CONTENT_TYPE", index), up->contentType);
-            mprSetJson(params, sfmt("FILE_%d_NAME", index), kp->key);
-            mprSetJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%zd", up->size));
+        for (ITERATE_ITEMS(rx->files, file, index)) {
+            mprSetJson(params, sfmt("FILE_%d_FILENAME", index), file->filename);
+            mprSetJson(params, sfmt("FILE_%d_CLIENT_FILENAME", index), file->clientFilename);
+            mprSetJson(params, sfmt("FILE_%d_CONTENT_TYPE", index), file->contentType);
+            mprSetJson(params, sfmt("FILE_%d_NAME", index), file->name);
+            mprSetJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%zd", file->size));
         }
     }
     if (conn->http->envCallback) {
@@ -307,46 +305,30 @@ PUBLIC bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
 }
 
 
-PUBLIC void httpAddUploadFile(HttpConn *conn, cchar *id, HttpUploadFile *upfile)
+PUBLIC void httpAddUploadFile(HttpConn *conn, HttpUploadFile *upfile)
 {
     HttpRx   *rx;
 
     rx = conn->rx;
     if (rx->files == 0) {
-        rx->files = mprCreateHash(-1, MPR_HASH_STABLE);
+        rx->files = mprCreateList(0, MPR_LIST_STABLE);
     }
-    mprAddKey(rx->files, id, upfile);
-}
-
-
-PUBLIC void httpRemoveUploadFile(HttpConn *conn, cchar *id)
-{
-    HttpRx    *rx;
-    HttpUploadFile  *upfile;
-
-    rx = conn->rx;
-
-    upfile = (HttpUploadFile*) mprLookupKey(rx->files, id);
-    if (upfile) {
-        mprDeletePath(upfile->filename);
-        upfile->filename = 0;
-    }
+    mprAddItem(rx->files, upfile);
 }
 
 
 PUBLIC void httpRemoveAllUploadedFiles(HttpConn *conn)
 {
     HttpRx          *rx;
-    HttpUploadFile  *upfile;
-    MprKey          *kp;
+    HttpUploadFile  *file;
+    int             index;
 
     rx = conn->rx;
 
-    for (kp = 0; rx->files && (kp = mprGetNextKey(rx->files, kp)) != 0; ) {
-        upfile = (HttpUploadFile*) kp->data;
-        if (upfile->filename) {
-            mprDeletePath(upfile->filename);
-            upfile->filename = 0;
+    for (ITERATE_ITEMS(rx->files, file, index)) {
+        if (file->filename) {
+            mprDeletePath(file->filename);
+            file->filename = 0;
         }
     }
 }

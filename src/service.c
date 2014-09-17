@@ -248,6 +248,10 @@ PUBLIC int httpStartEndpoints()
             return MPR_ERR_CANT_OPEN;
         }
     }
+    if (httpApplyUserGroup() < 0) {
+        httpStopEndpoints();
+        return MPR_ERR_CANT_OPEN;
+    }
     return 0;
 }
 

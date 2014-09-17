@@ -3,7 +3,7 @@
 #
 
 NAME                  := http
-VERSION               := 5.2.0
+VERSION               := 6.0.0
 PROFILE               ?= default
 ARCH                  ?= $(shell echo $(WIND_HOST_TYPE) | sed 's/-.*//')
 CPU                   ?= $(subst X86,PENTIUM,$(shell echo $(ARCH) | tr a-z A-Z))
@@ -960,5 +960,5 @@ uninstall: $(DEPS_60)
 #   version
 #
 version: $(DEPS_61)
-	echo 5.2.0
+	echo 6.0.0
 

@@ -3,7 +3,7 @@
 #
 
 NAME                  := http
-VERSION               := 5.2.0
+VERSION               := 6.0.0
 PROFILE               ?= default
 ARCH                  ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
 CC_ARCH               ?= $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
@@ -973,5 +973,5 @@ uninstall: $(DEPS_60)
 #   version
 #
 version: $(DEPS_61)
-	echo 5.2.0
+	echo 6.0.0
 

@@ -13,7 +13,7 @@
     #define ME_COMPANY "embedthis"
 #endif
 #ifndef ME_COMPATIBLE
-    #define ME_COMPATIBLE "5.2"
+    #define ME_COMPATIBLE "6.0"
 #endif
 #ifndef ME_COMPILER_HAS_ATOMIC
     #define ME_COMPILER_HAS_ATOMIC 1
@@ -115,7 +115,7 @@
     #define ME_TITLE "Embedthis Http"
 #endif
 #ifndef ME_VERSION
-    #define ME_VERSION "5.2.0"
+    #define ME_VERSION "6.0.0"
 #endif
 
 /* Prefixes */
@@ -135,7 +135,7 @@
     #define ME_APP_PREFIX "/usr/local/lib/http"
 #endif
 #ifndef ME_VAPP_PREFIX
-    #define ME_VAPP_PREFIX "/usr/local/lib/http/5.2.0"
+    #define ME_VAPP_PREFIX "/usr/local/lib/http/6.0.0"
 #endif
 #ifndef ME_BIN_PREFIX
     #define ME_BIN_PREFIX "/usr/local/bin"
@@ -168,7 +168,7 @@
     #define ME_CACHE_PREFIX "/var/spool/http/cache"
 #endif
 #ifndef ME_SRC_PREFIX
-    #define ME_SRC_PREFIX "http-5.2.0"
+    #define ME_SRC_PREFIX "http-6.0.0"
 #endif
 
 /* Suffixes */
@@ -204,16 +204,16 @@
 
 /* Miscellaneous */
 #ifndef ME_MAJOR_VERSION
-    #define ME_MAJOR_VERSION 5
+    #define ME_MAJOR_VERSION 6
 #endif
 #ifndef ME_MINOR_VERSION
-    #define ME_MINOR_VERSION 2
+    #define ME_MINOR_VERSION 0
 #endif
 #ifndef ME_PATCH_VERSION
     #define ME_PATCH_VERSION 0
 #endif
 #ifndef ME_VNUM
-    #define ME_VNUM 500020000
+    #define ME_VNUM 600000000
 #endif
 
 /* Components */

@@ -3,7 +3,7 @@
 #
 
 NAME                  = http
-VERSION               = 5.2.0
+VERSION               = 6.0.0
 
 OS                    = windows
 PA                    = $(PROCESSOR_ARCHITECTURE)
@@ -989,5 +989,5 @@ uninstall: $(DEPS_60)
 #   version
 #
 version: $(DEPS_61)
-	echo 5.2.0
+	echo 6.0.0
 

@@ -221,6 +221,7 @@ static void checkMonitor(HttpMonitor *monitor, MprEvent *event)
 static int manageMonitor(HttpMonitor *monitor, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
+        mprMark(monitor->counterName);
         mprMark(monitor->defenses);
         mprMark(monitor->timer);
     }

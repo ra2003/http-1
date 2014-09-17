@@ -150,6 +150,7 @@ static void manageUpload(Upload *up, int flags)
         mprMark(up->boundary);
         mprMark(up->clientFilename);
         mprMark(up->tmpPath);
+        mprMark(up->name);
     }
 }
 
@@ -413,10 +414,10 @@ static int processUploadHeader(HttpQueue *q, char *line)
 static void manageHttpUploadFile(HttpUploadFile *file, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
+        mprMark(file->name);
         mprMark(file->filename);
         mprMark(file->clientFilename);
         mprMark(file->contentType);
-        mprMark(file->name);
     }
 }
 

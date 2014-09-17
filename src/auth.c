@@ -77,6 +77,7 @@ PUBLIC HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
     if (parent) {
         //  OPT. Structure assignment
         auth->allow = parent->allow;
+        auth->cipher = parent->cipher;
         auth->deny = parent->deny;
         auth->type = parent->type;
         auth->store = parent->store;
@@ -100,19 +101,20 @@ PUBLIC HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
 static void manageAuth(HttpAuth *auth, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
+        mprMark(auth->cipher);
+        mprMark(auth->realm);
         mprMark(auth->allow);
         mprMark(auth->deny);
-        mprMark(auth->loggedIn);
-        mprMark(auth->loginPage);
-        mprMark(auth->permittedUsers);
-        mprMark(auth->qop);
-        mprMark(auth->realm);
-        mprMark(auth->abilities);
-        mprMark(auth->store);
-        mprMark(auth->type);
         mprMark(auth->userCache);
         mprMark(auth->roles);
+        mprMark(auth->abilities);
+        mprMark(auth->permittedUsers);
+        mprMark(auth->loginPage);
+        mprMark(auth->loggedIn);
         mprMark(auth->username);
+        mprMark(auth->qop);
+        mprMark(auth->type);
+        mprMark(auth->store);
     }
 }
 

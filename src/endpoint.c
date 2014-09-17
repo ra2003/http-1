@@ -50,9 +50,9 @@ static int manageEndpoint(HttpEndpoint *endpoint, int flags)
     if (flags & MPR_MANAGE_MARK) {
         mprMark(endpoint->http);
         mprMark(endpoint->hosts);
-        mprMark(endpoint->limits);
         mprMark(endpoint->ip);
         mprMark(endpoint->context);
+        mprMark(endpoint->limits);
         mprMark(endpoint->sock);
         mprMark(endpoint->dispatcher);
         mprMark(endpoint->ssl);

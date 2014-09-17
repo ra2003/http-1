@@ -101,31 +101,31 @@ static void manageConn(HttpConn *conn, int flags)
     assert(conn);
 
     if (flags & MPR_MANAGE_MARK) {
-        mprMark(conn->workerEvent);
-        mprMark(conn->address);
         mprMark(conn->rx);
         mprMark(conn->tx);
-        mprMark(conn->endpoint);
-        mprMark(conn->host);
+        mprMark(conn->readq);
+        mprMark(conn->writeq);
+        mprMark(conn->sock);
         mprMark(conn->limits);
         mprMark(conn->http);
         mprMark(conn->dispatcher);
         mprMark(conn->newDispatcher);
         mprMark(conn->oldDispatcher);
-        mprMark(conn->sock);
+        mprMark(conn->address);
         mprMark(conn->serviceq);
         mprMark(conn->currentq);
+        mprMark(conn->endpoint);
+        mprMark(conn->host);
         mprMark(conn->input);
-        mprMark(conn->readq);
-        mprMark(conn->writeq);
         mprMark(conn->connectorq);
         mprMark(conn->timeoutEvent);
+        mprMark(conn->workerEvent);
         mprMark(conn->context);
         mprMark(conn->ejs);
         mprMark(conn->pool);
         mprMark(conn->mark);
-        mprMark(conn->data);
         mprMark(conn->reqData);
+        mprMark(conn->data);
         mprMark(conn->grid);
         mprMark(conn->record);
         mprMark(conn->boundary);
@@ -133,14 +133,13 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->ip);
         mprMark(conn->protocol);
         mprMark(conn->protocols);
-        mprMark(conn->headersCallbackArg);
         mprMark(conn->trace);
-
         mprMark(conn->authType);
         mprMark(conn->authData);
         mprMark(conn->username);
         mprMark(conn->password);
         mprMark(conn->user);
+        mprMark(conn->headersCallbackArg);
     }
 }
 

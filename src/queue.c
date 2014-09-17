@@ -59,14 +59,14 @@ static void manageQueue(HttpQueue *q, int flags)
 
     if (flags & MPR_MANAGE_MARK) {
         mprMark(q->name);
+        mprMark(q->nextQ);
         for (packet = q->first; packet; packet = packet->next) {
             mprMark(packet);
         }
+        mprMark(q->conn);
         mprMark(q->last);
-        mprMark(q->nextQ);
         mprMark(q->prevQ);
         mprMark(q->stage);
-        mprMark(q->conn);
         mprMark(q->scheduleNext);
         mprMark(q->schedulePrev);
         mprMark(q->pair);

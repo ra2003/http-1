@@ -281,6 +281,7 @@ static void manageWebSocket(HttpWebSocket *ws, int flags)
         mprMark(ws->tailMessage);
         mprMark(ws->pingEvent);
         mprMark(ws->subProtocol);
+        mprMark(ws->errorMsg);
         mprMark(ws->closeReason);
         mprMark(ws->data);
     }

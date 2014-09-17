@@ -67,7 +67,7 @@ PUBLIC HttpConn *httpCreateConn(HttpEndpoint *endpoint, MprDispatcher *dispatche
 
 
 /*
-    Destroy a connection. This removes the connection from the list of connections. Should GC after that.
+    Destroy a connection. This removes the connection from the list of connections.
  */
 PUBLIC void httpDestroyConn(HttpConn *conn)
 {

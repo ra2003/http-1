@@ -78,7 +78,7 @@ Me.load({
                 exclude: /http.c/,
                 to:     '${src}/httpLib.c',
                 cat:    true,
-                filter: /^#inc.*http.*$/mg,
+                remove: /^#inc.*http.*$/mg,
                 header: '#include \"http.h\"',
                 title:  '${settings.title} Library Source',
                 set:    'pak',

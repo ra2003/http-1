@@ -40,6 +40,12 @@ Me.load({
         },
     },
 
+    scripts: {
+        loaded: `
+            me.targets.makerom.enable = false
+        `,
+    },
+
     usage: {
         'http.pam': 'Enable Unix Pluggable Auth Module (true|false)',                              
         'http.webSockets': 'Enable WebSockets (true|false)',                              
@@ -65,36 +71,45 @@ Me.load({
                 sets:       [ 'pak' ],
             },
         },
-        files: [ 
-            {   from:   'package/http.me', 
-                to:     '${src}/http.me',
-                set:    'pak',
-            },{
-                from:   ['src/http.h', 'src/http.c'],
-                to:     '${src}/',
-                set:    'pak',
-            },{
-                from:   ['src/service.c', 'src/*.c'],
-                exclude: /http.c/,
-                to:     '${src}/httpLib.c',
-                cat:    true,
-                remove: /^#inc.*http.*$/mg,
-                header: '#include \"http.h\"',
-                title:  '${settings.title} Library Source',
-                set:    'pak',
-            },{
-                from:   ['doc/api/http.html', 'doc/api/http*.tags', 'doc/api/http.dtags'],
-                to:     '${src}/doc/api/',
-                set:    'pak',
-            },{
-                from:   'doc/documents/man/http.1',
-                to:     '${src}/doc/documents/man/',
-                set:    'pak',
-            },{
-                from:   'src/paks/est/ca.crt',
-                to:     '${src}/ca.crt',
-                set:    'pak',
-            },
-        ],
+        sets: { 
+            pak: [
+                {   
+                    from:       'package/http.me', 
+                    to:         '${src}/http.me',
+
+                }, {
+                    from:       [
+                                    'src/http.h', 
+                                    'src/http.c'
+                                ],
+                    to:         '${src}/',
+                    flatten:    true,
+
+                }, {
+                    from:       ['src/service.c', 'src/*.c'],
+                    exclude:    /http.c/,
+                    to:         '${src}/httpLib.c',
+                    append:     true,
+                    filter:     /^#inc.*http.*$/mg,
+                    header:     '/*\n * ${settings.title} Library Source\n */\n\n#include \"http.h\"',
+                    separator:  true,
+
+                }, {
+                    from:       ['doc/api/http.html', 'doc/api/http*.tags', 'doc/api/http.dtags'],
+                    to:         '${src}/doc/api/',
+                    relative:   'doc/api',
+
+                }, {
+                    from:       'doc/documents/man/http.1',
+                    to:         '${src}/doc/documents/man/',
+                    relative:   'doc/documents/man',
+
+                }, {
+                    from:       'src/paks/est/ca.crt',
+                    to:         '${src}/ca.crt',
+
+                },
+            ],
+        },
 	},
 })

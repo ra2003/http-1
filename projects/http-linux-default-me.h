@@ -123,49 +123,49 @@
     #define ME_ROOT_PREFIX "/"
 #endif
 #ifndef ME_BASE_PREFIX
-    #define ME_BASE_PREFIX "/usr/local"
+    #define ME_BASE_PREFIX "${prefixes.root}/usr/local"
 #endif
 #ifndef ME_DATA_PREFIX
-    #define ME_DATA_PREFIX "/"
+    #define ME_DATA_PREFIX "${prefixes.root}"
 #endif
 #ifndef ME_STATE_PREFIX
-    #define ME_STATE_PREFIX "/var"
+    #define ME_STATE_PREFIX "${prefixes.root}/var"
 #endif
 #ifndef ME_APP_PREFIX
-    #define ME_APP_PREFIX "/usr/local/lib/http"
+    #define ME_APP_PREFIX "${prefixes.base}/lib/http"
 #endif
 #ifndef ME_VAPP_PREFIX
-    #define ME_VAPP_PREFIX "/usr/local/lib/http/6.0.0"
+    #define ME_VAPP_PREFIX "${prefixes.app}/6.0.0"
 #endif
 #ifndef ME_BIN_PREFIX
-    #define ME_BIN_PREFIX "/usr/local/bin"
+    #define ME_BIN_PREFIX "${prefixes.base}/bin"
 #endif
 #ifndef ME_INC_PREFIX
-    #define ME_INC_PREFIX "/usr/local/include"
+    #define ME_INC_PREFIX "${prefixes.base}/include"
 #endif
 #ifndef ME_LIB_PREFIX
-    #define ME_LIB_PREFIX "/usr/local/lib"
+    #define ME_LIB_PREFIX "${prefixes.base}/lib"
 #endif
 #ifndef ME_MAN_PREFIX
-    #define ME_MAN_PREFIX "/usr/local/share/man"
+    #define ME_MAN_PREFIX "${prefixes.base}/share/man"
 #endif
 #ifndef ME_SBIN_PREFIX
-    #define ME_SBIN_PREFIX "/usr/local/sbin"
+    #define ME_SBIN_PREFIX "${prefixes.base}/sbin"
 #endif
 #ifndef ME_ETC_PREFIX
-    #define ME_ETC_PREFIX "/etc/http"
+    #define ME_ETC_PREFIX "${prefixes.data}/etc/http"
 #endif
 #ifndef ME_WEB_PREFIX
-    #define ME_WEB_PREFIX "/var/www/http-default"
+    #define ME_WEB_PREFIX "${prefixes.state}/www/http-default"
 #endif
 #ifndef ME_LOG_PREFIX
-    #define ME_LOG_PREFIX "/var/log/http"
+    #define ME_LOG_PREFIX "${prefixes.state}/log/http"
 #endif
 #ifndef ME_SPOOL_PREFIX
-    #define ME_SPOOL_PREFIX "/var/spool/http"
+    #define ME_SPOOL_PREFIX "${prefixes.state}/spool/http"
 #endif
 #ifndef ME_CACHE_PREFIX
-    #define ME_CACHE_PREFIX "/var/spool/http/cache"
+    #define ME_CACHE_PREFIX "${prefixes.state}/spool/http/cache"
 #endif
 #ifndef ME_SRC_PREFIX
     #define ME_SRC_PREFIX "http-6.0.0"

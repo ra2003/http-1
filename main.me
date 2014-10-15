@@ -21,7 +21,7 @@ Me.load({
     ],
 
     settings: {
-        me: '~0.8',
+        me: '=0.8.4',
         prefixes: 'package-prefixes',
     
         http: {
@@ -92,7 +92,7 @@ Me.load({
                     append:     true,
                     filter:     /^#inc.*http.*$/mg,
                     header:     '/*\n * ${settings.title} Library Source\n */\n\n#include \"http.h\"',
-                    separator:  true,
+                    divider:    true,
 
                 }, {
                     from:       ['doc/api/http.html', 'doc/api/http*.tags', 'doc/api/http.dtags'],

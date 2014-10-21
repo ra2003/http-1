@@ -59,7 +59,7 @@ ME_LIB_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/lib
 ME_MAN_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/local/share/man
 ME_SBIN_PREFIX        ?= $(ME_ROOT_PREFIX)/usr/local/sbin
 ME_ETC_PREFIX         ?= $(ME_ROOT_PREFIX)/etc/$(NAME)
-ME_WEB_PREFIX         ?= $(ME_ROOT_PREFIX)/var/www/$(NAME)-default
+ME_WEB_PREFIX         ?= $(ME_ROOT_PREFIX)/var/www/$(NAME)
 ME_LOG_PREFIX         ?= $(ME_ROOT_PREFIX)/var/log/$(NAME)
 ME_SPOOL_PREFIX       ?= $(ME_ROOT_PREFIX)/var/spool/$(NAME)
 ME_CACHE_PREFIX       ?= $(ME_ROOT_PREFIX)/var/spool/$(NAME)/cache
@@ -156,7 +156,6 @@ clean:
 clobber: clean
 	rm -fr ./$(BUILD)
 
-
 #
 #   est.h
 #
@@ -170,6 +169,7 @@ $(BUILD)/inc/est.h: $(DEPS_1)
 #
 #   me.h
 #
+
 $(BUILD)/inc/me.h: $(DEPS_2)
 
 #
@@ -219,6 +219,7 @@ $(BUILD)/inc/pcre.h: $(DEPS_6)
 #
 #   http.h
 #
+
 src/http.h: $(DEPS_7)
 
 #
@@ -344,6 +345,7 @@ $(BUILD)/obj/error.o: \
 #
 #   est.h
 #
+
 src/paks/est/est.h: $(DEPS_20)
 
 #
@@ -409,6 +411,7 @@ $(BUILD)/obj/monitor.o: \
 #
 #   mpr.h
 #
+
 src/paks/mpr/mpr.h: $(DEPS_27)
 
 #
@@ -475,6 +478,7 @@ $(BUILD)/obj/passHandler.o: \
 #
 #   pcre.h
 #
+
 src/paks/pcre/pcre.h: $(DEPS_34)
 
 #
@@ -648,7 +652,6 @@ $(BUILD)/obj/webSockFilter.o: \
 	@echo '   [Compile] $(BUILD)/obj/webSockFilter.o'
 	$(CC) -c -o $(BUILD)/obj/webSockFilter.o $(LDFLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/webSockFilter.c
 
-
 #
 #   http-ca-crt
 #
@@ -782,6 +785,9 @@ endif
 #   libmprssl
 #
 DEPS_59 += $(BUILD)/bin/libmpr.so
+ifeq ($(ME_COM_EST),1)
+    DEPS_59 += $(BUILD)/bin/libest.so
+endif
 DEPS_59 += $(BUILD)/obj/mprSsl.o
 
 LIBS_59 += -lmpr
@@ -805,6 +811,7 @@ $(BUILD)/bin/libmprssl.so: $(DEPS_59)
 #
 #   installBinary
 #
+
 installBinary: $(DEPS_60)
 
 
@@ -827,6 +834,7 @@ uninstall: $(DEPS_62)
 #
 #   version
 #
+
 version: $(DEPS_63)
 	echo 6.0.0
 

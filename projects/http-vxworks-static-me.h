@@ -103,7 +103,7 @@
     #define ME_HTTP_WEB_SOCKETS 1
 #endif
 #ifndef ME_ME
-    #define ME_ME "~0.8"
+    #define ME_ME "=0.8.4"
 #endif
 #ifndef ME_NAME
     #define ME_NAME "http"

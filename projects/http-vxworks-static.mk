@@ -162,7 +162,6 @@ clean:
 clobber: clean
 	rm -fr ./$(BUILD)
 
-
 #
 #   est.h
 #
@@ -176,6 +175,7 @@ $(BUILD)/inc/est.h: $(DEPS_1)
 #
 #   me.h
 #
+
 $(BUILD)/inc/me.h: $(DEPS_2)
 
 #
@@ -225,6 +225,7 @@ $(BUILD)/inc/pcre.h: $(DEPS_6)
 #
 #   http.h
 #
+
 src/http.h: $(DEPS_7)
 
 #
@@ -350,6 +351,7 @@ $(BUILD)/obj/error.o: \
 #
 #   est.h
 #
+
 src/paks/est/est.h: $(DEPS_20)
 
 #
@@ -415,6 +417,7 @@ $(BUILD)/obj/monitor.o: \
 #
 #   mpr.h
 #
+
 src/paks/mpr/mpr.h: $(DEPS_27)
 
 #
@@ -481,6 +484,7 @@ $(BUILD)/obj/passHandler.o: \
 #
 #   pcre.h
 #
+
 src/paks/pcre/pcre.h: $(DEPS_34)
 
 #
@@ -654,7 +658,6 @@ $(BUILD)/obj/webSockFilter.o: \
 	@echo '   [Compile] $(BUILD)/obj/webSockFilter.o'
 	$(CC) -c -o $(BUILD)/obj/webSockFilter.o $(CFLAGS) $(DFLAGS) "-I$(BUILD)/inc" "-I$(WIND_BASE)/target/h" "-I$(WIND_BASE)/target/h/wrn/coreip" src/webSockFilter.c
 
-
 #
 #   http-ca-crt
 #
@@ -783,6 +786,9 @@ endif
 #   libmprssl
 #
 DEPS_59 += $(BUILD)/bin/libmpr.out
+ifeq ($(ME_COM_EST),1)
+    DEPS_59 += $(BUILD)/bin/libest.out
+endif
 DEPS_59 += $(BUILD)/obj/mprSsl.o
 
 $(BUILD)/bin/libmprssl.out: $(DEPS_59)
@@ -793,6 +799,7 @@ $(BUILD)/bin/libmprssl.out: $(DEPS_59)
 #
 #   installBinary
 #
+
 installBinary: $(DEPS_60)
 
 
@@ -815,6 +822,7 @@ uninstall: $(DEPS_62)
 #
 #   version
 #
+
 version: $(DEPS_63)
 	echo 6.0.0
 

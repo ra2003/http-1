@@ -707,8 +707,8 @@
     			shellPath = /bin/bash;
     			shellScript = "PATH=$PATH:/usr/local/bin
 cd ..
-mkdir -p build/macosx-x64-static/bin
-cp -r src/paks/est/ca.crt build/macosx-x64-static/bin/ca.crt
+	mkdir -p \"build/macosx-x64-static/bin\"
+	cp src/paks/est/ca.crt build/macosx-x64-static/bin/ca.crt
 ";
     		};
 		21537A9821538ADC00000017 /* ShellScript for Prep */ = {
@@ -725,7 +725,40 @@ cp -r src/paks/est/ca.crt build/macosx-x64-static/bin/ca.crt
     			runOnlyForDeploymentPostprocessing = 0;
     			shellPath = /bin/bash;
     			shellScript = "PATH=$PATH:/usr/local/bin
-";
+[ ! -x ${INC_DIR} ] && mkdir -p ${INC_DIR} ${OBJ_DIR} ${LIB_DIR} ${BIN_DIR}
+[ ! -f ${INC_DIR}/me.h -a -f cp http-macosx-static-me.h ] && cp http-macosx-static-me.h ${INC_DIR}/me.h
+if [ -f http-macosx-static-me.h ] ; then
+if ! diff ${INC_DIR}/me.h http-macosx-static-me.h >/dev/null 2>&1 ; then
+cp http-macosx-static-me.h ${INC_DIR}/me.h
+fi
+fi
+if [ ../src/paks/est/est.h -nt ${OUT_DIR}/inc/est.h ] ; then
+cp ../src/paks/est/est.h ${OUT_DIR}/inc/est.h
+fi
+if [ ../src/http.h -nt ${OUT_DIR}/inc/http.h ] ; then
+cp ../src/http.h ${OUT_DIR}/inc/http.h
+fi
+if [ ../src/paks/mpr/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
+cp ../src/paks/mpr/mpr.h ${OUT_DIR}/inc/mpr.h
+fi
+if [ ../src/paks/osdep/osdep.h -nt ${OUT_DIR}/inc/osdep.h ] ; then
+cp ../src/paks/osdep/osdep.h ${OUT_DIR}/inc/osdep.h
+fi
+if [ ../src/paks/pcre/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
+cp ../src/paks/pcre/pcre.h ${OUT_DIR}/inc/pcre.h
+fi
+if [ ../src/paks/est/est.h -nt ${OUT_DIR}/inc/est.h ] ; then
+cp ../src/paks/est/est.h ${OUT_DIR}/inc/est.h
+fi
+if [ ../src/http.h -nt ${OUT_DIR}/inc/http.h ] ; then
+cp ../src/http.h ${OUT_DIR}/inc/http.h
+fi
+if [ ../src/paks/mpr/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
+cp ../src/paks/mpr/mpr.h ${OUT_DIR}/inc/mpr.h
+fi
+if [ ../src/paks/pcre/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
+cp ../src/paks/pcre/pcre.h ${OUT_DIR}/inc/pcre.h
+fi";
     		};
 /* End PBXShellScriptBuildPhase section */
 

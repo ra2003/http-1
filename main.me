@@ -3,11 +3,14 @@
  */
 
 Me.load({
+    plugins: [ 'configuration' ],
+
     blend: [
-        "src/paks/*/*.me",
-        "src/http.me",
-        "test/test.me",
-        "doc/doc.me",
+        'mpr',
+        'pcre',
+        'src/http.me',
+        'test/test.me',
+        'doc/doc.me',
     ],
 
     configure: {
@@ -59,7 +62,7 @@ Me.load({
         },
 
         projects: {
-            action: "genProjects('-with est')",
+            action: `genProjects('-with est')`,
         },
     },
 

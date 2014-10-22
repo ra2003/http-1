@@ -671,6 +671,7 @@ $(BUILD)/bin/ca.crt: $(DEPS_52)
 #
 #   libmpr
 #
+DEPS_53 += $(BUILD)/inc/osdep.h
 DEPS_53 += $(BUILD)/inc/mpr.h
 DEPS_53 += $(BUILD)/obj/mprLib.o
 
@@ -762,6 +763,7 @@ ifeq ($(ME_COM_EST),1)
 #
 #   libest
 #
+DEPS_58 += $(BUILD)/inc/osdep.h
 DEPS_58 += $(BUILD)/inc/est.h
 DEPS_58 += $(BUILD)/obj/estLib.o
 

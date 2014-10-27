@@ -739,7 +739,7 @@ LIBS_51 = $(LIBS_51) libpcre.lib
 
 build\$(CONFIG)\bin\http-server.exe: $(DEPS_51)
 	@echo ..... [Link] build\$(CONFIG)\bin\http-server.exe
-	"$(LD)" -out:$(BUILD)\bin\http-server.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\http-server.obj" $(LIBPATHS_51) $(LIBS_51) $(LIBS_51) $(LIBS)  $(LOG)
+	"$(LD)" -nologo -out:$(BUILD)\bin\http-server.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\http-server.obj" $(LIBPATHS_51) $(LIBS_51) $(LIBS_51) $(LIBS)  $(LOG)
 
 #
 #   http.obj
@@ -765,7 +765,7 @@ LIBS_53 = $(LIBS_53) libpcre.lib
 
 build\$(CONFIG)\bin\http.exe: $(DEPS_53)
 	@echo ..... [Link] build\$(CONFIG)\bin\http.exe
-	"$(LD)" -out:$(BUILD)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\http.obj" $(LIBPATHS_53) $(LIBS_53) $(LIBS_53) $(LIBS)  $(LOG)
+	"$(LD)" -nologo -out:$(BUILD)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\http.obj" $(LIBPATHS_53) $(LIBS_53) $(LIBS_53) $(LIBS)  $(LOG)
 
 #
 #   est.h

@@ -93,6 +93,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmprssl", "http-windows-s
 		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
+		{3DF289A1-39C6-4738-A1C0-83282DD7E97D} = {3DF289A1-39C6-4738-A1C0-83282DD7E97D}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
 		{E79DD492-24AA-47FD-B537-3ED4901C2940} = {E79DD492-24AA-47FD-B537-3ED4901C2940}
 	EndProjectSection
 EndProject

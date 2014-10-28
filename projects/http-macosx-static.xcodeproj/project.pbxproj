@@ -1222,7 +1222,7 @@ fi";
 		21537A9821538ADC000000D6 /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
-    				PRODUCT_NAME = httpcmd;
+    				PRODUCT_NAME = http;
     
     				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ME_DEBUG",
@@ -1238,7 +1238,7 @@ fi";
     		21537A9821538ADC000000D7 /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
-    				PRODUCT_NAME = httpcmd;
+    				PRODUCT_NAME = http;
     
     				OTHER_LDFLAGS = ();
 

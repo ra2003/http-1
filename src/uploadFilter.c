@@ -498,7 +498,6 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
 static int processUploadData(HttpQueue *q)
 {
     HttpConn        *conn;
-    HttpUploadFile  *file;
     HttpPacket      *packet;
     MprBuf          *content;
     Upload          *up;
@@ -509,7 +508,6 @@ static int processUploadData(HttpQueue *q)
     conn = q->conn;
     up = q->queueData;
     content = q->first->content;
-    file = up->currentFile;
     packet = 0;
 
     size = mprGetBufLength(content);
@@ -552,9 +550,6 @@ static int processUploadData(HttpQueue *q)
             if (writeToFile(q, data, dataLen) < 0) {
                 return MPR_ERR_CANT_WRITE;
             }
-#if MOVED
-            httpAddUploadFile(conn, file);
-#endif
             defineFileFields(q, up);
 
         } else {

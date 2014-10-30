@@ -433,7 +433,6 @@ $(BUILD)/obj/mprLib.o: \
 #
 #   mprSsl.o
 #
-DEPS_29 += $(BUILD)/inc/me.h
 DEPS_29 += src/paks/mpr/mpr.h
 
 $(BUILD)/obj/mprSsl.o: \

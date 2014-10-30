@@ -349,9 +349,9 @@
 		78893F6C78894E100000009F /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = src/paks/mpr/mpr.h; sourceTree = "<group>"; };
 		78893F6C78894E100000006D /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		78893F6C78894E1000000067 /* mprSsl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprSsl.c; path = src/paks/mpr/mprSsl.c; sourceTree = "<group>"; };
-		78893F6C78894E10000000A0 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-default/inc/me.h; sourceTree = "<group>"; };
-		78893F6C78894E10000000A1 /* libmprssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmprssl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		78893F6C78894E10000000A0 /* libmprssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmprssl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		78893F6C78894E1000000069 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/paks/pcre/pcre.c; sourceTree = "<group>"; };
+		78893F6C78894E10000000A1 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-default/inc/me.h; sourceTree = "<group>"; };
 		78893F6C78894E10000000A2 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = src/paks/pcre/pcre.h; sourceTree = "<group>"; };
 		78893F6C78894E100000006F /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -523,7 +523,6 @@
 		78893F6C78894E10000000AE /* libmprssl */ = {
                 isa = PBXGroup;
                 children = (
-				78893F6C78894E10000000A0 /* me.h */,
 				78893F6C78894E100000009F /* mpr.h */,
 				78893F6C78894E1000000067 /* mprSsl.c */,
 			);
@@ -534,7 +533,7 @@
 		78893F6C78894E10000000AF /* libpcre */ = {
                 isa = PBXGroup;
                 children = (
-				78893F6C78894E10000000A0 /* me.h */,
+				78893F6C78894E10000000A1 /* me.h */,
 				78893F6C78894E10000000A2 /* pcre.h */,
 				78893F6C78894E1000000069 /* pcre.c */,
 			);
@@ -550,7 +549,7 @@
 				78893F6C78894E1000000077 /* libest */,
 				78893F6C78894E100000006B /* libhttp */,
 				78893F6C78894E100000006D /* libmpr */,
-				78893F6C78894E10000000A1 /* libmprssl */,
+				78893F6C78894E10000000A0 /* libmprssl */,
 				78893F6C78894E100000006F /* libpcre */,
 			);
                 name = "Products";
@@ -669,7 +668,7 @@
     			);
     			name = libmprssl;
     			productName = http;
-    			productReference = 78893F6C78894E10000000A1 /* libmprssl */;
+    			productReference = 78893F6C78894E10000000A0 /* libmprssl */;
     			productType = "com.apple.product-type.library.dynamic";
     		};
 		78893F6C78894E100000007D /* libpcre */ = {

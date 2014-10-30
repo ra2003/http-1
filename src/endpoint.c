@@ -256,15 +256,15 @@ PUBLIC void httpMatchHost(HttpConn *conn)
     listenSock = conn->sock->listenSock;
 
     if ((endpoint = httpLookupEndpoint(listenSock->ip, listenSock->port)) == 0) {
-        mprLog("error http", 0, "No listening endpoint for request from %s:%d", listenSock->ip, listenSock->port);
-        mprCloseSocket(conn->sock, 0);
+        conn->host = mprGetFirstItem(endpoint->hosts);
+        httpError(conn, HTTP_CODE_NOT_FOUND, "No listening endpoint for request from %s:%d", 
+            listenSock->ip, listenSock->port);
         return;
     }
     host = httpLookupHostOnEndpoint(endpoint, conn->rx->hostHeader);
     if (host == 0) {
-        httpSetConnHost(conn, 0);
-        httpError(conn, HTTP_CODE_NOT_FOUND, "No host to serve request. Searching for %s", conn->rx->hostHeader);
         conn->host = mprGetFirstItem(endpoint->hosts);
+        httpError(conn, HTTP_CODE_NOT_FOUND, "No host to serve request. Searching for %s", conn->rx->hostHeader);
         return;
     }
     conn->host = host;

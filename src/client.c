@@ -40,6 +40,9 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
     if (conn && conn->sock) {
         if (conn->keepAliveCount-- <= 0 || port != conn->port || strcmp(ip, conn->ip) != 0 ||
                 uri->secure != (conn->sock->ssl != 0) || conn->sock->ssl != ssl) {
+            /* 
+                Cannot reuse current socket. Close and open a new one below.
+             */
             mprCloseSocket(conn->sock, 0);
             conn->sock = 0;
         } else {

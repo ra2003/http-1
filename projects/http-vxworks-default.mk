@@ -793,34 +793,44 @@ $(BUILD)/bin/libmprssl.out: $(DEPS_59)
 	@echo '      [Link] $(BUILD)/bin/libmprssl.out'
 	$(CC) -r -o $(BUILD)/bin/libmprssl.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/mprSsl.o" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) 
 
+#
+#   stop
+#
+
+stop: $(DEPS_60)
 
 #
 #   installBinary
 #
 
-installBinary: $(DEPS_60)
+installBinary: $(DEPS_61)
 
+#
+#   start
+#
+
+start: $(DEPS_62)
 
 #
 #   install
 #
-DEPS_61 += stop
-DEPS_61 += installBinary
-DEPS_61 += start
+DEPS_63 += stop
+DEPS_63 += installBinary
+DEPS_63 += start
 
-install: $(DEPS_61)
+install: $(DEPS_63)
 
 #
 #   uninstall
 #
-DEPS_62 += stop
+DEPS_64 += stop
 
-uninstall: $(DEPS_62)
+uninstall: $(DEPS_64)
 
 #
 #   version
 #
 
-version: $(DEPS_63)
+version: $(DEPS_65)
 	echo 6.0.0
 

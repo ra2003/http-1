@@ -346,18 +346,22 @@ PUBLIC char *httpReadString(HttpConn *conn)
 
 
 /*
-    Issue a client http request.
+    Convenience method to issue a client http request.
     Assumes the Mpr and Http services are created and initialized.
  */
 PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
 {
-    HttpConn    *conn;
-    ssize       len;
+    HttpConn        *conn;
+    MprDispatcher   *dispatcher;
+    ssize           len;
 
     if (err) {
         *err = 0;
     }
-    conn = httpCreateConn(NULL, NULL);
+    dispatcher = mprCreateDispatcher("httpRequest", MPR_DISPATCHER_AUTO);
+    mprStartDispatcher(dispatcher);
+
+    conn = httpCreateConn(NULL, dispatcher);
     mprAddRoot(conn);
 
     /*
@@ -365,6 +369,7 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
      */
     if (httpConnect(conn, method, uri, NULL) < 0) {
         mprRemoveRoot(conn);
+        httpDestroyConn(conn);
         *err = sfmt("Cannot connect to %s", uri);
         return 0;
     }
@@ -377,6 +382,7 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
     httpFinalizeOutput(conn);
     if (httpWait(conn, HTTP_STATE_CONTENT, MPR_MAX_TIMEOUT) < 0) {
         mprRemoveRoot(conn);
+        httpDestroyConn(conn);
         *err = sclone("No response");
         return 0;
     }

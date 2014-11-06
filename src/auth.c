@@ -605,6 +605,9 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
         return 0;
     }
     if (password) {
+        if (auth->realm == 0 || *auth->realm == '\0') {
+            mprLog("error http auth", 0, "No AuthRealm defined");
+        }
         requiredPassword = (rx->passwordDigest) ? rx->passwordDigest : conn->user->password;
         if (sncmp(requiredPassword, "BF", 2) == 0 && slen(requiredPassword) > 4 && isdigit(requiredPassword[2]) &&
                 requiredPassword[3] == ':') {

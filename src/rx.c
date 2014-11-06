@@ -1159,7 +1159,6 @@ static void createErrorRequest(HttpConn *conn)
 
     packet = httpCreateDataPacket(ME_MAX_BUFFER);
     mprPutToBuf(packet->content, "%s %s %s\r\n", rx->method, tx->errorDocument, conn->protocol);
-    buf = rx->headerPacket->content;
     /*
         Sever the old Rx and Tx for GC
      */
@@ -1174,6 +1173,7 @@ static void createErrorRequest(HttpConn *conn)
     /*
         Ensure buffer always has a trailing null (one past buf->end)
      */
+    buf = rx->headerPacket->content;
     mprAddNullToBuf(buf);
     for (cp = buf->data; cp < &buf->end[-1]; cp++) {
         if (*cp == '\0') {
@@ -1194,13 +1194,12 @@ static void createErrorRequest(HttpConn *conn)
             }
         }
     }
-    if (headers && headers < buf->end) {
-        mprPutStringToBuf(packet->content, headers);
-        conn->input = packet;
-        conn->state = HTTP_STATE_CONNECTED;
-    } else {
-        httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Cannot reconstruct headers");
+    if (!headers || headers >= buf->end) {
+        headers = "\r\n";
     }
+    mprPutStringToBuf(packet->content, headers);
+    conn->input = packet;
+    conn->state = HTTP_STATE_CONNECTED;
 }
 
 

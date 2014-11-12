@@ -190,7 +190,7 @@
 
 /* Profile */
 #ifndef ME_CONFIG_CMD
-    #define ME_CONFIG_CMD "me -d -q -platform linux-x86-default -configure . -with est -gen make"
+    #define ME_CONFIG_CMD "me -d -q -platform linux-x86-default -configure . -with openssl -gen make"
 #endif
 #ifndef ME_HTTP_PRODUCT
     #define ME_HTTP_PRODUCT 1
@@ -221,7 +221,7 @@
     #define ME_COM_CC 1
 #endif
 #ifndef ME_COM_EST
-    #define ME_COM_EST 1
+    #define ME_COM_EST 0
 #endif
 #ifndef ME_COM_LIB
     #define ME_COM_LIB 1
@@ -230,7 +230,7 @@
     #define ME_COM_MPR 1
 #endif
 #ifndef ME_COM_OPENSSL
-    #define ME_COM_OPENSSL 0
+    #define ME_COM_OPENSSL 1
 #endif
 #ifndef ME_COM_OSDEP
     #define ME_COM_OSDEP 1

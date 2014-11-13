@@ -102,6 +102,9 @@
 #ifndef ME_HTTP_WEB_SOCKETS
     #define ME_HTTP_WEB_SOCKETS 1
 #endif
+#ifndef ME_INTEGRATE
+    #define ME_INTEGRATE 1
+#endif
 #ifndef ME_ME
     #define ME_ME "=>0.8.4"
 #endif

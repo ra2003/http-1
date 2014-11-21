@@ -245,8 +245,10 @@ static void postParse(HttpRoute *route)
     for (nextHost = 0; (host = mprGetNextItem(http->hosts, &nextHost)) != 0; ) {
         for (nextRoute = 0; (rp = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
             if (!mprLookupKey(rp->extensions, "")) {
-                httpAddRouteHandler(rp, "fileHandler", "");
-                httpAddRouteIndex(rp, "index.html");
+                if (!rp->handler) {
+                    httpAddRouteHandler(rp, "fileHandler", "");
+                    httpAddRouteIndex(rp, "index.html");
+                }
             }
             if (rp->parent == route) {
                 rp->client = route->client;

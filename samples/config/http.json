@@ -211,9 +211,9 @@
              */
             auth: {
                 /*
-                    Login configuration
+                    Automatic login configuration
                  */
-                login: {
+                auto: {
                     /*
                         Give the auto-logged-in user these abilities
                      */
@@ -228,6 +228,15 @@
                         URL for the application login dialog
                      */
                     url: "",
+                },
+
+                "login": {
+                    "route": "/login",
+                    "loginPage": 'login.html',
+                    "login": 'login',
+                    "logout": "logout",
+                    "loggedIn": 'index.html',
+                    "loggedOut": 'thanks.html',
                 },
 
                 /*
@@ -480,6 +489,11 @@
             methods: [ "get", "post" ],
 
             /*
+                Descriptive name for route
+             */
+            name:  "",
+
+            /*
                 Required request parameters before this route will match a request
              */
             params: [ {
@@ -534,24 +548,37 @@
             ],
 
             /*
-                Descriptive name for route
-             */
-            routeName:  "",
-
-            /*
-                List of routes. This can be a route-set name, or an array of routes.
+                List of routes
              */
             routes: [ 
             /*
                 Routes may nest other routes under their own "routes" property. 
+                Properties can be a route-set name, or an array of routes objects.
                 A route will typically define a "pattern" and may override most per-route properties.
+             */
+            /* 
                 For example:
+
+                "esp-server",
                 {
                     pattern: '^/auth/basic',
                     auth: {
                         realm: 'example.com',
                         type: 'basic|digest',
                     },
+                },
+                {
+                    "resources": {
+                        "sets": [
+                            "esp-server"
+                        ],
+                        "groups": [
+                            "user",
+                        ],
+                        "singletons": [
+                            "dashboard",
+                        ]
+                    }
                 }
              */
             ],

@@ -316,7 +316,7 @@ static void parseAuth(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseAuthLoginName(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseAuthAutoName(HttpRoute *route, cchar *key, MprJson *prop)
 {
     /* Automatic login as this user. Password not required */
     httpSetAuthUsername(route->auth, prop->value);
@@ -326,7 +326,7 @@ static void parseAuthLoginName(HttpRoute *route, cchar *key, MprJson *prop)
 /*
     Parse roles and compute abilities
  */
-static void parseAuthLoginRoles(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseAuthAutoRoles(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprHash     *abilities;
     MprKey      *kp;
@@ -345,8 +345,14 @@ static void parseAuthLoginRoles(HttpRoute *route, cchar *key, MprJson *prop)
         for (ITERATE_KEYS(abilities, kp)) {
             mprSetJson(job, "$", kp->key);
         }
-        mprSetJsonObj(route->config, "app.http.auth.login.abilities", job);
+        mprSetJsonObj(route->config, "app.http.auth.auto.abilities", job);
     }
+}
+
+
+static void parseAuthLogin(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpSetAuthLogin(route->auth, prop->value);
 }
 
 
@@ -1600,9 +1606,10 @@ PUBLIC int httpInitParser()
     httpAddConfig("app", parseAll);
     httpAddConfig("app.http", parseHttp);
     httpAddConfig("app.http.auth", parseAuth);
-    httpAddConfig("app.http.auth.login", parseAll);
-    httpAddConfig("app.http.auth.login.name", parseAuthLoginName);
-    httpAddConfig("app.http.auth.login.roles", parseAuthLoginRoles);
+    httpAddConfig("app.http.auth.auto", parseAll);
+    httpAddConfig("app.http.auth.auto.name", parseAuthAutoName);
+    httpAddConfig("app.http.auth.auto.roles", parseAuthAutoRoles);
+    httpAddConfig("app.http.auth.login", parseAuthLogin);
     httpAddConfig("app.http.auth.realm", parseAuthRealm);
     httpAddConfig("app.http.auth.require", parseAll);
     httpAddConfig("app.http.auth.require.roles", parseAuthRequireRoles);

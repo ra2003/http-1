@@ -614,6 +614,13 @@ static void parseFormatsResponse(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseHandler(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (httpSetRouteHandler(route, prop->value) < 0) {
+        httpParseError(route, "Cannot add handler %s", prop->value);
+    }
+}
+
 static void parseHeadersAdd(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -1638,6 +1645,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.errors", parseErrors);
     httpAddConfig("app.http.formats", parseAll);
     httpAddConfig("app.http.formats.response", parseFormatsResponse);
+    httpAddConfig("app.http.handler", parseHandler);
     httpAddConfig("app.http.headers", parseAll);
     httpAddConfig("app.http.headers.add", parseHeadersAdd);
     httpAddConfig("app.http.headers.remove", parseHeadersRemove);

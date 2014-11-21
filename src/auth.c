@@ -32,6 +32,7 @@ PUBLIC void httpInitAuth()
 {
     /*
         Auth protocol types: basic, digest, form
+        These are typically not used for web frameworks like ESP or PHP 
      */
     httpCreateAuthType("basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
     httpCreateAuthType("digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
@@ -76,6 +77,7 @@ PUBLIC HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
     }
     if (parent) {
         //  OPT. Structure assignment
+        auth->flags = parent->flags;
         auth->allow = parent->allow;
         auth->cipher = parent->cipher;
         auth->deny = parent->deny;
@@ -88,7 +90,8 @@ PUBLIC HttpAuth *httpCreateInheritedAuth(HttpAuth *parent)
         auth->abilities = parent->abilities;
         auth->userCache = parent->userCache;
         auth->roles = parent->roles;
-        auth->loggedIn = parent->loggedIn;
+        auth->loggedOutPage = parent->loggedOutPage;
+        auth->loggedInPage = parent->loggedInPage;
         auth->loginPage = parent->loginPage;
         auth->username = parent->username;
         auth->verifyUser = parent->verifyUser;
@@ -110,7 +113,8 @@ static void manageAuth(HttpAuth *auth, int flags)
         mprMark(auth->abilities);
         mprMark(auth->permittedUsers);
         mprMark(auth->loginPage);
-        mprMark(auth->loggedIn);
+        mprMark(auth->loggedInPage);
+        mprMark(auth->loggedOutPage);
         mprMark(auth->username);
         mprMark(auth->qop);
         mprMark(auth->type);
@@ -267,11 +271,9 @@ PUBLIC bool httpGetCredentials(HttpConn *conn, cchar **username, cchar **passwor
     auth = conn->rx->route->auth;
     if (auth->type) {
         if (conn->authType && !smatch(conn->authType, auth->type->name)) {
-            /* Do not call httpError so that a 401 response will be sent with WWW-Authenticate header */
             return 0;
         }
         if (auth->type->parseAuth && (auth->type->parseAuth)(conn, username, password) < 0) {
-            httpError(conn, HTTP_CODE_BAD_REQUEST, "Access denied. Bad authentication data.");
             return 0;
         }
     } else {
@@ -309,7 +311,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         return 0;
     }
     if ((verifyUser = auth->verifyUser) == 0) {
-        if (auth->parent && (verifyUser = auth->parent->verifyUser) == 0) {
+        if (!auth->parent || (verifyUser = auth->parent->verifyUser) == 0) {
             verifyUser = auth->store->verifyUser;
         }
     }
@@ -325,7 +327,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     if (!(verifyUser)(conn, username, password)) {
         return 0;
     }
-    if (!auth->store->noSession) {
+    if (!(auth->flags & HTTP_AUTH_NO_SESSION) && !auth->store->noSession) {
         if ((session = httpCreateSession(conn)) == 0) {
             /* Too many sessions */
             return 0;
@@ -376,6 +378,117 @@ PUBLIC void httpSetAuthAnyValidUser(HttpAuth *auth)
 }
 
 
+PUBLIC void httpSetAuthLogin(HttpAuth *auth, cchar *value)
+{
+    auth->loginPage = sclone(value);
+}
+
+
+/*
+    Web form login service routine. Called in response to a form-based login request when defined via httpSetAuthLogin.
+    It is expected that "authCondition" has already authenticated the request.
+ */
+static void loginServiceProc(HttpConn *conn)
+{
+    HttpAuth    *auth;
+    
+    auth = conn->rx->route->auth;
+    if (httpIsAuthenticated(conn)) {
+        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loggedInPage ? auth->loggedInPage : "~");
+    } else {
+        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
+    }
+}
+
+
+/*
+    Logout service for use with httpSetAuthFormDetails.
+ */
+static void logoutServiceProc(HttpConn *conn)
+{
+    HttpRoute       *route;
+    HttpAuth        *auth;
+    cchar           *loggedOut;
+
+    route = conn->rx->route;
+    auth = route->auth;
+
+    httpLogout(conn);
+
+    loggedOut = (auth->loggedOutPage) ? auth->loggedOutPage : auth->loginPage;
+    if (!loggedOut) {
+        loggedOut = "/";
+    }
+    httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, loggedOut);
+}
+
+
+static HttpRoute *createLoginRoute(HttpRoute *route, cchar *pattern, HttpAction action)
+{
+    bool    secure;
+
+    secure = 0;
+    if (sstarts(pattern, "https:///")) {
+        pattern = &pattern[8];
+        secure = 1;
+    }
+    if ((route = httpCreateInheritedRoute(route)) != 0) {
+        httpSetRoutePattern(route, sjoin(pattern, "$", NULL), 0);
+        if (secure) {
+            httpAddRouteCondition(route, "secure", "https://", HTTP_ROUTE_REDIRECT);
+        }
+        if (action) {
+            route->handler = route->http->actionHandler;
+            httpDefineAction(pattern, action);
+        }
+        httpSetRouteName(route, strim(pattern, "^$", 0));
+        httpFinalizeRoute(route);
+    }
+    return route;
+}
+
+
+/*
+    Define login URLs by creating routes. Used by Appweb AuthType directive.
+    Web frameworks like ESP should NOT use this.
+ */
+PUBLIC void httpSetAuthFormDetails(HttpRoute *route, cchar *loginPage, cchar *loginService, cchar *logoutService, 
+    cchar *loggedInPage, cchar *loggedOutPage)
+{
+    HttpRoute   *loginRoute;
+    HttpAuth    *auth;
+
+    auth = route->auth;
+
+    if (loggedInPage) {
+        auth->loggedInPage = sclone(loggedInPage);
+        createLoginRoute(route, auth->loggedInPage, 0);
+    }
+    if (loginPage) {
+        auth->loginPage = sclone(loginPage);
+        createLoginRoute(route, auth->loginPage, 0);
+    }
+    if (loggedOutPage) {
+        if (smatch(loginPage, loggedOutPage)) {
+            auth->loggedOutPage = auth->loginPage;
+        } else {
+            auth->loggedOutPage = sclone(loggedOutPage);
+            createLoginRoute(route, auth->loggedOutPage, 0);
+        }
+    }
+    /*
+        Put services last so they inherit the auth settings above
+     */
+    if (loginService) {
+        loginRoute = createLoginRoute(route, loginService, loginServiceProc);
+        httpAddRouteCondition(loginRoute, "auth", 0, 0);
+    }
+    if (logoutService) {
+        createLoginRoute(route, logoutService, logoutServiceProc);
+    }
+}
+
+
 /*
     Can supply a roles or abilities in the "abilities" parameter
  */
@@ -403,101 +516,6 @@ PUBLIC void httpSetAuthOrder(HttpAuth *auth, int order)
     auth->flags |= (order & (HTTP_ALLOW_DENY | HTTP_DENY_ALLOW));
 }
 
-
-/*
-    Form login service routine. Called in response to a form-based login request. Only used when httpSetAuthForm is utilized.
-    The password is clear-text so this must be used over SSL to be secure.
- */
-static void loginServiceProc(HttpConn *conn)
-{
-    HttpAuth    *auth;
-    cchar       *username, *password, *referrer;
-
-    auth = conn->rx->route->auth;
-    username = httpGetParam(conn, "username", 0);
-    password = httpGetParam(conn, "password", 0);
-
-    if (httpLogin(conn, username, password)) {
-        if ((referrer = httpGetSessionVar(conn, "referrer", 0)) != 0) {
-            /*
-                Preserve protocol scheme from existing connection
-             */
-            HttpUri *where = httpCreateUri(referrer, 0);
-            httpCompleteUri(where, conn->rx->parsedUri);
-            referrer = httpUriToString(where, 0);
-            httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, referrer);
-        } else {
-            if (auth->loggedIn) {
-                httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loggedIn);
-            } else {
-                httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, "~");
-            }
-        }
-    } else {
-        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
-    }
-}
-
-
-static void logoutServiceProc(HttpConn *conn)
-{
-    httpLogout(conn);
-    httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, conn->rx->route->auth->loginPage);
-}
-
-
-PUBLIC void httpSetAuthForm(HttpRoute *parent, cchar *loginPage, cchar *loginService, cchar *logoutService, cchar *loggedIn)
-{
-    HttpAuth    *auth;
-    HttpRoute   *route;
-    bool        secure;
-
-    secure = 0;
-    auth = parent->auth;
-    auth->loginPage = sclone(loginPage);
-    if (loggedIn) {
-        auth->loggedIn = sclone(loggedIn);
-    }
-    /*
-        Create routes without auth for the loginPage, loginService and logoutService
-     */
-    if ((route = httpCreateInheritedRoute(parent)) != 0) {
-        if (sstarts(loginPage, "https:///")) {
-            loginPage = &loginPage[8];
-            secure = 1;
-        }
-        httpSetRoutePattern(route, loginPage, 0);
-        route->auth->type = 0;
-        if (secure) {
-            httpAddRouteCondition(route, "secure", 0, 0);
-        }
-        httpFinalizeRoute(route);
-    }
-    if (loginService && *loginService) {
-        if (sstarts(loginService, "https:///")) {
-            loginService = &loginService[8];
-            secure = 1;
-        }
-        route = httpCreateActionRoute(parent, loginService, loginServiceProc);
-        httpSetRouteMethods(route, "POST");
-        route->auth->type = 0;
-        if (secure) {
-            httpAddRouteCondition(route, "secure", 0, 0);
-        }
-    }
-    if (logoutService && *logoutService) {
-        if (sstarts(logoutService, "https:///")) {
-            logoutService = &logoutService[8];
-            secure = 1;
-        }
-        httpSetRouteMethods(route, "POST");
-        route = httpCreateActionRoute(parent, logoutService, logoutServiceProc);
-        route->auth->type = 0;
-        if (secure) {
-            httpAddRouteCondition(route, "secure", 0, 0);
-        }
-    }
-}
 
 
 /*
@@ -570,6 +588,10 @@ PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
 
 PUBLIC int httpSetAuthType(HttpAuth *auth, cchar *type, cchar *details)
 {
+    if (type == 0 || *type == '\0' || smatch(type, "none")) {
+        auth->type = 0;
+        return 0;
+    }
     if ((auth->type = mprLookupKey(HTTP->authTypes, type)) == 0) {
         mprLog("critical http auth", 0, "Cannot find auth type %s", type);
         return MPR_ERR_CANT_FIND;

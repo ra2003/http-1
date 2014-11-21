@@ -438,6 +438,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 
     if (tx->finalized) {
         /* A response has already been formulated */
+        mprLog("error", 0, "Response already prepared, so redirect ignored: %s", targetUri); 
         return;
     }
     tx->status = status;
@@ -761,7 +762,7 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         if (!mprIsAbsPathContained(filename, conn->rx->route->documents)) {
             info->checked = 1;
             info->valid = 0;
-            httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad filename");
+            httpError(conn, HTTP_CODE_BAD_REQUEST, "Filename outside published documents");
             return;
         }
     }

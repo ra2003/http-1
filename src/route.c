@@ -337,6 +337,7 @@ PUBLIC HttpRoute *httpCreateAliasRoute(HttpRoute *parent, cchar *pattern, cchar 
 PUBLIC HttpRoute *httpCreateActionRoute(HttpRoute *parent, cchar *pattern, HttpAction action)
 {
     HttpRoute   *route;
+    cchar       *name;
 
     if (!pattern || !action) {
         return 0;
@@ -344,7 +345,9 @@ PUBLIC HttpRoute *httpCreateActionRoute(HttpRoute *parent, cchar *pattern, HttpA
     if ((route = httpCreateInheritedRoute(parent)) != 0) {
         route->handler = route->http->actionHandler;
         httpSetRoutePattern(route, pattern, 0);
-        httpDefineAction(pattern, action);
+        name = strim(pattern, "^$", 0);
+        httpDefineAction(name, action);
+        httpSetRouteName(route, name);
         httpFinalizeRoute(route);
     }
     return route;
@@ -1408,7 +1411,6 @@ PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags)
 PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix)
 {
     assert(route);
-    assert(!smatch(prefix, "/"));
 
     if (prefix && *prefix) {
         if (smatch(prefix, "/")) {
@@ -2160,8 +2162,8 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         httpGetCredentials(conn, &username, &password);
         if (!httpLogin(conn, username, password)) {
             if (!conn->tx->finalized) {
-                if (route->auth && route->auth->type) {
-                    (route->auth->type->askLogin)(conn);
+                if (auth && auth->type) {
+                    (auth->type->askLogin)(conn);
                 } else {
                     httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied, login required");
                 }
@@ -2173,8 +2175,8 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     if (!httpCanUser(conn, NULL)) {
         httpTrace(conn, "auth.check", "error", "msg:'Access denied, user is not authorized for access'");
         if (!conn->tx->finalized) {
-            if (route->auth && route->auth->type) {
-                (route->auth->type->askLogin)(conn);
+            if (auth && auth->type) {
+                (auth->type->askLogin)(conn);
                 /* Request has been denied and a response generated. So OK to accept this route. */
             } else {
                 httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access denied. User is not authorized for access.");
@@ -2552,7 +2554,7 @@ PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *uprefix, cchar *name)
         name = sjoin(parent->prefix, name, NULL);
     }
     pattern = sfmt("^%s(/.*)", uprefix);
-    path = mprGetRelPath(stemplate("${CLIENT_DIR}$1", parent->vars), parent->documents);
+    path = sjoin(mprGetRelPath(stemplate("${CLIENT_DIR}", parent->vars), parent->documents), "$1", NULL);
     route = httpDefineRoute(parent, name, "GET", pattern, path, parent->sourceName);
     httpAddRouteHandler(route, "fileHandler", "");
 }
@@ -2650,6 +2652,8 @@ static bool opPresent(MprList *list, HttpRouteOp *op)
 
 static void addUniqueItem(MprList *list, HttpRouteOp *op)
 {
+    int     index;
+
     assert(list);
     assert(op);
 

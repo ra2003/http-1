@@ -3844,6 +3844,18 @@ PUBLIC HttpAuth *httpCreateAuth();
  */
 PUBLIC int httpCreateAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth parse, HttpSetAuth setAuth);
 
+/**
+    Control whether a session and session cookie will be created for user logins for this authentication route
+    @description By default, a session and response cookie are created when a user is authenticated via #httpLogin.
+    This boosts performance because subsequent requests can supply the cookie and bypass authentication for each
+    subseqent request. This API permits the default behavior to be suppressed and thus no cookie or session will be created.
+    @param auth Auth object created via #httpCreateAuth.
+    @param noSession Set to true to suppress creation of sessions or cookies.
+    @ingroup HttpAuth
+    @stability Prototype
+ */
+PUBLIC void httpSetAuthSession(HttpAuth *auth, bool noSession);
+
 #if DEPRECATE || 1
 #define httpAddAuthType httpCreateAuthType
 #endif

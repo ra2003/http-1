@@ -254,6 +254,7 @@ static void manageDigestData(HttpDigest *dp, int flags)
 
 /*
     Respond to the request by asking for a client login
+    Only called if not logged in.
  */
 PUBLIC void httpDigestLogin(HttpConn *conn)
 {
@@ -261,20 +262,25 @@ PUBLIC void httpDigestLogin(HttpConn *conn)
     char        *nonce, *opaque;
 
     auth = conn->rx->route->auth;
-    nonce = createDigestNonce(conn, conn->http->secret, auth->realm);
-    /* Opaque is unused, set to anything */
-    opaque = "799d5";
 
-    if (smatch(auth->qop, "none")) {
-        httpSetHeader(conn, "WWW-Authenticate", "Digest realm=\"%s\", nonce=\"%s\"", auth->realm, nonce);
+    if (auth->loginPage && !sends(conn->rx->referrer, auth->loginPage)) {
+        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
     } else {
-        /* qop value of null defaults to "auth" */
-        httpSetHeader(conn, "WWW-Authenticate", "Digest realm=\"%s\", domain=\"%s\", "
-            "qop=\"auth\", nonce=\"%s\", opaque=\"%s\", algorithm=\"MD5\", stale=\"FALSE\"",
-            auth->realm, "/", nonce, opaque);
+        nonce = createDigestNonce(conn, conn->http->secret, auth->realm);
+        /* Opaque is unused, set to anything */
+        opaque = "799d5";
+
+        if (smatch(auth->qop, "none")) {
+            httpSetHeader(conn, "WWW-Authenticate", "Digest realm=\"%s\", nonce=\"%s\"", auth->realm, nonce);
+        } else {
+            /* qop value of null defaults to "auth" */
+            httpSetHeader(conn, "WWW-Authenticate", "Digest realm=\"%s\", domain=\"%s\", "
+                "qop=\"auth\", nonce=\"%s\", opaque=\"%s\", algorithm=\"MD5\", stale=\"FALSE\"",
+                auth->realm, "/", nonce, opaque);
+        }
+        httpSetContentType(conn, "text/plain");
+        httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
     }
-    httpSetContentType(conn, "text/plain");
-    httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
 }
 
 

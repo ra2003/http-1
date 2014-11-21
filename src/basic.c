@@ -46,15 +46,20 @@ PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
 
 /*
     Respond to the request by asking for a client login
+    Only called if not logged in
  */
 PUBLIC void httpBasicLogin(HttpConn *conn)
 {
     HttpAuth    *auth;
 
     auth = conn->rx->route->auth;
-    httpSetHeader(conn, "WWW-Authenticate", "Basic realm=\"%s\"", auth->realm);
-    httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
-    httpTrace(conn, "auth.basic.error", "error", "msg:'Access denied, Login required'");
+    if (auth->loginPage && !sends(conn->rx->referrer, auth->loginPage)) {
+        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
+    } else {
+        httpSetHeader(conn, "WWW-Authenticate", "Basic realm=\"%s\"", auth->realm);
+        httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
+        httpTrace(conn, "auth.basic.error", "error", "msg:'Access denied, Login required'");
+    }
 }
 
 

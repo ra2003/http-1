@@ -3812,7 +3812,8 @@ typedef struct HttpAuth {
     MprHash         *abilities;             /**< Set of required abilities (all are required) */
     MprHash         *permittedUsers;        /**< Set of valid users */
     char            *loginPage;             /**< Web page for user login for 'form' type */
-    char            *loggedIn;              /**< Target URI after logging in */
+    char            *loggedInPage;          /**< Target URI after logging in */
+    char            *loggedOutPage;         /**< Target URI after logging out */
     char            *username;              /**< Automatic login username. Password not required if defined */
     char            *qop;                   /**< Quality of service */
     HttpAuthType    *type;                  /**< Authorization protocol type (basic|digest|form|custom)*/
@@ -4021,21 +4022,6 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password);
  */
 PUBLIC void httpLogout(HttpConn *conn);
 
-/**
-    Define the callbabcks for the 'form' authentication type.
-    @description This creates a new route for the login page.
-    @param parent Parent route from which to inherit when creating a route for the login page.
-    @param loginPage Web page URI for the user to enter username and password.
-    @param loginService URI to use for the internal login service. To use your own login URI, set to this the empty string.
-    @param logoutService URI to use to log the user out. To use your won logout URI, set this to the empty string.
-    @param loggedIn The client is redirected to this URI once logged in. Use a "referrer:" prefix to the URI to
-        redirect the user to the referring URI before the loginPage. If the referrer cannot be determined, the base
-        URI is utilized.
-    @ingroup HttpAuth
-    @stability Evolving
- */
-PUBLIC void httpSetAuthForm(struct HttpRoute *parent, cchar *loginPage, cchar *loginService, cchar *logoutService,
-    cchar *loggedIn);
 
 /***************************** Auth Route ************************************/
 /**
@@ -4064,6 +4050,37 @@ PUBLIC void httpSetAuthAnyValidUser(HttpAuth *auth);
     @stability Evolving
  */
 PUBLIC void httpSetAuthDeny(HttpAuth *auth, cchar *ip);
+
+/**
+    Define login service URLs for use with "form" authentication.
+    @description This defines the login form URL and login/out service URLs. 
+        Set arguments to null if they are not required because the application is implementing its own redirection 
+        management during login. This API should not be used for web frameworks like ESP or PHP that define their own
+        login/out services.
+    @param route Route from which to inherit when creating a route for the login pages and services.
+    @param loginPage Web page URI for the user to enter username and password.
+    @param loginService URI to use for the internal login service. To use your own login URI, set to this the empty string.
+    @param logoutService URI to use to log the user out. To use your won logout URI, set this to the empty string.
+    @param loggedInPage The client is redirected to this URI once logged in. Use a "referrer:" prefix to the URI to
+        redirect the user to the referring URI before the loginPage. If the referrer cannot be determined, the base
+        URI is utilized.
+    @param loggedOutPage The client is redirected to this URI once logged in. Use a "referrer:" prefix to the URI to
+        redirect the user to the referring URI before the loginPage. If the referrer cannot be determined, the base
+        URI is utilized.
+    @ingroup HttpAuth
+    @stability Evolving
+ */
+PUBLIC void httpSetAuthFormDetails(struct HttpRoute *route, cchar *loginPage, cchar *loginService, cchar *logoutService,
+    cchar *loggedInPage, cchar *loggedOutPage);
+
+/**
+    Define the login page for use with authentication
+    @param auth Authorization object allocated by #httpCreateAuth.
+    @param uri URI for the login page. Can use "https:///page" to specify the SSL protocol with the current domain.
+    @ingroup HttpAuth
+    @stability Prototype
+ */
+PUBLIC void httpSetAuthLogin(HttpAuth *auth, cchar *value);
 
 /**
     Set the auth allow/deny order

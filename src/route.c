@@ -2299,6 +2299,13 @@ static int secureCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
             httpAddHeader(conn, "Strict-Transport-Security", "max-age=%lld", age / MPR_TICKS_PER_SEC);
         }
     }
+    if (op->flags & HTTP_ROUTE_REDIRECT) {
+        if (!conn->secure) {
+            assert(op->details && *op->details);
+            httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, expandTokens(conn, op->details));
+        }
+        return HTTP_ROUTE_OK;
+    }
     if (!conn->secure) {
         return HTTP_ROUTE_REJECT;
     }

@@ -141,7 +141,7 @@ static bool validateEndpoint(HttpEndpoint *endpoint)
             httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
         }
         for (nextRoute = 0; (route = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
-            if (!mprLookupKey(route->extensions, "")) {
+            if (!route->handler && !mprLookupKey(route->extensions, "")) {
                 httpAddRouteHandler(route, "fileHandler", "");
                 httpAddRouteIndex(route, "index.html");
             }

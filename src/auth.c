@@ -538,6 +538,15 @@ PUBLIC void httpSetAuthStoreSessions(HttpAuthStore *store, bool noSession)
 }
 
 
+PUBLIC void httpSetAuthSession(HttpAuth *auth, bool enable)
+{
+    auth->flags &= ~HTTP_AUTH_NO_SESSION;
+    if (!enable) {
+        auth->flags |= HTTP_AUTH_NO_SESSION;
+    }
+}
+
+
 PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
 {
     if ((auth->store = mprLookupKey(HTTP->authStores, store)) == 0) {

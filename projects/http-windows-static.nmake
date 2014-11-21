@@ -34,7 +34,7 @@ LBIN                  = $(BUILD)\bin
 ME_COM_COMPILER       = 1
 !ENDIF
 !IF "$(ME_COM_EST)" == ""
-ME_COM_EST            = 0
+ME_COM_EST            = 1
 !ENDIF
 !IF "$(ME_COM_LIB)" == ""
 ME_COM_LIB            = 1
@@ -46,7 +46,7 @@ ME_COM_LINK           = 1
 ME_COM_MPR            = 1
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == ""
-ME_COM_OPENSSL        = 1
+ME_COM_OPENSSL        = 0
 !ENDIF
 !IF "$(ME_COM_OSDEP)" == ""
 ME_COM_OSDEP          = 1
@@ -123,6 +123,9 @@ ME_SRC_PREFIX         = $(ME_VAPP_PREFIX)\src
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\ca.crt
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http-server.exe
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http.exe
+!IF "$(ME_COM_EST)" == "1"
+TARGETS               = $(TARGETS) build\$(CONFIG)\bin\libest.dll
+!ENDIF
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\libmprssl.dll
 
 !IFNDEF SHOW
@@ -167,6 +170,7 @@ clean:
 	if exist "build\$(CONFIG)\obj\dirHandler.obj" del /Q "build\$(CONFIG)\obj\dirHandler.obj"
 	if exist "build\$(CONFIG)\obj\endpoint.obj" del /Q "build\$(CONFIG)\obj\endpoint.obj"
 	if exist "build\$(CONFIG)\obj\error.obj" del /Q "build\$(CONFIG)\obj\error.obj"
+	if exist "build\$(CONFIG)\obj\estLib.obj" del /Q "build\$(CONFIG)\obj\estLib.obj"
 	if exist "build\$(CONFIG)\obj\fileHandler.obj" del /Q "build\$(CONFIG)\obj\fileHandler.obj"
 	if exist "build\$(CONFIG)\obj\host.obj" del /Q "build\$(CONFIG)\obj\host.obj"
 	if exist "build\$(CONFIG)\obj\http-server.obj" del /Q "build\$(CONFIG)\obj\http-server.obj"
@@ -204,6 +208,10 @@ clean:
 	if exist "build\$(CONFIG)\bin\http.lib" del /Q "build\$(CONFIG)\bin\http.lib"
 	if exist "build\$(CONFIG)\bin\http.pdb" del /Q "build\$(CONFIG)\bin\http.pdb"
 	if exist "build\$(CONFIG)\bin\http.exp" del /Q "build\$(CONFIG)\bin\http.exp"
+	if exist "build\$(CONFIG)\bin\libest.dll" del /Q "build\$(CONFIG)\bin\libest.dll"
+	if exist "build\$(CONFIG)\bin\libest.lib" del /Q "build\$(CONFIG)\bin\libest.lib"
+	if exist "build\$(CONFIG)\bin\libest.pdb" del /Q "build\$(CONFIG)\bin\libest.pdb"
+	if exist "build\$(CONFIG)\bin\libest.exp" del /Q "build\$(CONFIG)\bin\libest.exp"
 	if exist "build\$(CONFIG)\bin\libhttp.dll" del /Q "build\$(CONFIG)\bin\libhttp.dll"
 	if exist "build\$(CONFIG)\bin\libhttp.lib" del /Q "build\$(CONFIG)\bin\libhttp.lib"
 	if exist "build\$(CONFIG)\bin\libhttp.pdb" del /Q "build\$(CONFIG)\bin\libhttp.pdb"
@@ -794,22 +802,64 @@ build\$(CONFIG)\bin\http.exe: $(DEPS_53)
 	"$(LD)" -nologo -out:$(BUILD)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\http.obj" $(LIBPATHS_53) $(LIBS_53) $(LIBS_53) $(LIBS)  $(LOG)
 
 #
+#   est.h
+#
+DEPS_54 = $(DEPS_54) src\paks\est\est.h
+
+build\$(CONFIG)\inc\est.h: $(DEPS_54)
+	@echo ..... [Copy] build\$(CONFIG)\inc\est.h
+	if not exist "build\$(CONFIG)\inc" md "build\$(CONFIG)\inc"
+	copy /Y /B src\paks\est\est.h+modified build\$(CONFIG)\inc\est.h $(LOG)
+
+#
+#   est.h
+#
+
+src\paks\est\est.h: $(DEPS_55)
+
+#
+#   estLib.obj
+#
+DEPS_56 = $(DEPS_56) src\paks\est\est.h
+
+build\$(CONFIG)\obj\estLib.obj: \
+    src\paks\est\estLib.c $(DEPS_56)
+	@echo .. [Compile] build\$(CONFIG)\obj\estLib.obj
+	"$(CC)" -c -Fo$(BUILD)\obj\estLib.obj -Fd$(BUILD)\obj\estLib.pdb -nologo -GR- -Zi -Od -MDd $(DFLAGS) $(IFLAGS) src\paks\est\estLib.c $(LOG)
+
+!IF "$(ME_COM_EST)" == "1"
+#
+#   libest
+#
+DEPS_57 = $(DEPS_57) build\$(CONFIG)\inc\osdep.h
+DEPS_57 = $(DEPS_57) build\$(CONFIG)\inc\est.h
+DEPS_57 = $(DEPS_57) build\$(CONFIG)\obj\estLib.obj
+
+build\$(CONFIG)\bin\libest.dll: $(DEPS_57)
+	@echo ..... [Link] build\$(CONFIG)\bin\libest.dll
+	"lib.exe" -nologo -out:$(BUILD)\bin\libest.dll "$(BUILD)\obj\estLib.obj" $(LOG)
+!ENDIF
+
+#
 #   mprSsl.obj
 #
-DEPS_54 = $(DEPS_54) src\paks\mpr\mpr.h
+DEPS_58 = $(DEPS_58) src\paks\mpr\mpr.h
 
 build\$(CONFIG)\obj\mprSsl.obj: \
-    src\paks\mpr\mprSsl.c $(DEPS_54)
+    src\paks\mpr\mprSsl.c $(DEPS_58)
 	@echo .. [Compile] build\$(CONFIG)\obj\mprSsl.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\mprSsl.obj -Fd$(BUILD)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\paks\mpr\mprSsl.c $(LOG)
 
 #
 #   libmprssl
 #
-DEPS_55 = $(DEPS_55) build\$(CONFIG)\bin\libmpr.dll
-DEPS_55 = $(DEPS_55) build\$(CONFIG)\obj\mprSsl.obj
+DEPS_59 = $(DEPS_59) build\$(CONFIG)\bin\libmpr.dll
+!IF "$(ME_COM_EST)" == "1"
+DEPS_59 = $(DEPS_59) build\$(CONFIG)\bin\libest.dll
+!ENDIF
+DEPS_59 = $(DEPS_59) build\$(CONFIG)\obj\mprSsl.obj
 
-build\$(CONFIG)\bin\libmprssl.dll: $(DEPS_55)
+build\$(CONFIG)\bin\libmprssl.dll: $(DEPS_59)
 	@echo ..... [Link] build\$(CONFIG)\bin\libmprssl.dll
 	"lib.exe" -nologo -out:$(BUILD)\bin\libmprssl.dll "$(BUILD)\obj\mprSsl.obj" $(LOG)
 

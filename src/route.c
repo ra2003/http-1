@@ -2654,7 +2654,8 @@ static void addUniqueItem(MprList *list, HttpRouteOp *op)
     assert(op);
 
     if (!opPresent(list, op)) {
-        mprAddItem(list, op);
+        index = smatch(op->name, "secure") ? 0 : list->length;
+        mprInsertItemAtPos(list, index, op);
     }
 }
 

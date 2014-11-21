@@ -372,7 +372,7 @@ PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ev
     MprBuf      *buf;
     MprTime     now;
     char        *cp;
-    int         client, sessionSeqno;
+    int         client, sessionSeqno, gotColon;
 
     assert(trace);
     assert(event);
@@ -399,11 +399,14 @@ PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ev
     }
     if (values) {
         mprPutCharToBuf(buf, ' ');
+        gotColon = 0;
         for (cp = (char*) values; *cp; cp++) {
-            if (cp[0] == ':') {
+            if (cp[0] == ':' && !gotColon) {
                 cp[0] = '=';
+                gotColon = 1;
             } else if (cp[0] == ',') {
                 cp[0] = ' ';
+                gotColon = 0;
             }
         }
         mprPutStringToBuf(buf, values);

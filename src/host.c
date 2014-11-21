@@ -191,10 +191,6 @@ static void printRoute(HttpRoute *route, int next, bool full)
                 printf("    Handler:      %s\n", handler->name);
             }
         }
-#if UNUSED
-        printf("    Next Group    %d\n", route->nextGroup);
-#endif
-
     } else {
         printf("%-18s %-12s %-8s %-46s %-14s\n", route->name, methods ? methods : "*", 
             auth->type ? auth->type->name : "none", pattern, target);

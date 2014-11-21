@@ -2288,7 +2288,7 @@ static int secureCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     int64       age;
 
     assert(conn);
-    if (op->details && op->details) {
+    if (op->flags & HTTP_ROUTE_STRICT_TLS) {
         /* Negative age means subDomains == true */
         age = stoi(op->details);
         if (age < 0) {

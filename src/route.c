@@ -2513,6 +2513,8 @@ PUBLIC HttpRoute *httpAddRestfulRoute(HttpRoute *parent, cchar *uprefix, cchar *
 
 PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *uprefix, cchar *resource)
 {
+    /* Delete is a POST method alternative to remove */
+    httpAddRestfulRoute(parent, uprefix, "delete",    "POST",    "/{id=[0-9]+}/delete$",        "delete",          resource);
     httpAddRestfulRoute(parent, uprefix, "create",    "POST",    "(/)*$",                       "create",          resource);
     httpAddRestfulRoute(parent, uprefix, "edit",      "GET",     "/{id=[0-9]+}/edit$",          "edit",            resource);
     httpAddRestfulRoute(parent, uprefix, "get",       "GET",     "/{id=[0-9]+}$",               "get",             resource);
@@ -2527,6 +2529,8 @@ PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *uprefix, cchar *resou
 
 PUBLIC void httpAddResource(HttpRoute *parent, cchar *uprefix, cchar *resource)
 {
+    /* Delete is a POST method alternative to remove */
+    httpAddRestfulRoute(parent, uprefix, "delete",    "POST",    "/delete$",       "delete",     resource);
     httpAddRestfulRoute(parent, uprefix, "create",    "POST",    "(/)*$",          "create",     resource);
     httpAddRestfulRoute(parent, uprefix, "edit",      "GET",     "/edit$",         "edit",       resource);
     httpAddRestfulRoute(parent, uprefix, "get",       "GET",     "(/)*$",          "get",        resource);

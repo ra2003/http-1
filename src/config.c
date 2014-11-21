@@ -435,28 +435,22 @@ static void parseAuthStore(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseAuthType(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    if (httpSetAuthType(route->auth, prop->value, 0) < 0) {
-        httpParseError(route, "The %s AuthType is not available on this platform", prop->value);
-    }
-    if (smatch(prop->value, "basic") || smatch(prop->value, "digest")) {
-        /*
-            These are implemented by the browser, so we can use a global auth-condition
-         */
-        httpAddRouteCondition(route, "auth", 0, 0);
+    HttpAuth    *auth;
+    cchar       *type;
 
-#if DEPRECATED || 1
-    } else if (smatch(prop->value, "form")) {
-        /* Undocumented */
-        MprJson *parent;
-        cchar *auth, *loginForm, *loginService, *logoutService, *loggedInPage;
-        auth = mprTrimPathExt(key);
-        parent = mprGetJsonObj(route->config, auth);
-        loginForm = mprGetJson(parent, "loginForm");
-        loginService = mprGetJson(parent, "loginService");
-        logoutService = mprGetJson(parent, "logoutService");
-        loggedInPage = mprGetJson(parent, "loggedInPage");
-        httpSetAuthForm(route, loginForm, loginService, logoutService, loggedInPage);
-#endif
+    auth = route->auth;
+    type = prop->value;
+
+    if (httpSetAuthType(auth, type, 0) < 0) {
+        httpParseError(route, "The %s AuthType is not available on this platform", type);
+    }
+    httpAddRouteCondition(route, "auth", 0, 0);
+
+    if (smatch(type, "basic") || smatch(type, "digest")) {
+        /*
+            Must not use cookies by default, otherwise, the client cannot logoff.
+         */
+        httpSetAuthSession(auth, 0);
     }
 }
 
@@ -473,6 +467,9 @@ static void parseAuthUsers(HttpRoute *route, cchar *key, MprJson *prop)
         if (httpAddUser(route->auth, child->name, password, roles) < 0) {
             httpParseError(route, "Cannot add user %s", child->name);
             break;
+        }
+        if (!route->auth->store) {
+            httpSetAuthStore(route->auth, "config");
         }
     }
 }
@@ -881,6 +878,12 @@ static void parseMode(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseName(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpSetRouteName(route, prop->value);
+}
+
+
 /*
     Match route only if param matches
  */
@@ -986,11 +989,11 @@ static void createRedirectAlias(HttpRoute *route, int status, cchar *from, cchar
         pattern = sfmt("^%s%s(?:/)*(.*)$", route->prefix, from);
     }
     alias = httpCreateAliasRoute(route, pattern, 0, 0);
-    httpSetRouteName(alias, sfmt("redirect-%s", route->name));
+    httpSetRouteName(alias, "redirect");
     httpSetRouteMethods(alias, "*");
     httpSetRouteTarget(alias, "redirect", sfmt("%d %s/$1", status, to));
     if (sstarts(to, "https")) {
-        httpAddRouteCondition(alias, "secure", 0, HTTP_ROUTE_NOT);
+        httpAddRouteCondition(alias, "secure", to, HTTP_ROUTE_REDIRECT);
     }
     httpFinalizeRoute(alias);
 }
@@ -1003,7 +1006,11 @@ static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     if (prop->type & MPR_JSON_STRING) {
-        createRedirectAlias(route, 0, "/", prop->value);
+        if (smatch(prop->value, "secure")) {
+            httpAddRouteCondition(route, "secure", "https://", HTTP_ROUTE_REDIRECT);
+        } else {
+            createRedirectAlias(route, 0, "/", prop->value);
+        }
 
     } else {
         for (ITERATE_CONFIG(route, prop, child, ji)) {
@@ -1016,15 +1023,36 @@ static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
                 to = mprGetJson(child, "to");
                 status = mprGetJson(child, "status");
             }
-            createRedirectAlias(route, (int) stoi(status), from, to);
+            if (smatch(child->value, "secure")) {
+                httpAddRouteCondition(route, "secure", "https://", HTTP_ROUTE_REDIRECT);
+            } else {
+                createRedirectAlias(route, (int) stoi(status), from, to);
+            }
         }
     }
 }
 
 
-static void parseRouteName(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseResources(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    httpSetRouteName(route, prop->value);
+    MprJson     *child, *groups, *singletons, *sets;
+    int         ji;
+
+    if ((sets = mprGetJsonObj(prop, "sets")) != 0) {
+        for (ITERATE_CONFIG(route, sets, child, ji)) {
+            httpAddRouteSet(route, child->value);
+        }
+    }
+    if ((groups = mprGetJsonObj(prop, "groups")) != 0) {
+        for (ITERATE_CONFIG(route, groups, child, ji)) {
+            httpAddResourceGroup(route, route->serverPrefix, child->value);
+        }
+    }
+    if ((singletons = mprGetJsonObj(prop, "singletons")) != 0) {
+        for (ITERATE_CONFIG(route, singletons, child, ji)) {
+            httpAddResourceGroup(route, route->serverPrefix, child->value);
+        }
+    }
 }
 
 
@@ -1096,12 +1124,15 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
 
             } else if (child->type & MPR_JSON_OBJ) {
                 newRoute = 0;
-                if ((pattern = mprLookupJson(child, "pattern")) != 0) {
-                   newRoute = httpLookupRouteByPattern(route->host, pattern);
-                }
-                if (!newRoute) {
-                    newRoute = httpCreateInheritedRoute(route);
-                    httpSetRouteHost(newRoute, route->host);
+                pattern = mprLookupJson(child, "pattern");
+                if (pattern) {
+                    newRoute = httpLookupRouteByPattern(route->host, pattern);
+                    if (!newRoute) {
+                        newRoute = httpCreateInheritedRoute(route);
+                        httpSetRouteHost(newRoute, route->host);
+                    }
+                } else {
+                    newRoute = route;
                 }
                 parseAll(newRoute, key, child);
                 if (newRoute->error) {
@@ -1680,6 +1711,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.limits.workers", parseLimitsWorkers);
     httpAddConfig("app.http.methods", parseMethods);
     httpAddConfig("app.http.mode", parseMode);
+    httpAddConfig("app.http.name", parseName);
     httpAddConfig("app.http.params", parseParams);
     httpAddConfig("app.http.pattern", parsePattern);
     httpAddConfig("app.http.pipeline", parseAll);
@@ -1687,7 +1719,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("app.http.pipeline.handlers", parsePipelineHandlers);
     httpAddConfig("app.http.prefix", parsePrefix);
     httpAddConfig("app.http.redirect", parseRedirect);
-    httpAddConfig("app.http.routeName", parseRouteName);
+    httpAddConfig("app.http.resources", parseResources);
     httpAddConfig("app.http.scheme", parseScheme);
 
     httpAddConfig("app.http.server", parseServer);

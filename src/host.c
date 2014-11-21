@@ -134,7 +134,9 @@ PUBLIC HttpRoute *httpGetHostDefaultRoute(HttpHost *host)
 
 static void printRoute(HttpRoute *route, int next, bool full)
 {
+    HttpRouteOp *condition;
     HttpStage   *handler;
+    HttpAuth    *auth;
     MprKey      *kp;
     cchar       *methods, *pattern, *target, *index;
     int         nextIndex;
@@ -142,48 +144,60 @@ static void printRoute(HttpRoute *route, int next, bool full)
     if (route->flags & HTTP_ROUTE_HIDDEN) {
         return;
     }
+    auth = route->auth;
     methods = httpGetRouteMethods(route);
     methods = methods ? methods : "*";
     pattern = (route->pattern && *route->pattern) ? route->pattern : "^/";
     target = (route->target && *route->target) ? route->target : "$&";
     if (full) {
-        mprLog(0, 0, "\n%d. %s\n", next, route->name);
-        mprLog(0, 0, "    Pattern:      %s\n", pattern);
-        mprLog(0, 0, "    StartSegment: %s\n", route->startSegment);
-        mprLog(0, 0, "    StartsWith:   %s\n", route->startWith);
-        mprLog(0, 0, "    RegExp:       %s\n", route->optimizedPattern);
-        mprLog(0, 0, "    Methods:      %s\n", methods);
-        mprLog(0, 0, "    Prefix:       %s\n", route->prefix);
-        mprLog(0, 0, "    Target:       %s\n", target);
-        mprLog(0, 0, "    Home:         %s\n", route->home);
-        mprLog(0, 0, "    Documents:    %s\n", route->documents);
-        mprLog(0, 0, "    Source:       %s\n", route->sourceName);
-        mprLog(0, 0, "    Template:     %s\n", route->tplate);
+        printf("\n Route [%d]. %s\n", next, route->name);
+        printf("    Pattern:      %s\n", pattern);
+        if (route->prefix && *route->prefix) {
+            printf("    RegExp:       %s\n", route->optimizedPattern);
+            printf("    Prefix:       %s\n", route->prefix);
+        }
+        printf("    Methods:      %s\n", methods);
+        printf("    Target:       %s\n", target);
+        printf("    Auth:         %s\n", auth->type ? auth->type->name : "-");
+        printf("    Home:         %s\n", route->home);
+        printf("    Documents:    %s\n", route->documents);
+        if (route->sourceName) {
+            printf("    Source:       %s\n", route->sourceName);
+        }
+        if (route->tplate) {
+            printf("    Template:     %s\n", route->tplate);
+        }
         if (route->indexes) {
-            mprLog(0, 0, "    Indexes       ");
             for (ITERATE_ITEMS(route->indexes, index, nextIndex)) {
-                mprLog(0, 0, "%s ", index);
+                printf("    Indexes:      %s \n", index);
             }
         }
-        mprLog(0, 0, "\n    Next Group    %d\n", route->nextGroup);
+        if (route->conditions) {
+            for (next = 0; (condition = mprGetNextItem(route->conditions, &next)) != 0; ) {
+                printf("    Condition:    %s %s\n", condition->name, condition->details ? condition->details : "");
+            }
+        }
         if (route->handler) {
-            mprLog(0, 0, "    Handler:      %s\n", route->handler->name);
+            printf("    Handler:      %s\n", route->handler->name);
         }
-        if (full) {
-            if (route->extensions) {
-                for (ITERATE_KEYS(route->extensions, kp)) {
-                    handler = (HttpStage*) kp->data;
-                    mprLog(0, 0, "    Extension:    %s => %s\n", kp->key, handler->name);
-                }
-            }
-            if (route->handlers) {
-                for (ITERATE_ITEMS(route->handlers, handler, nextIndex)) {
-                    mprLog(0, 0, "    Handler:      %s\n", handler->name);
-                }
+        if (route->extensions) {
+            for (ITERATE_KEYS(route->extensions, kp)) {
+                handler = (HttpStage*) kp->data;
+                printf("    Extension:    \"%s\" => %s\n", kp->key, handler->name);
             }
         }
+        if (route->handlers) {
+            for (ITERATE_ITEMS(route->handlers, handler, nextIndex)) {
+                printf("    Handler:      %s\n", handler->name);
+            }
+        }
+#if UNUSED
+        printf("    Next Group    %d\n", route->nextGroup);
+#endif
+
     } else {
-        mprLog(0, 0, "%-34s %-22s %-50s %-14s", route->name, methods ? methods : "*", pattern, target);
+        printf("%-18s %-12s %-8s %-46s %-14s\n", route->name, methods ? methods : "*", 
+            auth->type ? auth->type->name : "none", pattern, target);
     }
 }
 
@@ -196,8 +210,9 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
     if (!host) {
         host = httpGetDefaultHost();
     }
+    printf("\n");
     if (!full) {
-        mprLog(0, 0, "%-34s %-22s %-50s %-14s", "Name", "Methods", "Pattern", "Target");
+        printf("%-18s %-12s %-8s %-46s %-14s\n", "Route Name", "Methods", "Auth", "Pattern", "Target");
     }
     for (foundDefault = next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
         printRoute(route, next - 1, full);
@@ -211,6 +226,7 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
     if (!foundDefault && host->defaultRoute) {
         printRoute(host->defaultRoute, next - 1, full);
     }
+    printf("\n");
 }
 
 

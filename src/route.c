@@ -651,6 +651,9 @@ static int selectHandler(HttpConn *conn, HttpRoute *route)
          */
         tx->handler = conn->http->passHandler;
     }
+    if (tx->finalized) {
+        tx->handler = conn->http->passHandler;
+    }
     return tx->handler ? HTTP_ROUTE_OK : HTTP_ROUTE_REJECT;
 }
 
@@ -769,6 +772,9 @@ PUBLIC int httpAddRouteCondition(HttpRoute *route, cchar *name, cchar *details, 
         op->flags |= HTTP_ROUTE_FREE;
 
     } else if (scaselessmatch(name, "secure")) {
+        if (!details || *details == '\0') {
+            mprLog("error http config", 0, "Secure route condition is missing a redirect target in route \"%s\"", route->name);
+        }
         op->details = finalizeReplacement(route, details);
     }
     addUniqueItem(route->conditions, op);

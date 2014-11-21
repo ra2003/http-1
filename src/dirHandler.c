@@ -72,7 +72,12 @@ static void startDir(HttpQueue *q)
     conn = q->conn;
     rx = conn->rx;
     tx = conn->tx;
-    dir = conn->reqData;
+    if ((dir = conn->reqData) == 0) {
+        if (!httpRenderDirListing(conn)) {
+            httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot get directory listing");
+            return;
+        }
+    }
     assert(tx->filename);
 
     if (!(rx->flags & (HTTP_GET | HTTP_HEAD))) {

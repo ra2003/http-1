@@ -523,10 +523,15 @@ PUBLIC void httpAddStage(HttpStage *stage)
 
 PUBLIC HttpStage *httpLookupStage(cchar *name)
 {
+    HttpStage   *stage;
+
     if (!HTTP) {
         return 0;
     }
-    return mprLookupKey(HTTP->stages, name);
+    if ((stage = mprLookupKey(HTTP->stages, name)) == 0 || stage->flags & HTTP_STAGE_INTERNAL) {
+        return 0;
+    }
+    return stage;
 }
 
 

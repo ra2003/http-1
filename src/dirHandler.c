@@ -73,10 +73,8 @@ static void startDir(HttpQueue *q)
     rx = conn->rx;
     tx = conn->tx;
     if ((dir = conn->reqData) == 0) {
-        if (!httpRenderDirListing(conn)) {
-            httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot get directory listing");
-            return;
-        }
+        httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot get directory listing");
+        return;
     }
     assert(tx->filename);
 
@@ -619,6 +617,7 @@ PUBLIC int httpOpenDirHandler()
     if ((handler->stageData = dir = mprAllocObj(HttpDir, manageDir)) == 0) {
         return MPR_ERR_MEMORY;
     }
+    handler->flags |= HTTP_STAGE_INTERNAL;
     handler->start = startDir; 
     HTTP->dirHandler = handler;
     dir->sortOrder = 1;

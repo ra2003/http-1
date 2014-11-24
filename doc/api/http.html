@@ -528,8 +528,8 @@
 <tr class="apiDef"><td class="apiType"><a href="osdep.html#osdep_8h_1a7d08ccc1e981eb4d5a238641ac4ccfc1" class="ref">ssize</a></td><td><a href="#group___http_cache_1ga2fd7b63c7f3834cd41260a22983cd932" class="nameRef">httpUpdateCache</a>(<a href="#group___http_conn" class="ref">HttpConn</a> *conn, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *data, <a href="mpr.html#mpr_8h_1adbceeccda24c35e7b4c6090db7065319" class="ref">MprTicks</a> lifespan)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Update the cached content for a URI.</td></tr>
 <tr class="apiDef"><td class="apiType">int</td><td><a href="#group___http_web_socket_1ga3456efbc36a0e27b3dde28462ef88d90" class="nameRef">httpUpgradeWebSocket</a>(<a href="#group___http_conn" class="ref">HttpConn</a> *conn)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Upgrade a client HTTP connection connection to use WebSockets.</td></tr>
 <tr class="apiDef"><td class="apiType">char*</td><td><a href="#group___http_uri_1ga9ea785faccf155c6bd3b2650d5245d11" class="nameRef">httpUriToString</a>(<a href="#group___http_uri" class="ref">HttpUri</a> *uri, int flags)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Convert a Uri to a string.</td></tr>
-<tr class="apiDef"><td class="apiType"><a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a></td><td><a href="#http_8h_1aeafb10159cd76d10d21bc590bc76db3a" class="nameRef">httpValidUriChars</a>(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Test if a URI is using only valid characters Note this does not test if the URI is fully legal.</td></tr>
-<tr class="apiDef"><td class="apiType">char*</td><td><a href="#http_8h_1aedd850692dddad7cc112b34d844b4ac2" class="nameRef">httpValidateUriPath</a>(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Validate a URI path as expected in a HTTP request line.</td></tr>
+<tr class="apiDef"><td class="apiType"><a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a></td><td><a href="#group___http_uri_1gaeafb10159cd76d10d21bc590bc76db3a" class="nameRef">httpValidUriChars</a>(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Test if a URI is using only valid characters Note this does not test if the URI is fully legal.</td></tr>
+<tr class="apiDef"><td class="apiType">char*</td><td><a href="#group___http_uri_1gaedd850692dddad7cc112b34d844b4ac2" class="nameRef">httpValidateUriPath</a>(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Validate a URI path as expected in a HTTP request line.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a></td><td><a href="#group___http_conn_1ga8edf2556f7d44f12e505ede6dabafe53" class="nameRef">httpVerifyWebSocketsHandshake</a>(<a href="#group___http_conn" class="ref">HttpConn</a> *conn)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Verify the server handshake.</td></tr>
 <tr class="apiDef"><td class="apiType">int</td><td><a href="#group___http_tx_1ga41b659331b27770caefc4a2920f0aad8" class="nameRef">httpWait</a>(<a href="#group___http_conn" class="ref">HttpConn</a> *conn, int state, <a href="mpr.html#mpr_8h_1adbceeccda24c35e7b4c6090db7065319" class="ref">MprTicks</a> timeout)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Wait for the client connection to achieve the requested state.</td></tr>
 <tr class="apiDef"><td class="apiType"><a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a></td><td><a href="#group___http_web_socket_1gacb7184072bfb15ebf2c95f9ef6d0ba8c" class="nameRef">httpWebSocketOrderlyClosed</a>(<a href="#group___http_conn" class="ref">HttpConn</a> *conn)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Test if WebSocket connection was orderly closed by sending an acknowledged close message.</td></tr>
@@ -12620,7 +12620,7 @@ This call will return the mime type from a limited internal set of mime types fo
     <table class="parameters" title="Parameters">
     <tr><td class="param">uri</td><td>URI object to normalize.</td>
     </table></dd></dl>
-    <dl><dt>Returns:</dt><dd>The supplied uri so it can be used in chaining.</dd></dl>
+    <dl><dt>Returns:</dt><dd>The supplied uri so it can be used in chaining. Returns null if the URI cannot be normalized.</dd></dl>
     <dl><dt><b>API</b> Stability:</dt><dd>Stable.</dd></dl>
     <dl><dt>See Also:</dt><dd>
     <a href="#group___http_conn" class="ref">HttpConn</a>, <a href="#group___http_uri_1gadd399e69d65d719663f7f9b51933c521" class="ref">httpCloneUri</a>, <a href="#group___http_uri_1ga87cace641a89a7bc7675e650d9e17640" class="ref">httpCompleteUri</a>, <a href="#group___http_uri_1ga3def4a0e93965e1fac2c38e6e5272081" class="ref">httpCreateUri</a>, <a href="#group___http_uri_1gadcc4702f652977af0efb6abceb17566b" class="ref">httpCreateUriFromParts</a>, <a href="#group___http_uri_1ga1c87f3e7e694435939d05e5a112e56fd" class="ref">httpFormatUri</a>, <a href="#group___http_uri_1ga8932b843125d3ba77523ee407f71089f" class="ref">httpGetRelativeUri</a>, <a href="#group___http_uri_1ga7336eda33f8949dc4f552cc5e4ab606c" class="ref">httpJoinUri</a>, <a href="#group___http_uri_1gaa591d6219b0eaa3d61a83770dd604fce" class="ref">httpJoinUriPath</a>, <a href="#group___http_uri_1gaf7793eaed546ea5d187691db728f1703" class="ref">httpLookupMimeType</a>, <a href="#group___http_uri_1ga76afee77d12a6c52896af0ea658c301d" class="ref">httpMakeUriLocal</a>, <a href="#group___http_uri_1ga662c0fad256c2517e276758efb1bb04d" class="ref">httpNormalizeUriPath</a>, <a href="#group___http_uri_1ga53a807f2a2750df3f88d4f4b2ac89fa2" class="ref">httpResolveUri</a>, <a href="#group___http_uri_1ga9ea785faccf155c6bd3b2650d5245d11" class="ref">httpUriToString</a></dd></dl>
@@ -12640,7 +12640,7 @@ This call will return the mime type from a limited internal set of mime types fo
     <table class="parameters" title="Parameters">
     <tr><td class="param">uri</td><td>Uri path string to normalize. This is the URI path portion without scheme, host and port components.</td>
     </table></dd></dl>
-    <dl><dt>Returns:</dt><dd>A new validated uri string.</dd></dl>
+    <dl><dt>Returns:</dt><dd>A new validated uri string. Returns null if the URI cannot be normalized.</dd></dl>
     <dl><dt><b>API</b> Stability:</dt><dd>Stable.</dd></dl>
     <dl><dt>See Also:</dt><dd>
     <a href="#group___http_conn" class="ref">HttpConn</a>, <a href="#group___http_uri_1gadd399e69d65d719663f7f9b51933c521" class="ref">httpCloneUri</a>, <a href="#group___http_uri_1ga87cace641a89a7bc7675e650d9e17640" class="ref">httpCompleteUri</a>, <a href="#group___http_uri_1ga3def4a0e93965e1fac2c38e6e5272081" class="ref">httpCreateUri</a>, <a href="#group___http_uri_1gadcc4702f652977af0efb6abceb17566b" class="ref">httpCreateUriFromParts</a>, <a href="#group___http_uri_1ga1c87f3e7e694435939d05e5a112e56fd" class="ref">httpFormatUri</a>, <a href="#group___http_uri_1ga8932b843125d3ba77523ee407f71089f" class="ref">httpGetRelativeUri</a>, <a href="#group___http_uri_1ga7336eda33f8949dc4f552cc5e4ab606c" class="ref">httpJoinUri</a>, <a href="#group___http_uri_1gaa591d6219b0eaa3d61a83770dd604fce" class="ref">httpJoinUriPath</a>, <a href="#group___http_uri_1gaf7793eaed546ea5d187691db728f1703" class="ref">httpLookupMimeType</a>, <a href="#group___http_uri_1ga76afee77d12a6c52896af0ea658c301d" class="ref">httpMakeUriLocal</a>, <a href="#group___http_uri_1ga53a807f2a2750df3f88d4f4b2ac89fa2" class="ref">httpResolveUri</a>, <a href="#group___http_uri_1ga9ea785faccf155c6bd3b2650d5245d11" class="ref">httpUriToString</a></dd></dl>
@@ -12686,6 +12686,45 @@ This call will return the mime type from a limited internal set of mime types fo
     <dl><dt><b>API</b> Stability:</dt><dd>Stable.</dd></dl>
     <dl><dt>See Also:</dt><dd>
     <a href="#group___http_conn" class="ref">HttpConn</a>, <a href="#group___http_uri_1gadd399e69d65d719663f7f9b51933c521" class="ref">httpCloneUri</a>, <a href="#group___http_uri_1ga87cace641a89a7bc7675e650d9e17640" class="ref">httpCompleteUri</a>, <a href="#group___http_uri_1ga3def4a0e93965e1fac2c38e6e5272081" class="ref">httpCreateUri</a>, <a href="#group___http_uri_1gadcc4702f652977af0efb6abceb17566b" class="ref">httpCreateUriFromParts</a>, <a href="#group___http_uri_1ga1c87f3e7e694435939d05e5a112e56fd" class="ref">httpFormatUri</a>, <a href="#group___http_uri_1ga8932b843125d3ba77523ee407f71089f" class="ref">httpGetRelativeUri</a>, <a href="#group___http_uri_1ga7336eda33f8949dc4f552cc5e4ab606c" class="ref">httpJoinUri</a>, <a href="#group___http_uri_1gaa591d6219b0eaa3d61a83770dd604fce" class="ref">httpJoinUriPath</a>, <a href="#group___http_uri_1gaf7793eaed546ea5d187691db728f1703" class="ref">httpLookupMimeType</a>, <a href="#group___http_uri_1ga76afee77d12a6c52896af0ea658c301d" class="ref">httpMakeUriLocal</a>, <a href="#group___http_uri_1ga662c0fad256c2517e276758efb1bb04d" class="ref">httpNormalizeUriPath</a>, <a href="#group___http_uri_1ga53a807f2a2750df3f88d4f4b2ac89fa2" class="ref">httpResolveUri</a></dd></dl>
+  </div>
+</div>
+<a name="group___http_uri_1gaedd850692dddad7cc112b34d844b4ac2"></a>
+<div class="api">
+  <div class="prototype">
+    char *
+    httpValidateUriPath
+(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri)
+  </div>
+  <div class="apiDetail">
+<p>Validate a URI path as expected in a HTTP request line.</p>
+    <dl><dt><b>Description</b>:</dt><dd>This expects a URI beginning with &quot;/&quot; and containing only valid URI characters. The URI is decoded, and normalized removing &quot;../&quot; and &quot;.&quot; segments. The URI must begin with a &quot;/&quot; both before and after decoding and normalization.</dd></dl>
+    <dl><dt>Parameters:</dt><dd>
+    <table class="parameters" title="Parameters">
+    <tr><td class="param">uri</td><td>URI to validate.</td>
+    </table></dd></dl>
+    <dl><dt>Returns:</dt><dd>A validated, normalized URI path.</dd></dl>
+    <dl><dt><b>API</b> Stability:</dt><dd>Evolving.</dd></dl>
+    <dl><dt>See Also:</dt><dd>
+    <a href="#group___http_conn" class="ref">HttpConn</a>, <a href="#group___http_uri_1gadd399e69d65d719663f7f9b51933c521" class="ref">httpCloneUri</a>, <a href="#group___http_uri_1ga87cace641a89a7bc7675e650d9e17640" class="ref">httpCompleteUri</a>, <a href="#group___http_uri_1ga3def4a0e93965e1fac2c38e6e5272081" class="ref">httpCreateUri</a>, <a href="#group___http_uri_1gadcc4702f652977af0efb6abceb17566b" class="ref">httpCreateUriFromParts</a>, <a href="#group___http_uri_1ga1c87f3e7e694435939d05e5a112e56fd" class="ref">httpFormatUri</a>, <a href="#group___http_uri_1ga8932b843125d3ba77523ee407f71089f" class="ref">httpGetRelativeUri</a>, <a href="#group___http_uri_1ga7336eda33f8949dc4f552cc5e4ab606c" class="ref">httpJoinUri</a>, <a href="#group___http_uri_1gaa591d6219b0eaa3d61a83770dd604fce" class="ref">httpJoinUriPath</a>, <a href="#group___http_uri_1gaf7793eaed546ea5d187691db728f1703" class="ref">httpLookupMimeType</a>, <a href="#group___http_uri_1ga76afee77d12a6c52896af0ea658c301d" class="ref">httpMakeUriLocal</a>, <a href="#group___http_uri_1ga662c0fad256c2517e276758efb1bb04d" class="ref">httpNormalizeUriPath</a>, <a href="#group___http_uri_1ga53a807f2a2750df3f88d4f4b2ac89fa2" class="ref">httpResolveUri</a>, <a href="#group___http_uri_1ga9ea785faccf155c6bd3b2650d5245d11" class="ref">httpUriToString</a></dd></dl>
+  </div>
+</div>
+<a name="group___http_uri_1gaeafb10159cd76d10d21bc590bc76db3a"></a>
+<div class="api">
+  <div class="prototype">
+    <a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a>
+    httpValidUriChars
+(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri)
+  </div>
+  <div class="apiDetail">
+<p>Test if a URI is using only valid characters Note this does not test if the URI is fully legal.</p>
+Some components of the URI have restricted character sets that this routine does not test. This tests if the URI has only characters valid to use in a URI before decoding. i.e. It will permit NN encodings. The set of valid characters is: &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&amp;&apos;()*+,;=%&quot;
+    <dl><dt>Parameters:</dt><dd>
+    <table class="parameters" title="Parameters">
+    <tr><td class="param">uri</td><td>Uri to test.</td>
+    </table></dd></dl>
+    <dl><dt>Returns:</dt><dd>True if the URI string is comprised of legal URI characters.</dd></dl>
+    <dl><dt>See Also:</dt><dd>
+    <a href="#group___http_conn" class="ref">HttpConn</a>, <a href="#group___http_uri_1gadd399e69d65d719663f7f9b51933c521" class="ref">httpCloneUri</a>, <a href="#group___http_uri_1ga87cace641a89a7bc7675e650d9e17640" class="ref">httpCompleteUri</a>, <a href="#group___http_uri_1ga3def4a0e93965e1fac2c38e6e5272081" class="ref">httpCreateUri</a>, <a href="#group___http_uri_1gadcc4702f652977af0efb6abceb17566b" class="ref">httpCreateUriFromParts</a>, <a href="#group___http_uri_1ga1c87f3e7e694435939d05e5a112e56fd" class="ref">httpFormatUri</a>, <a href="#group___http_uri_1ga8932b843125d3ba77523ee407f71089f" class="ref">httpGetRelativeUri</a>, <a href="#group___http_uri_1ga7336eda33f8949dc4f552cc5e4ab606c" class="ref">httpJoinUri</a>, <a href="#group___http_uri_1gaa591d6219b0eaa3d61a83770dd604fce" class="ref">httpJoinUriPath</a>, <a href="#group___http_uri_1gaf7793eaed546ea5d187691db728f1703" class="ref">httpLookupMimeType</a>, <a href="#group___http_uri_1ga76afee77d12a6c52896af0ea658c301d" class="ref">httpMakeUriLocal</a>, <a href="#group___http_uri_1ga662c0fad256c2517e276758efb1bb04d" class="ref">httpNormalizeUriPath</a>, <a href="#group___http_uri_1ga53a807f2a2750df3f88d4f4b2ac89fa2" class="ref">httpResolveUri</a>, <a href="#group___http_uri_1ga9ea785faccf155c6bd3b2650d5245d11" class="ref">httpUriToString</a></dd></dl>
   </div>
 </div>
 <h1>HttpWebSocket</h1>
@@ -13183,41 +13222,6 @@ Most useful to set the Tx.filename and pass to the fileHandler
     <tr><td class="param">handler</td><td>Handler to set.</td>
     </table></dd></dl>
     <dl><dt><b>API</b> Stability:</dt><dd>Stable.</dd></dl>
-  </div>
-</div>
-<a name="http_8h_1aedd850692dddad7cc112b34d844b4ac2"></a>
-<div class="api">
-  <div class="prototype">
-    char *
-    httpValidateUriPath
-(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri)
-  </div>
-  <div class="apiDetail">
-<p>Validate a URI path as expected in a HTTP request line.</p>
-    <dl><dt><b>Description</b>:</dt><dd>This expects a URI beginning with &quot;/&quot; and containing only valid URI characters. The URI is decoded, and normalized removing &quot;../&quot; and &quot;.&quot; segments. The URI must begin with a &quot;/&quot; both before and after decoding and normalization.</dd></dl>
-    <dl><dt>Parameters:</dt><dd>
-    <table class="parameters" title="Parameters">
-    <tr><td class="param">uri</td><td>URI to validate.</td>
-    </table></dd></dl>
-    <dl><dt>Returns:</dt><dd>A validated, normalized URI path.</dd></dl>
-    <dl><dt><b>API</b> Stability:</dt><dd>Evolving.</dd></dl>
-  </div>
-</div>
-<a name="http_8h_1aeafb10159cd76d10d21bc590bc76db3a"></a>
-<div class="api">
-  <div class="prototype">
-    <a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a>
-    httpValidUriChars
-(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri)
-  </div>
-  <div class="apiDetail">
-<p>Test if a URI is using only valid characters Note this does not test if the URI is fully legal.</p>
-Some components of the URI have restricted character sets that this routine does not test. This tests if the URI has only characters valid to use in a URI before decoding. i.e. It will permit NN encodings. The set of valid characters is: &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&amp;&apos;()*+,;=%&quot;
-    <dl><dt>Parameters:</dt><dd>
-    <table class="parameters" title="Parameters">
-    <tr><td class="param">uri</td><td>Uri to test.</td>
-    </table></dd></dl>
-    <dl><dt>Returns:</dt><dd>True if the URI string is comprised of legal URI characters.</dd></dl>
   </div>
 </div>
 <h2>Typedefs</h2>

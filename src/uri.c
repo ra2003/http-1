@@ -429,8 +429,9 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
     if (getPort(base) != getPort(target)) {
         return (clone) ? httpCloneUri(target, 0) : target;
     }
-    basePath = httpNormalizeUriPath(base->path);
-
+    if ((basePath = httpNormalizeUriPath(base->path)) == 0) {
+        return 0;
+    }
     /* Count trailing "/" */
     for (baseSegments = 0, bp = basePath; *bp; bp++) {
         if (*bp == '/') {
@@ -612,7 +613,7 @@ PUBLIC char *httpNormalizeUriPath(cchar *pathArg)
                     nseg--;
                 }
             } else {
-                /* ..more-chars */
+                /* .more-chars */
                 segments[j] = segments[i];
             }
         } else {
@@ -831,8 +832,10 @@ PUBLIC char *httpValidateUriPath(cchar *uri)
         return 0;
     }
     up = mprUriDecode(uri);
-    up = httpNormalizeUriPath(up);
-    if (*up != '/') {
+    if ((up = httpNormalizeUriPath(up)) == 0) {
+        return 0;
+    }
+    if (*up != '/' || strchr(up, '\\')) {
         return 0;
     }
     return up;

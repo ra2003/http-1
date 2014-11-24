@@ -370,7 +370,7 @@ static void parseAuthRequireRoles(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        httpSetAuthRequiredAbilities(route->auth, prop->value);
+        httpSetAuthRequiredAbilities(route->auth, child->value);
     }
 }
 

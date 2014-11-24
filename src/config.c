@@ -1034,6 +1034,9 @@ static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+/*
+    Create RESTful routes
+ */
 static void parseResources(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child, *groups, *singletons, *sets;
@@ -1051,7 +1054,7 @@ static void parseResources(HttpRoute *route, cchar *key, MprJson *prop)
     }
     if ((singletons = mprGetJsonObj(prop, "singletons")) != 0) {
         for (ITERATE_CONFIG(route, singletons, child, ji)) {
-            httpAddResourceGroup(route, route->serverPrefix, child->value);
+            httpAddResource(route, route->serverPrefix, child->value);
         }
     }
 }

@@ -444,8 +444,9 @@ static void parseAuthType(HttpRoute *route, cchar *key, MprJson *prop)
     if (httpSetAuthType(auth, type, 0) < 0) {
         httpParseError(route, "The %s AuthType is not available on this platform", type);
     }
-    httpAddRouteCondition(route, "auth", 0, 0);
-
+    if (type && !smatch(type, "none")) {
+        httpAddRouteCondition(route, "auth", 0, 0);
+    }
     if (smatch(type, "basic") || smatch(type, "digest")) {
         /*
             Must not use cookies by default, otherwise, the client cannot logoff.

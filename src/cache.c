@@ -527,7 +527,7 @@ static cchar *setHeadersFromCache(HttpConn *conn, cchar *content)
         headers = snclone(content, data - content);
         data += 2;
         for (header = stok(headers, "\n", &tok); header; header = stok(NULL, "\n", &tok)) {
-            key = stok(header, ": ", &value);
+            key = ssplit(header, ": ", &value);
             if (smatch(key, "X-Status")) {
                 conn->tx->status = (int) stoi(value);
             } else {

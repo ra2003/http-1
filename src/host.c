@@ -388,7 +388,7 @@ PUBLIC bool httpGetStreaming(HttpHost *host, cchar *mime, cchar *uri)
     assert(host->streams);
 
     if (schr(mime, ';')) {
-        mime = stok(sclone(mime), ";", 0);
+        mime = ssplit(sclone(mime), ";", 0);
     }
     if ((kp = mprLookupKeyEntry(host->streams, mime)) != 0) {
         if (kp->data == NULL || sstarts(uri, kp->data)) {

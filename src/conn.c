@@ -770,7 +770,7 @@ PUBLIC void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password,
 
     httpResetCredentials(conn);
     if (password == NULL && strchr(username, ':') != 0) {
-        conn->username = stok(sclone(username), ":", &ptok);
+        conn->username = ssplit(sclone(username), ":", &ptok);
         conn->password = sclone(ptok);
     } else {
         conn->username = sclone(username);

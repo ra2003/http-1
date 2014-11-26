@@ -427,7 +427,7 @@ PUBLIC int httpAddDefense(cchar *name, cchar *remedy, cchar *remedyArgs)
     args = mprCreateHash(0, MPR_HASH_STABLE);
     list = stolist(remedyArgs);
     for (ITERATE_ITEMS(list, arg, next)) {
-        key = stok(arg, "=", &value);
+        key = ssplit(arg, "=", &value);
         mprAddKey(args, key, strim(value, "\"'", 0));
     }
     if (!remedy) {
@@ -556,7 +556,7 @@ static void cmdRemedy(MprHash *args)
     command = sclone(mprLookupKey(args, "CMD"));
     data = 0;
     if (scontains(command, "|")) {
-        data = stok(command, "|", &command);
+        data = ssplit(command, "|", &command);
         data = stemplate(data, args);
     }
     command = strim(command, " \t", MPR_TRIM_BOTH);

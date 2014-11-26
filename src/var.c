@@ -85,11 +85,11 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         params = httpGetParams(conn);
         assert(params);
         for (ITERATE_ITEMS(rx->files, file, index)) {
-            mprSetJson(params, sfmt("FILE_%d_FILENAME", index), file->filename);
-            mprSetJson(params, sfmt("FILE_%d_CLIENT_FILENAME", index), file->clientFilename);
-            mprSetJson(params, sfmt("FILE_%d_CONTENT_TYPE", index), file->contentType);
-            mprSetJson(params, sfmt("FILE_%d_NAME", index), file->name);
-            mprSetJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%zd", file->size));
+            mprWriteJson(params, sfmt("FILE_%d_FILENAME", index), file->filename);
+            mprWriteJson(params, sfmt("FILE_%d_CLIENT_FILENAME", index), file->clientFilename);
+            mprWriteJson(params, sfmt("FILE_%d_CONTENT_TYPE", index), file->contentType);
+            mprWriteJson(params, sfmt("FILE_%d_NAME", index), file->name);
+            mprWriteJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%zd", file->size));
         }
     }
     if (conn->http->envCallback) {
@@ -127,7 +127,11 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
             /*
                 Append to existing keywords
              */
-            prior = mprLookupJsonObj(params, keyword);
+            prior = mprReadJsonObj(params, keyword);
+#if ME_EJS_PRODUCT
+            /*
+                Just for ejscript, we allow embedded ".[]" in the keys
+             */
             if (prior && prior->type == MPR_JSON_VALUE) {
                 if (*value) {
                     newValue = sjoin(prior->value, " ", value, NULL);
@@ -136,6 +140,16 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
             } else {
                 mprSetJson(params, keyword, value);
             }
+#else
+            if (prior && prior->type == MPR_JSON_VALUE) {
+                if (*value) {
+                    newValue = sjoin(prior->value, " ", value, NULL);
+                    mprWriteJson(params, keyword, newValue);
+                }
+            } else {
+                mprWriteJson(params, keyword, value);
+            }
+#endif
         }
         keyword = stok(0, "&", &tok);
     }
@@ -208,7 +222,7 @@ PUBLIC MprJson *httpGetParams(HttpConn *conn)
 
 PUBLIC int httpTestParam(HttpConn *conn, cchar *var)
 {
-    return mprLookupJsonObj(httpGetParams(conn), var) != 0;
+    return mprReadJsonObj(httpGetParams(conn), var) != 0;
 }
 
 
@@ -216,7 +230,7 @@ PUBLIC cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
 {
     cchar       *value;
 
-    value = mprLookupJson(httpGetParams(conn), var);
+    value = mprReadJson(httpGetParams(conn), var);
     return (value) ? value : defaultValue;
 }
 
@@ -225,7 +239,7 @@ PUBLIC int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
 {
     cchar       *value;
 
-    value = mprLookupJson(httpGetParams(conn), var);
+    value = mprReadJson(httpGetParams(conn), var);
     return (value) ? (int) stoi(value) : defaultValue;
 }
 
@@ -289,13 +303,13 @@ PUBLIC void httpRemoveParam(HttpConn *conn, cchar *var)
 
 PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value) 
 {
-    mprSetJson(httpGetParams(conn), var, value);
+    mprWriteJson(httpGetParams(conn), var, value);
 }
 
 
 PUBLIC void httpSetIntParam(HttpConn *conn, cchar *var, int value) 
 {
-    mprSetJson(httpGetParams(conn), var, sfmt("%d", value));
+    mprWriteJson(httpGetParams(conn), var, sfmt("%d", value));
 }
 
 

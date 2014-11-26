@@ -421,6 +421,9 @@ PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ev
         }
         mprPutToBuf(buf, "----\n");
     }
+    if (!values && !data) {
+        mprPutCharToBuf(buf, '\n');
+    }
     httpWriteTrace(trace, mprGetBufStart(buf), mprGetBufLength(buf));
     unlock(trace);
 }

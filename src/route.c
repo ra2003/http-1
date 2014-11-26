@@ -1951,7 +1951,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
                 if (options && (value = httpGetOption(options, key, 0)) != 0) {
                     mprPutStringToBuf(buf, value);
 
-                } else if ((value = mprLookupJson(rx->params, key)) != 0) {
+                } else if ((value = mprReadJson(rx->params, key)) != 0) {
                     mprPutStringToBuf(buf, value);
                 }
                 if (value == 0) {
@@ -2774,8 +2774,9 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
         if ((key = stok(&tok[2], ".:}", &value)) == 0) {
             continue;
         }
-        stok(value, "}", &cp);
-
+        if ((stok(value, "}", &cp)) == 0) {
+            continue;
+        }
         if (smatch(key, "header")) {
             header = stok(value, "=", &defaultValue);
             if ((value = (char*) httpGetHeader(conn, header)) == 0) {

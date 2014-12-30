@@ -117,7 +117,7 @@ PUBLIC void httpAddHostToEndpoints(HttpHost *host)
     int             next;
 
     if (host == 0) {
-        return;
+        host = httpGetDefaultHost();
     }
     for (next = 0; (endpoint = mprGetNextItem(HTTP->endpoints, &next)) != 0; ) {
         httpAddHostToEndpoint(endpoint, host);

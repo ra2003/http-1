@@ -14,13 +14,19 @@
     index = 0, child = obj ? obj->children: 0; obj && index < obj->length && !route->error; child = child->next, index++
 
 /************************************ Forwards ********************************/
-static void parseAll(HttpRoute *route, cchar *key, MprJson *prop);
+
+static void copyMappings(HttpRoute *route, MprJson *dest, MprJson *obj);
 static void parseAuthRoles(HttpRoute *route, cchar *key, MprJson *prop);
 static void parseAuthStore(HttpRoute *route, cchar *key, MprJson *prop);
-static void postParse(HttpRoute *route);
 static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop);
 
 /************************************** Code **********************************/
+/*
+    Define a configuration callbacks. The key is specified as it is used in json files.
+    When blended the json file is blended into route->config, the json file components will be located under "app" 
+    or elsewhere in the json tree. Consequently, when doing mprGetJson to lookup a specific key, you must use the 
+    "located" key name that typically includes the "app" prefix.
+ */
 
 PUBLIC HttpParseCallback httpAddConfig(cchar *key, HttpParseCallback callback)
 {
@@ -89,51 +95,32 @@ static int getint(cchar *value)
 }
 
 
-static int testConfig(HttpRoute *route, cchar *path)
-{
-    MprPath     cinfo;
-
-    if (mprGetPathInfo(path, &cinfo) == 0) {
-        if (route->config && cinfo.mtime > route->configLoaded) {
-            route->config = 0;
-        }
-        route->configLoaded = cinfo.mtime;
-    }
-    if (route->config) {
-        return 0;
-    }
-    if (!mprPathExists(path, R_OK)) {
-        mprLog("error http config", 0, "Cannot find %s", path);
-        return MPR_ERR_CANT_READ;
-    }
-    return 0;
-}
-
-
 /*
-    Blend the app.modes[app.mode] into app
+    Blend the modes[mode] into app
  */
 static void blendMode(HttpRoute *route, MprJson *config)
 {
-    MprJson     *currentMode, *app;
+    MprJson     *modeObj;
     cchar       *mode;
 
-    mode = mprGetJson(config, "app.mode");
+    mode = mprGetJson(route->config, "mode");
     if (!mode) {
         mode = sclone("debug");
     }
-    route->debug = smatch(mode, "debug");
-    if ((currentMode = mprGetJsonObj(config, sfmt("app.modes.%s", mode))) != 0) {
-        app = mprReadJsonObj(config, "app");
-        mprBlendJson(app, currentMode, MPR_JSON_OVERWRITE);
-        mprSetJson(app, "app.mode", mode);
+    route->mode = mode;
+    if ((route->debug = smatch(mode, "debug")) != 0) {
+        httpSetRouteShowErrors(route, 1);
+        route->keepSource = 1;
+    }
+    if ((modeObj = mprGetJsonObj(config, sfmt("modes.%s", mode))) != 0) {
+        mprBlendJson(config, modeObj, MPR_JSON_OVERWRITE);
     }
 }
 
 
-PUBLIC int parseFile(HttpRoute *route, cchar *path)
+PUBLIC int parseFile(HttpRoute *route, cchar *root, cchar *path)
 {
-    MprJson     *config;
+    MprJson     *config, *obj;
     cchar       *data, *errorMsg;
 
     if ((data = mprReadPathContents(path, NULL)) == 0) {
@@ -144,48 +131,104 @@ PUBLIC int parseFile(HttpRoute *route, cchar *path)
         mprLog("error http config", 0, "Cannot parse %s: error %s", path, errorMsg);
         return MPR_ERR_CANT_READ;
     }
-    if (route->config == 0) {
-        blendMode(route, config);
-        route->config = config;
+    blendMode(route, config);
+    if (root) {
+        if (route->config) {
+            if ((obj = mprGetJsonObj(route->config, root)) == 0) {
+                obj = mprCreateJson(MPR_JSON_OBJ);
+                mprSetJsonObj(route->config, root, obj);
+            }
+        } else {
+            route->config = obj = mprCreateJson(MPR_JSON_OBJ);
+        }
+        mprBlendJson(obj, config, MPR_JSON_COMBINE);
+    } else {
+        if (route->config) {
+            mprBlendJson(route->config, config, MPR_JSON_COMBINE);
+        } else {
+            route->config = config;
+        }
     }
-    parseAll(route, 0, config);
+    httpParseAll(route, 0, config);
     return 0;
 }
 
 
-PUBLIC int httpLoadConfig(HttpRoute *route, cchar *name)
+PUBLIC void httpInitConfig(HttpRoute *route)
 {
-    cchar       *path;
-
-    lock(route);
     route->error = 0;
+    route->config = 0;
+}
 
-    path = mprJoinPath(route->home, name);
-    if (testConfig(route, path) < 0) {
-        unlock(route);
+
+PUBLIC int httpLoadConfig(HttpRoute *route, cchar *root, cchar *path)
+{
+    route->error = 0;
+    if (parseFile(route, root, path) < 0) {
         return MPR_ERR_CANT_READ;
     }
-    if (route->config) {
-        unlock(route);
-        return 0;
-    }
-    if (parseFile(route, path) < 0) {
-        unlock(route);
-        return MPR_ERR_CANT_READ;
-    }
-    postParse(route);
-
     if (route->error) {
         route->config = 0;
-        unlock(route);
         return MPR_ERR_BAD_STATE;
     }
-    unlock(route);
     return 0;
 }
 
 
-static void clientCopy(HttpRoute *route, MprJson *dest, MprJson *obj)
+PUBLIC int httpFinalizeConfig(HttpRoute *route)
+{
+    HttpHost    *host;
+    HttpRoute   *rp;
+    MprJson     *obj, *mappings, *routes;
+    int         nextHost, nextRoute;
+
+    if (route->error) {
+        return MPR_ERR_BAD_STATE;
+    }
+    /*
+        Property order is not guaranteed, so must ensure routes are processed after all outer properties.
+     */
+    if ((routes = mprGetJsonObj(route->config, "app.http.routes")) != 0) {
+        parseRoutes(route, "http.routes", routes);
+    }
+
+    /*
+        Create a subset, optimized configuration to send to the client
+     */
+    if ((obj = mprGetJsonObj(route->config, "app.http.mappings")) != 0) {
+        mappings = mprCreateJson(MPR_JSON_OBJ);
+        copyMappings(route, mappings, obj);
+        mprWriteJson(mappings, "prefix", route->prefix);
+        route->clientConfig = mprJsonToString(mappings, MPR_JSON_QUOTES);
+    }
+    httpAddHostToEndpoints(route->host);
+
+    /*
+        Ensure the host home directory is set and the file handler is defined
+        Propagate the HttpRoute.client to all child routes.
+     */
+    for (nextHost = 0; (host = mprGetNextItem(route->http->hosts, &nextHost)) != 0; ) {
+        for (nextRoute = 0; (rp = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
+            if (!mprLookupKey(rp->extensions, "")) {
+                if (!rp->handler) {
+                    httpAddRouteHandler(rp, "fileHandler", "");
+                    httpAddRouteIndex(rp, "index.html");
+                }
+            }
+            if (rp->parent == route) {
+                rp->clientConfig = route->clientConfig;
+            }
+        }
+    }
+    if (route->error) {
+        route->config = 0;
+        return MPR_ERR_BAD_STATE;
+    }
+    return 0;
+}
+
+
+static void copyMappings(HttpRoute *route, MprJson *dest, MprJson *obj)
 {
     MprJson     *child, *job, *jvalue;
     cchar       *key, *value;
@@ -194,7 +237,7 @@ static void clientCopy(HttpRoute *route, MprJson *dest, MprJson *obj)
     for (ITERATE_CONFIG(route, obj, child, ji)) {
         if (child->type & MPR_JSON_OBJ) {
             job = mprCreateJson(MPR_JSON_OBJ);
-            clientCopy(route, job, child);
+            copyMappings(route, job, child);
             mprSetJsonObj(dest, child->name, job);
         } else {
             key = child->value;
@@ -213,53 +256,7 @@ static void clientCopy(HttpRoute *route, MprJson *dest, MprJson *obj)
 }
 
 
-static void postParse(HttpRoute *route)
-{
-    Http        *http;
-    HttpHost    *host;
-    HttpRoute   *rp;
-    MprJson     *mappings, *client;
-    int         nextHost, nextRoute;
-
-    if (route->error) {
-        return;
-    }
-    http = route->http;
-    route->mode = mprGetJson(route->config, "app.mode");
-
-    /*
-        Create a subset, optimized configuration to send to the client
-     */
-    if ((mappings = mprGetJsonObj(route->config, "app.client.mappings")) != 0) {
-        client = mprCreateJson(MPR_JSON_OBJ);
-        clientCopy(route, client, mappings);
-        mprWriteJson(client, "prefix", route->prefix);
-        route->client = mprJsonToString(client, MPR_JSON_QUOTES);
-    }
-    httpAddHostToEndpoints(route->host);
-
-    /*
-        Ensure the host home directory is set and the file handler is defined
-        Propagate the HttpRoute.client to all child routes.
-     */
-    for (nextHost = 0; (host = mprGetNextItem(http->hosts, &nextHost)) != 0; ) {
-        for (nextRoute = 0; (rp = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
-            if (!mprLookupKey(rp->extensions, "")) {
-                if (!rp->handler) {
-                    httpAddRouteHandler(rp, "fileHandler", "");
-                    httpAddRouteIndex(rp, "index.html");
-                }
-            }
-            if (rp->parent == route) {
-                rp->client = route->client;
-            }
-        }
-    }
-}
-
-
 /**************************************** Parser Callbacks ****************************************/
-
 
 static void parseKey(HttpRoute *route, cchar *key, MprJson *prop)
 {
@@ -272,22 +269,20 @@ static void parseKey(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseAll(HttpRoute *route, cchar *key, MprJson *prop)
+PUBLIC void httpParseAll(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    MprJson     *routes;
     MprJson     *child;
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         parseKey(route, key, child);
     }
+}
 
-    /*
-        Property order is not guaranteed, so must ensure routes are processed after all outer properties.
-     */
-    if ((routes = mprReadJsonObj(prop, "routes")) != 0) {
-        parseRoutes(route, key, routes);
-    }
+
+static void parseApp(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpParseAll(route, strim(key, "app.", MPR_TRIM_START), prop);
 }
 
 
@@ -313,7 +308,7 @@ static void parseAuth(HttpRoute *route, cchar *key, MprJson *prop)
         /* Permits auth: "app" to set the store */
         parseAuthStore(route, key, prop);
     } else if (prop->type == MPR_JSON_OBJ) {
-        parseAll(route, key, prop);
+        httpParseAll(route, key, prop);
     }
 }
 
@@ -484,34 +479,48 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
     int         flags, ji;
 
     clientLifespan = serverLifespan = 0;
-    for (ITERATE_CONFIG(route, prop, child, ji)) {
-        flags = 0;
-        if ((client = mprReadJson(child, "client")) != 0) {
-            flags |= HTTP_CACHE_CLIENT;
-            clientLifespan = httpGetTicks(client);
+    if (prop->type & MPR_JSON_STRING && smatch(prop->value, "true")) {
+        httpAddCache(route, 0, 0, 0, 0, 86400 * 1000, 0, HTTP_CACHE_CLIENT);
+    } else {
+        for (ITERATE_CONFIG(route, prop, child, ji)) {
+            flags = 0;
+            if ((client = mprReadJson(child, "client")) != 0) {
+                flags |= HTTP_CACHE_CLIENT;
+                clientLifespan = httpGetTicks(client);
+            }
+            if ((server = mprReadJson(child, "server")) != 0) {
+                flags |= HTTP_CACHE_SERVER;
+                serverLifespan = httpGetTicks(server);
+            }
+            methods = getList(mprReadJsonObj(child, "methods"));
+            uris = getList(mprReadJsonObj(child, "uris"));
+            mimeTypes = getList(mprReadJsonObj(child, "mime"));
+            extensions = getList(mprReadJsonObj(child, "extensions"));
+            if (smatch(mprReadJson(child, "unique"), "true")) {
+                /* Uniquely cache requests with different params */
+                flags |= HTTP_CACHE_UNIQUE;
+            }
+            if (smatch(mprReadJson(child, "manual"), "true")) {
+                /* User must manually call httpWriteCache */
+                flags |= HTTP_CACHE_MANUAL;
+            }
+            httpAddCache(route, methods, uris, extensions, mimeTypes, clientLifespan, serverLifespan, flags);
         }
-        if ((server = mprReadJson(child, "server")) != 0) {
-            flags |= HTTP_CACHE_SERVER;
-            serverLifespan = httpGetTicks(server);
-        }
-        methods = getList(mprReadJsonObj(child, "methods"));
-        extensions = getList(mprReadJsonObj(child, "extensions"));
-        uris = getList(mprReadJsonObj(child, "uris"));
-        mimeTypes = getList(mprReadJsonObj(child, "mime"));
-
-        if (smatch(mprReadJson(child, "unique"), "true")) {
-            /* Uniquely cache requests with different params */
-            flags |= HTTP_CACHE_UNIQUE;
-        }
-        if (smatch(mprReadJson(child, "manual"), "true")) {
-            /* User must manually call httpWriteCache */
-            flags |= HTTP_CACHE_MANUAL;
-        }
-        httpAddCache(route, methods, uris, extensions, mimeTypes, clientLifespan, serverLifespan, flags);
     }
 }
 
 
+static void parseCompress(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (smatch(prop->value, "true")) {
+        httpAddRouteMapping(route, "", "${1}.gz, min.${1}.gz, min.${1}");
+    } else if (prop->type & MPR_JSON_ARRAY) {
+        httpAddRouteMapping(route, mprJsonToString(prop, 0), "${1}.gz, min.${1}.gz, min.${1}");
+    }
+}
+
+
+#if KEEP && UNUSED
 static void parseContentCombine(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -541,14 +550,12 @@ static void parseContentCompress(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-#if DEPRECATED || 1
 static void parseContentKeep(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (mprGetJson(prop, "[@=c]")) {
         route->keepSource = 1;
     }
 }
-#endif
 
 
 static void parseContentMinify(HttpRoute *route, cchar *key, MprJson *prop)
@@ -565,6 +572,7 @@ static void parseContentMinify(HttpRoute *route, cchar *key, MprJson *prop)
         }
     }
 }
+#endif
 
 
 static void parseDatabase(HttpRoute *route, cchar *key, MprJson *prop)
@@ -710,7 +718,7 @@ static void parseLanguages(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseLimits(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpGraduateLimits(route, 0);
-    parseAll(route, key, prop);
+    httpParseAll(route, key, prop);
 }
 
 
@@ -1085,21 +1093,9 @@ PUBLIC void httpAddRouteSet(HttpRoute *route, cchar *set)
 }
 
 
-static void setConfigDefaults(HttpRoute *route)
-{
-    route->mode = mprGetJson(route->config, "app.mode");
-    if (smatch(route->mode, "debug")) {
-        httpSetRouteShowErrors(route, 1);
-        route->keepSource = 1;
-    }
-}
-
-
 static void parseHttp(HttpRoute *route, cchar *key, MprJson *prop)
 {
-
-    setConfigDefaults(route);
-    parseAll(route, key, prop);
+    httpParseAll(route, key, prop);
 }
 
 
@@ -1138,7 +1134,7 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
                 } else {
                     newRoute = route;
                 }
-                parseAll(newRoute, key, child);
+                httpParseAll(newRoute, key, child);
                 if (newRoute->error) {
                     break;
                 }
@@ -1165,7 +1161,7 @@ static void parseScheme(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseServer(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (route->http->flags & HTTP_UTILITY) {
-        parseAll(route, key, prop);
+        httpParseAll(route, key, prop);
     }
 }
 
@@ -1382,7 +1378,7 @@ static void parseSsl(HttpRoute *route, cchar *key, MprJson *prop)
             route->ssl = mprCloneSsl(parent->ssl);
         }
     }
-    parseAll(route, key, prop);
+    httpParseAll(route, key, prop);
 }
 
 
@@ -1526,7 +1522,7 @@ static void parseTarget(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseTimeouts(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpGraduateLimits(route, 0);
-    parseAll(route, key, prop);
+    httpParseAll(route, key, prop);
 }
 
 
@@ -1638,7 +1634,7 @@ static void parseInclude(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        parseFile(route, child->value);
+        parseFile(route, 0, child->value);
     }
 }
 
@@ -1647,119 +1643,128 @@ PUBLIC int httpInitParser()
 {
     HTTP->parsers = mprCreateHash(0, MPR_HASH_STATIC_VALUES);
 
-    httpAddConfig("app", parseAll);
-    httpAddConfig("app.http", parseHttp);
-    httpAddConfig("app.http.auth", parseAuth);
-    httpAddConfig("app.http.auth.auto", parseAll);
-    httpAddConfig("app.http.auth.auto.name", parseAuthAutoName);
-    httpAddConfig("app.http.auth.auto.roles", parseAuthAutoRoles);
-    httpAddConfig("app.http.auth.login", parseAuthLogin);
-    httpAddConfig("app.http.auth.realm", parseAuthRealm);
-    httpAddConfig("app.http.auth.require", parseAll);
-    httpAddConfig("app.http.auth.require.roles", parseAuthRequireRoles);
-    httpAddConfig("app.http.auth.require.users", parseAuthRequireUsers);
-    httpAddConfig("app.http.auth.roles", parseAuthRoles);
-    httpAddConfig("app.http.auth.session.cookie", parseAuthSessionCookie);
-    httpAddConfig("app.http.auth.session.vibility", parseAuthSessionVisibility);
-    httpAddConfig("app.http.auth.store", parseAuthStore);
-    httpAddConfig("app.http.auth.type", parseAuthType);
-    httpAddConfig("app.http.auth.users", parseAuthUsers);
-    httpAddConfig("app.http.cache", parseCache);
-    httpAddConfig("app.http.content", parseAll);
-    httpAddConfig("app.http.content.combine", parseContentCombine);
-    httpAddConfig("app.http.content.minify", parseContentMinify);
-    httpAddConfig("app.http.content.compress", parseContentCompress);
-#if DEPRECATED || 1
-    httpAddConfig("app.http.content.keep", parseContentKeep);
+    /*
+        Parse callbacks keys are specified as they are defined in the json files
+        When blended, various json components may be located under "app" or elsewhere in the tree.
+        Consequently, when doing mprGetJson to lookup a specific key, you must use the "located" key name that typically
+        includes the "app" prefix.
+     */
+    httpAddConfig("app", parseApp);
+    httpAddConfig("http", parseHttp);
+    httpAddConfig("http.auth", parseAuth);
+    httpAddConfig("http.auth.auto", httpParseAll);
+    httpAddConfig("http.auth.auto.name", parseAuthAutoName);
+    httpAddConfig("http.auth.auto.roles", parseAuthAutoRoles);
+    httpAddConfig("http.auth.login", parseAuthLogin);
+    httpAddConfig("http.auth.realm", parseAuthRealm);
+    httpAddConfig("http.auth.require", httpParseAll);
+    httpAddConfig("http.auth.require.roles", parseAuthRequireRoles);
+    httpAddConfig("http.auth.require.users", parseAuthRequireUsers);
+    httpAddConfig("http.auth.roles", parseAuthRoles);
+    httpAddConfig("http.auth.session.cookie", parseAuthSessionCookie);
+    httpAddConfig("http.auth.session.vibility", parseAuthSessionVisibility);
+    httpAddConfig("http.auth.store", parseAuthStore);
+    httpAddConfig("http.auth.type", parseAuthType);
+    httpAddConfig("http.auth.users", parseAuthUsers);
+    httpAddConfig("http.cache", parseCache);
+#if KEEP
+    httpAddConfig("http.content", httpParseAll);
+    httpAddConfig("http.content.combine", parseContentCombine);
+    httpAddConfig("http.content.minify", parseContentMinify);
+    httpAddConfig("http.content.compress", parseContentCompress);
+#if DEPRECATED
+    httpAddConfig("http.content.keep", parseContentKeep);
 #endif
-    httpAddConfig("app.http.database", parseDatabase);
-    httpAddConfig("app.http.deleteUploads", parseDeleteUploads);
-    httpAddConfig("app.http.directories", parseDirectories);
-    httpAddConfig("app.http.documents", parseDocuments);
-    httpAddConfig("app.http.domain", parseDomain);
-    httpAddConfig("app.http.errors", parseErrors);
-    httpAddConfig("app.http.formats", parseAll);
-    httpAddConfig("app.http.formats.response", parseFormatsResponse);
-    httpAddConfig("app.http.handler", parseHandler);
-    httpAddConfig("app.http.headers", parseAll);
-    httpAddConfig("app.http.headers.add", parseHeadersAdd);
-    httpAddConfig("app.http.headers.remove", parseHeadersRemove);
-    httpAddConfig("app.http.headers.set", parseHeadersSet);
-    httpAddConfig("app.http.home", parseHome);
-    httpAddConfig("app.http.indexes", parseIndexes);
-    httpAddConfig("app.http.keep", parseKeep);
-    httpAddConfig("app.http.languages", parseLanguages);
-    httpAddConfig("app.http.limits", parseLimits);
-    httpAddConfig("app.http.limits.buffer", parseLimitsBuffer);
-    httpAddConfig("app.http.limits.cache", parseLimitsCache);
-    httpAddConfig("app.http.limits.cacheItem", parseLimitsCacheItem);
-    httpAddConfig("app.http.limits.chunk", parseLimitsChunk);
-    httpAddConfig("app.http.limits.clients", parseLimitsClients);
-    httpAddConfig("app.http.limits.connections", parseLimitsConnections);
-    httpAddConfig("app.http.limits.keepAlive", parseLimitsKeepAlive);
-    httpAddConfig("app.http.limits.files", parseLimitsFiles);
-    httpAddConfig("app.http.limits.memory", parseLimitsMemory);
-    httpAddConfig("app.http.limits.requestBody", parseLimitsRequestBody);
-    httpAddConfig("app.http.limits.requestForm", parseLimitsRequestForm);
-    httpAddConfig("app.http.limits.requestHeader", parseLimitsRequestHeader);
-    httpAddConfig("app.http.limits.responseBody", parseLimitsResponseBody);
-    httpAddConfig("app.http.limits.processes", parseLimitsProcesses);
-    httpAddConfig("app.http.limits.requests", parseLimitsRequests);
-    httpAddConfig("app.http.limits.sessions", parseLimitsSessions);
-    httpAddConfig("app.http.limits.upload", parseLimitsUpload);
-    httpAddConfig("app.http.limits.uri", parseLimitsUri);
-    httpAddConfig("app.http.limits.webSockets", parseLimitsWebSockets);
-    httpAddConfig("app.http.limits.webSocketsMessage", parseLimitsWebSocketsMessage);
-    httpAddConfig("app.http.limits.webSocketsPacket", parseLimitsWebSocketsPacket);
-    httpAddConfig("app.http.limits.webSocketsFrame", parseLimitsWebSocketsFrame);
-    httpAddConfig("app.http.limits.workers", parseLimitsWorkers);
-    httpAddConfig("app.http.methods", parseMethods);
-    httpAddConfig("app.http.mode", parseMode);
-    httpAddConfig("app.http.name", parseName);
-    httpAddConfig("app.http.params", parseParams);
-    httpAddConfig("app.http.pattern", parsePattern);
-    httpAddConfig("app.http.pipeline", parseAll);
-    httpAddConfig("app.http.pipeline.filters", parsePipelineFilters);
-    httpAddConfig("app.http.pipeline.handlers", parsePipelineHandlers);
-    httpAddConfig("app.http.prefix", parsePrefix);
-    httpAddConfig("app.http.redirect", parseRedirect);
-    httpAddConfig("app.http.resources", parseResources);
-    httpAddConfig("app.http.scheme", parseScheme);
+#endif
+    httpAddConfig("http.compress", parseCompress);
+    httpAddConfig("http.database", parseDatabase);
+    httpAddConfig("http.deleteUploads", parseDeleteUploads);
+    httpAddConfig("http.directories", parseDirectories);
+    httpAddConfig("http.documents", parseDocuments);
+    httpAddConfig("http.domain", parseDomain);
+    httpAddConfig("http.errors", parseErrors);
+    httpAddConfig("http.formats", httpParseAll);
+    httpAddConfig("http.formats.response", parseFormatsResponse);
+    httpAddConfig("http.handler", parseHandler);
+    httpAddConfig("http.headers", httpParseAll);
+    httpAddConfig("http.headers.add", parseHeadersAdd);
+    httpAddConfig("http.headers.remove", parseHeadersRemove);
+    httpAddConfig("http.headers.set", parseHeadersSet);
+    httpAddConfig("http.home", parseHome);
+    httpAddConfig("http.indexes", parseIndexes);
+    httpAddConfig("http.keep", parseKeep);
+    httpAddConfig("http.languages", parseLanguages);
+    httpAddConfig("http.limits", parseLimits);
+    httpAddConfig("http.limits.buffer", parseLimitsBuffer);
+    httpAddConfig("http.limits.cache", parseLimitsCache);
+    httpAddConfig("http.limits.cacheItem", parseLimitsCacheItem);
+    httpAddConfig("http.limits.chunk", parseLimitsChunk);
+    httpAddConfig("http.limits.clients", parseLimitsClients);
+    httpAddConfig("http.limits.connections", parseLimitsConnections);
+    httpAddConfig("http.limits.keepAlive", parseLimitsKeepAlive);
+    httpAddConfig("http.limits.files", parseLimitsFiles);
+    httpAddConfig("http.limits.memory", parseLimitsMemory);
+    httpAddConfig("http.limits.requestBody", parseLimitsRequestBody);
+    httpAddConfig("http.limits.requestForm", parseLimitsRequestForm);
+    httpAddConfig("http.limits.requestHeader", parseLimitsRequestHeader);
+    httpAddConfig("http.limits.responseBody", parseLimitsResponseBody);
+    httpAddConfig("http.limits.processes", parseLimitsProcesses);
+    httpAddConfig("http.limits.requests", parseLimitsRequests);
+    httpAddConfig("http.limits.sessions", parseLimitsSessions);
+    httpAddConfig("http.limits.upload", parseLimitsUpload);
+    httpAddConfig("http.limits.uri", parseLimitsUri);
+    httpAddConfig("http.limits.webSockets", parseLimitsWebSockets);
+    httpAddConfig("http.limits.webSocketsMessage", parseLimitsWebSocketsMessage);
+    httpAddConfig("http.limits.webSocketsPacket", parseLimitsWebSocketsPacket);
+    httpAddConfig("http.limits.webSocketsFrame", parseLimitsWebSocketsFrame);
+    httpAddConfig("http.limits.workers", parseLimitsWorkers);
+    httpAddConfig("http.methods", parseMethods);
+    httpAddConfig("http.mode", parseMode);
+    httpAddConfig("http.name", parseName);
+    httpAddConfig("http.params", parseParams);
+    httpAddConfig("http.pattern", parsePattern);
+    httpAddConfig("http.pipeline", httpParseAll);
+    httpAddConfig("http.pipeline.filters", parsePipelineFilters);
+    httpAddConfig("http.pipeline.handlers", parsePipelineHandlers);
+    httpAddConfig("http.prefix", parsePrefix);
+    httpAddConfig("http.redirect", parseRedirect);
+    httpAddConfig("http.resources", parseResources);
+    httpAddConfig("http.scheme", parseScheme);
 
-    httpAddConfig("app.http.server", parseServer);
-    httpAddConfig("app.http.server.account", parseServerAccount);
-    httpAddConfig("app.http.server.chroot", parseServerChroot);
-    httpAddConfig("app.http.server.defenses", parseServerDefenses);
-    httpAddConfig("app.http.server.listen", parseServerListen);
-    httpAddConfig("app.http.server.log", parseServerLog);
-    httpAddConfig("app.http.server.monitors", parseServerMonitors);
-    httpAddConfig("app.http.server.ssl", parseSsl);
-    httpAddConfig("app.http.server.ssl.authority", parseAll);
-    httpAddConfig("app.http.server.ssl.authority.file", parseSslAuthorityFile);
-    httpAddConfig("app.http.server.ssl.authority.directory", parseSslAuthorityDirectory);
-    httpAddConfig("app.http.server.ssl.certificate", parseSslCertificate);
-    httpAddConfig("app.http.server.ssl.ciphers", parseSslCiphers);
-    httpAddConfig("app.http.server.ssl.key", parseSslKey);
-    httpAddConfig("app.http.server.ssl.provider", parseSslProvider);
-    httpAddConfig("app.http.server.ssl.protocols", parseSslProtocols);
-    httpAddConfig("app.http.server.ssl.verify", parseAll);
-    httpAddConfig("app.http.server.ssl.verify.client", parseSslVerifyClient);
-    httpAddConfig("app.http.server.ssl.verify.issuer", parseSslVerifyIssuer);
+    httpAddConfig("http.server", parseServer);
+    httpAddConfig("http.server.account", parseServerAccount);
+    httpAddConfig("http.server.chroot", parseServerChroot);
+    httpAddConfig("http.server.defenses", parseServerDefenses);
+    httpAddConfig("http.server.listen", parseServerListen);
+    httpAddConfig("http.server.log", parseServerLog);
+    httpAddConfig("http.server.monitors", parseServerMonitors);
+    httpAddConfig("http.server.ssl", parseSsl);
+    httpAddConfig("http.server.ssl.authority", httpParseAll);
+    httpAddConfig("http.server.ssl.authority.file", parseSslAuthorityFile);
+    httpAddConfig("http.server.ssl.authority.directory", parseSslAuthorityDirectory);
+    httpAddConfig("http.server.ssl.certificate", parseSslCertificate);
+    httpAddConfig("http.server.ssl.ciphers", parseSslCiphers);
+    httpAddConfig("http.server.ssl.key", parseSslKey);
+    httpAddConfig("http.server.ssl.provider", parseSslProvider);
+    httpAddConfig("http.server.ssl.protocols", parseSslProtocols);
+    httpAddConfig("http.server.ssl.verify", httpParseAll);
+    httpAddConfig("http.server.ssl.verify.client", parseSslVerifyClient);
+    httpAddConfig("http.server.ssl.verify.issuer", parseSslVerifyIssuer);
 
-    httpAddConfig("app.http.showErrors", parseShowErrors);
-    httpAddConfig("app.http.source", parseSource);
-    httpAddConfig("app.http.serverPrefix", parseServerPrefix);
-    httpAddConfig("app.http.stealth", parseStealth);
-    httpAddConfig("app.http.target", parseTarget);
-    httpAddConfig("app.http.timeouts", parseTimeouts);
-    httpAddConfig("app.http.timeouts.exit", parseTimeoutsExit);
-    httpAddConfig("app.http.timeouts.parse", parseTimeoutsParse);
-    httpAddConfig("app.http.timeouts.inactivity", parseTimeoutsInactivity);
-    httpAddConfig("app.http.timeouts.request", parseTimeoutsRequest);
-    httpAddConfig("app.http.timeouts.session", parseTimeoutsSession);
-    httpAddConfig("app.http.trace", parseTrace);
-    httpAddConfig("app.http.update", parseUpdate);
-    httpAddConfig("app.http.xsrf", parseXsrf);
+    httpAddConfig("http.showErrors", parseShowErrors);
+    httpAddConfig("http.source", parseSource);
+    httpAddConfig("http.serverPrefix", parseServerPrefix);
+    httpAddConfig("http.stealth", parseStealth);
+    httpAddConfig("http.target", parseTarget);
+    httpAddConfig("http.timeouts", parseTimeouts);
+    httpAddConfig("http.timeouts.exit", parseTimeoutsExit);
+    httpAddConfig("http.timeouts.parse", parseTimeoutsParse);
+    httpAddConfig("http.timeouts.inactivity", parseTimeoutsInactivity);
+    httpAddConfig("http.timeouts.request", parseTimeoutsRequest);
+    httpAddConfig("http.timeouts.session", parseTimeoutsSession);
+    httpAddConfig("http.trace", parseTrace);
+    httpAddConfig("http.update", parseUpdate);
+    httpAddConfig("http.xsrf", parseXsrf);
     httpAddConfig("directories", parseDirectories);
     httpAddConfig("include", parseInclude);
 

@@ -193,9 +193,11 @@ static int createEndpoints(int argc, char **argv)
     httpSetHostDefaultRoute(host, route);
     httpFinalizeRoute(route);
 
-    if (httpLoadConfig(route, app->configFile) < 0) {
+    httpInitConfig(route);
+    if (httpLoadConfig(route, 0, app->configFile) < 0) {
         return MPR_ERR_CANT_CREATE;
     }
+    httpFinalizeConfig(route);
     mprGC(MPR_GC_FORCE | MPR_GC_COMPLETE);
     return 0;
 }

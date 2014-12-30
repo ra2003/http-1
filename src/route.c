@@ -112,8 +112,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
         route->limits = mprMemdup(http->serverLimits ? http->serverLimits : http->clientLimits, sizeof(HttpLimits));
     }
     route->mimeTypes = MPR->mimeTypes;
-    route->mutex = mprCreateLock();
-
     if ((route->mimeTypes = mprCreateMimeTypes("mime.types")) == 0) {
         route->mimeTypes = MPR->mimeTypes;
     }
@@ -139,11 +137,9 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->auth = httpCreateInheritedAuth(parent->auth);
     route->autoDelete = parent->autoDelete;
     route->caching = parent->caching;
-    route->client = parent->client;
-    route->combine = parent->combine;
+    route->clientConfig = parent->clientConfig;
     route->conditions = parent->conditions;
     route->config = parent->config;
-    route->configLoaded = parent->configLoaded;
     route->connector = parent->connector;
     route->cookie = parent->cookie;
     route->corsAge = parent->corsAge;
@@ -210,7 +206,7 @@ static void manageRoute(HttpRoute *route, int flags)
     if (flags & MPR_MANAGE_MARK) {
         mprMark(route->auth);
         mprMark(route->caching);
-        mprMark(route->client);
+        mprMark(route->clientConfig);
         mprMark(route->conditions);
         mprMark(route->config);
         mprMark(route->connector);
@@ -241,7 +237,6 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->methods);
         mprMark(route->mimeTypes);
         mprMark(route->mode);
-        mprMark(route->mutex);
         mprMark(route->name);
         mprMark(route->optimizedPattern);
         mprMark(route->outputStages);
@@ -681,7 +676,10 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
     info = &tx->fileInfo;
 
     if (route->map && !(tx->flags & HTTP_TX_NO_MAP)) {
-        if ((extensions = mprLookupKey(route->map, tx->ext)) != 0) {
+        if ((extensions = mprLookupKey(route->map, tx->ext)) == 0) {
+            extensions = mprLookupKey(route->map, "");
+        }
+        if (extensions) {
             acceptGzip = scontains(rx->acceptEncoding, "gzip") != 0;
             for (ITERATE_ITEMS(extensions, ext, next)) {
                 zipped = sends(ext, "gz");
@@ -690,8 +688,7 @@ static cchar *mapContent(HttpConn *conn, cchar *filename)
                 }
                 path = mprReplacePathExt(filename, ext);
                 if (mprGetPathInfo(path, info) == 0) {
-                    httpTrace(conn, "request.map", "context", 
-                        "originalFilename:'%s',filename:'%s'", filename, path);
+                    httpTrace(conn, "request.map", "context", "originalFilename:'%s',filename:'%s'", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");
@@ -915,6 +912,9 @@ PUBLIC void httpAddRouteMapping(HttpRoute *route, cchar *extensions, cchar *mapp
     }
     if (*extensions == '[') {
         extensions = strim(extensions, "[]", 0);
+    }
+    if (smatch(extensions, "*")) {
+        extensions = "";
     }
     if (!route->map) {
         route->map = mprCreateHash(ME_MAX_ROUTE_MAP_HASH, MPR_HASH_STABLE);
@@ -2554,7 +2554,7 @@ PUBLIC void httpAddPermResource(HttpRoute *parent, cchar *uprefix, cchar *resour
 }
 
 
-PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *uprefix, cchar *name)
+PUBLIC void httpAddPublicRoute(HttpRoute *parent, cchar *uprefix, cchar *name)
 {
     HttpRoute   *route;
     cchar       *path, *pattern;
@@ -2567,7 +2567,7 @@ PUBLIC void httpAddClientRoute(HttpRoute *parent, cchar *uprefix, cchar *name)
         name = sjoin(parent->prefix, name, NULL);
     }
     pattern = sfmt("^%s(/.*)", uprefix);
-    path = sjoin(mprGetRelPath(stemplate("${CLIENT_DIR}", parent->vars), parent->documents), "$1", NULL);
+    path = sjoin(mprGetRelPath(stemplate("${PUBLIC_DIR}", parent->vars), parent->documents), "$1", NULL);
     route = httpDefineRoute(parent, name, "GET", pattern, path, parent->sourceName);
     httpAddRouteHandler(route, "fileHandler", "");
 }
@@ -2579,7 +2579,7 @@ PUBLIC void httpAddHomeRoute(HttpRoute *parent)
 
     source = parent->sourceName;
     name = sjoin(parent->prefix, "/home", NULL);
-    path = stemplate("${CLIENT_DIR}/index.esp", parent->vars);
+    path = stemplate("${PUBLIC_DIR}/index.esp", parent->vars);
     pattern = sfmt("^%s(/)$", parent->prefix);
     httpDefineRoute(parent, name, "GET,POST", pattern, path, source);
 }
@@ -3209,7 +3209,7 @@ PUBLIC cchar *httpGetDir(HttpRoute *route, cchar *name)
 PUBLIC void httpSetDir(HttpRoute *route, cchar *name, cchar *value)
 {
     if (value == 0) {
-        value = name;
+        value = slower(name);
     }
     value = mprJoinPath(route->home, value);
     httpSetRouteVar(route, sjoin(supper(name), "_DIR", NULL), httpMakePath(route, 0, value));
@@ -3218,10 +3218,10 @@ PUBLIC void httpSetDir(HttpRoute *route, cchar *name, cchar *value)
 
 PUBLIC void httpSetDefaultDirs(HttpRoute *route)
 {
+#if UNUSED
+    //  MOB - are these needed ?
     httpSetDir(route, "cache", 0);
-    httpSetDir(route, "client", 0);
     httpSetDir(route, "paks", 0);
-#if FUTURE
     httpSetDir(route, "public", 0);
 #endif
 }

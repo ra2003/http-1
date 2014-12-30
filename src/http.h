@@ -4228,7 +4228,8 @@ typedef struct HttpLang {
 
 /**
     Cache Control
-    @description Configuration is not thread safe and must occur at initialization time when the application is single threaded.
+    @description Configuration is not thread safe and must occur at initialization time when the application is 
+        single threaded.
     If the configuration is modified when the application is multithreaded, all requests must be first be quiesced.
     @defgroup HttpCache HttpCache
     @see HttpCache httpAddCache httpUpdateCache httpWriteCache
@@ -4286,7 +4287,7 @@ typedef struct HttpCache {
         If the URI is set to '*' all URIs for that action are uniquely cached. If the request has POST data,
         the URI may include such post data in a sorted query format. E.g. {uri: /buy?item=scarf&quantity=1}.
     @param extensions List of document extensions for which caching should be enabled. Set to a comma or space
-        separated list of extensions. Extensions should not have a period prefix. Set to null or '*' for all extensions.
+        separated list of extensions. Extensions should not have a period prefix. Set to null, '' or '*' for all extensions.
         Example: 'html, css, js'. The URI may include request parameters in sorted www-urlencoded format. For example:
         /example.esp?hobby=sailing&name=john.
     @param types List of document mime types for which caching should be enabled. Set to a comma or space
@@ -4410,7 +4411,8 @@ PUBLIC void httpSetStreaming(struct HttpHost *host, cchar *mime, cchar *uri, boo
 
 /**
     Route Control
-    @description Configuration is not thread safe and must occur at initialization time when the application is single threaded.
+    @description Configuration is not thread safe and must occur at initialization time when the application is 
+        single threaded.
     If the configuration is modified when the application is multithreaded, all requests must be first be quiesced.
     @defgroup HttpRoute HttpRoute
     @see HttpRoute httpAddRouteCondition httpAddRouteErrorDocument

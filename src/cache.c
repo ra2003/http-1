@@ -455,6 +455,19 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
                 mprAddKey(cache->types, item, cache);
             }
         }
+    } else {
+        mprAddKey(cache->types, "css", cache);
+        mprAddKey(cache->types, "gif", cache);
+        mprAddKey(cache->types, "ico", cache);
+        mprAddKey(cache->types, "jpg", cache);
+        mprAddKey(cache->types, "js", cache);
+        mprAddKey(cache->types, "html", cache);
+        mprAddKey(cache->types, "png", cache);
+        mprAddKey(cache->types, "pdf", cache);
+        mprAddKey(cache->types, "ttf", cache);
+        mprAddKey(cache->types, "txt", cache);
+        mprAddKey(cache->types, "xml", cache);
+        mprAddKey(cache->types, "woff", cache);
     }
     if (methods) {
         cache->methods = mprCreateHash(0, MPR_HASH_CASELESS | MPR_HASH_STABLE);

@@ -10,7 +10,7 @@
 
 /*********************************** Code *************************************/
 /*
-    Parse the client 'Authorization' header and the server 'Www-Authenticate' header
+    Parse the 'Authorization' header and the server 'Www-Authenticate' header
  */
 PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
 {
@@ -45,7 +45,7 @@ PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
 
 
 /*
-    Respond to the request by asking for a client login
+    Respond to the request by asking for a login
     Only called if not logged in
  */
 PUBLIC void httpBasicLogin(HttpConn *conn)
@@ -64,7 +64,7 @@ PUBLIC void httpBasicLogin(HttpConn *conn)
 
 
 /*
-    Add the client 'Authorization' header for authenticated requests
+    Add the 'Authorization' header for authenticated requests
     NOTE: Can do this without first getting a 401 response
  */
 PUBLIC bool httpBasicSetHeaders(HttpConn *conn, cchar *username, cchar *password)

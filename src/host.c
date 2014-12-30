@@ -154,7 +154,7 @@ static void printRoute(HttpRoute *route, int next, bool full)
                 patternLen = (int) max(patternLen, slen(rp->pattern));
                 methodsLen = (int) max(methodsLen, slen(httpGetRouteMethods(rp)));
             }
-            printf("%-*s %-*s %-*s %-*s %-14s\n", nameLen, "Route Name", methodsLen, "Methods", 
+            printf("%-*s %-*s %-*s %-*s %-14s\n", nameLen, "Route", methodsLen, "Methods", 
                 authLen, "Auth", patternLen, "Pattern", "Target");
         }
     }

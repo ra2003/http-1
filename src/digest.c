@@ -38,7 +38,7 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
 
 /*********************************** Code *************************************/
 /*
-    Parse the client 'Authorization' header and the server 'Www-Authenticate' header
+    Parse the 'Authorization' header and the server 'Www-Authenticate' header
  */
 PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
 {
@@ -253,7 +253,7 @@ static void manageDigestData(HttpDigest *dp, int flags)
 
 
 /*
-    Respond to the request by asking for a client login
+    Respond to the request by asking for a login
     Only called if not logged in.
  */
 PUBLIC void httpDigestLogin(HttpConn *conn)
@@ -285,7 +285,7 @@ PUBLIC void httpDigestLogin(HttpConn *conn)
 
 
 /*
-    Add the client 'Authorization' header for authenticated requests
+    Add the 'Authorization' header for authenticated requests
     Must first get a 401 response to get the authData.
  */
 PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *password)

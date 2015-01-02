@@ -116,7 +116,9 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
         route->mimeTypes = MPR->mimeTypes;
     }
     definePathVars(route);
+#if DEPRECATE && UNUSED
     httpSetDefaultDirs(route);
+#endif
     return route;
 }
 
@@ -1919,7 +1921,8 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
     Expect a template with embedded tokens of the form: "/${controller}/${action}/${other}"
     Understands the following aliases:
         ~   For ${PREFIX}
-        ^   For ${PREFIX}${SERVER_PREFIX}
+        |   For ${PREFIX}${SERVER_PREFIX}
+
     The options is a hash of token values.
  */
 PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
@@ -2228,7 +2231,10 @@ static int directoryCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
      */
     tx = conn->tx;
     httpMapFile(conn);
+    //  MOB - is tx->filename already set to the right filename?
+    //  MOB - why is op->details necessary?  Add comments
     path = mprJoinPath(route->documents, expandTokens(conn, op->details));
+    //  Why reset these?
     tx->ext = tx->filename = 0;
     mprGetPathInfo(path, &info);
     if (info.isDir) {
@@ -3216,6 +3222,7 @@ PUBLIC void httpSetDir(HttpRoute *route, cchar *name, cchar *value)
 }
 
 
+#if DEPRECATED && UNUSED
 PUBLIC void httpSetDefaultDirs(HttpRoute *route)
 {
 #if UNUSED
@@ -3224,6 +3231,7 @@ PUBLIC void httpSetDefaultDirs(HttpRoute *route)
     httpSetDir(route, "public", 0);
 #endif
 }
+#endif
 
 
 PUBLIC MprHash *httpGetOptions(cchar *options)

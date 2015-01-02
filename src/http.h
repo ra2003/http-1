@@ -4431,10 +4431,11 @@ PUBLIC void httpSetStreaming(struct HttpHost *host, cchar *mime, cchar *uri, boo
 typedef struct HttpRoute {
     /* Ordered for debugging */
     struct HttpRoute *parent;               /**< Parent route */
+//  ZZZ get rid of name
     char            *name;                  /**< Route name */
     char            *pattern;               /**< Original matching URI pattern for the route (includes prefix) */
-    char            *startSegment;          /**< Starting literal segment of pattern (includes prefix) */
-    char            *startWith;             /**< Starting literal segment of pattern (includes prefix) */
+    char            *startSegment;          /**< First starting literal segment of pattern */
+    char            *startWith;             /**< Starting literal portion of pattern */
     char            *optimizedPattern;      /**< Processed pattern (excludes prefix) */
     char            *prefix;                /**< Application scriptName prefix. Set to '' for '/'. Always set */
     char            *serverPrefix;          /**< Prefix for the server-side. Does not include prefix. Always set */
@@ -5267,6 +5268,7 @@ PUBLIC void httpResetRouteIndexes(HttpRoute *route);
  */
 PUBLIC void httpResetRoutePipeline(HttpRoute *route);
 
+#if DEPRECATED
 /**
     Define the default directory route variables
     @description This defines the default directories for the 'cache', 'client', 'pak' and 'public' directories.
@@ -5275,6 +5277,7 @@ PUBLIC void httpResetRoutePipeline(HttpRoute *route);
     @stability Prototype
  */
 PUBLIC void httpSetDefaultDirs(HttpRoute *route);
+#endif
 
 /**
     Define a route directory path variable

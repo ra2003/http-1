@@ -316,7 +316,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         }
     }
     if (!verifyUser) {
-        mprLog("error http auth", 0, "No user verification routine defined on route %s", rx->route->name);
+        mprLog("error http auth", 0, "No user verification routine defined on route %s", rx->route->pattern);
         return 0;
     }
     if (auth->username && *auth->username) {
@@ -441,7 +441,9 @@ static HttpRoute *createLoginRoute(HttpRoute *route, cchar *pattern, HttpAction 
             route->handler = route->http->actionHandler;
             httpDefineAction(pattern, action);
         }
+#if UNUSED
         httpSetRouteName(route, strim(pattern, "^$", 0));
+#endif
         httpFinalizeRoute(route);
     }
     return route;

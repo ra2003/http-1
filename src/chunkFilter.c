@@ -54,10 +54,8 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
         if (tx->length >= 0 || tx->chunkSize == 0) {
             return HTTP_ROUTE_OMIT_FILTER;
         }
-        return HTTP_ROUTE_OK;
-    } else {
-        return HTTP_ROUTE_OK;
     }
+    return HTTP_ROUTE_OK;
 }
 
 

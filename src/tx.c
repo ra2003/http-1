@@ -737,8 +737,9 @@ PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
 
 
 /*
-    Set the filename. The filename may be outside the route documents. So caller must take care.
-    This will update HttpTx.ext and HttpTx.fileInfo.
+    Low level routine to set the filename to serve. The filename may be outside the route documents, so caller 
+    must take care if the HTTP_TX_NO_CHECK flag is used.  This will update HttpTx.ext and HttpTx.fileInfo.
+    This does not implement per-language directories. For that, see httpMapFile.
  */
 PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
 {

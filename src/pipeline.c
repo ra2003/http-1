@@ -39,7 +39,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     HttpRx      *rx;
     HttpQueue   *q;
     HttpStage   *stage, *filter;
-    int         next, hasOutputFilters;
+    int         next;
 
     assert(conn);
     assert(route);
@@ -55,19 +55,18 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         }
         mprAddItem(tx->outputPipeline, tx->handler);
     }
-    hasOutputFilters = 0;
     if (route->outputStages) {
         for (next = 0; (filter = mprGetNextItem(route->outputStages, &next)) != 0; ) {
             if (matchFilter(conn, filter, route, HTTP_STAGE_TX) == HTTP_ROUTE_OK) {
                 mprAddItem(tx->outputPipeline, filter);
-                hasOutputFilters = 1;
+                tx->flags |= HTTP_TX_HAS_FILTERS;
             }
         }
     }
     if (tx->connector == 0) {
 #if !ME_ROM
-        if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !hasOutputFilters && !conn->secure && 
-                !httpTracing(conn)) {
+        if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !(tx->flags & HTTP_TX_HAS_FILTERS) && 
+                !conn->secure && !httpTracing(conn)) {
             tx->connector = http->sendConnector;
         } else 
 #endif
@@ -111,7 +110,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     if (conn->endpoint) {
         httpTrace(conn, "request.pipeline", "context",  
             "route:'%s',handler:'%s',target:'%s',endpoint:'%s:%d',host:'%s',referrer:'%s',filename:'%s'",
-            rx->route->name, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
+            rx->route->pattern, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
             conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "", 
             tx->filename ? tx->filename : "");
     }
@@ -245,6 +244,30 @@ PUBLIC void httpSetSendConnector(HttpConn *conn, cchar *path)
 #else
     mprLog("error http config", 0, "Send connector not available if ROMFS enabled");
 #endif
+}
+
+
+PUBLIC void httpSetFileHandler(HttpConn *conn, cchar *path)
+{
+    HttpStage   *fp;
+
+    HttpTx      *tx;
+
+    tx = conn->tx;
+    if (path && path != tx->filename) {
+        httpSetFilename(conn, path, 0);
+    }
+    fp = tx->handler = HTTP->fileHandler;
+//  MOB TEMP - can only do this if only the chunk filter has been added
+    tx->flags &= ~HTTP_TX_HAS_FILTERS;
+    if ((conn->rx->flags & HTTP_GET) && !(tx->flags & HTTP_TX_HAS_FILTERS) && !conn->secure && !httpTracing(conn)) {
+        tx->flags |= HTTP_TX_SENDFILE;
+        tx->connector = HTTP->sendConnector;
+    }
+    httpSetEntityLength(conn, tx->fileInfo.size);
+    fp->open(conn->writeq);
+    fp->start(conn->writeq);
+    conn->writeq->service = fp->outgoingService;
 }
 
 

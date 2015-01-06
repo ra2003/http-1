@@ -189,7 +189,9 @@ static int createEndpoints(int argc, char **argv)
     host = httpCreateHost();
     httpSetDefaultHost(host);
     route = httpCreateRoute(host);
+#if UNUSED
     httpSetRouteName(route, "default");
+#endif
     httpSetHostDefaultRoute(host, route);
     httpFinalizeRoute(route);
 

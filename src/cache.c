@@ -422,7 +422,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
     if (!route->caching) {
         if (route->handler) {
             mprLog("error http cache", 0, 
-                "Caching handler disabled because SetHandler used in route %s. Use AddHandler instead", route->name);
+                "Caching handler disabled because SetHandler used in route %s. Use AddHandler instead", route->pattern);
         }
         httpAddRouteHandler(route, "cacheHandler", NULL);
         httpAddRouteFilter(route, "cacheFilter", "", HTTP_STAGE_TX);

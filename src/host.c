@@ -91,7 +91,9 @@ PUBLIC HttpHost *httpCreateDefaultHost()
     }
     defaultHost = host = httpCreateHost();
     route = httpCreateRoute(host);
+#if UNUSED
     httpSetRouteName(route, "default");
+#endif
     httpSetHostDefaultRoute(host, route);
     route->limits = route->http->serverLimits;
     return host;
@@ -140,22 +142,21 @@ static void printRoute(HttpRoute *route, int next, bool full)
     HttpAuth    *auth;
     MprKey      *kp;
     cchar       *methods, *pattern, *target, *index;
-    int         authLen, methodsLen, nameLen, patternLen, nextIndex;
+    int         methodsLen, patternLen, nextIndex, targetLen;
 
     if (route->flags & HTTP_ROUTE_HIDDEN) {
         return;
     }
     if (!full) {
         if (next == 0) {
-            authLen = methodsLen = nameLen = patternLen = 0;
+            targetLen = methodsLen = patternLen = 0;
             for (next = 0; (rp = mprGetNextItem(route->host->routes, &next)) != 0; ) {
-                authLen = (int) max(authLen, rp->auth->type ? slen(rp->auth->type->name) : 0);
-                nameLen = (int) max(nameLen, slen(rp->name));
+                targetLen = (int) max(targetLen, slen(rp->target));
                 patternLen = (int) max(patternLen, slen(rp->pattern));
                 methodsLen = (int) max(methodsLen, slen(httpGetRouteMethods(rp)));
             }
-            printf("%-*s %-*s %-*s %-*s %-14s\n", nameLen, "Route", methodsLen, "Methods", 
-                authLen, "Auth", patternLen, "Pattern", "Target");
+            printf("%-*s %-*s %-*s %-14s\n", patternLen, "Route", methodsLen, "Methods", 
+                targetLen, "Target", "Auth");
         }
     }
     auth = route->auth;
@@ -164,7 +165,7 @@ static void printRoute(HttpRoute *route, int next, bool full)
     pattern = (route->pattern && *route->pattern) ? route->pattern : "^/";
     target = (route->target && *route->target) ? route->target : "$&";
     if (full) {
-        printf("\n Route [%d]. %s\n", next, route->name);
+        printf("\n Route [%d]. %s\n", next, route->pattern);
         printf("    Pattern:      %s\n", pattern);
         if (route->prefix && *route->prefix) {
             printf("    RegExp:       %s\n", route->optimizedPattern);
@@ -206,8 +207,8 @@ static void printRoute(HttpRoute *route, int next, bool full)
             }
         }
     } else {
-        printf("%-*s %-*s %-*s %-*s %-14s\n", nameLen, route->name, methodsLen, methods ? methods : "*", 
-            authLen, auth->type ? auth->type->name : "none", patternLen, pattern, target);
+        printf("%-*s %-*s %-*s %-14s\n", patternLen, route->pattern, methodsLen, methods ? methods : "*", 
+            targetLen, target, auth->type ? auth->type->name : "none");
     }
 }
 
@@ -291,24 +292,27 @@ PUBLIC int httpAddRoute(HttpHost *host, HttpRoute *route)
 }
 
 
-PUBLIC HttpRoute *httpLookupRoute(HttpHost *host, cchar *name)
+//  MOB ZZZ - merge with LookupRouteByPattern
+PUBLIC HttpRoute *httpLookupRoute(HttpHost *host, cchar *pattern)
 {
+#if UNUSED
     HttpRoute   *route;
     int         next;
 
-    if (name == 0 || *name == '\0') {
-        name = "default";
+    if (pattern == 0 || *pattern == '\0') {
+        pattern = "default";
     }
     if (!host && (host = httpGetDefaultHost()) == 0) {
         return 0;
     }
     for (next = 0; (route = mprGetNextItem(host->routes, &next)) != 0; ) {
-        assert(route->name);
-        if (smatch(route->name, name)) {
+        if (smatch(route->pattern, pattern)) {
             return route;
         }
     }
     return 0;
+#endif
+    return httpLookupRouteByPattern(host, pattern);
 }
 
 
@@ -317,6 +321,9 @@ PUBLIC HttpRoute *httpLookupRouteByPattern(HttpHost *host, cchar *pattern)
     HttpRoute   *route;
     int         next;
 
+    if (smatch(pattern, "default")) {
+        pattern = "";
+    }
     if (smatch(pattern, "/") || smatch(pattern, "^/") || smatch(pattern, "^/$")) {
         pattern = "";
     }

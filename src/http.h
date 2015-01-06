@@ -2889,8 +2889,8 @@ PUBLIC void httpSetIOCallback(struct HttpConn *conn, HttpIOCallback fn);
         httpGetConnHost httpGetError httpGetExt httpGetKeepAliveCount httpGetWriteQueueCount httpMatchHost httpMemoryError
         httpAfterEvent httpPrepClientConn httpResetCredentials httpRouteRequest httpRunHandlerReady httpService
         httpSetAsync httpSetChunkSize httpSetConnContext httpSetConnHost httpSetConnNotifier httpSetCredentials
-        httpSetKeepAliveCount httpSetProtocol httpSetRetries httpSetSendConnector httpSetState httpSetTimeout
-        httpSetTimestamp httpStartPipeline
+        httpSetFileHandler httpSetKeepAliveCount httpSetProtocol httpSetRetries httpSetSendConnector httpSetState 
+        httpSetTimeout httpSetTimestamp httpStartPipeline
     @stability Internal
  */
 typedef struct HttpConn {
@@ -3528,6 +3528,17 @@ PUBLIC void httpSetConnUser(HttpConn *conn, struct HttpUser *user);
     @stability Stable
  */
 PUBLIC void httpSetCredentials(HttpConn *conn, cchar *user, cchar *password, cchar *authType);
+
+/**
+    Set the "fileHandler" to process the request
+    @description This is used by handlers to relay file requests to the file handler. Should be called from the other
+        handlers start entry point.
+    @param conn HttpConn connection object created via #httpCreateConn
+    @param path Optional filename to serve. If null, use HttpTx.filename.
+    @ingroup HttpConn
+    @stability Prototype
+ */
+PUBLIC void httpSetFileHandler(HttpConn *conn, cchar *path);
 
 /**
     Control Http Keep-Alive for the connection.
@@ -4423,7 +4434,7 @@ PUBLIC void httpSetStreaming(struct HttpHost *host, cchar *mime, cchar *uri, boo
         httpGetRouteDocuments httpLookupRouteErrorDocument httpMakePath httpResetRoutePipeline
         httpSetRouteAuth httpSetRouteAutoDelete httpSetRouteConnector httpSetRouteData
         httpSetRouteDefaultLanguage httpSetRouteDocuments httpSetRouteFlags httpSetRouteHandler httpSetRouteHost
-        httpSetRouteIndex httpSetRouteMethods httpSetRouteName httpSetRouteVar httpSetRoutePattern
+        httpSetRouteIndex httpSetRouteMethods httpSetRouteVar httpSetRoutePattern
         httpSetRoutePrefix httpSetRouteScript httpSetRouteSource httpSetRouteTarget httpSetRouteWorkers httpTemplate
         httpTokenize httpTokenizev httpLink httpLinkEx
     @stability Internal
@@ -4431,14 +4442,18 @@ PUBLIC void httpSetStreaming(struct HttpHost *host, cchar *mime, cchar *uri, boo
 typedef struct HttpRoute {
     /* Ordered for debugging */
     struct HttpRoute *parent;               /**< Parent route */
-//  ZZZ get rid of name
+#if UNUSED
     char            *name;                  /**< Route name */
+#endif
     char            *pattern;               /**< Original matching URI pattern for the route (includes prefix) */
     char            *startSegment;          /**< First starting literal segment of pattern */
     char            *startWith;             /**< Starting literal portion of pattern */
     char            *optimizedPattern;      /**< Processed pattern (excludes prefix) */
     char            *prefix;                /**< Application scriptName prefix. Set to '' for '/'. Always set */
+#if DEPRECATE || 1
+    //  DEPRECATE in version 6
     char            *serverPrefix;          /**< Prefix for the server-side. Does not include prefix. Always set */
+#endif
     char            *tplate;                /**< URI template for forming links based on this route (includes prefix) */
     char            *targetRule;            /**< Target rule */
     char            *target;                /**< Route target details */
@@ -4796,10 +4811,13 @@ PUBLIC int httpAddRouteLanguageSuffix(HttpRoute *route, cchar *language, cchar *
 /**
     Add a route mapping
     @description Route mappings will map the request filename by changing the default extension to the mapped extension.
-    This is used primarily to select compressed content.
+        This is used primarily to select compressed content.
     @param route Route to modify
-    @param extensions Comma separated list of extensions to map
-    @param mappings New file extension to use. This may include a "${1}" token to replace the previous extension.
+    @param extensions Comma separated list of extensions to map. For example: "css,html,js,less,txt,xml"
+        Set to "*" or the empty string to match all extensions.
+    @param mappings List of new file extensions to consider. This may include a "${1}" token to replace the 
+        previous extension. The extensions are searched in order and the first matching extensions for which there is
+        an existing file will be selected. For example: "${1}.gz, min.${1}.gz, min.${1}".
     @ingroup HttpRoute
     @stability Evolving
  */
@@ -5217,6 +5235,17 @@ PUBLIC cchar *httpLookupRouteErrorDocument(HttpRoute *route, int status);
 PUBLIC char *httpMakePath(HttpRoute *route, cchar *dir, cchar *path);
 
 /**
+    Map a content filename 
+    @description Test a filename for alternative extension mappings. This is used to server compressed or minified 
+        content intead of "vanilla" files.
+    @param conn HttpConn connection object
+    @param filename Base filename.
+    @ingroup HttpRoute
+    @stability Internal
+ */
+PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename);
+
+/**
     Map the request URI to a filename in physical storage for a handler.
     @description This routine is invoked by handlers to map the request URI to a filename and should be called by handlers
     that serve physical documents. The request URI is resolved relative to the route documents directory.
@@ -5462,6 +5491,7 @@ PUBLIC void httpSetRouteMethods(HttpRoute *route, cchar *methods);
  */
 PUBLIC void httpSetRouteCookie(HttpRoute *route, cchar *cookie);
 
+#if UNUSED
 /**
     Set the route name
     @description Symbolic route names are used by httpLink and when displaying route tables.
@@ -5471,6 +5501,7 @@ PUBLIC void httpSetRouteCookie(HttpRoute *route, cchar *cookie);
     @stability Evolving
  */
 PUBLIC void httpSetRouteName(HttpRoute *route, cchar *name);
+#endif
 
 /**
     Set the route pattern
@@ -5500,6 +5531,8 @@ PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags);
  */
 PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix);
 
+#if DEPRECATE || 1
+    //  DEPRECATE in version 6
 /**
     Set the route prefix for server-side URIs
     @description The server-side route prefix is appended to the route prefix to create the complete prefix
@@ -5510,6 +5543,7 @@ PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix);
     @stability Evolving
  */
 PUBLIC void httpSetRouteServerPrefix(HttpRoute *route, cchar *prefix);
+#endif
 
 /**
     Set the route to preserve WebSocket frames boundaries
@@ -5697,10 +5731,12 @@ PUBLIC void httpSetRouteWorkers(HttpRoute *route, int workers);
  */
 PUBLIC void httpSetRouteXsrf(HttpRoute *route, bool enable);
 
+//  DEPRECATE | and serverPrefix in version 6
 /**
     Expand a template string using given options
     @description This expands a string with embedded tokens of the form "${token}" using values from the given options.
-    This routine also understands the leading aliases: "~" for the route prefix and "^" for the top server URL (prefix+serverPrefix).
+    This routine also understands the leading aliases: "~" for the route prefix and "|" for the top server URL 
+        (prefix+serverPrefix).
     @param conn HttpConn connection object created via #httpCreateConn
     @param tplate Template string to process
     @param options Hash of option values for embedded tokens.
@@ -6594,6 +6630,7 @@ PUBLIC void httpProcessWriteEvent(HttpConn *conn);
 #define HTTP_TX_NO_LENGTH           0x20    /**< Do not emit a content length (used for TRACE) */
 #define HTTP_TX_NO_MAP              0x40    /**< Do not map the filename to compressed or minified alternatives */
 #define HTTP_TX_PIPELINE            0x80    /**< Created Tx pipeline */
+#define HTTP_TX_HAS_FILTERS         0x100   /**< Has output filters */
 
 /**
     Http Tx
@@ -7793,26 +7830,26 @@ PUBLIC ssize httpSend(HttpConn *conn, cchar *fmt, ...) PRINTF_ATTRIBUTE(2,3);
     Send a message of a given type to the WebSocket peer
     @description This is the lower-level message send routine. It permits control of message types and message framing.
     \n\n
-    This routine can operate in a blocking, non-blocking or buffered mode. Blocking mode is specified via the HTTP_BLOCK flag.
-    When blocking, the call will wait until it has written all the data. The call will either accept and write all the data
-    or it will fail, it will never return "short" with a partial write. If in blocking mode, the call may block for up to the
-    inactivity timeout specified in the conn->limits->inactivityTimeout value.
+    This routine can operate in a blocking, non-blocking or buffered mode. Blocking mode is specified via the HTTP_BLOCK 
+    flag. When blocking, the call will wait until it has written all the data. The call will either accept and write all 
+    the data or it will fail, it will never return "short" with a partial write. If in blocking mode, the call may block 
+    for up to the inactivity timeout specified in the conn->limits->inactivityTimeout value.
     \n\n
     Non-blocking mode is specified via the HTTP_NON_BLOCK flag. In this mode, the call will consume that amount of data
-    that will fit within the outgoing WebSocket queues. Consequently, it may return "short" with a partial write. If this occurs
-    the next call to httpSendBlock should set the message type to WS_MSG_CONT to indicate a continued message. This is required
-    by the WebSockets specification.
+    that will fit within the outgoing WebSocket queues. Consequently, it may return "short" with a partial write. If this 
+    occurs the next call to httpSendBlock should set the message type to WS_MSG_CONT to indicate a continued message. 
+    This is required by the WebSockets specification.
     \n\n
-    Buffered mode is the default and may be explicitly specified via the HTTP_BUFFER flag. In buffered mode, the entire message
-    will be accepted and will be buffered if required.
+    Buffered mode is the default and may be explicitly specified via the HTTP_BUFFER flag. In buffered mode, the entire 
+    message will be accepted and will be buffered if required.
     \n\n
     This API may split the message into frames such that no frame is larger than the limit conn->limits->webSocketsFrameSize.
-    However, if the HTTP_MORE flag is specified to indicate there is more data to complete this entire message, the data provided
-    to this call will not be split into frames and will not be aggregated with previous or subsequent messages. i.e. frame
-    boundaries will be presserved and sent as-is to the peer.
+    However, if the HTTP_MORE flag is specified to indicate there is more data to complete this entire message, the data 
+    provided to this call will not be split into frames and will not be aggregated with previous or subsequent messages. 
+    i.e. frame boundaries will be presserved and sent as-is to the peer.
     \n\n
-    In blocking mode, this routine may invoke mprYield before blocking to consent for the garbage collector to run. Callers must
-        ensure they have retained all required temporary memory before invoking this routine.
+    In blocking mode, this routine may invoke mprYield before blocking to consent for the garbage collector to run. Callers 
+    must ensure they have retained all required temporary memory before invoking this routine.
 
     @param conn HttpConn connection object created via #httpCreateConn
     @param type Web socket message type. Choose from WS_MSG_TEXT, WS_MSG_BINARY or WS_MSG_PING.

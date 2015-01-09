@@ -527,8 +527,9 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     assert(route);
     rx = conn->rx;
     tx = conn->tx;
+    assert(rx->pathInfo[0]);
 
-    rx->target = route->target ? expandTokens(conn, route->target) : sclone(&conn->rx->pathInfo[1]);
+    rx->target = route->target ? expandTokens(conn, route->target) : sclone(&rx->pathInfo[1]);
 
     if (route->requestHeaders) {
         for (next = 0; (op = mprGetNextItem(route->requestHeaders, &next)) != 0; ) {
@@ -1250,11 +1251,7 @@ PUBLIC void httpSetRouteData(HttpRoute *route, cchar *key, void *data)
 
 PUBLIC void httpSetRouteDocuments(HttpRoute *route, cchar *path)
 {
-    assert(route);
-    assert(path && *path);
-
-    route->documents = httpMakePath(route, route->home, path);
-    httpSetRouteVar(route, "DOCUMENTS", route->documents);
+    httpSetDir(route, "DOCUMENTS", path);
 }
 
 
@@ -1298,11 +1295,7 @@ PUBLIC int httpSetRouteHandler(HttpRoute *route, cchar *name)
 
 PUBLIC void httpSetRouteHome(HttpRoute *route, cchar *path)
 {
-    assert(route);
-    assert(path && *path);
-
-    route->home = httpMakePath(route, ".", path);
-    httpSetRouteVar(route, "HOME", route->home);
+    httpSetDir(route, "HOME", path);
 }
 
 
@@ -1580,10 +1573,12 @@ PUBLIC void httpSetRouteTemplate(HttpRoute *route, cchar *tplate)
 }
 
 
+#if DEPRECATED || 1
 PUBLIC void httpSetRouteUploadDir(HttpRoute *route, cchar *dir)
 {
-    httpSetDir(route, "upload", dir);
+    httpSetDir(route, "UPLOAD", dir);
 }
+#endif
 
 
 PUBLIC void httpSetRouteWorkers(HttpRoute *route, int workers)
@@ -2216,6 +2211,9 @@ static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *
 }
 
 
+/*
+    Test if the condition parameters evaluate to a directory
+ */
 static int directoryCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
     HttpTx      *tx;

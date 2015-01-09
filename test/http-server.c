@@ -138,7 +138,7 @@ MAIN(http, int argc, char **argv, char **envp)
         }
     }
     if (logSpec) {
-        mprStartLogging(logSpec, MPR_LOG_DETAILED | MPR_LOG_CONFIG | MPR_LOG_CMDLINE);
+        mprStartLogging(logSpec, MPR_LOG_CMDLINE);
     }
     if (traceSpec) {
         httpStartTracing(traceSpec);
@@ -193,7 +193,7 @@ static int createEndpoints(int argc, char **argv)
     httpFinalizeRoute(route);
 
     httpInitConfig(route);
-    if (httpLoadConfig(route, 0, app->configFile) < 0) {
+    if (httpLoadConfig(route, app->configFile) < 0) {
         return MPR_ERR_CANT_CREATE;
     }
     httpFinalizeConfig(route);

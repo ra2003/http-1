@@ -2223,17 +2223,16 @@ static int directoryCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     assert(conn);
     assert(route);
     assert(op);
+    tx = conn->tx;
 
     /* 
-        Must have tx->filename set when expanding op->details, so map target now 
+        Must have tx->filename set when expanding op->details, so map target now.
+        Then reset the filename and extension.
      */
-    tx = conn->tx;
     httpMapFile(conn);
-    //  MOB - is tx->filename already set to the right filename?
-    //  MOB - why is op->details necessary?  Add comments
     path = mprJoinPath(route->documents, expandTokens(conn, op->details));
-    //  Why reset these?
     tx->ext = tx->filename = 0;
+
     mprGetPathInfo(path, &info);
     if (info.isDir) {
         return HTTP_ROUTE_OK;
@@ -2261,6 +2260,7 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     httpMapFile(conn);
     path = mprJoinPath(route->documents, expandTokens(conn, op->details));
     tx->ext = tx->filename = 0;
+
     if (mprPathExists(path, R_OK)) {
         return HTTP_ROUTE_OK;
     }

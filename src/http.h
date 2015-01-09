@@ -2785,6 +2785,7 @@ PUBLIC int httpOpenUploadFilter();
 PUBLIC int httpOpenWebSockFilter();
 PUBLIC int httpSendOpen(HttpQueue *q);
 PUBLIC void httpSendOutgoingService(HttpQueue *q);
+PUBLIC int httpHandleDirectory(struct HttpConn *conn);
 
 /********************************** HttpConn *********************************/
 /**
@@ -4417,13 +4418,17 @@ PUBLIC void httpSetStreaming(struct HttpHost *host, cchar *mime, cchar *uri, boo
 #define HTTP_ROUTE_CORS                 0x40        /**< Cross-Origin resource sharing */
 #define HTTP_ROUTE_STEALTH              0x80        /**< Stealth mode */
 #define HTTP_ROUTE_SHOW_ERRORS          0x100       /**< Show errors to the client */
-#define HTTP_ROUTE_VISIBLE_SESSION      0x200       /**< Create a session cookie visible to client Javascript (not httponly) */
+#define HTTP_ROUTE_VISIBLE_SESSION      0x200       /**< Create a session cookie visible to client Javascript */
 #define HTTP_ROUTE_PRESERVE_FRAMES      0x400       /**< Preserve WebSocket frame boundaries */
 #define HTTP_ROUTE_HIDDEN               0x800       /**< Hide this route in route tables. */
 #define HTTP_ROUTE_ENV_ESCAPE           0x1000      /**< Escape env vars */
 #define HTTP_ROUTE_DOTNET_DIGEST_FIX    0x2000      /**< .NET digest auth omits query in MD5 */
 #define HTTP_ROUTE_REDIRECT             0x4000      /**< Redirect secureCondition */
 #define HTTP_ROUTE_STRICT_TLS           0x8000      /**< Emit Strict-Transport-Security header */
+
+#if DEPRECATE || 1
+#define HTTP_ROUTE_SET_DEFINED          0x10000     /**< Route set defined */
+#endif
 
 /**
     Route Control
@@ -4459,8 +4464,8 @@ typedef struct HttpRoute {
     char            *targetRule;            /**< Target rule */
     char            *target;                /**< Route target details */
 
-    char            *documents;             /**< Documents directory */
-    char            *home;                  /**< Home directory for configuration files */
+    cchar           *documents;             /**< Documents directory */
+    cchar           *home;                  /**< Home directory for configuration files */
     char            *envPrefix;             /**< Environment strings prefix */
     MprList         *indexes;               /**< Directory index documents */
     HttpStage       *handler;               /**< Fixed handler */
@@ -5172,14 +5177,13 @@ PUBLIC void httpInitConfig(HttpRoute *route);
     Load a JSON configuration file
     @description This loads the JSON configuration file.
     @param route Parent route to configure
-    @param rootKey Top level json property key at which to locate the json file contents.
     @param path Filename of the JSON configuration file. If this is a relative path, it will be resolved relative
         to the routes home directory.
     @return 'Zero' if successful, otherwise a negative MPR error code.
     @ingroup HttpRoute
     @stability Prototype
  */
-PUBLIC int httpLoadConfig(HttpRoute *route, cchar *rootKey, cchar *path);
+PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path);
 
 /**
     Lookup an error document by HTTP status code

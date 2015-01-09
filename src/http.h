@@ -4240,6 +4240,7 @@ typedef struct HttpLang {
 #define HTTP_CACHE_RESET            0x8     /**< Don't inherit cache config from outer routes */
 #define HTTP_CACHE_UNIQUE           0x10    /**< Uniquely cache request with different params */
 #define HTTP_CACHE_HAS_PARAMS       0x20    /**< Cache definition has params */
+#define HTTP_CACHE_STATIC           0x40    /**< Cache extensions: css, gif, ico, jpg, js, html, pdf, ttf, txt, xml, woff */
 
 /**
     Cache Control

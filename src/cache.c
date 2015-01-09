@@ -455,7 +455,8 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
                 mprAddKey(cache->types, item, cache);
             }
         }
-    } else {
+    } else if (flags & HTTP_CACHE_STATIC) {
+        cache->types = mprCreateHash(0, MPR_HASH_STABLE);
         mprAddKey(cache->types, "css", cache);
         mprAddKey(cache->types, "gif", cache);
         mprAddKey(cache->types, "ico", cache);

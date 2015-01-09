@@ -23,9 +23,6 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop);
 /************************************** Code **********************************/
 /*
     Define a configuration callbacks. The key is specified as it is used in json files.
-    When blended the json file is blended into route->config, the json file components will be located under "app" 
-    or elsewhere in the json tree. Consequently, when doing mprGetJson to lookup a specific key, you must use the 
-    "located" key name that typically includes the "app" prefix.
  */
 
 PUBLIC HttpParseCallback httpAddConfig(cchar *key, HttpParseCallback callback)
@@ -118,9 +115,9 @@ static void blendMode(HttpRoute *route, MprJson *config)
 }
 
 
-PUBLIC int parseFile(HttpRoute *route, cchar *root, cchar *path)
+PUBLIC int parseFile(HttpRoute *route, cchar *path)
 {
-    MprJson     *config, *obj;
+    MprJson     *config;
     cchar       *data, *errorMsg;
 
     if ((data = mprReadPathContents(path, NULL)) == 0) {
@@ -132,22 +129,10 @@ PUBLIC int parseFile(HttpRoute *route, cchar *root, cchar *path)
         return MPR_ERR_CANT_READ;
     }
     blendMode(route, config);
-    if (root) {
-        if (route->config) {
-            if ((obj = mprGetJsonObj(route->config, root)) == 0) {
-                obj = mprCreateJson(MPR_JSON_OBJ);
-                mprSetJsonObj(route->config, root, obj);
-            }
-        } else {
-            route->config = obj = mprCreateJson(MPR_JSON_OBJ);
-        }
-        mprBlendJson(obj, config, MPR_JSON_COMBINE);
+    if (route->config) {
+        mprBlendJson(route->config, config, MPR_JSON_COMBINE);
     } else {
-        if (route->config) {
-            mprBlendJson(route->config, config, MPR_JSON_COMBINE);
-        } else {
-            route->config = config;
-        }
+        route->config = config;
     }
     httpParseAll(route, 0, config);
     return 0;
@@ -161,10 +146,10 @@ PUBLIC void httpInitConfig(HttpRoute *route)
 }
 
 
-PUBLIC int httpLoadConfig(HttpRoute *route, cchar *root, cchar *path)
+PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
 {
     route->error = 0;
-    if (parseFile(route, root, path) < 0) {
+    if (parseFile(route, path) < 0) {
         return MPR_ERR_CANT_READ;
     }
     if (route->error) {
@@ -188,14 +173,14 @@ PUBLIC int httpFinalizeConfig(HttpRoute *route)
     /*
         Property order is not guaranteed, so must ensure routes are processed after all outer properties.
      */
-    if ((routes = mprGetJsonObj(route->config, "app.http.routes")) != 0) {
+    if ((routes = mprGetJsonObj(route->config, "http.routes")) != 0) {
         parseRoutes(route, "http.routes", routes);
     }
 
     /*
         Create a subset, optimized configuration to send to the client
      */
-    if ((obj = mprGetJsonObj(route->config, "app.http.mappings")) != 0) {
+    if ((obj = mprGetJsonObj(route->config, "http.mappings")) != 0) {
         mappings = mprCreateJson(MPR_JSON_OBJ);
         copyMappings(route, mappings, obj);
         mprWriteJson(mappings, "prefix", route->prefix);
@@ -282,7 +267,7 @@ PUBLIC void httpParseAll(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseApp(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    httpParseAll(route, strim(key, "app.", MPR_TRIM_START), prop);
+    httpParseAll(route, 0, prop);
 }
 
 
@@ -330,8 +315,8 @@ static void parseAuthAutoRoles(HttpRoute *route, cchar *key, MprJson *prop)
     MprJson     *child, *job;
     int         ji;
 
-    if ((job = mprGetJsonObj(route->config, "app.http.auth.roles")) != 0) {
-        parseAuthRoles(route, "app.http.auth.roles", job);
+    if ((job = mprGetJsonObj(route->config, "http.auth.roles")) != 0) {
+        parseAuthRoles(route, "http.auth.roles", job);
     }
     abilities = mprCreateHash(0, 0);
     for (ITERATE_CONFIG(route, prop, child, ji)) {
@@ -342,7 +327,7 @@ static void parseAuthAutoRoles(HttpRoute *route, cchar *key, MprJson *prop)
         for (ITERATE_KEYS(abilities, kp)) {
             mprSetJson(job, "$", kp->key);
         }
-        mprSetJsonObj(route->config, "app.http.auth.auto.abilities", job);
+        mprSetJsonObj(route->config, "http.auth.auto.abilities", job);
     }
 }
 
@@ -480,7 +465,7 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
 
     clientLifespan = serverLifespan = 0;
     if (prop->type & MPR_JSON_STRING && smatch(prop->value, "true")) {
-        httpAddCache(route, 0, 0, 0, 0, 86400 * 1000, 0, HTTP_CACHE_CLIENT);
+        httpAddCache(route, 0, 0, 0, 0, 86400 * 1000, 0, HTTP_CACHE_CLIENT | HTTP_CACHE_STATIC);
     } else {
         for (ITERATE_CONFIG(route, prop, child, ji)) {
             flags = 0;
@@ -518,61 +503,6 @@ static void parseCompress(HttpRoute *route, cchar *key, MprJson *prop)
         httpAddRouteMapping(route, mprJsonToString(prop, 0), "${1}.gz, min.${1}.gz, min.${1}");
     }
 }
-
-
-#if KEEP && UNUSED
-static void parseContentCombine(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    MprJson     *child;
-    int         ji;
-
-    for (ITERATE_CONFIG(route, prop, child, ji)) {
-        if (smatch(child->value, "c")) {
-            route->combine = 1;
-            break;
-        }
-    }
-}
-
-
-static void parseContentCompress(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    MprJson     *child;
-    int         ji;
-
-    for (ITERATE_CONFIG(route, prop, child, ji)) {
-        if (mprGetJson(route->config, sfmt("app.http.content.minify[@ = '%s']", child->value))) {
-            httpAddRouteMapping(route, child->value, "${1}.gz, min.${1}.gz, min.${1}");
-        } else {
-            httpAddRouteMapping(route, child->value, "${1}.gz");
-        }
-    }
-}
-
-
-static void parseContentKeep(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    if (mprGetJson(prop, "[@=c]")) {
-        route->keepSource = 1;
-    }
-}
-
-
-static void parseContentMinify(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    MprJson     *child;
-    int         ji;
-
-    for (ITERATE_CONFIG(route, prop, child, ji)) {
-        /*
-            Compressed and minified is handled in parseContentCompress
-         */
-        if (mprGetJson(route->config, sfmt("app.http.content.compress[@ = '%s']", child->value)) == 0) {
-            httpAddRouteMapping(route, child->value, "min.${1}");
-        }
-    }
-}
-#endif
 
 
 static void parseDatabase(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1629,7 +1559,7 @@ static void parseInclude(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        parseFile(route, 0, child->value);
+        parseFile(route, child->value);
     }
 }
 
@@ -1640,9 +1570,6 @@ PUBLIC int httpInitParser()
 
     /*
         Parse callbacks keys are specified as they are defined in the json files
-        When blended, various json components may be located under "app" or elsewhere in the tree.
-        Consequently, when doing mprGetJson to lookup a specific key, you must use the "located" key name that typically
-        includes the "app" prefix.
      */
     httpAddConfig("app", parseApp);
     httpAddConfig("http", parseHttp);

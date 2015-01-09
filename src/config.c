@@ -180,7 +180,14 @@ PUBLIC int httpFinalizeConfig(HttpRoute *route)
     /*
         Create a subset, optimized configuration to send to the client
      */
-    if ((obj = mprGetJsonObj(route->config, "http.mappings")) != 0) {
+    if ((obj = mprGetJsonObj(route->config, "http.client.mappings")) == 0) {
+#if DEPRECATED || 1
+        if ((obj = mprGetJsonObj(route->config, "http.mappings")) != 0) {
+            mprLog("warn http", 0, "Using deprecated http.mappings. use http.client.mappings instead");
+        }
+#endif
+    }
+    if (obj) {
         mappings = mprCreateJson(MPR_JSON_OBJ);
         copyMappings(route, mappings, obj);
         mprWriteJson(mappings, "prefix", route->prefix);

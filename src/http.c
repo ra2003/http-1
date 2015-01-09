@@ -896,7 +896,6 @@ static int issueRequest(HttpConn *conn, cchar *url, MprList *files)
             }
         }
         if ((rx = conn->rx) != 0) {
-            /* TODO - better define what requests are retried */
             if (rx->status == HTTP_CODE_REQUEST_TOO_LARGE || rx->status == HTTP_CODE_REQUEST_URL_TOO_LARGE ||
                 rx->status == HTTP_CODE_NOT_ACCEPTABLE || 
                 (rx->status == HTTP_CODE_UNAUTHORIZED && conn->username == 0)) {

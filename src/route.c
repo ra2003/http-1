@@ -2438,9 +2438,6 @@ static int redirectTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
 static int runTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
-    /*
-        Need to re-compute output string as updates may have run to define params which affect the route->target tokens
-     */
     conn->rx->target = route->target ? expandTokens(conn, route->target) : sclone(&conn->rx->pathInfo[1]);
     return HTTP_ROUTE_OK;
 }

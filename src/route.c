@@ -591,7 +591,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     if (route->tokens) {
         for (next = 0; (token = mprGetNextItem(route->tokens, &next)) != 0; ) {
             int index = rx->matches[next * 2];
-            if (index >= 0 && rx->pathInfo[index]) {
+            if (index >= 0) {
                 value = snclone(&rx->pathInfo[index], rx->matches[(next * 2) + 1] - index);
                 httpSetParam(conn, token, value);
             }

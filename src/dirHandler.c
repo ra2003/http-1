@@ -82,9 +82,9 @@ static void startDir(HttpQueue *q)
         httpError(conn, HTTP_CODE_BAD_METHOD, "Bad method");
         return;
     }
+    httpSetContentType(conn, "text/html");
     httpSetHeaderString(conn, "Cache-Control", "no-cache");
     httpSetHeaderString(conn, "Last-Modified", conn->http->currentDate);
-    httpSetHeaderString(conn, "Content-Type", "text/html");
     parseQuery(conn);
 
     if ((list = mprGetPathFiles(tx->filename, MPR_PATH_RELATIVE)) == 0) {

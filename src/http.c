@@ -815,7 +815,7 @@ static int prepRequest(HttpConn *conn, MprList *files, int retry)
         httpSetHeaderString(conn, "Range", app->ranges);
     }
     if (app->formData) {
-        httpSetHeaderString(conn, "Content-Type", "application/x-www-form-urlencoded");
+        httpSetContentType(conn, "application/x-www-form-urlencoded");
     }
     if (setContentLength(conn, files) < 0) {
         return MPR_ERR_CANT_OPEN;

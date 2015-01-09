@@ -6,7 +6,6 @@
         Opportunity to remap directories. These are the default values.
      */
     directories: {
-        "app": "documents",
         "cache": "cache",
         "controllers": "controllers",
         "db": "db",
@@ -300,6 +299,7 @@
         
         /*
             Response caching directives
+            Can also just set "cache" to true which defines a client cache of 1 day for common static file types.
          */
         cache: [ {
             /*
@@ -702,18 +702,18 @@
     },
 
     /*
-        Mode specific property collections. The designated mode collection is copied to "app".
+        Mode specific property collections. The designated mode collection is copied to the top level.
         The mode property set is selected by the package.json "mode" property.
      */
     modes: {
         debug: { 
             /*
-                Collection of properties that are copied to "app" if in debug mode
+                Collection of properties that are copied to the top level if in debug mode
              */
         },
         release: {
             /*
-                Collection of properties that are copied to "app" if in release mode
+                Collection of properties that are copied to the top level if in release mode
              */
         }
     }

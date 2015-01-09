@@ -4895,13 +4895,13 @@ PUBLIC int httpAddRouteUpdate(HttpRoute *route, cchar *name, cchar *details, int
 
 /**
     Add a route using the WebSockets filter
-    @param parent Parent route from which to inherit configuration.
-    @param name Action to invoke on the controller.
+    @param route Parent route from which to inherit configuration.
+    @param action Name of the action to invoke on the route
     @return The new route object.
     @ingroup HttpRoute
     @stability Evolving
  */
-PUBLIC HttpRoute *httpAddWebSocketsRoute(HttpRoute *parent, cchar *action);
+PUBLIC HttpRoute *httpAddWebSocketsRoute(HttpRoute *route, cchar *action);
 
 
 /**

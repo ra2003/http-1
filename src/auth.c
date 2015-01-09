@@ -441,9 +441,6 @@ static HttpRoute *createLoginRoute(HttpRoute *route, cchar *pattern, HttpAction 
             route->handler = route->http->actionHandler;
             httpDefineAction(pattern, action);
         }
-#if UNUSED
-        httpSetRouteName(route, strim(pattern, "^$", 0));
-#endif
         httpFinalizeRoute(route);
     }
     return route;

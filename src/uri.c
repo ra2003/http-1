@@ -917,7 +917,8 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
 #if DEPRECATE || 1
     //  DEPRECATE in version 6
     if (routeName[0] == ME_SERVER_PREFIX_CHAR) {
-        return sjoin(route->prefix, route->serverPrefix, &routeName[1], NULL);
+        assert(routeName[0] != ME_SERVER_PREFIX_CHAR);
+        return sjoin(route->prefix, &routeName[1], NULL);
     }
 #endif
     return routeName;
@@ -936,11 +937,9 @@ static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action)
     }
     if (controller) {
         controllerPrefix = (controller && smatch(controller, "{controller}")) ? "*" : controller;
-        //  DEPRECATE serverPrefix in version 6
-        return sjoin(route->prefix, route->serverPrefix, "/", controllerPrefix, "/", action, NULL);
+        return sjoin("^", route->prefix, "/", controllerPrefix, "/", action, NULL);
     } else {
-        //  DEPRECATE serverPrefix in version 6
-        return sjoin(route->prefix, route->serverPrefix, "/", action, NULL);
+        return sjoin("^", route->prefix, "/", action, NULL);
     }
 }
 

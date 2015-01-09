@@ -485,11 +485,6 @@
         methods: [ "get", "post" ],
 
         /*
-            Descriptive name for route
-         */
-        name:  "",
-
-        /*
             Required request parameters before this route will match a request
          */
         params: [ {

@@ -1061,7 +1061,6 @@ PUBLIC int httpSetUserAccount(cchar *newUser)
 }
 
 
-//  TODO - this should be pushed down into http
 PUBLIC int httpSetGroupAccount(cchar *newGroup)
 {
     Http    *http;

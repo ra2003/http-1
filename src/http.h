@@ -182,9 +182,13 @@ struct HttpWebSocket;
 #ifndef ME_MAX_PING_DURATION
     #define ME_MAX_PING_DURATION   (30 * 1000)         /**< WSS ping defeat Keep-Alive timeouts (30 sec) */
 #endif
+
+#if DEPRECATE || 1
 #ifndef ME_SERVER_PREFIX_CHAR
     #define ME_SERVER_PREFIX_CHAR '|'                  /**< URI prefix character for server prefix */
 #endif
+#endif
+
 #ifndef ME_XSRF_COOKIE
     #define ME_XSRF_COOKIE        "XSRF-TOKEN"         /**< CSRF token cookie name */
 #endif
@@ -4442,16 +4446,12 @@ PUBLIC void httpSetStreaming(struct HttpHost *host, cchar *mime, cchar *uri, boo
 typedef struct HttpRoute {
     /* Ordered for debugging */
     struct HttpRoute *parent;               /**< Parent route */
-#if UNUSED
-    char            *name;                  /**< Route name */
-#endif
     char            *pattern;               /**< Original matching URI pattern for the route (includes prefix) */
     char            *startSegment;          /**< First starting literal segment of pattern */
     char            *startWith;             /**< Starting literal portion of pattern */
     char            *optimizedPattern;      /**< Processed pattern (excludes prefix) */
     char            *prefix;                /**< Application scriptName prefix. Set to '' for '/'. Always set */
 #if DEPRECATE || 1
-    //  DEPRECATE in version 6
     char            *serverPrefix;          /**< Prefix for the server-side. Does not include prefix. Always set */
 #endif
     char            *tplate;                /**< URI template for forming links based on this route (includes prefix) */
@@ -4638,12 +4638,11 @@ PUBLIC void httpAddRouteSet(HttpRoute *route, cchar *set);
     </tr>
     </table>
     @param parent Parent route from which to inherit configuration.
-    @param prefix URI prefix to append to the application prefix when constructing route URIs.
     @param resource Resource name. This should be a lower case, single word, alphabetic resource name.
     @ingroup HttpRoute
     @stability Evolving
  */
-PUBLIC void httpAddResource(HttpRoute *parent, cchar *prefix, cchar *resource);
+PUBLIC void httpAddResource(HttpRoute *parent, cchar *resource);
 
 /**
     Add routes for a permanent resource
@@ -4656,23 +4655,11 @@ PUBLIC void httpAddResource(HttpRoute *parent, cchar *prefix, cchar *resource);
     </tr>
     </table>
     @param parent Parent route from which to inherit configuration.
-    @param prefix URI prefix to append to the application prefix when constructing route URIs.
     @param resource Resource name. This should be a lower case, single word, alphabetic resource name.
     @ingroup HttpRoute
     @stability Evolving
  */
-PUBLIC void httpAddPermResource(HttpRoute *parent, cchar *prefix, cchar *resource);
-
-/**
-    Add a route for the public directory
-    The public directory is defined via the {PUBLIC_DIR} route var.
-    @param parent Parent route from which to inherit configuration.
-    @param prefix URI prefix to append to the application prefix when constructing route URIs.
-    @param name Route name.
-    @ingroup HttpRoute
-    @stability Evolving
- */
-PUBLIC void httpAddPublicRoute(HttpRoute *parent, cchar *prefix, cchar *name);
+PUBLIC void httpAddPermResource(HttpRoute *parent, cchar *resource);
 
 /**
     Add routes for a group of resources
@@ -4691,12 +4678,11 @@ PUBLIC void httpAddPublicRoute(HttpRoute *parent, cchar *prefix, cchar *name);
     </tr>
     </table>
     @param parent Parent route from which to inherit configuration.
-    @param prefix URI prefix to append to the application prefix when constructing route URIs.
     @param resource Resource name. This should be a lower case, single word, alphabetic resource name.
     @ingroup HttpRoute
     @stability Evolving
  */
-PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *prefix, cchar *resource);
+PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *resource);
 
 /**
     Add a route condition
@@ -4904,13 +4890,12 @@ PUBLIC int httpAddRouteUpdate(HttpRoute *route, cchar *name, cchar *details, int
 /**
     Add a route using the WebSockets filter
     @param parent Parent route from which to inherit configuration.
-    @param prefix URI prefix to append to the application prefix when constructing route URIs.
-    @param name Route name.
+    @param name Action to invoke on the controller.
     @return The new route object.
     @ingroup HttpRoute
     @stability Evolving
  */
-PUBLIC HttpRoute *httpAddWebSocketsRoute(HttpRoute *parent, cchar *prefix, cchar *name);
+PUBLIC HttpRoute *httpAddWebSocketsRoute(HttpRoute *parent, cchar *action);
 
 
 /**
@@ -4997,7 +4982,6 @@ PUBLIC HttpRoute *httpCreateRoute(struct HttpHost *host);
     @description This creates a route and then configures it using the given parameters. The route is finalized and
         added to the parent host.
     @param parent Parent route from which to inherit configuration.
-    @param name Route name to define.
     @param methods Http methods for which this route is active
     @param pattern Matching URI pattern for which this route will qualify
     @param target Route target string expression. This is used by handlers to determine the physical or virtual resource
@@ -5007,16 +4991,13 @@ PUBLIC HttpRoute *httpCreateRoute(struct HttpHost *host);
     @ingroup HttpRoute
     @stability Evolving
  */
-PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods, cchar *pattern, cchar *target, 
-    cchar *source);
+PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *methods, cchar *pattern, cchar *target, cchar *source);
 
 /**
     Define a RESTful route
     @description This creates a restful route and then configures it using the given parameters. The route is finalized and
         added to the parent host.
     @param parent Parent route from which to inherit configuration.
-    @param prefix URI prefix to use after the route prefix.
-    @param action Controller action name
     @param methods Http methods for which this route is active
     @param pattern Matching URI pattern for which this route will qualify
     @param target Route target string expression. This is used by handlers to determine the physical or virtual resource
@@ -5026,8 +5007,7 @@ PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *name, cchar *methods
     @ingroup HttpRoute
     @stability Evolving
  */
-PUBLIC HttpRoute *httpAddRestfulRoute(HttpRoute *parent, cchar *prefix, cchar *action, cchar *methods, cchar *pattern,
-    cchar * target, cchar *resource);
+PUBLIC HttpRoute *httpAddRestfulRoute(HttpRoute *parent, cchar *methods, cchar *pattern, cchar * target, cchar *resource);
 
 /**
     Define a route condition rule
@@ -5491,18 +5471,6 @@ PUBLIC void httpSetRouteMethods(HttpRoute *route, cchar *methods);
  */
 PUBLIC void httpSetRouteCookie(HttpRoute *route, cchar *cookie);
 
-#if UNUSED
-/**
-    Set the route name
-    @description Symbolic route names are used by httpLink and when displaying route tables.
-    @param route Route to modify
-    @param name Unique symbolic name for the route. If a name is not defined, the route pattern will be used as the name.
-    @ingroup HttpRoute
-    @stability Evolving
- */
-PUBLIC void httpSetRouteName(HttpRoute *route, cchar *name);
-#endif
-
 /**
     Set the route pattern
     @description This call defines the route regular expression pattern that is used to match against the request URI.
@@ -5532,7 +5500,6 @@ PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags);
 PUBLIC void httpSetRoutePrefix(HttpRoute *route, cchar *prefix);
 
 #if DEPRECATE || 1
-    //  DEPRECATE in version 6
 /**
     Set the route prefix for server-side URIs
     @description The server-side route prefix is appended to the route prefix to create the complete prefix
@@ -5701,6 +5668,7 @@ PUBLIC void httpSetRouteTemplate(HttpRoute *route, cchar *tplate);
  */
 PUBLIC void httpSetRouteVar(HttpRoute *route, cchar *token, cchar *value);
 
+#if DEPRECATED || 1
 /**
     Set the default upload directory for file uploads
     @param route Route to modify
@@ -5709,6 +5677,7 @@ PUBLIC void httpSetRouteVar(HttpRoute *route, cchar *token, cchar *value);
     @stability Evolving
  */
 PUBLIC void httpSetRouteUploadDir(HttpRoute *route, cchar *dir);
+#endif
 
 /**
     Define the maximum number of workers for a route
@@ -5731,12 +5700,10 @@ PUBLIC void httpSetRouteWorkers(HttpRoute *route, int workers);
  */
 PUBLIC void httpSetRouteXsrf(HttpRoute *route, bool enable);
 
-//  DEPRECATE | and serverPrefix in version 6
 /**
     Expand a template string using given options
     @description This expands a string with embedded tokens of the form "${token}" using values from the given options.
-    This routine also understands the leading aliases: "~" for the route prefix and "|" for the top server URL 
-        (prefix+serverPrefix).
+    This routine also understands the leading aliases: "~" for the route prefix.
     @param conn HttpConn connection object created via #httpCreateConn
     @param tplate Template string to process
     @param options Hash of option values for embedded tokens.
@@ -6126,7 +6093,6 @@ typedef struct HttpRx {
 
     /*
         Header values
-        TODO - these should be cchar
      */
     char            *accept;                /**< Accept header */
     char            *acceptCharset;         /**< Accept-Charset header */
@@ -7468,7 +7434,8 @@ PUBLIC void httpStopEndpoint(HttpEndpoint *endpoint);
     Host Object
     @description A Host object represents a logical host. Several logical hosts may share a single HttpEndpoint.
     @defgroup HttpHost HttpHost
-    @see HttpHost httpAddRoute httpCloneHost httpCreateHost httpResetRoutes httpSetHostHome httpSetHostName httpSetHostProtocol
+    @see HttpHost httpAddRoute httpCloneHost httpCreateHost httpResetRoutes httpSetHostHome 
+        httpSetHostName httpSetHostProtocol
     @stability Internal
 */
 typedef struct HttpHost {
@@ -7569,22 +7536,13 @@ PUBLIC HttpRoute *httpGetHostDefaultRoute(HttpHost *host);
 PUBLIC void httpLogRoutes(HttpHost *host, bool full);
 
 /**
-    Lookup a route by name
-    @param host HttpHost object owning the route table
-    @param name Route name to find. If null or empty, look for "default"
-    @ingroup HttpRoute
-    @stability Stable
- */
-PUBLIC HttpRoute *httpLookupRoute(HttpHost *host, cchar *name);
-
-/**
     Lookup a route by pattern
     @param host HttpHost object owning the route table
     @param pattern Route pattern to find. If null or empty, look for "/"
     @ingroup HttpRoute
     @stability Stable
   */
-PUBLIC HttpRoute *httpLookupRouteByPattern(HttpHost *host, cchar *pattern);
+PUBLIC HttpRoute *httpLookupRoute(HttpHost *host, cchar *pattern);
 
 /**
     Reset the list of routes for the host

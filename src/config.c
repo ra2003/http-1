@@ -887,15 +887,6 @@ static void parseMode(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseName(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    //  MOB - remove this and update doc
-#if UNUSED
-    httpSetRouteName(route, prop->value);
-#endif
-}
-
-
 /*
     Match route only if param matches
  */
@@ -1001,9 +992,6 @@ static void createRedirectAlias(HttpRoute *route, int status, cchar *from, cchar
         pattern = sfmt("^%s%s(?:/)*(.*)$", route->prefix, from);
     }
     alias = httpCreateAliasRoute(route, pattern, 0, 0);
-#if UNUSED
-    httpSetRouteName(alias, "redirect");
-#endif
     httpSetRouteMethods(alias, "*");
     httpSetRouteTarget(alias, "redirect", sfmt("%d %s/$1", status, to));
     if (sstarts(to, "https")) {
@@ -1062,14 +1050,12 @@ static void parseResources(HttpRoute *route, cchar *key, MprJson *prop)
     }
     if ((groups = mprReadJsonObj(prop, "groups")) != 0) {
         for (ITERATE_CONFIG(route, groups, child, ji)) {
-            //  DEPRECATE serverPrefix in version 6
-            httpAddResourceGroup(route, route->serverPrefix, child->value);
+            httpAddResourceGroup(route, child->value);
         }
     }
     if ((singletons = mprReadJsonObj(prop, "singletons")) != 0) {
         for (ITERATE_CONFIG(route, singletons, child, ji)) {
-            //  DEPRECATE serverPrefix in version 6
-            httpAddResource(route, route->serverPrefix, child->value);
+            httpAddResource(route, child->value);
         }
     }
 }
@@ -1133,7 +1119,7 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
                 newRoute = 0;
                 pattern = mprReadJson(child, "pattern");
                 if (pattern) {
-                    newRoute = httpLookupRouteByPattern(route->host, pattern);
+                    newRoute = httpLookupRoute(route->host, pattern);
                     if (!newRoute) {
                         newRoute = httpCreateInheritedRoute(route);
                         httpSetRouteHost(newRoute, route->host);
@@ -1351,10 +1337,12 @@ static void parseServerMonitors(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+#if DEPRECATE || 1
 static void parseServerPrefix(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpSetRouteServerPrefix(route, prop->value);
 }
+#endif
 
 
 static void parseShowErrors(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1727,7 +1715,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.limits.workers", parseLimitsWorkers);
     httpAddConfig("http.methods", parseMethods);
     httpAddConfig("http.mode", parseMode);
-    httpAddConfig("http.name", parseName);
     httpAddConfig("http.params", parseParams);
     httpAddConfig("http.pattern", parsePattern);
     httpAddConfig("http.pipeline", httpParseAll);
@@ -1761,7 +1748,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.showErrors", parseShowErrors);
     httpAddConfig("http.source", parseSource);
 #if DEPRECATE || 1
-    //  DEPRECATE in version 6
     httpAddConfig("http.serverPrefix", parseServerPrefix);
 #endif
     httpAddConfig("http.stealth", parseStealth);

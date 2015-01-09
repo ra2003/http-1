@@ -916,8 +916,8 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
     }
 #if DEPRECATE || 1
     //  DEPRECATE in version 6
-    if (routeName[0] == ME_SERVER_PREFIX_CHAR) {
-        assert(routeName[0] != ME_SERVER_PREFIX_CHAR);
+    if (routeName[0] == '|') {
+        assert(routeName[0] != '|');
         return sjoin(route->prefix, &routeName[1], NULL);
     }
 #endif

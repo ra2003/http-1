@@ -1935,11 +1935,10 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
             mprPutStringToBuf(buf, route->prefix);
 
 #if DEPRECATE || 1
-        } else if (cp == template && *cp == ME_SERVER_PREFIX_CHAR) {
+        } else if (cp == template && *cp == '|') {
             mprPutStringToBuf(buf, route->prefix);
             //  DEPRECATE in version 6
             mprPutStringToBuf(buf, route->serverPrefix);
-            assert(*cp != ME_SERVER_PREFIX_CHAR);
 #endif
 
         } else if (*cp == '$' && cp[1] == '{' && (cp == template || cp[-1] != '\\')) {

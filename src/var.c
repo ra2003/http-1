@@ -85,11 +85,11 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         params = httpGetParams(conn);
         assert(params);
         for (ITERATE_ITEMS(rx->files, file, index)) {
-            mprWriteJson(params, sfmt("FILE_%d_FILENAME", index), file->filename);
-            mprWriteJson(params, sfmt("FILE_%d_CLIENT_FILENAME", index), file->clientFilename);
-            mprWriteJson(params, sfmt("FILE_%d_CONTENT_TYPE", index), file->contentType);
-            mprWriteJson(params, sfmt("FILE_%d_NAME", index), file->name);
-            mprWriteJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%zd", file->size));
+            mprWriteJson(params, sfmt("FILE_%d_FILENAME", index), file->filename, MPR_JSON_STRING);
+            mprWriteJson(params, sfmt("FILE_%d_CLIENT_FILENAME", index), file->clientFilename, MPR_JSON_STRING);
+            mprWriteJson(params, sfmt("FILE_%d_CONTENT_TYPE", index), file->contentType, MPR_JSON_STRING);
+            mprWriteJson(params, sfmt("FILE_%d_NAME", index), file->name, MPR_JSON_STRING);
+            mprWriteJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%zd", file->size), MPR_JSON_NUMBER);
         }
     }
     if (conn->http->envCallback) {
@@ -135,19 +135,19 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
             if (prior && prior->type == MPR_JSON_VALUE) {
                 if (*value) {
                     newValue = sjoin(prior->value, " ", value, NULL);
-                    mprSetJson(params, keyword, newValue);
+                    mprSetJson(params, keyword, newValue, MPR_JSON_STRING);
                 }
             } else {
-                mprSetJson(params, keyword, value);
+                mprSetJson(params, keyword, value, MPR_JSON_STRING);
             }
 #else
             if (prior && prior->type == MPR_JSON_VALUE) {
                 if (*value) {
                     newValue = sjoin(prior->value, " ", value, NULL);
-                    mprWriteJson(params, keyword, newValue);
+                    mprWriteJson(params, keyword, newValue, MPR_JSON_STRING);
                 }
             } else {
-                mprWriteJson(params, keyword, value);
+                mprWriteJson(params, keyword, value, MPR_JSON_STRING);
             }
 #endif
         }
@@ -303,13 +303,13 @@ PUBLIC void httpRemoveParam(HttpConn *conn, cchar *var)
 
 PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value) 
 {
-    mprWriteJson(httpGetParams(conn), var, value);
+    mprWriteJson(httpGetParams(conn), var, value, 0);
 }
 
 
 PUBLIC void httpSetIntParam(HttpConn *conn, cchar *var, int value) 
 {
-    mprWriteJson(httpGetParams(conn), var, sfmt("%d", value));
+    mprWriteJson(httpGetParams(conn), var, sfmt("%d", value), MPR_JSON_NUMBER);
 }
 
 

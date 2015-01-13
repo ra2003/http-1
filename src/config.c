@@ -190,7 +190,7 @@ PUBLIC int httpFinalizeConfig(HttpRoute *route)
     if (obj) {
         mappings = mprCreateJson(MPR_JSON_OBJ);
         copyMappings(route, mappings, obj);
-        mprWriteJson(mappings, "prefix", route->prefix);
+        mprWriteJson(mappings, "prefix", route->prefix, 0);
         route->clientConfig = mprJsonToString(mappings, MPR_JSON_QUOTES);
     }
     httpAddHostToEndpoints(route->host);
@@ -236,7 +236,7 @@ static void copyMappings(HttpRoute *route, MprJson *dest, MprJson *obj)
             if (sends(key, "|time")) {
                 key = ssplit(sclone(key), " \t|", NULL);
                 if ((value = mprGetJson(route->config, key)) != 0) {
-                    mprSetJson(dest, child->name, itos(httpGetTicks(value)));
+                    mprSetJson(dest, child->name, itos(httpGetTicks(value)), MPR_JSON_NUMBER);
                 }
             } else {
                 if ((jvalue = mprGetJsonObj(route->config, key)) != 0) {
@@ -332,7 +332,7 @@ static void parseAuthAutoRoles(HttpRoute *route, cchar *key, MprJson *prop)
     if (mprGetHashLength(abilities) > 0) {
         job = mprCreateJson(MPR_JSON_ARRAY);
         for (ITERATE_KEYS(abilities, kp)) {
-            mprSetJson(job, "$", kp->key);
+            mprSetJson(job, "$", kp->key, 0);
         }
         mprSetJsonObj(route->config, "http.auth.auto.abilities", job);
     }
@@ -1118,6 +1118,9 @@ static void parseServerChroot(HttpRoute *route, cchar *key, MprJson *prop)
 #if ME_UNIX_LIKE
     char        *home;
 
+    if (!prop->value && !*prop->value) {
+        return;
+    }
     home = httpMakePath(route, 0, prop->value);
     if (chdir(home) < 0) {
         httpParseError(route, "Cannot change working directory to %s", home);

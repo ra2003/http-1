@@ -95,7 +95,6 @@ static int openFileHandler(HttpQueue *q)
         if (httpContentNotModified(conn)) {
             httpSetStatus(conn, HTTP_CODE_NOT_MODIFIED);
             httpOmitBody(conn);
-            tx->length = -1;
         }
         if (!tx->fileInfo.isReg && !tx->fileInfo.isLink) {
             httpTrace(conn, "request.document.error", "error", "msg:'Document is not a regular file',filename:'%s'", 
@@ -172,14 +171,16 @@ static void startFileHandler(HttpQueue *q)
         httpHandleOptions(q->conn);
         
     } else if (!(tx->flags & HTTP_TX_NO_BODY)) {
-        /* Create a single data packet based on the entity length */
-        packet = httpCreateEntityPacket(0, tx->entityLength, readFileData);
-        if (!tx->outputRanges && tx->chunkSize < 0) {
-            /* Can set a content length */
-            tx->length = tx->entityLength;
+        if (tx->entityLength >= 0) {
+            /* 
+                Create a single data packet based on the actual entity (file) length 
+             */
+            packet = httpCreateEntityPacket(0, tx->entityLength, readFileData);
+            if (!tx->outputRanges && tx->chunkSize < 0) {
+                tx->length = tx->entityLength;
+            }
+            httpPutForService(q, packet, 0);
         }
-        /* Add to the output service queue */
-        httpPutForService(q, packet, 0);
     }
 }
 

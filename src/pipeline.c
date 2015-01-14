@@ -265,7 +265,6 @@ PUBLIC void httpSetFileHandler(HttpConn *conn, cchar *path)
         tx->connector = HTTP->sendConnector;
     }
     tx->entityLength = tx->fileInfo.size;
-
     fp = tx->handler = HTTP->fileHandler;
     fp->open(conn->writeq);
     fp->start(conn->writeq);

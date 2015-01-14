@@ -156,7 +156,7 @@ static MprOff buildNetVec(HttpQueue *q)
     for (packet = prev = q->first; packet && !(packet->flags & HTTP_PACKET_END); packet = packet->next) {
         if (packet->flags & HTTP_PACKET_HEADER) {
             if (tx->chunkSize <= 0 && q->count > 0 && tx->length < 0) {
-                /* Incase no chunking filter and we've not seen all the data yet */
+                /* No content length, but not chunking. So have to close the connection to signify the content end */
                 conn->keepAliveCount = 0;
             }
             httpWriteHeaders(q, packet);

@@ -48,8 +48,9 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
     }
     if (dir & HTTP_STAGE_TX) {
         /* 
-            If content length is defined, don't need chunking. Also disable chunking if explicitly turned off vi 
-            the X_APPWEB_CHUNK_SIZE header which may set the chunk size to zero.
+            If content length is defined, don't need chunking - but only if chunking not explicitly asked for. 
+            Disable chunking if explicitly turned off via the X_APPWEB_CHUNK_SIZE header which may set the 
+            chunk size to zero.
          */
         if ((tx->length >= 0 && tx->chunkSize < 0) || tx->chunkSize == 0) {
             return HTTP_ROUTE_OMIT_FILTER;
@@ -173,7 +174,7 @@ static void outgoingChunkService(HttpQueue *q)
 
     if (!(q->flags & HTTP_QUEUE_SERVICED)) {
         /*
-            If we don't know the content length (tx->length < 0) and if the last packet is the end packet. Then
+            If we don't know the content length yet (tx->length < 0) and if the last packet is the end packet. Then
             we have all the data. Thus we can determine the actual content length and can bypass the chunk handler.
          */
         if (tx->length < 0 && (value = mprLookupKey(tx->headers, "Content-Length")) != 0) {

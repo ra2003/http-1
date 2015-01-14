@@ -247,6 +247,9 @@ PUBLIC void httpSetSendConnector(HttpConn *conn, cchar *path)
 }
 
 
+/*
+    Set the fileHandler as the selected handler for the request
+ */
 PUBLIC void httpSetFileHandler(HttpConn *conn, cchar *path)
 {
     HttpStage   *fp;
@@ -257,14 +260,13 @@ PUBLIC void httpSetFileHandler(HttpConn *conn, cchar *path)
     if (path && path != tx->filename) {
         httpSetFilename(conn, path, 0);
     }
-    fp = tx->handler = HTTP->fileHandler;
-//  MOB TEMP - can only do this if only the chunk filter has been added
-    tx->flags &= ~HTTP_TX_HAS_FILTERS;
     if ((conn->rx->flags & HTTP_GET) && !(tx->flags & HTTP_TX_HAS_FILTERS) && !conn->secure && !httpTracing(conn)) {
         tx->flags |= HTTP_TX_SENDFILE;
         tx->connector = HTTP->sendConnector;
     }
-    httpSetEntityLength(conn, tx->fileInfo.size);
+    tx->entityLength = tx->fileInfo.size;
+
+    fp = tx->handler = HTTP->fileHandler;
     fp->open(conn->writeq);
     fp->start(conn->writeq);
     conn->writeq->service = fp->outgoingService;

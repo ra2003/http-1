@@ -43,12 +43,12 @@ static int rewriteFileHandler(HttpConn *conn)
     if (info->isDir) {
         return httpHandleDirectory(conn);
     }
-    if (rx->flags & (HTTP_GET | HTTP_HEAD | HTTP_POST) && info->valid && tx->length < 0) {
+    if (rx->flags & (HTTP_GET | HTTP_HEAD | HTTP_POST) && info->valid) {
         /*
             The sendFile connector is optimized on some platforms to use the sendfile() system call.
             Set the entity length for the sendFile connector to utilize.
          */
-        httpSetEntityLength(conn, tx->fileInfo.size);
+        tx->entityLength = tx->fileInfo.size;
     }
     return HTTP_ROUTE_OK;
 }
@@ -174,7 +174,7 @@ static void startFileHandler(HttpQueue *q)
     } else if (!(tx->flags & HTTP_TX_NO_BODY)) {
         /* Create a single data packet based on the entity length */
         packet = httpCreateEntityPacket(0, tx->entityLength, readFileData);
-        if (!tx->outputRanges) {
+        if (!tx->outputRanges && tx->chunkSize < 0) {
             /* Can set a content length */
             tx->length = tx->entityLength;
         }
@@ -444,6 +444,10 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
         pathInfo = sjoin(req->path, "/", NULL);
         uri = httpFormatUri(req->scheme, req->host, req->port, pathInfo, req->reference, req->query, 0);
         httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
+        if (tx->finalized) {
+            /* This allows handlers to call httpHandleDirectory after routing (esp does this) */
+            tx->handler = conn->http->passHandler;
+        }
         return HTTP_ROUTE_OK;
     }
     if (route->indexes) {

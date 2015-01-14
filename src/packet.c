@@ -292,11 +292,10 @@ PUBLIC void httpJoinPackets(HttpQueue *q, ssize size)
         /*
             Copy the data and free all other packets
          */
-        for (p = packet->next; p && size > 0; p = p->next) {
-            if (p->content == 0 || (len = httpGetPacketLength(p)) == 0) {
-                break;
+        for (p = packet->next; p && (p->flags & HTTP_PACKET_DATA); p = p->next) {
+            if ((len = httpGetPacketLength(p)) > 0) {
+                httpJoinPacket(packet, p);
             }
-            httpJoinPacket(packet, p);
             /* Unlink the packet */
             packet->next = p->next;
             if (q->last == p) {

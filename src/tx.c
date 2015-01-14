@@ -657,7 +657,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
             httpAddHeader(conn, "Content-Length", "%lld", length);
         }
 
-    } else if (tx->length < 0 && tx->chunkSize > 0) {
+    } else if (tx->chunkSize > 0) {
         httpSetHeaderString(conn, "Transfer-Encoding", "chunked");
 
     } else if (httpServerConn(conn)) {
@@ -741,7 +741,7 @@ PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
     must take care if the HTTP_TX_NO_CHECK flag is used.  This will update HttpTx.ext and HttpTx.fileInfo.
     This does not implement per-language directories. For that, see httpMapFile.
  */
-PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
+PUBLIC bool httpSetFilename(HttpConn *conn, cchar *filename, int flags)
 {
     HttpTx      *tx;
     MprPath     *info;
@@ -757,14 +757,14 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         tx->filename = 0;
         tx->ext = 0;
         info->checked = info->valid = 0;
-        return;
+        return 0;
     }
     if (!(tx->flags & HTTP_TX_NO_CHECK)) {
         if (!mprIsAbsPathContained(filename, conn->rx->route->documents)) {
             info->checked = 1;
             info->valid = 0;
             httpError(conn, HTTP_CODE_BAD_REQUEST, "Filename outside published documents");
-            return;
+            return 0;
         }
     }
     if (!tx->ext || tx->ext[0] == '\0') {
@@ -772,8 +772,7 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
     }
     mprGetPathInfo(filename, info);
     if (info->valid) {
-        //  OPT - using inodes mean this is harder to cache when served from multiple servers.
-        tx->etag = sfmt("\"%llx-%llx-%llx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
+        tx->etag = sfmt("\"%llx\"", (int64) info->inode + (int64) info->size + (int64) info->mtime);
     }
     tx->filename = sclone(filename);
 
@@ -781,6 +780,7 @@ PUBLIC void httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         /* Filename being revised after pipeline created */
         httpTrace(conn, "request.document", "context", "filename:'%s'", tx->filename);
     }
+    return info->valid;
 }
 
 
@@ -888,7 +888,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
     /*
         By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter
      */
-    if (tx->length >= 0 || tx->chunkSize <= 0) {
+    if (tx->chunkSize <= 0) {
         mprPutStringToBuf(buf, "\r\n");
     }
     tx->headerSize = mprGetBufLength(buf);

@@ -64,7 +64,7 @@ static void startRange(HttpQueue *q)
     /*
         The httpContentNotModified routine can set outputRanges to zero if returning not-modified.
      */
-    if (tx->outputRanges == 0 || tx->status != HTTP_CODE_OK || !fixRangeLength(conn)) {
+    if (tx->outputRanges == 0 || tx->status != HTTP_CODE_OK) {
         httpRemoveQueue(q);
         tx->outputRanges = 0;
     } else {
@@ -85,6 +85,15 @@ static void outgoingRangeService(HttpQueue *q)
     conn = q->conn;
     tx = conn->tx;
 
+    if (!(q->flags & HTTP_QUEUE_SERVICED)) {
+        /*
+            The httpContentNotModified routine can set outputRanges to zero if returning not-modified.
+         */
+        if (!fixRangeLength(conn)) {
+            httpRemoveQueue(q);
+            tx->outputRanges = 0;
+        }
+    }
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (packet->flags & HTTP_PACKET_DATA) {
             if (!applyRange(q, packet)) {

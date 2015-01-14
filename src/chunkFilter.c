@@ -51,7 +51,7 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
             If content length is defined, don't need chunking. Also disable chunking if explicitly turned off vi 
             the X_APPWEB_CHUNK_SIZE header which may set the chunk size to zero.
          */
-        if (tx->length >= 0 || tx->chunkSize == 0) {
+        if ((tx->length >= 0 && tx->chunkSize < 0) || tx->chunkSize == 0) {
             return HTTP_ROUTE_OMIT_FILTER;
         }
     }

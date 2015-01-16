@@ -64,7 +64,7 @@ MAIN(http, int argc, char **argv, char **envp)
     mprAddRoot(app);
     mprAddStandardSignals();
 
-    if (httpCreate(HTTP_CLIENT_SIDE | HTTP_SERVER_SIDE | HTTP_UTILITY) < 0) {
+    if (httpCreate(HTTP_CLIENT_SIDE | HTTP_SERVER_SIDE) < 0) {
         exit(2);
     }
     app->mpr = mpr;

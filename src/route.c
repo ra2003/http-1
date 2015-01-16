@@ -74,6 +74,12 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->flags |= HTTP_ROUTE_SHOW_ERRORS;
     route->keepSource = 1;
 #endif
+
+#if FUTURE
+    /* Enable in version 6 */
+    route->flags |= HTTP_ROUTE_ENV_ESCAPE;
+    route->envPrefix = sclone("CGI_");
+#endif
     route->update = 1;
     route->host = host;
     route->http = HTTP;
@@ -856,7 +862,6 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
     assert(route);
 
     if ((handler = httpLookupStage(name)) == 0) {
-        mprLog("error http route", 0, "Cannot find stage %s", name);
         return MPR_ERR_CANT_FIND;
     }
     if (route->handler) {
@@ -3218,8 +3223,6 @@ PUBLIC void httpSetDir(HttpRoute *route, cchar *name, cchar *value)
     } else if (smatch(name, "DOCUMENTS")) {
         httpSetRouteVar(route, name, rpath);
         route->documents = path;
-    } else if (smatch(name, "UPLOAD")) {
-        httpSetRouteVar(route, name, rpath);
     }
 }
 

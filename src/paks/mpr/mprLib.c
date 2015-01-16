@@ -13209,15 +13209,15 @@ PUBLIC int mprBlendJson(MprJson *dest, MprJson *src, int flags)
     cchar       *trimmedName;
     int         kind, si, pflags;
 
+    if (dest == 0) {
+        return MPR_ERR_BAD_ARGS;
+    }
     if (src == 0) {
         return 0;
     }
-    if (dest == 0) {
-        dest = mprCreateJson(MPR_JSON_OBJ);
-    }
     if ((MPR_JSON_OBJ_TYPE & dest->type) != (MPR_JSON_OBJ_TYPE & src->type)) {
         if (flags & (MPR_JSON_APPEND | MPR_JSON_REPLACE)) {
-            return 0;
+            return MPR_ERR_BAD_ARGS;
         }
     }
     if (src->type & MPR_JSON_OBJ) {
@@ -19619,8 +19619,8 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
         MprPath info;
         char    *at;
         if ((at = mprSearchForModule(mp->path)) == 0) {
-            mprLog("error mpr", 0, "Cannot find module \"%s\", cwd: \"%s\", search path \"%s\"", mp->path, mprGetCurrentPath(),
-                mprGetModuleSearchPath());
+            mprLog("error mpr", 0, "Cannot find module \"%s\", cwd: \"%s\", search path \"%s\"", mp->path, 
+                mprGetCurrentPath(), mprGetModuleSearchPath());
             return MPR_ERR_CANT_ACCESS;
         }
         mp->path = at;

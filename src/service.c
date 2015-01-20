@@ -114,6 +114,7 @@ PUBLIC Http *httpCreate(int flags)
     http->startLevel = 2;
     http->localPlatform = slower(sfmt("%s-%s-%s", ME_OS, ME_CPU, ME_PROFILE));
     httpSetPlatform(http->localPlatform);
+    httpSetPlatformDir(0);
 
     updateCurrentDate();
     http->statusCodes = mprCreateHash(41, MPR_HASH_STATIC_VALUES | MPR_HASH_STATIC_KEYS | MPR_HASH_STABLE);

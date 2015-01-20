@@ -599,7 +599,7 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseCgiEscape(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    httpSetRouteEnvEscape(route, prop->type & MPR_JSON_TRUE);
+    httpSetRouteEnvEscape(route, (prop->type & MPR_JSON_TRUE) ? 1 : 0);
 }
 
 

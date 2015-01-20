@@ -431,9 +431,11 @@ static HttpRoute *createLoginRoute(HttpRoute *route, cchar *pattern, HttpAction 
     if (sstarts(pattern, "https:///")) {
         pattern = &pattern[8];
         secure = 1;
+    } else if (sstarts(pattern, "http:///")) {
+        pattern = &pattern[7];
     }
     if ((route = httpCreateInheritedRoute(route)) != 0) {
-        httpSetRoutePattern(route, sjoin(pattern, "$", NULL), 0);
+        httpSetRoutePattern(route, sjoin("^", pattern, "$", NULL), 0);
         if (secure) {
             httpAddRouteCondition(route, "secure", "https://", HTTP_ROUTE_REDIRECT);
         }
@@ -461,7 +463,9 @@ PUBLIC void httpSetAuthFormDetails(HttpRoute *route, cchar *loginPage, cchar *lo
 
     if (loggedInPage) {
         auth->loggedInPage = sclone(loggedInPage);
+#if UNUSED
         createLoginRoute(route, auth->loggedInPage, 0);
+#endif
     }
     if (loginPage) {
         auth->loginPage = sclone(loginPage);

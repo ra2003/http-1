@@ -481,9 +481,9 @@
         },
 
         /*
-            Supported request methods for this route. Use "*" for all methods, or omit definition.
+            Supported request methods for this route. Use "*" for all methods, or omit definition. Upper case.
          */
-        methods: [ "get", "post" ],
+        methods: [ "GET", "POST" ],
 
         /*
             Required request parameters before this route will match a request
@@ -497,7 +497,7 @@
         /*
             Regular expression used to match the route with the request URI
          */
-        pattern:    "^/route/auth",
+        pattern: "^/route/auth",
 
         /*
             Request pipeline construction
@@ -520,7 +520,7 @@
         },
 
         /*
-            Request URI prefix. This prefix is removed from the URI before processing the request
+            Request URI prefix. This prefix is removed from the URI before processing the request.
          */
         prefix: "/route/auth",
 

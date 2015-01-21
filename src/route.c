@@ -3209,8 +3209,12 @@ PUBLIC void httpSetDir(HttpRoute *route, cchar *name, cchar *value)
     }
     path = httpMakePath(route, 0, value);
     path = mprJoinPath(route->home, path);
-    rpath = mprGetRelPath(path, 0);
     name = supper(name);
+
+    /*
+        Define the variable as a relative path to the route home
+     */
+    rpath = mprGetRelPath(path, route->home);
     httpSetRouteVar(route, sjoin(name, "_DIR", NULL), rpath);
 
     /*

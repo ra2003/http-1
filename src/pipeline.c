@@ -269,6 +269,7 @@ PUBLIC void httpSetFileHandler(HttpConn *conn, cchar *path)
     fp->open(conn->writeq);
     fp->start(conn->writeq);
     conn->writeq->service = fp->outgoingService;
+    conn->readq->put = fp->incoming;
 }
 
 

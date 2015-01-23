@@ -1039,7 +1039,7 @@ static void parsePipelineHandlers(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parsePrefix(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    httpSetRoutePrefix(route, sjoin(route->prefix, prop->value, 0));
+    httpSetRoutePrefix(route, prop->value);
 }
 
 
@@ -1191,10 +1191,12 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
     MprJson     *child;
     int         ji;
 
+#if UNUSED
     if (route->loaded) {
         mprLog("warn http config", 1, "Skip reloading routes - must reboot if routes are modified");
         return;
     }
+#endif
     if (prop->type & MPR_JSON_STRING) {
         httpAddRouteSet(route, prop->value);
 

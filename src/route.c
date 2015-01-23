@@ -175,7 +175,9 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->languages = parent->languages;
     route->lifespan = parent->lifespan;
     route->limits = parent->limits;
+#if UNUSED
     route->loaded = parent->loaded;
+#endif
     route->map = parent->map;
     route->methods = parent->methods;
     route->mimeTypes = parent->mimeTypes;

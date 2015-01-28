@@ -203,6 +203,13 @@
          */
 
         /*
+            Alias a URL prefix to a directory under the route home
+         */
+        aliases: {
+            '/cgi-bin/': 'cgi-bin',
+        },
+
+        /*
             Authentication configuration
          */
         auth: {
@@ -278,7 +285,7 @@
                 /*
                     Define the session cookie prefix
                  */
-                cookie: "-esp-cookie-",
+                cookie: "-my-cookie-",
 
                 /*
                     Determine if the cookie is visible to browser scripts
@@ -344,6 +351,12 @@
              */
             unique: true,
         } ],
+
+        /*
+            Serve compressed content
+            Can also set to an array of extensions to serve compressed.
+         */
+        compress: true,
 
         /*
             Delete file uploads after the request completes

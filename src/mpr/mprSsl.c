@@ -665,6 +665,10 @@ struct CRYPTO_dynlock_value {
 };
 typedef struct CRYPTO_dynlock_value DynLock;
 
+#ifndef ME_MPR_SSL_CURVE
+    #define ME_MPR_SSL_CURVE "prime256v1"
+#endif
+
 /***************************** Forward Declarations ***************************/
 
 static void     closeOss(MprSocket *sp, bool gracefully);
@@ -911,6 +915,29 @@ static OpenConfig *createOpenSslConfig(MprSocket *sp)
      */
     SSL_CTX_set_tmp_rsa_callback(context, rsaCallback);
     SSL_CTX_set_tmp_dh_callback(context, dhCallback);
+
+#if SSL_OP_SINGLE_ECDH_USE
+{
+    EC_KEY  *ecdh;
+    cchar   *name;
+    int      nid;
+
+    name = ME_MPR_SSL_CURVE;
+    if ((nid = OBJ_sn2nid(name)) == 0) {
+        sp->errorMsg = sfmt("Unknown curve name \"%s\"", name);
+        SSL_CTX_free(context);
+        return 0;
+    }
+    if ((ecdh = EC_KEY_new_by_curve_name(nid)) == 0) {
+        sp->errorMsg = sfmt("Unable to create curve \"%s\"", name);
+        SSL_CTX_free(context);
+        return 0;
+    }
+    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
+    SSL_CTX_set_tmp_ecdh(context, ecdh);
+    EC_KEY_free(ecdh);
+}
+#endif
 
     SSL_CTX_set_options(context, SSL_OP_ALL);
 #ifdef SSL_OP_NO_TICKET

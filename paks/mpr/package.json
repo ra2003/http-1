@@ -1,13 +1,11 @@
 {
-    "name": "est",
-    "description": "Embedthis Security Transport",
-    "title": "Embethis EST",
-    "version": "0.6.3",
-    "pak": "~0.10",
+    "name": "mpr",
+    "description": "Embedthis Multithreaded Portable Runtime",
+    "title": "Embedthis MPR",
+    "version": "6.0.2",
     "keywords": [
-        "est",
-        "ssl",
-        "tls"
+        "mpr",
+        "runtime"
     ],
     "author": {
         "name": "Embedthis Software",
@@ -16,11 +14,10 @@
     },
     "repository": {
         "type": "git",
-        "url": "git://github.com/embedthis/est.git"
+        "url": "git://github.com/embedthis/mpr.git"
     },
     "bugs": {
-        "email": "dev@embedthis.com",
-        "url": "http://github.com/embedthis/est/issues"
+        "url": "http://github.com/embedthis/mpr/issues"
     },
     "licenses": [
         {
@@ -33,10 +30,16 @@
         }
     ],
     "dependencies": {
+        "est": "~0.6",
         "osdep": "~0.8",
         "ssl": "~0.8"
     },
-    "directories": {
-        "paks": "src/paks"
+    "files": [
+        "dist/",
+        "doc/api/"
+    ],
+    "pak": {
+        "import": true,
+        "version": ">=0.10.0"
     }
 }

@@ -19,10 +19,8 @@
     "bugs": {
         "url": "http://github.com/embedthis/pcre/issues"
     },
-    "licenses": [
-        {
-            "type": "BSD",
-            "url": "https://github.com/embedthis/zlib/blob/master/LICENSE.md"
-        }
-    ]
+    "licenses": "BSD",
+    "pak": {
+        "version": ">=0.10.0"
+    }
 }

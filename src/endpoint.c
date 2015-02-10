@@ -122,6 +122,7 @@ PUBLIC void httpAddHostToEndpoints(HttpHost *host)
     for (next = 0; (endpoint = mprGetNextItem(HTTP->endpoints, &next)) != 0; ) {
         httpAddHostToEndpoint(endpoint, host);
         if (!host->name) {
+            mprLog("warn http", 0, "Route does not have a name, using IP:PORT by default");
             httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
         }
     }
@@ -138,6 +139,7 @@ static bool validateEndpoint(HttpEndpoint *endpoint)
         host = httpGetDefaultHost();
         httpAddHostToEndpoint(endpoint, host);
         if (!host->name) {
+            mprLog("warn http", 0, "Route does not have a name, using IP:PORT by default");
             httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
         }
         for (nextRoute = 0; (route = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {

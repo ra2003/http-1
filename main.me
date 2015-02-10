@@ -3,7 +3,7 @@
  */
 
 Me.load({
-    plugins: [ 'configuration', 'package' ],
+    plugins: [ 'configuration', 'installs' ],
 
     blend: [
         'mpr',
@@ -26,7 +26,7 @@ Me.load({
     settings: {
         me: '=>0.8.4',
         integrate: true,
-        prefixes: 'package-prefixes',
+        prefixes: 'install-prefixes',
     
         http: {
             pam: true,
@@ -58,7 +58,7 @@ Me.load({
     targets: {
         'http-ca-crt': {
             type: 'file',
-            files: [ 'src/paks/est/ca.crt' ],
+            files: [ 'paks/est/dist/ca.crt' ],
             path: '${BIN}/ca.crt',
         },
 
@@ -78,25 +78,29 @@ Me.load({
         sets: { 
             pak: [
                 {   
-                    from:       'package/http.me', 
-                    to:         '${src}/http.me',
+                    from:       'installs/http.me', 
+                    to:         '${src}/dist/http.me',
 
                 }, {
                     from:       [
                                     'src/http.h', 
                                     'src/http.c'
                                 ],
-                    to:         '${src}/',
+                    to:         '${src}/dist/',
                     flatten:    true,
 
                 }, {
                     from:       ['src/service.c', 'src/*.c'],
                     exclude:    /http.c/,
-                    to:         '${src}/httpLib.c',
+                    to:         '${src}/dist/httpLib.c',
                     append:     true,
                     filter:     /^#inc.*http.*$/mg,
                     header:     '/*\n * ${settings.title} Library Source\n */\n\n#include \"http.h\"',
                     divider:    true,
+
+                }, {
+                    from:       'paks/est/dist/ca.crt',
+                    to:         '${src}/dist/ca.crt',
 
                 }, {
                     from:       ['doc/api/http.html', 'doc/api/http*.tags', 'doc/api/http.dtags'],
@@ -107,10 +111,6 @@ Me.load({
                     from:       'doc/source/man/http.1',
                     to:         '${src}/doc/source/man/',
                     relative:   'doc/source/man',
-
-                }, {
-                    from:       'src/paks/est/ca.crt',
-                    to:         '${src}/ca.crt',
 
                 },
             ],

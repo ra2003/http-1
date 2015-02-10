@@ -216,7 +216,8 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 
     if (flags & HTTP_BLOCK) {
         /*
-            Blocking mode: Fully drain the pipeline. This blocks until the connector has written all the data to the O/S socket.
+            Blocking mode: Fully drain the pipeline. This blocks until the connector has written all the data 
+            to the O/S socket.
          */
         while (tx->writeBlocked || conn->connectorq->count > 0 || conn->connectorq->ioCount) {
             if (conn->connError) {

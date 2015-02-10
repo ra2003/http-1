@@ -1,11 +1,12 @@
 {
-    "name": "http",
-    "description": "Embedthis Http Library",
-    "title": "Embedthis Http",
-    "version": "6.0.2",
+    "name": "est",
+    "title": "Embethis EST",
+    "description": "Embedthis Security Transport",
+    "version": "0.6.3",
     "keywords": [
-        "http",
-        "webserver"
+        "est",
+        "ssl",
+        "tls"
     ],
     "author": {
         "name": "Embedthis Software",
@@ -14,10 +15,11 @@
     },
     "repository": {
         "type": "git",
-        "url": "git://github.com/embedthis/http.git"
+        "url": "git://github.com/embedthis/est.git"
     },
     "bugs": {
-        "url": "http://github.com/embedthis/http/issues"
+        "email": "dev@embedthis.com",
+        "url": "http://github.com/embedthis/est/issues"
     },
     "licenses": [
         {
@@ -30,19 +32,10 @@
         }
     ],
     "dependencies": {
-        "est": "~0.6",
-        "mpr": "~6.0",
-        "osdep": "~0.8",
-        "pcre": "~1.0",
-        "ssl": "~0.8"
-    },
-    "optionalDependencies": {
-        "est": "~0.6",
-        "ssl": "~0.8"
+        "osdep": "~0.8"
     },
     "files": [
-        "dist/",
-        "doc/api/"
+        "dist/"
     ],
     "pak": {
         "import": true,

@@ -318,14 +318,14 @@
 		21537A9821538ADC0000005E /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
 		21537A9821538ADC00000060 /* webSockFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSockFilter.c; path = src/webSockFilter.c; sourceTree = "<group>"; };
 		21537A9821538ADC00000068 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		21537A9821538ADC00000062 /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/paks/mpr/mprLib.c; sourceTree = "<group>"; };
-		21537A9821538ADC00000095 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = src/paks/mpr/mpr.h; sourceTree = "<group>"; };
+		21537A9821538ADC00000062 /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = paks/mpr/dist/mprLib.c; sourceTree = "<group>"; };
+		21537A9821538ADC00000095 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = paks/mpr/dist/mpr.h; sourceTree = "<group>"; };
 		21537A9821538ADC0000006A /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		21537A9821538ADC00000064 /* mprSsl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprSsl.c; path = src/paks/mpr/mprSsl.c; sourceTree = "<group>"; };
+		21537A9821538ADC00000064 /* mprSsl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprSsl.c; path = paks/mpr/dist/mprSsl.c; sourceTree = "<group>"; };
 		21537A9821538ADC00000096 /* libmprssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmprssl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		21537A9821538ADC00000066 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/paks/pcre/pcre.c; sourceTree = "<group>"; };
+		21537A9821538ADC00000066 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = paks/pcre/dist/pcre.c; sourceTree = "<group>"; };
 		21537A9821538ADC00000097 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-static/inc/me.h; sourceTree = "<group>"; };
-		21537A9821538ADC00000098 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = src/paks/pcre/pcre.h; sourceTree = "<group>"; };
+		21537A9821538ADC00000098 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = paks/pcre/dist/pcre.h; sourceTree = "<group>"; };
 		21537A9821538ADC0000006C /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -631,7 +631,7 @@
     			files = (
     			);
     			inputPaths = (
-    ../src/paks/est/ca.crt
+    ../paks/est/dist/ca.crt
     			);
     			outputPaths = (
     ../build/macosx-x64-static/bin/ca.crt
@@ -641,7 +641,7 @@
     			shellScript = "PATH=$PATH:/usr/local/bin
 cd ..
 	mkdir -p \"build/macosx-x64-static/bin\"
-	cp src/paks/est/ca.crt build/macosx-x64-static/bin/ca.crt
+	cp paks/est/dist/ca.crt build/macosx-x64-static/bin/ca.crt
 ";
     		};
 		21537A9821538ADC00000016 /* ShellScript for Prep */ = {
@@ -668,23 +668,23 @@ fi
 if [ ../src/http.h -nt ${OUT_DIR}/inc/http.h ] ; then
 cp ../src/http.h ${OUT_DIR}/inc/http.h
 fi
-if [ ../src/paks/mpr/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
-cp ../src/paks/mpr/mpr.h ${OUT_DIR}/inc/mpr.h
+if [ ../paks/mpr/dist/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
+cp ../paks/mpr/dist/mpr.h ${OUT_DIR}/inc/mpr.h
 fi
-if [ ../src/paks/osdep/osdep.h -nt ${OUT_DIR}/inc/osdep.h ] ; then
-cp ../src/paks/osdep/osdep.h ${OUT_DIR}/inc/osdep.h
+if [ ../paks/osdep/dist/osdep.h -nt ${OUT_DIR}/inc/osdep.h ] ; then
+cp ../paks/osdep/dist/osdep.h ${OUT_DIR}/inc/osdep.h
 fi
-if [ ../src/paks/pcre/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
-cp ../src/paks/pcre/pcre.h ${OUT_DIR}/inc/pcre.h
+if [ ../paks/pcre/dist/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
+cp ../paks/pcre/dist/pcre.h ${OUT_DIR}/inc/pcre.h
 fi
 if [ ../src/http.h -nt ${OUT_DIR}/inc/http.h ] ; then
 cp ../src/http.h ${OUT_DIR}/inc/http.h
 fi
-if [ ../src/paks/mpr/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
-cp ../src/paks/mpr/mpr.h ${OUT_DIR}/inc/mpr.h
+if [ ../paks/mpr/dist/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
+cp ../paks/mpr/dist/mpr.h ${OUT_DIR}/inc/mpr.h
 fi
-if [ ../src/paks/pcre/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
-cp ../src/paks/pcre/pcre.h ${OUT_DIR}/inc/pcre.h
+if [ ../paks/pcre/dist/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
+cp ../paks/pcre/dist/pcre.h ${OUT_DIR}/inc/pcre.h
 fi";
     		};
 /* End PBXShellScriptBuildPhase section */
@@ -949,10 +949,10 @@ fi";
 
                     OUT_DIR = "../build/macosx-x64-static";
                     BIN_DIR = "../build/macosx-x64-static/bin";
-                    LIB_DIR = "../build/macosx-x64-static/bin";
+                    LIB_DIR = "../lib";
                     INC_DIR = "../build/macosx-x64-static/inc";
                     OBJ_DIR = "../build/macosx-x64-static/obj";
-                    SRC_DIR = "..";
+                    SRC_DIR = "../src";
 
                     CONFIGURATION_TEMP_DIR = "$(OBJ_DIR)/http-xcode/$(CONFIGURATION)";
                     CONFIGURATION_BUILD_DIR = "$(BIN_DIR)";
@@ -1018,10 +1018,10 @@ fi";
 
                     OUT_DIR = "../build/macosx-x64-static";
                     BIN_DIR = "../build/macosx-x64-static/bin";
-                    LIB_DIR = "../build/macosx-x64-static/bin";
+                    LIB_DIR = "../lib";
                     INC_DIR = "../build/macosx-x64-static/inc";
                     OBJ_DIR = "../build/macosx-x64-static/obj";
-                    SRC_DIR = "..";
+                    SRC_DIR = "../src";
 
                     CONFIGURATION_TEMP_DIR = "$(OBJ_DIR)/http-xcode/$(CONFIGURATION)";
                     CONFIGURATION_BUILD_DIR = "$(BIN_DIR)";

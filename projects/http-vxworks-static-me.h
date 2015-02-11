@@ -112,7 +112,7 @@
     #define ME_NAME "http"
 #endif
 #ifndef ME_PREFIXES
-    #define ME_PREFIXES "package-prefixes"
+    #define ME_PREFIXES "install-prefixes"
 #endif
 #ifndef ME_STATIC
     #define ME_STATIC 1

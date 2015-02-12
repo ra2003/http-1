@@ -57,7 +57,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         New socket
      */
     if ((sp = mprCreateSocket()) == 0) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Cannot create socket for %s", uri->uri);
+        httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Cannot create socket for %s", httpUriToString(uri, 0));
         return 0;
     }
     if ((rc = mprConnectSocket(sp, ip, port, MPR_SOCKET_NODELAY)) < 0) {

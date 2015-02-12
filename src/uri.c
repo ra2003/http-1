@@ -43,7 +43,7 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         return 0;
     }
-    tok = up->uri = sclone(uri);
+    tok = sclone(uri);
 
     /*
         [scheme://][hostname[:port]][/path[.ext]][#ref][?query]
@@ -163,7 +163,6 @@ static void manageUri(HttpUri *uri, int flags)
         mprMark(uri->ext);
         mprMark(uri->reference);
         mprMark(uri->query);
-        mprMark(uri->uri);
     }
 }
 

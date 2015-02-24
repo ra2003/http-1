@@ -6608,7 +6608,6 @@ static void prepWinProgram(MprCmd *cmd)
     MprFile     *file;
     cchar       *bat, *ext, *shell, *cp, *start;
     char        bang[ME_MAX_FNAME + 1], *path, *pp;
-    int         i;
 
     /*
         Map separators, convert carriage-returns and newlines to spaces and remove quotes on the command

@@ -893,7 +893,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
                     word = "";
                 }
                 prior = mprLookupKey(route->extensions, word);
-                if (prior && prior != handler) {
+                if (prior && prior != handler && *word) {
                     mprLog("warn http route", 0, "Route \"%s\" has multiple handlers defined for extension \"%s\". "
                             "Handlers: \"%s\", \"%s\".", route->pattern, word, handler->name, 
                             ((HttpStage*) mprLookupKey(route->extensions, word))->name);

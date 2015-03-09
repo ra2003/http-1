@@ -24091,7 +24091,6 @@ PUBLIC char *sfmt(cchar *format, ...)
 
 PUBLIC char *sfmtv(cchar *format, va_list arg)
 {
-    assert(format);
     return mprPrintfCore(NULL, -1, format, arg);
 }
 

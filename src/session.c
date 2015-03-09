@@ -108,7 +108,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
     HttpRx      *rx;
     cchar       *cookie, *data, *id;
     static int  seqno = 0;
-    int         flags, thisSeqno;
+    int         flags, thisSeqno, activeSessions;
 
     assert(conn);
     rx = conn->rx;
@@ -128,11 +128,11 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             id = mprGetMD5WithPrefix(id, slen(id), "-http.session-");
             id = sfmt("%d%s", thisSeqno, mprGetMD5WithPrefix(id, slen(id), "::http.session::"));
 
-            mprGetCacheStats(http->sessionCache, &http->activeSessions, NULL);
-            if (http->activeSessions >= conn->limits->sessionMax) {
+            mprGetCacheStats(http->sessionCache, &activeSessions, NULL);
+            if (activeSessions >= conn->limits->sessionMax) {
                 unlock(http);
                 httpLimitError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, 
-                    "Too many sessions %d/%d", http->activeSessions, conn->limits->sessionMax);
+                    "Too many sessions %d/%d", activeSessions, conn->limits->sessionMax);
                 return 0;
             }
             unlock(http);

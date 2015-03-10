@@ -248,41 +248,41 @@ build\$(CONFIG)\inc\me.h: $(DEPS_2)
 #
 #   osdep.h
 #
-DEPS_3 = $(DEPS_3) paks\osdep\dist\osdep.h
+DEPS_3 = $(DEPS_3) src\osdep\osdep.h
 DEPS_3 = $(DEPS_3) build\$(CONFIG)\inc\me.h
 
 build\$(CONFIG)\inc\osdep.h: $(DEPS_3)
 	@echo ..... [Copy] build\$(CONFIG)\inc\osdep.h
 	if not exist "build\$(CONFIG)\inc" md "build\$(CONFIG)\inc"
-	copy /Y /B paks\osdep\dist\osdep.h+modified build\$(CONFIG)\inc\osdep.h $(LOG)
+	copy /Y /B src\osdep\osdep.h+modified build\$(CONFIG)\inc\osdep.h $(LOG)
 
 #
 #   mpr.h
 #
-DEPS_4 = $(DEPS_4) paks\mpr\dist\mpr.h
+DEPS_4 = $(DEPS_4) src\mpr\mpr.h
 DEPS_4 = $(DEPS_4) build\$(CONFIG)\inc\me.h
 DEPS_4 = $(DEPS_4) build\$(CONFIG)\inc\osdep.h
 
 build\$(CONFIG)\inc\mpr.h: $(DEPS_4)
 	@echo ..... [Copy] build\$(CONFIG)\inc\mpr.h
 	if not exist "build\$(CONFIG)\inc" md "build\$(CONFIG)\inc"
-	copy /Y /B paks\mpr\dist\mpr.h+modified build\$(CONFIG)\inc\mpr.h $(LOG)
+	copy /Y /B src\mpr\mpr.h+modified build\$(CONFIG)\inc\mpr.h $(LOG)
 
 #
 #   mpr.h
 #
 
-paks\mpr\dist\mpr.h: $(DEPS_5)
+src\mpr\mpr.h: $(DEPS_5)
 
 #
 #   mprLib.obj
 #
-DEPS_6 = $(DEPS_6) paks\mpr\dist\mpr.h
+DEPS_6 = $(DEPS_6) src\mpr\mpr.h
 
 build\$(CONFIG)\obj\mprLib.obj: \
-    paks\mpr\dist\mprLib.c $(DEPS_6)
+    src\mpr\mprLib.c $(DEPS_6)
 	@echo .. [Compile] build\$(CONFIG)\obj\mprLib.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\mprLib.obj -Fd$(BUILD)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) paks\mpr\dist\mprLib.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\mprLib.obj -Fd$(BUILD)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\mpr\mprLib.c $(LOG)
 
 #
 #   libmpr
@@ -298,29 +298,29 @@ build\$(CONFIG)\bin\libmpr.dll: $(DEPS_7)
 #
 #   pcre.h
 #
-DEPS_8 = $(DEPS_8) paks\pcre\dist\pcre.h
+DEPS_8 = $(DEPS_8) src\pcre\pcre.h
 
 build\$(CONFIG)\inc\pcre.h: $(DEPS_8)
 	@echo ..... [Copy] build\$(CONFIG)\inc\pcre.h
 	if not exist "build\$(CONFIG)\inc" md "build\$(CONFIG)\inc"
-	copy /Y /B paks\pcre\dist\pcre.h+modified build\$(CONFIG)\inc\pcre.h $(LOG)
+	copy /Y /B src\pcre\pcre.h+modified build\$(CONFIG)\inc\pcre.h $(LOG)
 
 #
 #   pcre.h
 #
 
-paks\pcre\dist\pcre.h: $(DEPS_9)
+src\pcre\pcre.h: $(DEPS_9)
 
 #
 #   pcre.obj
 #
 DEPS_10 = $(DEPS_10) build\$(CONFIG)\inc\me.h
-DEPS_10 = $(DEPS_10) paks\pcre\dist\pcre.h
+DEPS_10 = $(DEPS_10) src\pcre\pcre.h
 
 build\$(CONFIG)\obj\pcre.obj: \
-    paks\pcre\dist\pcre.c $(DEPS_10)
+    src\pcre\pcre.c $(DEPS_10)
 	@echo .. [Compile] build\$(CONFIG)\obj\pcre.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\pcre.obj -Fd$(BUILD)\obj\pcre.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) paks\pcre\dist\pcre.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\pcre.obj -Fd$(BUILD)\obj\pcre.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pcre\pcre.c $(LOG)
 
 !IF "$(ME_COM_PCRE)" == "1"
 #
@@ -804,28 +804,28 @@ build\$(CONFIG)\bin\http.exe: $(DEPS_53)
 #
 #   est.h
 #
-DEPS_54 = $(DEPS_54) paks\est\dist\est.h
+DEPS_54 = $(DEPS_54) src\est\est.h
 
 build\$(CONFIG)\inc\est.h: $(DEPS_54)
 	@echo ..... [Copy] build\$(CONFIG)\inc\est.h
 	if not exist "build\$(CONFIG)\inc" md "build\$(CONFIG)\inc"
-	copy /Y /B paks\est\dist\est.h+modified build\$(CONFIG)\inc\est.h $(LOG)
+	copy /Y /B src\est\est.h+modified build\$(CONFIG)\inc\est.h $(LOG)
 
 #
 #   est.h
 #
 
-paks\est\dist\est.h: $(DEPS_55)
+src\est\est.h: $(DEPS_55)
 
 #
 #   estLib.obj
 #
-DEPS_56 = $(DEPS_56) paks\est\dist\est.h
+DEPS_56 = $(DEPS_56) src\est\est.h
 
 build\$(CONFIG)\obj\estLib.obj: \
-    paks\est\dist\estLib.c $(DEPS_56)
+    src\est\estLib.c $(DEPS_56)
 	@echo .. [Compile] build\$(CONFIG)\obj\estLib.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\estLib.obj -Fd$(BUILD)\obj\estLib.pdb -nologo -GR- -Zi -Od -MDd $(DFLAGS) $(IFLAGS) paks\est\dist\estLib.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\estLib.obj -Fd$(BUILD)\obj\estLib.pdb -nologo -GR- -Zi -Od -MDd $(DFLAGS) $(IFLAGS) src\est\estLib.c $(LOG)
 
 !IF "$(ME_COM_EST)" == "1"
 #
@@ -843,12 +843,12 @@ build\$(CONFIG)\bin\libest.dll: $(DEPS_57)
 #
 #   mprSsl.obj
 #
-DEPS_58 = $(DEPS_58) paks\mpr\dist\mpr.h
+DEPS_58 = $(DEPS_58) src\mpr\mpr.h
 
 build\$(CONFIG)\obj\mprSsl.obj: \
-    paks\mpr\dist\mprSsl.c $(DEPS_58)
+    src\mpr\mprSsl.c $(DEPS_58)
 	@echo .. [Compile] build\$(CONFIG)\obj\mprSsl.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\mprSsl.obj -Fd$(BUILD)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" paks\mpr\dist\mprSsl.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\mprSsl.obj -Fd$(BUILD)\obj\mprSsl.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\mpr\mprSsl.c $(LOG)
 
 #
 #   libmprssl

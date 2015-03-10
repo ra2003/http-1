@@ -318,14 +318,14 @@
 		78893F6C78894E100000005E /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
 		78893F6C78894E1000000060 /* webSockFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSockFilter.c; path = src/webSockFilter.c; sourceTree = "<group>"; };
 		78893F6C78894E1000000068 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		78893F6C78894E1000000062 /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = paks/mpr/dist/mprLib.c; sourceTree = "<group>"; };
-		78893F6C78894E1000000095 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = paks/mpr/dist/mpr.h; sourceTree = "<group>"; };
+		78893F6C78894E1000000062 /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/mpr/mprLib.c; sourceTree = "<group>"; };
+		78893F6C78894E1000000095 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = src/mpr/mpr.h; sourceTree = "<group>"; };
 		78893F6C78894E100000006A /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		78893F6C78894E1000000064 /* mprSsl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprSsl.c; path = paks/mpr/dist/mprSsl.c; sourceTree = "<group>"; };
+		78893F6C78894E1000000064 /* mprSsl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprSsl.c; path = src/mpr/mprSsl.c; sourceTree = "<group>"; };
 		78893F6C78894E1000000096 /* libmprssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmprssl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		78893F6C78894E1000000066 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = paks/pcre/dist/pcre.c; sourceTree = "<group>"; };
+		78893F6C78894E1000000066 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/pcre/pcre.c; sourceTree = "<group>"; };
 		78893F6C78894E1000000097 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-default/inc/me.h; sourceTree = "<group>"; };
-		78893F6C78894E1000000098 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = paks/pcre/dist/pcre.h; sourceTree = "<group>"; };
+		78893F6C78894E1000000098 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = src/pcre/pcre.h; sourceTree = "<group>"; };
 		78893F6C78894E100000006C /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -668,23 +668,23 @@ fi
 if [ ../src/http.h -nt ${OUT_DIR}/inc/http.h ] ; then
 cp ../src/http.h ${OUT_DIR}/inc/http.h
 fi
-if [ ../paks/mpr/dist/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
-cp ../paks/mpr/dist/mpr.h ${OUT_DIR}/inc/mpr.h
+if [ ../src/mpr/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
+cp ../src/mpr/mpr.h ${OUT_DIR}/inc/mpr.h
 fi
-if [ ../paks/osdep/dist/osdep.h -nt ${OUT_DIR}/inc/osdep.h ] ; then
-cp ../paks/osdep/dist/osdep.h ${OUT_DIR}/inc/osdep.h
+if [ ../src/osdep/osdep.h -nt ${OUT_DIR}/inc/osdep.h ] ; then
+cp ../src/osdep/osdep.h ${OUT_DIR}/inc/osdep.h
 fi
-if [ ../paks/pcre/dist/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
-cp ../paks/pcre/dist/pcre.h ${OUT_DIR}/inc/pcre.h
+if [ ../src/pcre/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
+cp ../src/pcre/pcre.h ${OUT_DIR}/inc/pcre.h
 fi
 if [ ../src/http.h -nt ${OUT_DIR}/inc/http.h ] ; then
 cp ../src/http.h ${OUT_DIR}/inc/http.h
 fi
-if [ ../paks/mpr/dist/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
-cp ../paks/mpr/dist/mpr.h ${OUT_DIR}/inc/mpr.h
+if [ ../src/mpr/mpr.h -nt ${OUT_DIR}/inc/mpr.h ] ; then
+cp ../src/mpr/mpr.h ${OUT_DIR}/inc/mpr.h
 fi
-if [ ../paks/pcre/dist/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
-cp ../paks/pcre/dist/pcre.h ${OUT_DIR}/inc/pcre.h
+if [ ../src/pcre/pcre.h -nt ${OUT_DIR}/inc/pcre.h ] ; then
+cp ../src/pcre/pcre.h ${OUT_DIR}/inc/pcre.h
 fi";
     		};
 /* End PBXShellScriptBuildPhase section */
@@ -949,7 +949,7 @@ fi";
 
                     OUT_DIR = "../build/macosx-x64-default";
                     BIN_DIR = "../build/macosx-x64-default/bin";
-                    LIB_DIR = "../lib";
+                    LIB_DIR = "../src";
                     INC_DIR = "../build/macosx-x64-default/inc";
                     OBJ_DIR = "../build/macosx-x64-default/obj";
                     SRC_DIR = "../src";
@@ -1018,7 +1018,7 @@ fi";
 
                     OUT_DIR = "../build/macosx-x64-default";
                     BIN_DIR = "../build/macosx-x64-default/bin";
-                    LIB_DIR = "../lib";
+                    LIB_DIR = "../src";
                     INC_DIR = "../build/macosx-x64-default/inc";
                     OBJ_DIR = "../build/macosx-x64-default/obj";
                     SRC_DIR = "../src";

@@ -91,18 +91,6 @@ static cchar *getList(MprJson *prop)
 }
 
 
-static int getint(cchar *value)
-{
-    int64   num;
-
-    num = httpGetNumber(value);
-    if (num >= MAXINT) {
-        num = MAXINT;
-    }
-    return (int) num;
-}
-
-
 /*
     Blend the pak.modes[pak.mode] up to the top level
  */
@@ -785,7 +773,7 @@ static void parseLimitsBuffer(HttpRoute *route, cchar *key, MprJson *prop)
 {
     int     size;
 
-    size = getint(prop->value);
+    size = httpGetInt(prop->value);
     if (size > (1048576)) {
         size = 1048576;
     }
@@ -801,31 +789,31 @@ static void parseLimitsCache(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseLimitsCacheItem(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->cacheItemSize = getint(prop->value);
+    route->limits->cacheItemSize = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsChunk(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->chunkSize = getint(prop->value);
+    route->limits->chunkSize = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsClients(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->clientMax = getint(prop->value);
+    route->limits->clientMax = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsConnections(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->connectionsMax = getint(prop->value);
+    route->limits->connectionsMax = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsFiles(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    mprSetFilesLimit(getint(prop->value));
+    mprSetFilesLimit(httpGetInt(prop->value));
 }
 
 
@@ -855,7 +843,7 @@ static void parseLimitsDepletion(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseLimitsKeepAlive(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->keepAliveMax = getint(prop->value);
+    route->limits->keepAliveMax = httpGetInt(prop->value);
 }
 
 
@@ -870,13 +858,13 @@ static void parseLimitsMemory(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseLimitsProcesses(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->processMax = getint(prop->value);
+    route->limits->processMax = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsRequests(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->requestsPerClientMax = getint(prop->value);
+    route->limits->requestsPerClientMax = httpGetInt(prop->value);
 }
 
 
@@ -894,7 +882,7 @@ static void parseLimitsRequestForm(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseLimitsRequestHeader(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->headerSize = getint(prop->value);
+    route->limits->headerSize = httpGetInt(prop->value);
 }
 
 
@@ -906,13 +894,13 @@ static void parseLimitsResponseBody(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseLimitsSessions(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->sessionMax = getint(prop->value);
+    route->limits->sessionMax = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsUri(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->uriSize = getint(prop->value);
+    route->limits->uriSize = httpGetInt(prop->value);
 }
 
 
@@ -924,25 +912,25 @@ static void parseLimitsUpload(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseLimitsWebSockets(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->webSocketsMax = getint(prop->value);
+    route->limits->webSocketsMax = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsWebSocketsMessage(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->webSocketsMessageSize = getint(prop->value);
+    route->limits->webSocketsMessageSize = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsWebSocketsFrame(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->webSocketsFrameSize = getint(prop->value);
+    route->limits->webSocketsFrameSize = httpGetInt(prop->value);
 }
 
 
 static void parseLimitsWebSocketsPacket(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->webSocketsPacketSize = getint(prop->value);
+    route->limits->webSocketsPacketSize = httpGetInt(prop->value);
 }
 
 
@@ -1422,7 +1410,7 @@ static void parseServerMonitors(HttpRoute *route, cchar *key, MprJson *prop)
             httpParseError(route, "Cannot add monitor: %s", prop->name);
             break;
         }
-        if (httpAddMonitor(counter, relation, getint(limit), period, defenses) < 0) {
+        if (httpAddMonitor(counter, relation, httpGetInt(limit), period, defenses) < 0) {
             httpParseError(route, "Cannot add monitor: %s", prop->name);
             break;
         }

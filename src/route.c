@@ -3372,11 +3372,8 @@ PUBLIC uint64 httpGetNumber(cchar *value)
 {
     uint64  number;
 
-    if (smatch(value, "unlimited")) {
+    if (smatch(value, "unlimited") || smatch(value, "infinite") || smatch(value, "never")) {
         return MAXINT64;
-    }
-    if (smatch(value, "infinite") || smatch(value, "never")) {
-        return MPR_MAX_TIMEOUT / MPR_TICKS_PER_SEC;
     }
     value = strim(slower(value), " \t", MPR_TRIM_BOTH);
     if (sends(value, "sec") || sends(value, "secs") || sends(value, "seconds") || sends(value, "seconds")) {
@@ -3411,6 +3408,18 @@ PUBLIC MprTicks httpGetTicks(cchar *value)
         num = MAXINT64 / MPR_TICKS_PER_SEC;
     }
     return num * MPR_TICKS_PER_SEC;
+}
+
+
+PUBLIC int httpGetInt(cchar *value)
+{
+    uint64  num;
+
+    num = httpGetNumber(value);
+    if (num >= MAXINT) {
+        num = MAXINT;
+    }
+    return (int) num;
 }
 
 

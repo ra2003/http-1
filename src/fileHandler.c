@@ -464,6 +464,7 @@ PUBLIC int httpHandleDirectory(HttpConn *conn, cchar *defaultIndex)
             if (mprPathExists(path, R_OK)) {
                 break;
             }
+            path = 0;
         }
         if (defaultIndex) {
             index = defaultIndex;

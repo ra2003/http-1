@@ -380,7 +380,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 {
     HttpRx      *rx;
     HttpLimits  *limits;
-    char        *method, *uri, *protocol, *start;
+    char        *headers, *method, *uri, *protocol, *start;
     MprBuf      *content;
     ssize       len;
 
@@ -395,6 +395,8 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
 
     content = packet->content;
     start = content->start;
+    headers = httpTracing(conn) ? snclone(start, rx->headerPacketLength) : 0;
+
     method = getToken(conn, 0);
     rx->originalMethod = rx->method = supper(method);
     parseMethod(conn);
@@ -433,11 +435,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     if (httpTracing(conn)) {
         httpTrace(conn, "rx.first.server", "request", "method:'%s',uri:'%s',protocol:'%s'", 
             rx->method, rx->uri, conn->protocol);
-        uri[-1] = ' ';
-        protocol[-1] = ' ';
-        content->start[-2] = '\r';
-        content->start[-1] = '\n';
-        httpTraceContent(conn, "rx.headers.server", "context", start, rx->headerPacketLength, NULL);
+        httpTraceContent(conn, "rx.headers.server", "context", headers, rx->headerPacketLength, NULL);
     }
     return 1;
 }

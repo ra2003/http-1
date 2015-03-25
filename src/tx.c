@@ -498,6 +498,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             msg, msg);
     }
     httpFinalize(conn);
+    tx->handler = conn->http->passHandler;
 }
 
 

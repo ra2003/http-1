@@ -32,7 +32,7 @@ static void sortList(HttpConn *conn, MprList *list);
     Test if this request is for a directory listing. This routine is called directly by the fileHandler.
     Directory listings are enabled in a route via "Options Indexes".
  */
-PUBLIC bool httpRenderDirListing(HttpConn *conn)
+PUBLIC bool httpShouldRenderDirListing(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;

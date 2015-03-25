@@ -41,7 +41,7 @@ static int rewriteFileHandler(HttpConn *conn)
         return HTTP_ROUTE_OK;
     }
     if (info->isDir) {
-        return httpHandleDirectory(conn, NULL);
+        return httpHandleDirectory(conn);
     }
     if (rx->flags & (HTTP_GET | HTTP_HEAD | HTTP_POST) && info->valid) {
         /*
@@ -418,14 +418,13 @@ static void handleDeleteRequest(HttpQueue *q)
 }
 
 
-PUBLIC int httpHandleDirectory(HttpConn *conn, cchar *defaultIndex)
+PUBLIC int httpHandleDirectory(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
     HttpRoute   *route;
     HttpUri     *req;
-    MprPath     *info;
-    cchar       *index, *pathInfo, *uri;
+    cchar       *index, *pathInfo;
     char        *path;
     int         next;
 
@@ -433,22 +432,19 @@ PUBLIC int httpHandleDirectory(HttpConn *conn, cchar *defaultIndex)
     tx = conn->tx;
     req = rx->parsedUri;
     route = rx->route;
-    info = &tx->fileInfo;
 
     /*
         Manage requests for directories
      */
     if (!sends(req->path, "/")) {
         /*
-           Append "/" and do an external redirect. Use the original request URI.
+           Append "/" and do an external redirect. Use the original request URI. Use httpFormatUri to preserve query.
          */
-        pathInfo = sjoin(req->path, "/", NULL);
-        uri = httpFormatUri(req->scheme, req->host, req->port, pathInfo, req->reference, req->query, 0);
-        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
-        if (tx->finalized) {
-            /* This allows handlers to call httpHandleDirectory after routing (esp does this) */
-            tx->handler = conn->http->passHandler;
-        }
+        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, 
+            httpFormatUri(req->scheme, req->host, req->port, sjoin(req->path, "/", NULL), req->reference, req->query, 0));
+#if UNUSED
+        tx->handler = conn->http->passHandler;
+#endif
         return HTTP_ROUTE_OK;
     }
     if (route->indexes) {
@@ -466,26 +462,27 @@ PUBLIC int httpHandleDirectory(HttpConn *conn, cchar *defaultIndex)
             }
             path = 0;
         }
+#if UNUSED
         if (defaultIndex) {
             index = defaultIndex;
             path = mprJoinPath(tx->filename, index);
         }
+#endif
         if (path) {
             pathInfo = sjoin(rx->scriptName, rx->pathInfo, index, NULL);
-            uri = httpFormatUri(req->scheme, req->host, req->port, pathInfo, req->reference, req->query, 0);
-            httpSetUri(conn, uri);
+            httpSetUri(conn, httpFormatUri(req->scheme, req->host, req->port, pathInfo, req->reference, req->query, 0));
             tx->filename = path;
             tx->ext = httpGetExt(conn);
-            mprGetPathInfo(tx->filename, info);
+            mprGetPathInfo(tx->filename, &tx->fileInfo);
             return HTTP_ROUTE_REROUTE;
         }
     }
 #if ME_COM_DIR
     /*
-        Directory Listing. If a directory, test if a directory listing should be rendered. If so, delegate to the
-        dirHandler. Cannot use the sendFile handler and must use the netConnector.
+        Directory Listing. Test if a directory listing should be rendered. If so, delegate to the dirHandler. 
+        Must use the netConnector.
      */
-    if (info->isDir && httpRenderDirListing(conn)) {
+    if (httpShouldRenderDirListing(conn)) {
         tx->handler = conn->http->dirHandler;
         tx->connector = conn->http->netConnector;
         return HTTP_ROUTE_OK;

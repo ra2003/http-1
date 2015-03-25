@@ -485,10 +485,6 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
 }
 
 
-//  FUTURE - rethink API, makes chaining hard if result must be supplied
-/*
-    result = base.join(other)
- */
 PUBLIC HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
 {
     char    *sep;
@@ -784,9 +780,9 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
             target = "/";
         }
     }
-    //  OPT
     target = httpTemplate(conn, tplate, options);
     uri = httpCreateUri(target, 0);
+
     /*
         This was changed from: httpCreateUri(rx->uri) to rx->parsedUri.
         The use case was appweb: /auth/form/login which redirects using: https:///auth/form/login on localhost:4443

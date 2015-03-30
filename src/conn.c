@@ -902,8 +902,8 @@ PUBLIC HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
     Test if a request has expired relative to the default inactivity and request timeout limits.
     Set timeout to a non-zero value to apply an overriding smaller timeout
     Set timeout to a value in msec. If timeout is zero, override default limits and wait forever.
-    If timeout is < 0, use default inactivity and duration timeouts. If timeout is > 0, then use this timeout as an additional
-    timeout.
+    If timeout is < 0, use default inactivity and duration timeouts. 
+    If timeout is > 0, then use this timeout as an additional timeout.
  */
 PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
 {

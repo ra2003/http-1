@@ -812,8 +812,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
             return 0;
         }
     }
-    stage = httpLookupStage(name);
-    if (stage == 0) {
+    if ((stage = httpLookupStage(name)) == 0) {
         mprLog("error http route", 0, "Cannot find filter %s", name);
         return MPR_ERR_CANT_FIND;
     }
@@ -832,6 +831,8 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
             } else if (*word == '.') {
                 word++;
             } else if (*word == '\"' && word[1] == '\"') {
+                word = "";
+            } else if (*word == '*' && word[1] == '\0') {
                 word = "";
             }
             mprAddKey(filter->extensions, word, filter);
@@ -2370,6 +2371,7 @@ static int cmdUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         httpTrace(conn, "request.run.error", "error", "command:'%s',error:'%s'", command, conn->errorMsg);
         /* Continue */
     }
+    mprDestroyCmd(cmd);
     return HTTP_ROUTE_OK;
 }
 

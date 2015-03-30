@@ -658,7 +658,7 @@ DEPS_50 += $(BUILD)/obj/mprLib.o
 
 $(BUILD)/bin/libmpr.out: $(DEPS_50)
 	@echo '      [Link] $(BUILD)/bin/libmpr.out'
-	ar -cr $(BUILD)/bin/libmpr.out "$(BUILD)/obj/mprLib.o"
+	$(CC) -r -o $(BUILD)/bin/libmpr.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/mprLib.o" $(LIBS) 
 
 ifeq ($(ME_COM_PCRE),1)
 #
@@ -669,7 +669,7 @@ DEPS_51 += $(BUILD)/obj/pcre.o
 
 $(BUILD)/bin/libpcre.out: $(DEPS_51)
 	@echo '      [Link] $(BUILD)/bin/libpcre.out'
-	ar -cr $(BUILD)/bin/libpcre.out "$(BUILD)/obj/pcre.o"
+	$(CC) -r -o $(BUILD)/bin/libpcre.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/pcre.o" $(LIBS) 
 endif
 
 #
@@ -718,7 +718,7 @@ DEPS_52 += $(BUILD)/obj/webSockFilter.o
 
 $(BUILD)/bin/libhttp.out: $(DEPS_52)
 	@echo '      [Link] $(BUILD)/bin/libhttp.out'
-	ar -cr $(BUILD)/bin/libhttp.out "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o"
+	$(CC) -r -o $(BUILD)/bin/libhttp.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBS) 
 
 #
 #   http-server
@@ -726,15 +726,9 @@ $(BUILD)/bin/libhttp.out: $(DEPS_52)
 DEPS_53 += $(BUILD)/bin/libhttp.out
 DEPS_53 += $(BUILD)/obj/http-server.o
 
-LIBS_53 += -lhttp
-LIBS_53 += -lmpr
-ifeq ($(ME_COM_PCRE),1)
-    LIBS_53 += -lpcre
-endif
-
 $(BUILD)/bin/http-server.out: $(DEPS_53)
 	@echo '      [Link] $(BUILD)/bin/http-server.out'
-	$(CC) -o $(BUILD)/bin/http-server.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http-server.o" $(LIBPATHS_53) $(LIBS_53) $(LIBS_53) $(LIBS) -Wl,-r 
+	$(CC) -o $(BUILD)/bin/http-server.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http-server.o" $(LIBS) -Wl,-r 
 
 #
 #   httpcmd
@@ -742,15 +736,9 @@ $(BUILD)/bin/http-server.out: $(DEPS_53)
 DEPS_54 += $(BUILD)/bin/libhttp.out
 DEPS_54 += $(BUILD)/obj/http.o
 
-LIBS_54 += -lhttp
-LIBS_54 += -lmpr
-ifeq ($(ME_COM_PCRE),1)
-    LIBS_54 += -lpcre
-endif
-
 $(BUILD)/bin/http.out: $(DEPS_54)
 	@echo '      [Link] $(BUILD)/bin/http.out'
-	$(CC) -o $(BUILD)/bin/http.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http.o" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) -Wl,-r 
+	$(CC) -o $(BUILD)/bin/http.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http.o" $(LIBS) -Wl,-r 
 
 #
 #   libmprssl
@@ -758,9 +746,20 @@ $(BUILD)/bin/http.out: $(DEPS_54)
 DEPS_55 += $(BUILD)/bin/libmpr.out
 DEPS_55 += $(BUILD)/obj/mprSsl.o
 
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_55 += -lssl
+    LIBPATHS_55 += -L"$(ME_COM_OPENSSL_PATH)/lib"
+    LIBPATHS_55 += -L"$(ME_COM_OPENSSL_PATH)"
+endif
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_55 += -lcrypto
+    LIBPATHS_55 += -L"$(ME_COM_OPENSSL_PATH)/lib"
+    LIBPATHS_55 += -L"$(ME_COM_OPENSSL_PATH)"
+endif
+
 $(BUILD)/bin/libmprssl.out: $(DEPS_55)
 	@echo '      [Link] $(BUILD)/bin/libmprssl.out'
-	ar -cr $(BUILD)/bin/libmprssl.out "$(BUILD)/obj/mprSsl.o"
+	$(CC) -r -o $(BUILD)/bin/libmprssl.out $(LDFLAGS) $(LIBPATHS)   "$(BUILD)/obj/mprSsl.o" $(LIBPATHS_55) $(LIBS_55) $(LIBS_55) $(LIBS) 
 
 #
 #   installPrep

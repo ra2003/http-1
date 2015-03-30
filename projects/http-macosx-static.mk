@@ -647,7 +647,7 @@ DEPS_50 += $(BUILD)/obj/mprLib.o
 
 $(BUILD)/bin/libmpr.dylib: $(DEPS_50)
 	@echo '      [Link] $(BUILD)/bin/libmpr.dylib'
-	ar -cr $(BUILD)/bin/libmpr.dylib "$(BUILD)/obj/mprLib.o"
+	$(CC) -dynamiclib -o $(BUILD)/bin/libmpr.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libmpr.dylib -compatibility_version 6.0 -current_version 6.0 "$(BUILD)/obj/mprLib.o" $(LIBS) 
 
 ifeq ($(ME_COM_PCRE),1)
 #
@@ -658,7 +658,7 @@ DEPS_51 += $(BUILD)/obj/pcre.o
 
 $(BUILD)/bin/libpcre.dylib: $(DEPS_51)
 	@echo '      [Link] $(BUILD)/bin/libpcre.dylib'
-	ar -cr $(BUILD)/bin/libpcre.dylib "$(BUILD)/obj/pcre.o"
+	$(CC) -dynamiclib -o $(BUILD)/bin/libpcre.dylib -arch $(CC_ARCH) $(LDFLAGS) -compatibility_version 6.0 -current_version 6.0 $(LIBPATHS) -install_name @rpath/libpcre.dylib -compatibility_version 6.0 -current_version 6.0 "$(BUILD)/obj/pcre.o" $(LIBS) 
 endif
 
 #
@@ -705,9 +705,14 @@ DEPS_52 += $(BUILD)/obj/user.o
 DEPS_52 += $(BUILD)/obj/var.o
 DEPS_52 += $(BUILD)/obj/webSockFilter.o
 
+LIBS_52 += -lmpr
+ifeq ($(ME_COM_PCRE),1)
+    LIBS_52 += -lpcre
+endif
+
 $(BUILD)/bin/libhttp.dylib: $(DEPS_52)
 	@echo '      [Link] $(BUILD)/bin/libhttp.dylib'
-	ar -cr $(BUILD)/bin/libhttp.dylib "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o"
+	$(CC) -dynamiclib -o $(BUILD)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 6.0 -current_version 6.0 "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS) -lpam 
 
 #
 #   http-server
@@ -747,9 +752,24 @@ $(BUILD)/bin/http: $(DEPS_54)
 DEPS_55 += $(BUILD)/bin/libmpr.dylib
 DEPS_55 += $(BUILD)/obj/mprSsl.o
 
+LIBS_55 += -lmpr
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_55 += -lssl
+    LIBPATHS_55 += -L"$(ME_COM_OPENSSL_PATH)/lib"
+    LIBPATHS_55 += -L"$(ME_COM_OPENSSL_PATH)"
+endif
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_55 += -lcrypto
+    LIBPATHS_55 += -L"$(ME_COM_OPENSSL_PATH)/lib"
+    LIBPATHS_55 += -L"$(ME_COM_OPENSSL_PATH)"
+endif
+ifeq ($(ME_COM_EST),1)
+    LIBS_55 += -lest
+endif
+
 $(BUILD)/bin/libmprssl.dylib: $(DEPS_55)
 	@echo '      [Link] $(BUILD)/bin/libmprssl.dylib'
-	ar -cr $(BUILD)/bin/libmprssl.dylib "$(BUILD)/obj/mprSsl.o"
+	$(CC) -dynamiclib -o $(BUILD)/bin/libmprssl.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)   -install_name @rpath/libmprssl.dylib -compatibility_version 6.0 -current_version 6.0 "$(BUILD)/obj/mprSsl.o" $(LIBPATHS_55) $(LIBS_55) $(LIBS_55) $(LIBS) 
 
 #
 #   installPrep

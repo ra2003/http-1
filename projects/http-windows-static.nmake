@@ -293,7 +293,7 @@ DEPS_7 = $(DEPS_7) build\$(CONFIG)\obj\mprLib.obj
 
 build\$(CONFIG)\bin\libmpr.dll: $(DEPS_7)
 	@echo ..... [Link] build\$(CONFIG)\bin\libmpr.dll
-	"lib.exe" -nologo -out:$(BUILD)\bin\libmpr.dll "$(BUILD)\obj\mprLib.obj" $(LOG)
+	"$(LD)" -dll -out:$(BUILD)\bin\libmpr.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\mprLib.obj" $(LIBS)  $(LOG)
 
 #
 #   pcre.h
@@ -331,7 +331,7 @@ DEPS_11 = $(DEPS_11) build\$(CONFIG)\obj\pcre.obj
 
 build\$(CONFIG)\bin\libpcre.dll: $(DEPS_11)
 	@echo ..... [Link] build\$(CONFIG)\bin\libpcre.dll
-	"lib.exe" -nologo -out:$(BUILD)\bin\libpcre.dll "$(BUILD)\obj\pcre.obj" $(LOG)
+	"$(LD)" -dll -out:$(BUILD)\bin\libpcre.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\pcre.obj" $(LIBS)  $(LOG)
 !ENDIF
 
 #
@@ -745,9 +745,14 @@ DEPS_49 = $(DEPS_49) build\$(CONFIG)\obj\user.obj
 DEPS_49 = $(DEPS_49) build\$(CONFIG)\obj\var.obj
 DEPS_49 = $(DEPS_49) build\$(CONFIG)\obj\webSockFilter.obj
 
+LIBS_49 = $(LIBS_49) libmpr.lib
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_49 = $(LIBS_49) libpcre.lib
+!ENDIF
+
 build\$(CONFIG)\bin\libhttp.dll: $(DEPS_49)
 	@echo ..... [Link] build\$(CONFIG)\bin\libhttp.dll
-	"lib.exe" -nologo -out:$(BUILD)\bin\libhttp.dll "$(BUILD)\obj\actionHandler.obj" "$(BUILD)\obj\auth.obj" "$(BUILD)\obj\basic.obj" "$(BUILD)\obj\cache.obj" "$(BUILD)\obj\chunkFilter.obj" "$(BUILD)\obj\client.obj" "$(BUILD)\obj\config.obj" "$(BUILD)\obj\conn.obj" "$(BUILD)\obj\digest.obj" "$(BUILD)\obj\dirHandler.obj" "$(BUILD)\obj\endpoint.obj" "$(BUILD)\obj\error.obj" "$(BUILD)\obj\fileHandler.obj" "$(BUILD)\obj\host.obj" "$(BUILD)\obj\monitor.obj" "$(BUILD)\obj\netConnector.obj" "$(BUILD)\obj\packet.obj" "$(BUILD)\obj\pam.obj" "$(BUILD)\obj\passHandler.obj" "$(BUILD)\obj\pipeline.obj" "$(BUILD)\obj\queue.obj" "$(BUILD)\obj\rangeFilter.obj" "$(BUILD)\obj\route.obj" "$(BUILD)\obj\rx.obj" "$(BUILD)\obj\sendConnector.obj" "$(BUILD)\obj\service.obj" "$(BUILD)\obj\session.obj" "$(BUILD)\obj\stage.obj" "$(BUILD)\obj\trace.obj" "$(BUILD)\obj\tx.obj" "$(BUILD)\obj\uploadFilter.obj" "$(BUILD)\obj\uri.obj" "$(BUILD)\obj\user.obj" "$(BUILD)\obj\var.obj" "$(BUILD)\obj\webSockFilter.obj" $(LOG)
+	"$(LD)" -dll -out:$(BUILD)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\actionHandler.obj" "$(BUILD)\obj\auth.obj" "$(BUILD)\obj\basic.obj" "$(BUILD)\obj\cache.obj" "$(BUILD)\obj\chunkFilter.obj" "$(BUILD)\obj\client.obj" "$(BUILD)\obj\config.obj" "$(BUILD)\obj\conn.obj" "$(BUILD)\obj\digest.obj" "$(BUILD)\obj\dirHandler.obj" "$(BUILD)\obj\endpoint.obj" "$(BUILD)\obj\error.obj" "$(BUILD)\obj\fileHandler.obj" "$(BUILD)\obj\host.obj" "$(BUILD)\obj\monitor.obj" "$(BUILD)\obj\netConnector.obj" "$(BUILD)\obj\packet.obj" "$(BUILD)\obj\pam.obj" "$(BUILD)\obj\passHandler.obj" "$(BUILD)\obj\pipeline.obj" "$(BUILD)\obj\queue.obj" "$(BUILD)\obj\rangeFilter.obj" "$(BUILD)\obj\route.obj" "$(BUILD)\obj\rx.obj" "$(BUILD)\obj\sendConnector.obj" "$(BUILD)\obj\service.obj" "$(BUILD)\obj\session.obj" "$(BUILD)\obj\stage.obj" "$(BUILD)\obj\trace.obj" "$(BUILD)\obj\tx.obj" "$(BUILD)\obj\uploadFilter.obj" "$(BUILD)\obj\uri.obj" "$(BUILD)\obj\user.obj" "$(BUILD)\obj\var.obj" "$(BUILD)\obj\webSockFilter.obj" $(LIBPATHS_49) $(LIBS_49) $(LIBS_49) $(LIBS)  $(LOG)
 
 #
 #   http-server.obj
@@ -837,7 +842,7 @@ DEPS_57 = $(DEPS_57) build\$(CONFIG)\obj\estLib.obj
 
 build\$(CONFIG)\bin\libest.dll: $(DEPS_57)
 	@echo ..... [Link] build\$(CONFIG)\bin\libest.dll
-	"lib.exe" -nologo -out:$(BUILD)\bin\libest.dll "$(BUILD)\obj\estLib.obj" $(LOG)
+	"$(LD)" -dll -out:$(BUILD)\bin\libest.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\estLib.obj" $(LIBS)  $(LOG)
 !ENDIF
 
 #
@@ -859,7 +864,22 @@ DEPS_59 = $(DEPS_59) build\$(CONFIG)\bin\libest.dll
 !ENDIF
 DEPS_59 = $(DEPS_59) build\$(CONFIG)\obj\mprSsl.obj
 
+LIBS_59 = $(LIBS_59) libmpr.lib
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_59 = $(LIBS_59) libeay32.lib
+LIBPATHS_59 = $(LIBPATHS_59) -libpath:$(ME_COM_OPENSSL_PATH)/lib
+LIBPATHS_59 = $(LIBPATHS_59) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_59 = $(LIBS_59) libssleay32.lib
+LIBPATHS_59 = $(LIBPATHS_59) -libpath:$(ME_COM_OPENSSL_PATH)/lib
+LIBPATHS_59 = $(LIBPATHS_59) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_EST)" == "1"
+LIBS_59 = $(LIBS_59) libest.lib
+!ENDIF
+
 build\$(CONFIG)\bin\libmprssl.dll: $(DEPS_59)
 	@echo ..... [Link] build\$(CONFIG)\bin\libmprssl.dll
-	"lib.exe" -nologo -out:$(BUILD)\bin\libmprssl.dll "$(BUILD)\obj\mprSsl.obj" $(LOG)
+	"$(LD)" -dll -out:$(BUILD)\bin\libmprssl.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS)   "$(BUILD)\obj\mprSsl.obj" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS)  $(LOG)
 

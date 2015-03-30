@@ -114,9 +114,6 @@
 #ifndef ME_PREFIXES
     #define ME_PREFIXES "install-prefixes"
 #endif
-#ifndef ME_STATIC
-    #define ME_STATIC 1
-#endif
 #ifndef ME_TITLE
     #define ME_TITLE "Embedthis Http"
 #endif

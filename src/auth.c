@@ -461,11 +461,11 @@ PUBLIC void httpSetAuthFormDetails(HttpRoute *route, cchar *loginPage, cchar *lo
 
     auth = route->auth;
 
+    if (!route->cookie) {
+        httpSetRouteCookie(route, HTTP_SESSION_COOKIE);
+    }
     if (loggedInPage) {
         auth->loggedInPage = sclone(loggedInPage);
-#if UNUSED
-        createLoginRoute(route, auth->loggedInPage, 0);
-#endif
     }
     if (loginPage) {
         auth->loginPage = sclone(loginPage);

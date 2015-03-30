@@ -5161,7 +5161,8 @@ PUBLIC void mprSetCacheLimits(MprCache *cache, int64 keys, MprTicks lifespan, in
 }
 
 
-PUBLIC ssize mprWriteCache(MprCache *cache, cchar *key, cchar *value, MprTime modified, MprTicks lifespan, int64 version, int options)
+PUBLIC ssize mprWriteCache(MprCache *cache, cchar *key, cchar *value, MprTime modified, MprTicks lifespan, 
+    int64 version, int options)
 {
     CacheItem   *item;
     MprKey      *kp;

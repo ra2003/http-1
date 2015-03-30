@@ -106,6 +106,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 {
     Http        *http;
     HttpRx      *rx;
+    MprTicks    lifespan;
     cchar       *cookie, *data, *id;
     static int  seqno = 0;
     int         flags, thisSeqno, activeSessions;
@@ -140,7 +141,8 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             rx->session = allocSessionObj(conn, id, NULL);
             flags = (rx->route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
             cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
-            httpSetCookie(conn, cookie, rx->session->id, "/", NULL, rx->session->lifespan, flags);
+            lifespan = (rx->route->flags & HTTP_ROUTE_PERSIST_COOKIE) ? rx->session->lifespan : 0;
+            httpSetCookie(conn, cookie, rx->session->id, "/", NULL, lifespan, flags);
             httpTrace(conn, "request.session.create", "context", "cookie:'%s',session:'%s'", cookie, rx->session->id);
 
             if ((rx->route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {

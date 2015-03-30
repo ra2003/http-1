@@ -1395,7 +1395,16 @@ PUBLIC void httpSetRouteCookie(HttpRoute *route, cchar *cookie)
 {
     assert(route);
     assert(cookie && *cookie);
-    route->cookie = cookie;
+    route->cookie = sclone(cookie);
+}
+
+
+PUBLIC void httpSetRouteCookiePersist(HttpRoute *route, int enable)
+{
+    route->flags &= ~HTTP_ROUTE_PERSIST_COOKIE;
+    if (enable) {
+        route->flags |= HTTP_ROUTE_PERSIST_COOKIE;
+    }
 }
 
 

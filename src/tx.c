@@ -547,12 +547,16 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
         }
     }
     domainAtt = domain ? "; domain=" : "";
-    if (domain && !strchr(domain, '.')) {
-        if (smatch(domain, "localhost")) {
-            domainAtt = domain = "";
-        } else {
-            domain = sjoin(".", domain, NULL);
+    if (domain) {
+        if (!strchr(domain, '.')) {
+            if (smatch(domain, "localhost")) {
+                domainAtt = domain = "";
+            } else {
+                domain = sjoin(".", domain, NULL);
+            }
         }
+    } else {
+        domain = "";
     }
     if (lifespan) {
         expiresAtt = "; expires=";

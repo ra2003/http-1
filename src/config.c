@@ -577,7 +577,7 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
     MprTicks    clientLifespan, serverLifespan;
-    cchar       *methods, *extensions, *uris, *mimeTypes, *client, *server;
+    cchar       *methods, *extensions, *urls, *mimeTypes, *client, *server;
     int         flags, ji;
 
     clientLifespan = serverLifespan = 0;
@@ -595,7 +595,7 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
                 serverLifespan = httpGetTicks(server);
             }
             methods = getList(mprReadJsonObj(child, "methods"));
-            uris = getList(mprReadJsonObj(child, "uris"));
+            urls = getList(mprReadJsonObj(child, "urls"));
             mimeTypes = getList(mprReadJsonObj(child, "mime"));
             extensions = getList(mprReadJsonObj(child, "extensions"));
             if (smatch(mprReadJson(child, "unique"), "true")) {
@@ -606,7 +606,7 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
                 /* User must manually call httpWriteCache */
                 flags |= HTTP_CACHE_MANUAL;
             }
-            httpAddCache(route, methods, uris, extensions, mimeTypes, clientLifespan, serverLifespan, flags);
+            httpAddCache(route, methods, urls, extensions, mimeTypes, clientLifespan, serverLifespan, flags);
         }
     }
 }
@@ -990,7 +990,13 @@ static void parseParams(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parsePattern(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    httpSetRoutePattern(route, prop->value, 0);
+    cchar   *pattern;
+
+    pattern = prop->value;
+    if (pattern && *pattern != '^') {
+        pattern = sfmt("^%s%s", route->parent->prefix, pattern);
+    }
+    httpSetRoutePattern(route, pattern, 0);
 }
 
 
@@ -1000,25 +1006,22 @@ static void parsePipelineFilters(HttpRoute *route, cchar *key, MprJson *prop)
     cchar       *name, *extensions;
     int         flags, ji;
 
-    for (ITERATE_CONFIG(route, prop, child, ji)) {
-        if (child->type & MPR_JSON_STRING) {
-            flags = HTTP_STAGE_RX | HTTP_STAGE_TX;
-            extensions = 0;
-            name = child->value;
-        } else {
-            name = mprReadJson(child, "name");
-            extensions = getList(mprReadJsonObj(child, "extensions"));
-#if KEEP
-            direction = mprReadJson(child, "direction");
-            flags |= smatch(direction, "input") ? HTTP_STAGE_RX : 0;
-            flags |= smatch(direction, "output") ? HTTP_STAGE_TX : 0;
-            flags |= smatch(direction, "both") ? HTTP_STAGE_RX | HTTP_STAGE_TX : 0;
-#else
-            flags = HTTP_STAGE_RX | HTTP_STAGE_TX;
-#endif
+    flags = HTTP_STAGE_RX | HTTP_STAGE_TX;
+
+    if (prop->type & MPR_JSON_STRING) {
+        name = prop->value;
+        if (httpAddRouteFilter(route, prop->value, NULL, flags) < 0) {
+            httpParseWarn(route, "Cannot add filter %s", name);
         }
+    } else if (prop->type & MPR_JSON_OBJ) {
+        name = mprReadJson(prop, "name");
+        extensions = getList(mprReadJsonObj(prop, "extensions"));
         if (httpAddRouteFilter(route, name, extensions, flags) < 0) {
             httpParseWarn(route, "Cannot add filter %s", name);
+        }
+    } else if (prop->type & MPR_JSON_ARRAY) {
+        for (ITERATE_CONFIG(route, prop, child, ji)) {
+            parsePipelineFilters(route, key, child);
         }
     }
 }
@@ -1446,7 +1449,7 @@ static void parseShowErrors(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseSource(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    httpSetRouteSource(route, prop->value);
+    httpSetRouteSource(route, mprJoinPath(route->home, prop->value));
 }
 
 

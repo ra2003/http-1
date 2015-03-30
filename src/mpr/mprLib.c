@@ -5551,7 +5551,6 @@ PUBLIC MprCmd *mprCreateCmd(MprDispatcher *dispatcher)
         files[i].fd = -1;
     }
     cmd->mutex = mprCreateLock();
-    mprAddItem(MPR->cmdService->cmds, cmd);
     return cmd;
 }
 
@@ -5830,9 +5829,11 @@ PUBLIC int mprRunCmdV(MprCmd *cmd, int argc, cchar **argv, cchar **envp, cchar *
         return 0;
     }
     if (mprWaitForCmd(cmd, timeout) < 0) {
+        mprRemoveItem(MPR->cmdService->cmds, cmd);
         return MPR_ERR_NOT_READY;
     }
     if ((status = mprGetCmdExitStatus(cmd)) < 0) {
+        mprRemoveItem(MPR->cmdService->cmds, cmd);
         return MPR_ERR;
     }
     if (err && flags & MPR_CMD_ERR) {
@@ -5966,7 +5967,9 @@ PUBLIC int mprStartCmd(MprCmd *cmd, int argc, cchar **argv, cchar **envp, int fl
         return MPR_ERR_CANT_OPEN;
     }
     rc = startProcess(cmd);
+
     cmd->originalPid = cmd->pid;
+    mprAddItem(MPR->cmdService->cmds, cmd);
     sunlock(cmd);
 #if ME_WIN_LIKE
     if (!rc) {

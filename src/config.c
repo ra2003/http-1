@@ -596,6 +596,13 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
             }
             methods = getList(mprReadJsonObj(child, "methods"));
             urls = getList(mprReadJsonObj(child, "urls"));
+#if DEPRECATE || 1
+            if (urls == 0) {
+                if ((urls = getList(mprReadJsonObj(child, "urls"))) != 0) {
+                    mprLog("error http config", 0, "Using deprecated property \"uris\", use \"urls\" instead");
+                }
+            }
+#endif
             mimeTypes = getList(mprReadJsonObj(child, "mime"));
             extensions = getList(mprReadJsonObj(child, "extensions"));
             if (smatch(mprReadJson(child, "unique"), "true")) {
@@ -1449,7 +1456,10 @@ static void parseShowErrors(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseSource(HttpRoute *route, cchar *key, MprJson *prop)
 {
+/*  UNUSED - messes up esp controllers/source
     httpSetRouteSource(route, mprJoinPath(route->home, prop->value));
+*/
+    httpSetRouteSource(route, prop->value);
 }
 
 

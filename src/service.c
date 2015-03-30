@@ -114,7 +114,7 @@ PUBLIC Http *httpCreate(int flags)
     http->startLevel = 2;
     http->localPlatform = slower(sfmt("%s-%s-%s", ME_OS, ME_CPU, ME_PROFILE));
     httpSetPlatform(http->localPlatform);
-    httpSetPlatformDir(0);
+    httpSetPlatformDir(NULL);
 
     updateCurrentDate();
     http->statusCodes = mprCreateHash(41, MPR_HASH_STATIC_VALUES | MPR_HASH_STATIC_KEYS | MPR_HASH_STABLE);
@@ -1243,7 +1243,17 @@ PUBLIC int httpSetPlatformDir(cchar *path)
 
     http = HTTP;
     if (path) {
-        http->platformDir = mprGetAbsPath(path);
+        if (mprPathExists(path, X_OK)) {
+            http->platformDir = mprGetAbsPath(path);
+        } else {
+            /*
+                Possible source tree platform directory
+             */
+            http->platformDir = mprJoinPath(mprGetPathDir(mprGetPathDir(mprGetPathDir(mprGetAppPath()))), path);
+            if (!mprPathExists(http->platformDir, X_OK)) {
+                http->platformDir = mprGetAbsPath(path);
+            }
+        }
     } else {
         http->platformDir = mprGetPathDir(mprGetPathDir(mprGetAppPath()));
     }

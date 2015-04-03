@@ -65,6 +65,10 @@ Me.load({
         projects: {
             action: `genProjects('-with openssl')`,
         },
+
+        mine: {
+            action: `genProjects('', 'mine', Config.OS + '-' + Config.CPU)`,
+        }
     },
 
     manifest: {

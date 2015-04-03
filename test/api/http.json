@@ -1,0 +1,18 @@
+/*
+    http.json - Http configuration file
+ */
+{
+    http: {
+        documents: 'web',
+        server: {
+            listen: [
+                'http://127.0.0.1:4100',
+                'https://127.0.0.1:4443',
+            ],
+        },
+        ssl: {
+            certificate: '../crt/test.crt',
+            key: '../crt/test.key',
+        },
+    },
+}

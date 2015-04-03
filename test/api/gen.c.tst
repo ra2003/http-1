@@ -9,13 +9,16 @@
 #include    "testme.h"
 #include    "http.h"
 
-    //  MOB - how to manage
+/*********************************** Locals ***********************************/
+
 int timeout = 10 * 1000 * 1000;
+
 /************************************ Code ************************************/
 
 static void initHttp()
 {
     MprSocket   *sp;
+    HttpUri     *uri;
 
     sp = mprCreateSocket(NULL);
     ttrue(sp);
@@ -23,7 +26,9 @@ static void initHttp()
     /*
         Test if we have network connectivity. If not, then skip further tests.
      */
-    if (mprConnectSocket(sp, "embedthis.com", 80, 0) < 0) {
+
+    uri = httpCreateUri(tget("TM_HTTP", "4100"), 0);
+    if (mprConnectSocket(sp, "127.0.0.1", uri->port, 0) < 0) {
         tskip("no internet connection");
         exit(0);
     }
@@ -54,7 +59,7 @@ static void basicHttpGet()
         httpStartTracing("stdout:4");
     }
     conn = httpCreateConn(NULL, 0);
-    rc = httpConnect(conn, "GET", "http://embedthis.com/index.html", NULL);
+    rc = httpConnect(conn, "GET", tget("TM_HTTP", "4100"), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         httpWait(conn, HTTP_STATE_COMPLETE, timeout);
@@ -71,7 +76,7 @@ static void basicHttpGet()
 }
 
 
-#if UNUSED && ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
+#if ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
 static void secureHttpGet()
 {
     Http        *http;
@@ -83,7 +88,7 @@ static void secureHttpGet()
     conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
 
-    rc = httpConnect(conn, "GET", "https://embedthis.com/", NULL);
+    rc = httpConnect(conn, "GET", tget("TM_HTTPS", 0), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         httpFinalize(conn);
@@ -115,7 +120,7 @@ static void stealSocket()
      */
     conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
-    rc = httpConnect(conn, "GET", "http://embedthis.com/", NULL);
+    rc = httpConnect(conn, "GET", tget("TM_HTTP", 0), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         ttrue(conn->sock != 0);
@@ -139,7 +144,7 @@ static void stealSocket()
      */
     conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
-    rc = httpConnect(conn, "GET", "http://embedthis.com/", NULL);
+    rc = httpConnect(conn, "GET", tget("TM_HTTP", 0), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         ttrue(conn->sock != 0);
@@ -168,7 +173,7 @@ int main(int argc, char **argv)
     initHttp();
     createHttp();
     basicHttpGet();
-#if UNUSED && ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
+#if ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
     secureHttpGet();
 #endif
     stealSocket();

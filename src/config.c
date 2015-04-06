@@ -1672,7 +1672,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *levels, *child;
     cchar       *location;
-    ssize       size, maxContent;
+    ssize       logSize, maxContent;
     cchar       *format, *formatter;
     char        level;
     int         anew, backup, ji;
@@ -1681,7 +1681,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
         mprLog("info http config", 4, "Already tracing. Ignoring trace configuration");
         return;
     }
-    size = (ssize) httpGetNumber(mprReadJson(prop, "size"));
+    logSize = (ssize) httpGetNumber(mprReadJson(prop, "size"));
     format = mprReadJson(prop, "format");
     formatter = mprReadJson(prop, "formatter");
     location = mprReadJson(prop, "location");
@@ -1695,9 +1695,14 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     } else if (level > 5) {
         level = 5;
     }
-    if (size < (10 * 1000)) {
-        size = 10 * 1000 * 1000;
-        mprLog("warn http config", 0, "Trace log size is too small, setting to 10MB. Must be larger than 10K.");
+    if (logSize < (10 * 1000)) {
+        if (logSize) {
+            mprLog("warn http config", 0, "Trace log size is too small, setting to 10MB. Must be larger than 10K.");
+        }
+        logSize = 10 * 1000 * 1000;
+    }
+    if (maxContent == 0) {
+        maxContent = 40 * 1024;
     }
     if (location == 0) {
         httpParseError(route, "Missing trace filename");
@@ -1713,7 +1718,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     }
     route->trace = httpCreateTrace(route->trace);
     httpSetTraceFormatterName(route->trace, formatter);
-    httpSetTraceLogFile(route->trace, location, size, backup, format, anew ? MPR_LOG_ANEW : 0);
+    httpSetTraceLogFile(route->trace, location, logSize, backup, format, anew ? MPR_LOG_ANEW : 0);
     httpSetTraceFormat(route->trace, format);
     httpSetTraceContentSize(route->trace, maxContent);
     httpSetTraceLevel(level);

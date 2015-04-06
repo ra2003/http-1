@@ -476,9 +476,7 @@ PUBLIC int httpOpenTraceLogFile(HttpTrace *trace)
         } else {
             backupTraceLogFile(trace);
             mode = O_CREAT | O_WRONLY | O_TEXT;
-            if (trace->flags & MPR_LOG_ANEW) {
-                mode |= O_TRUNC;
-            }
+            mode |= (trace->flags & MPR_LOG_ANEW) ? O_TRUNC : O_APPEND;
             if (smatch(trace->path, "stdout")) {
                 file = MPR->stdOutput;
             } else if (smatch(trace->path, "stderr")) {

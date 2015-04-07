@@ -319,34 +319,6 @@ PUBLIC bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
 }
 
 
-PUBLIC void httpAddUploadFile(HttpConn *conn, HttpUploadFile *upfile)
-{
-    HttpRx   *rx;
-
-    rx = conn->rx;
-    if (rx->files == 0) {
-        rx->files = mprCreateList(0, MPR_LIST_STABLE);
-    }
-    mprAddItem(rx->files, upfile);
-}
-
-
-PUBLIC void httpRemoveAllUploadedFiles(HttpConn *conn)
-{
-    HttpRx          *rx;
-    HttpUploadFile  *file;
-    int             index;
-
-    rx = conn->rx;
-
-    for (ITERATE_ITEMS(rx->files, file, index)) {
-        if (file->filename) {
-            mprDeletePath(file->filename);
-            file->filename = 0;
-        }
-    }
-}
-
 /*
     @copy   default
 

@@ -187,6 +187,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->patternCompiled = parent->patternCompiled;
     route->prefix = parent->prefix;
     route->prefixLen = parent->prefixLen;
+    route->renameUploads = parent->renameUploads;
     route->requestHeaders = parent->requestHeaders;
     route->responseFormat = parent->responseFormat;
     route->responseStatus = parent->responseStatus;
@@ -1220,6 +1221,13 @@ PUBLIC void httpSetRouteAutoDelete(HttpRoute *route, bool enable)
 {
     assert(route);
     route->autoDelete = enable;
+}
+
+
+PUBLIC void httpSetRouteRenameUploads(HttpRoute *route, bool enable)
+{
+    assert(route);
+    route->renameUploads = enable;
 }
 
 

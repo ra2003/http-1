@@ -1126,6 +1126,12 @@ static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseRenameUploads(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpSetRouteRenameUploads(route, (prop->type & MPR_JSON_TRUE) ? 1 : 0);
+}
+
+
 /*
     Create RESTful routes
  */
@@ -1831,6 +1837,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.pipeline.handlers", parsePipelineHandlers);
     httpAddConfig("http.prefix", parsePrefix);
     httpAddConfig("http.redirect", parseRedirect);
+    httpAddConfig("http.renameUploads", parseRenameUploads);
     httpAddConfig("http.routes", parseRoutes);
     httpAddConfig("http.resources", parseResources);
     httpAddConfig("http.scheme", parseScheme);

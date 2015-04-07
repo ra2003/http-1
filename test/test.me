@@ -12,6 +12,7 @@ Me.load({
         test: {
             action: `run('testme --depth ' + me.settings.depth)`,
             platforms: [ 'local' ],
+            depends: [ 'clean-test', 'build' ],
         },
 
         'clean-test': {

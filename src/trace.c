@@ -550,7 +550,9 @@ PUBLIC void httpWriteTraceLogFile(HttpTrace *trace, cchar *buf, ssize len)
         unlock(trace);
         return;
     }
-    mprWriteFile(trace->file, buf, len);
+	if (trace->file) {
+		mprWriteFile(trace->file, buf, len);
+	}
     unlock(trace);
 }
 

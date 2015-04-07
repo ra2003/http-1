@@ -356,8 +356,10 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
             ncounters = ((counterIndex + 0xF) & ~0xF);
             if (address) {
                 address = mprRealloc(address, sizeof(HttpAddress) * ncounters * sizeof(HttpCounter));
+                memset(&address[address->ncounters], 0, (ncounters - address->ncounters) * sizeof(HttpCounter));
             } else {
-                address = mprAllocBlock(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter), MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO);
+                address = mprAllocBlock(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter), 
+                    MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO);
                 mprSetManager(address, (MprManager) manageAddress);
             }
             if (!address) {

@@ -327,9 +327,12 @@ PUBLIC char *httpReadString(HttpConn *conn)
             remaining -= nbytes;
         }
     } else {
-        content = mprAlloc(ME_MAX_BUFFER);
+        content = NULL;
         sofar = 0;
         while (1) {
+            if ((content = mprRealloc(content, sofar + ME_MAX_BUFFER)) == 0) {
+                return 0;
+            }
             nbytes = httpRead(conn, &content[sofar], ME_MAX_BUFFER);
             if (nbytes < 0) {
                 return 0;
@@ -337,7 +340,6 @@ PUBLIC char *httpReadString(HttpConn *conn)
                 break;
             }
             sofar += nbytes;
-            content = mprRealloc(content, sofar + ME_MAX_BUFFER);
         }
     }
     content[sofar] = '\0';

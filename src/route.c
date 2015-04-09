@@ -2605,6 +2605,7 @@ PUBLIC void httpAddPermResource(HttpRoute *parent, cchar *resource)
 PUBLIC HttpRoute *httpAddWebSocketsRoute(HttpRoute *parent, cchar *action)
 {
     HttpRoute   *route;
+    HttpLimits  *limits;
     cchar       *path, *pattern;
 
 #if DEPRECATE || 1
@@ -2615,13 +2616,15 @@ PUBLIC HttpRoute *httpAddWebSocketsRoute(HttpRoute *parent, cchar *action)
     path = sjoin("$1/", action, NULL);
     route = httpDefineRoute(parent, "GET", pattern, path, "${controller}.c");
     httpAddRouteFilter(route, "webSocketFilter", "", HTTP_STAGE_RX | HTTP_STAGE_TX);
-    httpGraduateLimits(route, 0);
 
     /*
-        Set some reasonable defaults. 5 minutes for inactivity and no request timeout limit
+        Set some reasonable defaults. 5 minutes for inactivity and no request timeout limit.
      */
-    route->limits->inactivityTimeout = ME_MAX_INACTIVITY_DURATION * 10;
-    route->limits->requestTimeout = MPR_MAX_TIMEOUT;
+    limits = httpGraduateLimits(route, 0);
+    limits->inactivityTimeout = ME_MAX_INACTIVITY_DURATION * 10;
+    limits->requestTimeout = HTTP_UNLIMITED;
+    limits->rxBodySize = HTTP_UNLIMITED;
+    limits->txBodySize = HTTP_UNLIMITED;
     return route;
 }
 
@@ -3385,61 +3388,6 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
         route->limits = mprMemdup(limits, sizeof(HttpLimits));
     }
     return route->limits;
-}
-
-
-PUBLIC uint64 httpGetNumber(cchar *value)
-{
-    uint64  number;
-
-    if (smatch(value, "unlimited") || smatch(value, "infinite") || smatch(value, "never")) {
-        return MAXINT64;
-    }
-    value = strim(slower(value), " \t", MPR_TRIM_BOTH);
-    if (sends(value, "sec") || sends(value, "secs") || sends(value, "seconds") || sends(value, "seconds")) {
-        number = stoi(value);
-    } else if (sends(value, "min") || sends(value, "mins") || sends(value, "minute") || sends(value, "minutes")) {
-        number = stoi(value) * 60;
-    } else if (sends(value, "hr") || sends(value, "hrs") || sends(value, "hour") || sends(value, "hours")) {
-        number = stoi(value) * 60 * 60;
-    } else if (sends(value, "day") || sends(value, "days")) {
-        number = stoi(value) * 60 * 60 * 24;
-    } else if (sends(value, "kb") || sends(value, "k")) {
-        number = stoi(value) * 1024;
-    } else if (sends(value, "mb") || sends(value, "m")) {
-        number = stoi(value) * 1024 * 1024;
-    } else if (sends(value, "gb") || sends(value, "g")) {
-        number = stoi(value) * 1024 * 1024 * 1024;
-    } else if (sends(value, "byte") || sends(value, "bytes")) {
-        number = stoi(value);
-    } else {
-        number = stoi(value);
-    }
-    return number;
-}
-
-
-PUBLIC MprTicks httpGetTicks(cchar *value)
-{
-    uint64  num;
-
-    num = httpGetNumber(value);
-    if (num >= (MAXINT64 / MPR_TICKS_PER_SEC)) {
-        num = MAXINT64 / MPR_TICKS_PER_SEC;
-    }
-    return num * MPR_TICKS_PER_SEC;
-}
-
-
-PUBLIC int httpGetInt(cchar *value)
-{
-    uint64  num;
-
-    num = httpGetNumber(value);
-    if (num >= MAXINT) {
-        num = MAXINT;
-    }
-    return (int) num;
 }
 
 

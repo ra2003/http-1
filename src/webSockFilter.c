@@ -229,9 +229,10 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
         if (ws->subProtocol && *ws->subProtocol) {
             httpSetHeaderString(conn, "Sec-WebSocket-Protocol", ws->subProtocol);
         }
+#if !ME_HTTP_WEB_SOCKETS_STEALTH
         httpSetHeader(conn, "X-Request-Timeout", "%lld", conn->limits->requestTimeout / MPR_TICKS_PER_SEC);
         httpSetHeader(conn, "X-Inactivity-Timeout", "%lld", conn->limits->inactivityTimeout / MPR_TICKS_PER_SEC);
-
+#endif
         if (route->webSocketsPingPeriod) {
             ws->pingEvent = mprCreateEvent(conn->dispatcher, "webSocket", route->webSocketsPingPeriod,
                 webSockPing, conn, MPR_EVENT_CONTINUOUS);
@@ -239,7 +240,7 @@ static int matchWebSock(HttpConn *conn, HttpRoute *route, int dir)
         conn->keepAliveCount = 0;
         conn->upgraded = 1;
         rx->eof = 0;
-        rx->remainingContent = MAXINT;
+        rx->remainingContent = HTTP_UNLIMITED;
         return HTTP_ROUTE_OK;
     }
     return HTTP_ROUTE_OMIT_FILTER;
@@ -734,7 +735,7 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
         Note: we can come here before the handshake is complete. The data is queued and if the connection handshake
         succeeds, then the data is sent.
      */
-    if (!(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED) || !conn->upgraded) {
+    if (!(HTTP_STATE_CONNECTED <= conn->state && conn->state < HTTP_STATE_FINALIZED) || !conn->upgraded || conn->error) {
         return MPR_ERR_BAD_STATE;
     }
     if (type != WS_MSG_CONT && type != WS_MSG_TEXT && type != WS_MSG_BINARY && type != WS_MSG_CLOSE &&
@@ -1154,7 +1155,7 @@ PUBLIC int httpUpgradeWebSocket(HttpConn *conn)
 
     conn->upgraded = 1;
     conn->keepAliveCount = 0;
-    conn->rx->remainingContent = MAXINT;
+    conn->rx->remainingContent = HTTP_UNLIMITED;
     return 0;
 }
 

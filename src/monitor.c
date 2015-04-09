@@ -148,7 +148,7 @@ PUBLIC void httpPruneMonitors()
     MprKey      *kp;
 
     http = HTTP;
-    period = max(http->monitorMaxPeriod, 15 * MPR_TICKS_PER_SEC);
+    period = max(http->monitorPeriod, ME_HTTP_MONITOR_PERIOD);
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
         if (address->banUntil && address->banUntil < http->now) {
@@ -274,8 +274,7 @@ PUBLIC int httpAddMonitor(cchar *counterName, cchar *expr, uint64 limit, MprTick
     monitor->period = period;
     monitor->defenses = defenseList;
     monitor->http = http;
-    http->monitorMinPeriod = min(http->monitorMinPeriod, period);
-    http->monitorMaxPeriod = max(http->monitorMaxPeriod, period);
+    http->monitorPeriod = min(http->monitorPeriod, period);
     mprAddItem(http->monitors, monitor);
     return 0;
 }

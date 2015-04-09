@@ -230,6 +230,7 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
 {
     HttpPacket  *packet;
     HttpQueue   *q;
+    HttpLimits  *limits;
     MprBuf      *content;
     MprTicks    start, delay;
     ssize       nbytes, len;
@@ -238,12 +239,13 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
     q = conn->readq;
     assert(q->count >= 0);
     assert(size >= 0);
+    limits = conn->limits;
 
     if (flags == 0) {
         flags = conn->async ? HTTP_NON_BLOCK : HTTP_BLOCK;
     }
     if (timeout < 0) {
-        timeout = conn->limits->inactivityTimeout;
+        timeout = limits->inactivityTimeout;
     } else if (timeout == 0) {
         timeout = MPR_MAX_TIMEOUT;
     }
@@ -254,7 +256,7 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
             if (httpRequestExpired(conn, -1)) {
                 break;
             }
-            delay = min(conn->limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
+            delay = min(limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
             httpEnableConnEvents(conn);
             mprWaitForEvent(conn->dispatcher, delay, dispatcherMark);
             if (mprGetRemainingTicks(start, timeout) <= 0) {
@@ -476,10 +478,12 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
  */
 PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
 {
+    HttpLimits  *limits;
     MprTicks    delay, start;
     int64       dispatcherMark;
     int         justOne;
 
+    limits = conn->limits;
     if (conn->endpoint) {
         assert(!conn->endpoint);
         return MPR_ERR_BAD_STATE;
@@ -501,7 +505,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
         return MPR_ERR_BAD_STATE;
     }
     if (timeout < 0) {
-        timeout = conn->limits->requestTimeout;
+        timeout = limits->requestTimeout;
     } else if (timeout == 0) {
         timeout = MPR_MAX_TIMEOUT;
     }
@@ -515,10 +519,10 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
             return MPR_ERR_TIMEOUT;
         }
         httpEnableConnEvents(conn);
-        delay = min(conn->limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
+        delay = min(limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
         delay = max(delay, 0);
         mprWaitForEvent(conn->dispatcher, delay, dispatcherMark);
-        if (justOne || mprGetRemainingTicks(start, timeout) <= 0) {
+        if (justOne || (mprGetRemainingTicks(start, timeout) <= 0)) {
             break;
         }
         dispatcherMark = mprGetEventMark(conn->dispatcher);

@@ -427,6 +427,10 @@ static void readPeerData(HttpConn *conn)
         if (conn->lastRead > 0) {
             mprAdjustBufEnd(packet->content, conn->lastRead);
         } else if (conn->lastRead < 0 && mprIsSocketEof(conn->sock)) {
+            if (conn->state < HTTP_STATE_PARSED) {
+                conn->error = 1;
+                conn->rx->eof = 1;
+            }
             conn->errorMsg = conn->sock->errorMsg;
             conn->keepAliveCount = 0;
             conn->lastRead = 0;
@@ -494,9 +498,9 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
     /*
         When a request completes, prepForNext will reset the state to HTTP_STATE_BEGIN
      */
-    if (conn->endpoint && conn->keepAliveCount <= 0 && conn->state < HTTP_STATE_PARSED) {
+    if (conn->state < HTTP_STATE_PARSED && conn->endpoint && (mprIsSocketEof(conn->sock) || (conn->keepAliveCount <= 0))) {
         httpDestroyConn(conn);
-    } else if (conn->async && !mprIsSocketEof(conn->sock) && !conn->delay) {
+    } else if (!mprIsSocketEof(conn->sock) && conn->async && !conn->delay) {
         httpEnableConnEvents(conn);
     }
     conn->io = 0;
@@ -881,14 +885,14 @@ PUBLIC void httpSetTimeout(HttpConn *conn, MprTicks requestTimeout, MprTicks ina
 {
     if (requestTimeout >= 0) {
         if (requestTimeout == 0) {
-            conn->limits->requestTimeout = MAXINT;
+            conn->limits->requestTimeout = HTTP_UNLIMITED;
         } else {
             conn->limits->requestTimeout = requestTimeout;
         }
     }
     if (inactivityTimeout >= 0) {
         if (inactivityTimeout == 0) {
-            conn->limits->inactivityTimeout = MAXINT;
+            conn->limits->inactivityTimeout = HTTP_UNLIMITED;
         } else {
             conn->limits->inactivityTimeout = inactivityTimeout;
         }

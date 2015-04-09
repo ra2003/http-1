@@ -101,10 +101,10 @@ static int openFileHandler(HttpQueue *q)
                 tx->filename);
             httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot serve document");
             
-        } else if (tx->fileInfo.size > conn->limits->transmissionBodySize) {
+        } else if (tx->fileInfo.size > conn->limits->txBodySize && 
+                conn->limits->txBodySize != HTTP_UNLIMITED) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
-                "Http transmission aborted. File size exceeds max body of %'lld bytes",
-                    conn->limits->transmissionBodySize);
+                "Http transmission aborted. File size exceeds max body of %lld bytes", conn->limits->txBodySize);
             
         } else if (!(tx->connector == conn->http->sendConnector)) {
             /*

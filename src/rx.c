@@ -211,8 +211,7 @@ static bool parseIncoming(HttpConn *conn)
         conn->activeRequest = 1;
         if ((value = httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, 1)) >= limits->requestsPerClientMax) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_SERVICE_UNAVAILABLE,
-                "Too many concurrent requests for client: %s %d/%d", conn->ip, (int) value,
-                limits->requestsPerClientMax);
+                "Too many concurrent requests for client: %s %d/%d", conn->ip, (int) value, limits->requestsPerClientMax);
             return 0;
         }
         httpMonitorEvent(conn, HTTP_COUNTER_REQUESTS, 1);
@@ -415,7 +414,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     conn->protocol = supper(protocol);
     if (strcmp(conn->protocol, "HTTP/1.0") == 0) {
         if (rx->flags & (HTTP_POST|HTTP_PUT)) {
-            rx->remainingContent = MAXINT;
+            rx->remainingContent = HTTP_UNLIMITED;
             rx->needInputPipeline = 1;
         }
         conn->http10 = 1;
@@ -461,7 +460,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
     if (strcmp(protocol, "HTTP/1.0") == 0) {
         conn->http10 = 1;
         if (!scaselessmatch(tx->method, "HEAD")) {
-            rx->remainingContent = MAXINT;
+            rx->remainingContent = HTTP_UNLIMITED;
         }
     } else if (strcmp(protocol, "HTTP/1.1") != 0) {
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
@@ -773,7 +772,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                      */
                     rx->flags |= HTTP_CHUNKED;
                     rx->chunkState = HTTP_CHUNK_START;
-                    rx->remainingContent = MAXINT;
+                    rx->remainingContent = HTTP_UNLIMITED;
                     rx->needInputPipeline = 1;
                 }
             }
@@ -822,9 +821,9 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             break;
         }
     }
-    if (rx->form && rx->length >= conn->limits->receiveFormSize) {
+    if (rx->form && rx->length >= conn->limits->rxFormSize && conn->limits->rxFormSize != HTTP_UNLIMITED) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Request form of %'lld bytes is too big. Limit %'lld", rx->length, conn->limits->receiveFormSize);
+            "Request form of %lld bytes is too big. Limit %lld", rx->length, conn->limits->rxFormSize);
     }
     if (conn->error) {
         /* Cannot continue with keep-alive as the headers have not been correctly parsed */
@@ -840,7 +839,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 Connection: close
                 Location: URI
          */
-        rx->remainingContent = rx->redirect ? 0 : MAXINT;
+        rx->remainingContent = rx->redirect ? 0 : HTTP_UNLIMITED;
     }
     if (!(rx->flags & HTTP_CHUNKED)) {
         /*
@@ -877,12 +876,12 @@ static bool processParsed(HttpConn *conn)
             httpRouteRequest(conn);
         }
         /*
-            Delay testing receiveBodySize till after routing for streaming requests. This way, recieveBodySize
+            Delay testing rxBodySize till after routing for streaming requests. This way, recieveBodySize
             can be defined per route.
          */
-        if (!rx->upload && rx->length >= conn->limits->receiveBodySize) {
+        if (!rx->upload && rx->length >= conn->limits->rxBodySize && conn->limits->rxBodySize != HTTP_UNLIMITED) {
             httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-                "Request content length %'lld bytes is too big. Limit %'lld", rx->length, conn->limits->receiveBodySize);
+                "Request content length %lld bytes is too big. Limit %lld", rx->length, conn->limits->rxBodySize);
             return 0;
         }
         if (rx->streaming) {
@@ -926,10 +925,12 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
     HttpRx      *rx;
     HttpTx      *tx;
     MprOff      size;
+    HttpLimits  *limits;
     ssize       nbytes;
 
     rx = conn->rx;
     tx = conn->tx;
+    limits = conn->limits;
     *more = 0;
 
     if (mprIsSocketEof(conn->sock) || conn->connError) {
@@ -942,7 +943,7 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
             assert(rx->remainingContent == 0);
         }
     } else {
-        nbytes = min((ssize) rx->remainingContent, conn->lastRead);
+        nbytes = (ssize) min(rx->remainingContent, conn->lastRead);
         if (!conn->upgraded && (rx->remainingContent - nbytes) <= 0) {
             httpSetEof(conn);
         }
@@ -952,22 +953,25 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
     assert(nbytes >= 0);
     rx->bytesRead += nbytes;
     if (!conn->upgraded) {
-        rx->remainingContent -= nbytes;
+        if (rx->remainingContent != HTTP_UNLIMITED) {
+            rx->remainingContent -= nbytes;
+        }
         assert(rx->remainingContent >= 0);
     }
 
-    /*
-        Enforce sandbox limits
-     */
-    size = rx->bytesRead - rx->bytesUploaded;
-    if (size >= conn->limits->receiveBodySize) {
-        if (!rx->webSocket) {
+    if (limits->rxBodySize < HTTP_UNLIMITED) {
+        /*
+            Enforce sandbox limits
+         */
+        size = rx->bytesRead - rx->bytesUploaded;
+        if (size >= limits->rxBodySize) {
             httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-                "Receive body of %'lld bytes (sofar) is too big. Limit %'lld", size, conn->limits->receiveBodySize);
+                "Receive body of %lld bytes (sofar) is too big. Limit %lld", size, limits->rxBodySize);
+
+        } else if (rx->form && size >= limits->rxFormSize) {
+            httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
+                "Receive form of %lld bytes (sofar) is too big. Limit %lld", size, limits->rxFormSize);
         }
-    } else if (rx->form && size >= conn->limits->receiveFormSize) {
-        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Receive form of %'lld bytes (sofar) is too big. Limit %'lld", size, conn->limits->receiveFormSize);
     }
     if (packet && httpTracing(conn)) {
         httpTraceBody(conn, 0, packet, nbytes);
@@ -1020,7 +1024,7 @@ static bool processContent(HttpConn *conn)
     /* Packet may be null */
 
     if ((nbytes = filterPacket(conn, packet, &moreData)) > 0) {
-        if (conn->state < HTTP_STATE_FINALIZED) {
+        if (!tx->finalized) {
             if (rx->inputPipeline) {
                 httpPutPacketToNext(q, packet);
             } else {
@@ -1227,8 +1231,6 @@ static bool processFinalized(HttpConn *conn)
     }
     return 1;
 }
-
-
 
 
 static bool processCompletion(HttpConn *conn)

@@ -107,8 +107,7 @@ PUBLIC Http *httpCreate(int flags)
     http->routeSets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
     http->booted = mprGetTime();
     http->flags = flags;
-    http->monitorMaxPeriod = 0;
-    http->monitorMinPeriod = MAXINT;
+    http->monitorPeriod = ME_HTTP_MONITOR_PERIOD;
     http->secret = mprGetRandomString(HTTP_MAX_SECRET);
     http->trace = httpCreateTrace(0);
     http->startLevel = 2;
@@ -466,15 +465,15 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->webSocketsPing = ME_MAX_PING_DURATION;
 
     if (serverSide) {
-        limits->receiveFormSize = ME_MAX_RECEIVE_FORM;
-        limits->receiveBodySize = ME_MAX_RECEIVE_BODY;
-        limits->transmissionBodySize = ME_MAX_TX_BODY;
+        limits->rxFormSize = ME_MAX_RX_FORM;
+        limits->rxBodySize = ME_MAX_RX_BODY;
+        limits->txBodySize = ME_MAX_TX_BODY;
         limits->uploadSize = ME_MAX_UPLOAD;
     } else {
-        limits->receiveFormSize = MAXOFF;
-        limits->receiveBodySize = MAXOFF;
-        limits->transmissionBodySize = MAXOFF;
-        limits->uploadSize = MAXOFF;
+        limits->rxFormSize = HTTP_UNLIMITED;
+        limits->rxBodySize = HTTP_UNLIMITED;
+        limits->txBodySize = HTTP_UNLIMITED;
+        limits->uploadSize = HTTP_UNLIMITED;
     }
 
 #if KEEP
@@ -509,10 +508,10 @@ PUBLIC HttpLimits *httpCreateLimits(int serverSide)
 
 PUBLIC void httpEaseLimits(HttpLimits *limits)
 {
-    limits->receiveFormSize = MAXOFF;
-    limits->receiveBodySize = MAXOFF;
-    limits->transmissionBodySize = MAXOFF;
-    limits->uploadSize = MAXOFF;
+    limits->rxFormSize = HTTP_UNLIMITED;
+    limits->rxBodySize = HTTP_UNLIMITED;
+    limits->txBodySize = HTTP_UNLIMITED;
+    limits->uploadSize = HTTP_UNLIMITED;
 }
 
 

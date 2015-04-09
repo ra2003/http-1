@@ -27,7 +27,7 @@ static void initHttp()
         Test if we have network connectivity. If not, then skip further tests.
      */
 
-    uri = httpCreateUri(tget("TM_HTTP", "4100"), 0);
+    uri = httpCreateUri(tget("TM_HTTP", ":4100"), 0);
     if (mprConnectSocket(sp, "127.0.0.1", uri->port, 0) < 0) {
         tskip("no internet connection");
         exit(0);
@@ -59,7 +59,7 @@ static void basicHttpGet()
         httpStartTracing("stdout:4");
     }
     conn = httpCreateConn(NULL, 0);
-    rc = httpConnect(conn, "GET", tget("TM_HTTP", "4100"), NULL);
+    rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         httpWait(conn, HTTP_STATE_COMPLETE, timeout);
@@ -74,34 +74,6 @@ static void basicHttpGet()
     }
     httpDestroy(http);
 }
-
-
-#if ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
-static void secureHttpGet()
-{
-    Http        *http;
-    HttpConn    *conn;
-    int         rc, status;
-
-    http = httpCreate(HTTP_CLIENT_SIDE);
-    ttrue(http != 0);
-    conn = httpCreateConn(NULL, 0);
-    ttrue(conn != 0);
-
-    rc = httpConnect(conn, "GET", tget("TM_HTTPS", 0), NULL);
-    ttrue(rc >= 0);
-    if (rc >= 0) {
-        httpFinalize(conn);
-        httpWait(conn, HTTP_STATE_COMPLETE, timeout);
-        status = httpGetStatus(conn);
-        ttrue(status == 200 || status == 301 || status == 302);
-        if (status != 200 && status != 301 && status != 302) {
-            mprLog("http test", 0, "HTTP response status %d", status);
-        }
-    }
-    httpDestroy(http);
-}
-#endif
 
 
 static void stealSocket()
@@ -120,7 +92,7 @@ static void stealSocket()
      */
     conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
-    rc = httpConnect(conn, "GET", tget("TM_HTTP", 0), NULL);
+    rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         ttrue(conn->sock != 0);
@@ -144,7 +116,7 @@ static void stealSocket()
      */
     conn = httpCreateConn(NULL, 0);
     ttrue(conn != 0);
-    rc = httpConnect(conn, "GET", tget("TM_HTTP", 0), NULL);
+    rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
         ttrue(conn->sock != 0);
@@ -163,7 +135,9 @@ static void stealSocket()
 int main(int argc, char **argv)
 {
     mprCreate(argc, argv, 0);
+#ifdef BIN
     mprSetModuleSearchPath(BIN);
+#endif
     mprVerifySslPeer(NULL, 0);
 
     if (tget("TM_DEBUG", 0)) {
@@ -173,9 +147,6 @@ int main(int argc, char **argv)
     initHttp();
     createHttp();
     basicHttpGet();
-#if ME_COM_SSL && (ME_COM_MATRIXSSL || ME_COM_OPENSSL)
-    secureHttpGet();
-#endif
     stealSocket();
     return 0;
 };

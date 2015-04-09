@@ -793,8 +793,8 @@ static void parseLimitsBuffer(HttpRoute *route, cchar *key, MprJson *prop)
     int     size;
 
     size = httpGetInt(prop->value);
-    if (size > (1048576)) {
-        size = 1048576;
+    if (size > ME_SANITY_QBUFFER) {
+        size = ME_SANITY_QBUFFER;
     }
     route->limits->bufferSize = size;
 }
@@ -887,27 +887,27 @@ static void parseLimitsRequests(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseLimitsRequestBody(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseLimitsRxBody(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->receiveBodySize = httpGetNumber(prop->value);
+    route->limits->rxBodySize = httpGetNumber(prop->value);
 }
 
 
-static void parseLimitsRequestForm(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseLimitsRxForm(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->receiveFormSize = httpGetNumber(prop->value);
+    route->limits->rxFormSize = httpGetNumber(prop->value);
 }
 
 
-static void parseLimitsRequestHeader(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseLimitsRxHeader(HttpRoute *route, cchar *key, MprJson *prop)
 {
     route->limits->headerSize = httpGetInt(prop->value);
 }
 
 
-static void parseLimitsResponseBody(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseLimitsTxBody(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->transmissionBodySize = httpGetNumber(prop->value);
+    route->limits->txBodySize = httpGetNumber(prop->value);
 }
 
 
@@ -958,7 +958,7 @@ static void parseLimitsWorkers(HttpRoute *route, cchar *key, MprJson *prop)
     int     count;
 
     count = atoi(prop->value);
-    if (count < 1) {
+    if (count <= 0) {
         count = MAXINT;
     }
     mprSetMaxWorkers(count);
@@ -1743,6 +1743,61 @@ static void parseXsrf(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+PUBLIC uint64 httpGetNumber(cchar *value)
+{
+    uint64  number;
+
+    if (smatch(value, "unlimited") || smatch(value, "infinite") || smatch(value, "never")) {
+        return HTTP_UNLIMITED;
+    }
+    value = strim(slower(value), " \t", MPR_TRIM_BOTH);
+    if (sends(value, "sec") || sends(value, "secs") || sends(value, "seconds") || sends(value, "seconds")) {
+        number = stoi(value);
+    } else if (sends(value, "min") || sends(value, "mins") || sends(value, "minute") || sends(value, "minutes")) {
+        number = stoi(value) * 60;
+    } else if (sends(value, "hr") || sends(value, "hrs") || sends(value, "hour") || sends(value, "hours")) {
+        number = stoi(value) * 60 * 60;
+    } else if (sends(value, "day") || sends(value, "days")) {
+        number = stoi(value) * 60 * 60 * 24;
+    } else if (sends(value, "kb") || sends(value, "k")) {
+        number = stoi(value) * 1024;
+    } else if (sends(value, "mb") || sends(value, "m")) {
+        number = stoi(value) * 1024 * 1024;
+    } else if (sends(value, "gb") || sends(value, "g")) {
+        number = stoi(value) * 1024 * 1024 * 1024;
+    } else if (sends(value, "byte") || sends(value, "bytes")) {
+        number = stoi(value);
+    } else {
+        number = stoi(value);
+    }
+    return number;
+}
+
+
+PUBLIC MprTicks httpGetTicks(cchar *value)
+{
+    uint64  num;
+
+    num = httpGetNumber(value);
+    if (num >= (MAXINT64 / MPR_TICKS_PER_SEC)) {
+        num = MAXINT64 / MPR_TICKS_PER_SEC;
+    }
+    return num * MPR_TICKS_PER_SEC;
+}
+
+
+PUBLIC int httpGetInt(cchar *value)
+{
+    uint64  num;
+
+    num = httpGetNumber(value);
+    if (num >= MAXINT) {
+        num = MAXINT;
+    }
+    return (int) num;
+}
+
+
 PUBLIC int httpInitParser()
 {
     HTTP->parsers = mprCreateHash(0, MPR_HASH_STATIC_VALUES);
@@ -1750,9 +1805,7 @@ PUBLIC int httpInitParser()
     /*
         Parse callbacks keys are specified as they are defined in the json files
      */
-#if DEPRECATED || 1
-    httpAddConfig("app", parseApp);
-#endif
+    httpAddConfig("directories", parseDirectories);
     httpAddConfig("http", parseHttp);
     httpAddConfig("http.aliases", parseAliases);
     httpAddConfig("http.auth", parseAuth);
@@ -1776,15 +1829,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.cgi", httpParseAll);
     httpAddConfig("http.cgi.escape", parseCgiEscape);
     httpAddConfig("http.cgi.prefix", parseCgiPrefix);
-#if KEEP
-    httpAddConfig("http.content", httpParseAll);
-    httpAddConfig("http.content.combine", parseContentCombine);
-    httpAddConfig("http.content.minify", parseContentMinify);
-    httpAddConfig("http.content.compress", parseContentCompress);
-#if DEPRECATED
-    httpAddConfig("http.content.keep", parseContentKeep);
-#endif
-#endif
     httpAddConfig("http.compress", parseCompress);
     httpAddConfig("http.database", parseDatabase);
     httpAddConfig("http.deleteUploads", parseDeleteUploads);
@@ -1814,13 +1858,13 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.limits.keepAlive", parseLimitsKeepAlive);
     httpAddConfig("http.limits.files", parseLimitsFiles);
     httpAddConfig("http.limits.memory", parseLimitsMemory);
-    httpAddConfig("http.limits.requestBody", parseLimitsRequestBody);
-    httpAddConfig("http.limits.requestForm", parseLimitsRequestForm);
-    httpAddConfig("http.limits.requestHeader", parseLimitsRequestHeader);
-    httpAddConfig("http.limits.responseBody", parseLimitsResponseBody);
+    httpAddConfig("http.limits.rxBody", parseLimitsRxBody);
+    httpAddConfig("http.limits.rxForm", parseLimitsRxForm);
+    httpAddConfig("http.limits.rxHeader", parseLimitsRxHeader);
     httpAddConfig("http.limits.processes", parseLimitsProcesses);
     httpAddConfig("http.limits.requests", parseLimitsRequests);
     httpAddConfig("http.limits.sessions", parseLimitsSessions);
+    httpAddConfig("http.limits.txBody", parseLimitsTxBody);
     httpAddConfig("http.limits.upload", parseLimitsUpload);
     httpAddConfig("http.limits.uri", parseLimitsUri);
     httpAddConfig("http.limits.webSockets", parseLimitsWebSockets);
@@ -1841,7 +1885,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.routes", parseRoutes);
     httpAddConfig("http.resources", parseResources);
     httpAddConfig("http.scheme", parseScheme);
-
     httpAddConfig("http.server", httpParseAll);
     httpAddConfig("http.server.account", parseServerAccount);
     httpAddConfig("http.server.defenses", parseServerDefenses);
@@ -1849,8 +1892,39 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.server.log", parseServerLog);
     httpAddConfig("http.server.modules", parseServerModules);
     httpAddConfig("http.server.monitors", parseServerMonitors);
+    httpAddConfig("http.showErrors", parseShowErrors);
+    httpAddConfig("http.source", parseSource);
+    httpAddConfig("http.ssl", parseSsl);
+    httpAddConfig("http.ssl.authority", httpParseAll);
+    httpAddConfig("http.ssl.authority.file", parseSslAuthorityFile);
+    httpAddConfig("http.ssl.authority.directory", parseSslAuthorityDirectory);
+    httpAddConfig("http.ssl.certificate", parseSslCertificate);
+    httpAddConfig("http.ssl.ciphers", parseSslCiphers);
+    httpAddConfig("http.ssl.key", parseSslKey);
+    httpAddConfig("http.ssl.provider", parseSslProvider);
+    httpAddConfig("http.ssl.protocols", parseSslProtocols);
+    httpAddConfig("http.ssl.verify", httpParseAll);
+    httpAddConfig("http.ssl.verify.client", parseSslVerifyClient);
+    httpAddConfig("http.ssl.verify.issuer", parseSslVerifyIssuer);
+    httpAddConfig("http.stealth", parseStealth);
+    httpAddConfig("http.target", parseTarget);
+    httpAddConfig("http.timeouts", parseTimeouts);
+    httpAddConfig("http.timeouts.exit", parseTimeoutsExit);
+    httpAddConfig("http.timeouts.parse", parseTimeoutsParse);
+    httpAddConfig("http.timeouts.inactivity", parseTimeoutsInactivity);
+    httpAddConfig("http.timeouts.request", parseTimeoutsRequest);
+    httpAddConfig("http.timeouts.session", parseTimeoutsSession);
+    httpAddConfig("http.trace", parseTrace);
+    httpAddConfig("http.update", parseUpdate);
+    httpAddConfig("http.xsrf", parseXsrf);
 
 #if DEPRECATED || 1
+    httpAddConfig("app", parseApp);
+    httpAddConfig("http.limits.requestBody", parseLimitsRxBody);
+    httpAddConfig("http.limits.responseBody", parseLimitsTxBody);
+    httpAddConfig("http.limits.requestForm", parseLimitsRxForm);
+    httpAddConfig("http.limits.requestHeader", parseLimitsRxHeader);
+    httpAddConfig("http.serverPrefix", parseServerPrefix);
     httpAddConfig("http.server.ssl", parseSsl);
     httpAddConfig("http.server.ssl.authority", httpParseAll);
     httpAddConfig("http.server.ssl.authority.file", parseSslAuthorityFile);
@@ -1864,38 +1938,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.server.ssl.verify.client", parseSslVerifyClient);
     httpAddConfig("http.server.ssl.verify.issuer", parseSslVerifyIssuer);
 #endif
-
-    httpAddConfig("http.showErrors", parseShowErrors);
-    httpAddConfig("http.source", parseSource);
-#if DEPRECATE || 1
-    httpAddConfig("http.serverPrefix", parseServerPrefix);
-#endif
-    httpAddConfig("http.ssl", parseSsl);
-    httpAddConfig("http.ssl.authority", httpParseAll);
-    httpAddConfig("http.ssl.authority.file", parseSslAuthorityFile);
-    httpAddConfig("http.ssl.authority.directory", parseSslAuthorityDirectory);
-    httpAddConfig("http.ssl.certificate", parseSslCertificate);
-    httpAddConfig("http.ssl.ciphers", parseSslCiphers);
-    httpAddConfig("http.ssl.key", parseSslKey);
-    httpAddConfig("http.ssl.provider", parseSslProvider);
-    httpAddConfig("http.ssl.protocols", parseSslProtocols);
-    httpAddConfig("http.ssl.verify", httpParseAll);
-    httpAddConfig("http.ssl.verify.client", parseSslVerifyClient);
-    httpAddConfig("http.ssl.verify.issuer", parseSslVerifyIssuer);
-
-    httpAddConfig("http.stealth", parseStealth);
-    httpAddConfig("http.target", parseTarget);
-    httpAddConfig("http.timeouts", parseTimeouts);
-    httpAddConfig("http.timeouts.exit", parseTimeoutsExit);
-    httpAddConfig("http.timeouts.parse", parseTimeoutsParse);
-    httpAddConfig("http.timeouts.inactivity", parseTimeoutsInactivity);
-    httpAddConfig("http.timeouts.request", parseTimeoutsRequest);
-    httpAddConfig("http.timeouts.session", parseTimeoutsSession);
-    httpAddConfig("http.trace", parseTrace);
-    httpAddConfig("http.update", parseUpdate);
-    httpAddConfig("http.xsrf", parseXsrf);
-    httpAddConfig("directories", parseDirectories);
-
     return 0;
 }
 

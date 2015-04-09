@@ -442,9 +442,6 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
          */
         httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, 
             httpFormatUri(req->scheme, req->host, req->port, sjoin(req->path, "/", NULL), req->reference, req->query, 0));
-#if UNUSED
-        tx->handler = conn->http->passHandler;
-#endif
         return HTTP_ROUTE_OK;
     }
     if (route->indexes) {
@@ -462,12 +459,6 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
             }
             path = 0;
         }
-#if UNUSED
-        if (defaultIndex) {
-            index = defaultIndex;
-            path = mprJoinPath(tx->filename, index);
-        }
-#endif
         if (path) {
             pathInfo = sjoin(rx->scriptName, rx->pathInfo, index, NULL);
             httpSetUri(conn, httpFormatUri(req->scheme, req->host, req->port, pathInfo, req->reference, req->query, 0));

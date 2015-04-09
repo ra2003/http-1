@@ -213,103 +213,6 @@ PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
 }
 
 
-#if UNUSED
-PUBLIC int httpFinalizeConfig(HttpRoute *route)
-{
-    HttpHost    *host;
-    HttpRoute   *rp;
-    MprJson     *routes;
-    cchar       *home;
-    int         nextHost, nextRoute;
-
-    if (route->error) {
-        return MPR_ERR_BAD_STATE;
-    }
-    /*
-        Property order is not guaranteed, so must ensure routes are processed after all outer properties.
-     */
-    if ((routes = mprGetJsonObj(route->config, "http.routes")) != 0) {
-        parseRoutes(route, "http.routes", routes);
-    }
-    httpAddHostToEndpoints(route->host);
-
-#if UNUSED
-    for (nextHost = 0; (host = mprGetNextItem(route->http->hosts, &nextHost)) != 0; ) {
-        for (nextRoute = 0; (rp = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
-            if (!mprLookupKey(rp->extensions, "")) {
-                if (!rp->handler) {
-                    httpAddRouteHandler(rp, "fileHandler", "");
-                    httpAddRouteIndex(rp, "index.html");
-                }
-            }
-            if (rp->parent == route) {
-                rp->clientConfig = route->clientConfig;
-            }
-        }
-    }
-#endif
-#if ME_UNIX_LIKE
-    if ((home = mprGetJson(route->config, "http.server.chroot")) != 0) {
-        home = httpMakePath(route, 0, home);
-        if (chdir(home) < 0) {
-            httpParseError(route, "Cannot change working directory to %s", home);
-            return MPR_ERR_BAD_STATE;
-        }
-        if (route->flags & HTTP_ROUTE_NO_LISTEN) {
-            /* Not running a web server */
-            mprLog("info http config", 2, "Change directory to: \"%s\"", home);
-        } else {
-            if (chroot(home) < 0) {
-                if (errno == EPERM) {
-                    httpParseError(route, "Must be super user to use chroot\n");
-                } else {
-                    httpParseError(route, "Cannot change change root directory to %s, errno %d\n", home, errno);
-                }
-            } else {
-                mprLog("info http config", 2, "Chroot to: \"%s\"", home);
-            }
-        }
-    }
-#endif
-    if (route->error) {
-        route->config = 0;
-        return MPR_ERR_BAD_STATE;
-    }
-    return 0;
-}
-#endif
-
-
-#if UNUSED
-static void copyMappings(HttpRoute *route, MprJson *dest, MprJson *obj)
-{
-    MprJson     *child, *job, *jvalue;
-    cchar       *key, *value;
-    int         ji;
-
-    for (ITERATE_CONFIG(route, obj, child, ji)) {
-        if (child->type & MPR_JSON_OBJ) {
-            job = mprCreateJson(MPR_JSON_OBJ);
-            copyMappings(route, job, child);
-            mprSetJsonObj(dest, child->name, job);
-        } else {
-            key = child->value;
-            if (sends(key, "|time")) {
-                key = ssplit(sclone(key), " \t|", NULL);
-                if ((value = mprGetJson(route->config, key)) != 0) {
-                    mprSetJson(dest, child->name, itos(httpGetTicks(value)), MPR_JSON_NUMBER);
-                }
-            } else {
-                if ((jvalue = mprGetJsonObj(route->config, key)) != 0) {
-                    mprSetJsonObj(dest, child->name, mprCloneJson(jvalue));
-                }
-            }
-        }
-    }
-}
-#endif
-
-
 /**************************************** Parser Callbacks ****************************************/
 
 static void parseKey(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1222,12 +1125,6 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
     MprJson     *child;
     int         ji;
 
-#if UNUSED
-    if (route->loaded) {
-        mprLog("warn http config", 1, "Skip reloading routes - must reboot if routes are modified");
-        return;
-    }
-#endif
     if (prop->type & MPR_JSON_STRING) {
         httpAddRouteSet(route, prop->value);
 
@@ -1462,9 +1359,6 @@ static void parseShowErrors(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseSource(HttpRoute *route, cchar *key, MprJson *prop)
 {
-/*  UNUSED - messes up esp controllers/source
-    httpSetRouteSource(route, mprJoinPath(route->home, prop->value));
-*/
     httpSetRouteSource(route, prop->value);
 }
 

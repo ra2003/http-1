@@ -511,9 +511,6 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
         return;
     }
     tx->length = length;
-#if UNUSED
-    httpSetHeader(conn, "Content-Length", "%lld", tx->length);
-#endif
 }
 
 

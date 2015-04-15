@@ -69,3 +69,5 @@ macosx-*.me
 linux-*
 /build/
 testme/
+.cdrc
+.cdrc

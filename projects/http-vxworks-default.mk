@@ -811,5 +811,5 @@ uninstall: $(DEPS_61)
 #
 
 version: $(DEPS_62)
-	echo 6.0.3
+	echo $(VERSION)
 

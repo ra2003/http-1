@@ -8911,7 +8911,7 @@ static void printRoute(HttpRoute *route, int idx, bool full, int methodsLen, int
     cchar       *methods, *pattern, *target, *index;
     int         nextIndex;
 
-    if (route->flags & HTTP_ROUTE_HIDDEN) {
+    if (route->flags & HTTP_ROUTE_HIDDEN && !full) {
         return;
     }
     auth = route->auth;

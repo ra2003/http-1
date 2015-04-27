@@ -461,7 +461,7 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
     assert(conn->tx);
     assert(conn->rx);
 
-#if DEPRECATE || 1
+#if DEPRECATED || 1
     /* Just IO state asserting */
     if (conn->io) {
         assert(!conn->io);

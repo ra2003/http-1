@@ -4806,7 +4806,10 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
     }
     host = route->host;
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        mprParseSocketAddress(child->value, &ip, &port, &secure, 80);
+        if (mprParseSocketAddress(child->value, &ip, &port, &secure, 80) < 0) {
+            httpParseError(route, "Bad listen address: %s", child->value);
+            return;
+        }
         if (port == 0) {
             httpParseError(route, "Bad or missing port %d in Listen directive", port);
             return;
@@ -7894,7 +7897,10 @@ PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
     char            *ip;
     int             port, next, count;
 
-    mprParseSocketAddress(name, &ip, &port, NULL, -1);
+    if (mprParseSocketAddress(name, &ip, &port, NULL, -1) < 0) {
+        mprLog("error http", 0, "Bad endpoint address: %s", name);
+        return MPR_ERR_BAD_ARGS;
+    }
     if (ip == 0) {
         ip = "";
     }
@@ -7927,7 +7933,7 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHea
     HttpHost    *host;
     int         next;
 
-    if (hostHeader == 0 || *hostHeader == '\0' || mprGetListLength(endpoint->hosts) <= 1) {
+    if (hostHeader == 0 || *hostHeader == '\0' /* UNUSED || mprGetListLength(endpoint->hosts) <= 1 */) {
         return mprGetFirstItem(endpoint->hosts);
     }
     for (next = 0; (host = mprGetNextItem(endpoint->hosts, &next)) != 0; ) {
@@ -17252,7 +17258,9 @@ static int setParsedUri(HttpConn *conn)
     if (!hostname) {
         hostname = conn->sock->acceptIp;
     }
-    mprParseSocketAddress(hostname, &up->host, NULL, NULL, 0);
+    if (mprParseSocketAddress(hostname, &up->host, NULL, NULL, 0) < 0) {
+        return MPR_ERR_BAD_ARGS;
+    }
     up->port = conn->sock->listenSock->port;
     return 0;
 }
@@ -19906,7 +19914,10 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
             /* Omit domain if set to empty string */
         }
     } else if (rx->hostHeader) {
-        mprParseSocketAddress(rx->hostHeader, &domain, &port, NULL, 0);
+        if (mprParseSocketAddress(rx->hostHeader, &domain, &port, NULL, 0) < 0) {
+            mprLog("error http", 4, "Bad host header for cookie: %s", rx->hostHeader);
+            return;
+        }
         if (domain && port) {
             domain = 0;
         }

@@ -538,7 +538,10 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
             /* Omit domain if set to empty string */
         }
     } else if (rx->hostHeader) {
-        mprParseSocketAddress(rx->hostHeader, &domain, &port, NULL, 0);
+        if (mprParseSocketAddress(rx->hostHeader, &domain, &port, NULL, 0) < 0) {
+            mprLog("error http", 4, "Bad host header for cookie: %s", rx->hostHeader);
+            return;
+        }
         if (domain && port) {
             domain = 0;
         }

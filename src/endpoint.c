@@ -357,7 +357,10 @@ PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
     char            *ip;
     int             port, next, count;
 
-    mprParseSocketAddress(name, &ip, &port, NULL, -1);
+    if (mprParseSocketAddress(name, &ip, &port, NULL, -1) < 0) {
+        mprLog("error http", 0, "Bad endpoint address: %s", name);
+        return MPR_ERR_BAD_ARGS;
+    }
     if (ip == 0) {
         ip = "";
     }
@@ -390,7 +393,7 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHea
     HttpHost    *host;
     int         next;
 
-    if (hostHeader == 0 || *hostHeader == '\0' || mprGetListLength(endpoint->hosts) <= 1) {
+    if (hostHeader == 0 || *hostHeader == '\0') {
         return mprGetFirstItem(endpoint->hosts);
     }
     for (next = 0; (host = mprGetNextItem(endpoint->hosts, &next)) != 0; ) {

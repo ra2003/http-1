@@ -1515,7 +1515,9 @@ static int setParsedUri(HttpConn *conn)
     if (!hostname) {
         hostname = conn->sock->acceptIp;
     }
-    mprParseSocketAddress(hostname, &up->host, NULL, NULL, 0);
+    if (mprParseSocketAddress(hostname, &up->host, NULL, NULL, 0) < 0) {
+        return MPR_ERR_BAD_ARGS;
+    }
     up->port = conn->sock->listenSock->port;
     return 0;
 }

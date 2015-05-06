@@ -3,11 +3,12 @@
  */
 
 Me.load({
+    makeme: '>=0.8.6',
+
     plugins: [ 'configuration', 'installs' ],
 
     blend: [
-        'mpr',
-        'pcre',
+        'src/*/*.me',
         'src/http.me',
         'test/test.me',
         'doc/doc.me',
@@ -24,7 +25,6 @@ Me.load({
     ],
 
     settings: {
-        me: '=>0.8.4',
         integrate: true,
         prefixes: 'install-prefixes',
     
@@ -44,24 +44,12 @@ Me.load({
         },
     },
 
-    scripts: {
-        loaded: `
-            me.targets.makerom.enable = false
-        `,
-    },
-
     usage: {
         'http.pam': 'Enable Unix Pluggable Auth Module (true|false)',                              
         'http.webSockets': 'Enable WebSockets (true|false)',                              
     },
 
     targets: {
-        'http-ca-crt': {
-            type: 'file',
-            files: [ 'paks/est/dist/ca.crt' ],
-            path: '${BIN}/ca.crt',
-        },
-
         projects: {
             action: `genProjects('-with openssl')`,
         },
@@ -82,7 +70,7 @@ Me.load({
         sets: { 
             pak: [
                 {   
-                    from:       'installs/http.me', 
+                    from:       'src/dist.me', 
                     to:         '${src}/dist/http.me',
 
                 }, {
@@ -103,7 +91,7 @@ Me.load({
                     divider:    true,
 
                 }, {
-                    from:       'paks/est/dist/ca.crt',
+                    from:       'src/ca.crt',
                     to:         '${src}/dist/ca.crt',
 
                 }, {

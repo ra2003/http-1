@@ -7933,7 +7933,7 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHea
     HttpHost    *host;
     int         next;
 
-    if (hostHeader == 0 || *hostHeader == '\0' /* UNUSED || mprGetListLength(endpoint->hosts) <= 1 */) {
+    if (hostHeader == 0 || *hostHeader == '\0') {
         return mprGetFirstItem(endpoint->hosts);
     }
     for (next = 0; (host = mprGetNextItem(endpoint->hosts, &next)) != 0; ) {
@@ -15770,7 +15770,7 @@ static void parseMethod(HttpConn *conn);
 static bool processParsed(HttpConn *conn);
 static bool processReady(HttpConn *conn);
 static bool processRunning(HttpConn *conn);
-static int setParsedUri(HttpConn *conn);
+static void setParsedUri(HttpConn *conn);
 static int sendContinue(HttpConn *conn);
 
 /*********************************** Code *************************************/
@@ -15998,9 +15998,8 @@ static bool parseIncoming(HttpConn *conn)
     }
     if (httpServerConn(conn)) {
         httpMatchHost(conn);
-        if (setParsedUri(conn) < 0) {
-            return 0;
-        }
+        setParsedUri(conn);
+
     } else if (rx->status != HTTP_CODE_CONTINUE) {
         /*
             Ignore Expect status responses. NOTE: Clients have already created their Tx pipeline.
@@ -17236,55 +17235,61 @@ PUBLIC void httpSetMethod(HttpConn *conn, cchar *method)
 }
 
 
-static int setParsedUri(HttpConn *conn)
+static void setParsedUri(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpUri     *up;
     cchar       *hostname;
 
     rx = conn->rx;
-    if (httpSetUri(conn, rx->uri) < 0 || rx->pathInfo[0] != '/') {
+    if (httpSetUri(conn, rx->uri) < 0) {
         httpBadRequestError(conn, HTTP_CODE_BAD_REQUEST, "Bad URL");
         rx->parsedUri = httpCreateUri("", 0);
-        /* Continue to render a response */
+
+    } else {
+        /*
+            Complete the URI based on the connection state.
+            Must have a complete scheme, host, port and path.
+         */
+        up = rx->parsedUri;
+        up->scheme = sclone(conn->secure ? "https" : "http");
+        hostname = rx->hostHeader ? rx->hostHeader : conn->host->name;
+        if (!hostname) {
+            hostname = conn->sock->acceptIp;
+        }
+        if (mprParseSocketAddress(hostname, &up->host, NULL, NULL, 0) < 0) {
+            if (!conn->error) {
+                httpBadRequestError(conn, HTTP_CODE_BAD_REQUEST, "Bad host");
+            }
+        } else {
+            up->port = conn->sock->listenSock->port;
+        }
     }
-    /*
-        Complete the URI based on the connection state.
-        Must have a complete scheme, host, port and path.
-     */
-    up = rx->parsedUri;
-    up->scheme = sclone(conn->secure ? "https" : "http");
-    hostname = rx->hostHeader ? rx->hostHeader : conn->host->name;
-    if (!hostname) {
-        hostname = conn->sock->acceptIp;
-    }
-    if (mprParseSocketAddress(hostname, &up->host, NULL, NULL, 0) < 0) {
-        return MPR_ERR_BAD_ARGS;
-    }
-    up->port = conn->sock->listenSock->port;
-    return 0;
 }
 
 
 PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
 {
     HttpRx      *rx;
+    HttpUri     *parsedUri;
     char        *pathInfo;
 
     rx = conn->rx;
-    if ((rx->parsedUri = httpCreateUri(uri, 0)) == 0) {
+    if ((parsedUri = httpCreateUri(uri, 0)) == 0) {
         return MPR_ERR_BAD_ARGS;
     }
-    if ((pathInfo = httpValidateUriPath(rx->parsedUri->path)) == 0) {
+    if ((pathInfo = httpValidateUriPath(parsedUri->path)) == 0) {
         return MPR_ERR_BAD_ARGS;
     }
     rx->pathInfo = pathInfo;
-    rx->uri = rx->parsedUri->path;
+    rx->uri = parsedUri->path;
     conn->tx->ext = httpGetExt(conn);
+
     /*
         Start out with no scriptName and the entire URI in the pathInfo. Stages may rewrite.
      */
     rx->scriptName = mprEmptyString();
+    rx->parsedUri = parsedUri;
     return 0;
 }
 

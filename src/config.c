@@ -1193,7 +1193,10 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
     }
     host = route->host;
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        mprParseSocketAddress(child->value, &ip, &port, &secure, 80);
+        if (mprParseSocketAddress(child->value, &ip, &port, &secure, 80) < 0) {
+            httpParseError(route, "Bad listen address: %s", child->value);
+            return;
+        }
         if (port == 0) {
             httpParseError(route, "Bad or missing port %d in Listen directive", port);
             return;

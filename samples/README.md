@@ -11,7 +11,7 @@ The Pak tool may also be helpful to manage imported packages
 
 The following samples are available:
 
-none
+* [config](config/README.md)    Configuring http via the http.json.
 
 The "crt" directory contains scripts to create test certificates.
 

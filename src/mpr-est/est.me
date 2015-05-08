@@ -6,7 +6,8 @@ Me.load({
     targets: {
         est: {
             configurable: true,
-            path:         '${BIN}/libestssl${SHLIB}',
+            location:     'src/est',
+            path:         '${BIN}/libestssl${ARLIB}',
             type:         'lib',
             static:       true,
             ifdef:        [ 'ssl' ],

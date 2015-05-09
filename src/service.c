@@ -413,7 +413,9 @@ PUBLIC HttpEndpoint *httpGetFirstEndpoint()
  */
 PUBLIC void httpAddHost(HttpHost *host)
 {
-    mprAddItem(HTTP->hosts, host);
+    if (mprLookupItem(HTTP->hosts, host) < 0) {
+        mprAddItem(HTTP->hosts, host);
+    }
 }
 
 

@@ -10,6 +10,7 @@
 /********************************* Includes ***********************************/
 
 #include    "http.h"
+#include    "pcre.h"
 
 /*********************************** Locals ***********************************/
 
@@ -47,21 +48,19 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
 {
     HttpHost    *host;
 
-    if ((host = mprAllocObj(HttpHost, manageHost)) == 0) {
+    if ((host = httpCreateHost()) == 0) {
         return 0;
     }
     /*
         The dirs and routes are all copy-on-write.
-        Don't clone ip, port and name
+        Do not clone routes, ip, port and name
      */
     host->parent = parent;
-    host->responseCache = parent->responseCache;
-    host->routes = parent->routes;
-    host->flags = parent->flags | HTTP_HOST_VHOST;
+    host->flags = parent->flags & HTTP_HOST_NO_TRACE;
     host->streams = parent->streams;
     host->secureEndpoint = parent->secureEndpoint;
     host->defaultEndpoint = parent->defaultEndpoint;
-    httpAddHost(host);
+    host->routes = mprCreateList(-1, MPR_LIST_STABLE);
     return host;
 }
 
@@ -146,7 +145,9 @@ static void printRouteHeader(HttpHost *host, int *methodsLen, int *patternLen, i
         *patternLen = (int) max(*patternLen, slen(route->pattern));
         *methodsLen = (int) max(*methodsLen, slen(httpGetRouteMethods(route)));
     }
-    printf("\n%-*s %-*s %-*s\n", *patternLen, "Route", *methodsLen, "Methods", *targetLen, "Target");
+    printf("\nRoutes for host: %s\n\n", host->name ? host->name : "default");
+    printf("%-*s %-*s %-*s\n", *patternLen, "Route", *methodsLen, "Methods", *targetLen, "Target");
+    printf("%-*s %-*s %-*s\n", *patternLen, "-----", *methodsLen, "-------", *targetLen, "------");
 }
 
 
@@ -159,9 +160,11 @@ static void printRoute(HttpRoute *route, int idx, bool full, int methodsLen, int
     cchar       *methods, *pattern, *target, *index;
     int         nextIndex;
 
+#if UNUSED
     if (route->flags & HTTP_ROUTE_HIDDEN && !full) {
         return;
     }
+#endif
     auth = route->auth;
     methods = httpGetRouteMethods(route);
     methods = methods ? methods : "*";
@@ -169,7 +172,8 @@ static void printRoute(HttpRoute *route, int idx, bool full, int methodsLen, int
     target = (route->target && *route->target) ? route->target : "$&";
 
     if (full) {
-        printf("\n Route [%d]. %s\n", idx, pattern);
+        printf("\nRoutes for host: %s\n", route->host->name ? route->host->name : "default");
+        printf("\n  Route [%d]. %s\n", idx, pattern);
         if (route->prefix && *route->prefix) {
             printf("    Prefix:       %s\n", route->prefix);
         }
@@ -223,11 +227,15 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
     if (!host) {
         host = httpGetDefaultHost();
     }
-    if (!full) {
-        printRouteHeader(host, &methodsLen, &patternLen, &targetLen);
-    }
-    for (index = 0; (route = mprGetNextItem(host->routes, &index)) != 0; ) {
-        printRoute(route, index - 1, full, methodsLen, patternLen, targetLen);
+    if (mprGetListLength(host->routes) == 0) {
+        printf("\nRoutes for host: %s: none\n", host->name ? host->name : "default");
+    } else {
+        if (!full) {
+            printRouteHeader(host, &methodsLen, &patternLen, &targetLen);
+        }
+        for (index = 0; (route = mprGetNextItem(host->routes, &index)) != 0; ) {
+            printRoute(route, index - 1, full, methodsLen, patternLen, targetLen);
+        }
     }
     printf("\n");
 }

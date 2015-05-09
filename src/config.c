@@ -17,7 +17,6 @@
 
 static void parseAuthRoles(HttpRoute *route, cchar *key, MprJson *prop);
 static void parseAuthStore(HttpRoute *route, cchar *key, MprJson *prop);
-static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop);
 
 /************************************** Code **********************************/
 /*
@@ -80,7 +79,19 @@ static cchar *getList(MprJson *prop)
         cp = strim(cp, "[]", 0);
     }
     for (p = cp; *p; p++) {
-        if (*p == '"' || *p == ',') {
+        if (*p == '"') {
+            if (p[1] == '"') {
+                p++;
+            } else {
+                *p = ' ';
+            }
+        } else if (*p == '\'') {
+            if (p[1] == '\'') {
+                p++;
+            } else {
+                *p = ' ';
+            }
+        } else if (*p == ',') {
             *p = ' ';
         }
     }
@@ -294,6 +305,39 @@ static void parseAliases(HttpRoute *route, cchar *key, MprJson *prop)
     }
 }
 
+
+static void parseAttach(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    HttpEndpoint    *endpoint;
+    MprJson         *child;
+    char            *ip;
+    int             ji, port;
+
+    if (prop->type & MPR_JSON_VALUE) {
+        if (mprParseSocketAddress(prop->value, &ip, &port, NULL, -1) < 0) {
+            httpParseError(route, "Bad attach address: %s", prop->value);
+            return;
+        }
+        if ((endpoint = httpLookupEndpoint(ip, port)) == 0) {
+            httpParseError(route, "Cannot find endpoint %s to attach for host %s", prop->value, route->host->name);
+            return;
+        }
+        httpAddHostToEndpoint(endpoint, route->host);
+
+    } else if (prop->type == MPR_JSON_ARRAY) {
+        for (ITERATE_CONFIG(route, prop, child, ji)) {
+            if (mprParseSocketAddress(child->value, &ip, &port, NULL, -1) < 0) {
+                httpParseError(route, "Bad attach address: %s", child->value);
+                return;
+            }
+            if ((endpoint = httpLookupEndpoint(ip, port)) == 0) {
+                httpParseError(route, "Cannot find endpoint %s to attach for host %s", child->value, route->host->name);
+                return;
+            }
+            httpAddHostToEndpoint(endpoint, route->host);
+        }
+    }
+}
 
 static void parseAuth(HttpRoute *route, cchar *key, MprJson *prop)
 {
@@ -668,6 +712,40 @@ static void parseHome(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseHost(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    HttpHost    *host;
+    HttpRoute   *newRoute;
+
+    host = httpCloneHost(route->host);
+    newRoute = httpCreateInheritedRoute(route);
+    httpSetRouteHost(newRoute, host);
+    httpSetHostDefaultRoute(host, newRoute);
+    httpParseAll(newRoute, key, prop);
+    httpFinalizeRoute(newRoute);
+    if (!(host->flags & HTTP_HOST_ATTACHED)) {
+        httpAddHostToEndpoints(host);
+    }
+}
+
+
+static void parseHosts(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    MprJson     *child;
+    int         ji;
+
+    if (prop->type & MPR_JSON_OBJ) {
+        parseHost(route, sreplace(key, ".hosts", ""), prop);
+
+    } else if (prop->type & MPR_JSON_ARRAY) {
+        key = sreplace(key, ".hosts", "");
+        for (ITERATE_CONFIG(route, prop, child, ji)) {
+            parseHost(route, key, child);
+        }
+    }
+}
+
+
 static void parseIndexes(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -1028,6 +1106,17 @@ static void createRedirectAlias(HttpRoute *route, int status, cchar *from, cchar
 }
 
 
+/*
+    redirect: 'secure'
+    redirect: [
+        '/to/url',
+        {
+            from: '/somewhere.html',
+            to:   '/elsewhere.html',
+            status: 302,
+        }
+    }
+ */
 static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -1136,7 +1225,13 @@ static void parseRoute(HttpRoute *route, cchar *key, MprJson *prop)
     cchar       *pattern;
 
     if (prop->type & MPR_JSON_STRING) {
-        httpAddRouteSet(route, prop->value);
+        if (smatch(prop->value, "reset")) {
+            httpResetRoutes(route->host);
+        } else if (smatch(prop->value, "print")) {
+            httpLogRoutes(route->host, 0);
+        } else {
+            httpAddRouteSet(route, prop->value);
+        }
 
     } else if (prop->type & MPR_JSON_OBJ) {
         newRoute = 0;
@@ -1164,7 +1259,7 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     if (prop->type & MPR_JSON_STRING) {
-        httpAddRouteSet(route, prop->value);
+        parseRoute(route, key, prop);
 
     } else if (prop->type & MPR_JSON_OBJ) {
         key = sreplace(key, ".routes", "");
@@ -1176,6 +1271,18 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
             parseRoute(route, key, child);
         }
     }
+}
+
+
+static void parseRoutesPrint(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpLogRoutes(route->host, 0);
+}
+
+
+static void parseRoutesReset(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpResetRoutes(route->host);
 }
 
 
@@ -1541,8 +1648,8 @@ static void parseStealth(HttpRoute *route, cchar *key, MprJson *prop)
 
 
 /*
-    Names: "close", "redirect", "run", "write"
-    Rules:
+    Operations: "close", "redirect", "run", "write"
+    Args:
         close:      [immediate]
         redirect:   status URI
         run:        ${DOCUMENT_ROOT}/${request:uri}
@@ -1743,6 +1850,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("directories", parseDirectories);
     httpAddConfig("http", parseHttp);
     httpAddConfig("http.aliases", parseAliases);
+    httpAddConfig("http.attach", parseAttach);
     httpAddConfig("http.auth", parseAuth);
     httpAddConfig("http.auth.auto", httpParseAll);
     httpAddConfig("http.auth.auto.name", parseAuthAutoName);
@@ -1780,6 +1888,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.headers.remove", parseHeadersRemove);
     httpAddConfig("http.headers.set", parseHeadersSet);
     httpAddConfig("http.home", parseHome);
+    httpAddConfig("http.hosts", parseHosts);
     httpAddConfig("http.indexes", parseIndexes);
     httpAddConfig("http.keep", parseKeep);
     httpAddConfig("http.languages", parseLanguages);
@@ -1820,6 +1929,8 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.redirect", parseRedirect);
     httpAddConfig("http.renameUploads", parseRenameUploads);
     httpAddConfig("http.routes", parseRoutes);
+    httpAddConfig("http.routes.print", parseRoutesPrint);
+    httpAddConfig("http.routes.reset", parseRoutesReset);
     httpAddConfig("http.resources", parseResources);
     httpAddConfig("http.scheme", parseScheme);
     httpAddConfig("http.server", httpParseAll);

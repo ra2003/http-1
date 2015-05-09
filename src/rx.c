@@ -20,6 +20,7 @@ static bool parseIncoming(HttpConn *conn);
 static bool parseRange(HttpConn *conn, char *value);
 static bool parseRequestLine(HttpConn *conn, HttpPacket *packet);
 static bool parseResponseLine(HttpConn *conn, HttpPacket *packet);
+static void parseUri(HttpConn *conn);
 static bool processCompletion(HttpConn *conn);
 static bool processFinalized(HttpConn *conn);
 static bool processContent(HttpConn *conn);
@@ -27,7 +28,6 @@ static void parseMethod(HttpConn *conn);
 static bool processParsed(HttpConn *conn);
 static bool processReady(HttpConn *conn);
 static bool processRunning(HttpConn *conn);
-static void setParsedUri(HttpConn *conn);
 static int sendContinue(HttpConn *conn);
 
 /*********************************** Code *************************************/
@@ -255,7 +255,7 @@ static bool parseIncoming(HttpConn *conn)
     }
     if (httpServerConn(conn)) {
         httpMatchHost(conn);
-        setParsedUri(conn);
+        parseUri(conn);
 
     } else if (rx->status != HTTP_CODE_CONTINUE) {
         /*
@@ -1492,7 +1492,7 @@ PUBLIC void httpSetMethod(HttpConn *conn, cchar *method)
 }
 
 
-static void setParsedUri(HttpConn *conn)
+static void parseUri(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpUri     *up;

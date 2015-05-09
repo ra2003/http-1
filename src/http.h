@@ -4645,7 +4645,7 @@ PUBLIC HttpRouteSetProc httpDefineRouteSet(cchar *name, HttpRouteSetProc fn);
         <tr><td>home</td><td>GET,POST,PUT</td><td>^/$</td><td>index.esp</td></tr>
     </table>
     @param route Parent route from which to inherit configuration.
-    @param set Route set to select. Use 'angular-mvc', or 'html-mvc'.
+    @param set Route set name to select.
     @ingroup HttpRoute
     @stability Prototype
  */

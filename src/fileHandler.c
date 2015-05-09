@@ -424,7 +424,7 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
     HttpTx      *tx;
     HttpRoute   *route;
     HttpUri     *req;
-    cchar       *index, *pathInfo;
+    cchar       *index, *pathInfo; 
     char        *path;
     int         next;
 
@@ -432,7 +432,7 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
     tx = conn->tx;
     req = rx->parsedUri;
     route = rx->route;
-
+    
     /*
         Manage requests for directories
      */

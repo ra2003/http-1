@@ -6,6 +6,7 @@
 /********************************* Includes ***********************************/
 
 #include    "http.h"
+#include    "pcre.h"
 
 /********************************** Forwards **********************************/
 
@@ -108,9 +109,6 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(HttpHost *host, cchar *home, c
 }
 
 
-/*
-    Add the default host to the unassigned endpoints
- */
 PUBLIC void httpAddHostToEndpoints(HttpHost *host)
 {
     HttpEndpoint    *endpoint;

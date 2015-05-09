@@ -43,6 +43,9 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         return 0;
     }
+    if (!httpValidUriChars(uri)) {
+        return 0;
+    }
     tok = sclone(uri);
 
     /*
@@ -341,8 +344,9 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
 
     portDelim = "";
     portStr = "";
+    hostDelim = "";
 
-    if ((flags & HTTP_COMPLETE_URI) || host || scheme) {
+    if (flags & HTTP_COMPLETE_URI) {
         if (scheme == 0 || *scheme == '\0') {
             scheme = "http";
         }
@@ -351,9 +355,11 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
                 host = "localhost";
             }
         }
+    } else if (!host) {
+        host = "";
+    }
+    if (scheme) {
         hostDelim = "://";
-    } else {
-        host = hostDelim = "";
     }
     if (host) {
         if (mprIsIPv6(host)) {
@@ -691,7 +697,7 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
 {
     HttpRoute       *route, *lroute;
     HttpRx          *rx;
-    HttpUri         *uri;
+    HttpUri         *base, *uri, *canonical;
     cchar           *routeName, *action, *controller, *originalAction, *tplate;
     char            *rest;
 
@@ -784,11 +790,23 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
     uri = httpCreateUri(target, 0);
 
     /*
-        This was changed from: httpCreateUri(rx->uri) to rx->parsedUri.
-        The use case was appweb: /auth/form/login which redirects using: https:///auth/form/login on localhost:4443
-        This must extract the existing host and port from the prior request
+        This was changed from: httpCreateUri(rx->uri) to rx->parsedUri because we must extract the existing host and 
+        port from the prior request. The use case was appweb: 
+            /auth/form/login which redirects using: https:///auth/form/login on localhost:4443
      */
-    uri = httpResolveUri(rx->parsedUri, 1, &uri, 0);
+    canonical = conn->host->canonical;
+    if (canonical) {
+        base = httpCloneUri(rx->parsedUri, 0);
+        if (canonical->host) {
+            base->host = canonical->host;
+        }
+        if (canonical->port) {
+            base->port = canonical->port;
+        }
+    } else {
+        base = rx->parsedUri;
+    }
+    uri = httpResolveUri(base, 1, &uri, 0);
     return httpNormalizeUri(uri);
 }
 

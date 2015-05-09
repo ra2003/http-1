@@ -70,6 +70,7 @@ static void manageHost(HttpHost *host, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(host->name);
+        mprMark(host->canonical);
         mprMark(host->parent);
         mprMark(host->responseCache);
         mprMark(host->routes);
@@ -232,18 +233,54 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
 }
 
 
-PUBLIC void httpSetHostName(HttpHost *host, cchar *name)
+PUBLIC int httpSetHostCanonicalName(HttpHost *host, cchar *name)
 {
     if (!name || *name == '\0') {
-        mprLog("error http", 0, "Host name is empty");
+        mprLog("error http", 0, "Empty host name");
+        return MPR_ERR_BAD_ARGS;
     }
+    if (schr(name, ':')) {
+        host->canonical = httpCreateUri(name, 0);
+    } else {
+        host->canonical = httpCreateUri(sjoin(name, ":", 0), 0);
+    }
+    return 0;
+}
+
+
+PUBLIC int httpSetHostName(HttpHost *host, cchar *name)
+{
+    cchar   *errMsg;
+    int     column;
+
+    if (!name || *name == '\0') {
+        mprLog("error http", 0, "Empty host name");
+        return MPR_ERR_BAD_ARGS;
+    }
+    host->flags &= ~(HTTP_HOST_WILD_STARTS | HTTP_HOST_WILD_CONTAINS | HTTP_HOST_WILD_REGEXP);
     if (sends(name, "*")) {
         host->flags |= HTTP_HOST_WILD_STARTS;
+        host->name = strim(name, "*", MPR_TRIM_END);
 
-    } else if (name && *name == '*') {
+    } else if (*name == '*') {
         host->flags |= HTTP_HOST_WILD_CONTAINS;
+        host->name = strim(name, "*", MPR_TRIM_START);
+
+    } else if (*name == '/') {
+        host->flags |= HTTP_HOST_WILD_REGEXP;
+        host->name = strim(name, "/", MPR_TRIM_BOTH);
+        if (host->nameCompiled) {
+            free(host->nameCompiled);
+        }
+        if ((host->nameCompiled = pcre_compile2(host->name, 0, 0, &errMsg, &column, NULL)) == 0) {
+            mprLog("error http route", 0, "Cannot compile condition match pattern. Error %s at column %d", errMsg, column);
+            return MPR_ERR_BAD_SYNTAX;
+        }
+
+    } else {
+        host->name = sclone(name);
     }
-    host->name = strim(name, "*", 0);
+    return 0;
 }
 
 

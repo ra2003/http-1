@@ -441,7 +441,7 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
            Append "/" and do an external redirect. Use the original request URI. Use httpFormatUri to preserve query.
          */
         httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, 
-            httpFormatUri(req->scheme, req->host, req->port, sjoin(req->path, "/", NULL), req->reference, req->query, 0));
+            httpFormatUri(0, 0, 0, sjoin(req->path, "/", NULL), req->reference, req->query, 0));
         return HTTP_ROUTE_OK;
     }
     if (route->indexes) {

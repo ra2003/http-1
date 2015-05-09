@@ -522,6 +522,37 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseCanonicalName(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (httpSetHostCanonicalName(route->host, prop->value) < 0) {
+        httpParseError(route, "Bad host canonical name: %s", prop->value);
+    }
+}
+
+/*
+    condition: '[!] auth'
+    condition: '[!] condition'
+    condition: '[!] exists string'
+    condition: '[!] directory string'
+    condition: '[!] match string valuePattern'
+    condition: '[!] secure'
+    condition: '[!] unauthorized'
+ */
+static void parseConditions(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    char    *name, *details;
+    int     not;
+
+    if (!httpTokenize(route, prop->value, "%! ?S ?*", &not, &name, &details)) {
+        httpParseError(route, "Bad condition: %s", prop->value);
+        return;
+    }
+    if (httpAddRouteCondition(route, name, details, not ? HTTP_ROUTE_NOT : 0) < 0) {
+        httpParseError(route, "Bad condition: %s", prop->value);
+        return;
+    }
+}
+
 static void parseCgiEscape(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpSetRouteEnvEscape(route, (prop->type & MPR_JSON_TRUE) ? 1 : 0);
@@ -553,12 +584,6 @@ static void parseDatabase(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseDeleteUploads(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpSetRouteAutoDelete(route, (prop->type & MPR_JSON_TRUE) ? 1 : 0);
-}
-
-
-static void parseDomain(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    httpSetHostName(route->host, strim(prop->value, "http://", MPR_TRIM_START));
 }
 
 
@@ -880,6 +905,14 @@ static void parseMode(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseName(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (httpSetHostName(route->host, prop->value) < 0) {
+        httpParseError(route, "Bad host name: %s", prop->value);
+    }
+}
+
+
 /*
     Match route only if param matches
  */
@@ -1018,6 +1051,11 @@ static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
                 from = mprReadJson(child, "from");
                 to = mprReadJson(child, "to");
                 status = mprReadJson(child, "status");
+                if (smatch(status, "permanent")) {
+                    status = "301";
+                } else if (smatch(status, "temporary")) {
+                    status = "302";
+                }
             }
             if (smatch(child->value, "secure")) {
                 httpAddRouteCondition(route, "secure", "https://", HTTP_ROUTE_REDIRECT);
@@ -1723,6 +1761,8 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.auth.type", parseAuthType);
     httpAddConfig("http.auth.users", parseAuthUsers);
     httpAddConfig("http.cache", parseCache);
+    httpAddConfig("http.canonical", parseCanonicalName);
+    httpAddConfig("http.conditions", parseConditions);
     httpAddConfig("http.cgi", httpParseAll);
     httpAddConfig("http.cgi.escape", parseCgiEscape);
     httpAddConfig("http.cgi.prefix", parseCgiPrefix);
@@ -1731,7 +1771,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.deleteUploads", parseDeleteUploads);
     httpAddConfig("http.directories", parseDirectories);
     httpAddConfig("http.documents", parseDocuments);
-    httpAddConfig("http.domain", parseDomain);
     httpAddConfig("http.errors", parseErrors);
     httpAddConfig("http.formats", httpParseAll);
     httpAddConfig("http.formats.response", parseFormatsResponse);
@@ -1771,6 +1810,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.limits.workers", parseLimitsWorkers);
     httpAddConfig("http.methods", parseMethods);
     httpAddConfig("http.mode", parseMode);
+    httpAddConfig("http.name", parseName);
     httpAddConfig("http.params", parseParams);
     httpAddConfig("http.pattern", parsePattern);
     httpAddConfig("http.pipeline", httpParseAll);
@@ -1817,6 +1857,7 @@ PUBLIC int httpInitParser()
 
 #if DEPRECATED || 1
     httpAddConfig("app", parseApp);
+    httpAddConfig("http.domain", parseName);
     httpAddConfig("http.limits.requestBody", parseLimitsRxBody);
     httpAddConfig("http.limits.responseBody", parseLimitsTxBody);
     httpAddConfig("http.limits.requestForm", parseLimitsRxForm);

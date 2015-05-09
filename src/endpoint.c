@@ -253,6 +253,9 @@ PUBLIC void httpMatchHost(HttpConn *conn)
 
     listenSock = conn->sock->listenSock;
 
+    /*
+        The connection must match an endpoint and then the hostHeader must match a specific Host
+     */
     if ((endpoint = httpLookupEndpoint(listenSock->ip, listenSock->port)) == 0) {
         conn->host = mprGetFirstItem(endpoint->hosts);
         httpError(conn, HTTP_CODE_NOT_FOUND, "No listening endpoint for request from %s:%d", 
@@ -379,6 +382,7 @@ PUBLIC void httpAddHostToEndpoint(HttpEndpoint *endpoint, HttpHost *host)
 {
     if (mprLookupItem(endpoint->hosts, host) < 0) {
         mprAddItem(endpoint->hosts, host);
+        host->flags |= HTTP_HOST_ATTACHED;
     }
     if (endpoint->limits == 0) {
         endpoint->limits = host->defaultRoute->limits;
@@ -386,30 +390,36 @@ PUBLIC void httpAddHostToEndpoint(HttpEndpoint *endpoint, HttpHost *host)
 }
 
 
-PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *hostHeader)
+PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
 {
     HttpHost    *host;
+    int         matches[ME_MAX_ROUTE_MATCHES * 2];
     int         next;
 
-    if (hostHeader == 0 || *hostHeader == '\0') {
+    if (mprGetListLength(endpoint->hosts) <= 1) {
         return mprGetFirstItem(endpoint->hosts);
     }
+    if (name == 0 || *name == '\0') {
+        return 0;
+    }
     for (next = 0; (host = mprGetNextItem(endpoint->hosts, &next)) != 0; ) {
-        if (smatch(host->name, hostHeader)) {
-            return host;
-        }
-        if (*host->name == '\0') {
-            /* Match all hosts */
+        if (smatch(host->name, name)) {
             return host;
         }
         if (host->flags & HTTP_HOST_WILD_STARTS) {
-            if (sstarts(hostHeader, host->name)) {
+            if (sstarts(name, host->name)) {
                 return host;
             }
         } else if (host->flags & HTTP_HOST_WILD_CONTAINS) {
-            if (scontains(hostHeader, host->name)) {
+            if (scontains(name, host->name)) {
                 return host;
             }
+        } else if (host->flags & HTTP_HOST_WILD_REGEXP) {
+            if (pcre_exec(host->nameCompiled, NULL, name, (int) slen(name), 0, 0, matches, 
+                    sizeof(matches) / sizeof(int)) >= 1) {
+                return host;
+            }
+            free(host->nameCompiled);
         }
     }
     return 0;

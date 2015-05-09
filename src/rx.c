@@ -653,7 +653,12 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
         case 'h':
             if (strcasecmp(key, "host") == 0) {
-                rx->hostHeader = sclone(value);
+                if (strspn(value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.[]:") 
+                        < (int) slen(value)) {
+                    httpBadRequestError(conn, HTTP_CODE_BAD_REQUEST, "Bad host header");
+                } else {
+                    rx->hostHeader = sclone(value);
+                }
             }
             break;
 
@@ -1534,6 +1539,9 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
     rx = conn->rx;
     if ((parsedUri = httpCreateUri(uri, 0)) == 0) {
         return MPR_ERR_BAD_ARGS;
+    }
+    if (parsedUri->host && !rx->hostHeader) {
+        rx->hostHeader = parsedUri->host;
     }
     if ((pathInfo = httpValidateUriPath(parsedUri->path)) == 0) {
         return MPR_ERR_BAD_ARGS;

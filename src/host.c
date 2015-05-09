@@ -77,6 +77,10 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->defaultEndpoint);
         mprMark(host->secureEndpoint);
         mprMark(host->streams);
+    } else if (flags & MPR_MANAGE_FREE) {
+        if (host->nameCompiled) {
+            free(host->nameCompiled);
+        }
     }
 }
 

@@ -419,7 +419,6 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
                     sizeof(matches) / sizeof(int)) >= 1) {
                 return host;
             }
-            free(host->nameCompiled);
         }
     }
     return 0;

@@ -674,13 +674,10 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBS_50 += -lcrypto
     LIBPATHS_50 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
-ifeq ($(ME_COM_EST),1)
-    LIBS_50 += -lestssl
-endif
 
 $(BUILD)/bin/libmpr.out: $(DEPS_50)
 	@echo '      [Link] $(BUILD)/bin/libmpr.out'
-	$(CC) -r -o $(BUILD)/bin/libmpr.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/mprLib.o" $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS) 
+	$(CC) -r -o $(BUILD)/bin/libmpr.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/mprLib.o" -lestssl $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS) 
 
 ifeq ($(ME_COM_PCRE),1)
 #
@@ -750,13 +747,10 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBS_52 += -lcrypto
     LIBPATHS_52 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
-ifeq ($(ME_COM_EST),1)
-    LIBS_52 += -lestssl
-endif
 
 $(BUILD)/bin/libhttp.out: $(DEPS_52)
 	@echo '      [Link] $(BUILD)/bin/libhttp.out'
-	$(CC) -r -o $(BUILD)/bin/libhttp.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS) 
+	$(CC) -r -o $(BUILD)/bin/libhttp.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS) -lestssl 
 
 #
 #   http-server
@@ -776,13 +770,10 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBS_53 += -lcrypto
     LIBPATHS_53 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
-ifeq ($(ME_COM_EST),1)
-    LIBS_53 += -lestssl
-endif
 
 $(BUILD)/bin/http-server.out: $(DEPS_53)
 	@echo '      [Link] $(BUILD)/bin/http-server.out'
-	$(CC) -o $(BUILD)/bin/http-server.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http-server.o" $(LIBPATHS_53) $(LIBS_53) $(LIBS_53) $(LIBS) -Wl,-r 
+	$(CC) -o $(BUILD)/bin/http-server.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http-server.o" $(LIBPATHS_53) $(LIBS_53) $(LIBS_53) $(LIBS) -lestssl -Wl,-r 
 
 #
 #   httpcmd
@@ -802,13 +793,10 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBS_54 += -lcrypto
     LIBPATHS_54 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
-ifeq ($(ME_COM_EST),1)
-    LIBS_54 += -lestssl
-endif
 
 $(BUILD)/bin/http.out: $(DEPS_54)
 	@echo '      [Link] $(BUILD)/bin/http.out'
-	$(CC) -o $(BUILD)/bin/http.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http.o" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) -Wl,-r 
+	$(CC) -o $(BUILD)/bin/http.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http.o" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) -lestssl -Wl,-r 
 
 #
 #   installPrep

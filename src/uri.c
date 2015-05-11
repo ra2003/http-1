@@ -30,8 +30,8 @@ static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action);
         /URI
         URI
 
-        NOTE: the following is not supported and requires a scheme prefix. This is because it is ambiguous with Uri path.
-        HOST/URI
+        NOTE: HOST/URI is not supported and requires a scheme prefix. This is because it is ambiguous with a 
+        relative uri path.
 
     Missing fields are null or zero.
  */
@@ -44,7 +44,8 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
         return 0;
     }
     if (!httpValidUriChars(uri)) {
-        return 0;
+        up->valid = 0;
+        return up;
     }
     tok = sclone(uri);
 
@@ -142,6 +143,9 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
             up->path = sclone("/");
         }
     }
+    up->secure = smatch(up->scheme, "https") || smatch(up->scheme, "wss");
+    up->webSockets = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
+
     if (flags & HTTP_COMPLETE_URI) {
         if (!up->scheme) {
             up->scheme = sclone("http");
@@ -150,9 +154,10 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
             up->host = sclone("localhost");
         }
         if (!up->port) {
-            up->port = 80;
+            up->port = up->secure ? 443 : 80;
         }
     }
+    up->valid = 1;
     return up;
 }
 
@@ -180,12 +185,19 @@ PUBLIC HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cch
     char        *cp, *tok;
 
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
+        up->valid = 0;
         return 0;
+    }
+    if (!httpValidUriChars(scheme) || !httpValidUriChars(host) || !httpValidUriChars(path) ||
+        !httpValidUriChars(reference) || !httpValidUriChars(query)) {
+        up->valid = 0;
+        return up;
     }
     if (scheme) {
         up->scheme = sclone(scheme);
         up->secure = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"));
         up->webSockets = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
+
     } else if (flags & HTTP_COMPLETE_URI) {
         up->scheme = "http";
     }
@@ -233,6 +245,7 @@ PUBLIC HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cch
             up->ext = sclone(&tok[1]);
         }
     }
+    up->valid = 1;
     return up;
 }
 
@@ -242,11 +255,13 @@ PUBLIC HttpUri *httpCloneUri(HttpUri *base, int flags)
     HttpUri     *up;
     char        *path, *cp, *tok;
 
-    if (!base) {
+    if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
+        up->valid = 0;
         return 0;
     }
-    if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
-        return 0;
+    if (!base || !base->valid) {
+        up->valid = 0;
+        return up;
     }
     if (base->scheme) {
         up->scheme = sclone(base->scheme);
@@ -263,7 +278,7 @@ PUBLIC HttpUri *httpCloneUri(HttpUri *base, int flags)
     if (base->port) {
         up->port = base->port;
     } else if (flags & HTTP_COMPLETE_URI) {
-        up->port = (smatch(up->scheme, "https") || smatch(up->scheme, "wss"))? 443 : 80;
+        up->port = up->secure ? 443 : 80;
     }
     path = base->path;
     if (path) {
@@ -292,6 +307,7 @@ PUBLIC HttpUri *httpCloneUri(HttpUri *base, int flags)
             up->ext = sclone(&tok[1]);
         }
     }
+    up->valid = 1;
     return up;
 }
 
@@ -304,20 +320,7 @@ PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
     if (!uri) {
         return 0;
     }
-    if (!base) {
-        return uri;
-    }
-    if (!base) {
-        if (!uri->scheme) {
-            uri->scheme = sclone("http");
-        }
-        if (!uri->host) {
-            uri->host = sclone("localhost");
-        }
-        if (!uri->path) {
-            uri->path = sclone("/");
-        }
-    } else {
+    if (base) {
         if (!uri->host) {
             uri->host = base->host;
             if (!uri->port) {
@@ -335,6 +338,16 @@ PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
             if (!uri->reference) {
                 uri->reference = base->reference;
             }
+        }
+    } else {
+        if (!uri->scheme) {
+            uri->scheme = sclone("http");
+        }
+        if (!uri->host) {
+            uri->host = sclone("localhost");
+        }
+        if (!uri->path) {
+            uri->path = sclone("/");
         }
     }
     uri->secure = (smatch(uri->scheme, "https") || smatch(uri->scheme, "wss"));
@@ -429,10 +442,10 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
     int         i, baseSegments, commonSegments;
 
     if (base == 0) {
-        return target;
+        return clone ? httpCloneUri(target, 0) : target;
     }
     if (target == 0) {
-        return (clone) ? httpCloneUri(base, 0) : base;
+        return clone ? httpCloneUri(base, 0) : base;
     }
     if (!(target->path && target->path[0] == '/') || !((base->path && base->path[0] == '/'))) {
         /* If target is relative, just use it. If base is relative, cannot use it because we don't know where it is */
@@ -527,6 +540,9 @@ PUBLIC HttpUri *httpJoinUri(HttpUri *uri, int argc, HttpUri **others)
     int         i;
 
     if ((uri = httpCloneUri(uri, 0)) == 0) {
+        return 0;
+    }
+    if (!uri->valid) {
         return 0;
     }
     for (i = 0; i < argc; i++) {
@@ -662,6 +678,9 @@ PUBLIC HttpUri *httpResolveUri(HttpUri *base, int argc, HttpUri **others, bool l
 
     if ((current = httpCloneUri(base, 0)) == 0) {
         return 0;
+    }
+    if (!current->valid) {
+        return current;
     }
     if (local) {
         current->host = 0;
@@ -807,6 +826,9 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
     if ((uri = httpCreateUri(target, 0)) == 0) {
         return 0;
     }
+    if (!uri->valid) {
+        return uri;
+    }
     /*
         This was changed from: httpCreateUri(rx->uri) to rx->parsedUri because we must extract the existing host and 
         port from the prior request. The use case was appweb: 
@@ -883,8 +905,8 @@ PUBLIC bool httpValidUriChars(cchar *uri)
 {
     ssize   pos;
 
-    if (uri == 0 || *uri == 0) {
-        return 1;
+    if (uri == 0) {
+        return 0;
     }
     pos = strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%");
     if (pos < slen(uri)) {

@@ -149,10 +149,12 @@ static void testCreateUri()
     checkUri(uri, "http-local-0-null-null-null-host/");
 
     uri = httpCreateUri("http://local host/", 0);
-    tassert(uri == 0);
+    tassert(uri);
+    tassert(!uri->valid);
 
     uri = httpCreateUri("http://localhost/long path", 0);
-    tassert(uri == 0);
+    tassert(uri);
+    tassert(!uri->valid);
 
     uri = httpCreateUri("", HTTP_COMPLETE_URI);
     checkUri(uri, "http-localhost-80-/-null-null-null");

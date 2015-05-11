@@ -348,11 +348,14 @@ DEPS_12 = $(DEPS_12) build\$(CONFIG)\inc\mpr.h
 DEPS_12 = $(DEPS_12) build\$(CONFIG)\obj\mprLib.obj
 
 !IF "$(ME_COM_EST)" == "1"
-LIBS_12 = $(LIBS_12) libestssl.lib
+LIBS_12 = $(LIBS_12) libest.lib
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_12 = $(LIBS_12) libopenssl.lib
 LIBPATHS_12 = $(LIBPATHS_12) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_EST)" == "1"
+LIBS_12 = $(LIBS_12) libestssl.lib
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_12 = $(LIBS_12) libeay32.lib
@@ -361,9 +364,6 @@ LIBPATHS_12 = $(LIBPATHS_12) -libpath:$(ME_COM_OPENSSL_PATH)
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_12 = $(LIBS_12) libssleay32.lib
 LIBPATHS_12 = $(LIBPATHS_12) -libpath:$(ME_COM_OPENSSL_PATH)
-!ENDIF
-!IF "$(ME_COM_EST)" == "1"
-LIBS_12 = $(LIBS_12) libest.lib
 !ENDIF
 
 build\$(CONFIG)\bin\libmpr.dll: $(DEPS_12)
@@ -823,13 +823,19 @@ DEPS_54 = $(DEPS_54) build\$(CONFIG)\obj\user.obj
 DEPS_54 = $(DEPS_54) build\$(CONFIG)\obj\var.obj
 DEPS_54 = $(DEPS_54) build\$(CONFIG)\obj\webSockFilter.obj
 
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_54 = $(LIBS_54) libpcre.lib
+!ENDIF
 LIBS_54 = $(LIBS_54) libmpr.lib
 !IF "$(ME_COM_EST)" == "1"
-LIBS_54 = $(LIBS_54) libestssl.lib
+LIBS_54 = $(LIBS_54) libest.lib
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_54 = $(LIBS_54) libopenssl.lib
 LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_EST)" == "1"
+LIBS_54 = $(LIBS_54) libestssl.lib
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_54 = $(LIBS_54) libeay32.lib
@@ -838,12 +844,6 @@ LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_54 = $(LIBS_54) libssleay32.lib
 LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
-!ENDIF
-!IF "$(ME_COM_EST)" == "1"
-LIBS_54 = $(LIBS_54) libest.lib
-!ENDIF
-!IF "$(ME_COM_PCRE)" == "1"
-LIBS_54 = $(LIBS_54) libpcre.lib
 !ENDIF
 
 build\$(CONFIG)\bin\libhttp.dll: $(DEPS_54)
@@ -867,13 +867,19 @@ DEPS_56 = $(DEPS_56) build\$(CONFIG)\bin\libhttp.dll
 DEPS_56 = $(DEPS_56) build\$(CONFIG)\obj\http-server.obj
 
 LIBS_56 = $(LIBS_56) libhttp.lib
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_56 = $(LIBS_56) libpcre.lib
+!ENDIF
 LIBS_56 = $(LIBS_56) libmpr.lib
 !IF "$(ME_COM_EST)" == "1"
-LIBS_56 = $(LIBS_56) libestssl.lib
+LIBS_56 = $(LIBS_56) libest.lib
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_56 = $(LIBS_56) libopenssl.lib
 LIBPATHS_56 = $(LIBPATHS_56) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_EST)" == "1"
+LIBS_56 = $(LIBS_56) libestssl.lib
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_56 = $(LIBS_56) libeay32.lib
@@ -882,12 +888,6 @@ LIBPATHS_56 = $(LIBPATHS_56) -libpath:$(ME_COM_OPENSSL_PATH)
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_56 = $(LIBS_56) libssleay32.lib
 LIBPATHS_56 = $(LIBPATHS_56) -libpath:$(ME_COM_OPENSSL_PATH)
-!ENDIF
-!IF "$(ME_COM_EST)" == "1"
-LIBS_56 = $(LIBS_56) libest.lib
-!ENDIF
-!IF "$(ME_COM_PCRE)" == "1"
-LIBS_56 = $(LIBS_56) libpcre.lib
 !ENDIF
 
 build\$(CONFIG)\bin\http-server.exe: $(DEPS_56)
@@ -911,13 +911,19 @@ DEPS_58 = $(DEPS_58) build\$(CONFIG)\bin\libhttp.dll
 DEPS_58 = $(DEPS_58) build\$(CONFIG)\obj\http.obj
 
 LIBS_58 = $(LIBS_58) libhttp.lib
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_58 = $(LIBS_58) libpcre.lib
+!ENDIF
 LIBS_58 = $(LIBS_58) libmpr.lib
 !IF "$(ME_COM_EST)" == "1"
-LIBS_58 = $(LIBS_58) libestssl.lib
+LIBS_58 = $(LIBS_58) libest.lib
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_58 = $(LIBS_58) libopenssl.lib
 LIBPATHS_58 = $(LIBPATHS_58) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_EST)" == "1"
+LIBS_58 = $(LIBS_58) libestssl.lib
 !ENDIF
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_58 = $(LIBS_58) libeay32.lib
@@ -926,12 +932,6 @@ LIBPATHS_58 = $(LIBPATHS_58) -libpath:$(ME_COM_OPENSSL_PATH)
 !IF "$(ME_COM_OPENSSL)" == "1"
 LIBS_58 = $(LIBS_58) libssleay32.lib
 LIBPATHS_58 = $(LIBPATHS_58) -libpath:$(ME_COM_OPENSSL_PATH)
-!ENDIF
-!IF "$(ME_COM_EST)" == "1"
-LIBS_58 = $(LIBS_58) libest.lib
-!ENDIF
-!IF "$(ME_COM_PCRE)" == "1"
-LIBS_58 = $(LIBS_58) libpcre.lib
 !ENDIF
 
 build\$(CONFIG)\bin\http.exe: $(DEPS_58)

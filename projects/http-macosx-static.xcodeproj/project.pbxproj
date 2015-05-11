@@ -81,13 +81,13 @@
 		21537A9821538ADC0000005E /* pcre.c in Sources */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC0000005F /* pcre.c */; };
 		21537A9821538ADC00000060 /* openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000061 /* openssl.c */; };
 		21537A9821538ADC00000062 /* libhttp.dylib for http-server */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000063; };
-		21537A9821538ADC00000064 /* libmpr.dylib for http-server */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000065; };
-		21537A9821538ADC00000066 /* libpcre.dylib for http-server */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000067; };
+		21537A9821538ADC00000064 /* libpcre.dylib for http-server */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000065; };
+		21537A9821538ADC00000066 /* libmpr.dylib for http-server */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000067; };
 		21537A9821538ADC00000068 /* libhttp.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000063; };
-		21537A9821538ADC00000069 /* libmpr.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000065; };
-		21537A9821538ADC0000006A /* libpcre.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000067; };
-		21537A9821538ADC0000006B /* libmpr.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000065; };
-		21537A9821538ADC0000006C /* libpcre.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000067; };
+		21537A9821538ADC00000069 /* libpcre.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000065; };
+		21537A9821538ADC0000006A /* libmpr.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000067; };
+		21537A9821538ADC0000006B /* libpcre.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000065; };
+		21537A9821538ADC0000006C /* libmpr.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = 21537A9821538ADC00000067; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -314,11 +314,11 @@
 		21537A9821538ADC00000063 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		21537A9821538ADC0000005D /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/mpr/mprLib.c; sourceTree = "<group>"; };
 		21537A9821538ADC00000091 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = src/mpr/mpr.h; sourceTree = "<group>"; };
-		21537A9821538ADC00000065 /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		21537A9821538ADC00000067 /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		21537A9821538ADC0000005F /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/pcre/pcre.c; sourceTree = "<group>"; };
 		21537A9821538ADC00000092 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-static/inc/me.h; sourceTree = "<group>"; };
 		21537A9821538ADC00000093 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = src/pcre/pcre.h; sourceTree = "<group>"; };
-		21537A9821538ADC00000067 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		21537A9821538ADC00000065 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		21537A9821538ADC00000061 /* openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = openssl.c; path = src/mpr-openssl/openssl.c; sourceTree = "<group>"; };
 		21537A9821538ADC00000094 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = build/macosx-x64-static/inc/mpr.h; sourceTree = "<group>"; };
 		21537A9821538ADC00000095 /* openssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libopenssl.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -330,8 +330,8 @@
                 buildActionMask = 2147483647;
                 files = (
     				21537A9821538ADC00000062 /* libhttp */,
-				21537A9821538ADC00000064 /* libmpr */,
-				21537A9821538ADC00000066 /* libpcre */,				
+				21537A9821538ADC00000064 /* libpcre */,
+				21537A9821538ADC00000066 /* libmpr */,				
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
@@ -340,8 +340,8 @@
                 buildActionMask = 2147483647;
                 files = (
     				21537A9821538ADC00000068 /* libhttp */,
-				21537A9821538ADC00000069 /* libmpr */,
-				21537A9821538ADC0000006A /* libpcre */,				
+				21537A9821538ADC00000069 /* libpcre */,
+				21537A9821538ADC0000006A /* libmpr */,				
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
@@ -349,8 +349,8 @@
                 isa = PBXFrameworksBuildPhase;
                 buildActionMask = 2147483647;
                 files = (
-    				21537A9821538ADC0000006B /* libmpr */,
-				21537A9821538ADC0000006C /* libpcre */,				
+    				21537A9821538ADC0000006B /* libpcre */,
+				21537A9821538ADC0000006C /* libmpr */,				
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
@@ -496,8 +496,8 @@
 				21537A9821538ADC0000008D /* http-server */,
 				21537A9821538ADC0000008F /* httpcmd */,
 				21537A9821538ADC00000063 /* libhttp */,
-				21537A9821538ADC00000065 /* libmpr */,
-				21537A9821538ADC00000067 /* libpcre */,
+				21537A9821538ADC00000067 /* libmpr */,
+				21537A9821538ADC00000065 /* libpcre */,
 				21537A9821538ADC00000095 /* openssl */,
 			);
                 name = "Products";
@@ -584,7 +584,7 @@
     			);
     			name = libmpr;
     			productName = http;
-    			productReference = 21537A9821538ADC00000065 /* libmpr */;
+    			productReference = 21537A9821538ADC00000067 /* libmpr */;
     			productType = "com.apple.product-type.library.dynamic";
     		};
 		21537A9821538ADC00000073 /* libpcre */ = {
@@ -601,7 +601,7 @@
     			);
     			name = libpcre;
     			productName = http;
-    			productReference = 21537A9821538ADC00000067 /* libpcre */;
+    			productReference = 21537A9821538ADC00000065 /* libpcre */;
     			productType = "com.apple.product-type.library.dynamic";
     		};
 		21537A9821538ADC0000006F /* openssl */ = {
@@ -1060,9 +1060,9 @@ fi";
 					"$(inherited)"
 				);
 				OTHER_LDFLAGS = (
+					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"-lopenssl",
 					"$(inherited)"
 				);
 
@@ -1075,9 +1075,9 @@ fi";
     				PRODUCT_NAME = http-server;
     
     				OTHER_LDFLAGS = (
+					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"-lopenssl",
 					"$(inherited)"
 				);
 
@@ -1094,9 +1094,9 @@ fi";
 					"$(inherited)"
 				);
 				OTHER_LDFLAGS = (
+					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"-lopenssl",
 					"$(inherited)"
 				);
 
@@ -1109,9 +1109,9 @@ fi";
     				PRODUCT_NAME = http;
     
     				OTHER_LDFLAGS = (
+					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"-lopenssl",
 					"$(inherited)"
 				);
 
@@ -1128,9 +1128,9 @@ fi";
 					"$(inherited)"
 				);
 				OTHER_LDFLAGS = (
+					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"-lopenssl",
 					"-lpam",
 					"$(inherited)"
 				);
@@ -1144,9 +1144,9 @@ fi";
     				PRODUCT_NAME = libhttp;
     
     				OTHER_LDFLAGS = (
+					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"-lopenssl",
 					"-lpam",
 					"$(inherited)"
 				);
@@ -1164,9 +1164,9 @@ fi";
 					"$(inherited)"
 				);
 				OTHER_LDFLAGS = (
+					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"-lopenssl",
 					"$(inherited)"
 				);
 
@@ -1179,9 +1179,9 @@ fi";
     				PRODUCT_NAME = libmpr;
     
     				OTHER_LDFLAGS = (
+					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"-lopenssl",
 					"$(inherited)"
 				);
 

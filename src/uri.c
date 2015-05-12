@@ -43,10 +43,6 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         return 0;
     }
-    if (!httpValidUriChars(uri)) {
-        up->valid = 0;
-        return up;
-    }
     tok = sclone(uri);
 
     /*
@@ -157,7 +153,7 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
             up->port = up->secure ? 443 : 80;
         }
     }
-    up->valid = 1;
+    up->valid = httpValidUriChars(uri);
     return up;
 }
 

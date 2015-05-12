@@ -1537,7 +1537,7 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
     char        *pathInfo;
 
     rx = conn->rx;
-    if ((parsedUri = httpCreateUri(uri, 0)) == 0) {
+    if ((parsedUri = httpCreateUri(uri, 0)) == 0 || !parsedUri->valid) {
         return MPR_ERR_BAD_ARGS;
     }
     if (parsedUri->host && !rx->hostHeader) {

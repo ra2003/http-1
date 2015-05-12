@@ -152,6 +152,10 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
         httpPrepClientConn(conn, 0);
     }
     assert(conn->state == HTTP_STATE_BEGIN);
+
+    /*
+        Do not test if the URI is valid. Some test clients need the ability to create invalid URIs
+     */
     conn->tx->parsedUri = httpCreateUri(uri, HTTP_COMPLETE_URI_PATH);
 
     if (openConnection(conn, ssl) == 0) {

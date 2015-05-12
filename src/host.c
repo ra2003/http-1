@@ -241,6 +241,9 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
             printRoute(route, index - 1, full, methodsLen, patternLen, targetLen);
         }
     }
+    if (mprLookupItem(host->routes, host->defaultRoute) < 0) {
+        printRoute(host->defaultRoute, index, full, methodsLen, patternLen, targetLen);
+    }
     printf("\n");
 }
 

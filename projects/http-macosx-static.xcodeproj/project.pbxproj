@@ -80,14 +80,14 @@
 		0DB082EC0DB0B2020000005C /* mprLib.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B2020000005D /* mprLib.c */; };
 		0DB082EC0DB0B2020000005E /* pcre.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B2020000005F /* pcre.c */; };
 		0DB082EC0DB0B20200000060 /* openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000061 /* openssl.c */; };
-		0DB082EC0DB0B20200000062 /* libhttp.dylib for http-server */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000063; };
-		0DB082EC0DB0B20200000064 /* libpcre.dylib for http-server */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000065; };
-		0DB082EC0DB0B20200000066 /* libmpr.dylib for http-server */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000067; };
-		0DB082EC0DB0B20200000068 /* libhttp.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000063; };
-		0DB082EC0DB0B20200000069 /* libpcre.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000065; };
-		0DB082EC0DB0B2020000006A /* libmpr.dylib for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000067; };
-		0DB082EC0DB0B2020000006B /* libpcre.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000065; };
-		0DB082EC0DB0B2020000006C /* libmpr.dylib for libhttp */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000067; };
+		0DB082EC0DB0B20200000062 /* libhttp.a for http-server */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000063; };
+		0DB082EC0DB0B20200000064 /* libpcre.a for http-server */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000065; };
+		0DB082EC0DB0B20200000066 /* libmpr.a for http-server */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000067; };
+		0DB082EC0DB0B20200000068 /* libhttp.a for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000063; };
+		0DB082EC0DB0B20200000069 /* libpcre.a for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000065; };
+		0DB082EC0DB0B2020000006A /* libmpr.a for httpcmd */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000067; };
+		0DB082EC0DB0B2020000006B /* libpcre.a for libhttp */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000065; };
+		0DB082EC0DB0B2020000006C /* libmpr.a for libhttp */ = {isa = PBXBuildFile; fileRef = 0DB082EC0DB0B20200000067; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -311,14 +311,14 @@
 		0DB082EC0DB0B20200000057 /* user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = user.c; path = src/user.c; sourceTree = "<group>"; };
 		0DB082EC0DB0B20200000059 /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
 		0DB082EC0DB0B2020000005B /* webSockFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSockFilter.c; path = src/webSockFilter.c; sourceTree = "<group>"; };
-		0DB082EC0DB0B20200000063 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		0DB082EC0DB0B20200000063 /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0DB082EC0DB0B2020000005D /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/mpr/mprLib.c; sourceTree = "<group>"; };
 		0DB082EC0DB0B20200000091 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = src/mpr/mpr.h; sourceTree = "<group>"; };
-		0DB082EC0DB0B20200000067 /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		0DB082EC0DB0B20200000067 /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0DB082EC0DB0B2020000005F /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/pcre/pcre.c; sourceTree = "<group>"; };
 		0DB082EC0DB0B20200000092 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-static/inc/me.h; sourceTree = "<group>"; };
 		0DB082EC0DB0B20200000093 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = src/pcre/pcre.h; sourceTree = "<group>"; };
-		0DB082EC0DB0B20200000065 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		0DB082EC0DB0B20200000065 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0DB082EC0DB0B20200000061 /* openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = openssl.c; path = src/mpr-openssl/openssl.c; sourceTree = "<group>"; };
 		0DB082EC0DB0B20200000094 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = build/macosx-x64-static/inc/mpr.h; sourceTree = "<group>"; };
 		0DB082EC0DB0B20200000095 /* openssl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libopenssl.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1058,8 +1058,9 @@ fi";
 					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"$(inherited)"
-				);
+					);
+
+				MACH_O_TYPE = mh_execute;
 
     			};
     			name = Debug;
@@ -1073,8 +1074,9 @@ fi";
 					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"$(inherited)"
-				);
+					);
+
+				MACH_O_TYPE = mh_execute;
 
     			};
     			name = Release;
@@ -1092,8 +1094,9 @@ fi";
 					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"$(inherited)"
-				);
+					);
+
+				MACH_O_TYPE = mh_execute;
 
     			};
     			name = Debug;
@@ -1107,8 +1110,9 @@ fi";
 					"-lopenssl",
 					"-lssl",
 					"-lcrypto",
-					"$(inherited)"
-				);
+					);
+
+				MACH_O_TYPE = mh_execute;
 
     			};
     			name = Release;
@@ -1117,18 +1121,20 @@ fi";
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libhttp;
-    
+    				EXECUTABLE_EXTENSION = a;
+
     				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ME_DEBUG",
 					"$(inherited)"
 				);
 				OTHER_LDFLAGS = (
-					"-lopenssl",
-					"-lssl",
-					"-lcrypto",
-					"-lpam",
-					"$(inherited)"
-				);
+					"",
+					"",
+					"",
+					"",
+					);
+
+				MACH_O_TYPE = staticlib;
 
     			};
     			name = Debug;
@@ -1137,14 +1143,16 @@ fi";
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libhttp;
-    
+    				EXECUTABLE_EXTENSION = a;
+
     				OTHER_LDFLAGS = (
-					"-lopenssl",
-					"-lssl",
-					"-lcrypto",
-					"-lpam",
-					"$(inherited)"
-				);
+					"",
+					"",
+					"",
+					"",
+					);
+
+				MACH_O_TYPE = staticlib;
 
     			};
     			name = Release;
@@ -1153,17 +1161,19 @@ fi";
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libmpr;
-    
+    				EXECUTABLE_EXTENSION = a;
+
     				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ME_DEBUG",
 					"$(inherited)"
 				);
 				OTHER_LDFLAGS = (
-					"-lopenssl",
-					"-lssl",
-					"-lcrypto",
-					"$(inherited)"
-				);
+					"",
+					"",
+					"",
+					);
+
+				MACH_O_TYPE = staticlib;
 
     			};
     			name = Debug;
@@ -1172,13 +1182,15 @@ fi";
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libmpr;
-    
+    				EXECUTABLE_EXTENSION = a;
+
     				OTHER_LDFLAGS = (
-					"-lopenssl",
-					"-lssl",
-					"-lcrypto",
-					"$(inherited)"
-				);
+					"",
+					"",
+					"",
+					);
+
+				MACH_O_TYPE = staticlib;
 
     			};
     			name = Release;
@@ -1187,12 +1199,17 @@ fi";
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libpcre;
-    
+    				EXECUTABLE_EXTENSION = a;
+
     				GCC_PREPROCESSOR_DEFINITIONS = (
 					"PCRE_CHAR=char",
 					"ME_DEBUG",
 					"$(inherited)"
 				);
+				OTHER_LDFLAGS = ();
+
+				MACH_O_TYPE = staticlib;
+
     			};
     			name = Debug;
     		};
@@ -1200,11 +1217,16 @@ fi";
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libpcre;
-    
+    				EXECUTABLE_EXTENSION = a;
+
     				GCC_PREPROCESSOR_DEFINITIONS = (
 					"PCRE_CHAR=char",
 					"$(inherited)"
 				);
+				OTHER_LDFLAGS = ();
+
+				MACH_O_TYPE = staticlib;
+
     			};
     			name = Release;
     		};
@@ -1253,6 +1275,10 @@ fi";
 					"ME_DEBUG",
 					"$(inherited)"
 				);
+				OTHER_LDFLAGS = ();
+
+				MACH_O_TYPE = mh_execute;
+
     			};
     			name = Debug;
     		};
@@ -1261,7 +1287,10 @@ fi";
     			buildSettings = {
     				PRODUCT_NAME = All;
     
-    
+    				OTHER_LDFLAGS = ();
+
+				MACH_O_TYPE = mh_execute;
+
     			};
     			name = Release;
     		};
@@ -1274,6 +1303,10 @@ fi";
 					"ME_DEBUG",
 					"$(inherited)"
 				);
+				OTHER_LDFLAGS = ();
+
+				MACH_O_TYPE = mh_execute;
+
     			};
     			name = Debug;
     		};
@@ -1282,7 +1315,10 @@ fi";
     			buildSettings = {
     				PRODUCT_NAME = Prep;
     
-    
+    				OTHER_LDFLAGS = ();
+
+				MACH_O_TYPE = mh_execute;
+
     			};
     			name = Release;
     		};

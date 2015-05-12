@@ -150,9 +150,9 @@ clean:
 	rm -f "$(BUILD)/obj/webSockFilter.o"
 	rm -f "$(BUILD)/bin/http-server"
 	rm -f "$(BUILD)/bin/http"
-	rm -f "$(BUILD)/bin/libhttp.dylib"
-	rm -f "$(BUILD)/bin/libmpr.dylib"
-	rm -f "$(BUILD)/bin/libpcre.dylib"
+	rm -f "$(BUILD)/bin/libhttp.a"
+	rm -f "$(BUILD)/bin/libmpr.a"
+	rm -f "$(BUILD)/bin/libpcre.a"
 	rm -f "$(BUILD)/bin/libopenssl.a"
 
 clobber: clean
@@ -651,28 +651,9 @@ endif
 DEPS_50 += $(BUILD)/inc/mpr.h
 DEPS_50 += $(BUILD)/obj/mprLib.o
 
-ifeq ($(ME_COM_EST),1)
-    LIBS_50 += -lestssl
-endif
-ifeq ($(ME_COM_EST),1)
-    LIBS_50 += -lest
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_50 += -lopenssl
-    LIBPATHS_50 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_50 += -lssl
-    LIBPATHS_50 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_50 += -lcrypto
-    LIBPATHS_50 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-
-$(BUILD)/bin/libmpr.dylib: $(DEPS_50)
-	@echo '      [Link] $(BUILD)/bin/libmpr.dylib'
-	$(CC) -dynamiclib -o $(BUILD)/bin/libmpr.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)  -install_name @rpath/libmpr.dylib -compatibility_version 6.0 -current_version 6.0 "$(BUILD)/obj/mprLib.o" $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS) 
+$(BUILD)/bin/libmpr.a: $(DEPS_50)
+	@echo '      [Link] $(BUILD)/bin/libmpr.a'
+	ar -cr $(BUILD)/bin/libmpr.a "$(BUILD)/obj/mprLib.o"
 
 ifeq ($(ME_COM_PCRE),1)
 #
@@ -681,17 +662,17 @@ ifeq ($(ME_COM_PCRE),1)
 DEPS_51 += $(BUILD)/inc/pcre.h
 DEPS_51 += $(BUILD)/obj/pcre.o
 
-$(BUILD)/bin/libpcre.dylib: $(DEPS_51)
-	@echo '      [Link] $(BUILD)/bin/libpcre.dylib'
-	$(CC) -dynamiclib -o $(BUILD)/bin/libpcre.dylib -arch $(CC_ARCH) $(LDFLAGS) -compatibility_version 6.0 -current_version 6.0 $(LIBPATHS) -install_name @rpath/libpcre.dylib -compatibility_version 6.0 -current_version 6.0 "$(BUILD)/obj/pcre.o" $(LIBS) 
+$(BUILD)/bin/libpcre.a: $(DEPS_51)
+	@echo '      [Link] $(BUILD)/bin/libpcre.a'
+	ar -cr $(BUILD)/bin/libpcre.a "$(BUILD)/obj/pcre.o"
 endif
 
 #
 #   libhttp
 #
-DEPS_52 += $(BUILD)/bin/libmpr.dylib
+DEPS_52 += $(BUILD)/bin/libmpr.a
 ifeq ($(ME_COM_PCRE),1)
-    DEPS_52 += $(BUILD)/bin/libpcre.dylib
+    DEPS_52 += $(BUILD)/bin/libpcre.a
 endif
 DEPS_52 += $(BUILD)/inc/http.h
 DEPS_52 += $(BUILD)/obj/actionHandler.o
@@ -730,37 +711,14 @@ DEPS_52 += $(BUILD)/obj/user.o
 DEPS_52 += $(BUILD)/obj/var.o
 DEPS_52 += $(BUILD)/obj/webSockFilter.o
 
-ifeq ($(ME_COM_PCRE),1)
-    LIBS_52 += -lpcre
-endif
-LIBS_52 += -lmpr
-ifeq ($(ME_COM_EST),1)
-    LIBS_52 += -lestssl
-endif
-ifeq ($(ME_COM_EST),1)
-    LIBS_52 += -lest
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_52 += -lopenssl
-    LIBPATHS_52 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_52 += -lssl
-    LIBPATHS_52 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_52 += -lcrypto
-    LIBPATHS_52 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-
-$(BUILD)/bin/libhttp.dylib: $(DEPS_52)
-	@echo '      [Link] $(BUILD)/bin/libhttp.dylib'
-	$(CC) -dynamiclib -o $(BUILD)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)  -install_name @rpath/libhttp.dylib -compatibility_version 6.0 -current_version 6.0 "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS) -lpam 
+$(BUILD)/bin/libhttp.a: $(DEPS_52)
+	@echo '      [Link] $(BUILD)/bin/libhttp.a'
+	ar -cr $(BUILD)/bin/libhttp.a "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o"
 
 #
 #   http-server
 #
-DEPS_53 += $(BUILD)/bin/libhttp.dylib
+DEPS_53 += $(BUILD)/bin/libhttp.a
 DEPS_53 += $(BUILD)/obj/http-server.o
 
 LIBS_53 += -lhttp
@@ -794,7 +752,7 @@ $(BUILD)/bin/http-server: $(DEPS_53)
 #
 #   httpcmd
 #
-DEPS_54 += $(BUILD)/bin/libhttp.dylib
+DEPS_54 += $(BUILD)/bin/libhttp.a
 DEPS_54 += $(BUILD)/obj/http.o
 
 LIBS_54 += -lhttp

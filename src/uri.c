@@ -906,7 +906,7 @@ PUBLIC bool httpValidUriChars(cchar *uri)
     ssize   pos;
 
     if (uri == 0) {
-        return 0;
+        return 1;
     }
     pos = strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%");
     if (pos < slen(uri)) {

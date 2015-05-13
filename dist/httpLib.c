@@ -16451,13 +16451,11 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         len = (endp) ? (int) (endp - content->start + 4) : 0;
         httpTraceContent(conn, "rx.headers.client", "context", content->start, len, NULL);
     }
-#if MOB
     if (rx->status == HTTP_CODE_CONTINUE) {
         /* Eat the blank line and wait for the real response */
         mprAdjustBufStart(content, 2);
         return 0;
     }
-#endif
     return 1;
 }
 

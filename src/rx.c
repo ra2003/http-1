@@ -486,6 +486,13 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         len = (endp) ? (int) (endp - content->start + 4) : 0;
         httpTraceContent(conn, "rx.headers.client", "context", content->start, len, NULL);
     }
+#if MOB
+    if (rx->status == HTTP_CODE_CONTINUE) {
+        /* Eat the blank line and wait for the real response */
+        mprAdjustBufStart(content, 2);
+        return 0;
+    }
+#endif
     return 1;
 }
 
@@ -1936,12 +1943,15 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn)
 static int sendContinue(HttpConn *conn)
 {
     cchar      *response;
+    int         mode;
 
     assert(conn);
 
     if (!conn->tx->finalized && !conn->tx->bytesWritten) {
         response = sfmt("%s 100 Continue\r\n\r\n", conn->protocol);
+        mode = mprGetSocketBlockingMode(conn->sock);
         mprWriteSocket(conn->sock, response, slen(response));
+        mprSetSocketBlockingMode(conn->sock, mode);
         mprFlushSocket(conn->sock);
     }
     return 0;

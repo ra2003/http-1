@@ -16447,6 +16447,13 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         len = (endp) ? (int) (endp - content->start + 4) : 0;
         httpTraceContent(conn, "rx.headers.client", "context", content->start, len, NULL);
     }
+#if MOB
+    if (rx->status == HTTP_CODE_CONTINUE) {
+        /* Eat the blank line and wait for the real response */
+        mprAdjustBufStart(content, 2);
+        return 0;
+    }
+#endif
     return 1;
 }
 
@@ -17897,12 +17904,15 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn)
 static int sendContinue(HttpConn *conn)
 {
     cchar      *response;
+    int         mode;
 
     assert(conn);
 
     if (!conn->tx->finalized && !conn->tx->bytesWritten) {
         response = sfmt("%s 100 Continue\r\n\r\n", conn->protocol);
+        mode = mprGetSocketBlockingMode(conn->sock);
         mprWriteSocket(conn->sock, response, slen(response));
+        mprSetSocketBlockingMode(conn->sock, mode);
         mprFlushSocket(conn->sock);
     }
     return 0;
@@ -19616,6 +19626,7 @@ PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ty
 
 /***************************** Forward Declarations ***************************/
 
+static void dummyPut(HttpQueue *q, HttpPacket *packet);
 static void manageTx(HttpTx *tx, int flags);
 
 /*********************************** Code *************************************/
@@ -19623,6 +19634,7 @@ static void manageTx(HttpTx *tx, int flags);
 PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
 {
     HttpTx      *tx;
+    HttpQueue   *q;
 
     if ((tx = mprAllocObj(HttpTx, manageTx)) == 0) {
         return 0;
@@ -19635,9 +19647,13 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     tx->chunkSize = -1;
     tx->cookies = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
     tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
-    tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
+
+    q = tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
+    q->put = dummyPut;
     conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
-    tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
+
+    q = tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
+    q->put = dummyPut;
     conn->readq = tx->queue[HTTP_QUEUE_RX]->prevQ;
 
     if (headers) {
@@ -20623,6 +20639,12 @@ PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
     buf = sfmtv(fmt, vargs);
     va_end(vargs);
     return httpWriteString(q, buf);
+}
+
+
+static void dummyPut(HttpQueue *q, HttpPacket *packet)
+{
+    mprLog("error", 0, "WARNING: Put packet called on queue %s", q->name);
 }
 
 

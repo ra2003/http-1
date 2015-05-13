@@ -9,6 +9,7 @@
 
 /***************************** Forward Declarations ***************************/
 
+static void dummyPut(HttpQueue *q, HttpPacket *packet);
 static void manageTx(HttpTx *tx, int flags);
 
 /*********************************** Code *************************************/
@@ -16,6 +17,7 @@ static void manageTx(HttpTx *tx, int flags);
 PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
 {
     HttpTx      *tx;
+    HttpQueue   *q;
 
     if ((tx = mprAllocObj(HttpTx, manageTx)) == 0) {
         return 0;
@@ -28,9 +30,13 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     tx->chunkSize = -1;
     tx->cookies = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
     tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
-    tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
+
+    q = tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
+    q->put = dummyPut;
     conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
-    tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
+
+    q = tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
+    q->put = dummyPut;
     conn->readq = tx->queue[HTTP_QUEUE_RX]->prevQ;
 
     if (headers) {
@@ -1016,6 +1022,12 @@ PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
     buf = sfmtv(fmt, vargs);
     va_end(vargs);
     return httpWriteString(q, buf);
+}
+
+
+static void dummyPut(HttpQueue *q, HttpPacket *packet)
+{
+    mprLog("error", 0, "WARNING: Put packet called on queue %s", q->name);
 }
 
 

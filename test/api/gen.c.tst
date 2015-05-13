@@ -26,7 +26,6 @@ static void initHttp()
     /*
         Test if we have network connectivity. If not, then skip further tests.
      */
-
     uri = httpCreateUri(tget("TM_HTTP", ":4100"), 0);
     if (mprConnectSocket(sp, "127.0.0.1", uri->port, 0) < 0) {
         tskip("no internet connection");

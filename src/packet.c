@@ -312,7 +312,9 @@ PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
     assert(packet);
     assert(q->put);
 
-    q->put(q, packet);
+    if (q->put) {
+        q->put(q, packet);
+    }
 }
 
 
@@ -324,7 +326,9 @@ PUBLIC void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
     assert(packet);
     assert(q->nextQ->put);
 
-    q->nextQ->put(q->nextQ, packet);
+    if (q->nextQ && q->nextQ->put) {
+        q->nextQ->put(q->nextQ, packet);
+    }
 }
 
 

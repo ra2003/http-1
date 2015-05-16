@@ -258,6 +258,11 @@ static void testValidateUri()
     validate("/extra%20long/../path/a/..", "/path");
 }
 
+static void testFormatUri()
+{
+    smatch(httpFormatUri(0, "127.0.0.1", 5000, "index.html", 0, 0, 0), "127.0.0.1:5000/index.html");
+}
+
 
 int main(int argc, char **argv)
 {
@@ -266,6 +271,7 @@ int main(int argc, char **argv)
     testCreateUri();
     testNormalizeUri();
     testValidateUri();
+    testFormatUri();
     return 0;
 }
 

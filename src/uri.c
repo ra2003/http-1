@@ -335,16 +335,15 @@ PUBLIC HttpUri *httpCompleteUri(HttpUri *uri, HttpUri *base)
                 uri->reference = base->reference;
             }
         }
-    } else {
-        if (!uri->scheme) {
-            uri->scheme = sclone("http");
-        }
-        if (!uri->host) {
-            uri->host = sclone("localhost");
-        }
-        if (!uri->path) {
-            uri->path = sclone("/");
-        }
+    }
+    if (!uri->scheme) {
+        uri->scheme = sclone("http");
+    }
+    if (!uri->host) {
+        uri->host = sclone("localhost");
+    }
+    if (!uri->path) {
+        uri->path = sclone("/");
     }
     uri->secure = (smatch(uri->scheme, "https") || smatch(uri->scheme, "wss"));
     uri->webSockets = (smatch(uri->scheme, "ws") || smatch(uri->scheme, "wss"));
@@ -373,22 +372,21 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
                 host = "localhost";
             }
         }
-    } else if (!host) {
-        host = "";
-    }
+    } 
     if (scheme) {
         hostDelim = "://";
     }
-    if (host) {
-        if (mprIsIPv6(host)) {
-            if (*host != '[') {
-                host = sfmt("[%s]", host);
-            } else if ((cp = scontains(host, "]:")) != 0) {
-                port = 0;
-            }
-        } else if (schr(host, ':')) {
+    if (!host) {
+        host = "";
+    }
+    if (mprIsIPv6(host)) {
+        if (*host != '[') {
+            host = sfmt("[%s]", host);
+        } else if ((cp = scontains(host, "]:")) != 0) {
             port = 0;
         }
+    } else if (schr(host, ':')) {
+        port = 0;
     }
     if (port != 0 && port != getDefaultPort(scheme)) {
         portStr = itos(port);
@@ -398,7 +396,7 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
         scheme = "";
     }
     if (path && *path) {
-        if (*hostDelim) {
+        if (*host) {
             pathDelim = (*path == '/') ? "" :  "/";
         } else {
             pathDelim = "";

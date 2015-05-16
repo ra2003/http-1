@@ -37,7 +37,8 @@
             "*.ca",
             "*.ans",
             "*.srl",
-            "*.me"
+            "*.me",
+            "*.conf"
         ],
         "origin": "embedthis/certs"
     }

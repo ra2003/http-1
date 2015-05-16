@@ -11,8 +11,8 @@
             ],
         },
         ssl: {
-            certificate: '../crt/test.crt',
-            key: '../crt/test.key',
+            certificate: '../../src/certs/test.crt',
+            key: '../../src/certs/test.key',
         },
     },
 }

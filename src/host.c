@@ -231,7 +231,7 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
     if (!host) {
         host = httpGetDefaultHost();
     }
-    if (mprGetListLength(host->routes) == 0) {
+    if (mprGetListLength(host->routes) == 0 && !host->defaultRoute) {
         printf("\nRoutes for host: %s: none\n", host->name ? host->name : "default");
     } else {
         if (!full) {
@@ -240,9 +240,9 @@ PUBLIC void httpLogRoutes(HttpHost *host, bool full)
         for (index = 0; (route = mprGetNextItem(host->routes, &index)) != 0; ) {
             printRoute(route, index - 1, full, methodsLen, patternLen, targetLen);
         }
-    }
-    if (mprLookupItem(host->routes, host->defaultRoute) < 0) {
-        printRoute(host->defaultRoute, index, full, methodsLen, patternLen, targetLen);
+        if (mprLookupItem(host->routes, host->defaultRoute) < 0) {
+            printRoute(host->defaultRoute, index, full, methodsLen, patternLen, targetLen);
+        }
     }
     printf("\n");
 }

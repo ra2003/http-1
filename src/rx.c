@@ -488,7 +488,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
     }
     if (rx->status == HTTP_CODE_CONTINUE) {
         /* Eat the blank line and wait for the real response */
-        mprAdjustBufStart(content, 2);
+        mprAdjustBufStart(packet->content, 2);
         return 0;
     }
     return 1;

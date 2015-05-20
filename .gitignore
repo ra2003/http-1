@@ -63,7 +63,7 @@ src/firefox.crt
 TODO.md
 http.sublime-*
 src/paks/openssl
-start.me
+/start.me
 macosx-x64*
 macosx-*.me
 linux-*

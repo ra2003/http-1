@@ -685,8 +685,8 @@ PUBLIC void httpSetTimestamp(MprTicks period)
     Http    *http;
 
     http = HTTP;
-    if (period < (10 * MPR_TICKS_PER_SEC)) {
-        period = (10 * MPR_TICKS_PER_SEC);
+    if (period < (10 * TPS)) {
+        period = (10 * TPS);
     }
     if (http->timestamp) {
         mprRemoveEvent(http->timestamp);
@@ -737,7 +737,7 @@ PUBLIC char *httpGetDateString(MprPath *sbuf)
     if (sbuf == 0) {
         when = mprGetTime();
     } else {
-        when = (MprTicks) sbuf->mtime * MPR_TICKS_PER_SEC;
+        when = (MprTicks) sbuf->mtime * TPS;
     }
     return mprFormatUniversalTime(HTTP_DATE_FORMAT, when);
 }
@@ -800,7 +800,7 @@ static void updateCurrentDate()
     http = HTTP;
     http->now = mprGetTicks();
     diff = http->now - http->currentTime;
-    if (diff <= MPR_TICKS_PER_SEC || diff >= MPR_TICKS_PER_SEC) {
+    if (diff <= TPS || diff >= TPS) {
         /*
             Optimize and only update the string date representation once per second
          */

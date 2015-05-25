@@ -1322,7 +1322,7 @@ PUBLIC bool httpContentNotModified(HttpConn *conn)
             performed, skip the transfer.
          */
         assert(tx->fileInfo.valid);
-        modified = (MprTime) tx->fileInfo.mtime * MPR_TICKS_PER_SEC;
+        modified = (MprTime) tx->fileInfo.mtime * TPS;
         same = httpMatchModified(conn, modified) && httpMatchEtag(conn, tx->etag);
         if (tx->outputRanges && !same) {
             tx->outputRanges = 0;

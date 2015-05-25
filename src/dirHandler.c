@@ -373,7 +373,7 @@ static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *path, int nameSize)
         isDir = 0;
     } else {
         isDir = info.isDir ? 1 : 0;
-        when = (MprTime) info.mtime * MPR_TICKS_PER_SEC;
+        when = (MprTime) info.mtime * TPS;
     }
     if (isDir) {
         icon = "folder";

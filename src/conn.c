@@ -487,6 +487,9 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
                 "msg:'Connection secured without peer certificate',secure:true,cipher:'%s',session:'%s'",
                 sp->cipher, sp->session);
         }
+        if (mprGetLogLevel() >= 5) {
+            mprLog("info http ssl", 5, "SSL State: %s", mprGetSocketState(sp));
+        }
     }
     /*
         Process one or more complete requests in the packet

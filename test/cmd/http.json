@@ -11,8 +11,8 @@
             ],
         },
         ssl: {
-            certificate: '../../src/certs/test.crt',
-            key: '../../src/certs/test.key',
+            certificate: '${BIN_DIR}/test.crt',
+            key: '${BIN_DIR}/test.key',
         },
         auth: {
             roles: {

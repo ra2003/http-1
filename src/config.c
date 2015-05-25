@@ -633,10 +633,13 @@ static void parseDeleteUploads(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseDocuments(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    if (!mprPathExists(prop->value, X_OK)) {
-        httpParseError(route, "Cannot locate documents directory %s", prop->value);
+    cchar   *path;
+
+    path = httpExpandRouteVars(route, prop->value);
+    if (!mprPathExists(path, X_OK)) {
+        httpParseError(route, "Cannot locate documents directory %s", path);
     } else {
-        httpSetRouteDocuments(route, prop->value);
+        httpSetRouteDocuments(route, path);
     }
 }
 
@@ -704,10 +707,13 @@ static void parseHeadersSet(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseHome(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    if (!mprPathExists(prop->value, X_OK)) {
-        httpParseError(route, "Cannot locate home directory %s", prop->value);
+    cchar   *path;
+
+    path = httpExpandRouteVars(route, prop->value);
+    if (!mprPathExists(path, X_OK)) {
+        httpParseError(route, "Cannot locate home directory %s", path);
     } else {
-        httpSetRouteHome(route, prop->value);
+        httpSetRouteHome(route, path);
     }
 }
 
@@ -1536,30 +1542,39 @@ static void parseSsl(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseSslAuthorityFile(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    if (!mprPathExists(prop->value, R_OK)) {
-        httpParseError(route, "Cannot find file %s", prop->value);
+    cchar   *path;
+
+    path = httpExpandRouteVars(route, prop->value);
+    if (!mprPathExists(path, R_OK)) {
+        httpParseError(route, "Cannot find file %s", path);
     } else {
-        mprSetSslCaFile(route->ssl, prop->value);
+        mprSetSslCaFile(route->ssl, path);
     }
 }
 
 
 static void parseSslAuthorityDirectory(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    if (!mprPathExists(prop->value, R_OK)) {
-        httpParseError(route, "Cannot find file %s", prop->value);
+    cchar   *path;
+
+    path = httpExpandRouteVars(route, prop->value);
+    if (!mprPathExists(path, R_OK)) {
+        httpParseError(route, "Cannot find file %s", path);
     } else {
-        mprSetSslCaPath(route->ssl, prop->value);
+        mprSetSslCaPath(route->ssl, path);
     }
 }
 
 
 static void parseSslCertificate(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    if (!mprPathExists(prop->value, R_OK)) {
-        httpParseError(route, "Cannot find file %s", prop->value);
+    cchar   *path;
+
+    path = httpExpandRouteVars(route, prop->value);
+    if (!mprPathExists(path, R_OK)) {
+        httpParseError(route, "Cannot find file %s", path);
     } else {
-        mprSetSslCertFile(route->ssl, prop->value);
+        mprSetSslCertFile(route->ssl, path);
     }
 }
 
@@ -1570,12 +1585,28 @@ static void parseSslCiphers(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseSslDh(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    cchar   *path;
+
+    path = httpExpandRouteVars(route, prop->value);
+    if (!mprPathExists(path, R_OK)) {
+        httpParseError(route, "Cannot find file %s", path);
+    } else {
+        mprSetSslDhFile(route->ssl, path);
+    }
+}
+
+
 static void parseSslKey(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    if (!mprPathExists(prop->value, R_OK)) {
-        httpParseError(route, "Cannot find file %s", prop->value);
+    cchar   *path;
+
+    path = httpExpandRouteVars(route, prop->value);
+    if (!mprPathExists(path, R_OK)) {
+        httpParseError(route, "Cannot find file %s", path);
     } else {
-        mprSetSslKeyFile(route->ssl, prop->value);
+        mprSetSslKeyFile(route->ssl, path);
     }
 }
 
@@ -1821,10 +1852,10 @@ PUBLIC MprTicks httpGetTicks(cchar *value)
     uint64  num;
 
     num = httpGetNumber(value);
-    if (num >= (MAXINT64 / MPR_TICKS_PER_SEC)) {
-        num = MAXINT64 / MPR_TICKS_PER_SEC;
+    if (num >= (MAXINT64 / TPS)) {
+        num = MAXINT64 / TPS;
     }
-    return num * MPR_TICKS_PER_SEC;
+    return num * TPS;
 }
 
 
@@ -1980,6 +2011,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.server.ssl.authority.directory", parseSslAuthorityDirectory);
     httpAddConfig("http.server.ssl.certificate", parseSslCertificate);
     httpAddConfig("http.server.ssl.ciphers", parseSslCiphers);
+    httpAddConfig("http.server.ssl.dh", parseSslDh);
     httpAddConfig("http.server.ssl.key", parseSslKey);
     httpAddConfig("http.server.ssl.provider", parseSslProvider);
     httpAddConfig("http.server.ssl.protocols", parseSslProtocols);

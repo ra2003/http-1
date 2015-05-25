@@ -39,6 +39,7 @@ Me.load({
         certs: {
             days: 3650,
             bits: 2048,
+            gendh: false,
         }
     },
     mixin: `
@@ -123,7 +124,8 @@ Me.load({
             message: 'Generate: Local DH parameters for OpenSSL ... may take a few minutes',
             action: `
                 me.dir.bin.join('dh.c').write(Cmd.run('openssl dhparam -C ${settings.certs.bits} -out ${BIN}/dh.pem') + '\n')
-            `
+            `,
+            enable: '${settings.certs.gendh} == true'
         }
 
         /*

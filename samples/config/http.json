@@ -60,7 +60,7 @@
          */
         server: {
             /*
-                Account execution 
+                Account execution
              */
             account: {
                 /*
@@ -118,7 +118,7 @@
                 level: "2",
 
                 /*
-                    Keep up to 5 log files 
+                    Keep up to 5 log files
                  */
                 backup: 5,
 
@@ -142,8 +142,8 @@
                 Defensive counter-measure monitor policies
              */
             monitors: {
-                /*  
-                    Name of monitor 
+                /*
+                    Name of monitor
                  */
                 missing: {
                     /*
@@ -194,9 +194,20 @@
                     Ordered list of preferred ciphers
                  */
                 ciphers: [
-                    "TLS_RSA_WITH_AES_256_CBC_SHA",
-                    "TLS_RSA_WITH_RC4_128_SHA"
+                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+                    "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
+                    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+                    "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+                    "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
                 ],
+
                 /*
                     Server private key file
                  */
@@ -322,7 +333,7 @@
                 visible: true,
             },
 
-            /* 
+            /*
                 Auth Store to use, "app" means user credentials are stored in a server-side application database
                 Set to "app", "config" or "system".
              */
@@ -333,22 +344,22 @@
              */
             type: "basic|digest",
         },
-        
+
         /*
             Response caching directives
             Can also just set "cache" to true which defines a client cache of 1 day for common static file types.
          */
         cache: [ {
             /*
-                Cache at the client 
-             */ 
+                Cache at the client
+             */
             client: "1day",
 
             /*
                 Cache at the server
              */
             server: "1hour",
-            
+
             /*
                 File extensions to cache
              */
@@ -661,7 +672,7 @@
          */
         timeouts: {
             /*
-                Maximum time for application to exit when waiting for requests to complete 
+                Maximum time for application to exit when waiting for requests to complete
              */
             exit:       "30secs",
 
@@ -724,7 +735,7 @@
             },
 
             /*
-                Keep up to 5 log files 
+                Keep up to 5 log files
              */
             backup: 5,
 
@@ -760,7 +771,7 @@
         The mode property set is selected by the package.json "mode" property.
      */
     modes: {
-        debug: { 
+        debug: {
             /*
                 Collection of properties that are copied to the top-level if in debug mode
              */

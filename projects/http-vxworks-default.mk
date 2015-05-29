@@ -86,6 +86,9 @@ ME_SRC_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/src/$(NAME)-$(VERSION)
 
 TARGETS               += $(BUILD)/bin/http-server.out
 TARGETS               += $(BUILD)/bin/http.out
+ifeq ($(ME_COM_SSL),1)
+    TARGETS           += $(BUILD)/bin
+endif
 
 unexport CDPATH
 
@@ -161,6 +164,7 @@ clean:
 	rm -f "$(BUILD)/obj/webSockFilter.o"
 	rm -f "$(BUILD)/bin/http-server.out"
 	rm -f "$(BUILD)/bin/http.out"
+	rm -f "$(BUILD)/bin"
 	rm -f "$(BUILD)/bin/libhttp.out"
 	rm -f "$(BUILD)/bin/libmpr.out"
 	rm -f "$(BUILD)/bin/libpcre.out"
@@ -798,11 +802,41 @@ $(BUILD)/bin/http.out: $(DEPS_54)
 	@echo '      [Link] $(BUILD)/bin/http.out'
 	$(CC) -o $(BUILD)/bin/http.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http.o" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) -lestssl -Wl,-r 
 
+ifeq ($(ME_COM_SSL),1)
+#
+#   install-certs
+#
+DEPS_55 += src/certs/samples/ca.crt
+DEPS_55 += src/certs/samples/ca.key
+DEPS_55 += src/certs/samples/dh.pem
+DEPS_55 += src/certs/samples/ec.crt
+DEPS_55 += src/certs/samples/ec.key
+DEPS_55 += src/certs/samples/roots.crt
+DEPS_55 += src/certs/samples/self.crt
+DEPS_55 += src/certs/samples/self.key
+DEPS_55 += src/certs/samples/test.crt
+DEPS_55 += src/certs/samples/test.key
+
+$(BUILD)/bin: $(DEPS_55)
+	@echo '      [Copy] $(BUILD)/bin'
+	mkdir -p "$(BUILD)/bin"
+	cp src/certs/samples/ca.crt $(BUILD)/bin/ca.crt
+	cp src/certs/samples/ca.key $(BUILD)/bin/ca.key
+	cp src/certs/samples/dh.pem $(BUILD)/bin/dh.pem
+	cp src/certs/samples/ec.crt $(BUILD)/bin/ec.crt
+	cp src/certs/samples/ec.key $(BUILD)/bin/ec.key
+	cp src/certs/samples/roots.crt $(BUILD)/bin/roots.crt
+	cp src/certs/samples/self.crt $(BUILD)/bin/self.crt
+	cp src/certs/samples/self.key $(BUILD)/bin/self.key
+	cp src/certs/samples/test.crt $(BUILD)/bin/test.crt
+	cp src/certs/samples/test.key $(BUILD)/bin/test.key
+endif
+
 #
 #   installPrep
 #
 
-installPrep: $(DEPS_55)
+installPrep: $(DEPS_56)
 	if [ "`id -u`" != 0 ] ; \
 	then echo "Must run as root. Rerun with "sudo"" ; \
 	exit 255 ; \
@@ -812,41 +846,41 @@ installPrep: $(DEPS_55)
 #   stop
 #
 
-stop: $(DEPS_56)
+stop: $(DEPS_57)
 
 #
 #   installBinary
 #
 
-installBinary: $(DEPS_57)
+installBinary: $(DEPS_58)
 
 #
 #   start
 #
 
-start: $(DEPS_58)
+start: $(DEPS_59)
 
 #
 #   install
 #
-DEPS_59 += installPrep
-DEPS_59 += stop
-DEPS_59 += installBinary
-DEPS_59 += start
+DEPS_60 += installPrep
+DEPS_60 += stop
+DEPS_60 += installBinary
+DEPS_60 += start
 
-install: $(DEPS_59)
+install: $(DEPS_60)
 
 #
 #   uninstall
 #
-DEPS_60 += stop
+DEPS_61 += stop
 
-uninstall: $(DEPS_60)
+uninstall: $(DEPS_61)
 
 #
 #   version
 #
 
-version: $(DEPS_61)
+version: $(DEPS_62)
 	echo $(VERSION)
 

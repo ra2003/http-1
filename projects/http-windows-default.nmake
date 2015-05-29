@@ -128,6 +128,9 @@ ME_SRC_PREFIX         = $(ME_VAPP_PREFIX)\src
 
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http-server.exe
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http.exe
+!IF "$(ME_COM_SSL)" == "1"
+TARGETS               = $(TARGETS) build\$(CONFIG)\bin
+!ENDIF
 
 !IFNDEF SHOW
 .SILENT:
@@ -208,6 +211,7 @@ clean:
 	if exist "build\$(CONFIG)\bin\http.lib" del /Q "build\$(CONFIG)\bin\http.lib"
 	if exist "build\$(CONFIG)\bin\http.pdb" del /Q "build\$(CONFIG)\bin\http.pdb"
 	if exist "build\$(CONFIG)\bin\http.exp" del /Q "build\$(CONFIG)\bin\http.exp"
+	if exist "build\$(CONFIG)\bin" del /Q "build\$(CONFIG)\bin"
 	if exist "build\$(CONFIG)\bin\libest.dll" del /Q "build\$(CONFIG)\bin\libest.dll"
 	if exist "build\$(CONFIG)\bin\libest.lib" del /Q "build\$(CONFIG)\bin\libest.lib"
 	if exist "build\$(CONFIG)\bin\libest.pdb" del /Q "build\$(CONFIG)\bin\libest.pdb"
@@ -932,4 +936,34 @@ LIBPATHS_58 = $(LIBPATHS_58) -libpath:$(ME_COM_OPENSSL_PATH)
 build\$(CONFIG)\bin\http.exe: $(DEPS_58)
 	@echo ..... [Link] build\$(CONFIG)\bin\http.exe
 	"$(LD)" -nologo -out:$(BUILD)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS)  "$(BUILD)\obj\http.obj" $(LIBPATHS_58) $(LIBS_58) $(LIBS_58) $(LIBS)  $(LOG)
+
+!IF "$(ME_COM_SSL)" == "1"
+#
+#   install-certs
+#
+DEPS_59 = $(DEPS_59) src\certs\samples\ca.crt
+DEPS_59 = $(DEPS_59) src\certs\samples\ca.key
+DEPS_59 = $(DEPS_59) src\certs\samples\dh.pem
+DEPS_59 = $(DEPS_59) src\certs\samples\ec.crt
+DEPS_59 = $(DEPS_59) src\certs\samples\ec.key
+DEPS_59 = $(DEPS_59) src\certs\samples\roots.crt
+DEPS_59 = $(DEPS_59) src\certs\samples\self.crt
+DEPS_59 = $(DEPS_59) src\certs\samples\self.key
+DEPS_59 = $(DEPS_59) src\certs\samples\test.crt
+DEPS_59 = $(DEPS_59) src\certs\samples\test.key
+
+build\$(CONFIG)\bin: $(DEPS_59)
+	@echo ..... [Copy] build\$(CONFIG)\bin
+	if not exist "build\$(CONFIG)\bin" md "build\$(CONFIG)\bin"
+	copy /Y /B src\certs\samples\ca.crt+modified build\$(CONFIG)\bin\ca.crt $(LOG)
+	copy /Y /B src\certs\samples\ca.key+modified build\$(CONFIG)\bin\ca.key $(LOG)
+	copy /Y /B src\certs\samples\dh.pem+modified build\$(CONFIG)\bin\dh.pem $(LOG)
+	copy /Y /B src\certs\samples\ec.crt+modified build\$(CONFIG)\bin\ec.crt $(LOG)
+	copy /Y /B src\certs\samples\ec.key+modified build\$(CONFIG)\bin\ec.key $(LOG)
+	copy /Y /B src\certs\samples\roots.crt+modified build\$(CONFIG)\bin\roots.crt $(LOG)
+	copy /Y /B src\certs\samples\self.crt+modified build\$(CONFIG)\bin\self.crt $(LOG)
+	copy /Y /B src\certs\samples\self.key+modified build\$(CONFIG)\bin\self.key $(LOG)
+	copy /Y /B src\certs\samples\test.crt+modified build\$(CONFIG)\bin\test.crt $(LOG)
+	copy /Y /B src\certs\samples\test.key+modified build\$(CONFIG)\bin\test.key $(LOG)
+!ENDIF
 

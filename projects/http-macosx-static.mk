@@ -142,7 +142,6 @@ clean:
 	rm -f "$(BUILD)/obj/pipeline.o"
 	rm -f "$(BUILD)/obj/queue.o"
 	rm -f "$(BUILD)/obj/rangeFilter.o"
-	rm -f "$(BUILD)/obj/removeFiles.o"
 	rm -f "$(BUILD)/obj/route.o"
 	rm -f "$(BUILD)/obj/rx.o"
 	rm -f "$(BUILD)/obj/sendConnector.o"
@@ -545,142 +544,133 @@ $(BUILD)/obj/rangeFilter.o: \
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/rangeFilter.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/rangeFilter.c
 
 #
-#   removeFiles.o
-#
-
-$(BUILD)/obj/removeFiles.o: \
-    package/windows/removeFiles.c $(DEPS_40)
-	@echo '   [Compile] $(BUILD)/obj/removeFiles.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/removeFiles.o -arch $(CC_ARCH) $(CFLAGS) $(IFLAGS) package/windows/removeFiles.c
-
-#
 #   route.o
 #
-DEPS_41 += src/http.h
-DEPS_41 += $(BUILD)/inc/pcre.h
+DEPS_40 += src/http.h
+DEPS_40 += $(BUILD)/inc/pcre.h
 
 $(BUILD)/obj/route.o: \
-    src/route.c $(DEPS_41)
+    src/route.c $(DEPS_40)
 	@echo '   [Compile] $(BUILD)/obj/route.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/route.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/route.c
 
 #
 #   rx.o
 #
-DEPS_42 += src/http.h
+DEPS_41 += src/http.h
 
 $(BUILD)/obj/rx.o: \
-    src/rx.c $(DEPS_42)
+    src/rx.c $(DEPS_41)
 	@echo '   [Compile] $(BUILD)/obj/rx.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/rx.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/rx.c
 
 #
 #   sendConnector.o
 #
-DEPS_43 += src/http.h
+DEPS_42 += src/http.h
 
 $(BUILD)/obj/sendConnector.o: \
-    src/sendConnector.c $(DEPS_43)
+    src/sendConnector.c $(DEPS_42)
 	@echo '   [Compile] $(BUILD)/obj/sendConnector.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/sendConnector.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/sendConnector.c
 
 #
 #   service.o
 #
-DEPS_44 += src/http.h
+DEPS_43 += src/http.h
 
 $(BUILD)/obj/service.o: \
-    src/service.c $(DEPS_44)
+    src/service.c $(DEPS_43)
 	@echo '   [Compile] $(BUILD)/obj/service.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/service.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/service.c
 
 #
 #   session.o
 #
-DEPS_45 += src/http.h
+DEPS_44 += src/http.h
 
 $(BUILD)/obj/session.o: \
-    src/session.c $(DEPS_45)
+    src/session.c $(DEPS_44)
 	@echo '   [Compile] $(BUILD)/obj/session.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/session.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/session.c
 
 #
 #   stage.o
 #
-DEPS_46 += src/http.h
+DEPS_45 += src/http.h
 
 $(BUILD)/obj/stage.o: \
-    src/stage.c $(DEPS_46)
+    src/stage.c $(DEPS_45)
 	@echo '   [Compile] $(BUILD)/obj/stage.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/stage.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/stage.c
 
 #
 #   trace.o
 #
-DEPS_47 += src/http.h
+DEPS_46 += src/http.h
 
 $(BUILD)/obj/trace.o: \
-    src/trace.c $(DEPS_47)
+    src/trace.c $(DEPS_46)
 	@echo '   [Compile] $(BUILD)/obj/trace.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/trace.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/trace.c
 
 #
 #   tx.o
 #
-DEPS_48 += src/http.h
+DEPS_47 += src/http.h
 
 $(BUILD)/obj/tx.o: \
-    src/tx.c $(DEPS_48)
+    src/tx.c $(DEPS_47)
 	@echo '   [Compile] $(BUILD)/obj/tx.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/tx.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/tx.c
 
 #
 #   uploadFilter.o
 #
-DEPS_49 += src/http.h
+DEPS_48 += src/http.h
 
 $(BUILD)/obj/uploadFilter.o: \
-    src/uploadFilter.c $(DEPS_49)
+    src/uploadFilter.c $(DEPS_48)
 	@echo '   [Compile] $(BUILD)/obj/uploadFilter.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/uploadFilter.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/uploadFilter.c
 
 #
 #   uri.o
 #
-DEPS_50 += src/http.h
+DEPS_49 += src/http.h
 
 $(BUILD)/obj/uri.o: \
-    src/uri.c $(DEPS_50)
+    src/uri.c $(DEPS_49)
 	@echo '   [Compile] $(BUILD)/obj/uri.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/uri.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/uri.c
 
 #
 #   user.o
 #
-DEPS_51 += src/http.h
+DEPS_50 += src/http.h
 
 $(BUILD)/obj/user.o: \
-    src/user.c $(DEPS_51)
+    src/user.c $(DEPS_50)
 	@echo '   [Compile] $(BUILD)/obj/user.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/user.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/user.c
 
 #
 #   var.o
 #
-DEPS_52 += src/http.h
+DEPS_51 += src/http.h
 
 $(BUILD)/obj/var.o: \
-    src/var.c $(DEPS_52)
+    src/var.c $(DEPS_51)
 	@echo '   [Compile] $(BUILD)/obj/var.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/var.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/var.c
 
 #
 #   webSockFilter.o
 #
-DEPS_53 += src/http.h
+DEPS_52 += src/http.h
 
 $(BUILD)/obj/webSockFilter.o: \
-    src/webSockFilter.c $(DEPS_53)
+    src/webSockFilter.c $(DEPS_52)
 	@echo '   [Compile] $(BUILD)/obj/webSockFilter.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/webSockFilter.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/webSockFilter.c
 
@@ -688,11 +678,11 @@ ifeq ($(ME_COM_EST),1)
 #
 #   libest
 #
-DEPS_54 += $(BUILD)/inc/osdep.h
-DEPS_54 += $(BUILD)/inc/est.h
-DEPS_54 += $(BUILD)/obj/estLib.o
+DEPS_53 += $(BUILD)/inc/osdep.h
+DEPS_53 += $(BUILD)/inc/est.h
+DEPS_53 += $(BUILD)/obj/estLib.o
 
-$(BUILD)/bin/libest.a: $(DEPS_54)
+$(BUILD)/bin/libest.a: $(DEPS_53)
 	@echo '      [Link] $(BUILD)/bin/libest.a'
 	ar -cr $(BUILD)/bin/libest.a "$(BUILD)/obj/estLib.o"
 endif
@@ -702,11 +692,11 @@ ifeq ($(ME_COM_SSL),1)
 #   est
 #
 ifeq ($(ME_COM_EST),1)
-    DEPS_55 += $(BUILD)/bin/libest.a
+    DEPS_54 += $(BUILD)/bin/libest.a
 endif
-DEPS_55 += $(BUILD)/obj/est.o
+DEPS_54 += $(BUILD)/obj/est.o
 
-$(BUILD)/bin/libmpr-estssl.a: $(DEPS_55)
+$(BUILD)/bin/libmpr-estssl.a: $(DEPS_54)
 	@echo '      [Link] $(BUILD)/bin/libmpr-estssl.a'
 	ar -cr $(BUILD)/bin/libmpr-estssl.a "$(BUILD)/obj/est.o"
 endif
@@ -715,9 +705,9 @@ ifeq ($(ME_COM_SSL),1)
 #
 #   openssl
 #
-DEPS_56 += $(BUILD)/obj/openssl.o
+DEPS_55 += $(BUILD)/obj/openssl.o
 
-$(BUILD)/bin/libmpr-openssl.a: $(DEPS_56)
+$(BUILD)/bin/libmpr-openssl.a: $(DEPS_55)
 	@echo '      [Link] $(BUILD)/bin/libmpr-openssl.a'
 	ar -cr $(BUILD)/bin/libmpr-openssl.a "$(BUILD)/obj/openssl.o"
 endif
@@ -725,21 +715,21 @@ endif
 #
 #   libmpr
 #
-DEPS_57 += $(BUILD)/inc/osdep.h
+DEPS_56 += $(BUILD)/inc/osdep.h
 ifeq ($(ME_COM_SSL),1)
 ifeq ($(ME_COM_OPENSSL),1)
-    DEPS_57 += $(BUILD)/bin/libmpr-openssl.a
+    DEPS_56 += $(BUILD)/bin/libmpr-openssl.a
 endif
 endif
 ifeq ($(ME_COM_SSL),1)
 ifeq ($(ME_COM_EST),1)
-    DEPS_57 += $(BUILD)/bin/libmpr-estssl.a
+    DEPS_56 += $(BUILD)/bin/libmpr-estssl.a
 endif
 endif
-DEPS_57 += $(BUILD)/inc/mpr.h
-DEPS_57 += $(BUILD)/obj/mprLib.o
+DEPS_56 += $(BUILD)/inc/mpr.h
+DEPS_56 += $(BUILD)/obj/mprLib.o
 
-$(BUILD)/bin/libmpr.a: $(DEPS_57)
+$(BUILD)/bin/libmpr.a: $(DEPS_56)
 	@echo '      [Link] $(BUILD)/bin/libmpr.a'
 	ar -cr $(BUILD)/bin/libmpr.a "$(BUILD)/obj/mprLib.o"
 
@@ -747,10 +737,10 @@ ifeq ($(ME_COM_PCRE),1)
 #
 #   libpcre
 #
-DEPS_58 += $(BUILD)/inc/pcre.h
-DEPS_58 += $(BUILD)/obj/pcre.o
+DEPS_57 += $(BUILD)/inc/pcre.h
+DEPS_57 += $(BUILD)/obj/pcre.o
 
-$(BUILD)/bin/libpcre.a: $(DEPS_58)
+$(BUILD)/bin/libpcre.a: $(DEPS_57)
 	@echo '      [Link] $(BUILD)/bin/libpcre.a'
 	ar -cr $(BUILD)/bin/libpcre.a "$(BUILD)/obj/pcre.o"
 endif
@@ -758,56 +748,100 @@ endif
 #
 #   libhttp
 #
-DEPS_59 += $(BUILD)/bin/libmpr.a
+DEPS_58 += $(BUILD)/bin/libmpr.a
 ifeq ($(ME_COM_PCRE),1)
-    DEPS_59 += $(BUILD)/bin/libpcre.a
+    DEPS_58 += $(BUILD)/bin/libpcre.a
 endif
-DEPS_59 += $(BUILD)/inc/http.h
-DEPS_59 += $(BUILD)/obj/actionHandler.o
-DEPS_59 += $(BUILD)/obj/auth.o
-DEPS_59 += $(BUILD)/obj/basic.o
-DEPS_59 += $(BUILD)/obj/cache.o
-DEPS_59 += $(BUILD)/obj/chunkFilter.o
-DEPS_59 += $(BUILD)/obj/client.o
-DEPS_59 += $(BUILD)/obj/config.o
-DEPS_59 += $(BUILD)/obj/conn.o
-DEPS_59 += $(BUILD)/obj/digest.o
-DEPS_59 += $(BUILD)/obj/dirHandler.o
-DEPS_59 += $(BUILD)/obj/endpoint.o
-DEPS_59 += $(BUILD)/obj/error.o
-DEPS_59 += $(BUILD)/obj/fileHandler.o
-DEPS_59 += $(BUILD)/obj/host.o
-DEPS_59 += $(BUILD)/obj/monitor.o
-DEPS_59 += $(BUILD)/obj/netConnector.o
-DEPS_59 += $(BUILD)/obj/packet.o
-DEPS_59 += $(BUILD)/obj/pam.o
-DEPS_59 += $(BUILD)/obj/passHandler.o
-DEPS_59 += $(BUILD)/obj/pipeline.o
-DEPS_59 += $(BUILD)/obj/queue.o
-DEPS_59 += $(BUILD)/obj/rangeFilter.o
-DEPS_59 += $(BUILD)/obj/route.o
-DEPS_59 += $(BUILD)/obj/rx.o
-DEPS_59 += $(BUILD)/obj/sendConnector.o
-DEPS_59 += $(BUILD)/obj/service.o
-DEPS_59 += $(BUILD)/obj/session.o
-DEPS_59 += $(BUILD)/obj/stage.o
-DEPS_59 += $(BUILD)/obj/trace.o
-DEPS_59 += $(BUILD)/obj/tx.o
-DEPS_59 += $(BUILD)/obj/uploadFilter.o
-DEPS_59 += $(BUILD)/obj/uri.o
-DEPS_59 += $(BUILD)/obj/user.o
-DEPS_59 += $(BUILD)/obj/var.o
-DEPS_59 += $(BUILD)/obj/webSockFilter.o
+DEPS_58 += $(BUILD)/inc/http.h
+DEPS_58 += $(BUILD)/obj/actionHandler.o
+DEPS_58 += $(BUILD)/obj/auth.o
+DEPS_58 += $(BUILD)/obj/basic.o
+DEPS_58 += $(BUILD)/obj/cache.o
+DEPS_58 += $(BUILD)/obj/chunkFilter.o
+DEPS_58 += $(BUILD)/obj/client.o
+DEPS_58 += $(BUILD)/obj/config.o
+DEPS_58 += $(BUILD)/obj/conn.o
+DEPS_58 += $(BUILD)/obj/digest.o
+DEPS_58 += $(BUILD)/obj/dirHandler.o
+DEPS_58 += $(BUILD)/obj/endpoint.o
+DEPS_58 += $(BUILD)/obj/error.o
+DEPS_58 += $(BUILD)/obj/fileHandler.o
+DEPS_58 += $(BUILD)/obj/host.o
+DEPS_58 += $(BUILD)/obj/monitor.o
+DEPS_58 += $(BUILD)/obj/netConnector.o
+DEPS_58 += $(BUILD)/obj/packet.o
+DEPS_58 += $(BUILD)/obj/pam.o
+DEPS_58 += $(BUILD)/obj/passHandler.o
+DEPS_58 += $(BUILD)/obj/pipeline.o
+DEPS_58 += $(BUILD)/obj/queue.o
+DEPS_58 += $(BUILD)/obj/rangeFilter.o
+DEPS_58 += $(BUILD)/obj/route.o
+DEPS_58 += $(BUILD)/obj/rx.o
+DEPS_58 += $(BUILD)/obj/sendConnector.o
+DEPS_58 += $(BUILD)/obj/service.o
+DEPS_58 += $(BUILD)/obj/session.o
+DEPS_58 += $(BUILD)/obj/stage.o
+DEPS_58 += $(BUILD)/obj/trace.o
+DEPS_58 += $(BUILD)/obj/tx.o
+DEPS_58 += $(BUILD)/obj/uploadFilter.o
+DEPS_58 += $(BUILD)/obj/uri.o
+DEPS_58 += $(BUILD)/obj/user.o
+DEPS_58 += $(BUILD)/obj/var.o
+DEPS_58 += $(BUILD)/obj/webSockFilter.o
 
-$(BUILD)/bin/libhttp.a: $(DEPS_59)
+$(BUILD)/bin/libhttp.a: $(DEPS_58)
 	@echo '      [Link] $(BUILD)/bin/libhttp.a'
 	ar -cr $(BUILD)/bin/libhttp.a "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o"
 
 #
 #   http-server
 #
+DEPS_59 += $(BUILD)/bin/libhttp.a
+DEPS_59 += $(BUILD)/obj/http-server.o
+
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_59 += -lmpr-openssl
+    LIBPATHS_59 += -L"$(ME_COM_OPENSSL_PATH)"
+endif
+ifeq ($(ME_COM_OPENSSL),1)
+ifeq ($(ME_COM_SSL),1)
+    LIBS_59 += -lssl
+    LIBPATHS_59 += -L"$(ME_COM_OPENSSL_PATH)"
+endif
+endif
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_59 += -lcrypto
+    LIBPATHS_59 += -L"$(ME_COM_OPENSSL_PATH)"
+endif
+ifeq ($(ME_COM_EST),1)
+    LIBS_59 += -lest
+endif
+ifeq ($(ME_COM_EST),1)
+    LIBS_59 += -lmpr-estssl
+endif
+LIBS_59 += -lmpr
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_59 += -lmpr-openssl
+    LIBPATHS_59 += -L"$(ME_COM_OPENSSL_PATH)"
+endif
+ifeq ($(ME_COM_PCRE),1)
+    LIBS_59 += -lpcre
+endif
+LIBS_59 += -lhttp
+ifeq ($(ME_COM_PCRE),1)
+    LIBS_59 += -lpcre
+endif
+LIBS_59 += -lmpr
+
+$(BUILD)/bin/http-server: $(DEPS_59)
+	@echo '      [Link] $(BUILD)/bin/http-server'
+	$(CC) -o $(BUILD)/bin/http-server -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http-server.o" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) 
+
+#
+#   httpcmd
+#
 DEPS_60 += $(BUILD)/bin/libhttp.a
-DEPS_60 += $(BUILD)/obj/http-server.o
+DEPS_60 += $(BUILD)/obj/http.o
 
 ifeq ($(ME_COM_OPENSSL),1)
     LIBS_60 += -lmpr-openssl
@@ -843,76 +877,26 @@ ifeq ($(ME_COM_PCRE),1)
 endif
 LIBS_60 += -lmpr
 
-$(BUILD)/bin/http-server: $(DEPS_60)
-	@echo '      [Link] $(BUILD)/bin/http-server'
-	$(CC) -o $(BUILD)/bin/http-server -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http-server.o" $(LIBPATHS_60) $(LIBS_60) $(LIBS_60) $(LIBS) 
-
-#
-#   httpcmd
-#
-DEPS_61 += $(BUILD)/bin/libhttp.a
-DEPS_61 += $(BUILD)/obj/http.o
-
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_61 += -lmpr-openssl
-    LIBPATHS_61 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-ifeq ($(ME_COM_SSL),1)
-    LIBS_61 += -lssl
-    LIBPATHS_61 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_61 += -lcrypto
-    LIBPATHS_61 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-ifeq ($(ME_COM_EST),1)
-    LIBS_61 += -lest
-endif
-ifeq ($(ME_COM_EST),1)
-    LIBS_61 += -lmpr-estssl
-endif
-LIBS_61 += -lmpr
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_61 += -lmpr-openssl
-    LIBPATHS_61 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-ifeq ($(ME_COM_PCRE),1)
-    LIBS_61 += -lpcre
-endif
-LIBS_61 += -lhttp
-ifeq ($(ME_COM_PCRE),1)
-    LIBS_61 += -lpcre
-endif
-LIBS_61 += -lmpr
-
-$(BUILD)/bin/http: $(DEPS_61)
+$(BUILD)/bin/http: $(DEPS_60)
 	@echo '      [Link] $(BUILD)/bin/http'
-	$(CC) -o $(BUILD)/bin/http -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http.o" $(LIBPATHS_61) $(LIBS_61) $(LIBS_61) $(LIBS) 
-
-#
-#   import-certs
-#
-
-import-certs: $(DEPS_62)
+	$(CC) -o $(BUILD)/bin/http -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http.o" $(LIBPATHS_60) $(LIBS_60) $(LIBS_60) $(LIBS) 
 
 ifeq ($(ME_COM_SSL),1)
 #
 #   install-certs
 #
-DEPS_63 += src/certs/samples/ca.crt
-DEPS_63 += src/certs/samples/ca.key
-DEPS_63 += src/certs/samples/dh.pem
-DEPS_63 += src/certs/samples/ec.crt
-DEPS_63 += src/certs/samples/ec.key
-DEPS_63 += src/certs/samples/roots.crt
-DEPS_63 += src/certs/samples/self.crt
-DEPS_63 += src/certs/samples/self.key
-DEPS_63 += src/certs/samples/test.crt
-DEPS_63 += src/certs/samples/test.key
+DEPS_61 += src/certs/samples/ca.crt
+DEPS_61 += src/certs/samples/ca.key
+DEPS_61 += src/certs/samples/dh.pem
+DEPS_61 += src/certs/samples/ec.crt
+DEPS_61 += src/certs/samples/ec.key
+DEPS_61 += src/certs/samples/roots.crt
+DEPS_61 += src/certs/samples/self.crt
+DEPS_61 += src/certs/samples/self.key
+DEPS_61 += src/certs/samples/test.crt
+DEPS_61 += src/certs/samples/test.key
 
-$(BUILD)/bin: $(DEPS_63)
+$(BUILD)/bin: $(DEPS_61)
 	@echo '      [Copy] $(BUILD)/bin'
 	mkdir -p "$(BUILD)/bin"
 	cp src/certs/samples/ca.crt $(BUILD)/bin/ca.crt
@@ -931,7 +915,7 @@ endif
 #   installPrep
 #
 
-installPrep: $(DEPS_64)
+installPrep: $(DEPS_62)
 	if [ "`id -u`" != 0 ] ; \
 	then echo "Must run as root. Rerun with "sudo"" ; \
 	exit 255 ; \
@@ -941,41 +925,41 @@ installPrep: $(DEPS_64)
 #   stop
 #
 
-stop: $(DEPS_65)
+stop: $(DEPS_63)
 
 #
 #   installBinary
 #
 
-installBinary: $(DEPS_66)
+installBinary: $(DEPS_64)
 
 #
 #   start
 #
 
-start: $(DEPS_67)
+start: $(DEPS_65)
 
 #
 #   install
 #
-DEPS_68 += installPrep
-DEPS_68 += stop
-DEPS_68 += installBinary
-DEPS_68 += start
+DEPS_66 += installPrep
+DEPS_66 += stop
+DEPS_66 += installBinary
+DEPS_66 += start
 
-install: $(DEPS_68)
+install: $(DEPS_66)
 
 #
 #   uninstall
 #
-DEPS_69 += stop
+DEPS_67 += stop
 
-uninstall: $(DEPS_69)
+uninstall: $(DEPS_67)
 
 #
 #   version
 #
 
-version: $(DEPS_70)
+version: $(DEPS_68)
 	echo $(VERSION)
 

@@ -634,6 +634,7 @@ $(BUILD)/obj/webSockFilter.o: \
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/webSockFilter.o -arch $(CC_ARCH) $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/webSockFilter.c
 
 ifeq ($(ME_COM_SSL),1)
+ifeq ($(ME_COM_OPENSSL),1)
 #
 #   openssl
 #
@@ -642,6 +643,7 @@ DEPS_49 += $(BUILD)/obj/openssl.o
 $(BUILD)/bin/libmpr-openssl.a: $(DEPS_49)
 	@echo '      [Link] $(BUILD)/bin/libmpr-openssl.a'
 	ar -cr $(BUILD)/bin/libmpr-openssl.a "$(BUILD)/obj/openssl.o"
+endif
 endif
 
 #

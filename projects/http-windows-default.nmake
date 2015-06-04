@@ -33,14 +33,29 @@ LBIN                  = $(BUILD)\bin
 !IF "$(ME_COM_COMPILER)" == ""
 ME_COM_COMPILER       = 1
 !ENDIF
+!IF "$(ME_COM_EST)" == ""
+ME_COM_EST            = 0
+!ENDIF
 !IF "$(ME_COM_LIB)" == ""
 ME_COM_LIB            = 1
 !ENDIF
 !IF "$(ME_COM_LINK)" == ""
 ME_COM_LINK           = 1
 !ENDIF
+!IF "$(ME_COM_MATRIXSSL)" == ""
+ME_COM_MATRIXSSL      = 0
+!ENDIF
+!IF "$(ME_COM_MBEDTLS)" == ""
+ME_COM_MBEDTLS        = 0
+!ENDIF
 !IF "$(ME_COM_MPR)" == ""
 ME_COM_MPR            = 1
+!ENDIF
+!IF "$(ME_COM_NANOSSL)" == ""
+ME_COM_NANOSSL        = 0
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == ""
+ME_COM_OPENSSL        = 0
 !ENDIF
 !IF "$(ME_COM_OSDEP)" == ""
 ME_COM_OSDEP          = 1
@@ -61,6 +76,9 @@ ME_COM_VXWORKS        = 0
 ME_COM_WINSDK         = 1
 !ENDIF
 
+!IF "$(ME_COM_MPR)" == ""
+ME_COM_OPENSSL_PATH   = ""
+!ENDIF
 
 !IF "$(ME_COM_LIB)" == "1"
 ME_COM_COMPILER       = 1
@@ -68,6 +86,10 @@ ME_COM_COMPILER       = 1
 
 !IF "$(ME_COM_LINK)" == "1"
 ME_COM_COMPILER       = 1
+!ENDIF
+
+!IF "$(ME_COM_OPENSSL)" == "1"
+ME_COM_SSL            = 1
 !ENDIF
 
 !IF "$(ME_COM_RC)" == "1"
@@ -79,7 +101,7 @@ CC                    = cl
 LD                    = link
 RC                    = rc
 CFLAGS                = -nologo -GR- -W3 -Zi -Od -MDd
-DFLAGS                = -D_REENTRANT -D_MT -DME_COM_COMPILER=$(ME_COM_COMPILER) -DME_COM_LIB=$(ME_COM_LIB) -DME_COM_LINK=$(ME_COM_LINK) -DME_COM_MPR=$(ME_COM_MPR) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_RC=$(ME_COM_RC) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_VXWORKS=$(ME_COM_VXWORKS) -DME_COM_WINSDK=$(ME_COM_WINSDK) 
+DFLAGS                = -D_REENTRANT -D_MT -DME_COM_COMPILER=$(ME_COM_COMPILER) -DME_COM_EST=$(ME_COM_EST) -DME_COM_LIB=$(ME_COM_LIB) -DME_COM_LINK=$(ME_COM_LINK) -DME_COM_MATRIXSSL=$(ME_COM_MATRIXSSL) -DME_COM_MBEDTLS=$(ME_COM_MBEDTLS) -DME_COM_MPR=$(ME_COM_MPR) -DME_COM_NANOSSL=$(ME_COM_NANOSSL) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_RC=$(ME_COM_RC) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_VXWORKS=$(ME_COM_VXWORKS) -DME_COM_WINSDK=$(ME_COM_WINSDK) 
 IFLAGS                = -Ibuild\$(CONFIG)\inc
 LDFLAGS               = -nologo -nodefaultlib -incremental:no -debug -machine:$(ARCH)
 LIBPATHS              = "-libpath:$(BUILD)\bin"
@@ -105,6 +127,9 @@ ME_SRC_PREFIX         = $(ME_VAPP_PREFIX)\src
 
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http-server.exe
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http.exe
+!IF "$(ME_COM_SSL)" == "1"
+TARGETS               = $(TARGETS) build\$(CONFIG)\bin
+!ENDIF
 
 !IFNDEF SHOW
 .SILENT:
@@ -184,6 +209,7 @@ clean:
 	if exist "build\$(CONFIG)\bin\http.lib" del /Q "build\$(CONFIG)\bin\http.lib"
 	if exist "build\$(CONFIG)\bin\http.pdb" del /Q "build\$(CONFIG)\bin\http.pdb"
 	if exist "build\$(CONFIG)\bin\http.exp" del /Q "build\$(CONFIG)\bin\http.exp"
+	if exist "build\$(CONFIG)\bin" del /Q "build\$(CONFIG)\bin"
 	if exist "build\$(CONFIG)\bin\libhttp.dll" del /Q "build\$(CONFIG)\bin\libhttp.dll"
 	if exist "build\$(CONFIG)\bin\libhttp.lib" del /Q "build\$(CONFIG)\bin\libhttp.lib"
 	if exist "build\$(CONFIG)\bin\libhttp.pdb" del /Q "build\$(CONFIG)\bin\libhttp.pdb"
@@ -196,6 +222,7 @@ clean:
 	if exist "build\$(CONFIG)\bin\libpcre.lib" del /Q "build\$(CONFIG)\bin\libpcre.lib"
 	if exist "build\$(CONFIG)\bin\libpcre.pdb" del /Q "build\$(CONFIG)\bin\libpcre.pdb"
 	if exist "build\$(CONFIG)\bin\libpcre.exp" del /Q "build\$(CONFIG)\bin\libpcre.exp"
+	if exist "build\$(CONFIG)\bin\libmpr-openssl.lib" del /Q "build\$(CONFIG)\bin\libmpr-openssl.lib"
 
 #
 #   me.h
@@ -227,38 +254,87 @@ build\$(CONFIG)\inc\mpr.h: $(DEPS_3)
 	copy /Y /B src\mpr\mpr.h+modified build\$(CONFIG)\inc\mpr.h $(LOG)
 
 #
+#   openssl.obj
+#
+DEPS_4 = $(DEPS_4) build\$(CONFIG)\inc\mpr.h
+
+build\$(CONFIG)\obj\openssl.obj: \
+    src\mpr-openssl\openssl.c $(DEPS_4)
+	@echo .. [Compile] build\$(CONFIG)\obj\openssl.obj
+	"$(CC)" -c -Fo$(BUILD)\obj\openssl.obj -Fd$(BUILD)\obj\openssl.pdb $(CFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\mpr-openssl\openssl.c $(LOG)
+
+!IF "$(ME_COM_SSL)" == "1"
+!IF "$(ME_COM_OPENSSL)" == "1"
+#
+#   openssl
+#
+DEPS_5 = $(DEPS_5) build\$(CONFIG)\obj\openssl.obj
+
+build\$(CONFIG)\bin\libmpr-openssl.lib: $(DEPS_5)
+	@echo ..... [Link] build\$(CONFIG)\bin\libmpr-openssl.lib
+	"lib.exe" -nologo -out:$(BUILD)\bin\libmpr-openssl.lib "$(BUILD)\obj\openssl.obj" $(LOG)
+!ENDIF
+!ENDIF
+
+#
 #   mpr.h
 #
 
-src\mpr\mpr.h: $(DEPS_4)
+src\mpr\mpr.h: $(DEPS_6)
 
 #
 #   mprLib.obj
 #
-DEPS_5 = $(DEPS_5) src\mpr\mpr.h
+DEPS_7 = $(DEPS_7) src\mpr\mpr.h
 
 build\$(CONFIG)\obj\mprLib.obj: \
-    src\mpr\mprLib.c $(DEPS_5)
+    src\mpr\mprLib.c $(DEPS_7)
 	@echo .. [Compile] build\$(CONFIG)\obj\mprLib.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\mprLib.obj -Fd$(BUILD)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\mpr\mprLib.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\mprLib.obj -Fd$(BUILD)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\mpr\mprLib.c $(LOG)
 
 #
 #   libmpr
 #
-DEPS_6 = $(DEPS_6) build\$(CONFIG)\inc\osdep.h
-DEPS_6 = $(DEPS_6) build\$(CONFIG)\inc\mpr.h
-DEPS_6 = $(DEPS_6) build\$(CONFIG)\obj\mprLib.obj
+DEPS_8 = $(DEPS_8) build\$(CONFIG)\inc\osdep.h
+!IF "$(ME_COM_SSL)" == "1"
+!IF "$(ME_COM_OPENSSL)" == "1"
+DEPS_8 = $(DEPS_8) build\$(CONFIG)\bin\libmpr-openssl.lib
+!ENDIF
+!ENDIF
+DEPS_8 = $(DEPS_8) build\$(CONFIG)\inc\mpr.h
+DEPS_8 = $(DEPS_8) build\$(CONFIG)\obj\mprLib.obj
 
-build\$(CONFIG)\bin\libmpr.dll: $(DEPS_6)
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_8 = $(LIBS_8) libmpr-openssl.lib
+LIBPATHS_8 = $(LIBPATHS_8) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_8 = $(LIBS_8) libgdi32.lib
+LIBPATHS_8 = $(LIBPATHS_8) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_8 = $(LIBS_8) libeay32.lib
+LIBPATHS_8 = $(LIBPATHS_8) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_8 = $(LIBS_8) libssleay32.lib
+LIBPATHS_8 = $(LIBPATHS_8) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_8 = $(LIBS_8) libmpr-openssl.lib
+LIBPATHS_8 = $(LIBPATHS_8) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+
+build\$(CONFIG)\bin\libmpr.dll: $(DEPS_8)
 	@echo ..... [Link] build\$(CONFIG)\bin\libmpr.dll
-	"$(LD)" -dll -out:$(BUILD)\bin\libmpr.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\mprLib.obj" $(LIBS)  $(LOG)
+	"$(LD)" -dll -out:$(BUILD)\bin\libmpr.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS)  "$(BUILD)\obj\mprLib.obj" $(LIBPATHS_8) $(LIBS_8) $(LIBS_8) $(LIBS)  $(LOG)
 
 #
 #   pcre.h
 #
-DEPS_7 = $(DEPS_7) src\pcre\pcre.h
+DEPS_9 = $(DEPS_9) src\pcre\pcre.h
 
-build\$(CONFIG)\inc\pcre.h: $(DEPS_7)
+build\$(CONFIG)\inc\pcre.h: $(DEPS_9)
 	@echo ..... [Copy] build\$(CONFIG)\inc\pcre.h
 	if not exist "build\$(CONFIG)\inc" md "build\$(CONFIG)\inc"
 	copy /Y /B src\pcre\pcre.h+modified build\$(CONFIG)\inc\pcre.h $(LOG)
@@ -267,16 +343,16 @@ build\$(CONFIG)\inc\pcre.h: $(DEPS_7)
 #   pcre.h
 #
 
-src\pcre\pcre.h: $(DEPS_8)
+src\pcre\pcre.h: $(DEPS_10)
 
 #
 #   pcre.obj
 #
-DEPS_9 = $(DEPS_9) build\$(CONFIG)\inc\me.h
-DEPS_9 = $(DEPS_9) src\pcre\pcre.h
+DEPS_11 = $(DEPS_11) build\$(CONFIG)\inc\me.h
+DEPS_11 = $(DEPS_11) src\pcre\pcre.h
 
 build\$(CONFIG)\obj\pcre.obj: \
-    src\pcre\pcre.c $(DEPS_9)
+    src\pcre\pcre.c $(DEPS_11)
 	@echo .. [Compile] build\$(CONFIG)\obj\pcre.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\pcre.obj -Fd$(BUILD)\obj\pcre.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pcre\pcre.c $(LOG)
 
@@ -284,10 +360,10 @@ build\$(CONFIG)\obj\pcre.obj: \
 #
 #   libpcre
 #
-DEPS_10 = $(DEPS_10) build\$(CONFIG)\inc\pcre.h
-DEPS_10 = $(DEPS_10) build\$(CONFIG)\obj\pcre.obj
+DEPS_12 = $(DEPS_12) build\$(CONFIG)\inc\pcre.h
+DEPS_12 = $(DEPS_12) build\$(CONFIG)\obj\pcre.obj
 
-build\$(CONFIG)\bin\libpcre.dll: $(DEPS_10)
+build\$(CONFIG)\bin\libpcre.dll: $(DEPS_12)
 	@echo ..... [Link] build\$(CONFIG)\bin\libpcre.dll
 	"$(LD)" -dll -out:$(BUILD)\bin\libpcre.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\pcre.obj" $(LIBS)  $(LOG)
 !ENDIF
@@ -295,10 +371,10 @@ build\$(CONFIG)\bin\libpcre.dll: $(DEPS_10)
 #
 #   http.h
 #
-DEPS_11 = $(DEPS_11) src\http.h
-DEPS_11 = $(DEPS_11) build\$(CONFIG)\inc\mpr.h
+DEPS_13 = $(DEPS_13) src\http.h
+DEPS_13 = $(DEPS_13) build\$(CONFIG)\inc\mpr.h
 
-build\$(CONFIG)\inc\http.h: $(DEPS_11)
+build\$(CONFIG)\inc\http.h: $(DEPS_13)
 	@echo ..... [Copy] build\$(CONFIG)\inc\http.h
 	if not exist "build\$(CONFIG)\inc" md "build\$(CONFIG)\inc"
 	copy /Y /B src\http.h+modified build\$(CONFIG)\inc\http.h $(LOG)
@@ -307,465 +383,475 @@ build\$(CONFIG)\inc\http.h: $(DEPS_11)
 #   http.h
 #
 
-src\http.h: $(DEPS_12)
+src\http.h: $(DEPS_14)
 
 #
 #   actionHandler.obj
 #
-DEPS_13 = $(DEPS_13) src\http.h
+DEPS_15 = $(DEPS_15) src\http.h
 
 build\$(CONFIG)\obj\actionHandler.obj: \
-    src\actionHandler.c $(DEPS_13)
+    src\actionHandler.c $(DEPS_15)
 	@echo .. [Compile] build\$(CONFIG)\obj\actionHandler.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\actionHandler.obj -Fd$(BUILD)\obj\actionHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\actionHandler.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\actionHandler.obj -Fd$(BUILD)\obj\actionHandler.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\actionHandler.c $(LOG)
 
 #
 #   auth.obj
 #
-DEPS_14 = $(DEPS_14) src\http.h
+DEPS_16 = $(DEPS_16) src\http.h
 
 build\$(CONFIG)\obj\auth.obj: \
-    src\auth.c $(DEPS_14)
+    src\auth.c $(DEPS_16)
 	@echo .. [Compile] build\$(CONFIG)\obj\auth.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\auth.obj -Fd$(BUILD)\obj\auth.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\auth.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\auth.obj -Fd$(BUILD)\obj\auth.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\auth.c $(LOG)
 
 #
 #   basic.obj
 #
-DEPS_15 = $(DEPS_15) src\http.h
+DEPS_17 = $(DEPS_17) src\http.h
 
 build\$(CONFIG)\obj\basic.obj: \
-    src\basic.c $(DEPS_15)
+    src\basic.c $(DEPS_17)
 	@echo .. [Compile] build\$(CONFIG)\obj\basic.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\basic.obj -Fd$(BUILD)\obj\basic.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\basic.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\basic.obj -Fd$(BUILD)\obj\basic.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\basic.c $(LOG)
 
 #
 #   cache.obj
 #
-DEPS_16 = $(DEPS_16) src\http.h
+DEPS_18 = $(DEPS_18) src\http.h
 
 build\$(CONFIG)\obj\cache.obj: \
-    src\cache.c $(DEPS_16)
+    src\cache.c $(DEPS_18)
 	@echo .. [Compile] build\$(CONFIG)\obj\cache.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\cache.obj -Fd$(BUILD)\obj\cache.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\cache.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\cache.obj -Fd$(BUILD)\obj\cache.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\cache.c $(LOG)
 
 #
 #   chunkFilter.obj
 #
-DEPS_17 = $(DEPS_17) src\http.h
+DEPS_19 = $(DEPS_19) src\http.h
 
 build\$(CONFIG)\obj\chunkFilter.obj: \
-    src\chunkFilter.c $(DEPS_17)
+    src\chunkFilter.c $(DEPS_19)
 	@echo .. [Compile] build\$(CONFIG)\obj\chunkFilter.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\chunkFilter.obj -Fd$(BUILD)\obj\chunkFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\chunkFilter.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\chunkFilter.obj -Fd$(BUILD)\obj\chunkFilter.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\chunkFilter.c $(LOG)
 
 #
 #   client.obj
 #
-DEPS_18 = $(DEPS_18) src\http.h
+DEPS_20 = $(DEPS_20) src\http.h
 
 build\$(CONFIG)\obj\client.obj: \
-    src\client.c $(DEPS_18)
+    src\client.c $(DEPS_20)
 	@echo .. [Compile] build\$(CONFIG)\obj\client.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\client.obj -Fd$(BUILD)\obj\client.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\client.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\client.obj -Fd$(BUILD)\obj\client.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\client.c $(LOG)
 
 #
 #   config.obj
 #
-DEPS_19 = $(DEPS_19) src\http.h
+DEPS_21 = $(DEPS_21) src\http.h
 
 build\$(CONFIG)\obj\config.obj: \
-    src\config.c $(DEPS_19)
+    src\config.c $(DEPS_21)
 	@echo .. [Compile] build\$(CONFIG)\obj\config.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\config.obj -Fd$(BUILD)\obj\config.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\config.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\config.obj -Fd$(BUILD)\obj\config.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\config.c $(LOG)
 
 #
 #   conn.obj
 #
-DEPS_20 = $(DEPS_20) src\http.h
+DEPS_22 = $(DEPS_22) src\http.h
 
 build\$(CONFIG)\obj\conn.obj: \
-    src\conn.c $(DEPS_20)
+    src\conn.c $(DEPS_22)
 	@echo .. [Compile] build\$(CONFIG)\obj\conn.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\conn.obj -Fd$(BUILD)\obj\conn.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\conn.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\conn.obj -Fd$(BUILD)\obj\conn.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\conn.c $(LOG)
 
 #
 #   digest.obj
 #
-DEPS_21 = $(DEPS_21) src\http.h
+DEPS_23 = $(DEPS_23) src\http.h
 
 build\$(CONFIG)\obj\digest.obj: \
-    src\digest.c $(DEPS_21)
+    src\digest.c $(DEPS_23)
 	@echo .. [Compile] build\$(CONFIG)\obj\digest.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\digest.obj -Fd$(BUILD)\obj\digest.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\digest.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\digest.obj -Fd$(BUILD)\obj\digest.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\digest.c $(LOG)
 
 #
 #   dirHandler.obj
 #
-DEPS_22 = $(DEPS_22) src\http.h
+DEPS_24 = $(DEPS_24) src\http.h
 
 build\$(CONFIG)\obj\dirHandler.obj: \
-    src\dirHandler.c $(DEPS_22)
+    src\dirHandler.c $(DEPS_24)
 	@echo .. [Compile] build\$(CONFIG)\obj\dirHandler.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\dirHandler.obj -Fd$(BUILD)\obj\dirHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\dirHandler.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\dirHandler.obj -Fd$(BUILD)\obj\dirHandler.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\dirHandler.c $(LOG)
 
 #
 #   endpoint.obj
 #
-DEPS_23 = $(DEPS_23) src\http.h
-DEPS_23 = $(DEPS_23) build\$(CONFIG)\inc\pcre.h
+DEPS_25 = $(DEPS_25) src\http.h
+DEPS_25 = $(DEPS_25) build\$(CONFIG)\inc\pcre.h
 
 build\$(CONFIG)\obj\endpoint.obj: \
-    src\endpoint.c $(DEPS_23)
+    src\endpoint.c $(DEPS_25)
 	@echo .. [Compile] build\$(CONFIG)\obj\endpoint.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\endpoint.obj -Fd$(BUILD)\obj\endpoint.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\endpoint.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\endpoint.obj -Fd$(BUILD)\obj\endpoint.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\endpoint.c $(LOG)
 
 #
 #   error.obj
 #
-DEPS_24 = $(DEPS_24) src\http.h
+DEPS_26 = $(DEPS_26) src\http.h
 
 build\$(CONFIG)\obj\error.obj: \
-    src\error.c $(DEPS_24)
+    src\error.c $(DEPS_26)
 	@echo .. [Compile] build\$(CONFIG)\obj\error.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\error.obj -Fd$(BUILD)\obj\error.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\error.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\error.obj -Fd$(BUILD)\obj\error.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\error.c $(LOG)
 
 #
 #   fileHandler.obj
 #
-DEPS_25 = $(DEPS_25) src\http.h
+DEPS_27 = $(DEPS_27) src\http.h
 
 build\$(CONFIG)\obj\fileHandler.obj: \
-    src\fileHandler.c $(DEPS_25)
+    src\fileHandler.c $(DEPS_27)
 	@echo .. [Compile] build\$(CONFIG)\obj\fileHandler.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\fileHandler.obj -Fd$(BUILD)\obj\fileHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\fileHandler.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\fileHandler.obj -Fd$(BUILD)\obj\fileHandler.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\fileHandler.c $(LOG)
 
 #
 #   host.obj
 #
-DEPS_26 = $(DEPS_26) src\http.h
-DEPS_26 = $(DEPS_26) build\$(CONFIG)\inc\pcre.h
+DEPS_28 = $(DEPS_28) src\http.h
+DEPS_28 = $(DEPS_28) build\$(CONFIG)\inc\pcre.h
 
 build\$(CONFIG)\obj\host.obj: \
-    src\host.c $(DEPS_26)
+    src\host.c $(DEPS_28)
 	@echo .. [Compile] build\$(CONFIG)\obj\host.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\host.obj -Fd$(BUILD)\obj\host.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\host.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\host.obj -Fd$(BUILD)\obj\host.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\host.c $(LOG)
 
 #
 #   monitor.obj
 #
-DEPS_27 = $(DEPS_27) src\http.h
+DEPS_29 = $(DEPS_29) src\http.h
 
 build\$(CONFIG)\obj\monitor.obj: \
-    src\monitor.c $(DEPS_27)
+    src\monitor.c $(DEPS_29)
 	@echo .. [Compile] build\$(CONFIG)\obj\monitor.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\monitor.obj -Fd$(BUILD)\obj\monitor.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\monitor.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\monitor.obj -Fd$(BUILD)\obj\monitor.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\monitor.c $(LOG)
 
 #
 #   netConnector.obj
 #
-DEPS_28 = $(DEPS_28) src\http.h
+DEPS_30 = $(DEPS_30) src\http.h
 
 build\$(CONFIG)\obj\netConnector.obj: \
-    src\netConnector.c $(DEPS_28)
+    src\netConnector.c $(DEPS_30)
 	@echo .. [Compile] build\$(CONFIG)\obj\netConnector.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\netConnector.obj -Fd$(BUILD)\obj\netConnector.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\netConnector.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\netConnector.obj -Fd$(BUILD)\obj\netConnector.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\netConnector.c $(LOG)
 
 #
 #   packet.obj
 #
-DEPS_29 = $(DEPS_29) src\http.h
+DEPS_31 = $(DEPS_31) src\http.h
 
 build\$(CONFIG)\obj\packet.obj: \
-    src\packet.c $(DEPS_29)
+    src\packet.c $(DEPS_31)
 	@echo .. [Compile] build\$(CONFIG)\obj\packet.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\packet.obj -Fd$(BUILD)\obj\packet.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\packet.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\packet.obj -Fd$(BUILD)\obj\packet.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\packet.c $(LOG)
 
 #
 #   pam.obj
 #
-DEPS_30 = $(DEPS_30) src\http.h
+DEPS_32 = $(DEPS_32) src\http.h
 
 build\$(CONFIG)\obj\pam.obj: \
-    src\pam.c $(DEPS_30)
+    src\pam.c $(DEPS_32)
 	@echo .. [Compile] build\$(CONFIG)\obj\pam.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\pam.obj -Fd$(BUILD)\obj\pam.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pam.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\pam.obj -Fd$(BUILD)\obj\pam.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\pam.c $(LOG)
 
 #
 #   passHandler.obj
 #
-DEPS_31 = $(DEPS_31) src\http.h
+DEPS_33 = $(DEPS_33) src\http.h
 
 build\$(CONFIG)\obj\passHandler.obj: \
-    src\passHandler.c $(DEPS_31)
+    src\passHandler.c $(DEPS_33)
 	@echo .. [Compile] build\$(CONFIG)\obj\passHandler.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\passHandler.obj -Fd$(BUILD)\obj\passHandler.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\passHandler.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\passHandler.obj -Fd$(BUILD)\obj\passHandler.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\passHandler.c $(LOG)
 
 #
 #   pipeline.obj
 #
-DEPS_32 = $(DEPS_32) src\http.h
+DEPS_34 = $(DEPS_34) src\http.h
 
 build\$(CONFIG)\obj\pipeline.obj: \
-    src\pipeline.c $(DEPS_32)
+    src\pipeline.c $(DEPS_34)
 	@echo .. [Compile] build\$(CONFIG)\obj\pipeline.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\pipeline.obj -Fd$(BUILD)\obj\pipeline.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pipeline.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\pipeline.obj -Fd$(BUILD)\obj\pipeline.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\pipeline.c $(LOG)
 
 #
 #   queue.obj
 #
-DEPS_33 = $(DEPS_33) src\http.h
+DEPS_35 = $(DEPS_35) src\http.h
 
 build\$(CONFIG)\obj\queue.obj: \
-    src\queue.c $(DEPS_33)
+    src\queue.c $(DEPS_35)
 	@echo .. [Compile] build\$(CONFIG)\obj\queue.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\queue.obj -Fd$(BUILD)\obj\queue.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\queue.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\queue.obj -Fd$(BUILD)\obj\queue.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\queue.c $(LOG)
 
 #
 #   rangeFilter.obj
 #
-DEPS_34 = $(DEPS_34) src\http.h
+DEPS_36 = $(DEPS_36) src\http.h
 
 build\$(CONFIG)\obj\rangeFilter.obj: \
-    src\rangeFilter.c $(DEPS_34)
+    src\rangeFilter.c $(DEPS_36)
 	@echo .. [Compile] build\$(CONFIG)\obj\rangeFilter.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\rangeFilter.obj -Fd$(BUILD)\obj\rangeFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\rangeFilter.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\rangeFilter.obj -Fd$(BUILD)\obj\rangeFilter.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\rangeFilter.c $(LOG)
 
 #
 #   route.obj
 #
-DEPS_35 = $(DEPS_35) src\http.h
-DEPS_35 = $(DEPS_35) build\$(CONFIG)\inc\pcre.h
+DEPS_37 = $(DEPS_37) src\http.h
+DEPS_37 = $(DEPS_37) build\$(CONFIG)\inc\pcre.h
 
 build\$(CONFIG)\obj\route.obj: \
-    src\route.c $(DEPS_35)
+    src\route.c $(DEPS_37)
 	@echo .. [Compile] build\$(CONFIG)\obj\route.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\route.obj -Fd$(BUILD)\obj\route.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\route.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\route.obj -Fd$(BUILD)\obj\route.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\route.c $(LOG)
 
 #
 #   rx.obj
 #
-DEPS_36 = $(DEPS_36) src\http.h
+DEPS_38 = $(DEPS_38) src\http.h
 
 build\$(CONFIG)\obj\rx.obj: \
-    src\rx.c $(DEPS_36)
+    src\rx.c $(DEPS_38)
 	@echo .. [Compile] build\$(CONFIG)\obj\rx.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\rx.obj -Fd$(BUILD)\obj\rx.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\rx.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\rx.obj -Fd$(BUILD)\obj\rx.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\rx.c $(LOG)
 
 #
 #   sendConnector.obj
 #
-DEPS_37 = $(DEPS_37) src\http.h
+DEPS_39 = $(DEPS_39) src\http.h
 
 build\$(CONFIG)\obj\sendConnector.obj: \
-    src\sendConnector.c $(DEPS_37)
+    src\sendConnector.c $(DEPS_39)
 	@echo .. [Compile] build\$(CONFIG)\obj\sendConnector.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\sendConnector.obj -Fd$(BUILD)\obj\sendConnector.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\sendConnector.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\sendConnector.obj -Fd$(BUILD)\obj\sendConnector.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\sendConnector.c $(LOG)
 
 #
 #   service.obj
 #
-DEPS_38 = $(DEPS_38) src\http.h
+DEPS_40 = $(DEPS_40) src\http.h
 
 build\$(CONFIG)\obj\service.obj: \
-    src\service.c $(DEPS_38)
+    src\service.c $(DEPS_40)
 	@echo .. [Compile] build\$(CONFIG)\obj\service.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\service.obj -Fd$(BUILD)\obj\service.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\service.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\service.obj -Fd$(BUILD)\obj\service.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\service.c $(LOG)
 
 #
 #   session.obj
 #
-DEPS_39 = $(DEPS_39) src\http.h
+DEPS_41 = $(DEPS_41) src\http.h
 
 build\$(CONFIG)\obj\session.obj: \
-    src\session.c $(DEPS_39)
+    src\session.c $(DEPS_41)
 	@echo .. [Compile] build\$(CONFIG)\obj\session.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\session.obj -Fd$(BUILD)\obj\session.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\session.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\session.obj -Fd$(BUILD)\obj\session.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\session.c $(LOG)
 
 #
 #   stage.obj
 #
-DEPS_40 = $(DEPS_40) src\http.h
+DEPS_42 = $(DEPS_42) src\http.h
 
 build\$(CONFIG)\obj\stage.obj: \
-    src\stage.c $(DEPS_40)
+    src\stage.c $(DEPS_42)
 	@echo .. [Compile] build\$(CONFIG)\obj\stage.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\stage.obj -Fd$(BUILD)\obj\stage.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\stage.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\stage.obj -Fd$(BUILD)\obj\stage.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\stage.c $(LOG)
 
 #
 #   trace.obj
 #
-DEPS_41 = $(DEPS_41) src\http.h
+DEPS_43 = $(DEPS_43) src\http.h
 
 build\$(CONFIG)\obj\trace.obj: \
-    src\trace.c $(DEPS_41)
+    src\trace.c $(DEPS_43)
 	@echo .. [Compile] build\$(CONFIG)\obj\trace.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\trace.obj -Fd$(BUILD)\obj\trace.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\trace.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\trace.obj -Fd$(BUILD)\obj\trace.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\trace.c $(LOG)
 
 #
 #   tx.obj
 #
-DEPS_42 = $(DEPS_42) src\http.h
+DEPS_44 = $(DEPS_44) src\http.h
 
 build\$(CONFIG)\obj\tx.obj: \
-    src\tx.c $(DEPS_42)
+    src\tx.c $(DEPS_44)
 	@echo .. [Compile] build\$(CONFIG)\obj\tx.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\tx.obj -Fd$(BUILD)\obj\tx.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\tx.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\tx.obj -Fd$(BUILD)\obj\tx.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\tx.c $(LOG)
 
 #
 #   uploadFilter.obj
 #
-DEPS_43 = $(DEPS_43) src\http.h
+DEPS_45 = $(DEPS_45) src\http.h
 
 build\$(CONFIG)\obj\uploadFilter.obj: \
-    src\uploadFilter.c $(DEPS_43)
+    src\uploadFilter.c $(DEPS_45)
 	@echo .. [Compile] build\$(CONFIG)\obj\uploadFilter.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\uploadFilter.obj -Fd$(BUILD)\obj\uploadFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\uploadFilter.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\uploadFilter.obj -Fd$(BUILD)\obj\uploadFilter.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\uploadFilter.c $(LOG)
 
 #
 #   uri.obj
 #
-DEPS_44 = $(DEPS_44) src\http.h
+DEPS_46 = $(DEPS_46) src\http.h
 
 build\$(CONFIG)\obj\uri.obj: \
-    src\uri.c $(DEPS_44)
+    src\uri.c $(DEPS_46)
 	@echo .. [Compile] build\$(CONFIG)\obj\uri.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\uri.obj -Fd$(BUILD)\obj\uri.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\uri.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\uri.obj -Fd$(BUILD)\obj\uri.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\uri.c $(LOG)
 
 #
 #   user.obj
 #
-DEPS_45 = $(DEPS_45) src\http.h
+DEPS_47 = $(DEPS_47) src\http.h
 
 build\$(CONFIG)\obj\user.obj: \
-    src\user.c $(DEPS_45)
+    src\user.c $(DEPS_47)
 	@echo .. [Compile] build\$(CONFIG)\obj\user.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\user.obj -Fd$(BUILD)\obj\user.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\user.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\user.obj -Fd$(BUILD)\obj\user.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\user.c $(LOG)
 
 #
 #   var.obj
 #
-DEPS_46 = $(DEPS_46) src\http.h
+DEPS_48 = $(DEPS_48) src\http.h
 
 build\$(CONFIG)\obj\var.obj: \
-    src\var.c $(DEPS_46)
+    src\var.c $(DEPS_48)
 	@echo .. [Compile] build\$(CONFIG)\obj\var.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\var.obj -Fd$(BUILD)\obj\var.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\var.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\var.obj -Fd$(BUILD)\obj\var.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\var.c $(LOG)
 
 #
 #   webSockFilter.obj
 #
-DEPS_47 = $(DEPS_47) src\http.h
+DEPS_49 = $(DEPS_49) src\http.h
 
 build\$(CONFIG)\obj\webSockFilter.obj: \
-    src\webSockFilter.c $(DEPS_47)
+    src\webSockFilter.c $(DEPS_49)
 	@echo .. [Compile] build\$(CONFIG)\obj\webSockFilter.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\webSockFilter.obj -Fd$(BUILD)\obj\webSockFilter.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\webSockFilter.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\webSockFilter.obj -Fd$(BUILD)\obj\webSockFilter.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\webSockFilter.c $(LOG)
 
 #
 #   libhttp
 #
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\bin\libmpr.dll
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\bin\libmpr.dll
 !IF "$(ME_COM_PCRE)" == "1"
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\bin\libpcre.dll
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\bin\libpcre.dll
 !ENDIF
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\inc\http.h
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\actionHandler.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\auth.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\basic.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\cache.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\chunkFilter.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\client.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\config.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\conn.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\digest.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\dirHandler.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\endpoint.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\error.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\fileHandler.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\host.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\monitor.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\netConnector.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\packet.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\pam.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\passHandler.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\pipeline.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\queue.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\rangeFilter.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\route.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\rx.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\sendConnector.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\service.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\session.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\stage.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\trace.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\tx.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\uploadFilter.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\uri.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\user.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\var.obj
-DEPS_48 = $(DEPS_48) build\$(CONFIG)\obj\webSockFilter.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\inc\http.h
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\actionHandler.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\auth.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\basic.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\cache.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\chunkFilter.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\client.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\config.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\conn.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\digest.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\dirHandler.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\endpoint.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\error.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\fileHandler.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\host.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\monitor.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\netConnector.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\packet.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\pam.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\passHandler.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\pipeline.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\queue.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\rangeFilter.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\route.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\rx.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\sendConnector.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\service.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\session.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\stage.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\trace.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\tx.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\uploadFilter.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\uri.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\user.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\var.obj
+DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\webSockFilter.obj
 
-LIBS_48 = $(LIBS_48) libmpr.lib
-!IF "$(ME_COM_PCRE)" == "1"
-LIBS_48 = $(LIBS_48) libpcre.lib
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_50 = $(LIBS_50) libmpr-openssl.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_50 = $(LIBS_50) libgdi32.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_50 = $(LIBS_50) libeay32.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_50 = $(LIBS_50) libssleay32.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+LIBS_50 = $(LIBS_50) libmpr.lib
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_50 = $(LIBS_50) libmpr-openssl.lib
+LIBPATHS_50 = $(LIBPATHS_50) -libpath:$(ME_COM_OPENSSL_PATH)
 !ENDIF
 !IF "$(ME_COM_PCRE)" == "1"
-LIBS_48 = $(LIBS_48) libpcre.lib
+LIBS_50 = $(LIBS_50) libpcre.lib
 !ENDIF
-LIBS_48 = $(LIBS_48) libmpr.lib
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_50 = $(LIBS_50) libpcre.lib
+!ENDIF
+LIBS_50 = $(LIBS_50) libmpr.lib
 
-build\$(CONFIG)\bin\libhttp.dll: $(DEPS_48)
+build\$(CONFIG)\bin\libhttp.dll: $(DEPS_50)
 	@echo ..... [Link] build\$(CONFIG)\bin\libhttp.dll
-	"$(LD)" -dll -out:$(BUILD)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\actionHandler.obj" "$(BUILD)\obj\auth.obj" "$(BUILD)\obj\basic.obj" "$(BUILD)\obj\cache.obj" "$(BUILD)\obj\chunkFilter.obj" "$(BUILD)\obj\client.obj" "$(BUILD)\obj\config.obj" "$(BUILD)\obj\conn.obj" "$(BUILD)\obj\digest.obj" "$(BUILD)\obj\dirHandler.obj" "$(BUILD)\obj\endpoint.obj" "$(BUILD)\obj\error.obj" "$(BUILD)\obj\fileHandler.obj" "$(BUILD)\obj\host.obj" "$(BUILD)\obj\monitor.obj" "$(BUILD)\obj\netConnector.obj" "$(BUILD)\obj\packet.obj" "$(BUILD)\obj\pam.obj" "$(BUILD)\obj\passHandler.obj" "$(BUILD)\obj\pipeline.obj" "$(BUILD)\obj\queue.obj" "$(BUILD)\obj\rangeFilter.obj" "$(BUILD)\obj\route.obj" "$(BUILD)\obj\rx.obj" "$(BUILD)\obj\sendConnector.obj" "$(BUILD)\obj\service.obj" "$(BUILD)\obj\session.obj" "$(BUILD)\obj\stage.obj" "$(BUILD)\obj\trace.obj" "$(BUILD)\obj\tx.obj" "$(BUILD)\obj\uploadFilter.obj" "$(BUILD)\obj\uri.obj" "$(BUILD)\obj\user.obj" "$(BUILD)\obj\var.obj" "$(BUILD)\obj\webSockFilter.obj" $(LIBPATHS_48) $(LIBS_48) $(LIBS_48) $(LIBS)  $(LOG)
+	"$(LD)" -dll -out:$(BUILD)\bin\libhttp.dll -entry:$(ENTRY) $(LDFLAGS) $(LIBPATHS)  "$(BUILD)\obj\actionHandler.obj" "$(BUILD)\obj\auth.obj" "$(BUILD)\obj\basic.obj" "$(BUILD)\obj\cache.obj" "$(BUILD)\obj\chunkFilter.obj" "$(BUILD)\obj\client.obj" "$(BUILD)\obj\config.obj" "$(BUILD)\obj\conn.obj" "$(BUILD)\obj\digest.obj" "$(BUILD)\obj\dirHandler.obj" "$(BUILD)\obj\endpoint.obj" "$(BUILD)\obj\error.obj" "$(BUILD)\obj\fileHandler.obj" "$(BUILD)\obj\host.obj" "$(BUILD)\obj\monitor.obj" "$(BUILD)\obj\netConnector.obj" "$(BUILD)\obj\packet.obj" "$(BUILD)\obj\pam.obj" "$(BUILD)\obj\passHandler.obj" "$(BUILD)\obj\pipeline.obj" "$(BUILD)\obj\queue.obj" "$(BUILD)\obj\rangeFilter.obj" "$(BUILD)\obj\route.obj" "$(BUILD)\obj\rx.obj" "$(BUILD)\obj\sendConnector.obj" "$(BUILD)\obj\service.obj" "$(BUILD)\obj\session.obj" "$(BUILD)\obj\stage.obj" "$(BUILD)\obj\trace.obj" "$(BUILD)\obj\tx.obj" "$(BUILD)\obj\uploadFilter.obj" "$(BUILD)\obj\uri.obj" "$(BUILD)\obj\user.obj" "$(BUILD)\obj\var.obj" "$(BUILD)\obj\webSockFilter.obj" $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS)  $(LOG)
 
 #
 #   http-server.obj
 #
-DEPS_49 = $(DEPS_49) build\$(CONFIG)\inc\http.h
+DEPS_51 = $(DEPS_51) build\$(CONFIG)\inc\http.h
 
 build\$(CONFIG)\obj\http-server.obj: \
-    test\http-server.c $(DEPS_49)
+    test\http-server.c $(DEPS_51)
 	@echo .. [Compile] build\$(CONFIG)\obj\http-server.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\http-server.obj -Fd$(BUILD)\obj\http-server.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) test\http-server.c $(LOG)
+	"$(CC)" -c -Fo$(BUILD)\obj\http-server.obj -Fd$(BUILD)\obj\http-server.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" test\http-server.c $(LOG)
 
 #
 #   http-server
 #
-DEPS_50 = $(DEPS_50) build\$(CONFIG)\bin\libhttp.dll
-DEPS_50 = $(DEPS_50) build\$(CONFIG)\obj\http-server.obj
-
-LIBS_50 = $(LIBS_50) libmpr.lib
-!IF "$(ME_COM_PCRE)" == "1"
-LIBS_50 = $(LIBS_50) libpcre.lib
-!ENDIF
-LIBS_50 = $(LIBS_50) libhttp.lib
-!IF "$(ME_COM_PCRE)" == "1"
-LIBS_50 = $(LIBS_50) libpcre.lib
-!ENDIF
-LIBS_50 = $(LIBS_50) libmpr.lib
-
-build\$(CONFIG)\bin\http-server.exe: $(DEPS_50)
-	@echo ..... [Link] build\$(CONFIG)\bin\http-server.exe
-	"$(LD)" -nologo -out:$(BUILD)\bin\http-server.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\http-server.obj" $(LIBPATHS_50) $(LIBS_50) $(LIBS_50) $(LIBS)  $(LOG)
-
-#
-#   http.obj
-#
-DEPS_51 = $(DEPS_51) src\http.h
-
-build\$(CONFIG)\obj\http.obj: \
-    src\http.c $(DEPS_51)
-	@echo .. [Compile] build\$(CONFIG)\obj\http.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\http.obj -Fd$(BUILD)\obj\http.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\http.c $(LOG)
-
-#
-#   httpcmd
-#
 DEPS_52 = $(DEPS_52) build\$(CONFIG)\bin\libhttp.dll
-DEPS_52 = $(DEPS_52) build\$(CONFIG)\obj\http.obj
+DEPS_52 = $(DEPS_52) build\$(CONFIG)\obj\http-server.obj
 
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_52 = $(LIBS_52) libmpr-openssl.lib
+LIBPATHS_52 = $(LIBPATHS_52) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_52 = $(LIBS_52) libgdi32.lib
+LIBPATHS_52 = $(LIBPATHS_52) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_52 = $(LIBS_52) libeay32.lib
+LIBPATHS_52 = $(LIBPATHS_52) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_52 = $(LIBS_52) libssleay32.lib
+LIBPATHS_52 = $(LIBPATHS_52) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
 LIBS_52 = $(LIBS_52) libmpr.lib
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_52 = $(LIBS_52) libmpr-openssl.lib
+LIBPATHS_52 = $(LIBPATHS_52) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
 !IF "$(ME_COM_PCRE)" == "1"
 LIBS_52 = $(LIBS_52) libpcre.lib
 !ENDIF
@@ -775,26 +861,76 @@ LIBS_52 = $(LIBS_52) libpcre.lib
 !ENDIF
 LIBS_52 = $(LIBS_52) libmpr.lib
 
-build\$(CONFIG)\bin\http.exe: $(DEPS_52)
+build\$(CONFIG)\bin\http-server.exe: $(DEPS_52)
+	@echo ..... [Link] build\$(CONFIG)\bin\http-server.exe
+	"$(LD)" -nologo -out:$(BUILD)\bin\http-server.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS)  "$(BUILD)\obj\http-server.obj" $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS)  $(LOG)
+
+#
+#   http.obj
+#
+DEPS_53 = $(DEPS_53) src\http.h
+
+build\$(CONFIG)\obj\http.obj: \
+    src\http.c $(DEPS_53)
+	@echo .. [Compile] build\$(CONFIG)\obj\http.obj
+	"$(CC)" -c -Fo$(BUILD)\obj\http.obj -Fd$(BUILD)\obj\http.pdb $(CFLAGS) $(DFLAGS) -DME_COM_OPENSSL_PATH="$(ME_COM_OPENSSL_PATH)" $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\include" src\http.c $(LOG)
+
+#
+#   httpcmd
+#
+DEPS_54 = $(DEPS_54) build\$(CONFIG)\bin\libhttp.dll
+DEPS_54 = $(DEPS_54) build\$(CONFIG)\obj\http.obj
+
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_54 = $(LIBS_54) libmpr-openssl.lib
+LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_54 = $(LIBS_54) libgdi32.lib
+LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_54 = $(LIBS_54) libeay32.lib
+LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_54 = $(LIBS_54) libssleay32.lib
+LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+LIBS_54 = $(LIBS_54) libmpr.lib
+!IF "$(ME_COM_OPENSSL)" == "1"
+LIBS_54 = $(LIBS_54) libmpr-openssl.lib
+LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
+!ENDIF
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_54 = $(LIBS_54) libpcre.lib
+!ENDIF
+LIBS_54 = $(LIBS_54) libhttp.lib
+!IF "$(ME_COM_PCRE)" == "1"
+LIBS_54 = $(LIBS_54) libpcre.lib
+!ENDIF
+LIBS_54 = $(LIBS_54) libmpr.lib
+
+build\$(CONFIG)\bin\http.exe: $(DEPS_54)
 	@echo ..... [Link] build\$(CONFIG)\bin\http.exe
-	"$(LD)" -nologo -out:$(BUILD)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS) "$(BUILD)\obj\http.obj" $(LIBPATHS_52) $(LIBS_52) $(LIBS_52) $(LIBS)  $(LOG)
+	"$(LD)" -nologo -out:$(BUILD)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS)  "$(BUILD)\obj\http.obj" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS)  $(LOG)
 
 !IF "$(ME_COM_SSL)" == "1"
 #
 #   install-certs
 #
-DEPS_53 = $(DEPS_53) src\certs\samples\ca.crt
-DEPS_53 = $(DEPS_53) src\certs\samples\ca.key
-DEPS_53 = $(DEPS_53) src\certs\samples\dh.pem
-DEPS_53 = $(DEPS_53) src\certs\samples\ec.crt
-DEPS_53 = $(DEPS_53) src\certs\samples\ec.key
-DEPS_53 = $(DEPS_53) src\certs\samples\roots.crt
-DEPS_53 = $(DEPS_53) src\certs\samples\self.crt
-DEPS_53 = $(DEPS_53) src\certs\samples\self.key
-DEPS_53 = $(DEPS_53) src\certs\samples\test.crt
-DEPS_53 = $(DEPS_53) src\certs\samples\test.key
+DEPS_55 = $(DEPS_55) src\certs\samples\ca.crt
+DEPS_55 = $(DEPS_55) src\certs\samples\ca.key
+DEPS_55 = $(DEPS_55) src\certs\samples\dh.pem
+DEPS_55 = $(DEPS_55) src\certs\samples\ec.crt
+DEPS_55 = $(DEPS_55) src\certs\samples\ec.key
+DEPS_55 = $(DEPS_55) src\certs\samples\roots.crt
+DEPS_55 = $(DEPS_55) src\certs\samples\self.crt
+DEPS_55 = $(DEPS_55) src\certs\samples\self.key
+DEPS_55 = $(DEPS_55) src\certs\samples\test.crt
+DEPS_55 = $(DEPS_55) src\certs\samples\test.key
 
-build\$(CONFIG)\bin: $(DEPS_53)
+build\$(CONFIG)\bin: $(DEPS_55)
 	@echo ..... [Copy] build\$(CONFIG)\bin
 	if not exist "build\$(CONFIG)\bin" md "build\$(CONFIG)\bin"
 	copy /Y /B src\certs\samples\ca.crt+modified build\$(CONFIG)\bin\ca.crt $(LOG)
@@ -807,26 +943,5 @@ build\$(CONFIG)\bin: $(DEPS_53)
 	copy /Y /B src\certs\samples\self.key+modified build\$(CONFIG)\bin\self.key $(LOG)
 	copy /Y /B src\certs\samples\test.crt+modified build\$(CONFIG)\bin\test.crt $(LOG)
 	copy /Y /B src\certs\samples\test.key+modified build\$(CONFIG)\bin\test.key $(LOG)
-!ENDIF
-
-#
-#   openssl.obj
-#
-DEPS_54 = $(DEPS_54) build\$(CONFIG)\inc\mpr.h
-
-build\$(CONFIG)\obj\openssl.obj: \
-    src\mpr-openssl\openssl.c $(DEPS_54)
-	@echo .. [Compile] build\$(CONFIG)\obj\openssl.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\openssl.obj -Fd$(BUILD)\obj\openssl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\mpr-openssl\openssl.c $(LOG)
-
-!IF "$(ME_COM_SSL)" == "1"
-#
-#   openssl
-#
-DEPS_55 = $(DEPS_55) build\$(CONFIG)\obj\openssl.obj
-
-build\$(CONFIG)\bin\libmpr-openssl.lib: $(DEPS_55)
-	@echo ..... [Link] build\$(CONFIG)\bin\libmpr-openssl.lib
-	"lib.exe" -nologo -out:$(BUILD)\bin\libmpr-openssl.lib "$(BUILD)\obj\openssl.obj" $(LOG)
 !ENDIF
 

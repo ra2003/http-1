@@ -10,6 +10,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmpr", "http-windows-defa
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
+		{0B1E93AB-39C6-4871-B7E0-056E4D0630C6} = {0B1E93AB-39C6-4871-B7E0-056E4D0630C6}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
 		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
 	EndProjectSection
 EndProject
@@ -26,6 +29,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhttp", "http-windows-def
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
+		{0B1E93AB-39C6-4871-B7E0-056E4D0630C6} = {0B1E93AB-39C6-4871-B7E0-056E4D0630C6}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
 		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
@@ -38,6 +44,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http-server", "http-windows-default\http-server.vcxproj", "{A1E9FC3D-94B6-45CD-8CCE-31BEC6CB5CDA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{0B1E93AB-39C6-4871-B7E0-056E4D0630C6} = {0B1E93AB-39C6-4871-B7E0-056E4D0630C6}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
@@ -57,6 +66,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "httpcmd", "http-windows-def
 		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
+		{0B1E93AB-39C6-4871-B7E0-056E4D0630C6} = {0B1E93AB-39C6-4871-B7E0-056E4D0630C6}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
 		{D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A} = {D0B6BE03-B4B0-4CCF-B01D-3777DCDB611A}
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
@@ -67,6 +79,22 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "httpcmd", "http-windows-def
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{AF03968D-A485-4710-A544-7B72280D1444} = {AF03968D-A485-4710-A544-7B72280D1444}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "install-certs", "http-windows-default\install-certs.vcxproj", "{D7AE8D85-D900-42A2-9C69-3FF3955A6096}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{D7AE8D85-D900-42A2-9C69-3FF3955A6096} = {D7AE8D85-D900-42A2-9C69-3FF3955A6096}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openssl", "http-windows-default\openssl.vcxproj", "{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{0B1E93AB-39C6-4871-B7E0-056E4D0630C6} = {0B1E93AB-39C6-4871-B7E0-056E4D0630C6}
 	EndProjectSection
 EndProject
 
@@ -126,6 +154,22 @@ EndProject
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|Win32.Build.0 = Release|Win32
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|x64.ActiveCfg = Release|x64
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|x64.Build.0 = Release|x64
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Debug|Win32.ActiveCfg = Debug|Win32
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Debug|Win32.Build.0 = Debug|Win32
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Debug|x64.ActiveCfg = Debug|x64
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Debug|x64.Build.0 = Debug|x64
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Release|Win32.ActiveCfg = Release|Win32
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Release|Win32.Build.0 = Release|Win32
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Release|x64.ActiveCfg = Release|x64
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Release|x64.Build.0 = Release|x64
+{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}.Debug|Win32.ActiveCfg = Debug|Win32
+{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}.Debug|Win32.Build.0 = Debug|Win32
+{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}.Debug|x64.ActiveCfg = Debug|x64
+{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}.Debug|x64.Build.0 = Debug|x64
+{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}.Release|Win32.ActiveCfg = Release|Win32
+{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}.Release|Win32.Build.0 = Release|Win32
+{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}.Release|x64.ActiveCfg = Release|x64
+{0B1E93AB-39C6-4871-B7E0-056E4D0630C6}.Release|x64.Build.0 = Release|x64
 EndGlobalSection
 
       GlobalSection(SolutionProperties) = preSolution

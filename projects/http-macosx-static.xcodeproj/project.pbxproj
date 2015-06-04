@@ -1231,7 +1231,7 @@ fi";
 		E661C77AE661E1CE000000CD /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
-    				PRODUCT_NAME = bin;
+    				PRODUCT_NAME = install-certs;
     
     				GCC_PREPROCESSOR_DEFINITIONS = (
 					"ME_DEBUG",
@@ -1247,7 +1247,7 @@ fi";
     		E661C77AE661E1CE000000CE /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
-    				PRODUCT_NAME = bin;
+    				PRODUCT_NAME = install-certs;
     
     				OTHER_LDFLAGS = ();
 

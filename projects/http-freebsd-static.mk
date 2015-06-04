@@ -77,7 +77,7 @@ ME_SRC_PREFIX         ?= $(ME_ROOT_PREFIX)$(NAME)-$(VERSION)
 TARGETS               += $(BUILD)/bin/http-server
 TARGETS               += $(BUILD)/bin/http
 ifeq ($(ME_COM_SSL),1)
-    TARGETS           += $(BUILD)/bin
+    TARGETS           += $(BUILD)/.install-certs-modified
 endif
 
 unexport CDPATH
@@ -152,7 +152,7 @@ clean:
 	rm -f "$(BUILD)/obj/webSockFilter.o"
 	rm -f "$(BUILD)/bin/http-server"
 	rm -f "$(BUILD)/bin/http"
-	rm -f "$(BUILD)/bin"
+	rm -f "$(BUILD)/.install-certs-modified"
 	rm -f "$(BUILD)/bin/libhttp.a"
 	rm -f "$(BUILD)/bin/libmpr.a"
 	rm -f "$(BUILD)/bin/libpcre.a"
@@ -813,7 +813,7 @@ DEPS_55 += src/certs/samples/self.key
 DEPS_55 += src/certs/samples/test.crt
 DEPS_55 += src/certs/samples/test.key
 
-$(BUILD)/bin: $(DEPS_55)
+$(BUILD)/.install-certs-modified: $(DEPS_55)
 	@echo '      [Copy] $(BUILD)/bin'
 	mkdir -p "$(BUILD)/bin"
 	cp src/certs/samples/ca.crt $(BUILD)/bin/ca.crt
@@ -826,6 +826,7 @@ $(BUILD)/bin: $(DEPS_55)
 	cp src/certs/samples/self.key $(BUILD)/bin/self.key
 	cp src/certs/samples/test.crt $(BUILD)/bin/test.crt
 	cp src/certs/samples/test.key $(BUILD)/bin/test.key
+	touch "$(BUILD)/.install-certs-modified"
 endif
 
 #

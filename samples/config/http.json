@@ -185,10 +185,21 @@
                      */
                     directory:  "",
                 },
+
+                /*
+                    Session cache size in items
+                 */
+                cache: 512,
+
                 /*
                     Server's own certificate filename
                  */
                 certificate: "server.crt",
+
+                /*
+                    Elliptic curve name
+                 */
+                curve: "prime256v1",
 
                 /*
                     Ordered list of preferred ciphers
@@ -214,11 +225,31 @@
                 key: "server.key",
 
                 /*
+                    Send debug trace starting at this level (defaults to 3)
+                 */
+                logLevel: 3,
+
+                /*
                     Supported protocols
                  */
                 protocols: [
                     'all', '-sslv3', '+tls', '-tlsv1.1', 'tlsv1.2'
                 ],
+
+                /*
+                    Enable session renegotiation (defaults to true)
+                 */
+                renegotiate: true,
+
+                /*
+                    Enable session tickets
+                 */
+                ticket: true,
+
+                /*
+                    SSL Session timeout
+                 */
+                timeout: '1day',
 
                 /*
                     Verification options

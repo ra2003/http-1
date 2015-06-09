@@ -1545,10 +1545,12 @@ static void parseSslAuthorityFile(HttpRoute *route, cchar *key, MprJson *prop)
     cchar   *path;
 
     path = httpExpandRouteVars(route, prop->value);
-    if (!mprPathExists(path, R_OK)) {
-        httpParseError(route, "Cannot find file %s", path);
-    } else {
-        mprSetSslCaFile(route->ssl, path);
+    if (path && *path) {
+        if (!mprPathExists(path, R_OK)) {
+            httpParseError(route, "Cannot find ssl.authority.file %s", path);
+        } else {
+            mprSetSslCaFile(route->ssl, path);
+        }
     }
 }
 
@@ -1558,10 +1560,12 @@ static void parseSslAuthorityDirectory(HttpRoute *route, cchar *key, MprJson *pr
     cchar   *path;
 
     path = httpExpandRouteVars(route, prop->value);
-    if (!mprPathExists(path, R_OK)) {
-        httpParseError(route, "Cannot find file %s", path);
-    } else {
-        mprSetSslCaPath(route->ssl, path);
+    if (path && *path) {
+        if (!mprPathExists(path, R_OK)) {
+            httpParseError(route, "Cannot find ssl.authority.directory %s", path);
+        } else {
+            mprSetSslCaPath(route->ssl, path);
+        }
     }
 }
 
@@ -1573,7 +1577,7 @@ static void parseSslCertificate(HttpRoute *route, cchar *key, MprJson *prop)
     path = httpExpandRouteVars(route, prop->value);
     if (path && *path) {
         if (!mprPathExists(path, R_OK)) {
-            httpParseError(route, "Cannot find file %s", path);
+            httpParseError(route, "Cannot find ssl.certificate %s", path);
         } else {
             mprSetSslCertFile(route->ssl, path);
         }
@@ -1594,7 +1598,7 @@ static void parseSslKey(HttpRoute *route, cchar *key, MprJson *prop)
     path = httpExpandRouteVars(route, prop->value);
     if (path && *path) {
         if (!mprPathExists(path, R_OK)) {
-            httpParseError(route, "Cannot find file %s", path);
+            httpParseError(route, "Cannot find ssl.key %s", path);
         } else {
             mprSetSslKeyFile(route->ssl, path);
         }
@@ -1648,12 +1652,6 @@ static void parseSslProtocols(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseSslCache(HttpRoute *route, cchar *key, MprJson *prop)
 {
     mprSetSslCacheSize(route->ssl, (int) stoi(prop->value));
-}
-
-
-static void parseSslCurve(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    mprSetSslCurve(route->ssl, prop->value);
 }
 
 
@@ -2007,7 +2005,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl.cache", parseSslCache);
     httpAddConfig("http.ssl.certificate", parseSslCertificate);
     httpAddConfig("http.ssl.ciphers", parseSslCiphers);
-    httpAddConfig("http.ssl.curve", parseSslCurve);
     httpAddConfig("http.ssl.logLevel", parseSslLogLevel);
     httpAddConfig("http.ssl.key", parseSslKey);
     httpAddConfig("http.ssl.provider", parseSslProvider);

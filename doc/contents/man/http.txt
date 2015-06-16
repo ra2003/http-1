@@ -30,7 +30,6 @@ SYNOPSIS
            --post
            --printable
            --protocol version
-           --provider name
            --put
            --range byteRanges
            --retries count
@@ -148,9 +147,6 @@ OPTIONS
        --protocol HTTP_VERSION
               Use  the  specified  HTTP protocol. httpVersion should be either
               '0' for HTTP/1.0 or 1 for HTTP/1.1.
-
-       --provider est|openssl
-              Select the SSL stack provider.
 
        --put  Issue a PUT request. This is an alias for --method PUT.
 

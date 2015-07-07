@@ -66,6 +66,9 @@
 #ifndef ME_DESCRIPTION
     #define ME_DESCRIPTION "Embedthis Http Library"
 #endif
+#ifndef ME_HTTP_CMD
+    #define ME_HTTP_CMD 1
+#endif
 #ifndef ME_HTTP_PAM
     #define ME_HTTP_PAM 1
 #endif

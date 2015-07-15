@@ -166,7 +166,6 @@ clean:
 	rm -f "$(BUILD)/bin/libhttp.a"
 	rm -f "$(BUILD)/bin/libmpr.a"
 	rm -f "$(BUILD)/bin/libpcre.a"
-	rm -f "$(BUILD)/bin/libmpr-openssl.a"
 
 clobber: clean
 	rm -fr ./$(BUILD)
@@ -753,10 +752,6 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBPATHS_53 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
 LIBS_53 += -lmpr
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_53 += -lmpr-openssl
-    LIBPATHS_53 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
 ifeq ($(ME_COM_PCRE),1)
     LIBS_53 += -lpcre
 endif
@@ -791,10 +786,6 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBPATHS_54 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
 LIBS_54 += -lmpr
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_54 += -lmpr-openssl
-    LIBPATHS_54 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
 ifeq ($(ME_COM_PCRE),1)
     LIBS_54 += -lpcre
 endif

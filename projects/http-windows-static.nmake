@@ -210,7 +210,6 @@ clean:
 	if exist "build\$(CONFIG)\bin\libhttp.lib" del /Q "build\$(CONFIG)\bin\libhttp.lib"
 	if exist "build\$(CONFIG)\bin\libmpr.lib" del /Q "build\$(CONFIG)\bin\libmpr.lib"
 	if exist "build\$(CONFIG)\bin\libpcre.lib" del /Q "build\$(CONFIG)\bin\libpcre.lib"
-	if exist "build\$(CONFIG)\bin\libmpr-openssl.lib" del /Q "build\$(CONFIG)\bin\libmpr-openssl.lib"
 
 #
 #   me.h
@@ -786,10 +785,6 @@ LIBS_52 = $(LIBS_52) libssleay32.lib
 LIBPATHS_52 = $(LIBPATHS_52) -libpath:$(ME_COM_OPENSSL_PATH)
 !ENDIF
 LIBS_52 = $(LIBS_52) libmpr.lib
-!IF "$(ME_COM_OPENSSL)" == "1"
-LIBS_52 = $(LIBS_52) libmpr-openssl.lib
-LIBPATHS_52 = $(LIBPATHS_52) -libpath:$(ME_COM_OPENSSL_PATH)
-!ENDIF
 !IF "$(ME_COM_PCRE)" == "1"
 LIBS_52 = $(LIBS_52) libpcre.lib
 !ENDIF
@@ -836,10 +831,6 @@ LIBS_54 = $(LIBS_54) libssleay32.lib
 LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
 !ENDIF
 LIBS_54 = $(LIBS_54) libmpr.lib
-!IF "$(ME_COM_OPENSSL)" == "1"
-LIBS_54 = $(LIBS_54) libmpr-openssl.lib
-LIBPATHS_54 = $(LIBPATHS_54) -libpath:$(ME_COM_OPENSSL_PATH)
-!ENDIF
 !IF "$(ME_COM_PCRE)" == "1"
 LIBS_54 = $(LIBS_54) libpcre.lib
 !ENDIF

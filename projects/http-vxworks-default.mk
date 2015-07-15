@@ -166,7 +166,6 @@ clean:
 	rm -f "$(BUILD)/bin/libhttp.out"
 	rm -f "$(BUILD)/bin/libmpr.out"
 	rm -f "$(BUILD)/bin/libpcre.out"
-	rm -f "$(BUILD)/bin/libmpr-openssl.a"
 
 clobber: clean
 	rm -fr ./$(BUILD)
@@ -682,10 +681,6 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBS_50 += -lcrypto
     LIBPATHS_50 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_50 += -lmpr-openssl
-    LIBPATHS_50 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
 
 $(BUILD)/bin/libmpr.out: $(DEPS_50)
 	@echo '      [Link] $(BUILD)/bin/libmpr.out'
@@ -761,10 +756,6 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBS_52 += -lcrypto
     LIBPATHS_52 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_52 += -lmpr-openssl
-    LIBPATHS_52 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
 
 $(BUILD)/bin/libhttp.out: $(DEPS_52)
 	@echo '      [Link] $(BUILD)/bin/libhttp.out'
@@ -790,10 +781,6 @@ ifeq ($(ME_COM_OPENSSL),1)
     LIBS_53 += -lcrypto
     LIBPATHS_53 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_53 += -lmpr-openssl
-    LIBPATHS_53 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
 
 $(BUILD)/bin/http-server.out: $(DEPS_53)
 	@echo '      [Link] $(BUILD)/bin/http-server.out'
@@ -817,10 +804,6 @@ endif
 endif
 ifeq ($(ME_COM_OPENSSL),1)
     LIBS_54 += -lcrypto
-    LIBPATHS_54 += -L"$(ME_COM_OPENSSL_PATH)"
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_54 += -lmpr-openssl
     LIBPATHS_54 += -L"$(ME_COM_OPENSSL_PATH)"
 endif
 

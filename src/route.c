@@ -1931,6 +1931,31 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
 }
 
 
+PUBLIC cchar *httpGetRouteTop(HttpConn *conn)
+{
+    HttpRx  *rx;
+    char   *pp, *top;
+    int     count;
+
+    rx = conn->rx;
+    if (sstarts(rx->pathInfo, rx->route->prefix)) {
+        pp = &rx->pathInfo[rx->route->prefixLen];
+    } else {
+        pp = rx->pathInfo;
+    }
+    top = MPR->emptyString;
+    for (count = 0; *pp; pp++) {
+        if (*pp == '/' && count++ > 0) {
+            top = sjoin(top, "../", NULL);
+        }
+    }
+    if (*top) {
+        top[slen(top) - 1] = '\0';
+    }
+    return top;
+}
+
+
 /*
     Expect a template with embedded tokens of the form: "/${controller}/${action}/${other}"
     Understands the following aliases:
@@ -1953,8 +1978,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     buf = mprCreateBuf(-1, -1);
     for (cp = template; *cp; cp++) {
         if (cp == template && *cp == '~') {
-            mprPutStringToBuf(buf, route->prefix);
-
+            mprPutStringToBuf(buf, httpGetRouteTop(conn));
 #if DEPRECATED || 1
         } else if (cp == template && *cp == '|') {
             mprPutStringToBuf(buf, route->prefix);
@@ -1970,6 +1994,9 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
                     mprPutStringToBuf(buf, value);
 
                 } else if ((value = mprReadJson(rx->params, key)) != 0) {
+                    mprPutStringToBuf(buf, value);
+
+                } else if ((value = mprLookupKey(route->vars, key)) != 0) {
                     mprPutStringToBuf(buf, value);
                 }
                 if (value == 0) {

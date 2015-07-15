@@ -264,6 +264,47 @@ static void testFormatUri()
 }
 
 
+static void testLink() 
+{
+    HttpConn        *conn;
+    HttpEndpoint    *endpoint;
+    cchar           *s;
+
+    endpoint = httpCreateEndpoint(NULL, 80, NULL);
+    conn = httpCreateConn(endpoint, NULL);
+    conn->rx = httpCreateRx(conn);
+    conn->rx->route = httpCreateRoute(NULL);
+
+    conn->rx->parsedUri = httpCreateUri("/", 0);
+    s = httpLink(conn, "~");
+    ttrue(smatch(s, ""));
+}
+
+
+static void testResolve()
+{
+    HttpConn        *conn;
+    HttpEndpoint    *endpoint;
+    cchar           *s;
+
+    endpoint = httpCreateEndpoint(NULL, 80, NULL);
+    conn = httpCreateConn(endpoint, NULL);
+    conn->rx = httpCreateRx(conn);
+    conn->rx->route = httpCreateRoute(NULL);
+
+    conn->rx->parsedUri = httpCreateUri("/admin/index.html", 0);
+    s = httpLink(conn, "~");
+    s = httpResolveUri(conn, NULL, httpCreateUri("index.html", 0));
+    ttrue(smatch(s, ""));
+
+    //  Test redirects
+    //  Test canonical
+    /*
+        Test
+            Resolving ~
+}
+
+
 int main(int argc, char **argv)
 {
     mprCreate(argc, argv, 0);
@@ -272,6 +313,8 @@ int main(int argc, char **argv)
     testNormalizeUri();
     testValidateUri();
     testFormatUri();
+    testLink();
+    testResolve();
     return 0;
 }
 

@@ -20097,10 +20097,12 @@ PUBLIC void httpOmitBody(HttpConn *conn)
 }
 
 
+#if UNUSED
 static bool localEndpoint(cchar *host)
 {
     return smatch(host, "localhost") || smatch(host, "127.0.0.1") || smatch(host, "::1");
 }
+#endif
 
 
 /*
@@ -20110,10 +20112,13 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 {
     HttpTx          *tx;
     HttpRx          *rx;
-    HttpUri         *target, *base;
+    HttpUri         *base, *canonical;
+#if UNUSED
+    HttpUri         *target;
     HttpEndpoint    *endpoint;
-    cchar           *msg;
     char            *dir, *cp;
+#endif
+    cchar           *msg;
 
     assert(targetUri);
     rx = conn->rx;
@@ -20125,15 +20130,30 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
         return;
     }
     tx->status = status;
-
-    /*
-        Expand the target for embedded tokens. Resolve relative to the current request URI
-        This may add "localhost" if the host is missing in the targetUri.
-     */
-    targetUri = httpLink(conn, targetUri);
     msg = httpLookupStatus(status);
 
+    canonical = conn->host->canonical;
+    if (canonical) {
+        base = httpCloneUri(conn->rx->parsedUri, 0);
+        if (canonical->host) {
+            base->host = canonical->host;
+        }
+        if (canonical->port) {
+            base->port = canonical->port;
+        }
+    } else {
+        base = conn->rx->parsedUri;
+    }
+    /*
+        Expand the target for embedded tokens. Resolve relative to the current request URI.
+     */
+    targetUri = httpUriToString(httpResolveUri(conn, base, httpLinkUri(conn, targetUri, 0)), 0);
+
     if (300 <= status && status <= 399) {
+#if UNUSED
+/*
+MOB - is this needed anymore or does the resolve above do it all
+*/
         if (targetUri == 0) {
             targetUri = "/";
         }
@@ -20144,7 +20164,8 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             different scheme. So find a suitable local endpoint to supply the port for the scheme.
         */
         if (!target->port && (target->scheme && !smatch(target->scheme, base->scheme))) {
-            if (!target->host || smatch(base->host, target->host) || (localEndpoint(base->host) && localEndpoint(target->host))) {
+            if (!target->host || smatch(base->host, target->host) || 
+                (localEndpoint(base->host) && localEndpoint(target->host))) {
                 endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
                 if (endpoint) {
                     target->port = endpoint->port;
@@ -20165,7 +20186,9 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             target->path = sjoin(dir, "/", target->path, NULL);
         }
         target = httpCompleteUri(target, base);
+assert(smatch(targetUri, httpUriToString(target, 0)));
         targetUri = httpUriToString(target, 0);
+#endif
         httpSetHeader(conn, "Location", "%s", targetUri);
         httpFormatResponse(conn,
             "<!DOCTYPE html>\r\n"

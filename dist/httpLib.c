@@ -9151,11 +9151,6 @@ static void printRoute(HttpRoute *route, int idx, bool full, int methodsLen, int
     cchar       *methods, *pattern, *target, *index;
     int         nextIndex;
 
-#if UNUSED
-    if (route->flags & HTTP_ROUTE_HIDDEN && !full) {
-        return;
-    }
-#endif
     auth = route->auth;
     methods = httpGetRouteMethods(route);
     methods = methods ? methods : "*";
@@ -14585,12 +14580,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     buf = mprCreateBuf(-1, -1);
     for (cp = template; *cp; cp++) {
         if (cp == template && *cp == '~') {
-#if UNUSED
-            mprPutStringToBuf(buf, route->prefix);
-#else
             mprPutStringToBuf(buf, httpGetRouteTop(conn));
-#endif
-
 #if DEPRECATED || 1
         } else if (cp == template && *cp == '|') {
             mprPutStringToBuf(buf, route->prefix);
@@ -20181,9 +20171,6 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 
     if (300 <= status && status <= 399) {
 #if UNUSED
-/*
-MOB - is this needed anymore or does the resolve above do it all
-*/
         if (targetUri == 0) {
             targetUri = "/";
         }
@@ -20216,7 +20203,6 @@ MOB - is this needed anymore or does the resolve above do it all
             target->path = sjoin(dir, "/", target->path, NULL);
         }
         target = httpCompleteUri(target, base);
-assert(smatch(targetUri, httpUriToString(target, 0)));
         targetUri = httpUriToString(target, 0);
 #endif
         httpSetHeader(conn, "Location", "%s", targetUri);

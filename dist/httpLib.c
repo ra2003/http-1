@@ -4284,13 +4284,6 @@ static void parseFormatsResponse(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseHandler(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    if (httpSetRouteHandler(route, prop->value) < 0) {
-        httpParseError(route, "Cannot add handler \"%s\"", prop->value);
-    }
-}
-
 static void parseHeadersAdd(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -4673,6 +4666,14 @@ static void parsePipelineFilters(HttpRoute *route, cchar *key, MprJson *prop)
         for (ITERATE_CONFIG(route, prop, child, ji)) {
             parsePipelineFilters(route, key, child);
         }
+    }
+}
+
+
+static void parsePipelineHandler(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (httpSetRouteHandler(route, prop->value) < 0) {
+        httpParseError(route, "Cannot add handler \"%s\"", prop->value);
     }
 }
 
@@ -5555,7 +5556,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.errors", parseErrors);
     httpAddConfig("http.formats", httpParseAll);
     httpAddConfig("http.formats.response", parseFormatsResponse);
-    httpAddConfig("http.handler", parseHandler);
     httpAddConfig("http.headers", httpParseAll);
     httpAddConfig("http.headers.add", parseHeadersAdd);
     httpAddConfig("http.headers.remove", parseHeadersRemove);
@@ -5597,6 +5597,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.pattern", parsePattern);
     httpAddConfig("http.pipeline", httpParseAll);
     httpAddConfig("http.pipeline.filters", parsePipelineFilters);
+    httpAddConfig("http.pipeline.handler", parsePipelineHandler);
     httpAddConfig("http.pipeline.handlers", parsePipelineHandlers);
     httpAddConfig("http.prefix", parsePrefix);
     httpAddConfig("http.redirect", parseRedirect);
@@ -5646,6 +5647,7 @@ PUBLIC int httpInitParser()
 #if DEPRECATED || 1
     httpAddConfig("app", parseApp);
     httpAddConfig("http.domain", parseName);
+    httpAddConfig("http.handler", parsePipelineHandler);
     httpAddConfig("http.limits.requestBody", parseLimitsRxBody);
     httpAddConfig("http.limits.responseBody", parseLimitsTxBody);
     httpAddConfig("http.limits.requestForm", parseLimitsRxForm);

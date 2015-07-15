@@ -164,11 +164,6 @@ static void printRoute(HttpRoute *route, int idx, bool full, int methodsLen, int
     cchar       *methods, *pattern, *target, *index;
     int         nextIndex;
 
-#if UNUSED
-    if (route->flags & HTTP_ROUTE_HIDDEN && !full) {
-        return;
-    }
-#endif
     auth = route->auth;
     methods = httpGetRouteMethods(route);
     methods = methods ? methods : "*";

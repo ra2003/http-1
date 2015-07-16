@@ -424,8 +424,7 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
     HttpTx      *tx;
     HttpRoute   *route;
     HttpUri     *req;
-    cchar       *index, *pathInfo; 
-    char        *path;
+    cchar       *index, *pathInfo, *path; 
     int         next;
 
     rx = conn->rx;
@@ -456,6 +455,12 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
             path = mprJoinPath(tx->filename, index);
             if (mprPathExists(path, R_OK)) {
                 break;
+            }
+            if (route->map && !(tx->flags & HTTP_TX_NO_MAP)) {
+                path = httpMapContent(conn, path);
+                if (mprPathExists(path, R_OK)) {
+                    break;
+                }
             }
             path = 0;
         }

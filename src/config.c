@@ -650,7 +650,7 @@ static void parseErrors(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        httpAddRouteErrorDocument(route, (int) stoi(prop->name), prop->value);
+        httpAddRouteErrorDocument(route, (int) stoi(child->name), child->value);
     }
 }
 

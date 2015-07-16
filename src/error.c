@@ -65,7 +65,7 @@ static void errorRedirect(HttpConn *conn, cchar *uri)
             No response started and it is an internal redirect, so we can rerun the request.
             Set finalized to "cap" any output. processCompletion() in rx.c will rerun the request using the errorDocument.
          */
-        tx->errorDocument = uri;
+        tx->errorDocument = httpLink(conn, uri);
         tx->finalized = tx->finalizedOutput = tx->finalizedConnector = 1;
     }
 }

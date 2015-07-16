@@ -266,6 +266,7 @@ static void testFormatUri()
 
 static void testLink() 
 {
+#if FUTURE
     HttpConn        *conn;
     HttpEndpoint    *endpoint;
     cchar           *s;
@@ -278,14 +279,15 @@ static void testLink()
     conn->rx->parsedUri = httpCreateUri("/", 0);
     s = httpLink(conn, "~");
     ttrue(smatch(s, ""));
+#endif
 }
 
 
 static void testResolve()
 {
+#if FUTURE
     HttpConn        *conn;
     HttpEndpoint    *endpoint;
-    cchar           *s;
 
     endpoint = httpCreateEndpoint(NULL, 80, NULL);
     conn = httpCreateConn(endpoint, NULL);
@@ -293,15 +295,15 @@ static void testResolve()
     conn->rx->route = httpCreateRoute(NULL);
 
     conn->rx->parsedUri = httpCreateUri("/admin/index.html", 0);
+
+    cchar           *s;
     s = httpLink(conn, "~");
     s = httpResolveUri(conn, NULL, httpCreateUri("index.html", 0));
     ttrue(smatch(s, ""));
 
     //  Test redirects
     //  Test canonical
-    /*
-        Test
-            Resolving ~
+#endif
 }
 
 

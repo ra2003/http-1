@@ -83,9 +83,7 @@ ME_SRC_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/src/$(NAME)-$(VERSION)
 
 TARGETS               += $(BUILD)/bin/http-server.out
 TARGETS               += $(BUILD)/bin/http.out
-ifeq ($(ME_COM_SSL),1)
-    TARGETS           += $(BUILD)/.install-certs-modified
-endif
+TARGETS               += $(BUILD)/.install-certs-modified
 
 unexport CDPATH
 
@@ -811,7 +809,6 @@ $(BUILD)/bin/http.out: $(DEPS_54)
 	@echo '      [Link] $(BUILD)/bin/http.out'
 	$(CC) -o $(BUILD)/bin/http.out $(LDFLAGS) $(LIBPATHS)  "$(BUILD)/obj/http.o" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS) -Wl,-r 
 
-ifeq ($(ME_COM_SSL),1)
 #
 #   install-certs
 #
@@ -838,7 +835,6 @@ $(BUILD)/.install-certs-modified: $(DEPS_55)
 	cp src/certs/samples/test.crt $(BUILD)/bin/test.crt
 	cp src/certs/samples/test.key $(BUILD)/bin/test.key
 	touch "$(BUILD)/.install-certs-modified"
-endif
 
 #
 #   installPrep

@@ -69,6 +69,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "httpcmd", "http-windows-sta
 		{AF03968D-A485-4710-A544-7B72280D1444} = {AF03968D-A485-4710-A544-7B72280D1444}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "install-certs", "http-windows-static\install-certs.vcxproj", "{D7AE8D85-D900-42A2-9C69-3FF3955A6096}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3561715A-E451-49C9-9926-F60AA1268C42} = {3561715A-E451-49C9-9926-F60AA1268C42}
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{D7AE8D85-D900-42A2-9C69-3FF3955A6096} = {D7AE8D85-D900-42A2-9C69-3FF3955A6096}
+	EndProjectSection
+EndProject
 
     Global
         GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -126,6 +134,14 @@ EndProject
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|Win32.Build.0 = Release|Win32
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|x64.ActiveCfg = Release|x64
 {AF03968D-A485-4710-A544-7B72280D1444}.Release|x64.Build.0 = Release|x64
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Debug|Win32.ActiveCfg = Debug|Win32
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Debug|Win32.Build.0 = Debug|Win32
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Debug|x64.ActiveCfg = Debug|x64
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Debug|x64.Build.0 = Debug|x64
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Release|Win32.ActiveCfg = Release|Win32
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Release|Win32.Build.0 = Release|Win32
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Release|x64.ActiveCfg = Release|x64
+{D7AE8D85-D900-42A2-9C69-3FF3955A6096}.Release|x64.Build.0 = Release|x64
 EndGlobalSection
 
       GlobalSection(SolutionProperties) = preSolution

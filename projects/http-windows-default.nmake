@@ -124,9 +124,7 @@ ME_SRC_PREFIX         = $(ME_VAPP_PREFIX)\src
 
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http-server.exe
 TARGETS               = $(TARGETS) build\$(CONFIG)\bin\http.exe
-!IF "$(ME_COM_SSL)" == "1"
 TARGETS               = $(TARGETS) build\$(CONFIG)\.install-certs-modified
-!ENDIF
 
 !IFNDEF SHOW
 .SILENT:
@@ -895,7 +893,6 @@ build\$(CONFIG)\bin\http.exe: $(DEPS_54)
 	@echo ..... [Link] build\$(CONFIG)\bin\http.exe
 	"$(LD)" -nologo -out:$(BUILD)\bin\http.exe -entry:mainCRTStartup -subsystem:console $(LDFLAGS) $(LIBPATHS)  "$(BUILD)\obj\http.obj" $(LIBPATHS_54) $(LIBS_54) $(LIBS_54) $(LIBS)  $(LOG)
 
-!IF "$(ME_COM_SSL)" == "1"
 #
 #   install-certs
 #
@@ -922,5 +919,4 @@ build\$(CONFIG)\.install-certs-modified: $(DEPS_55)
 	copy /Y /B src\certs\samples\test.crt+modified build\$(CONFIG)\bin\test.crt $(LOG)
 	copy /Y /B src\certs\samples\test.key+modified build\$(CONFIG)\bin\test.key $(LOG)
 	copy /Y /B nul+modified build\$(CONFIG)\.install-certs-modified $(LOG)
-!ENDIF
 

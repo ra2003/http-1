@@ -7,8 +7,7 @@
 */
 {
     /*
-        Single word application name. Must be a C identifier.
-        This is typically provided by the package.json instead.
+        Single word application name. This is typically provided by the package.json instead.
      */
     name: "blog",
 
@@ -55,121 +54,6 @@
      */
     http: {
         /*
-            Server related configuration that applies globally
-            Ignored if hosted in Appweb, when server configuration comes from appweb.conf.
-         */
-        server: {
-            /*
-                Account execution
-             */
-            account: {
-                /*
-                    Run as user
-                 */
-                user: "name",
-
-                /*
-                    Run as member of group
-                 */
-                group: "name",
-            },
-
-            /*
-                Change the file system root. Unix only.
-             */
-            chroot: "/path",
-
-            /*
-                Defensive counter-measures. These are referenced by "monitors"
-             */
-            defenses: {
-                /*
-                    Name of defense and collection of properties for the remedy
-                 */
-                block: {
-                    "remedy": "ban",
-                    "status": 406,
-                    "message": "Client temporarily banned due to monitored limit exceeded",
-                    "period": "30mins",
-                },
-            },
-
-            /*
-                Listening endpoints. Ignored if hosted.
-             */
-            listen: [
-                "http://*:4000",
-                "http://127.0.0.1:4000",
-                "https://127.0.0.1:4443",
-            ],
-
-            /*
-                Log file configuration
-             */
-            log: {
-                /*
-                    Log filename or destination
-                 */
-                location: "stdout",
-
-                /*
-                    Verbosity level (0-5)
-                 */
-                level: "2",
-
-                /*
-                    Keep up to 5 log files
-                 */
-                backup: 5,
-
-                /*
-                    Start a new log file on restart
-                 */
-                anew: true,
-
-                /*
-                    Maximum log file size before starting a new log file
-                 */
-                size: "10MB",
-
-                /*
-                    Add a timestamp to the log file
-                 */
-                timestamp: "1hr",
-            },
-
-            /*
-                Defensive counter-measure monitor policies
-             */
-            monitors: {
-                /*
-                    Name of monitor
-                 */
-                missing: {
-                    /*
-                        Monitor expression to evaluate
-                     */
-                    "expression": "NotFoundErrors > 5",
-
-                    /*
-                        Frequence to check the monitor expression
-                     */
-                    "period": "10 secs",
-
-                    /*
-                        List of defenses to invoke if monitor expression is true
-                     */
-                    "defenses": [ "block" ],
-
-                    /*
-                        Enable or disable the monitor
-                     */
-                    "enable": true,
-                },
-            },
-        },
-
-        /*
             All the properties below apply on a per-route basis
          */
 
@@ -177,15 +61,20 @@
             Alias a URL prefix to a directory under the route home
          */
         aliases: {
-            '/cgi-bin/': 'cgi-bin',
+            "/cgi-bin/": "cgi-bin",
         },
+
+        /*
+            Attach the current host to a specific endpoint
+         */
+        attach: ":443",
 
         /*
             Authentication configuration
          */
         auth: {
             /*
-                Login configuration
+                Automatic login configuration. Used for debugging.
              */
             auto: {
                 /*
@@ -199,10 +88,15 @@
                 name: "",
 
                 /*
-                    URL for the application login dialog
+                    Defined roles for the automatically logged in user
                  */
-                url: "",
+                roles: "",
             },
+
+            /*
+                URL for the application login dialog
+             */
+            login: "",
 
             /*
                 Authentication realm
@@ -233,16 +127,6 @@
                 "administrator": ["view", "edit"],
             },
 
-            /*
-                Define user accounts. More typically, these are stored in a database.
-             */
-            users: {
-                ralph: {
-                    password: "BF1:00128:bWFG5x85BYfuf7GW:w+zzIU0WTZQYaNAe0sPecWyry8Z9GrKH",
-                    roles:    ["user", "administrator", "purchase"],
-                },
-            },
-
             session: {
                 /*
                     Define the session cookie prefix
@@ -263,7 +147,7 @@
                 /*
                     Determine if the cookie is visible to browser scripts
                  */
-                visible: true,
+                visibility: true,
             },
 
             /*
@@ -274,8 +158,20 @@
 
             /*
                 Type of authentication protocol to use
+                Set to: basic, digest, form or none
              */
-            type: "basic|digest",
+            type: "basic",
+
+            /*
+                Define user accounts. More typically, these are stored in a database.
+             */
+            users: {
+                ralph: {
+                    password: "BF1:00128:bWFG5x85BYfuf7GW:w+zzIU0WTZQYaNAe0sPecWyry8Z9GrKH",
+                    roles:    ["user", "administrator", "purchase"],
+                },
+            },
+
         },
 
         /*
@@ -325,11 +221,34 @@
             unique: true,
         } ],
 
+
+        /*
+            Canonical address for this host to be used in redirections
+         */
+        canonical: "http://example.com",
+
+        cgi: {
+            /*
+                Define if shell characters are escaped in environment variables
+             */
+            escape: true,
+
+            /*
+                Define a prefix string for environment variables
+             */
+            prefix: "CGI_",
+        },
+
         /*
             Serve compressed content
             Can also set to an array of extensions to serve compressed.
          */
         compress: true,
+
+        /*
+            FUTURE
+         */
+        conditions: [ "reserved" ],
 
         /*
             Database specification. Supported providers: sdb for SQLite and mdb for Memory Database.
@@ -342,15 +261,14 @@
         deleteUploads: true,
 
         /*
-            Documents to serve. Same as {directories: documents: 'DIR' }
+            Opportunity to remap directories. Same as the top level "directories"
          */
-        documents: 'directory',
+        directories: {},
 
         /*
-            Domain to service. This supports virtual hosting. If the name contains "*", it tests if the
-            request Host header contains the substring.
+            Documents to serve. Same as {directories: documents: "DIR" }
          */
-        domain: "*embedthis",
+        documents: "directory",
 
         /*
             Error pages to serve for specific error response codes
@@ -395,9 +313,21 @@
         },
 
         /*
-            Home directory for the server. Same as {directories: home: 'DIR' }
+            Home directory for the server. Same as {directories: home: "DIR" }
          */
-        home: 'directory',
+        home: "directory",
+
+        /*
+            List of virtual hosts
+            A host may then define most other properties to create route-specific configurations.
+         */
+        hosts: [
+            {
+                attach: ':443',
+                name: '/example.com|example.org/',
+                redirect: 'https://example.com/',
+            },
+        ],
 
         /*
             List of index documents to serve for directory level requests
@@ -477,6 +407,15 @@
         methods: [ "GET", "POST" ],
 
         /*
+            Set the host name to serve.
+            host name is used when matching client requests to hosts using the Http request Host header.
+            If the host name starts with "*", it will match names that contain the name.
+            If the host name ends with "*", it will match names that start with the name.
+            If the host name begins and ends with a "/", the name is assumed to be a regular expression.
+         */
+        name: "example.com",
+
+        /*
             Required request parameters before this route will match a request
          */
         params: [ {
@@ -501,6 +440,12 @@
                 name: "uploadFilter",
                 extensions: [ "txt", "*" ],
             }],
+
+            /*
+                Define a single handler to be used. Overrides "handlers"
+             */
+            handler: "fileHandler",
+
             /*
                 Defined request handlers and the extensions for which they apply
              */
@@ -544,16 +489,18 @@
             Routes may nest other routes under their own "routes" property.
             Properties can be a route-set name, or an array of routes objects.
             A route will typically define a "pattern" and may override most per-route properties.
-         */
-        /*
+            A route may then define most other properties to create route-specific configurations.
+            The special route string "reset" will reset inherited routes and "print" will display the current route table.
+
             For example:
 
+            "reset",
             "esp-server",
             {
-                pattern: '^/auth/basic',
+                pattern: "^/auth/basic",
                 auth: {
-                    realm: 'example.com',
-                    type: 'basic|digest',
+                    realm: "example.com",
+                    type: "basic|digest",
                 },
             },
             {
@@ -568,7 +515,8 @@
                         "dashboard",
                     ]
                 }
-            }
+            },
+            "print",
          */
         ],
 
@@ -576,6 +524,126 @@
             Supported scheme for this route. Set to https to require SSL.
          */
         scheme: "https",
+
+        /*
+            Server related configuration that applies globally
+            Ignored if hosted in Appweb, when server configuration comes from appweb.conf.
+         */
+        server: {
+            /*
+                Account execution
+             */
+            account: {
+                /*
+                    Run as user
+                 */
+                user: "name",
+
+                /*
+                    Run as member of group
+                 */
+                group: "name",
+            },
+
+            /*
+                Defensive counter-measures. These are referenced by "monitors"
+             */
+            defenses: {
+                /*
+                    Name of defense and collection of properties for the remedy
+                 */
+                block: {
+                    "remedy": "ban",
+                    "status": 406,
+                    "message": "Client temporarily banned due to monitored limit exceeded",
+                    "period": "30mins",
+                },
+            },
+
+            /*
+                Listening endpoints. Ignored if hosted.
+             */
+            listen: [
+                "http://*:4000",
+                "http://127.0.0.1:4000",
+                "https://127.0.0.1:4443",
+            ],
+
+            /*
+                Log file configuration
+             */
+            log: {
+                /*
+                    Log filename or destination
+                 */
+                location: "stdout",
+
+                /*
+                    Verbosity level (0-5)
+                 */
+                level: "2",
+
+                /*
+                    Keep up to 5 log files
+                 */
+                backup: 5,
+
+                /*
+                    Start a new log file on restart
+                 */
+                anew: true,
+
+                /*
+                    Maximum log file size before starting a new log file
+                 */
+                size: "10MB",
+
+                /*
+                    Add a timestamp to the log file
+                 */
+                timestamp: "1hr",
+            },
+
+            /*
+                Load the named modules
+             */
+            modules: [
+                {
+                    name: 'myModule',
+                    path: '/path/to/module',
+                }
+            ],
+
+            /*
+                Defensive counter-measure monitor policies
+             */
+            monitors: {
+                /*
+                    Name of monitor
+                 */
+                missing: {
+                    /*
+                        Monitor expression to evaluate
+                     */
+                    "expression": "NotFoundErrors > 5",
+
+                    /*
+                        Frequence to check the monitor expression
+                     */
+                    "period": "10 secs",
+
+                    /*
+                        List of defenses to invoke if monitor expression is true
+                     */
+                    "defenses": [ "block" ],
+
+                    /*
+                        Enable or disable the monitor
+                     */
+                    "enable": true,
+                },
+            },
+        },
 
         /*
             Display server-side errors in the browser
@@ -648,7 +716,7 @@
                 Supported protocols
              */
             protocols: [
-                'all', '-sslv3', '+tls', '-tlsv1.1', 'tlsv1.2'
+                "all", "-sslv3", "+tls", "-tlsv1.1", "tlsv1.2"
             ],
 
             /*
@@ -664,7 +732,7 @@
             /*
                 SSL Session timeout
              */
-            timeout: '1day',
+            timeout: "1day",
 
             /*
                 Verification options

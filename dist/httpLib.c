@@ -3929,6 +3929,11 @@ static void parseAliases(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+/*
+    Attach this host to an endpoint
+
+    attach: 'ip:port'
+ */
 static void parseAttach(HttpRoute *route, cchar *key, MprJson *prop)
 {
     HttpEndpoint    *endpoint;
@@ -4599,6 +4604,9 @@ static void parseMethods(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+/*
+    Note: this typically comes from package.json. See blendMode
+ */
 static void parseMode(HttpRoute *route, cchar *key, MprJson *prop)
 {
     route->mode = prop->value;
@@ -5060,6 +5068,14 @@ static void parseServerLog(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+/*
+    modules: [
+        {
+            name: 'espHandler',
+            path: '/path/to/module'
+        }
+    ]
+ */
 static void parseServerModules(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprModule   *module;
@@ -5102,13 +5118,16 @@ static void parseServerMonitors(HttpRoute *route, cchar *key, MprJson *prop)
     MprJson     *child;
     MprTicks    period;
     cchar       *counter, *expression, *limit, *relation, *defenses;
-    int         ji;
+    int         ji, enable;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         defenses = mprReadJson(child, "defenses");
         expression = mprReadJson(child, "expression");
         period = httpGetTicks(mprReadJson(child, "period"));
-
+        enable = smatch(mprReadJson(child, "enable"), "true");
+        if (!enable) {
+            continue;
+        }
         if (!httpTokenize(route, expression, "%S %S %S", &counter, &relation, &limit)) {
             httpParseError(route, "Cannot add monitor: %s", prop->name);
             break;
@@ -5544,11 +5563,11 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.auth.users", parseAuthUsers);
     httpAddConfig("http.cache", parseCache);
     httpAddConfig("http.canonical", parseCanonicalName);
-    httpAddConfig("http.conditions", parseConditions);
     httpAddConfig("http.cgi", httpParseAll);
     httpAddConfig("http.cgi.escape", parseCgiEscape);
     httpAddConfig("http.cgi.prefix", parseCgiPrefix);
     httpAddConfig("http.compress", parseCompress);
+    httpAddConfig("http.conditions", parseConditions);
     httpAddConfig("http.database", parseDatabase);
     httpAddConfig("http.deleteUploads", parseDeleteUploads);
     httpAddConfig("http.directories", parseDirectories);
@@ -5623,8 +5642,8 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl.cache", parseSslCache);
     httpAddConfig("http.ssl.certificate", parseSslCertificate);
     httpAddConfig("http.ssl.ciphers", parseSslCiphers);
-    httpAddConfig("http.ssl.logLevel", parseSslLogLevel);
     httpAddConfig("http.ssl.key", parseSslKey);
+    httpAddConfig("http.ssl.logLevel", parseSslLogLevel);
     httpAddConfig("http.ssl.protocols", parseSslProtocols);
     httpAddConfig("http.ssl.renegotiate", parseSslRenegotiate);
     httpAddConfig("http.ssl.ticket", parseSslTicket);

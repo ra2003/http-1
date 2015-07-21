@@ -9,8 +9,15 @@ Me.load({
             depends: [ 'libhttp' ],
             sources: [ 'http-server.c' ],
         },
+
         test: {
             action: `run('testme --depth ' + me.settings.depth)`,
+            platforms: [ 'local' ],
+            depends: [ 'test-prep' ],
+        },
+
+        'test-prep': {
+            action: ``,
             platforms: [ 'local' ],
             depends: [ 'clean-test', 'build' ],
         },
@@ -18,6 +25,6 @@ Me.load({
         'clean-test': {
             type: 'clean',                                                                                 
             action: `Cmd.run('testme --clean')`
-        },  
-    },
+        }
+    }
 })

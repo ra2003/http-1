@@ -168,6 +168,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->http = HTTP;
     route->indexes = parent->indexes;
     route->inputStages = parent->inputStages;
+    route->json = parent->json;
     route->keepSource = parent->keepSource;
     route->languages = parent->languages;
     route->lifespan = parent->lifespan;

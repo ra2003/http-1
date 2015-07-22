@@ -663,6 +663,9 @@ static void parseErrors(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseFormatsResponse(HttpRoute *route, cchar *key, MprJson *prop)
 {
     route->responseFormat = prop->value;
+    if (smatch(route->responseFormat, "json")) {
+        route->json = 1;
+    }
 }
 
 

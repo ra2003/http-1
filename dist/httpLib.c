@@ -319,6 +319,7 @@ PUBLIC void httpDestroy()
     }
     httpStopConnections(0);
     httpStopEndpoints();
+    httpSetDefaultHost(0);
 
     if (http->timer) {
         mprRemoveEvent(http->timer);
@@ -4065,7 +4066,7 @@ static void parseAuthRoles(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        if (httpAddRole(route->auth, child->name, getList(child)) < 0) {
+        if (httpAddRole(route->auth, child->name, getList(child)) == 0) {
             httpParseError(route, "Cannot add role %s", child->name);
             break;
         }
@@ -9228,7 +9229,7 @@ static void printRoute(HttpRoute *route, int idx, bool full, int methodsLen, int
             }
         }
     } else {
-        printf("%-*s %-*s %-*s\n", patternLen, pattern, methodsLen, methods ? methods : "*", targetLen, target);
+        printf("%-*s %-*s %-*s\n", patternLen, pattern, methodsLen, methods, targetLen, target);
     }
 }
 
@@ -9842,6 +9843,7 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
                 mprSetManager(address, (MprManager) manageAddress);
             }
             if (!address) {
+                unlock(http->addresses);
                 return 0;
             }
             address->ncounters = ncounters;
@@ -21918,7 +21920,7 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
     } else {
         queryDelim = query = "";
     }
-    if (portDelim) {
+    if (*portDelim) {
         uri = sjoin(scheme, hostDelim, host, portDelim, portStr, pathDelim, path, referenceDelim, reference, 
             queryDelim, query, NULL);
     } else {

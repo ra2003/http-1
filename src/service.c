@@ -308,6 +308,7 @@ PUBLIC void httpDestroy()
     }
     httpStopConnections(0);
     httpStopEndpoints();
+    httpSetDefaultHost(0);
 
     if (http->timer) {
         mprRemoveEvent(http->timer);

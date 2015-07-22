@@ -442,7 +442,7 @@ static void parseAuthRoles(HttpRoute *route, cchar *key, MprJson *prop)
     int         ji;
 
     for (ITERATE_CONFIG(route, prop, child, ji)) {
-        if (httpAddRole(route->auth, child->name, getList(child)) < 0) {
+        if (httpAddRole(route->auth, child->name, getList(child)) == 0) {
             httpParseError(route, "Cannot add role %s", child->name);
             break;
         }

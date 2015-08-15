@@ -28,6 +28,7 @@ static void manageTrace(HttpTrace *trace, int flags)
         mprMark(trace->path);
         mprMark(trace->events);
         mprMark(trace->mutex);
+        mprMark(trace->parent);
     }
 }
 

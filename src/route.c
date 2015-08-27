@@ -937,10 +937,7 @@ PUBLIC void httpAddRouteMapping(HttpRoute *route, cchar *extensions, cchar *mapp
         route->map = mprCreateHash(ME_MAX_ROUTE_MAP_HASH, MPR_HASH_STABLE);
     }
     for (ext = stok(sclone(extensions), ", \t", &etok); ext; ext = stok(NULL, ", \t", &etok)) {
-        if (*ext == '.') {
-            ext++;
-        }
-        if (*ext == '"') {
+        if (*ext == '.' || *ext == '"' || *ext == '*') {
             ext++;
         }
         len = slen(ext);

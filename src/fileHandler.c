@@ -467,10 +467,11 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
         }
         if (path) {
             pathInfo = sjoin(rx->scriptName, rx->pathInfo, index, NULL);
+            tx->filename = 0;
+            tx->ext = 0;
+            tx->fileInfo.checked = 0;
+            tx->fileInfo.valid = 0;
             httpSetUri(conn, httpFormatUri(req->scheme, req->host, req->port, pathInfo, req->reference, req->query, 0));
-            tx->filename = path;
-            tx->ext = httpGetExt(conn);
-            mprGetPathInfo(tx->filename, &tx->fileInfo);
             return HTTP_ROUTE_REROUTE;
         }
     }

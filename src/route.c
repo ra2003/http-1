@@ -672,7 +672,7 @@ PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename)
     HttpTx      *tx;
     MprKey      *kp;
     MprList     *extensions;
-    MprPath     *info;
+    MprPath     info;
     bool        acceptGzip, zipped;
     cchar       *ext, *path;
     int         next;
@@ -680,7 +680,6 @@ PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename)
     tx = conn->tx;
     rx = conn->rx;
     route = rx->route;
-    info = &tx->fileInfo;
 
     if (route->map && !(tx->flags & HTTP_TX_NO_MAP)) {
         if ((kp = mprLookupKeyEntry(route->map, tx->ext)) == 0) {
@@ -699,12 +698,13 @@ PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename)
                 } else {
                     path = sjoin(filename, ext, NULL);
                 }
-                if (mprGetPathInfo(path, info) == 0) {
+                if (mprGetPathInfo(path, &info) == 0) {
                     httpTrace(conn, "request.map", "context", "originalFilename:'%s',filename:'%s'", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");
                     }
+                    tx->fileInfo = info;
                     break;
                 }
             }

@@ -416,14 +416,6 @@ PUBLIC void httpOmitBody(HttpConn *conn)
 }
 
 
-#if UNUSED
-static bool localEndpoint(cchar *host)
-{
-    return smatch(host, "localhost") || smatch(host, "127.0.0.1") || smatch(host, "::1");
-}
-#endif
-
-
 /*
     Redirect the user to another URI. The targetUri may or may not have a scheme or hostname.
  */
@@ -432,11 +424,6 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     HttpTx          *tx;
     HttpRx          *rx;
     HttpUri         *base, *canonical;
-#if UNUSED
-    HttpUri         *target;
-    HttpEndpoint    *endpoint;
-    char            *dir, *cp;
-#endif
     cchar           *msg;
 
     assert(targetUri);
@@ -469,41 +456,6 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     targetUri = httpUriToString(httpResolveUri(conn, base, httpLinkUri(conn, targetUri, 0)), 0);
 
     if (300 <= status && status <= 399) {
-#if UNUSED
-        if (targetUri == 0) {
-            targetUri = "/";
-        }
-        target = httpCreateUri(targetUri, 0);
-        base = rx->parsedUri;
-        /*
-            Support URIs without a host:  https:///path. This is used to redirect onto the same host but with a
-            different scheme. So find a suitable local endpoint to supply the port for the scheme.
-        */
-        if (!target->port && (target->scheme && !smatch(target->scheme, base->scheme))) {
-            if (!target->host || smatch(base->host, target->host) || 
-                (localEndpoint(base->host) && localEndpoint(target->host))) {
-                endpoint = smatch(target->scheme, "https") ? conn->host->secureEndpoint : conn->host->defaultEndpoint;
-                if (endpoint) {
-                    target->port = endpoint->port;
-                } else if (smatch(target->scheme, "https")) {
-                    mprLog("error", 0, "Missing secure endpoint to use with https redirection");
-                }
-            }
-        }
-        if (target->path && target->path[0] != '/') {
-            /*
-                Relative file redirection to a file in the same directory as the previous request.
-             */
-            dir = sclone(rx->pathInfo);
-            if ((cp = strrchr(dir, '/')) != 0) {
-                /* Remove basename */
-                *cp = '\0';
-            }
-            target->path = sjoin(dir, "/", target->path, NULL);
-        }
-        target = httpCompleteUri(target, base);
-        targetUri = httpUriToString(target, 0);
-#endif
         httpSetHeader(conn, "Location", "%s", targetUri);
         httpFormatResponse(conn,
             "<!DOCTYPE html>\r\n"

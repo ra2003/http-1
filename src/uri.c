@@ -693,10 +693,6 @@ PUBLIC HttpUri *httpResolveUri(HttpConn *conn, HttpUri *base, HttpUri *other)
          */
         if (other->port) {
             current->port = other->port;
-#if UNUSED
-        } else if (current->port) {
-            current->port = 0;
-#endif
         } else {
             host = conn ? conn->host : httpGetDefaultHost();
             endpoint = smatch(current->scheme, "https") ? host->secureEndpoint : host->defaultEndpoint;

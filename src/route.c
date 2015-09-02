@@ -889,18 +889,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
                 } else if (*word == '\"' && word[1] == '\"') {
                     word = "";
                 }
-#if UNUSED
-                prior = mprLookupKey(route->extensions, word);
-                if (prior && prior != handler && *word) {
-                    mprLog("warn http route", 0, "Route \"%s\" has multiple handlers defined for extension \"%s\". "
-                            "Handlers: \"%s\", \"%s\".", route->pattern, word, handler->name, 
-                            ((HttpStage*) mprLookupKey(route->extensions, word))->name);
-                } else {
-                    mprAddKey(route->extensions, word, handler);
-                }
-#else
                 mprAddKey(route->extensions, word, handler);
-#endif
                 word = stok(NULL, " \t\r\n", &tok);
             }
         }
@@ -1929,11 +1918,6 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
     if (mprGetListLength(route->indexes) == 0) {
         mprAddItem(route->indexes,  sclone("index.html"));
     }
-#if UNUSED
-    if (!mprLookupKey(route->extensions, "")) {
-        httpAddRouteHandler(route, "fileHandler", "");
-    }
-#endif
     httpAddRoute(route->host, route);
 }
 

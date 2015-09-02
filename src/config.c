@@ -533,7 +533,7 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
     int         flags, ji;
 
     clientLifespan = serverLifespan = 0;
-    if (prop->type & MPR_JSON_STRING && smatch(prop->value, "true")) {
+    if (prop->type & MPR_JSON_TRUE || (prop->type == MPR_JSON_STRING && smatch(prop->value, "true"))) {
         httpAddCache(route, 0, 0, 0, 0, 3600 * 1000, 0, HTTP_CACHE_CLIENT | HTTP_CACHE_STATIC);
     } else {
         for (ITERATE_CONFIG(route, prop, child, ji)) {

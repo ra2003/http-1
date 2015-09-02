@@ -445,19 +445,19 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
             }
         }
     } else if (flags & HTTP_CACHE_STATIC) {
-        cache->types = mprCreateHash(0, MPR_HASH_STABLE);
-        mprAddKey(cache->types, "css", cache);
-        mprAddKey(cache->types, "gif", cache);
-        mprAddKey(cache->types, "ico", cache);
-        mprAddKey(cache->types, "jpg", cache);
-        mprAddKey(cache->types, "js", cache);
-        mprAddKey(cache->types, "html", cache);
-        mprAddKey(cache->types, "png", cache);
-        mprAddKey(cache->types, "pdf", cache);
-        mprAddKey(cache->types, "ttf", cache);
-        mprAddKey(cache->types, "txt", cache);
-        mprAddKey(cache->types, "xml", cache);
-        mprAddKey(cache->types, "woff", cache);
+        cache->extensions = mprCreateHash(0, MPR_HASH_STABLE);
+        mprAddKey(cache->extensions, "css", cache);
+        mprAddKey(cache->extensions, "gif", cache);
+        mprAddKey(cache->extensions, "ico", cache);
+        mprAddKey(cache->extensions, "jpg", cache);
+        mprAddKey(cache->extensions, "js", cache);
+        mprAddKey(cache->extensions, "html", cache);
+        mprAddKey(cache->extensions, "png", cache);
+        mprAddKey(cache->extensions, "pdf", cache);
+        mprAddKey(cache->extensions, "ttf", cache);
+        mprAddKey(cache->extensions, "txt", cache);
+        mprAddKey(cache->extensions, "xml", cache);
+        mprAddKey(cache->extensions, "woff", cache);
     }
     if (methods) {
         cache->methods = mprCreateHash(0, MPR_HASH_CASELESS | MPR_HASH_STABLE);

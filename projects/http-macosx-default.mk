@@ -217,6 +217,7 @@ $(BUILD)/inc/http.h: $(DEPS_5)
 #   mbedtls.h
 #
 DEPS_6 += src/mbedtls/mbedtls.h
+DEPS_6 += $(BUILD)/inc/me.h
 
 $(BUILD)/inc/mbedtls.h: $(DEPS_6)
 	@echo '      [Copy] $(BUILD)/inc/mbedtls.h'
@@ -247,7 +248,7 @@ DEPS_9 += src/http.h
 $(BUILD)/obj/actionHandler.o: \
     src/actionHandler.c $(DEPS_9)
 	@echo '   [Compile] $(BUILD)/obj/actionHandler.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/actionHandler.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/actionHandler.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/actionHandler.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/actionHandler.c
 
 #
 #   auth.o
@@ -257,7 +258,7 @@ DEPS_10 += src/http.h
 $(BUILD)/obj/auth.o: \
     src/auth.c $(DEPS_10)
 	@echo '   [Compile] $(BUILD)/obj/auth.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/auth.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/auth.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/auth.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/auth.c
 
 #
 #   basic.o
@@ -267,7 +268,7 @@ DEPS_11 += src/http.h
 $(BUILD)/obj/basic.o: \
     src/basic.c $(DEPS_11)
 	@echo '   [Compile] $(BUILD)/obj/basic.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/basic.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/basic.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/basic.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/basic.c
 
 #
 #   cache.o
@@ -277,7 +278,7 @@ DEPS_12 += src/http.h
 $(BUILD)/obj/cache.o: \
     src/cache.c $(DEPS_12)
 	@echo '   [Compile] $(BUILD)/obj/cache.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/cache.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/cache.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/cache.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/cache.c
 
 #
 #   chunkFilter.o
@@ -287,7 +288,7 @@ DEPS_13 += src/http.h
 $(BUILD)/obj/chunkFilter.o: \
     src/chunkFilter.c $(DEPS_13)
 	@echo '   [Compile] $(BUILD)/obj/chunkFilter.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/chunkFilter.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/chunkFilter.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/chunkFilter.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/chunkFilter.c
 
 #
 #   client.o
@@ -297,7 +298,7 @@ DEPS_14 += src/http.h
 $(BUILD)/obj/client.o: \
     src/client.c $(DEPS_14)
 	@echo '   [Compile] $(BUILD)/obj/client.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/client.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/client.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/client.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/client.c
 
 #
 #   config.o
@@ -307,7 +308,7 @@ DEPS_15 += src/http.h
 $(BUILD)/obj/config.o: \
     src/config.c $(DEPS_15)
 	@echo '   [Compile] $(BUILD)/obj/config.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/config.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/config.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/config.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/config.c
 
 #
 #   conn.o
@@ -317,7 +318,7 @@ DEPS_16 += src/http.h
 $(BUILD)/obj/conn.o: \
     src/conn.c $(DEPS_16)
 	@echo '   [Compile] $(BUILD)/obj/conn.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/conn.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/conn.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/conn.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/conn.c
 
 #
 #   digest.o
@@ -327,7 +328,7 @@ DEPS_17 += src/http.h
 $(BUILD)/obj/digest.o: \
     src/digest.c $(DEPS_17)
 	@echo '   [Compile] $(BUILD)/obj/digest.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/digest.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/digest.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/digest.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/digest.c
 
 #
 #   dirHandler.o
@@ -337,7 +338,7 @@ DEPS_18 += src/http.h
 $(BUILD)/obj/dirHandler.o: \
     src/dirHandler.c $(DEPS_18)
 	@echo '   [Compile] $(BUILD)/obj/dirHandler.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/dirHandler.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/dirHandler.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/dirHandler.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/dirHandler.c
 
 #
 #   endpoint.o
@@ -348,7 +349,7 @@ DEPS_19 += $(BUILD)/inc/pcre.h
 $(BUILD)/obj/endpoint.o: \
     src/endpoint.c $(DEPS_19)
 	@echo '   [Compile] $(BUILD)/obj/endpoint.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/endpoint.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/endpoint.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/endpoint.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/endpoint.c
 
 #
 #   error.o
@@ -358,7 +359,7 @@ DEPS_20 += src/http.h
 $(BUILD)/obj/error.o: \
     src/error.c $(DEPS_20)
 	@echo '   [Compile] $(BUILD)/obj/error.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/error.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/error.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/error.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/error.c
 
 #
 #   fileHandler.o
@@ -368,7 +369,7 @@ DEPS_21 += src/http.h
 $(BUILD)/obj/fileHandler.o: \
     src/fileHandler.c $(DEPS_21)
 	@echo '   [Compile] $(BUILD)/obj/fileHandler.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/fileHandler.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/fileHandler.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/fileHandler.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/fileHandler.c
 
 #
 #   host.o
@@ -379,7 +380,7 @@ DEPS_22 += $(BUILD)/inc/pcre.h
 $(BUILD)/obj/host.o: \
     src/host.c $(DEPS_22)
 	@echo '   [Compile] $(BUILD)/obj/host.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/host.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/host.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/host.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/host.c
 
 #
 #   http-server.o
@@ -389,7 +390,7 @@ DEPS_23 += $(BUILD)/inc/http.h
 $(BUILD)/obj/http-server.o: \
     test/http-server.c $(DEPS_23)
 	@echo '   [Compile] $(BUILD)/obj/http-server.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/http-server.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) test/http-server.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/http-server.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) test/http-server.c
 
 #
 #   http.o
@@ -399,51 +400,45 @@ DEPS_24 += src/http.h
 $(BUILD)/obj/http.o: \
     src/http.c $(DEPS_24)
 	@echo '   [Compile] $(BUILD)/obj/http.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/http.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/http.c
-
-#
-#   mbedtls.h
-#
-
-src/mbedtls/mbedtls.h: $(DEPS_25)
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/http.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/http.c
 
 #
 #   mbedtls.o
 #
-DEPS_26 += src/mbedtls/mbedtls.h
+DEPS_25 += $(BUILD)/inc/mbedtls.h
 
 $(BUILD)/obj/mbedtls.o: \
-    src/mbedtls/mbedtls.c $(DEPS_26)
+    src/mbedtls/mbedtls.c $(DEPS_25)
 	@echo '   [Compile] $(BUILD)/obj/mbedtls.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/mbedtls.o -arch $(CC_ARCH) $(CFLAGS) -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/mbedtls/mbedtls.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/mbedtls.o -arch $(CC_ARCH) $(CFLAGS) -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/mbedtls/mbedtls.c
 
 #
 #   monitor.o
 #
-DEPS_27 += src/http.h
+DEPS_26 += src/http.h
 
 $(BUILD)/obj/monitor.o: \
-    src/monitor.c $(DEPS_27)
+    src/monitor.c $(DEPS_26)
 	@echo '   [Compile] $(BUILD)/obj/monitor.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/monitor.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/monitor.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/monitor.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/monitor.c
 
 #
 #   mpr-mbedtls.o
 #
-DEPS_28 += $(BUILD)/inc/mpr.h
+DEPS_27 += $(BUILD)/inc/mpr.h
 
 $(BUILD)/obj/mpr-mbedtls.o: \
-    src/mpr-mbedtls/mpr-mbedtls.c $(DEPS_28)
+    src/mpr-mbedtls/mpr-mbedtls.c $(DEPS_27)
 	@echo '   [Compile] $(BUILD)/obj/mpr-mbedtls.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/mpr-mbedtls.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/mpr-mbedtls/mpr-mbedtls.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/mpr-mbedtls.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/mpr-mbedtls/mpr-mbedtls.c
 
 #
 #   mpr-openssl.o
 #
-DEPS_29 += $(BUILD)/inc/mpr.h
+DEPS_28 += $(BUILD)/inc/mpr.h
 
 $(BUILD)/obj/mpr-openssl.o: \
-    src/mpr-openssl/mpr-openssl.c $(DEPS_29)
+    src/mpr-openssl/mpr-openssl.c $(DEPS_28)
 	@echo '   [Compile] $(BUILD)/obj/mpr-openssl.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/mpr-openssl.o -arch $(CC_ARCH) $(CFLAGS) $(IFLAGS) src/mpr-openssl/mpr-openssl.c
 
@@ -451,246 +446,246 @@ $(BUILD)/obj/mpr-openssl.o: \
 #   mpr.h
 #
 
-src/mpr/mpr.h: $(DEPS_30)
+src/mpr/mpr.h: $(DEPS_29)
 
 #
 #   mprLib.o
 #
-DEPS_31 += src/mpr/mpr.h
+DEPS_30 += src/mpr/mpr.h
 
 $(BUILD)/obj/mprLib.o: \
-    src/mpr/mprLib.c $(DEPS_31)
+    src/mpr/mprLib.c $(DEPS_30)
 	@echo '   [Compile] $(BUILD)/obj/mprLib.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/mprLib.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/mpr/mprLib.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/mprLib.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/mpr/mprLib.c
 
 #
 #   netConnector.o
 #
-DEPS_32 += src/http.h
+DEPS_31 += src/http.h
 
 $(BUILD)/obj/netConnector.o: \
-    src/netConnector.c $(DEPS_32)
+    src/netConnector.c $(DEPS_31)
 	@echo '   [Compile] $(BUILD)/obj/netConnector.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/netConnector.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/netConnector.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/netConnector.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/netConnector.c
 
 #
 #   packet.o
 #
-DEPS_33 += src/http.h
+DEPS_32 += src/http.h
 
 $(BUILD)/obj/packet.o: \
-    src/packet.c $(DEPS_33)
+    src/packet.c $(DEPS_32)
 	@echo '   [Compile] $(BUILD)/obj/packet.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/packet.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/packet.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/packet.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/packet.c
 
 #
 #   pam.o
 #
-DEPS_34 += src/http.h
+DEPS_33 += src/http.h
 
 $(BUILD)/obj/pam.o: \
-    src/pam.c $(DEPS_34)
+    src/pam.c $(DEPS_33)
 	@echo '   [Compile] $(BUILD)/obj/pam.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/pam.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/pam.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/pam.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/pam.c
 
 #
 #   passHandler.o
 #
-DEPS_35 += src/http.h
+DEPS_34 += src/http.h
 
 $(BUILD)/obj/passHandler.o: \
-    src/passHandler.c $(DEPS_35)
+    src/passHandler.c $(DEPS_34)
 	@echo '   [Compile] $(BUILD)/obj/passHandler.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/passHandler.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/passHandler.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/passHandler.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/passHandler.c
 
 #
 #   pcre.h
 #
 
-src/pcre/pcre.h: $(DEPS_36)
+src/pcre/pcre.h: $(DEPS_35)
 
 #
 #   pcre.o
 #
-DEPS_37 += $(BUILD)/inc/me.h
-DEPS_37 += src/pcre/pcre.h
+DEPS_36 += $(BUILD)/inc/me.h
+DEPS_36 += src/pcre/pcre.h
 
 $(BUILD)/obj/pcre.o: \
-    src/pcre/pcre.c $(DEPS_37)
+    src/pcre/pcre.c $(DEPS_36)
 	@echo '   [Compile] $(BUILD)/obj/pcre.o'
 	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/pcre.o -arch $(CC_ARCH) $(CFLAGS) $(IFLAGS) src/pcre/pcre.c
 
 #
 #   pipeline.o
 #
-DEPS_38 += src/http.h
+DEPS_37 += src/http.h
 
 $(BUILD)/obj/pipeline.o: \
-    src/pipeline.c $(DEPS_38)
+    src/pipeline.c $(DEPS_37)
 	@echo '   [Compile] $(BUILD)/obj/pipeline.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/pipeline.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/pipeline.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/pipeline.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/pipeline.c
 
 #
 #   queue.o
 #
-DEPS_39 += src/http.h
+DEPS_38 += src/http.h
 
 $(BUILD)/obj/queue.o: \
-    src/queue.c $(DEPS_39)
+    src/queue.c $(DEPS_38)
 	@echo '   [Compile] $(BUILD)/obj/queue.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/queue.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/queue.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/queue.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/queue.c
 
 #
 #   rangeFilter.o
 #
-DEPS_40 += src/http.h
+DEPS_39 += src/http.h
 
 $(BUILD)/obj/rangeFilter.o: \
-    src/rangeFilter.c $(DEPS_40)
+    src/rangeFilter.c $(DEPS_39)
 	@echo '   [Compile] $(BUILD)/obj/rangeFilter.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/rangeFilter.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/rangeFilter.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/rangeFilter.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/rangeFilter.c
 
 #
 #   route.o
 #
-DEPS_41 += src/http.h
-DEPS_41 += $(BUILD)/inc/pcre.h
+DEPS_40 += src/http.h
+DEPS_40 += $(BUILD)/inc/pcre.h
 
 $(BUILD)/obj/route.o: \
-    src/route.c $(DEPS_41)
+    src/route.c $(DEPS_40)
 	@echo '   [Compile] $(BUILD)/obj/route.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/route.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/route.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/route.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/route.c
 
 #
 #   rx.o
 #
-DEPS_42 += src/http.h
+DEPS_41 += src/http.h
 
 $(BUILD)/obj/rx.o: \
-    src/rx.c $(DEPS_42)
+    src/rx.c $(DEPS_41)
 	@echo '   [Compile] $(BUILD)/obj/rx.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/rx.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/rx.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/rx.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/rx.c
 
 #
 #   sendConnector.o
 #
-DEPS_43 += src/http.h
+DEPS_42 += src/http.h
 
 $(BUILD)/obj/sendConnector.o: \
-    src/sendConnector.c $(DEPS_43)
+    src/sendConnector.c $(DEPS_42)
 	@echo '   [Compile] $(BUILD)/obj/sendConnector.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/sendConnector.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/sendConnector.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/sendConnector.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/sendConnector.c
 
 #
 #   service.o
 #
-DEPS_44 += src/http.h
+DEPS_43 += src/http.h
 
 $(BUILD)/obj/service.o: \
-    src/service.c $(DEPS_44)
+    src/service.c $(DEPS_43)
 	@echo '   [Compile] $(BUILD)/obj/service.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/service.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/service.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/service.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/service.c
 
 #
 #   session.o
 #
-DEPS_45 += src/http.h
+DEPS_44 += src/http.h
 
 $(BUILD)/obj/session.o: \
-    src/session.c $(DEPS_45)
+    src/session.c $(DEPS_44)
 	@echo '   [Compile] $(BUILD)/obj/session.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/session.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/session.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/session.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/session.c
 
 #
 #   stage.o
 #
-DEPS_46 += src/http.h
+DEPS_45 += src/http.h
 
 $(BUILD)/obj/stage.o: \
-    src/stage.c $(DEPS_46)
+    src/stage.c $(DEPS_45)
 	@echo '   [Compile] $(BUILD)/obj/stage.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/stage.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/stage.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/stage.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/stage.c
 
 #
 #   trace.o
 #
-DEPS_47 += src/http.h
+DEPS_46 += src/http.h
 
 $(BUILD)/obj/trace.o: \
-    src/trace.c $(DEPS_47)
+    src/trace.c $(DEPS_46)
 	@echo '   [Compile] $(BUILD)/obj/trace.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/trace.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/trace.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/trace.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/trace.c
 
 #
 #   tx.o
 #
-DEPS_48 += src/http.h
+DEPS_47 += src/http.h
 
 $(BUILD)/obj/tx.o: \
-    src/tx.c $(DEPS_48)
+    src/tx.c $(DEPS_47)
 	@echo '   [Compile] $(BUILD)/obj/tx.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/tx.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/tx.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/tx.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/tx.c
 
 #
 #   uploadFilter.o
 #
-DEPS_49 += src/http.h
+DEPS_48 += src/http.h
 
 $(BUILD)/obj/uploadFilter.o: \
-    src/uploadFilter.c $(DEPS_49)
+    src/uploadFilter.c $(DEPS_48)
 	@echo '   [Compile] $(BUILD)/obj/uploadFilter.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/uploadFilter.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/uploadFilter.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/uploadFilter.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/uploadFilter.c
 
 #
 #   uri.o
 #
-DEPS_50 += src/http.h
+DEPS_49 += src/http.h
 
 $(BUILD)/obj/uri.o: \
-    src/uri.c $(DEPS_50)
+    src/uri.c $(DEPS_49)
 	@echo '   [Compile] $(BUILD)/obj/uri.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/uri.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/uri.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/uri.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/uri.c
 
 #
 #   user.o
 #
-DEPS_51 += src/http.h
+DEPS_50 += src/http.h
 
 $(BUILD)/obj/user.o: \
-    src/user.c $(DEPS_51)
+    src/user.c $(DEPS_50)
 	@echo '   [Compile] $(BUILD)/obj/user.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/user.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/user.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/user.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/user.c
 
 #
 #   var.o
 #
-DEPS_52 += src/http.h
+DEPS_51 += src/http.h
 
 $(BUILD)/obj/var.o: \
-    src/var.c $(DEPS_52)
+    src/var.c $(DEPS_51)
 	@echo '   [Compile] $(BUILD)/obj/var.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/var.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/var.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/var.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/var.c
 
 #
 #   webSockFilter.o
 #
-DEPS_53 += src/http.h
+DEPS_52 += src/http.h
 
 $(BUILD)/obj/webSockFilter.o: \
-    src/webSockFilter.c $(DEPS_53)
+    src/webSockFilter.c $(DEPS_52)
 	@echo '   [Compile] $(BUILD)/obj/webSockFilter.o'
-	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/webSockFilter.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE="embedtls.h" $(IFLAGS) src/webSockFilter.c
+	$(CC) -c $(DFLAGS) -o $(BUILD)/obj/webSockFilter.o -arch $(CC_ARCH) $(CFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/webSockFilter.c
 
 ifeq ($(ME_COM_MBEDTLS),1)
 #
 #   libmbedtls
 #
-DEPS_54 += $(BUILD)/inc/osdep.h
-DEPS_54 += $(BUILD)/inc/embedtls.h
-DEPS_54 += $(BUILD)/inc/mbedtls.h
-DEPS_54 += $(BUILD)/obj/mbedtls.o
+DEPS_53 += $(BUILD)/inc/osdep.h
+DEPS_53 += $(BUILD)/inc/embedtls.h
+DEPS_53 += $(BUILD)/inc/mbedtls.h
+DEPS_53 += $(BUILD)/obj/mbedtls.o
 
-$(BUILD)/bin/libmbedtls.a: $(DEPS_54)
+$(BUILD)/bin/libmbedtls.a: $(DEPS_53)
 	@echo '      [Link] $(BUILD)/bin/libmbedtls.a'
 	ar -cr $(BUILD)/bin/libmbedtls.a "$(BUILD)/obj/mbedtls.o"
 endif
@@ -699,10 +694,10 @@ ifeq ($(ME_COM_MBEDTLS),1)
 #
 #   libmpr-mbedtls
 #
-DEPS_55 += $(BUILD)/bin/libmbedtls.a
-DEPS_55 += $(BUILD)/obj/mpr-mbedtls.o
+DEPS_54 += $(BUILD)/bin/libmbedtls.a
+DEPS_54 += $(BUILD)/obj/mpr-mbedtls.o
 
-$(BUILD)/bin/libmpr-mbedtls.a: $(DEPS_55)
+$(BUILD)/bin/libmpr-mbedtls.a: $(DEPS_54)
 	@echo '      [Link] $(BUILD)/bin/libmpr-mbedtls.a'
 	ar -cr $(BUILD)/bin/libmpr-mbedtls.a "$(BUILD)/obj/mpr-mbedtls.o"
 endif
@@ -711,9 +706,9 @@ ifeq ($(ME_COM_OPENSSL),1)
 #
 #   libmpr-openssl
 #
-DEPS_56 += $(BUILD)/obj/mpr-openssl.o
+DEPS_55 += $(BUILD)/obj/mpr-openssl.o
 
-$(BUILD)/bin/libmpr-openssl.a: $(DEPS_56)
+$(BUILD)/bin/libmpr-openssl.a: $(DEPS_55)
 	@echo '      [Link] $(BUILD)/bin/libmpr-openssl.a'
 	ar -cr $(BUILD)/bin/libmpr-openssl.a "$(BUILD)/obj/mpr-openssl.o"
 endif
@@ -721,47 +716,47 @@ endif
 #
 #   libmpr
 #
-DEPS_57 += $(BUILD)/inc/osdep.h
+DEPS_56 += $(BUILD)/inc/osdep.h
 ifeq ($(ME_COM_MBEDTLS),1)
-    DEPS_57 += $(BUILD)/bin/libmpr-mbedtls.a
+    DEPS_56 += $(BUILD)/bin/libmpr-mbedtls.a
 endif
 ifeq ($(ME_COM_MBEDTLS),1)
-    DEPS_57 += $(BUILD)/bin/libmbedtls.a
+    DEPS_56 += $(BUILD)/bin/libmbedtls.a
 endif
 ifeq ($(ME_COM_OPENSSL),1)
-    DEPS_57 += $(BUILD)/bin/libmpr-openssl.a
+    DEPS_56 += $(BUILD)/bin/libmpr-openssl.a
 endif
-DEPS_57 += $(BUILD)/inc/mpr.h
-DEPS_57 += $(BUILD)/obj/mprLib.o
+DEPS_56 += $(BUILD)/inc/mpr.h
+DEPS_56 += $(BUILD)/obj/mprLib.o
 
 ifeq ($(ME_COM_MBEDTLS),1)
-    LIBS_57 += -lmbedtls
+    LIBS_56 += -lmbedtls
 endif
 ifeq ($(ME_COM_MBEDTLS),1)
-    LIBS_57 += -lmpr-mbedtls
+    LIBS_56 += -lmpr-mbedtls
 endif
 ifeq ($(ME_COM_MBEDTLS),1)
-    LIBS_57 += -lmbedtls
+    LIBS_56 += -lmbedtls
 endif
 ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_57 += -lmpr-openssl
+    LIBS_56 += -lmpr-openssl
 endif
 ifeq ($(ME_COM_MBEDTLS),1)
-    LIBS_57 += -lmpr-mbedtls
+    LIBS_56 += -lmpr-mbedtls
 endif
 
-$(BUILD)/bin/libmpr.dylib: $(DEPS_57)
+$(BUILD)/bin/libmpr.dylib: $(DEPS_56)
 	@echo '      [Link] $(BUILD)/bin/libmpr.dylib'
-	$(CC) -dynamiclib -o $(BUILD)/bin/libmpr.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libmpr.dylib -compatibility_version 6.2 -current_version 6.2 "$(BUILD)/obj/mprLib.o" $(LIBPATHS_57) $(LIBS_57) $(LIBS_57) $(LIBS) 
+	$(CC) -dynamiclib -o $(BUILD)/bin/libmpr.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libmpr.dylib -compatibility_version 6.2 -current_version 6.2 "$(BUILD)/obj/mprLib.o" $(LIBPATHS_56) $(LIBS_56) $(LIBS_56) $(LIBS) 
 
 ifeq ($(ME_COM_PCRE),1)
 #
 #   libpcre
 #
-DEPS_58 += $(BUILD)/inc/pcre.h
-DEPS_58 += $(BUILD)/obj/pcre.o
+DEPS_57 += $(BUILD)/inc/pcre.h
+DEPS_57 += $(BUILD)/obj/pcre.o
 
-$(BUILD)/bin/libpcre.dylib: $(DEPS_58)
+$(BUILD)/bin/libpcre.dylib: $(DEPS_57)
 	@echo '      [Link] $(BUILD)/bin/libpcre.dylib'
 	$(CC) -dynamiclib -o $(BUILD)/bin/libpcre.dylib -arch $(CC_ARCH) $(LDFLAGS) -compatibility_version 6.2 -current_version 6.2 $(LIBPATHS) -install_name @rpath/libpcre.dylib -compatibility_version 6.2 -current_version 6.2 "$(BUILD)/obj/pcre.o" $(LIBS) 
 endif
@@ -769,46 +764,80 @@ endif
 #
 #   libhttp
 #
-DEPS_59 += $(BUILD)/bin/libmpr.dylib
+DEPS_58 += $(BUILD)/bin/libmpr.dylib
 ifeq ($(ME_COM_PCRE),1)
-    DEPS_59 += $(BUILD)/bin/libpcre.dylib
+    DEPS_58 += $(BUILD)/bin/libpcre.dylib
 endif
-DEPS_59 += $(BUILD)/inc/http.h
-DEPS_59 += $(BUILD)/obj/actionHandler.o
-DEPS_59 += $(BUILD)/obj/auth.o
-DEPS_59 += $(BUILD)/obj/basic.o
-DEPS_59 += $(BUILD)/obj/cache.o
-DEPS_59 += $(BUILD)/obj/chunkFilter.o
-DEPS_59 += $(BUILD)/obj/client.o
-DEPS_59 += $(BUILD)/obj/config.o
-DEPS_59 += $(BUILD)/obj/conn.o
-DEPS_59 += $(BUILD)/obj/digest.o
-DEPS_59 += $(BUILD)/obj/dirHandler.o
-DEPS_59 += $(BUILD)/obj/endpoint.o
-DEPS_59 += $(BUILD)/obj/error.o
-DEPS_59 += $(BUILD)/obj/fileHandler.o
-DEPS_59 += $(BUILD)/obj/host.o
-DEPS_59 += $(BUILD)/obj/monitor.o
-DEPS_59 += $(BUILD)/obj/netConnector.o
-DEPS_59 += $(BUILD)/obj/packet.o
-DEPS_59 += $(BUILD)/obj/pam.o
-DEPS_59 += $(BUILD)/obj/passHandler.o
-DEPS_59 += $(BUILD)/obj/pipeline.o
-DEPS_59 += $(BUILD)/obj/queue.o
-DEPS_59 += $(BUILD)/obj/rangeFilter.o
-DEPS_59 += $(BUILD)/obj/route.o
-DEPS_59 += $(BUILD)/obj/rx.o
-DEPS_59 += $(BUILD)/obj/sendConnector.o
-DEPS_59 += $(BUILD)/obj/service.o
-DEPS_59 += $(BUILD)/obj/session.o
-DEPS_59 += $(BUILD)/obj/stage.o
-DEPS_59 += $(BUILD)/obj/trace.o
-DEPS_59 += $(BUILD)/obj/tx.o
-DEPS_59 += $(BUILD)/obj/uploadFilter.o
-DEPS_59 += $(BUILD)/obj/uri.o
-DEPS_59 += $(BUILD)/obj/user.o
-DEPS_59 += $(BUILD)/obj/var.o
-DEPS_59 += $(BUILD)/obj/webSockFilter.o
+DEPS_58 += $(BUILD)/inc/http.h
+DEPS_58 += $(BUILD)/obj/actionHandler.o
+DEPS_58 += $(BUILD)/obj/auth.o
+DEPS_58 += $(BUILD)/obj/basic.o
+DEPS_58 += $(BUILD)/obj/cache.o
+DEPS_58 += $(BUILD)/obj/chunkFilter.o
+DEPS_58 += $(BUILD)/obj/client.o
+DEPS_58 += $(BUILD)/obj/config.o
+DEPS_58 += $(BUILD)/obj/conn.o
+DEPS_58 += $(BUILD)/obj/digest.o
+DEPS_58 += $(BUILD)/obj/dirHandler.o
+DEPS_58 += $(BUILD)/obj/endpoint.o
+DEPS_58 += $(BUILD)/obj/error.o
+DEPS_58 += $(BUILD)/obj/fileHandler.o
+DEPS_58 += $(BUILD)/obj/host.o
+DEPS_58 += $(BUILD)/obj/monitor.o
+DEPS_58 += $(BUILD)/obj/netConnector.o
+DEPS_58 += $(BUILD)/obj/packet.o
+DEPS_58 += $(BUILD)/obj/pam.o
+DEPS_58 += $(BUILD)/obj/passHandler.o
+DEPS_58 += $(BUILD)/obj/pipeline.o
+DEPS_58 += $(BUILD)/obj/queue.o
+DEPS_58 += $(BUILD)/obj/rangeFilter.o
+DEPS_58 += $(BUILD)/obj/route.o
+DEPS_58 += $(BUILD)/obj/rx.o
+DEPS_58 += $(BUILD)/obj/sendConnector.o
+DEPS_58 += $(BUILD)/obj/service.o
+DEPS_58 += $(BUILD)/obj/session.o
+DEPS_58 += $(BUILD)/obj/stage.o
+DEPS_58 += $(BUILD)/obj/trace.o
+DEPS_58 += $(BUILD)/obj/tx.o
+DEPS_58 += $(BUILD)/obj/uploadFilter.o
+DEPS_58 += $(BUILD)/obj/uri.o
+DEPS_58 += $(BUILD)/obj/user.o
+DEPS_58 += $(BUILD)/obj/var.o
+DEPS_58 += $(BUILD)/obj/webSockFilter.o
+
+ifeq ($(ME_COM_MBEDTLS),1)
+    LIBS_58 += -lmbedtls
+endif
+ifeq ($(ME_COM_MBEDTLS),1)
+    LIBS_58 += -lmpr-mbedtls
+endif
+ifeq ($(ME_COM_MBEDTLS),1)
+    LIBS_58 += -lmbedtls
+endif
+ifeq ($(ME_COM_OPENSSL),1)
+    LIBS_58 += -lmpr-openssl
+endif
+LIBS_58 += -lmpr
+ifeq ($(ME_COM_MBEDTLS),1)
+    LIBS_58 += -lmpr-mbedtls
+endif
+ifeq ($(ME_COM_PCRE),1)
+    LIBS_58 += -lpcre
+endif
+ifeq ($(ME_COM_PCRE),1)
+    LIBS_58 += -lpcre
+endif
+LIBS_58 += -lmpr
+
+$(BUILD)/bin/libhttp.dylib: $(DEPS_58)
+	@echo '      [Link] $(BUILD)/bin/libhttp.dylib'
+	$(CC) -dynamiclib -o $(BUILD)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 6.2 -current_version 6.2 "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBPATHS_58) $(LIBS_58) $(LIBS_58) $(LIBS) -lpam 
+
+#
+#   http-server
+#
+DEPS_59 += $(BUILD)/bin/libhttp.dylib
+DEPS_59 += $(BUILD)/obj/http-server.o
 
 ifeq ($(ME_COM_MBEDTLS),1)
     LIBS_59 += -lmbedtls
@@ -829,20 +858,21 @@ endif
 ifeq ($(ME_COM_PCRE),1)
     LIBS_59 += -lpcre
 endif
+LIBS_59 += -lhttp
 ifeq ($(ME_COM_PCRE),1)
     LIBS_59 += -lpcre
 endif
 LIBS_59 += -lmpr
 
-$(BUILD)/bin/libhttp.dylib: $(DEPS_59)
-	@echo '      [Link] $(BUILD)/bin/libhttp.dylib'
-	$(CC) -dynamiclib -o $(BUILD)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) -install_name @rpath/libhttp.dylib -compatibility_version 6.2 -current_version 6.2 "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) -lpam 
+$(BUILD)/bin/http-server: $(DEPS_59)
+	@echo '      [Link] $(BUILD)/bin/http-server'
+	$(CC) -o $(BUILD)/bin/http-server -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http-server.o" $(LIBPATHS_59) $(LIBS_59) $(LIBS_59) $(LIBS) 
 
 #
-#   http-server
+#   httpcmd
 #
 DEPS_60 += $(BUILD)/bin/libhttp.dylib
-DEPS_60 += $(BUILD)/obj/http-server.o
+DEPS_60 += $(BUILD)/obj/http.o
 
 ifeq ($(ME_COM_MBEDTLS),1)
     LIBS_60 += -lmbedtls
@@ -869,59 +899,24 @@ ifeq ($(ME_COM_PCRE),1)
 endif
 LIBS_60 += -lmpr
 
-$(BUILD)/bin/http-server: $(DEPS_60)
-	@echo '      [Link] $(BUILD)/bin/http-server'
-	$(CC) -o $(BUILD)/bin/http-server -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http-server.o" $(LIBPATHS_60) $(LIBS_60) $(LIBS_60) $(LIBS) 
-
-#
-#   httpcmd
-#
-DEPS_61 += $(BUILD)/bin/libhttp.dylib
-DEPS_61 += $(BUILD)/obj/http.o
-
-ifeq ($(ME_COM_MBEDTLS),1)
-    LIBS_61 += -lmbedtls
-endif
-ifeq ($(ME_COM_MBEDTLS),1)
-    LIBS_61 += -lmpr-mbedtls
-endif
-ifeq ($(ME_COM_MBEDTLS),1)
-    LIBS_61 += -lmbedtls
-endif
-ifeq ($(ME_COM_OPENSSL),1)
-    LIBS_61 += -lmpr-openssl
-endif
-LIBS_61 += -lmpr
-ifeq ($(ME_COM_MBEDTLS),1)
-    LIBS_61 += -lmpr-mbedtls
-endif
-ifeq ($(ME_COM_PCRE),1)
-    LIBS_61 += -lpcre
-endif
-LIBS_61 += -lhttp
-ifeq ($(ME_COM_PCRE),1)
-    LIBS_61 += -lpcre
-endif
-LIBS_61 += -lmpr
-
-$(BUILD)/bin/http: $(DEPS_61)
+$(BUILD)/bin/http: $(DEPS_60)
 	@echo '      [Link] $(BUILD)/bin/http'
-	$(CC) -o $(BUILD)/bin/http -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http.o" $(LIBPATHS_61) $(LIBS_61) $(LIBS_61) $(LIBS) 
+	$(CC) -o $(BUILD)/bin/http -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http.o" $(LIBPATHS_60) $(LIBS_60) $(LIBS_60) $(LIBS) 
 
 #
 #   install-certs
 #
-DEPS_62 += src/certs/samples/ca.crt
-DEPS_62 += src/certs/samples/ca.key
-DEPS_62 += src/certs/samples/ec.crt
-DEPS_62 += src/certs/samples/ec.key
-DEPS_62 += src/certs/samples/roots.crt
-DEPS_62 += src/certs/samples/self.crt
-DEPS_62 += src/certs/samples/self.key
-DEPS_62 += src/certs/samples/test.crt
-DEPS_62 += src/certs/samples/test.key
+DEPS_61 += src/certs/samples/ca.crt
+DEPS_61 += src/certs/samples/ca.key
+DEPS_61 += src/certs/samples/ec.crt
+DEPS_61 += src/certs/samples/ec.key
+DEPS_61 += src/certs/samples/roots.crt
+DEPS_61 += src/certs/samples/self.crt
+DEPS_61 += src/certs/samples/self.key
+DEPS_61 += src/certs/samples/test.crt
+DEPS_61 += src/certs/samples/test.key
 
-$(BUILD)/.install-certs-modified: $(DEPS_62)
+$(BUILD)/.install-certs-modified: $(DEPS_61)
 	@echo '      [Copy] $(BUILD)/bin'
 	mkdir -p "$(BUILD)/bin"
 	cp src/certs/samples/ca.crt $(BUILD)/bin/ca.crt
@@ -939,7 +934,7 @@ $(BUILD)/.install-certs-modified: $(DEPS_62)
 #   installPrep
 #
 
-installPrep: $(DEPS_63)
+installPrep: $(DEPS_62)
 	if [ "`id -u`" != 0 ] ; \
 	then echo "Must run as root. Rerun with "sudo"" ; \
 	exit 255 ; \
@@ -949,41 +944,41 @@ installPrep: $(DEPS_63)
 #   stop
 #
 
-stop: $(DEPS_64)
+stop: $(DEPS_63)
 
 #
 #   installBinary
 #
 
-installBinary: $(DEPS_65)
+installBinary: $(DEPS_64)
 
 #
 #   start
 #
 
-start: $(DEPS_66)
+start: $(DEPS_65)
 
 #
 #   install
 #
-DEPS_67 += installPrep
-DEPS_67 += stop
-DEPS_67 += installBinary
-DEPS_67 += start
+DEPS_66 += installPrep
+DEPS_66 += stop
+DEPS_66 += installBinary
+DEPS_66 += start
 
-install: $(DEPS_67)
+install: $(DEPS_66)
 
 #
 #   uninstall
 #
-DEPS_68 += stop
+DEPS_67 += stop
 
-uninstall: $(DEPS_68)
+uninstall: $(DEPS_67)
 
 #
 #   version
 #
 
-version: $(DEPS_69)
+version: $(DEPS_68)
 	echo $(VERSION)
 

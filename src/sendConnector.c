@@ -142,6 +142,7 @@ PUBLIC void httpSendOutgoingService(HttpQueue *q)
     }
     if (q->first && q->first->flags & HTTP_PACKET_END) {
         httpFinalizeConnector(conn);
+        httpGetPacket(q);
     }
 }
 

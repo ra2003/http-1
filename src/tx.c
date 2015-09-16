@@ -100,6 +100,9 @@ static void setHdr(HttpConn *conn, cchar *key, cchar *value)
     assert(key && *key);
     assert(value);
 
+    if (schr(value, '$')) {
+        value = httpExpandVars(conn, value);
+    }
     mprAddKey(conn->tx->headers, key, value);
 }
 

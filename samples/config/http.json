@@ -297,7 +297,7 @@
                 Headers to add if not already defined
              */
             add: {
-                "Content-Security-Policy":   "allow \"self\"; unsafe-inline; img-src \"self\"",
+                "Content-Security-Policy":   "default-src 'self'",
                 "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
                 "CrossOrigin":               "origin=* credentials=yes headers=X-CORS-HEADER age=3000",
             },

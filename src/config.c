@@ -1783,9 +1783,7 @@ static void parseTimeoutsRequest(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseTimeoutsSession(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    if (! mprGetDebugMode()) {
-        route->limits->sessionTimeout = httpGetTicks(prop->value);
-    }
+    route->limits->sessionTimeout = httpGetTicks(prop->value);
 }
 
 

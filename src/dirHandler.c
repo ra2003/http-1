@@ -113,7 +113,7 @@ static void startDir(HttpQueue *q)
     outputFooter(q);
     httpFinalize(conn);
 }
- 
+
 
 static void parseQuery(HttpConn *conn)
 {
@@ -123,7 +123,7 @@ static void parseQuery(HttpConn *conn)
 
     rx = conn->rx;
     dir = conn->reqData;
-    
+
     query = sclone(rx->parsedUri->query);
     if (query == 0) {
         return;
@@ -152,7 +152,7 @@ static void parseQuery(HttpConn *conn)
                     dir->sortOrder = -1;
                 }
 
-            } else if (*tok == 'F') {           /* Format */ 
+            } else if (*tok == 'F') {           /* Format */
                 if (*value == '0') {
                     dir->fancyIndexing = 0;
                 } else if (*value == '1') {
@@ -161,7 +161,7 @@ static void parseQuery(HttpConn *conn)
                     dir->fancyIndexing = 2;
                 }
 
-            } else if (*tok == 'P') {           /* Pattern */ 
+            } else if (*tok == 'P') {           /* Pattern */
                 dir->pattern = sclone(value);
             }
         }
@@ -177,7 +177,7 @@ static void sortList(HttpConn *conn, MprList *list)
     int         count, i, j, rc;
 
     dir = conn->reqData;
-    
+
     if (dir->sortField == 0) {
         return;
     }
@@ -192,7 +192,7 @@ static void sortList(HttpConn *conn, MprList *list)
                         rc = -dir->sortOrder;
                     } else if (items[j]->isDir && !items[i]->isDir) {
                         rc = dir->sortOrder;
-                    } 
+                    }
                 }
                 rc *= dir->sortOrder;
                 if (rc < 0) {
@@ -395,7 +395,7 @@ static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *path, int nameSize)
     }
     mprDecodeLocalTime(&tm, when);
 
-    fmt(timeBuf, sizeof(timeBuf), "%02d-%3s-%4d %02d:%02d", tm.tm_mday, months[tm.tm_mon], tm.tm_year + 1900, 
+    fmt(timeBuf, sizeof(timeBuf), "%02d-%3s-%4d %02d:%02d", tm.tm_mday, months[tm.tm_mon], tm.tm_year + 1900,
         tm.tm_hour,  tm.tm_min);
     len = (int) strlen(ep->name) + (int) strlen(dirSuffix);
 
@@ -407,7 +407,7 @@ static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *path, int nameSize)
 
     } else if (dir->fancyIndexing == 1) {
         httpWrite(q, "<img src=\"/icons/%s.gif\" alt=\"[   ]\", /> ", icon);
-        httpWrite(q, "<a href=\"%s%s\">%s%s</a>%-*s %17s %4s\r\n", ep->name, dirSuffix, ep->name, dirSuffix, 
+        httpWrite(q, "<a href=\"%s%s\">%s%s</a>%-*s %17s %4s\r\n", ep->name, dirSuffix, ep->name, dirSuffix,
             nameSize - len, "", timeBuf, sizeBuf);
 
     } else {
@@ -421,13 +421,13 @@ static void outputFooter(HttpQueue *q)
     HttpConn    *conn;
     MprSocket   *sock;
     HttpDir     *dir;
-    
+
     conn = q->conn;
     dir = conn->reqData;
-    
+
     if (dir->fancyIndexing == 2) {
         httpWrite(q, "<tr><th colspan=\"5\"><hr /></th></tr>\r\n</table>\r\n");
-        
+
     } else if (dir->fancyIndexing == 1) {
         httpWrite(q, "<hr /></pre>\r\n");
     } else {
@@ -446,7 +446,7 @@ static void filterDirList(HttpConn *conn, MprList *list)
     int             next;
 
     dir = conn->reqData;
-    
+
     /*
         Do pattern matching. Entries that don't match, free the name to mark
      */
@@ -519,8 +519,8 @@ static int defaultIconDirective(MaState *state, cchar *key, cchar *value)
     return 0;
 }
 
-/*  
-    IndexIgnore pat ... 
+/*
+    IndexIgnore pat ...
  */
 static int indexIgnoreDirective(MaState *state, cchar *key, cchar *value)
 {
@@ -585,7 +585,7 @@ PUBLIC HttpDir *httpGetDirObj(HttpRoute *route)
     if (route->parent) {
         /*
             If the parent route has the same route data, then force a clone so the parent route does not get modified
-         */ 
+         */
         parent = httpGetRouteData(route->parent, DIR_NAME);
         if (dir == parent) {
             dir = 0;
@@ -618,7 +618,7 @@ PUBLIC int httpOpenDirHandler()
         return MPR_ERR_MEMORY;
     }
     handler->flags |= HTTP_STAGE_INTERNAL;
-    handler->start = startDir; 
+    handler->start = startDir;
     HTTP->dirHandler = handler;
     dir->sortOrder = 1;
     return 0;
@@ -631,7 +631,7 @@ PUBLIC int httpOpenDirHandler()
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

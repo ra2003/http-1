@@ -107,7 +107,7 @@ static int matchCacheHandler(HttpConn *conn, HttpRoute *route, int dir)
                 return HTTP_ROUTE_OK;
             }
             /*
-                Caching is configured but no acceptable cached content yet. 
+                Caching is configured but no acceptable cached content yet.
                 Create a capture buffer for the cacheFilter.
              */
             if (!tx->cacheBuffer) {
@@ -414,7 +414,7 @@ PUBLIC void httpAddCache(HttpRoute *route, cchar *methods, cchar *uris, cchar *e
     cache = 0;
     if (!route->caching) {
         if (route->handler) {
-            mprLog("error http cache", 0, 
+            mprLog("error http cache", 0,
                 "Caching handler disabled because SetHandler used in route %s. Use AddHandler instead", route->pattern);
         }
         httpAddRouteHandler(route, "cacheHandler", NULL);

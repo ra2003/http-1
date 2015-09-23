@@ -129,9 +129,9 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
 
         subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
-            sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %lld, MESSAGE: '%s', PERIOD: %lld, SUBJECT: '%s', VALUE: %lld }", 
+            sfmt("{ COUNTER: '%s', DATE: '%s', IP: '%s', LIMIT: %lld, MESSAGE: '%s', PERIOD: %lld, SUBJECT: '%s', VALUE: %lld }",
             monitor->counterName, mprGetDate(NULL), ip, monitor->limit, msg, period, subject, counter->value));
-        /*  
+        /*
             WARNING: may yield depending on remedy
          */
         invokeDefenses(monitor, args);
@@ -288,7 +288,7 @@ static void manageAddress(HttpAddress *address, int flags)
 }
 
 
-static void startMonitors() 
+static void startMonitors()
 {
     HttpMonitor     *monitor;
     Http            *http;
@@ -311,7 +311,7 @@ static void startMonitors()
 }
 
 
-static void stopMonitors() 
+static void stopMonitors()
 {
     HttpMonitor     *monitor;
     Http            *http;
@@ -334,7 +334,7 @@ static void stopMonitors()
 
 /*
     Register a monitor event
-    This code is very carefully coded for maximum speed to minimize locks for keep-alive requests. 
+    This code is very carefully coded for maximum speed to minimize locks for keep-alive requests.
     There are some tolerated race conditions.
  */
 PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
@@ -357,7 +357,7 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
                 address = mprRealloc(address, sizeof(HttpAddress) * ncounters * sizeof(HttpCounter));
                 memset(&address[address->ncounters], 0, (ncounters - address->ncounters) * sizeof(HttpCounter));
             } else {
-                address = mprAllocBlock(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter), 
+                address = mprAllocBlock(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter),
                     MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO);
                 mprSetManager(address, (MprManager) manageAddress);
             }
@@ -377,8 +377,8 @@ PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
     }
     counter = &address->counters[counterIndex];
     mprAtomicAdd64((int64*) &counter->value, adj);
-    /* 
-        Tolerated race with "updated" and the return value 
+    /*
+        Tolerated race with "updated" and the return value
      */
     address->updated = http->now;
     return counter->value;
@@ -585,7 +585,7 @@ static void cmdRemedy(MprHash *args)
         rc = mprWaitForCmd(cmd, ME_HTTP_REMEDY_TIMEOUT);
         status = mprGetCmdExitStatus(cmd);
         if (rc < 0 || status != 0) {
-            httpTrace(0, "monitor.remedy.cmd.error", "error", "msg:'Remedy failed. %s. %s', command: '%s'", 
+            httpTrace(0, "monitor.remedy.cmd.error", "error", "msg:'Remedy failed. %s. %s', command: '%s'",
                 mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf), command);
             return;
         }
@@ -680,7 +680,7 @@ PUBLIC int httpAddRemedies()
     httpAddRemedy("log", logRemedy);
     httpAddRemedy("restart", restartRemedy);
     return 0;
-} 
+}
 
 
 /*
@@ -689,7 +689,7 @@ PUBLIC int httpAddRemedies()
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

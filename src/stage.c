@@ -1,7 +1,7 @@
 /*
     stage.c -- Stages are the building blocks of the Http request pipeline.
 
-    Stages support the extensible and modular processing of HTTP requests. Handlers are a kind of stage that are the 
+    Stages support the extensible and modular processing of HTTP requests. Handlers are a kind of stage that are the
     first line processing of a request. Connectors are the last stage in a chain to send/receive data over a network.
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
@@ -153,7 +153,7 @@ PUBLIC HttpStage *httpCreateConnector(cchar *name, MprModule *module)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

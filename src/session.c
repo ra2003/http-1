@@ -134,7 +134,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             mprGetCacheStats(http->sessionCache, &activeSessions, NULL);
             if (activeSessions >= conn->limits->sessionMax) {
                 unlock(http);
-                httpLimitError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, 
+                httpLimitError(conn, HTTP_CODE_SERVICE_UNAVAILABLE,
                     "Too many sessions %d/%d", activeSessions, conn->limits->sessionMax);
                 return 0;
             }
@@ -315,7 +315,7 @@ PUBLIC cchar *httpGetSessionID(HttpConn *conn)
 
 
 /*
-    Create a security token to use to mitiate CSRF threats. Security tokens are expected to be sent with POST requests to 
+    Create a security token to use to mitiate CSRF threats. Security tokens are expected to be sent with POST requests to
     verify the request is not being forged.
 
     Note: the HttpSession API prevents session hijacking by pairing with the client IP
@@ -359,7 +359,7 @@ PUBLIC cchar *httpGetSecurityToken(HttpConn *conn, bool recreate)
     Add the security token to a XSRF cookie and response header
     Set recreate to true to force a recreation of the token.
  */
-PUBLIC int httpAddSecurityToken(HttpConn *conn, bool recreate) 
+PUBLIC int httpAddSecurityToken(HttpConn *conn, bool recreate)
 {
     HttpRoute   *route;
     cchar       *securityToken, *url;
@@ -377,7 +377,7 @@ PUBLIC int httpAddSecurityToken(HttpConn *conn, bool recreate)
     Check the security token with the request. This must match the last generated token stored in the session state.
     It is expected the client will set the X-XSRF-TOKEN header with the token.
  */
-PUBLIC bool httpCheckSecurityToken(HttpConn *conn) 
+PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
 {
     cchar   *requestToken, *sessionToken;
 
@@ -393,8 +393,8 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.
              */
-            httpTrace(conn, "request.xsrf.error", "error",   
-                "msg:'Security token in request does not match session token',xsrf:'%s',sessionXsrf:'%s'", 
+            httpTrace(conn, "request.xsrf.error", "error",
+                "msg:'Security token in request does not match session token',xsrf:'%s',sessionXsrf:'%s'",
                 requestToken, sessionToken);
             httpAddSecurityToken(conn, 1);
             return 0;
@@ -410,7 +410,7 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

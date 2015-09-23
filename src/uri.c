@@ -30,7 +30,7 @@ static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action);
         /URI
         URI
 
-        NOTE: HOST/URI is not supported and requires a scheme prefix. This is because it is ambiguous with a 
+        NOTE: HOST/URI is not supported and requires a scheme prefix. This is because it is ambiguous with a
         relative uri path.
 
     Missing fields are null or zero.
@@ -174,7 +174,7 @@ static void manageUri(HttpUri *uri, int flags)
 /*
     Create and initialize a URI. This accepts full URIs with schemes (http:) and partial URLs
  */
-PUBLIC HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query, 
+PUBLIC HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cchar *path, cchar *reference, cchar *query,
         int flags)
 {
     HttpUri     *up;
@@ -372,7 +372,7 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
                 host = "localhost";
             }
         }
-    } 
+    }
     if (scheme) {
         hostDelim = "://";
     }
@@ -415,7 +415,7 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
         queryDelim = query = "";
     }
     if (*portDelim) {
-        uri = sjoin(scheme, hostDelim, host, portDelim, portStr, pathDelim, path, referenceDelim, reference, 
+        uri = sjoin(scheme, hostDelim, host, portDelim, portStr, pathDelim, path, referenceDelim, reference,
             queryDelim, query, NULL);
     } else {
         uri = sjoin(scheme, hostDelim, host, pathDelim, path, referenceDelim, reference, queryDelim, query, NULL);
@@ -519,7 +519,7 @@ PUBLIC HttpUri *httpJoinUriPath(HttpUri *result, HttpUri *base, HttpUri *other)
         if (other->path[0] == '/') {
             result->path = sclone(other->path);
         } else {
-            sep = ((base->path[0] == '\0' || base->path[slen(base->path) - 1] == '/') || 
+            sep = ((base->path[0] == '\0' || base->path[slen(base->path) - 1] == '/') ||
                    (other->path[0] == '\0' || other->path[0] == '/'))  ? "" : "/";
             result->path = sjoin(base->path, sep, other->path, NULL);
         }
@@ -590,7 +590,7 @@ PUBLIC HttpUri *httpNormalizeUri(HttpUri *uri)
 
 /*
     Normalize a URI path to remove redundant "./" and cleanup "../" and make separator uniform. Does not make an abs path.
-    It does not map separators nor change case. 
+    It does not map separators nor change case.
  */
 PUBLIC char *httpNormalizeUriPath(cchar *pathArg)
 {
@@ -744,7 +744,7 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
     }
     if (*target == '@') {
         target = sjoin("{action: '", target, "'}", NULL);
-    } 
+    }
     if (*target != '{') {
         tplate = target;
         if (!options) {
@@ -918,7 +918,7 @@ static int getDefaultPort(cchar *scheme)
 }
 
 
-static void trimPathToDirname(HttpUri *uri) 
+static void trimPathToDirname(HttpUri *uri)
 {
     char        *path, *cp;
     int         len;
@@ -993,7 +993,7 @@ static char *actionRoute(HttpRoute *route, cchar *controller, cchar *action)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

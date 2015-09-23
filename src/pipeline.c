@@ -1,5 +1,5 @@
 /*
-    pipeline.c -- HTTP pipeline processing. 
+    pipeline.c -- HTTP pipeline processing.
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
 
@@ -65,10 +65,10 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     }
     if (tx->connector == 0) {
 #if !ME_ROM
-        if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !(tx->flags & HTTP_TX_HAS_FILTERS) && 
+        if (tx->handler == http->fileHandler && (rx->flags & HTTP_GET) && !(tx->flags & HTTP_TX_HAS_FILTERS) &&
                 !conn->secure && !httpTracing(conn)) {
             tx->connector = http->sendConnector;
-        } else 
+        } else
 #endif
         tx->connector = (route && route->connector) ? route->connector : http->netConnector;
     }
@@ -82,7 +82,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     conn->connectorq = tx->queue[HTTP_QUEUE_TX]->prevQ;
 
     /*
-        Double the connector max hi-water mark. This optimization permits connectors to accept packets without 
+        Double the connector max hi-water mark. This optimization permits connectors to accept packets without
         unnecesary flow control.
      */
     conn->connectorq->max *= 2;
@@ -108,10 +108,10 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     tx->flags |= HTTP_TX_PIPELINE;
 
     if (conn->endpoint) {
-        httpTrace(conn, "request.pipeline", "context",  
+        httpTrace(conn, "request.pipeline", "context",
             "route:'%s',handler:'%s',target:'%s',endpoint:'%s:%d',host:'%s',referrer:'%s',filename:'%s'",
             rx->route->pattern, tx->handler->name, rx->route->targetRule, conn->endpoint->ip, conn->endpoint->port,
-            conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "", 
+            conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "",
             tx->filename ? tx->filename : "");
     }
 }
@@ -393,8 +393,8 @@ PUBLIC bool httpServiceQueues(HttpConn *conn, int flags)
             mprYield(0);
         }
     }
-    /* 
-        Always do a yield if requested even if there are no queues to service 
+    /*
+        Always do a yield if requested even if there are no queues to service
      */
     if (mprNeedYield() && (flags & HTTP_BLOCK)) {
         mprYield(0);
@@ -440,7 +440,7 @@ static bool matchFilter(HttpConn *conn, HttpStage *filter, HttpRoute *route, int
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

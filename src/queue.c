@@ -216,7 +216,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 
     if (flags & HTTP_BLOCK) {
         /*
-            Blocking mode: Fully drain the pipeline. This blocks until the connector has written all the data 
+            Blocking mode: Fully drain the pipeline. This blocks until the connector has written all the data
             to the O/S socket.
          */
         while (tx->writeBlocked || conn->connectorq->count > 0 || conn->connectorq->ioCount) {
@@ -244,7 +244,7 @@ PUBLIC void httpFlush(HttpConn *conn)
 
 
 /*
-    Flush the write queue. In sync mode, this call may yield. 
+    Flush the write queue. In sync mode, this call may yield.
  */
 PUBLIC void httpFlushAll(HttpConn *conn)
 {
@@ -396,8 +396,8 @@ PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
     httpResizePacket(q, packet, 0);
     size = httpGetPacketLength(packet);
     assert(size <= nextQ->packetSize);
-    /* 
-        Packet size is now acceptable. Accept the packet if the queue is mostly empty (< low) or if the 
+    /*
+        Packet size is now acceptable. Accept the packet if the queue is mostly empty (< low) or if the
         packet will fit entirely under the max or if the queue.
         NOTE: queue maximums are advisory. We choose to potentially overflow the max here to optimize the case where
         the queue may have say one byte and a max size packet would overflow by 1.
@@ -406,7 +406,7 @@ PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
         return 1;
     }
     /*
-        The downstream queue cannot accept this packet, so disable queue and mark the downstream queue as full and service 
+        The downstream queue cannot accept this packet, so disable queue and mark the downstream queue as full and service
      */
     httpSuspendQueue(q);
     if (!(nextQ->flags & HTTP_QUEUE_SUSPENDED)) {
@@ -434,7 +434,7 @@ PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpPacket *packet, bool spl
         }
     }
     /*
-        The downstream queue is full, so disable the queue and mark the downstream queue as full and service 
+        The downstream queue is full, so disable the queue and mark the downstream queue as full and service
      */
     if (!(q->flags & HTTP_QUEUE_SUSPENDED)) {
         httpScheduleQueue(q);
@@ -488,7 +488,7 @@ PUBLIC bool httpVerifyQueue(HttpQueue *q)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

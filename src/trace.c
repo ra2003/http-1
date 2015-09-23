@@ -293,7 +293,7 @@ PUBLIC bool httpTraceProc(HttpConn *conn, cchar *event, cchar *type, cchar *valu
 
 
 
-PUBLIC void httpFormatTrace(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, cchar *buf, 
+PUBLIC void httpFormatTrace(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, cchar *buf,
     ssize len)
 {
     (trace->formatter)(trace, conn, event, type, values, buf, len);
@@ -367,7 +367,7 @@ PUBLIC cchar *httpMakePrintable(HttpTrace *trace, HttpConn *conn, cchar *event, 
 /*
     Format a detailed request message
  */
-PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, 
+PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values,
     cchar *data, ssize len)
 {
     MprBuf      *buf;

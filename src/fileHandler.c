@@ -5,7 +5,7 @@
     GET, PUT, DELETE, OPTIONS and TRACE. It is event based and does not use worker threads.
 
     The fileHandler also manages requests for directories that require redirection to an index or responding with
-    a directory listing. 
+    a directory listing.
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
@@ -22,7 +22,7 @@ static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize si
 
 /*********************************** Code *************************************/
 /*
-    Rewrite the request for directories, indexes and compressed content. 
+    Rewrite the request for directories, indexes and compressed content.
  */
 static int rewriteFileHandler(HttpConn *conn)
 {
@@ -76,7 +76,7 @@ static int openFileHandler(HttpQueue *q)
         if (!(info->valid || info->isDir)) {
             httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot find document");
             return 0;
-        } 
+        }
         if (!tx->etag) {
             /* Set the etag for caching in the client */
             tx->etag = sfmt("\"%llx-%llx-%llx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
@@ -97,15 +97,15 @@ static int openFileHandler(HttpQueue *q)
             httpOmitBody(conn);
         }
         if (!tx->fileInfo.isReg && !tx->fileInfo.isLink) {
-            httpTrace(conn, "request.document.error", "error", "msg:'Document is not a regular file',filename:'%s'", 
+            httpTrace(conn, "request.document.error", "error", "msg:'Document is not a regular file',filename:'%s'",
                 tx->filename);
             httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot serve document");
-            
-        } else if (tx->fileInfo.size > conn->limits->txBodySize && 
+
+        } else if (tx->fileInfo.size > conn->limits->txBodySize &&
                 conn->limits->txBodySize != HTTP_UNLIMITED) {
             httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Http transmission aborted. File size exceeds max body of %lld bytes", conn->limits->txBodySize);
-            
+
         } else if (!(tx->connector == conn->http->sendConnector)) {
             /*
                 If using the net connector, open the file if a body must be sent with the response. The file will be
@@ -115,11 +115,11 @@ static int openFileHandler(HttpQueue *q)
                 tx->file = mprOpenFile(tx->filename, O_RDONLY | O_BINARY, 0);
                 if (tx->file == 0) {
                     if (rx->referrer && *rx->referrer) {
-                        httpTrace(conn, "request.document.error", "error", 
-                            "msg:'Cannot open document',filename:'%s',referrer:'%s'", 
+                        httpTrace(conn, "request.document.error", "error",
+                            "msg:'Cannot open document',filename:'%s',referrer:'%s'",
                             tx->filename, rx->referrer);
                     } else {
-                        httpTrace(conn, "request.document.error", "error", 
+                        httpTrace(conn, "request.document.error", "error",
                             "msg:'Cannot open document',filename:'%s'", tx->filename);
                     }
                     httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot open document");
@@ -157,23 +157,23 @@ static void startFileHandler(HttpQueue *q)
     conn = q->conn;
     rx = conn->rx;
     tx = conn->tx;
-    
+
     if (tx->finalized || conn->error) {
         return;
 
     } else if (rx->flags & HTTP_PUT) {
         handlePutRequest(q);
-        
+
     } else if (rx->flags & HTTP_DELETE) {
         handleDeleteRequest(q);
-        
+
     } else if (rx->flags & HTTP_OPTIONS) {
         httpHandleOptions(q->conn);
-        
+
     } else if (!(tx->flags & HTTP_TX_NO_BODY)) {
         if (tx->entityLength >= 0) {
-            /* 
-                Create a single data packet based on the actual entity (file) length 
+            /*
+                Create a single data packet based on the actual entity (file) length
              */
             packet = httpCreateEntityPacket(0, tx->entityLength, readFileData);
             if (!tx->outputRanges && tx->chunkSize < 0) {
@@ -197,8 +197,8 @@ static void readyFileHandler(HttpQueue *q)
 }
 
 
-/*  
-    Populate a packet with file data. Return the number of bytes read or a negative error code. 
+/*
+    Populate a packet with file data. Return the number of bytes read or a negative error code.
  */
 static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize size)
 {
@@ -219,8 +219,8 @@ static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize si
         mprSeekFile(tx->file, SEEK_SET, pos);
     }
     if ((nbytes = mprReadFile(tx->file, mprGetBufStart(packet->content), size)) != size) {
-        /*  
-            As we may have sent some data already to the client, the only thing we can do is abort and hope the client 
+        /*
+            As we may have sent some data already to the client, the only thing we can do is abort and hope the client
             notices the short data.
          */
         httpError(conn, HTTP_CODE_SERVICE_UNAVAILABLE, "Cannot read file %s", tx->filename);
@@ -233,7 +233,7 @@ static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize si
 }
 
 
-/*  
+/*
     Prepare a data packet for sending downstream. This involves reading file data into a suitably sized packet. Return
     the 1 if the packet was sent entirely, return zero if the packet could not be completely sent. Return a negative
     error code for write errors. This may split the packet if it exceeds the downstreams maximum packet size.
@@ -255,7 +255,7 @@ static int prepPacket(HttpQueue *q, HttpPacket *packet)
         size = (ssize) packet->esize;
     }
     if ((size + nextQ->count) > nextQ->max) {
-        /*  
+        /*
             The downstream queue is full, so disable the queue and service downstream queue.
             Will re-enable via a writable event on the connection.
          */
@@ -273,9 +273,9 @@ static int prepPacket(HttpQueue *q, HttpPacket *packet)
 }
 
 
-/*  
-    The service callback will be invoked to service outgoing packets on the service queue. It will only be called 
-    once all incoming data has been received and then when the downstream queues drain sufficiently to absorb 
+/*
+    The service callback will be invoked to service outgoing packets on the service queue. It will only be called
+    once all incoming data has been received and then when the downstream queues drain sufficiently to absorb
     more data. This routine may flow control if the downstream stage cannot accept all the file data. It will
     then be re-called as required to send more data.
  */
@@ -305,7 +305,7 @@ static void outgoingFileService(HttpQueue *q)
 
 
 /*
-    The incoming callback is invoked to receive body data 
+    The incoming callback is invoked to receive body data
  */
 static void incomingFile(HttpQueue *q, HttpPacket *packet)
 {
@@ -321,7 +321,7 @@ static void incomingFile(HttpQueue *q, HttpPacket *packet)
     tx = conn->tx;
     rx = conn->rx;
     file = (MprFile*) q->queueData;
-    
+
     if (file == 0) {
         /*  Not a PUT so just ignore the incoming data.  */
         return;
@@ -353,7 +353,7 @@ static void incomingFile(HttpQueue *q, HttpPacket *packet)
 }
 
 
-/*  
+/*
     This is called to setup for a HTTP PUT request. It is called before receiving the post data via incomingFileData
  */
 static void handlePutRequest(HttpQueue *q)
@@ -372,7 +372,7 @@ static void handlePutRequest(HttpQueue *q)
 
     path = tx->filename;
     if (tx->outputRanges) {
-        /*  
+        /*
             Open an existing file with fall-back to create
          */
         if ((file = mprOpenFile(path, O_BINARY | O_WRONLY, 0644)) == 0) {
@@ -425,14 +425,14 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
     HttpTx      *tx;
     HttpRoute   *route;
     HttpUri     *req;
-    cchar       *index, *pathInfo, *path; 
+    cchar       *index, *pathInfo, *path;
     int         next;
 
     rx = conn->rx;
     tx = conn->tx;
     req = rx->parsedUri;
     route = rx->route;
-    
+
     /*
         Manage requests for directories
      */
@@ -440,7 +440,7 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
         /*
            Append "/" and do an external redirect. Use the original request URI. Use httpFormatUri to preserve query.
          */
-        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, 
+        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY,
             httpFormatUri(0, 0, 0, sjoin(req->path, "/", NULL), req->reference, req->query, 0));
         return HTTP_ROUTE_OK;
     }
@@ -467,7 +467,7 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
         }
         if (path) {
             pathInfo = sjoin(req->path, index, NULL);
-            if (httpSetUri(conn, httpFormatUri(req->scheme, req->host, req->port, pathInfo, req->reference, 
+            if (httpSetUri(conn, httpFormatUri(req->scheme, req->host, req->port, pathInfo, req->reference,
                     req->query, 0)) < 0) {
                 mprLog("error http", 0, "Cannot handle directory \"%s\"", pathInfo);
                 return HTTP_ROUTE_REJECT;
@@ -479,7 +479,7 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
     }
 #if ME_COM_DIR
     /*
-        Directory Listing. Test if a directory listing should be rendered. If so, delegate to the dirHandler. 
+        Directory Listing. Test if a directory listing should be rendered. If so, delegate to the dirHandler.
         Must use the netConnector.
      */
     if (httpShouldRenderDirListing(conn)) {
@@ -492,14 +492,14 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
 }
 
 
-/*  
+/*
     Loadable module initialization
  */
 PUBLIC int httpOpenFileHandler()
 {
     HttpStage     *handler;
 
-    /* 
+    /*
         This handler serves requests without using thread workers.
      */
     if ((handler = httpCreateHandler("fileHandler", NULL)) == 0) {
@@ -523,7 +523,7 @@ PUBLIC int httpOpenFileHandler()
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

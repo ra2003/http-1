@@ -364,13 +364,13 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     conn->ip = sclone(sock->ip);
 
     if ((value = httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1)) > conn->limits->connectionsMax) {
-        httpTrace(conn, "connection.accept.error", "error", "msg:'Too many concurrent connections',active:%d,max:%d", 
+        httpTrace(conn, "connection.accept.error", "error", "msg:'Too many concurrent connections',active:%d,max:%d",
             (int) value, conn->limits->connectionsMax);
         httpDestroyConn(conn);
         return 0;
     }
     if (mprGetHashLength(http->addresses) > conn->limits->clientMax) {
-        httpTrace(conn, "connection.accept.error", "error", "msg:'Too many concurrent clients',active:%d,max:%d", 
+        httpTrace(conn, "connection.accept.error", "error", "msg:'Too many concurrent clients',active:%d,max:%d",
             mprGetHashLength(http->addresses), conn->limits->clientMax);
         httpDestroyConn(conn);
         return 0;
@@ -402,9 +402,9 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
     assert(conn->state == HTTP_STATE_BEGIN);
     httpSetState(conn, HTTP_STATE_CONNECTED);
 
-    httpTrace(conn, "connection.accept.new", "context", "peer:'%s',endpoint:'%s:%d'", 
+    httpTrace(conn, "connection.accept.new", "context", "peer:'%s',endpoint:'%s:%d'",
         conn->ip, sock->acceptIp, sock->acceptPort);
-    
+
     event->mask = MPR_READABLE;
     event->timestamp = conn->http->now;
     (conn->ioCallback)(conn, event);
@@ -413,7 +413,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
 
 
 /*
-    Read data from the peer. This will use the existing conn->input packet or allocate a new packet if required to 
+    Read data from the peer. This will use the existing conn->input packet or allocate a new packet if required to
     hold the data. The number of bytes read is stored in conn->lastRead. SSL connections are traced.
     Socket error messages are stored in conn->errorMsg.
  */
@@ -441,8 +441,8 @@ static void readPeerData(HttpConn *conn)
 
 
 /*
-    Handle IO on the connection. Initially the conn->dispatcher will be set to the server->dispatcher and the first 
-    I/O event will be handled on the server thread (or main thread). A request handler may create a new 
+    Handle IO on the connection. Initially the conn->dispatcher will be set to the server->dispatcher and the first
+    I/O event will be handled on the server thread (or main thread). A request handler may create a new
     conn->dispatcher and transfer execution to a worker thread if required.
  */
 PUBLIC void httpIO(HttpConn *conn, int eventMask)
@@ -512,8 +512,8 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
 
 
 /*
-    Handle an IO event on the connection. This is invoked by the wait subsystem in response to I/O events. 
-    It is also invoked via relay when an accept event is received by the server. 
+    Handle an IO event on the connection. This is invoked by the wait subsystem in response to I/O events.
+    It is also invoked via relay when an accept event is received by the server.
 */
 PUBLIC void httpIOEvent(HttpConn *conn, MprEvent *event)
 {
@@ -920,7 +920,7 @@ PUBLIC HttpLimits *httpSetUniqueConnLimits(HttpConn *conn)
     Test if a request has expired relative to the default inactivity and request timeout limits.
     Set timeout to a non-zero value to apply an overriding smaller timeout
     Set timeout to a value in msec. If timeout is zero, override default limits and wait forever.
-    If timeout is < 0, use default inactivity and duration timeouts. 
+    If timeout is < 0, use default inactivity and duration timeouts.
     If timeout is > 0, then use this timeout as an additional timeout.
  */
 PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
@@ -947,7 +947,7 @@ PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout)
     }
     if (mprGetRemainingTicks(conn->lastActivity, inactivityTimeout) < 0) {
         if (inactivityTimeout != timeout) {
-            httpTrace(conn, "timeout.inactivity", "error", 
+            httpTrace(conn, "timeout.inactivity", "error",
                 "msg:'Request cancelled due to inactivity',timeout:%lld", inactivityTimeout / 1000);
         }
         return 1;

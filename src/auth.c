@@ -32,7 +32,7 @@ PUBLIC void httpInitAuth()
 {
     /*
         Auth protocol types: basic, digest, form
-        These are typically not used for web frameworks like ESP or PHP 
+        These are typically not used for web frameworks like ESP or PHP
      */
     httpCreateAuthType("basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
     httpCreateAuthType("digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
@@ -166,7 +166,7 @@ PUBLIC bool httpAuthenticate(HttpConn *conn)
                 return 0;
             }
         }
-        httpTrace(conn, "auth.login.authenticated", "context", 
+        httpTrace(conn, "auth.login.authenticated", "context",
             "msg: 'Using cached authentication data', username:'%s'", username);
         conn->username = username;
         rx->authenticated = 1;
@@ -397,7 +397,7 @@ PUBLIC void httpSetAuthLogin(HttpAuth *auth, cchar *value)
 static void loginServiceProc(HttpConn *conn)
 {
     HttpAuth    *auth;
-    
+
     auth = conn->rx->route->auth;
     if (httpIsAuthenticated(conn)) {
         httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loggedInPage ? auth->loggedInPage : "~");
@@ -459,7 +459,7 @@ static HttpRoute *createLoginRoute(HttpRoute *route, cchar *pattern, HttpAction 
     Define login URLs by creating routes. Used by Appweb AuthType directive.
     Web frameworks like ESP should NOT use this.
  */
-PUBLIC void httpSetAuthFormDetails(HttpRoute *route, cchar *loginPage, cchar *loginService, cchar *logoutService, 
+PUBLIC void httpSetAuthFormDetails(HttpRoute *route, cchar *loginPage, cchar *loginService, cchar *logoutService,
     cchar *loggedInPage, cchar *loggedOutPage)
 {
     HttpRoute   *loginRoute;

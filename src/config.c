@@ -111,7 +111,7 @@ static void blendMode(HttpRoute *route, MprJson *config)
     cchar       *mode;
 
     /*
-        Use existing mode from route->config. Blending of config should already have taken place, 
+        Use existing mode from route->config. Blending of config should already have taken place,
         so pak.mode should be defined.
      */
     mode = mprGetJson(route->config, "pak.mode");

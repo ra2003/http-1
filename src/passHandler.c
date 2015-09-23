@@ -1,7 +1,7 @@
 /*
     passHandler.c -- Pass through handler
 
-    This handler simply relays all content to a network connector. It is used for the ErrorHandler and 
+    This handler simply relays all content to a network connector. It is used for the ErrorHandler and
     when there is no handler defined. It is configured as the "passHandler" and "errorHandler".
     It also handles OPTIONS and TRACE methods for all.
 
@@ -53,7 +53,7 @@ static void handleTrace(HttpConn *conn)
     HttpPacket  *traceData, *headers;
 
     /*
-        Create a dummy set of headers to use as the response body. Then reset so the connector will create 
+        Create a dummy set of headers to use as the response body. Then reset so the connector will create
         the headers in the normal fashion. Need to be careful not to have a content length in the headers in the body.
      */
     tx = conn->tx;
@@ -103,7 +103,7 @@ PUBLIC int httpOpenPassHandler()
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

@@ -299,7 +299,7 @@ PUBLIC void httpStopConnections(void *data)
     Destroy the http service. This should be called only after ensuring all running requests have completed.
     Normally invoked by the http terminator from mprDestroy
  */
-PUBLIC void httpDestroy() 
+PUBLIC void httpDestroy()
 {
     Http            *http;
 
@@ -351,7 +351,7 @@ static bool isIdle(bool traceRequests)
             if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
                 if (traceRequests && lastTrace < now) {
                     if (conn->rx) {
-                        mprLog("info http", 2, "Request for \"%s\" is still active", 
+                        mprLog("info http", 2, "Request for \"%s\" is still active",
                             conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
                     }
                     lastTrace = now;
@@ -597,7 +597,7 @@ static void httpTimer(Http *http, MprEvent *event)
 
     updateCurrentDate();
 
-    /* 
+    /*
        Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
        OPT - could check for expired connections every 10 seconds.
      */
@@ -606,7 +606,7 @@ static void httpTimer(Http *http, MprEvent *event)
         limits = conn->limits;
         if (!conn->timeoutEvent) {
             abort = mprIsStopping();
-            if (httpServerConn(conn) && (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED) && 
+            if (httpServerConn(conn) && (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED) &&
                     (http->now - conn->started) > limits->requestParseTimeout) {
                 conn->timeout = HTTP_PARSE_TIMEOUT;
                 abort = 1;
@@ -619,7 +619,7 @@ static void httpTimer(Http *http, MprEvent *event)
             } else if (!event) {
                 /* Called directly from httpStop to stop connections */
                 if (MPR->exitTimeout > 0) {
-                    if (conn->state == HTTP_STATE_COMPLETE || 
+                    if (conn->state == HTTP_STATE_COMPLETE ||
                         (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED)) {
                         abort = 1;
                     }
@@ -693,7 +693,7 @@ PUBLIC void httpSetTimestamp(MprTicks period)
         mprRemoveEvent(http->timestamp);
     }
     if (period > 0) {
-        http->timestamp = mprCreateTimerEvent(NULL, "httpTimestamp", period, timestamp, NULL, 
+        http->timestamp = mprCreateTimerEvent(NULL, "httpTimestamp", period, timestamp, NULL,
             MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
     }
 }
@@ -717,7 +717,7 @@ PUBLIC void httpAddConn(HttpConn *conn)
         if (!mprGetDebugMode())
 #endif
         {
-            http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http, 
+            http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http,
                 MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
         }
     }
@@ -905,7 +905,7 @@ PUBLIC char *httpStatsReport(int flags)
     mprPutToBuf(buf, "Processes    %8d active\n", s.activeProcesses);
     mprPutToBuf(buf, "Requests     %8d active\n", s.activeRequests);
     mprPutToBuf(buf, "Sessions     %8d active\n", s.activeSessions);
-    mprPutToBuf(buf, "Workers      %8d busy - %d yielded, %d idle, %d max\n", 
+    mprPutToBuf(buf, "Workers      %8d busy - %d yielded, %d idle, %d max\n",
         s.workersBusy, s.workersYielded, s.workersIdle, s.workersMax);
     mprPutToBuf(buf, "Sessions     %8.1f MB\n", s.memSessions / mb);
     mprPutCharToBuf(buf, '\n');
@@ -945,7 +945,7 @@ PUBLIC bool httpConfigure(HttpConfigureProc proc, void *data, MprTicks timeout)
 }
 
 
-PUBLIC int httpApplyUserGroup() 
+PUBLIC int httpApplyUserGroup()
 {
 #if ME_UNIX_LIKE
     Http    *http;
@@ -982,7 +982,7 @@ PUBLIC int httpApplyUserGroup()
             }
         }
         groups = mprGetBufStart(gbuf);
-        mprLog("info http", 2, "Running as user \"%s\" (%d), group \"%s\" (%d)%s", http->user, http->uid, 
+        mprLog("info http", 2, "Running as user \"%s\" (%d), group \"%s\" (%d)%s", http->user, http->uid,
             http->group, http->gid, groups);
     }
 #endif
@@ -1269,7 +1269,7 @@ PUBLIC int httpSetPlatformDir(cchar *path)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

@@ -1,5 +1,5 @@
 /*
-    route.c -- Http request routing 
+    route.c -- Http request routing
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
@@ -334,7 +334,7 @@ PUBLIC HttpRoute *httpCreateAliasRoute(HttpRoute *parent, cchar *pattern, cchar 
 
 
 /*
-    This routine binds a new route to a URI. It creates a handler, route and binds a callback to that route. 
+    This routine binds a new route to a URI. It creates a handler, route and binds a callback to that route.
  */
 PUBLIC HttpRoute *httpCreateActionRoute(HttpRoute *parent, cchar *pattern, HttpAction action)
 {
@@ -375,8 +375,8 @@ PUBLIC void httpStopRoute(HttpRoute *route)
 
 
 /*
-    Find the matching route and handler for a request. If any errors occur, the pass handler is used to 
-    pass errors via the net/sendfile connectors onto the client. This process may rewrite the request 
+    Find the matching route and handler for a request. If any errors occur, the pass handler is used to
+    pass errors via the net/sendfile connectors onto the client. This process may rewrite the request
     URI and may redirect the request.
  */
 PUBLIC void httpRouteRequest(HttpConn *conn)
@@ -489,7 +489,7 @@ static int matchRequestUri(HttpConn *conn, HttpRoute *route)
     rx = conn->rx;
 
     if (route->patternCompiled) {
-        rx->matchCount = pcre_exec(route->patternCompiled, NULL, rx->pathInfo, (int) slen(rx->pathInfo), 0, 0, 
+        rx->matchCount = pcre_exec(route->patternCompiled, NULL, rx->pathInfo, (int) slen(rx->pathInfo), 0, 0,
             rx->matches, sizeof(rx->matches) / sizeof(int));
         if (route->flags & HTTP_ROUTE_NOT) {
             if (rx->matchCount > 0) {
@@ -538,7 +538,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     if (route->requestHeaders) {
         for (next = 0; (op = mprGetNextItem(route->requestHeaders, &next)) != 0; ) {
             if ((header = httpGetHeader(conn, op->name)) != 0) {
-                count = pcre_exec(op->mdata, NULL, header, (int) slen(header), 0, 0, 
+                count = pcre_exec(op->mdata, NULL, header, (int) slen(header), 0, 0,
                     matched, sizeof(matched) / sizeof(int));
                 result = count > 0;
                 if (op->flags & HTTP_ROUTE_NOT) {
@@ -553,7 +553,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     if (route->params) {
         for (next = 0; (op = mprGetNextItem(route->params, &next)) != 0; ) {
             if ((field = httpGetParam(conn, op->name, "")) != 0) {
-                count = pcre_exec(op->mdata, NULL, field, (int) slen(field), 0, 0, 
+                count = pcre_exec(op->mdata, NULL, field, (int) slen(field), 0, 0,
                     matched, sizeof(matched) / sizeof(int));
                 result = count > 0;
                 if (op->flags & HTTP_ROUTE_NOT) {
@@ -766,7 +766,7 @@ PUBLIC int httpAddRouteCondition(HttpRoute *route, cchar *name, cchar *details, 
         op->details = finalizeReplacement(route, details);
 
     } else if (scaselessmatch(name, "match")) {
-        /* 
+        /*
             Condition match string pattern
             String can contain matching ${tokens} from the route->pattern and can contain request ${tokens}
          */
@@ -782,7 +782,7 @@ PUBLIC int httpAddRouteCondition(HttpRoute *route, cchar *name, cchar *details, 
 
     } else if (scaselessmatch(name, "secure")) {
         if (!details || *details == '\0') {
-            mprLog("error http config", 0, "Secure route condition is missing a redirect target in route \"%s\"", 
+            mprLog("error http config", 0, "Secure route condition is missing a redirect target in route \"%s\"",
                 route->pattern);
         }
         op->details = finalizeReplacement(route, details);
@@ -803,7 +803,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
 
     for (ITERATE_ITEMS(route->outputStages, stage, next)) {
         if (smatch(stage->name, name)) {
-            mprLog("warn http route", 0, "Stage \"%s\" is already configured for the route \"%s\". Ignoring.", 
+            mprLog("warn http route", 0, "Stage \"%s\" is already configured for the route \"%s\". Ignoring.",
                 name, route->pattern);
             return 0;
         }
@@ -841,7 +841,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     }
     if (direction & HTTP_STAGE_TX && filter->outgoing) {
         GRADUATE_LIST(route, outputStages);
-        if (smatch(name, "cacheFilter") && 
+        if (smatch(name, "cacheFilter") &&
                 (pos = mprGetListLength(route->outputStages) - 1) >= 0 &&
                 smatch(((HttpStage*) mprGetLastItem(route->outputStages))->name, "chunkFilter")) {
             mprInsertItemAtPos(route->outputStages, pos, filter);
@@ -864,7 +864,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
         return MPR_ERR_CANT_FIND;
     }
     if (route->handler) {
-        mprLog("error http route", 0, "Cannot add handler \"%s\" to route \"%s\" once SetHandler used.", 
+        mprLog("error http route", 0, "Cannot add handler \"%s\" to route \"%s\" once SetHandler used.",
             handler->name, route->pattern);
     }
     if (!extensions && !handler->match) {
@@ -873,7 +873,7 @@ PUBLIC int httpAddRouteHandler(HttpRoute *route, cchar *name, cchar *extensions)
     if (extensions) {
         /*
             Add to the handler extension hash. Skip over "*." and "."
-         */ 
+         */
         GRADUATE_HASH(route, extensions);
         extlist = sclone(extensions);
         if ((word = stok(extlist, " \t\r\n", &tok)) == 0) {
@@ -1301,7 +1301,7 @@ PUBLIC void httpSetRouteHome(HttpRoute *route, cchar *path)
 
 
 /*
-    WARNING: internal API only. 
+    WARNING: internal API only.
  */
 PUBLIC void httpSetRouteHost(HttpRoute *route, HttpHost *host)
 {
@@ -1523,12 +1523,12 @@ PUBLIC void httpSetRouteStealth(HttpRoute *route, bool on)
 
 
 /*
-    Target names are extensible and hashed in http->routeTargets. 
+    Target names are extensible and hashed in http->routeTargets.
 
         Target close
         Target redirect status [URI]
         Target run ${DOCUMENTS}/${request:uri}.gz
-        Target run ${controller}-${action} 
+        Target run ${controller}-${action}
         Target write [-r] status "Hello World\r\n"
  */
 PUBLIC int httpSetRouteTarget(HttpRoute *route, cchar *rule, cchar *details)
@@ -1623,7 +1623,7 @@ PUBLIC cchar *httpLookupRouteErrorDocument(HttpRoute *route, int code)
 
 
 /*
-    Finalize the pattern. 
+    Finalize the pattern.
         - Change "\{n[:m]}" to "{n[:m]}"
         - Change "\~" to "~"
         - Change "(~ PAT ~)" to "(?: PAT )?"
@@ -1789,7 +1789,7 @@ static char *finalizeReplacement(HttpRoute *route, cchar *str)
                             mprPutCharToBuf(buf, '$');
                             mprPutStringToBuf(buf, token);
                         } else {
-                            mprLog("error http route", 0, "Cannot find token \"%s\" in template \"%s\"", 
+                            mprLog("error http route", 0, "Cannot find token \"%s\" in template \"%s\"",
                                 token, route->pattern);
                         }
                     }
@@ -1910,7 +1910,7 @@ static char *finalizeTemplate(HttpRoute *route)
 PUBLIC void httpFinalizeRoute(HttpRoute *route)
 {
     /*
-        Add the route to the owning host. When using an Appweb configuration file, the order of route finalization 
+        Add the route to the owning host. When using an Appweb configuration file, the order of route finalization
         will be from the inside out. This ensures that nested routes are defined BEFORE outer/enclosing routes.
         This is important as requests process routes in-order.
      */
@@ -2263,7 +2263,7 @@ static int directoryCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     assert(op);
     tx = conn->tx;
 
-    /* 
+    /*
         Must have tx->filename set when expanding op->details, so map target now.
         Then reset the filename and extension.
      */
@@ -2291,8 +2291,8 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     assert(route);
     assert(op);
 
-    /* 
-        Must have tx->filename set when expanding op->details, so map target now 
+    /*
+        Must have tx->filename set when expanding op->details, so map target now
      */
     tx = conn->tx;
     httpMapFile(conn);
@@ -2683,11 +2683,11 @@ static bool opPresent(MprList *list, HttpRouteOp *op)
     if ((last = mprGetLastItem(list)) == 0) {
         return 0;
     }
-    if (smatch(last->name, op->name) && 
-        smatch(last->details, op->details) && 
-        smatch(last->var, op->var) && 
-        smatch(last->value, op->value) && 
-        last->mdata == op->mdata && 
+    if (smatch(last->name, op->name) &&
+        smatch(last->details, op->details) &&
+        smatch(last->var, op->var) &&
+        smatch(last->value, op->value) &&
+        last->mdata == op->mdata &&
         last->flags == op->flags) {
         return 1;
     }
@@ -2751,7 +2751,7 @@ static void definePathVars(HttpRoute *route)
 }
 
 
-static void defineHostVars(HttpRoute *route) 
+static void defineHostVars(HttpRoute *route)
 {
     assert(route);
     mprAddKey(route->vars, "DOCUMENTS", route->documents);
@@ -3038,7 +3038,7 @@ PUBLIC void httpDefineRouteBuiltins()
 
 
 /*
-    Tokenizes a line using %formats. Mandatory tokens can be specified with %. Optional tokens are specified with ?. 
+    Tokenizes a line using %formats. Mandatory tokens can be specified with %. Optional tokens are specified with ?.
     Supported tokens:
         %B - Boolean. Parses: on/off, true/false, yes/no.
         %N - Number. Parses numbers in base 10.
@@ -3099,7 +3099,7 @@ PUBLIC bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list arg
                 etok = &tok[1];
             } else {
                 if (quote) {
-                    for (etok = tok; *etok && !(*etok == quote && etok[-1] != '\\'); etok++) ; 
+                    for (etok = tok; *etok && !(*etok == quote && etok[-1] != '\\'); etok++) ;
                     *etok++ = '\0';
                 } else if (*f == '*') {
                     for (etok = tok; *etok; etok++) {
@@ -3316,7 +3316,7 @@ PUBLIC MprHash *httpGetOptionHash(MprHash *options, cchar *field)
 }
 
 
-/* 
+/*
     Prepend an option
  */
 PUBLIC void httpInsertOption(MprHash *options, cchar *field, cchar *value)
@@ -3414,7 +3414,7 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

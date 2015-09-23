@@ -606,7 +606,7 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             }
         }
         /*
-            Send what we have if preserving frames or the current messages is over the packet limit size. 
+            Send what we have if preserving frames or the current messages is over the packet limit size.
             Otherwise, keep buffering.
          */
         for (ws->tailMessage = 0; packet; packet = ws->tailMessage, ws->tailMessage = 0) {
@@ -716,7 +716,7 @@ PUBLIC ssize httpSend(HttpConn *conn, cchar *fmt, ...)
 
 
 /*
-    Send a block of data with the specified message type. Set flags to HTTP_MORE to indicate there is more data 
+    Send a block of data with the specified message type. Set flags to HTTP_MORE to indicate there is more data
     for this message.
  */
 PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int flags)
@@ -931,7 +931,7 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            httpTracePacket(conn, "tx.websockets.packet", "body", packet, 
+            httpTracePacket(conn, "tx.websockets.packet", "body", packet,
                 "wsSeqno:%d,wsTypeName:\"%s\",wsType:%d,wsLast:%d,wsLength:%zd",
                 ws->txSeq++, codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
         }

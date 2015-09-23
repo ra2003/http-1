@@ -431,7 +431,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
     httpSetState(conn, HTTP_STATE_FIRST);
 
     if (httpTracing(conn)) {
-        httpTrace(conn, "rx.first.server", "request", "method:'%s',uri:'%s',protocol:'%s'", 
+        httpTrace(conn, "rx.first.server", "request", "method:'%s',uri:'%s',protocol:'%s'",
             rx->method, rx->uri, conn->protocol);
         httpTraceContent(conn, "rx.headers.server", "context", headers, rx->headerPacketLength, NULL);
     }
@@ -658,7 +658,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
 
         case 'h':
             if (strcasecmp(key, "host") == 0) {
-                if ((int) strspn(value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.[]:") 
+                if ((int) strspn(value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.[]:")
                         < (int) slen(value)) {
                     httpBadRequestError(conn, HTTP_CODE_BAD_REQUEST, "Bad host header");
                 } else {
@@ -1265,13 +1265,13 @@ static bool processCompletion(HttpConn *conn)
         status = conn->endpoint ? tx->status : rx->status;
         received = rx->headerPacketLength + rx->bytesRead;
 #if MPR_HIGH_RES_TIMER
-        httpTrace(conn, 
+        httpTrace(conn,
             "request.completion", "result",
             "status:%d,error:%d,connError:%d,elapsed:%llu,elapsedTicks:%llu,received:%lld,sent:%lld",
-            status, conn->error, conn->connError, elapsed, mprGetHiResTicks() - conn->startMark, 
+            status, conn->error, conn->connError, elapsed, mprGetHiResTicks() - conn->startMark,
             received, tx->bytesWritten);
 #else
-        httpTrace(conn, "request.completion", "result", 
+        httpTrace(conn, "request.completion", "result",
             "status:%d,error:%d,connError:%d,elapsed:%llu,received:%lld,sent:%lld",
             status, conn->error, conn->connError, elapsed, received, tx->bytesWritten);
 #endif

@@ -16,7 +16,7 @@ static void outgoingChunkService(HttpQueue *q);
 static void setChunkPrefix(HttpQueue *q, HttpPacket *packet);
 
 /*********************************** Code *************************************/
-/* 
+/*
    Loadable module initialization
  */
 PUBLIC int httpOpenChunkFilter()
@@ -27,9 +27,9 @@ PUBLIC int httpOpenChunkFilter()
         return MPR_ERR_CANT_CREATE;
     }
     HTTP->chunkFilter = filter;
-    filter->match = matchChunk; 
-    filter->open = openChunk; 
-    filter->outgoingService = outgoingChunkService; 
+    filter->match = matchChunk;
+    filter->open = openChunk;
+    filter->outgoingService = outgoingChunkService;
     return 0;
 }
 
@@ -47,9 +47,9 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
         return HTTP_ROUTE_OMIT_FILTER;
     }
     if (dir & HTTP_STAGE_TX) {
-        /* 
-            If content length is defined, don't need chunking - but only if chunking not explicitly asked for. 
-            Disable chunking if explicitly turned off via the X_APPWEB_CHUNK_SIZE header which may set the 
+        /*
+            If content length is defined, don't need chunking - but only if chunking not explicitly asked for.
+            Disable chunking if explicitly turned off via the X_APPWEB_CHUNK_SIZE header which may set the
             chunk size to zero.
          */
         if ((tx->length >= 0 && tx->chunkSize < 0) || tx->chunkSize == 0) {
@@ -247,7 +247,7 @@ static void setChunkPrefix(HttpQueue *q, HttpPacket *packet)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

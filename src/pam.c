@@ -65,8 +65,8 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
         conn->user = mprLookupKey(conn->rx->route->auth->userCache, username);
     }
     if (!conn->user) {
-        /* 
-            Create a temporary user with a abilities set to the groups 
+        /*
+            Create a temporary user with a abilities set to the groups
          */
         Gid     groups[32];
         int     ngroups;
@@ -94,7 +94,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
 /*
     Callback invoked by the pam_authenticate function
  */
-static int pamChat(int msgCount, const struct pam_message **msg, struct pam_response **resp, void *data) 
+static int pamChat(int msgCount, const struct pam_message **msg, struct pam_response **resp, void *data)
 {
     UserInfo                *info;
     struct pam_response     *reply;
@@ -140,7 +140,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

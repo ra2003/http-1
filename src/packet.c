@@ -14,8 +14,8 @@ static void managePacket(HttpPacket *packet, int flags);
 
 /************************************ Code ************************************/
 /*
-    Create a new packet. If size is -1, then also create a default growable buffer -- 
-    used for incoming body content. If size > 0, then create a non-growable buffer 
+    Create a new packet. If size is -1, then also create a default growable buffer --
+    used for incoming body content. If size > 0, then create a non-growable buffer
     of the requested size.
  */
 PUBLIC HttpPacket *httpCreatePacket(ssize size)
@@ -232,7 +232,7 @@ PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serv
 
 /*
     Join two packets by pulling the content from the second into the first.
-    WARNING: this will not update the queue count. Assumes the either both are on the queue or neither. 
+    WARNING: this will not update the queue count. Assumes the either both are on the queue or neither.
  */
 PUBLIC int httpJoinPacket(HttpPacket *packet, HttpPacket *p)
 {
@@ -395,7 +395,7 @@ PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 
 
 /*
-    Resize and possibly split a packet so it fits in the downstream queue. Put back the 2nd portion of the split packet 
+    Resize and possibly split a packet so it fits in the downstream queue. Put back the 2nd portion of the split packet
     on the queue. Ensure that the packet is not larger than "size" if it is greater than zero. If size < 0, then
     use the default packet size. Return the tail packet.
  */
@@ -432,7 +432,7 @@ PUBLIC HttpPacket *httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size
 
 /*
     Split a packet at a given offset and return the tail packet containing the data after the offset.
-    The prefix data remains with the original packet. 
+    The prefix data remains with the original packet.
  */
 PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 {
@@ -457,8 +457,8 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
         }
         if (offset < (httpGetPacketLength(orig) / 2)) {
             /*
-                A large packet will often be resized by splitting into chunks that the downstream queues will accept. 
-                To optimize, we allocate a new packet content buffer and the tail packet keeps the trimmed 
+                A large packet will often be resized by splitting into chunks that the downstream queues will accept.
+                To optimize, we allocate a new packet content buffer and the tail packet keeps the trimmed
                 original packet buffer.
              */
             if ((tail = httpCreateDataPacket(0)) == 0) {
@@ -493,7 +493,7 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 }
 
 
-bool httpIsLastPacket(HttpPacket *packet) 
+bool httpIsLastPacket(HttpPacket *packet)
 {
     return packet->last;
 }
@@ -505,7 +505,7 @@ bool httpIsLastPacket(HttpPacket *packet)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

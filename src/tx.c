@@ -435,7 +435,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
 
     if (tx->finalized) {
         /* A response has already been formulated */
-        mprLog("error", 0, "Response already prepared, so redirect ignored: %s", targetUri); 
+        mprLog("error", 0, "Response already prepared, so redirect ignored: %s", targetUri);
         return;
     }
     tx->status = status;
@@ -495,7 +495,7 @@ PUBLIC void httpSetContentLength(HttpConn *conn, MprOff length)
     Set lifespan == 0 for no expiry.
     WARNING: Some browsers (Chrome, Firefox) do not delete session cookies when you exit the browser.
  */
-PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain, 
+PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *cookieDomain,
     MprTicks lifespan, int flags)
 {
     HttpRx      *rx;
@@ -507,14 +507,14 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     }
     /*
         Note: Cookies do not respect port numbers, so we ignore them here.
-        Note: Modern browsers will give subdomains the cookies defined for a top-level domain. 
+        Note: Modern browsers will give subdomains the cookies defined for a top-level domain.
         Note: A leading dot in the top-level domain is not required anymore.
         Note: Browsers may store top-level domain cookies with a leading dot in their cooke store (chrome).
      */
     domain = 0;
     if (cookieDomain) {
-        /* 
-            Omit domain if set to empty string 
+        /*
+            Omit domain if set to empty string
         */
         if (*cookieDomain) {
             domain = (char*) cookieDomain;
@@ -549,7 +549,7 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     secure = (conn->secure & (flags & HTTP_COOKIE_SECURE)) ? "; secure" : "";
     httponly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
 
-    mprAddKey(conn->tx->cookies, name, 
+    mprAddKey(conn->tx->cookies, name,
         sjoin(value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
 
     if ((cp = mprLookupKey(conn->tx->headers, "Cache-Control")) == 0 || !scontains(cp, "no-cache")) {
@@ -657,7 +657,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
 
     } else if (httpServerConn(conn)) {
         /* Server must not emit a content length header for 1XX, 204 and 304 status */
-        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304 || 
+        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304 ||
                 tx->flags & HTTP_TX_NO_LENGTH)) {
             if (length >= 0) {
                 httpAddHeader(conn, "Content-Length", "%lld", length);
@@ -692,7 +692,7 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         if (--conn->keepAliveCount > 0) {
             assert(conn->keepAliveCount >= 1);
             httpAddHeaderString(conn, "Connection", "Keep-Alive");
-            httpAddHeader(conn, "Keep-Alive", "timeout=%lld, max=%d", conn->limits->inactivityTimeout / 1000, 
+            httpAddHeader(conn, "Keep-Alive", "timeout=%lld, max=%d", conn->limits->inactivityTimeout / 1000,
                 conn->keepAliveCount);
         } else {
             /* Tell the peer to close the connection */
@@ -732,7 +732,7 @@ PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
 
 
 /*
-    Low level routine to set the filename to serve. The filename may be outside the route documents, so caller 
+    Low level routine to set the filename to serve. The filename may be outside the route documents, so caller
     must take care if the HTTP_TX_NO_CHECK flag is used.  This will update HttpTx.ext and HttpTx.fileInfo.
     This does not implement per-language directories. For that, see httpMapFile.
  */
@@ -860,7 +860,7 @@ PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
             }
         }
         /* Client side trace */
-        httpTrace(conn, "tx.first.client", "request", "method:'%s',uri:'%s',protocol:'%s'", tx->method, 
+        httpTrace(conn, "tx.first.client", "request", "method:'%s',uri:'%s',protocol:'%s'", tx->method,
             parsedUri->path, conn->protocol);
     }
     mprPutStringToBuf(buf, "\r\n");

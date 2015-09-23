@@ -100,7 +100,7 @@ static void makeAltBody(HttpConn *conn, int status)
 
 
 /*
-    The current request has an error and cannot complete as normal. This call sets the Http response status and 
+    The current request has an error and cannot complete as normal. This call sets the Http response status and
     overrides the normal output with an alternate error message. If the output has alread started (headers sent), then
     the connection MUST be closed so the client can get some indication the request failed.
  */
@@ -142,7 +142,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         httpAddHeaderString(conn, "Cache-Control", "no-cache");
         if (httpServerConn(conn) && tx && rx) {
             if (tx->flags & HTTP_TX_HEADERS_CREATED) {
-                /* 
+                /*
                     If the response headers have been sent, must let the other side of the failure ... aborting
                     the request is the only way as the status has been sent.
                  */
@@ -210,7 +210,7 @@ PUBLIC void httpMemoryError(HttpConn *conn)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

@@ -32,9 +32,9 @@ PUBLIC int httpOpenRangeFilter()
         return MPR_ERR_CANT_CREATE;
     }
     HTTP->rangeFilter = filter;
-    filter->match = matchRange; 
-    filter->start = startRange; 
-    filter->outgoingService = outgoingRangeService; 
+    filter->match = matchRange;
+    filter->start = startRange;
+    filter->outgoingService = outgoingRangeService;
     return 0;
 }
 
@@ -206,7 +206,7 @@ static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range)
     length = (tx->entityLength >= 0) ? itos(tx->entityLength) : "*";
     packet = httpCreatePacket(HTTP_RANGE_BUFSIZE);
     packet->flags |= HTTP_PACKET_RANGE;
-    mprPutToBuf(packet->content, 
+    mprPutToBuf(packet->content,
         "\r\n--%s\r\n"
         "Content-Range: bytes %lld-%lld/%s\r\n\r\n",
         tx->rangeBoundary, range->start, range->end - 1, length);
@@ -278,10 +278,10 @@ static bool fixRangeLength(HttpConn *conn)
         if (range->start < 0) {
             if (length <= 0) {
                 /*
-                    Cannot compute an offset from the end as we don't know the entity length and it is not 
+                    Cannot compute an offset from the end as we don't know the entity length and it is not
                     always possible or wise to buffer all the output.
                  */
-                httpError(conn, HTTP_CODE_RANGE_NOT_SATISFIABLE, "Cannot compute end range with unknown content length"); 
+                httpError(conn, HTTP_CODE_RANGE_NOT_SATISFIABLE, "Cannot compute end range with unknown content length");
                 return 0;
             }
             /* select last -range-end bytes */
@@ -306,7 +306,7 @@ static bool fixRangeLength(HttpConn *conn)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

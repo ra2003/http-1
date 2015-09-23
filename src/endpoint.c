@@ -164,10 +164,10 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
     if ((endpoint->sock = mprCreateSocket()) == 0) {
         return MPR_ERR_MEMORY;
     }
-    if (mprListenOnSocket(endpoint->sock, endpoint->ip, endpoint->port, 
+    if (mprListenOnSocket(endpoint->sock, endpoint->ip, endpoint->port,
                 MPR_SOCKET_NODELAY | MPR_SOCKET_THREAD) == SOCKET_ERROR) {
         if (mprGetError() == EADDRINUSE) {
-            mprLog("error http", 0, "Cannot open a socket on %s:%d, socket already bound.", 
+            mprLog("error http", 0, "Cannot open a socket on %s:%d, socket already bound.",
                 *endpoint->ip ? endpoint->ip : "*", endpoint->port);
         } else {
             mprLog("error http", 0, "Cannot open a socket on %s:%d", *endpoint->ip ? endpoint->ip : "*", endpoint->port);
@@ -178,7 +178,7 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
         return MPR_ERR_CANT_OPEN;
     }
     if (endpoint->async && !endpoint->sock->handler) {
-        mprAddSocketHandler(endpoint->sock, MPR_SOCKET_READABLE, endpoint->dispatcher, acceptConn, endpoint, 
+        mprAddSocketHandler(endpoint->sock, MPR_SOCKET_READABLE, endpoint->dispatcher, acceptConn, endpoint,
             (endpoint->dispatcher ? 0 : MPR_WAIT_NEW_DISPATCHER) | MPR_WAIT_IMMEDIATE);
     } else {
         mprSetSocketBlockingMode(endpoint->sock, 1);
@@ -210,8 +210,8 @@ PUBLIC void httpStopEndpoint(HttpEndpoint *endpoint)
 
 
 /*
-    This routine runs using the service event thread. It accepts the socket and creates an event on a new dispatcher to 
-    manage the connection. When it returns, it immediately can listen for new connections without having to modify the 
+    This routine runs using the service event thread. It accepts the socket and creates an event on a new dispatcher to
+    manage the connection. When it returns, it immediately can listen for new connections without having to modify the
     event listen masks.
  */
 static void acceptConn(HttpEndpoint *endpoint)
@@ -246,7 +246,7 @@ static void acceptConn(HttpEndpoint *endpoint)
 
 
 PUBLIC void httpMatchHost(HttpConn *conn)
-{ 
+{
     MprSocket       *listenSock;
     HttpEndpoint    *endpoint;
     HttpHost        *host;
@@ -258,7 +258,7 @@ PUBLIC void httpMatchHost(HttpConn *conn)
      */
     if ((endpoint = httpLookupEndpoint(listenSock->ip, listenSock->port)) == 0) {
         conn->host = mprGetFirstItem(endpoint->hosts);
-        httpError(conn, HTTP_CODE_NOT_FOUND, "No listening endpoint for request from %s:%d", 
+        httpError(conn, HTTP_CODE_NOT_FOUND, "No listening endpoint for request from %s:%d",
             listenSock->ip, listenSock->port);
         return;
     }
@@ -282,7 +282,7 @@ PUBLIC void *httpGetEndpointContext(HttpEndpoint *endpoint)
 }
 
 
-PUBLIC int httpIsEndpointAsync(HttpEndpoint *endpoint) 
+PUBLIC int httpIsEndpointAsync(HttpEndpoint *endpoint)
 {
     assert(endpoint);
     if (endpoint) {
@@ -415,7 +415,7 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
                 return host;
             }
         } else if (host->flags & HTTP_HOST_WILD_REGEXP) {
-            if (pcre_exec(host->nameCompiled, NULL, name, (int) slen(name), 0, 0, matches, 
+            if (pcre_exec(host->nameCompiled, NULL, name, (int) slen(name), 0, 0, matches,
                     sizeof(matches) / sizeof(int)) >= 1) {
                 return host;
             }
@@ -436,7 +436,7 @@ PUBLIC void httpSetInfoLevel(int level)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

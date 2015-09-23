@@ -49,8 +49,8 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     mprAddKey(svars, "REMOTE_ADDR", conn->ip);
     mprAddKeyFmt(svars, "REMOTE_PORT", "%d", conn->port);
 
-    /* 
-        Set to the same as AUTH_USER 
+    /*
+        Set to the same as AUTH_USER
      */
     mprAddKey(svars, "REMOTE_USER", conn->username);
     mprAddKey(svars, "REQUEST_METHOD", rx->method);
@@ -67,16 +67,16 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     mprAddKey(svars, "REQUEST_URI", rx->originalUri);
 
     /*
-        URIs are broken into the following: http://{SERVER_NAME}:{SERVER_PORT}{SCRIPT_NAME}{PATH_INFO} 
+        URIs are broken into the following: http://{SERVER_NAME}:{SERVER_PORT}{SCRIPT_NAME}{PATH_INFO}
         NOTE: Appweb refers to pathInfo as the app relative URI and scriptName as the app address before the pathInfo.
-        In CGI|PHP terms, the scriptName is the appweb rx->pathInfo and the PATH_INFO is the extraPath. 
+        In CGI|PHP terms, the scriptName is the appweb rx->pathInfo and the PATH_INFO is the extraPath.
      */
     mprAddKey(svars, "PATH_INFO", rx->extraPath);
     mprAddKeyFmt(svars, "SCRIPT_NAME", "%s%s", rx->scriptName, rx->pathInfo);
     mprAddKey(svars, "SCRIPT_FILENAME", tx->filename);
     if (rx->extraPath) {
         /*
-            Only set PATH_TRANSLATED if extraPath is set (CGI spec) 
+            Only set PATH_TRANSLATED if extraPath is set (CGI spec)
          */
         assert(rx->extraPath[0] == '/');
         mprAddKey(svars, "PATH_TRANSLATED", mprNormalizePath(sfmt("%s%s", rx->route->documents, rx->extraPath)));
@@ -100,7 +100,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
 
 /*
     Add variables to the params. This comes from the query string and urlencoded post data.
-    Make variables for each keyword in a query string. The buffer must be url encoded 
+    Make variables for each keyword in a query string. The buffer must be url encoded
     (ie. key=value&key2=value2..., spaces converted to '+' and all else should be %HEX encoded).
  */
 static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
@@ -156,7 +156,7 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
 }
 
 
-PUBLIC void httpAddQueryParams(HttpConn *conn) 
+PUBLIC void httpAddQueryParams(HttpConn *conn)
 {
     HttpRx      *rx;
 
@@ -212,7 +212,7 @@ PUBLIC void httpAddJsonParams(HttpConn *conn)
 
 
 PUBLIC MprJson *httpGetParams(HttpConn *conn)
-{ 
+{
     if (conn->rx->params == 0) {
         conn->rx->params = mprCreateJson(MPR_JSON_OBJ);
     }
@@ -251,7 +251,7 @@ static int sortParam(MprJson **j1, MprJson **j2)
 
 
 /*
-    Return the request parameters as a string. 
+    Return the request parameters as a string.
     This will return the exact same string regardless of the order of form parameters.
  */
 PUBLIC char *httpGetParamsString(HttpConn *conn)
@@ -295,19 +295,19 @@ PUBLIC char *httpGetParamsString(HttpConn *conn)
 }
 
 
-PUBLIC void httpRemoveParam(HttpConn *conn, cchar *var) 
+PUBLIC void httpRemoveParam(HttpConn *conn, cchar *var)
 {
     mprRemoveJson(httpGetParams(conn), var);
 }
 
 
-PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value) 
+PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value)
 {
     mprWriteJson(httpGetParams(conn), var, value, 0);
 }
 
 
-PUBLIC void httpSetIntParam(HttpConn *conn, cchar *var, int value) 
+PUBLIC void httpSetIntParam(HttpConn *conn, cchar *var, int value)
 {
     mprWriteJson(httpGetParams(conn), var, sfmt("%d", value), MPR_JSON_NUMBER);
 }
@@ -325,7 +325,7 @@ PUBLIC bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
     Copyright (c) Embedthis Software. All Rights Reserved.
 
     This software is distributed under commercial and open source licenses.
-    You may use the Embedthis Open Source license or you may acquire a 
+    You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
     by the terms of either license. Consult the LICENSE.md distributed with
     this software for full details and other copyrights.

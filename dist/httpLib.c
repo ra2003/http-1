@@ -12746,9 +12746,11 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     httpAddRouteFilter(route, http->rangeFilter->name, NULL, HTTP_STAGE_TX);
     httpAddRouteFilter(route, http->chunkFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
 
-#if KEEP
-    httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "Content-Security-Policy", "default-src 'self'");
-#endif
+    /*
+        Standard headers for all routes. These should not break typical content
+        Users then vary via header directives
+     */
+    httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "Vary", "Accept-Encoding");
     httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-XSS-Protection", "1; mode=block");
     httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-Frame-Options", "SAMEORIGIN");
     httpAddRouteResponseHeader(route, HTTP_ROUTE_ADD_HEADER, "X-Content-Type-Options", "nosniff");

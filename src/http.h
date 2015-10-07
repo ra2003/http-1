@@ -2980,6 +2980,7 @@ typedef struct HttpConn {
     bool            borrowed: 1;            /**< Connection has been borrowed */
     bool            destroyed: 1;           /**< Connection has been destroyed */
     bool            encoded: 1;             /**< True if the password is MD5(username:realm:password) */
+    bool            errorDoc: 1;            /**< Processing an error document */
     bool            followRedirects: 1;     /**< Follow redirects for client requests */
     bool            http10: 1;              /**< Using legacy HTTP/1.0 */
     bool            mustClose: 1;           /**< Peer requested the connection be closed via "Connection: close" */

@@ -1292,20 +1292,6 @@ static void parseRoutes(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-#if UNUSED
-static void parseRoutesPrint(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    httpLogRoutes(route->host, 0);
-}
-
-
-static void parseRoutesReset(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    httpResetRoutes(route->host);
-}
-#endif
-
-
 static void parseScheme(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (sstarts(prop->value, "https")) {
@@ -1874,6 +1860,12 @@ PUBLIC uint64 httpGetNumber(cchar *value)
         number = stoi(value) * 60 * 60;
     } else if (sends(value, "day") || sends(value, "days")) {
         number = stoi(value) * 60 * 60 * 24;
+    } else if (sends(value, "week") || sends(value, "weeks")) {
+        number = stoi(value) * 60 * 60 * 24 * 7;
+    } else if (sends(value, "month") || sends(value, "months")) {
+        number = stoi(value) * 60 * 60 * 24 * 30;
+    } else if (sends(value, "year") || sends(value, "years")) {
+        number = stoi(value) * 60 * 60 * 24 * 365;
     } else if (sends(value, "kb") || sends(value, "k")) {
         number = stoi(value) * 1024;
     } else if (sends(value, "mb") || sends(value, "m")) {
@@ -2002,10 +1994,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.redirect", parseRedirect);
     httpAddConfig("http.renameUploads", parseRenameUploads);
     httpAddConfig("http.routes", parseRoutes);
-#if UNUSED
-    httpAddConfig("http.routes.print", parseRoutesPrint);
-    httpAddConfig("http.routes.reset", parseRoutesReset);
-#endif
     httpAddConfig("http.resources", parseResources);
     httpAddConfig("http.scheme", parseScheme);
     httpAddConfig("http.server", httpParseAll);

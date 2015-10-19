@@ -17289,6 +17289,7 @@ static void createErrorRequest(HttpConn *conn)
     conn->input = packet;
     conn->state = HTTP_STATE_CONNECTED;
     conn->errorDoc = 1;
+    conn->keepAliveCount = 0;
 }
 
 

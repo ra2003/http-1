@@ -258,7 +258,7 @@ static void cacheAtClient(HttpConn *conn)
     tx = conn->tx;
     cache = conn->tx->cache;
 
-    if (!mprLookupKey(tx->headers, "Cache-Control")) {
+    if (tx->status == HTTP_CODE_OK && !mprLookupKey(tx->headers, "Cache-Control")) {
         if ((value = mprLookupKey(conn->tx->headers, "Cache-Control")) != 0) {
             if (strstr(value, "max-age") == 0) {
                 httpAppendHeader(conn, "Cache-Control", "public, max-age=%lld", cache->clientLifespan / TPS);

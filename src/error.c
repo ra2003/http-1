@@ -139,7 +139,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
             }
             httpMonitorEvent(conn, HTTP_COUNTER_ERRORS, 1);
         }
-        httpAddHeaderString(conn, "Cache-Control", "no-cache");
+        httpSetHeaderString(conn, "Cache-Control", "no-cache");
         if (httpServerConn(conn) && tx && rx) {
             if (tx->flags & HTTP_TX_HEADERS_CREATED) {
                 /*

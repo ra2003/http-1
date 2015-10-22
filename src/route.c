@@ -964,6 +964,7 @@ PUBLIC void httpAddRouteParam(HttpRoute *route, cchar *field, cchar *value, int 
     if ((op->mdata = pcre_compile2(value, 0, 0, &errMsg, &column, NULL)) == 0) {
         mprLog("error http route", 0, "Cannot compile field pattern. Error %s at column %d", errMsg, column);
     } else {
+        op->flags |= HTTP_ROUTE_FREE;
         mprAddItem(route->params, op);
     }
 }
@@ -989,6 +990,7 @@ PUBLIC void httpAddRouteRequestHeaderCheck(HttpRoute *route, cchar *header, ccha
     if ((op->mdata = pcre_compile2(pattern, 0, 0, &errMsg, &column, NULL)) == 0) {
         mprLog("error http route", 0, "Cannot compile header pattern. Error %s at column %d", errMsg, column);
     } else {
+        op->flags |= HTTP_ROUTE_FREE;
         mprAddItem(route->requestHeaders, op);
     }
 }

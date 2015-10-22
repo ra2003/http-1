@@ -163,9 +163,7 @@ PUBLIC void httpProtocol(HttpConn *conn)
             canProceed = 0;
             break;
         }
-        /*
-            This may block briefly if GC is due
-         */
+
         httpServiceQueues(conn, HTTP_BLOCK);
 
         /*
@@ -835,7 +833,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             "Request form of %lld bytes is too big. Limit %lld", rx->length, conn->limits->rxFormSize);
     }
     if (conn->error) {
-        /* Cannot continue with keep-alive as the headers have not been correctly parsed */
+        /* Cannot reliably continue with keep-alive as the headers have not been correctly parsed */
         conn->keepAliveCount = 0;
         conn->connError = 1;
     }

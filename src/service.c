@@ -301,7 +301,7 @@ PUBLIC void httpStopConnections(void *data)
  */
 PUBLIC void httpDestroy()
 {
-    Http            *http;
+    Http        *http;
 
     if ((http = HTTP) == 0) {
         return;
@@ -318,6 +318,9 @@ PUBLIC void httpDestroy()
         mprRemoveEvent(http->timestamp);
         http->timestamp = 0;
     }
+    http->hosts = NULL;
+    http->clientRoute = NULL;
+    http->endpoints = NULL;
     MPR->httpService = NULL;
 }
 

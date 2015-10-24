@@ -325,7 +325,7 @@ static void adjustSendVec(HttpQueue *q, MprOff written)
 
 #else
 PUBLIC int httpOpenSendConnector() { return 0; }
-PUBLIC int httpSendOpen(HttpQueue *q) {}
+PUBLIC int httpSendOpen(HttpQueue *q) { return 0; }
 PUBLIC void httpSendOutgoingService(HttpQueue *q) {}
 #endif /* !ME_ROM */
 

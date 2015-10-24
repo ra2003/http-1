@@ -192,9 +192,9 @@ static void connTimeout(HttpConn *conn, MprEvent *mprEvent)
             msg = sfmt("%s exceeded parse headers timeout of %lld sec", prefix, limits->requestParseTimeout  / 1000);
             event = "timeout.parse";
 
-#if UNUSED
-        /* Too noisy */
+#if KEEP
         } else if (conn->timeout == HTTP_INACTIVITY_TIMEOUT) {
+            /* Too noisy */
             msg = sfmt("%s exceeded inactivity timeout of %lld sec", prefix, limits->inactivityTimeout / 1000);
             event = "timeout.inactivity";
 #endif

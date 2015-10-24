@@ -433,9 +433,8 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
     rx = conn->rx;
     tx = conn->tx;
 
-    if (tx->finalized) {
-        /* A response has already been formulated */
-        mprLog("error", 0, "Response already finalized, so redirect ignored: %s", targetUri);
+    if (tx->flags & HTTP_TX_HEADERS_CREATED) {
+        mprLog("error", 0, "Headers already created, so redirect ignored: %s", targetUri);
         return;
     }
     tx->status = status;
@@ -754,6 +753,7 @@ PUBLIC bool httpSetFilename(HttpConn *conn, cchar *filename, int flags)
         info->checked = info->valid = 0;
         return 0;
     }
+#if !ME_ROM
     if (!(tx->flags & HTTP_TX_NO_CHECK)) {
         if (!mprIsAbsPathContained(filename, conn->rx->route->documents)) {
             info->checked = 1;
@@ -762,6 +762,7 @@ PUBLIC bool httpSetFilename(HttpConn *conn, cchar *filename, int flags)
             return 0;
         }
     }
+#endif
     if (!tx->ext || tx->ext[0] == '\0') {
         tx->ext = httpGetPathExt(filename);
     }

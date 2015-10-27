@@ -39,6 +39,7 @@ PUBLIC HttpHost *httpCreateHost()
     host->streams = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
     httpSetStreaming(host, "application/x-www-form-urlencoded", NULL, 0);
     httpSetStreaming(host, "application/json", NULL, 0);
+    httpSetStreaming(host, "application/csp-report", NULL, 0);
     httpAddHost(host);
     return host;
 }

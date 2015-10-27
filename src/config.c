@@ -1707,6 +1707,21 @@ static void parseStealth(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseStream(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    MprJson     *child;
+    cchar       *mime, *stream, *uri;
+    int         ji;
+
+    for (ITERATE_CONFIG(route, prop, child, ji)) {
+        mime = mprGetJson(child, "mime");
+        stream = mprGetJson(child, "stream");
+        uri = mprGetJson(child, "uri");
+        httpSetStreaming(route->host, mime, uri, smatch(stream, "false") || smatch(stream, ""));
+    }
+}
+
+
 /*
     Operations: "close", "redirect", "run", "write"
     Args:
@@ -2021,6 +2036,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl.verify.client", parseSslVerifyClient);
     httpAddConfig("http.ssl.verify.issuer", parseSslVerifyIssuer);
     httpAddConfig("http.stealth", parseStealth);
+    httpAddConfig("http.stream", parseStream);
     httpAddConfig("http.target", parseTarget);
     httpAddConfig("http.timeouts", parseTimeouts);
     httpAddConfig("http.timeouts.exit", parseTimeoutsExit);

@@ -779,6 +779,14 @@
         stealth: true,
 
         /*
+            Buffer or stream input by mime type. This directive is per-host, not per-route.
+            The value may be true, false or a URI 
+         */
+        stream: [
+            { mime: 'application/x-www-form-urlencoded', stream: false, uri: '/some-uri' },
+        ],
+
+        /*
             Target rule to process the request
          */
         target: {

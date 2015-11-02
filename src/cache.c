@@ -325,6 +325,7 @@ static bool fetchCachedResponse(HttpConn *conn)
         httpSetStatus(conn, status);
         httpSetHeaderString(conn, "Etag", mprGetMD5(key));
         httpSetHeaderString(conn, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
+        httpRemoveHeader(conn, "Content-Encoding");
         return 1;
     }
     httpTrace(conn, "cache.none", "context", "msg:'No cached content',key:'%s'", key);

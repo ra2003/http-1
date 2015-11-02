@@ -94,6 +94,7 @@ static int openFileHandler(HttpQueue *q)
         }
         if (httpContentNotModified(conn)) {
             httpSetStatus(conn, HTTP_CODE_NOT_MODIFIED);
+            httpRemoveHeader(conn, "Content-Encoding");
             httpOmitBody(conn);
         }
         if (!tx->fileInfo.isReg && !tx->fileInfo.isLink) {

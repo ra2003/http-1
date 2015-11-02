@@ -8592,6 +8592,7 @@ static int openFileHandler(HttpQueue *q)
         }
         if (httpContentNotModified(conn)) {
             httpSetStatus(conn, HTTP_CODE_NOT_MODIFIED);
+            httpRemoveHeader(conn, "Content-Encoding");
             httpOmitBody(conn);
         }
         if (!tx->fileInfo.isReg && !tx->fileInfo.isLink) {
@@ -19992,6 +19993,16 @@ PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
     } else {
         setHdr(conn, key, sclone(value));
     }
+}
+
+
+PUBLIC cchar *httpGetTxHeader(HttpConn *conn, cchar *key)
+{
+    if (conn->rx == 0) {
+        assert(conn->rx);
+        return 0;
+    }
+    return mprLookupKey(conn->tx->headers, key);
 }
 
 

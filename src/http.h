@@ -6298,8 +6298,8 @@ PUBLIC char *httpGetParamsString(HttpConn *conn);
     Get an rx http header.
     @description Get a http request header value for a given header key.
     @param conn HttpConn connection object created via #httpCreateConn
-    @param key Name of the header to retrieve. This should be a lower case header name. For example: "Connection"
-    @return Value associated with the header key or null if the key did not exist in the response.
+    @param key Name of the header to retrieve.
+    @return Value associated with the header key or null if the key did not exist in the request.
     @ingroup HttpRx
     @stability Stable
  */
@@ -6935,6 +6935,17 @@ PUBLIC ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args);
     @stability Stable
  */
 PUBLIC ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...) PRINTF_ATTRIBUTE(3,4);
+
+/**
+    Get a tx http header.
+    @description Get a http response header value for a given header key.
+    @param conn HttpConn connection object created via #httpCreateConn
+    @param key Name of the header to retrieve. 
+    @return Value associated with the header key or null if the key did not exist in the response.
+    @ingroup HttpTx
+    @stability Prototype
+ */
+PUBLIC cchar *httpGetTxHeader(HttpConn *conn, cchar *key);
 
 /**
     Get the queue data for the connection

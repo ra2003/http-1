@@ -232,6 +232,16 @@ PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
 }
 
 
+PUBLIC cchar *httpGetTxHeader(HttpConn *conn, cchar *key)
+{
+    if (conn->rx == 0) {
+        assert(conn->rx);
+        return 0;
+    }
+    return mprLookupKey(conn->tx->headers, key);
+}
+
+
 /*
     Set a http header. Overwrite if present.
  */

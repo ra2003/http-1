@@ -467,9 +467,9 @@ static void parseAuthSessionEnable(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseAuthSessionVisibility(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseAuthSessionVisible(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    httpSetRouteSessionVisibility(route, scaselessmatch(prop->value, "visible"));
+    httpSetRouteSessionVisibility(route, scaselessmatch(prop->value, "true"));
 }
 
 
@@ -1940,10 +1940,11 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.auth.require.roles", parseAuthRequireRoles);
     httpAddConfig("http.auth.require.users", parseAuthRequireUsers);
     httpAddConfig("http.auth.roles", parseAuthRoles);
+    httpAddConfig("http.auth.session", httpParseAll);
     httpAddConfig("http.auth.session.cookie", parseAuthSessionCookie);
     httpAddConfig("http.auth.session.persist", parseAuthSessionCookiePersist);
     httpAddConfig("http.auth.session.enable", parseAuthSessionEnable);
-    httpAddConfig("http.auth.session.vibility", parseAuthSessionVisibility);
+    httpAddConfig("http.auth.session.visible", parseAuthSessionVisible);
     httpAddConfig("http.auth.store", parseAuthStore);
     httpAddConfig("http.auth.type", parseAuthType);
     httpAddConfig("http.auth.users", parseAuthUsers);

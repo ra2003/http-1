@@ -3130,7 +3130,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         if (ssl == 0) {
             ssl = mprCreateSsl(0);
         }
-        peerName = isdigit(uri->host[0]) ? 0 : uri->host;
+        peerName = uri->host;
         if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
             httpTrace(conn, "connection.upgrade.error", "error", "msg:'Cannot perform SSL upgrade. %s'", conn->errorMsg);
@@ -3738,43 +3738,6 @@ static cchar *getList(MprJson *prop)
 }
 
 
-/*
-    Blend the pak.modes[pak.mode] up to the top level
- */
-static void blendMode(HttpRoute *route, MprJson *config)
-{
-    MprJson     *modeObj;
-    cchar       *mode;
-
-    /*
-        Use existing mode from route->config. Blending of config should already have taken place,
-        so pak.mode should be defined.
-     */
-    mode = mprGetJson(route->config, "pak.mode");
-    if (!mode) {
-        mode = mprGetJson(config, "pak.mode");
-    }
-    if (mode) {
-        if ((route->debug = smatch(mode, "debug")) != 0) {
-            httpSetRouteShowErrors(route, 1);
-            route->keepSource = 1;
-        }
-        /*
-            Http uses top level modes
-            Pak uses top level pak.modes
-         */
-        if ((modeObj = mprGetJsonObj(config, sfmt("modes.%s", mode))) == 0) {
-            modeObj = mprGetJsonObj(config, sfmt("pak.modes.%s", mode));
-        }
-        if (modeObj) {
-            mprBlendJson(route->config, modeObj, MPR_JSON_OVERWRITE);
-            httpParseAll(route, 0, modeObj);
-        }
-        route->mode = mode;
-    }
-}
-
-
 PUBLIC int parseInclude(HttpRoute *route, MprJson *config, MprJson *inc)
 {
     MprJson     *child, *obj;
@@ -3810,13 +3773,13 @@ PUBLIC void httpInitConfig(HttpRoute *route)
 
 PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
 {
-    MprJson     *config, *obj;
-    cchar       *data, *errorMsg;
+    MprJson     *config, *obj, *modeObj;
+    cchar       *data, *errorMsg, *mode;
 
     /*
         Order of processing matters. First load the file and then blend included files into the same json obj.
         Then blend the mode directives and then assign/blend into the route config.
-        Lastly, parse the json config dom.
+        Lastly, parse the json config object.
      */
     if ((data = mprReadPathContents(path, NULL)) == 0) {
         mprLog("error http config", 0, "Cannot read configuration from \"%s\"", path);
@@ -3842,13 +3805,37 @@ PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
     }
 }
 #endif
-    blendMode(route, config);
+
+    if (!route->mode) {
+        mode = mprGetJson(route->config, "pak.mode");
+        if (!mode) {
+            mode = mprGetJson(config, "pak.mode");
+        }
+        route->mode = mode;
+        if ((route->debug = smatch(route->mode, "debug")) != 0) {
+            route->flags |= HTTP_ROUTE_SHOW_ERRORS;
+            route->keepSource = 1;
+        }
+    }
     if (route->config) {
         mprBlendJson(route->config, config, MPR_JSON_COMBINE);
     } else {
         route->config = config;
     }
     route->error = 0;
+
+    if (route->mode) {
+        /*
+            Http uses top level modes, Pak uses top level pak.modes.
+         */
+        if ((modeObj = mprGetJsonObj(config, sfmt("modes.%s", route->mode))) == 0) {
+            modeObj = mprGetJsonObj(config, sfmt("pak.modes.%s", route->mode));
+        }
+        if (modeObj) {
+            mprBlendJson(route->config, modeObj, MPR_JSON_OVERWRITE);
+            httpParseAll(route, 0, modeObj);
+        }
+    }
 
     httpParseAll(route, 0, config);
     if (route->error) {
@@ -4620,7 +4607,7 @@ static void parseMethods(HttpRoute *route, cchar *key, MprJson *prop)
 
 
 /*
-    Note: this typically comes from package.json. See blendMode
+    Note: this typically comes from package.json
  */
 static void parseMode(HttpRoute *route, cchar *key, MprJson *prop)
 {
@@ -4968,7 +4955,7 @@ static void parseServerDefenses(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    HttpEndpoint    *endpoint;
+    HttpEndpoint    *endpoint, *dual;
     HttpHost        *host;
     MprJson         *child;
     char            *ip;
@@ -5009,8 +4996,9 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
             This is currently used by VxWorks and Windows versions prior to Vista (i.e. XP)
          */
         if (!schr(prop->value, ':') && mprHasIPv6() && !mprHasDualNetworkStack()) {
-            mprAddItem(route->http->endpoints, httpCreateEndpoint("::", port, NULL));
-            httpSecureEndpoint(endpoint, route->ssl);
+            dual = httpCreateEndpoint("::", port, NULL);
+            mprAddItem(route->http->endpoints, dual);
+            httpSecureEndpoint(dual, route->ssl);
         }
     }
 }

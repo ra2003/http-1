@@ -78,7 +78,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         if (ssl == 0) {
             ssl = mprCreateSsl(0);
         }
-        peerName = isdigit(uri->host[0]) ? 0 : uri->host;
+        peerName = uri->host;
         if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
             conn->errorMsg = sp->errorMsg;
             httpTrace(conn, "connection.upgrade.error", "error", "msg:'Cannot perform SSL upgrade. %s'", conn->errorMsg);

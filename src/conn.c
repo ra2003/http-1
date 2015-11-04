@@ -359,6 +359,7 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event)
         mprCloseSocket(sock, 0);
         return 0;
     }
+    sock->data = conn;
     conn->notifier = endpoint->notifier;
     conn->async = endpoint->async;
     conn->endpoint = endpoint;

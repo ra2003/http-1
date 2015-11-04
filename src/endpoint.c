@@ -109,23 +109,6 @@ PUBLIC HttpEndpoint *httpCreateConfiguredEndpoint(HttpHost *host, cchar *home, c
 }
 
 
-PUBLIC void httpAddHostToEndpoints(HttpHost *host)
-{
-    HttpEndpoint    *endpoint;
-    int             next;
-
-    if (host == 0) {
-        host = httpGetDefaultHost();
-    }
-    for (next = 0; (endpoint = mprGetNextItem(HTTP->endpoints, &next)) != 0; ) {
-        httpAddHostToEndpoint(endpoint, host);
-        if (!host->name) {
-            httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
-        }
-    }
-}
-
-
 static bool validateEndpoint(HttpEndpoint *endpoint)
 {
     HttpHost    *host;
@@ -135,14 +118,16 @@ static bool validateEndpoint(HttpEndpoint *endpoint)
     if ((host = mprGetFirstItem(endpoint->hosts)) == 0) {
         host = httpGetDefaultHost();
         httpAddHostToEndpoint(endpoint, host);
-        if (!host->name) {
-            httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
-        }
-        for (nextRoute = 0; (route = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
-            if (!route->handler && !mprLookupKey(route->extensions, "")) {
-                httpAddRouteHandler(route, "fileHandler", "");
-                httpAddRouteIndex(route, "index.html");
-            }
+    }
+#if UNUSED
+    if (!host->name) {
+        httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
+    }
+#endif
+    for (nextRoute = 0; (route = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
+        if (!route->handler && !mprLookupKey(route->extensions, "")) {
+            httpAddRouteHandler(route, "fileHandler", "");
+            httpAddRouteIndex(route, "index.html");
         }
     }
     return 1;
@@ -245,30 +230,33 @@ static void acceptConn(HttpEndpoint *endpoint)
 }
 
 
-PUBLIC void httpMatchHost(HttpConn *conn)
+PUBLIC HttpHost *httpMatchHost(HttpConn *conn, cchar *hostname)
 {
-    MprSocket       *listenSock;
+    assert(conn);
+
+    if (!conn->host && (conn->host = httpLookupHostOnEndpoint(conn->endpoint, hostname)) == 0) {
+        mprLog("error http", 0, "No host to serve request. Searching for %s", hostname);
+        return 0;
+    }
+    return conn->host;
+}
+
+
+PUBLIC MprSsl *httpMatchSsl(MprSocket *sp, cchar *hostname)
+{
     HttpEndpoint    *endpoint;
+    HttpConn        *conn;
     HttpHost        *host;
 
-    listenSock = conn->sock->listenSock;
+    assert(sp && sp->data);
+    conn = sp->data;
+    endpoint = conn->endpoint;
 
-    /*
-        The connection must match an endpoint and then the hostHeader must match a specific Host
-     */
-    if ((endpoint = httpLookupEndpoint(listenSock->ip, listenSock->port)) == 0) {
-        conn->host = mprGetFirstItem(endpoint->hosts);
-        httpError(conn, HTTP_CODE_NOT_FOUND, "No listening endpoint for request from %s:%d",
-            listenSock->ip, listenSock->port);
-        return;
-    }
-    host = httpLookupHostOnEndpoint(endpoint, conn->rx->hostHeader);
-    if (host == 0) {
-        conn->host = mprGetFirstItem(endpoint->hosts);
-        httpError(conn, HTTP_CODE_NOT_FOUND, "No host to serve request. Searching for %s", conn->rx->hostHeader);
-        return;
+    if ((host = httpMatchHost(conn, hostname)) == 0) {
+        return 0;
     }
     conn->host = host;
+    return host->defaultRoute->ssl;
 }
 
 
@@ -344,6 +332,7 @@ PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 {
 #if ME_COM_SSL
     endpoint->ssl = ssl;
+    mprSetSslMatch(ssl, httpMatchSsl);
     return 0;
 #else
     mprLog("error http", 0, "Configuration lacks SSL support");
@@ -393,25 +382,21 @@ PUBLIC void httpAddHostToEndpoint(HttpEndpoint *endpoint, HttpHost *host)
 PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
 {
     HttpHost    *host;
-    int         matches[ME_MAX_ROUTE_MATCHES * 2];
-    int         next;
+    int         matches[ME_MAX_ROUTE_MATCHES * 2], next;
 
-    if (mprGetListLength(endpoint->hosts) <= 1) {
-        return mprGetFirstItem(endpoint->hosts);
-    }
-    if (name == 0 || *name == '\0') {
-        return 0;
-    }
     for (next = 0; (host = mprGetNextItem(endpoint->hosts, &next)) != 0; ) {
-        if (smatch(host->name, name)) {
+        if (host->hostname == 0 || *host->hostname == 0 || name == 0 || *name == 0) {
+            return host;
+        }
+        if (smatch(name, host->hostname)) {
             return host;
         }
         if (host->flags & HTTP_HOST_WILD_STARTS) {
-            if (sstarts(name, host->name)) {
+            if (sstarts(name, host->hostname)) {
                 return host;
             }
         } else if (host->flags & HTTP_HOST_WILD_CONTAINS) {
-            if (scontains(name, host->name)) {
+            if (scontains(name, host->hostname)) {
                 return host;
             }
         } else if (host->flags & HTTP_HOST_WILD_REGEXP) {

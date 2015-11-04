@@ -716,9 +716,6 @@ static void parseHost(HttpRoute *route, cchar *key, MprJson *prop)
     httpSetHostDefaultRoute(host, newRoute);
     httpParseAll(newRoute, key, prop);
     httpFinalizeRoute(newRoute);
-    if (!(host->flags & HTTP_HOST_ATTACHED)) {
-        httpAddHostToEndpoints(host);
-    }
 }
 
 
@@ -1339,6 +1336,8 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
             return;
         }
         endpoint = httpCreateEndpoint(ip, port, NULL);
+        httpAddHostToEndpoint(endpoint, host);
+
         if (!host->defaultEndpoint) {
             httpSetHostDefaultEndpoint(host, endpoint);
         }
@@ -1361,7 +1360,7 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
          */
         if (!schr(prop->value, ':') && mprHasIPv6() && !mprHasDualNetworkStack()) {
             dual = httpCreateEndpoint("::", port, NULL);
-            mprAddItem(route->http->endpoints, dual);
+            httpAddHostToEndpoint(dual, host);
             httpSecureEndpoint(dual, route->ssl);
         }
     }
@@ -1647,12 +1646,6 @@ static void parseSslProtocols(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseSslCache(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    mprSetSslCacheSize(route->ssl, (int) stoi(prop->value));
-}
-
-
 static void parseSslLogLevel(HttpRoute *route, cchar *key, MprJson *prop)
 {
     mprSetSslLogLevel(route->ssl, (int) stoi(prop->value));
@@ -1668,12 +1661,6 @@ static void parseSslRenegotiate(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseSslTicket(HttpRoute *route, cchar *key, MprJson *prop)
 {
     mprSetSslTicket(route->ssl, (prop->type & MPR_JSON_TRUE) ? 1 : 0);
-}
-
-
-static void parseSslTimeout(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    mprSetSslTimeout(route->ssl, httpGetTicks(prop->value));
 }
 
 
@@ -2012,7 +1999,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl.authority", httpParseAll);
     httpAddConfig("http.ssl.authority.file", parseSslAuthorityFile);
     httpAddConfig("http.ssl.authority.directory", parseSslAuthorityDirectory);
-    httpAddConfig("http.ssl.cache", parseSslCache);
     httpAddConfig("http.ssl.certificate", parseSslCertificate);
     httpAddConfig("http.ssl.ciphers", parseSslCiphers);
     httpAddConfig("http.ssl.key", parseSslKey);
@@ -2020,7 +2006,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl.protocols", parseSslProtocols);
     httpAddConfig("http.ssl.renegotiate", parseSslRenegotiate);
     httpAddConfig("http.ssl.ticket", parseSslTicket);
-    httpAddConfig("http.ssl.timeout", parseSslTimeout);
     httpAddConfig("http.ssl.verify", httpParseAll);
     httpAddConfig("http.ssl.verify.client", parseSslVerifyClient);
     httpAddConfig("http.ssl.verify.issuer", parseSslVerifyIssuer);

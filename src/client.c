@@ -14,7 +14,7 @@ static void setDefaultHeaders(HttpConn *conn);
 
 /*********************************** Code *************************************/
 
-static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
+static HttpConn *openConnection(HttpConn *conn, MprSsl *ssl)
 {
     Http        *http;
     HttpUri     *uri;
@@ -74,12 +74,7 @@ static HttpConn *openConnection(HttpConn *conn, struct MprSsl *ssl)
         Must be done even if using keep alive for repeat SSL requests
      */
     if (uri->secure) {
-        char *peerName;
-        if (ssl == 0) {
-            ssl = mprCreateSsl(0);
-        }
-        peerName = uri->host;
-        if (mprUpgradeSocket(sp, ssl, peerName) < 0) {
+        if (mprUpgradeSocket(sp, ssl, uri->host) < 0) {
             conn->errorMsg = sp->errorMsg;
             httpTrace(conn, "connection.upgrade.error", "error", "msg:'Cannot perform SSL upgrade. %s'", conn->errorMsg);
             return 0;

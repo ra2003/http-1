@@ -196,9 +196,6 @@ static int createEndpoints(int argc, char **argv)
     if (httpLoadConfig(route, app->configFile) < 0) {
         return MPR_ERR_CANT_CREATE;
     }
-#if UNUSED
-    httpFinalizeConfig(route);
-#endif
     mprGC(MPR_GC_FORCE | MPR_GC_COMPLETE);
     return 0;
 }

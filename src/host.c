@@ -59,8 +59,6 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
     host->parent = parent;
     host->flags = parent->flags & HTTP_HOST_NO_TRACE;
     host->streams = parent->streams;
-    host->secureEndpoint = parent->secureEndpoint;
-    host->defaultEndpoint = parent->defaultEndpoint;
     host->routes = mprCreateList(-1, MPR_LIST_STABLE);
     return host;
 }
@@ -69,6 +67,7 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
 static void manageHost(HttpHost *host, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
+        mprMark(host->hostname);
         mprMark(host->name);
         mprMark(host->canonical);
         mprMark(host->parent);
@@ -263,34 +262,34 @@ PUBLIC int httpSetHostCanonicalName(HttpHost *host, cchar *name)
 PUBLIC int httpSetHostName(HttpHost *host, cchar *name)
 {
     cchar   *errMsg;
+    char    *cp;
     int     column;
 
     if (!name || *name == '\0') {
         mprLog("error http", 0, "Empty host name");
         return MPR_ERR_BAD_ARGS;
     }
+    host->name = sclone(name);
+    host->hostname = strim(name, "/*", MPR_TRIM_BOTH);
+    if ((cp = schr(host->hostname, ':')) != 0) {
+        host->hostname = ssplit((char*) host->hostname, ":", NULL);
+    }
     host->flags &= ~(HTTP_HOST_WILD_STARTS | HTTP_HOST_WILD_CONTAINS | HTTP_HOST_WILD_REGEXP);
     if (sends(name, "*")) {
         host->flags |= HTTP_HOST_WILD_STARTS;
-        host->name = strim(name, "*", MPR_TRIM_END);
 
     } else if (*name == '*') {
         host->flags |= HTTP_HOST_WILD_CONTAINS;
-        host->name = strim(name, "*", MPR_TRIM_START);
 
     } else if (*name == '/') {
         host->flags |= HTTP_HOST_WILD_REGEXP;
-        host->name = strim(name, "/", MPR_TRIM_BOTH);
         if (host->nameCompiled) {
             free(host->nameCompiled);
         }
-        if ((host->nameCompiled = pcre_compile2(host->name, 0, 0, &errMsg, &column, NULL)) == 0) {
+        if ((host->nameCompiled = pcre_compile2(host->hostname, 0, 0, &errMsg, &column, NULL)) == 0) {
             mprLog("error http route", 0, "Cannot compile condition match pattern. Error %s at column %d", errMsg, column);
             return MPR_ERR_BAD_SYNTAX;
         }
-
-    } else {
-        host->name = sclone(name);
     }
     return 0;
 }

@@ -3310,13 +3310,26 @@ PUBLIC bool httpClientConn(HttpConn *conn);
 
 /**
     Match the HttpHost object that should serve this request
-    @description This sets the conn->host field to the appropriate host. If no suitable host can be found, #httpError
+    @description This selects the appropriate host object for this request. If no suitable host can be found, #httpError
         will be called and conn->error will be set.
-    @param conn HttpConn connection object created via #httpCreateConn
+    @param conn Connection object created via #httpCreateConn
+    @param hostname Host name to select.
+    @return Host object to serve the request. Also sets conn->host.
     @ingroup HttpConn
     @stability Internal
   */
-PUBLIC void httpMatchHost(HttpConn *conn);
+PUBLIC struct HttpHost *httpMatchHost(HttpConn *conn, cchar *hostname);
+
+/**
+    Match the HttpHost object that should serve this request
+    @description This selects the appropriate SSL configuration for the request.
+    @param sp Socket object
+    @param hostname Host name to select.
+    @return SSL configuration object.
+    @ingroup HttpConn
+    @stability Internal
+  */
+PUBLIC MprSsl *httpMatchSsl(MprSocket *sp, cchar *hostname);
 
 /**
     Signal a memory allocation error
@@ -7270,7 +7283,7 @@ typedef struct HttpEndpoint {
     MprSocket       *sock;                  /**< Listening socket */
     MprDispatcher   *dispatcher;            /**< Event dispatcher */
     HttpNotifier    notifier;               /**< Default connection notifier callback */
-    struct MprSsl   *ssl;                   /**< Endpoint SSL configuration */
+    MprSsl          *ssl;                   /**< SSL configurations to use */
     MprMutex        *mutex;                 /**< Multithread sync */
 } HttpEndpoint;
 
@@ -7298,15 +7311,6 @@ PUBLIC HttpConn *httpAcceptConn(HttpEndpoint *endpoint, MprEvent *event);
     @stability Internal
  */
 PUBLIC void httpAddHostToEndpoint(HttpEndpoint *endpoint, struct HttpHost *host);
-
-/**
-    Add a host to all unassigned endpoints
-    @description Add the host to any endpoints that do not have an assigned host.
-    @param host HttpHost object to add.
-    @ingroup HttpEndpoint
-    @stability Internal
- */
-PUBLIC void httpAddHostToEndpoints(struct HttpHost *host);
 
 /**
     Create and configure a new endpoint.
@@ -7498,7 +7502,8 @@ typedef struct HttpHost {
     /*
         NOTE: A host may be associated with multiple listening endpoints.
      */
-    char            *name;                  /**< Host name or names to be served. Flags defines the type of name */
+    cchar           *name;                  /**< Full host name with port */
+    cchar           *hostname;              /**< Host name portion only */
     HttpUri         *canonical;             /**< Canonical host name (optional canonial public name for redirections) */
     struct HttpHost *parent;                /**< Parent host to inherit aliases, dirs, routes */
     MprCache        *responseCache;         /**< Response content caching store */

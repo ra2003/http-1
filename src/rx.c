@@ -186,9 +186,9 @@ static bool parseIncoming(HttpConn *conn)
     HttpAddress *address;
     HttpPacket  *packet;
     HttpLimits  *limits;
+    char        *start, *end, *hostname;
     ssize       len;
     int64       value;
-    char        *start, *end;
 
     if ((packet = conn->input) == 0) {
         return 0;
@@ -252,7 +252,15 @@ static bool parseIncoming(HttpConn *conn)
         return 0;
     }
     if (httpServerConn(conn)) {
-        httpMatchHost(conn);
+        hostname = rx->hostHeader;
+        if (schr(rx->hostHeader, ':')) {
+            mprParseSocketAddress(rx->hostHeader, &hostname, NULL, NULL, 0);
+        }
+        if (!httpMatchHost(conn, hostname)) {
+            conn->host = mprGetFirstItem(conn->endpoint->hosts);
+            httpError(conn, HTTP_CODE_NOT_FOUND, "No listening endpoint for request for %s", rx->hostHeader);
+            return 0;
+        }
         parseUri(conn);
 
     } else if (rx->status != HTTP_CODE_CONTINUE) {
@@ -572,6 +580,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
             } else if (strcasecmp(key, "content-length") == 0) {
                 if (rx->length >= 0) {
                     httpBadRequestError(conn, HTTP_CLOSE | HTTP_CODE_BAD_REQUEST, "Mulitple content length headers");
+//  MOB - return 0?
                     break;
                 }
                 rx->length = stoi(value);
@@ -616,6 +625,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 }
                 if (start < 0 || end < 0 || size < 0 || end < start) {
                     httpBadRequestError(conn, HTTP_CLOSE | HTTP_CODE_RANGE_NOT_SATISFIABLE, "Bad content range");
+//  MOB - return 0?
                     break;
                 }
                 rx->inputRange = httpCreateRange(conn, start, end);
@@ -647,6 +657,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 if (!conn->http10) {
                     if (strcasecmp(value, "100-continue") != 0) {
                         httpBadRequestError(conn, HTTP_CODE_EXPECTATION_FAILED, "Expect header value is not supported");
+//  MOB - return 0?
                     } else {
                         rx->flags |= HTTP_EXPECT_CONTINUE;
                     }
@@ -659,6 +670,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                 if ((int) strspn(value, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.[]:")
                         < (int) slen(value)) {
                     httpBadRequestError(conn, HTTP_CODE_BAD_REQUEST, "Bad host header");
+//  MOB - return 0?
                 } else {
                     rx->hostHeader = sclone(value);
                 }
@@ -763,6 +775,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
                  */
                 if (!parseRange(conn, value)) {
                     httpBadRequestError(conn, HTTP_CLOSE | HTTP_CODE_RANGE_NOT_SATISFIABLE, "Bad range");
+//  MOB - return 0?
                 }
             } else if (strcasecmp(key, "referer") == 0) {
                 /* NOTE: yes the header is misspelt in the spec */
@@ -831,6 +844,7 @@ static bool parseHeaders(HttpConn *conn, HttpPacket *packet)
     if (rx->form && rx->length >= conn->limits->rxFormSize && conn->limits->rxFormSize != HTTP_UNLIMITED) {
         httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
             "Request form of %lld bytes is too big. Limit %lld", rx->length, conn->limits->rxFormSize);
+//  MOB - return 0?
     }
     if (conn->error) {
         /* Cannot reliably continue with keep-alive as the headers have not been correctly parsed */

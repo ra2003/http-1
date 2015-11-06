@@ -55,16 +55,15 @@ help:
 	@echo 'With make, the default configuration can be modified by setting make' >&2
 	@echo 'variables. Set to 0 to disable and 1 to enable:' >&2
 	@echo '' >&2
-	@echo '  ME_ESP_MDB         # Enable ESP MDB database support' >&2
-	@echo '  ME_ESP_SDB         # Enable ESP SQLite database support' >&2
+	@echo '  ME_COM_MBEDTLS     # Enable the mbed TLS stack' >&2
 	@echo '  ME_MPR_LOGGING     # Enable application logging' >&2
 	@echo '  ME_MPR_TRACING     # Enable debug tracing' >&2
 	@echo '  ME_HTTP_PAM        # Enable PAM storage for passwords' >&2
 	@echo '  ME_ROM             # Build for ROM without a file system' >&2
 	@echo '' >&2
-	@echo 'For example, to disable EST:' >&2
+	@echo 'For example, to disable MBEDTLS:' >&2
 	@echo '' >&2
-	@echo '  ME_COM_EST=0 make' >&2
+	@echo '  ME_COM_MBEDTLS=0 make' >&2
 	@echo '' >&2
 	@echo 'Other make environment variables:' >&2
 	@echo '  ARCH               # CPU architecture (x86, x64, ppc, ...)' >&2

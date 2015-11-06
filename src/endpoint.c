@@ -246,13 +246,11 @@ PUBLIC HttpHost *httpMatchHost(HttpConn *conn, cchar *hostname)
 
 PUBLIC MprSsl *httpMatchSsl(MprSocket *sp, cchar *hostname)
 {
-    HttpEndpoint    *endpoint;
     HttpConn        *conn;
     HttpHost        *host;
 
     assert(sp && sp->data);
     conn = sp->data;
-    endpoint = conn->endpoint;
 
     if ((host = httpMatchHost(conn, hostname)) == 0) {
         return 0;

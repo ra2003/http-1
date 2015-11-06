@@ -79,10 +79,7 @@ static void makeAltBody(HttpConn *conn, int status)
     assert(rx && tx);
 
     statusMsg = httpLookupStatus(status);
-    msg = "";
-    if (rx && (!rx->route || rx->route->flags & HTTP_ROUTE_SHOW_ERRORS)) {
-        msg = conn->errorMsg;
-    }
+    msg = (rx && rx->route && rx->route->flags & HTTP_ROUTE_SHOW_ERRORS) ?  conn->errorMsg : "";
     if (rx && scmp(rx->accept, "text/plain") == 0) {
         tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, msg);
     } else {

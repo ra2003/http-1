@@ -1595,6 +1595,12 @@ PUBLIC void httpSetRouteUploadDir(HttpRoute *route, cchar *dir)
 #endif
 
 
+PUBLIC void httpSetRouteUpdate(HttpRoute *route, bool on)
+{
+    route->update = on;
+}
+
+
 PUBLIC void httpSetRouteWorkers(HttpRoute *route, int workers)
 {
     assert(route);

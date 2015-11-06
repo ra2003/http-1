@@ -504,6 +504,7 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
 
     /*
         When a request completes, prepForNext will reset the state to HTTP_STATE_BEGIN
+        Errors will set keepAliveCount to zero.
      */
     if (conn->state < HTTP_STATE_PARSED && conn->endpoint && (mprIsSocketEof(conn->sock) || (conn->keepAliveCount <= 0))) {
         if (!conn->errorMsg) {

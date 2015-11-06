@@ -119,11 +119,6 @@ static bool validateEndpoint(HttpEndpoint *endpoint)
         host = httpGetDefaultHost();
         httpAddHostToEndpoint(endpoint, host);
     }
-#if UNUSED
-    if (!host->name) {
-        httpSetHostName(host, sfmt("%s:%d", endpoint->ip, endpoint->port));
-    }
-#endif
     for (nextRoute = 0; (route = mprGetNextItem(host->routes, &nextRoute)) != 0; ) {
         if (!route->handler && !mprLookupKey(route->extensions, "")) {
             httpAddRouteHandler(route, "fileHandler", "");

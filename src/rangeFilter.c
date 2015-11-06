@@ -18,7 +18,7 @@ static void createRangeBoundary(HttpConn *conn);
 static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range);
 static HttpPacket *createFinalRangePacket(HttpConn *conn);
 static void outgoingRangeService(HttpQueue *q);
-static bool fixRangeLength(HttpConn *conn);
+static bool fixRangeLength(HttpConn *conn, HttpQueue *q);
 static int matchRange(HttpConn *conn, HttpRoute *route, int dir);
 static void startRange(HttpQueue *q);
 
@@ -89,11 +89,12 @@ static void outgoingRangeService(HttpQueue *q)
         /*
             The httpContentNotModified routine can set outputRanges to zero if returning not-modified.
          */
-        if (!fixRangeLength(conn)) {
+        if (!fixRangeLength(conn, q)) {
             if (!q->servicing) {
                 httpRemoveQueue(q);
             }
             tx->outputRanges = 0;
+            tx->status = HTTP_CODE_OK;
         }
     }
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
@@ -249,16 +250,29 @@ static void createRangeBoundary(HttpConn *conn)
 /*
     Ensure all the range limits are within the entity size limits. Fixup negative ranges.
  */
-static bool fixRangeLength(HttpConn *conn)
+static bool fixRangeLength(HttpConn *conn, HttpQueue *q)
 {
     HttpTx      *tx;
     HttpRange   *range;
     MprOff      length;
+    cchar       *value;
 
     tx = conn->tx;
     length = tx->entityLength ? tx->entityLength : tx->length;
     if (length <= 0) {
-        return 0;
+        if ((value = mprLookupKey(tx->headers, "Content-Length")) != 0) {
+            length = stoi(value);
+        }
+        if (length < 0 && tx->chunkSize < 0) {
+            if (q->last->flags & HTTP_PACKET_END) {
+                if (q->count > 0) {
+                    length = q->count;
+                }
+            }
+        }
+        if (length < 0) {
+            return 0;
+        }
     }
     for (range = tx->outputRanges; range; range = range->next) {
         /*
@@ -281,7 +295,6 @@ static bool fixRangeLength(HttpConn *conn)
                     Cannot compute an offset from the end as we don't know the entity length and it is not
                     always possible or wise to buffer all the output.
                  */
-                httpError(conn, HTTP_CODE_RANGE_NOT_SATISFIABLE, "Cannot compute end range with unknown content length");
                 return 0;
             }
             /* select last -range-end bytes */

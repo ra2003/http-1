@@ -69,6 +69,8 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->flags = HTTP_ROUTE_STEALTH;
 #if ME_DEBUG
     route->keepSource = 1;
+    route->compile = 1;
+    route->update = 1;
 #endif
 
 #if FUTURE
@@ -76,7 +78,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->flags |= HTTP_ROUTE_ENV_ESCAPE;
     route->envPrefix = sclone("CGI_");
 #endif
-    route->update = 1;
     route->host = host;
     route->http = HTTP;
     route->lifespan = ME_MAX_CACHE_DURATION;
@@ -143,6 +144,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->autoDelete = parent->autoDelete;
     route->caching = parent->caching;
     route->clientConfig = parent->clientConfig;
+    route->compile = parent->compile;
     route->conditions = parent->conditions;
     route->config = parent->config;
     route->connector = parent->connector;
@@ -1212,6 +1214,12 @@ PUBLIC void httpSetRouteAutoDelete(HttpRoute *route, bool enable)
 {
     assert(route);
     route->autoDelete = enable;
+}
+
+
+PUBLIC void httpSetRouteCompile(HttpRoute *route, bool on)
+{
+    route->compile = on;
 }
 
 

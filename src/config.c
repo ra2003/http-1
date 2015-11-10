@@ -566,6 +566,13 @@ static void parseCanonicalName(HttpRoute *route, cchar *key, MprJson *prop)
     }
 }
 
+
+static void parseCompile(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    route->compile = (prop->type & MPR_JSON_TRUE) ? 1 : 0;
+}
+
+
 /*
     condition: '[!] auth'
     condition: '[!] condition'
@@ -2022,6 +2029,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.timeouts.session", parseTimeoutsSession);
     httpAddConfig("http.trace", parseTrace);
     httpAddConfig("http.update", parseUpdate);
+    httpAddConfig("http.compile", parseCompile);
     httpAddConfig("http.xsrf", parseXsrf);
 
 #if DEPRECATED || 1

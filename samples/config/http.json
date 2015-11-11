@@ -338,11 +338,6 @@
         ],
 
         /*
-            Keep intermediate forms
-         */
-        keep: true,
-
-        /*
             Per-language content
          */
         languages: {
@@ -881,11 +876,6 @@
              */
             content: "1K",
         },
-
-        /*
-            Transparently recompile updated views, controllers and source
-         */
-        update: true,
 
         /*
             Set to include a XSRF token to minimize CSRF vulnerabilies

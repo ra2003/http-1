@@ -179,9 +179,7 @@ PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
             mode = mprGetJson(config, "pak.mode");
         }
         route->mode = mode;
-        if ((route->debug = smatch(route->mode, "debug")) != 0) {
-            route->keepSource = 1;
-        }
+        route->debug = smatch(route->mode, "debug");
     }
     if (route->config) {
         mprBlendJson(route->config, config, MPR_JSON_COMBINE);
@@ -567,12 +565,6 @@ static void parseCanonicalName(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseCompile(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    route->compile = (prop->type & MPR_JSON_TRUE) ? 1 : 0;
-}
-
-
 /*
     condition: '[!] auth'
     condition: '[!] condition'
@@ -754,12 +746,6 @@ static void parseIndexes(HttpRoute *route, cchar *key, MprJson *prop)
     for (ITERATE_CONFIG(route, prop, child, ji)) {
         httpAddRouteIndex(route, child->value);
     }
-}
-
-
-static void parseKeep(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    route->keepSource = (prop->type & MPR_JSON_TRUE) ? 1 : 0;
 }
 
 
@@ -1830,12 +1816,6 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseUpdate(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    route->update = (prop->type & MPR_JSON_TRUE) ? 1 : 0;
-}
-
-
 static void parseXsrf(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpSetRouteXsrf(route, (prop->type & MPR_JSON_TRUE) ? 1 : 0);
@@ -1953,7 +1933,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.home", parseHome);
     httpAddConfig("http.hosts", parseHosts);
     httpAddConfig("http.indexes", parseIndexes);
-    httpAddConfig("http.keep", parseKeep);
     httpAddConfig("http.languages", parseLanguages);
     httpAddConfig("http.limits", parseLimits);
     httpAddConfig("http.limits.buffer", parseLimitsBuffer);
@@ -2028,8 +2007,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.timeouts.request", parseTimeoutsRequest);
     httpAddConfig("http.timeouts.session", parseTimeoutsSession);
     httpAddConfig("http.trace", parseTrace);
-    httpAddConfig("http.update", parseUpdate);
-    httpAddConfig("http.compile", parseCompile);
     httpAddConfig("http.xsrf", parseXsrf);
 
 #if DEPRECATED || 1

@@ -67,12 +67,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->defaultLanguage = sclone("en");
     route->home = route->documents = mprGetCurrentPath();
     route->flags = HTTP_ROUTE_STEALTH;
-#if ME_DEBUG
-    route->keepSource = 1;
-    route->compile = 1;
-    route->update = 1;
-#endif
-
 #if FUTURE
     /* Enable in version 6 */
     route->flags |= HTTP_ROUTE_ENV_ESCAPE;
@@ -144,7 +138,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->autoDelete = parent->autoDelete;
     route->caching = parent->caching;
     route->clientConfig = parent->clientConfig;
-    route->compile = parent->compile;
     route->conditions = parent->conditions;
     route->config = parent->config;
     route->connector = parent->connector;
@@ -172,7 +165,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->indexes = parent->indexes;
     route->inputStages = parent->inputStages;
     route->json = parent->json;
-    route->keepSource = parent->keepSource;
     route->languages = parent->languages;
     route->lifespan = parent->lifespan;
     route->limits = parent->limits;
@@ -200,7 +192,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->targetRule = parent->targetRule;
     route->tokens = parent->tokens;
     route->trace = parent->trace;
-    route->update = parent->update;
     route->updates = parent->updates;
     route->vars = parent->vars;
     route->workers = parent->workers;
@@ -1217,12 +1208,6 @@ PUBLIC void httpSetRouteAutoDelete(HttpRoute *route, bool enable)
 }
 
 
-PUBLIC void httpSetRouteCompile(HttpRoute *route, bool on)
-{
-    route->compile = on;
-}
-
-
 PUBLIC void httpSetRouteRenameUploads(HttpRoute *route, bool enable)
 {
     assert(route);
@@ -1600,12 +1585,6 @@ PUBLIC void httpSetRouteUploadDir(HttpRoute *route, cchar *dir)
     httpSetDir(route, "UPLOAD", dir);
 }
 #endif
-
-
-PUBLIC void httpSetRouteUpdate(HttpRoute *route, bool on)
-{
-    route->update = on;
-}
 
 
 PUBLIC void httpSetRouteWorkers(HttpRoute *route, int workers)

@@ -27,10 +27,10 @@
 typedef struct App {
     Mpr         *mpr;
     MprSignal   *traceToggle;
-    char        *documents;
-    char        *home;
-    char        *configFile;
-    char        *pathVar;
+    cchar       *documents;
+    cchar       *home;
+    cchar       *configFile;
+    cchar       *pathVar;
     int         show;
 } App;
 

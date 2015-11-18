@@ -109,7 +109,7 @@ PUBLIC void httpSetTraceFormatterName(HttpTrace *trace, cchar *name)
         if ((trace->events = mprCreateHash(0, MPR_HASH_STATIC_VALUES)) == 0) {
             return;
         }
-        mprAddKey(trace->events, "complete", ITOP(0));
+        mprAddKey(trace->events, "result", ITOP(0));
         formatter = httpCommonTraceFormatter;
     } else {
        formatter = httpDetailTraceFormatter;
@@ -175,7 +175,7 @@ PUBLIC bool httpTraceBody(HttpConn *conn, bool outgoing, HttpPacket *packet, ssi
             event = "rx.body.data";
         }
     }
-    return httpTracePacket(conn, event, type, packet, "length: %zd", len);
+    return httpTracePacket(conn, event, type, packet, "length:%zd", len);
 }
 
 
@@ -582,7 +582,7 @@ PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ty
     assert(type && *type);
     assert(event && *event);
 
-    if (!smatch(event, "request.completion")) {
+    if (!smatch(event, "result")) {
         return;
     }
     rx = conn->rx;

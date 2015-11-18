@@ -780,7 +780,7 @@ PUBLIC bool httpSetFilename(HttpConn *conn, cchar *filename, int flags)
     }
     mprGetPathInfo(filename, info);
     if (info->valid) {
-        tx->etag = sfmt("\"%llx-%llx-%llx\"", (int64) info->inode, (int64) info->size, (int64) info->mtime);
+        tx->etag = itos(info->inode + info->size + info->mtime);
     }
     tx->filename = sclone(filename);
 

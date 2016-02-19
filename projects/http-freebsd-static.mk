@@ -3,7 +3,7 @@
 #
 
 NAME                  := http
-VERSION               := 6.2.2
+VERSION               := 6.2.3
 PROFILE               ?= static
 ARCH                  ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
 CC_ARCH               ?= $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
@@ -941,9 +941,15 @@ DEPS_68 += stop
 uninstall: $(DEPS_68)
 
 #
+#   uninstallBinary
+#
+
+uninstallBinary: $(DEPS_69)
+
+#
 #   version
 #
 
-version: $(DEPS_69)
+version: $(DEPS_70)
 	echo $(VERSION)
 

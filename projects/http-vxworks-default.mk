@@ -3,7 +3,7 @@
 #
 
 NAME                  := http
-VERSION               := 6.2.2
+VERSION               := 6.2.3
 PROFILE               ?= default
 ARCH                  ?= $(shell echo $(WIND_HOST_TYPE) | sed 's/-.*$(ME_ROOT_PREFIX)/')
 CPU                   ?= $(subst X86,PENTIUM,$(shell echo $(ARCH) | tr a-z A-Z))
@@ -900,9 +900,15 @@ DEPS_68 += stop
 uninstall: $(DEPS_68)
 
 #
+#   uninstallBinary
+#
+
+uninstallBinary: $(DEPS_69)
+
+#
 #   version
 #
 
-version: $(DEPS_69)
+version: $(DEPS_70)
 	echo $(VERSION)
 

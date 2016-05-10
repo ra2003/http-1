@@ -901,7 +901,7 @@ $(BUILD)/.install-certs-modified: $(DEPS_62)
 
 installPrep: $(DEPS_63)
 	if [ "`id -u`" != 0 ] ; \
-	then echo "Must run as root. Rerun with "sudo"" ; \
+	then echo "Must run as root. Rerun with sudo." ; \
 	exit 255 ; \
 	fi
 

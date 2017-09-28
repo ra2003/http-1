@@ -2501,13 +2501,6 @@
     </member>
     <member kind="function">
       <type>void</type>
-      <name>httpSetRouteServerPrefix</name>
-      <anchorfile>group___http_route.html</anchorfile>
-      <anchor>ga614be974f6b3149723767cb1f2f5931b</anchor>
-      <arglist>(HttpRoute *route, cchar *prefix)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
       <name>httpSetRouteSessionVisibility</name>
       <anchorfile>group___http_route.html</anchorfile>
       <anchor>gaeca3e06924e7ffadd182db344bcdb2fb</anchor>

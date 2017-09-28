@@ -81,10 +81,9 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->workers = -1;
     route->prefix = MPR->emptyString;
     route->trace = http->trace;
-#if DEPRECATED || 1
+#if DEPRECATE
     route->serverPrefix = MPR->emptyString;
 #endif
-
     route->headers = mprCreateList(-1, MPR_LIST_STABLE);
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
     route->indexes = mprCreateList(-1, MPR_LIST_STABLE);
@@ -113,11 +112,6 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
         route->limits = mprMemdup(http->serverLimits ? http->serverLimits : http->clientLimits, sizeof(HttpLimits));
     }
     route->mimeTypes = MPR->mimeTypes;
-#if UNUSED
-    if ((route->mimeTypes = mprCreateMimeTypes("mime.types")) == 0) {
-        route->mimeTypes = MPR->mimeTypes;
-    }
-#endif
     definePathVars(route);
     return route;
 }
@@ -197,7 +191,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->updates = parent->updates;
     route->vars = parent->vars;
     route->workers = parent->workers;
-#if DEPRECATED || 1
+#if DEPRECATE
     route->serverPrefix = parent->serverPrefix;
 #endif
     return route;
@@ -262,7 +256,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->updates);
         mprMark(route->vars);
         mprMark(route->webSocketsProtocol);
-#if DEPRECATED || 1
+#if DEPRECATE
         mprMark(route->serverPrefix);
 #endif
 
@@ -1445,7 +1439,7 @@ PUBLIC void httpSetRoutePreserveFrames(HttpRoute *route, bool on)
 }
 
 
-#if DEPRECATED || 1
+#if DEPRECATE
 PUBLIC void httpSetRouteServerPrefix(HttpRoute *route, cchar *prefix)
 {
     assert(route);
@@ -1578,12 +1572,10 @@ PUBLIC void httpSetRouteTemplate(HttpRoute *route, cchar *tplate)
 }
 
 
-#if DEPRECATED || 1
 PUBLIC void httpSetRouteUploadDir(HttpRoute *route, cchar *dir)
 {
     httpSetDir(route, "UPLOAD", dir);
 }
-#endif
 
 
 PUBLIC void httpSetRouteWorkers(HttpRoute *route, int workers)
@@ -1965,10 +1957,9 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     for (cp = template; *cp; cp++) {
         if (cp == template && *cp == '~') {
             mprPutStringToBuf(buf, httpGetRouteTop(conn));
-#if DEPRECATED || 1
+#if DEPRECATE
         } else if (cp == template && *cp == '|') {
             mprPutStringToBuf(buf, route->prefix);
-            //  DEPRECATED in version 6
             mprPutStringToBuf(buf, route->serverPrefix);
 #endif
 
@@ -2195,7 +2186,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         /* Authentication not required */
         return HTTP_ROUTE_OK;
     }
-    if (!httpLoggedIn(conn)) {
+    if (!httpIsAuthenticated(conn)) {
         httpGetCredentials(conn, &username, &password);
         if (!httpLogin(conn, username, password)) {
             if (!conn->tx->finalized) {
@@ -2233,7 +2224,7 @@ static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *
     if (!auth || !auth->type) {
         return HTTP_ROUTE_REJECT;
     }
-    if (httpLoggedIn(conn)) {
+    if (httpIsAuthenticated(conn)) {
         return HTTP_ROUTE_REJECT;
     }
     httpGetCredentials(conn, &username, &password);
@@ -2505,16 +2496,12 @@ PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *methods, cchar *patt
     if ((route = httpCreateInheritedRoute(parent)) == 0) {
         return 0;
     }
-#if DEPRECATED || 1
-    /* Keep till version 6 */
-        /*
-            Keep till version 6
-         */
-        if (schr(target, '-')) {
-            char   *controller, *action;
-            controller = ssplit(sclone(target), "-", &action);
-            target = sjoin(controller, "/", action, NULL);
-        }
+#if DEPRECATE
+    if (schr(target, '-')) {
+        char   *controller, *action;
+        controller = ssplit(sclone(target), "-", &action);
+        target = sjoin(controller, "/", action, NULL);
+    }
 #endif
     httpSetRoutePattern(route, pattern, 0);
     if (methods) {
@@ -2533,7 +2520,7 @@ PUBLIC HttpRoute *httpAddRestfulRoute(HttpRoute *parent, cchar *methods, cchar *
 {
     cchar   *source;
 
-#if DEPRECATED || 1
+#if DEPRECATE
     if (*resource == '{') {
         pattern = sfmt("^%s%s/%s%s", parent->prefix, parent->serverPrefix, resource, pattern);
     } else {
@@ -2616,7 +2603,7 @@ PUBLIC HttpRoute *httpAddWebSocketsRoute(HttpRoute *parent, cchar *action)
     HttpLimits  *limits;
     cchar       *path, *pattern;
 
-#if DEPRECATED || 1
+#if DEPRECATE
     pattern = sfmt("^%s%s/{controller}/%s", parent->prefix, parent->serverPrefix, action);
 #else
     pattern = sfmt("^%s/{controller}/%s", parent->prefix, action);
@@ -2752,7 +2739,7 @@ static void defineHostVars(HttpRoute *route)
     mprAddKey(route->vars, "DOCUMENTS", route->documents);
     mprAddKey(route->vars, "HOME", route->home);
     mprAddKey(route->vars, "HOST", route->host->name);
-#if DEPRECATED || 1
+#if DEPRECATE
     mprAddKey(route->vars, "SERVER_NAME", route->host->name);
 #endif
 }

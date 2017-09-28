@@ -159,7 +159,7 @@ PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
     if ((obj = mprGetJsonObj(config, "include")) != 0) {
         parseInclude(route, config, obj);
     }
-#if DEPRECATED || 1
+#if DEPRECATE
 {
     MprJson *obj;
     if ((obj = mprGetJsonObj(config, "app.http")) != 0) {
@@ -233,7 +233,7 @@ PUBLIC void httpParseAll(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-#if DEPRECATED || 1
+#if DEPRECATE
 static void parseApp(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpParseAll(route, 0, prop);
@@ -533,7 +533,7 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
             }
             methods = getList(mprReadJsonObj(child, "methods"));
             urls = getList(mprReadJsonObj(child, "urls"));
-#if DEPRECATED || 1
+#if DEPRECATE
             if (urls == 0) {
                 if ((urls = getList(mprReadJsonObj(child, "urls"))) != 0) {
                     mprLog("error http config", 0, "Using deprecated property \"uris\", use \"urls\" instead");
@@ -1450,7 +1450,7 @@ static void parseServerModules(HttpRoute *route, cchar *key, MprJson *prop)
         module = mprCreateModule(name, path, entry, HTTP);
 
         if (mprLoadModule(module) < 0) {
-#if DEPRECATED || 1
+#if DEPRECATE
             module->entry = sfmt("ma%sInit", stitle(name));
             if (mprLoadModule(module) < 0) {
                 httpParseError(route, "Cannot load module: %s", path);
@@ -1488,7 +1488,7 @@ static void parseServerMonitors(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-#if DEPRECATE || 1
+#if DEPRECATE
 static void parseServerPrefix(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpSetRouteServerPrefix(route, prop->value);
@@ -1546,6 +1546,7 @@ static void parseSslAuthorityFile(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+#if DEPRECATE
 static void parseSslAuthorityDirectory(HttpRoute *route, cchar *key, MprJson *prop)
 {
     cchar   *path;
@@ -1559,6 +1560,7 @@ static void parseSslAuthorityDirectory(HttpRoute *route, cchar *key, MprJson *pr
         }
     }
 }
+#endif
 
 
 static void parseSslCertificate(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1985,7 +1987,9 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl", parseSsl);
     httpAddConfig("http.ssl.authority", httpParseAll);
     httpAddConfig("http.ssl.authority.file", parseSslAuthorityFile);
+#if DEPRECATE
     httpAddConfig("http.ssl.authority.directory", parseSslAuthorityDirectory);
+#endif
     httpAddConfig("http.ssl.certificate", parseSslCertificate);
     httpAddConfig("http.ssl.ciphers", parseSslCiphers);
     httpAddConfig("http.ssl.key", parseSslKey);
@@ -2008,7 +2012,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.trace", parseTrace);
     httpAddConfig("http.xsrf", parseXsrf);
 
-#if DEPRECATED || 1
+#if DEPRECATE
     httpAddConfig("app", parseApp);
     httpAddConfig("http.domain", parseName);
     httpAddConfig("http.handler", parsePipelineHandler);

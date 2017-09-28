@@ -589,7 +589,7 @@ PUBLIC HttpUri *httpNormalizeUri(HttpUri *uri)
 
 
 /*
-    Normalize a URI path to remove redundant "./", "../" and make separators uniform. 
+    Normalize a URI path to remove redundant "./", "../" and make separators uniform.
     This will not permit leading '../' segments.
     Does not make an abs path, map separators or change case.
  */
@@ -958,8 +958,7 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
     if (sstarts(routeName, "${app}")) {
         return sjoin(httpGetRouteTop(conn), &routeName[6], NULL);
     }
-#if DEPRECATED || 1
-    //  DEPRECATED in version 6
+#if DEPRECATE
     if (routeName[0] == '|') {
         assert(routeName[0] != '|');
         return sjoin(route->prefix, &routeName[1], NULL);

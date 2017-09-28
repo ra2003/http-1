@@ -47,7 +47,7 @@ PUBLIC void httpInitAuth()
     httpCreateAuthStore("system", httpPamVerifyUser);
 #endif
 
-#if DEPRECATED || 1
+#if DEPRECATE
     httpCreateAuthStore("file", configVerifyUser);
     httpCreateAuthStore("internal", configVerifyUser);
 #if ME_COMPILER_HAS_PAM && ME_HTTP_PAM

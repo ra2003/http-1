@@ -464,7 +464,7 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
     assert(conn->tx);
     assert(conn->rx);
 
-#if DEPRECATED || 1
+#if DEPRECATE
     /* Just IO state asserting */
     if (conn->io) {
         assert(!conn->io);
@@ -515,7 +515,9 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
     } else if (!mprIsSocketEof(conn->sock) && conn->async && !conn->delay) {
         httpEnableConnEvents(conn);
     }
+#if DEPRECATE
     conn->io = 0;
+#endif
 }
 
 

@@ -949,9 +949,6 @@ static void trimPathToDirname(HttpUri *uri)
  */
 static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
 {
-    HttpRoute   *route;
-
-    route = conn->rx->route;
     if (routeName[0] == '~') {
         return sjoin(httpGetRouteTop(conn), &routeName[1], NULL);
     }
@@ -960,6 +957,8 @@ static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
     }
 #if DEPRECATE
     if (routeName[0] == '|') {
+        HttpRoute   *route;
+        route = conn->rx->route;
         assert(routeName[0] != '|');
         return sjoin(route->prefix, &routeName[1], NULL);
     }

@@ -18186,6 +18186,9 @@ PUBLIC MprList *mprGlobPathFiles(cchar *path, cchar *pattern, int flags)
             exclude = &pattern[1];
         }
         globPathFiles(result, path, rewritePattern(pattern, flags), relativeTo, exclude, flags);
+        if (!(flags & (MPR_PATH_DEPTH_FIRST))) {
+            mprSortList(result, NULL, NULL);
+        }
     }
     return result;
 }
@@ -19293,11 +19296,13 @@ PUBLIC char *mprSearchPath(cchar *file, int flags, cchar *search, ...)
     if ((result = checkPath(file, flags)) != 0) {
         return result;
     }
+#if ME_WIN_LIKE
     if ((flags & MPR_SEARCH_EXE) && *ME_EXE) {
         if ((result = checkPath(mprJoinPathExt(file, ME_EXE), flags)) != 0) {
             return result;
         }
     }
+#endif
     for (nextDir = (char*) search; nextDir; nextDir = va_arg(args, char*)) {
         tok = NULL;
         nextDir = sclone(nextDir);
@@ -19308,12 +19313,14 @@ PUBLIC char *mprSearchPath(cchar *file, int flags, cchar *search, ...)
                 va_end(args);
                 return mprNormalizePath(result);
             }
+#if ME_WIN_LIKE
             if ((flags & MPR_SEARCH_EXE) && *ME_EXE) {
                 if ((result = checkPath(mprJoinPathExt(path, ME_EXE), flags)) != 0) {
                     va_end(args);
                     return mprNormalizePath(result);
                 }
             }
+#endif
             dir = stok(0, MPR_SEARCH_SEP, &tok);
         }
     }

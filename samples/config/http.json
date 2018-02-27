@@ -7,25 +7,25 @@
 */
 {
     /*
-        Single word application name. This is typically provided by the package.json instead.
+        Single word application name. This is typically provided by the pak.json instead.
      */
     name: "blog",
 
     /*
         Multi-word title for the application. Used for display.
-        This is typically provided by the package.json instead.
+        This is typically provided by the pak.json instead.
      */
     title: "My Blog",
 
     /*
         One-line description for the application. Used in the Pak catalog.
-        This is typically provided by the package.json instead.
+        This is typically provided by the pak.json instead.
      */
     description: "My Blog detailing adventures in the Artic",
 
     /*
         SemVer compatible version string
-        This is typically provided by the package.json instead.
+        This is typically provided by the pak.json instead.
      */
     version: "1.0.0",
 
@@ -775,7 +775,7 @@
 
         /*
             Buffer or stream input by mime type. This directive is per-host, not per-route.
-            The value may be true, false or a URI 
+            The value may be true, false or a URI
          */
         stream: [
             { mime: 'application/x-www-form-urlencoded', stream: false, uri: '/some-uri' },
@@ -885,17 +885,17 @@
 
     /*
         Mode specific property collections. The designated mode collection is copied to the top level.
-        The mode property set is selected by the package.json "mode" property.
+        The profile property set is selected by the pak.json "profile" property.
      */
-    modes: {
+    profiles: {
         debug: {
             /*
-                Collection of properties that are copied to the top-level if in debug mode
+                Collection of properties that are copied to the top-level if in debug profile
              */
         },
         release: {
             /*
-                Collection of properties that are copied to the top level if in release mode
+                Collection of properties that are copied to the top level if in release profile
              */
         }
     }

@@ -367,7 +367,9 @@ PUBLIC void httpServiceQueue(HttpQueue *q)
         }
         if (!(q->flags & HTTP_QUEUE_SUSPENDED)) {
             q->servicing = 1;
-            q->service(q);
+            if (q->service) {
+                q->service(q);
+            }
             if (q->flags & HTTP_QUEUE_RESERVICE) {
                 q->flags &= ~HTTP_QUEUE_RESERVICE;
                 httpScheduleQueue(q);

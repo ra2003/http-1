@@ -1,4 +1,4 @@
- 
+
         <div class="ui inverted menu">
             <div class="right menu">
                 <@ partial('menu') @>
@@ -7,7 +7,7 @@
         <@ if (meta.crumbs ) { @>
         <div class="ui breadcrumb">
             <a class="section" href="@~">Home</a>
-            <@ for each (crumb in meta.crumbs ) { 
+            <@ for each (crumb in meta.crumbs ) {
                 for (let [name, url] in crumb ) { @>
             <div class="divider">/</div>
             <a class="section" href="<@= url @>">
@@ -21,5 +21,5 @@
         </div>
         <@ } @>
         <div class="ui right floated basic segment version">
-            v<@= Path('../package.json').readJSON().version @>
+            v<@= Path('../pak.json').readJSON().version @>
         </div>

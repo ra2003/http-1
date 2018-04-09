@@ -40,6 +40,12 @@ PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
     if (password) {
         *password = sclone(cp);
     }
+    if (username && *username == 0) {
+        return MPR_ERR_BAD_FORMAT;
+    }
+    if (password && *password == 0) {
+        return MPR_ERR_BAD_FORMAT;
+    }
     return 0;
 }
 

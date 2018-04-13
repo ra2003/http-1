@@ -28,6 +28,10 @@ Me.load({
         integrate: true,
         prefixes: 'install-prefixes',
     
+        mbedtls: {
+            compact: true,      /* Compact edition - Disable non-essential ciphers and features */
+        },
+
         http: {
             cmd: true,
             pam: true,

@@ -93,6 +93,9 @@
 #ifndef ME_INTEGRATE
     #define ME_INTEGRATE 1
 #endif
+#ifndef ME_MBEDTLS_COMPACT
+    #define ME_MBEDTLS_COMPACT 1
+#endif
 #ifndef ME_NAME
     #define ME_NAME "http"
 #endif
@@ -103,7 +106,7 @@
     #define ME_TITLE "Embedthis Http"
 #endif
 #ifndef ME_VERSION
-    #define ME_VERSION "7.0.0"
+    #define ME_VERSION "7.0.3"
 #endif
 
 /* Prefixes */
@@ -123,7 +126,7 @@
     #define ME_APP_PREFIX "/usr/local/lib/http"
 #endif
 #ifndef ME_VAPP_PREFIX
-    #define ME_VAPP_PREFIX "/usr/local/lib/http/7.0.0"
+    #define ME_VAPP_PREFIX "/usr/local/lib/http/7.0.3"
 #endif
 #ifndef ME_BIN_PREFIX
     #define ME_BIN_PREFIX "/usr/local/bin"
@@ -156,7 +159,7 @@
     #define ME_CACHE_PREFIX "/var/spool/http/cache"
 #endif
 #ifndef ME_SRC_PREFIX
-    #define ME_SRC_PREFIX "http-7.0.0"
+    #define ME_SRC_PREFIX "http-7.0.3"
 #endif
 
 /* Suffixes */
@@ -198,10 +201,10 @@
     #define ME_MINOR_VERSION 0
 #endif
 #ifndef ME_PATCH_VERSION
-    #define ME_PATCH_VERSION 0
+    #define ME_PATCH_VERSION 3
 #endif
 #ifndef ME_VNUM
-    #define ME_VNUM 700000000
+    #define ME_VNUM 700000003
 #endif
 
 /* Components */

@@ -50,6 +50,17 @@
     },
 
     /*
+        ESP related configuration
+    */
+    esp: {
+        /*
+            See the ESP configuration sample for the full list of Http related configuration
+            properties at: https://github.com/embedthis/esp/tree/dev/samples/config
+         */
+        app: true,
+    },
+
+    /*
         HTTP related configuration
      */
     http: {
@@ -71,6 +82,9 @@
 
         /*
             Authentication configuration
+            Can also do
+                auth: "none"
+                auth: "app|config|system" to set the auth store
          */
         auth: {
             /*

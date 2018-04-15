@@ -323,8 +323,13 @@ static void parseAttach(HttpRoute *route, cchar *key, MprJson *prop)
 static void parseAuth(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (prop->type & MPR_JSON_STRING) {
-        /* Permits auth: "app" to set the store */
-        parseAuthStore(route, key, prop);
+        /* Permits auth: "app" to set the store and "none" to set no auth */
+        if (smatch(prop->value, "none")) {
+            httpSetAuthType(route->auth, "none", 0);
+            httpAddRouteCondition(route, "auth", 0, 0);
+        } else {
+            parseAuthStore(route, key, prop);
+        }
     } else if (prop->type == MPR_JSON_OBJ) {
         httpParseAll(route, key, prop);
     }
@@ -642,6 +647,17 @@ static void parseFormatsResponse(HttpRoute *route, cchar *key, MprJson *prop)
     route->responseFormat = prop->value;
     if (smatch(route->responseFormat, "json")) {
         route->json = 1;
+    }
+}
+
+
+/*
+    Alias for pipeline: { handler ... }
+ */
+static void parseHandler(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (httpSetRouteHandler(route, prop->value) < 0) {
+        httpParseError(route, "Cannot set handler %s", prop->value);
     }
 }
 
@@ -1026,6 +1042,11 @@ static void parsePipelineFilters(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+/*
+    pipeline: {
+        handlers: 'espHandler',                     //  For all extensions
+    },
+ */
 static void parsePipelineHandler(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (httpSetRouteHandler(route, prop->value) < 0) {
@@ -1036,7 +1057,6 @@ static void parsePipelineHandler(HttpRoute *route, cchar *key, MprJson *prop)
 
 /*
     pipeline: {
-        handlers: 'espHandler',                     //  For all extensions
         handlers: {
             espHandler: [ '*.esp, '*.xesp' ],
         },
@@ -1924,6 +1944,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.errors", parseErrors);
     httpAddConfig("http.formats", httpParseAll);
     httpAddConfig("http.formats.response", parseFormatsResponse);
+    httpAddConfig("http.handler", parseHandler);
     httpAddConfig("http.headers", httpParseAll);
     httpAddConfig("http.headers.add", parseHeadersAdd);
     httpAddConfig("http.headers.remove", parseHeadersRemove);
@@ -2014,7 +2035,6 @@ PUBLIC int httpInitParser()
 #if DEPRECATE
     httpAddConfig("app", parseApp);
     httpAddConfig("http.domain", parseName);
-    httpAddConfig("http.handler", parsePipelineHandler);
     httpAddConfig("http.limits.requestBody", parseLimitsRxBody);
     httpAddConfig("http.limits.responseBody", parseLimitsTxBody);
     httpAddConfig("http.limits.requestForm", parseLimitsRxForm);

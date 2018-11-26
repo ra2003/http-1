@@ -27,17 +27,21 @@ Me.load({
     settings: {
         integrate: true,
         prefixes: 'install-prefixes',
-    
+
         http: {
             cmd: true,
             pam: true,
+            http2: true,
             webSockets: true,
-        }
+        },
+        mbedtls: {
+            compact: true,      /* Compact edition - Disable non-essential ciphers and features */
+        },
     },
 
     usage: {
-        'http.pam': 'Enable Unix Pluggable Auth Module (true|false)',                              
-        'http.webSockets': 'Enable WebSockets (true|false)',                              
+        'http.pam': 'Enable Unix Pluggable Auth Module (true|false)',
+        'http.webSockets': 'Enable WebSockets (true|false)',
     },
 
     targets: {
@@ -62,15 +66,15 @@ Me.load({
                 sets:       [ 'pak' ],
             },
         },
-        sets: { 
+        sets: {
             pak: [
-                {   
-                    from:       'src/dist.me', 
+                {
+                    from:       'src/dist.me',
                     to:         '${src}/dist/http.me',
 
                 }, {
                     from:       [
-                                    'src/http.h', 
+                                    'src/http.h',
                                     'src/http.c'
                                 ],
                     to:         '${src}/dist/',
@@ -78,7 +82,7 @@ Me.load({
 
                 }, {
                     from:       ['src/service.c', 'src/*.c'],
-                    exclude:    /http.c/,
+                    exclude:    /http.c|server.c/,
                     to:         '${src}/dist/httpLib.c',
                     append:     true,
                     filter:     /^#inc.*http.*$/mg,
@@ -100,4 +104,3 @@ Me.load({
         },
 	},
 })
-

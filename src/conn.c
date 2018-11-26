@@ -22,9 +22,9 @@ static void manageConn(HttpConn *conn, int flags);
 PUBLIC HttpConn *httpCreateConn(HttpNet *net)
 {
     Http        *http;
+    HttpQueue   *q;
     HttpConn    *conn;
     HttpLimits  *limits;
-    HttpTx      *tx;
     HttpHost    *host;
     HttpRoute   *route;
 
@@ -44,6 +44,8 @@ PUBLIC HttpConn *httpCreateConn(HttpNet *net)
     conn->sock = net->sock;
     conn->port = net->port;
     conn->ip = net->ip;
+    conn->secure = net->secure;
+    pickStreamNumber(conn);
 
     if (net->endpoint) {
         host = mprGetFirstItem(net->endpoint->hosts);
@@ -61,23 +63,37 @@ PUBLIC HttpConn *httpCreateConn(HttpNet *net)
     limits = conn->limits;
     conn->keepAliveCount = (net->protocol >= 2) ? 0 : conn->limits->keepAliveMax;
     conn->dispatcher = net->dispatcher;
-    conn->rx = httpCreateRx(conn);
-    tx = conn->tx = httpCreateTx(conn, NULL);
-    pickStreamNumber(conn);
 
-    /*
-        Define the network read/write queues for the HTTP request pipeline. The HTTP filters read and write
-        to these queues. For HTTP/2, there will be multiple tailFilters for one http2Filter (multiplexer).
-     */
-    conn->inputq = httpCreateQueue(net, conn, http->tailFilter, HTTP_QUEUE_RX, NULL);
-    conn->outputq = httpCreateQueue(net, conn, http->tailFilter, HTTP_QUEUE_TX, NULL);
-    httpPairQueues(conn->inputq, conn->outputq);
+    conn->rx = httpCreateRx(conn);
+    conn->tx = httpCreateTx(conn, NULL);
+
+    q = conn->rxHead = httpCreateQueueHead(net, conn, "RxHead", HTTP_QUEUE_RX);
+    q = httpCreateQueue(net, conn, http->tailFilter, HTTP_QUEUE_RX, q);
+    if (net->protocol < 2) {
+        q = httpCreateQueue(net, conn, http->chunkFilter, HTTP_QUEUE_RX, q);
+    }
+    if (httpIsServer(net)) {
+        q = httpCreateQueue(net, conn, http->uploadFilter, HTTP_QUEUE_RX, q);
+    }
+    conn->inputq = conn->rxHead->nextQ;
+    conn->readq = conn->rxHead;
+
+    q = conn->txHead = httpCreateQueueHead(net, conn, "TxHead", HTTP_QUEUE_TX);
+    if (net->protocol < 2) {
+        q = httpCreateQueue(net, conn, http->chunkFilter, HTTP_QUEUE_TX, q);
+        q = httpCreateQueue(net, conn, http->tailFilter, HTTP_QUEUE_TX, q);
+    } else {
+        q = httpCreateQueue(net, conn, http->tailFilter, HTTP_QUEUE_TX, q);
+    }
+    conn->outputq = q;
+    conn->writeq = conn->txHead->nextQ;
+    httpTraceQueues(conn);
+    httpOpenQueues(conn);
 
 #if ME_HTTP_HTTP2
-    httpSetQueueLimits(conn->inputq, limits->frameSize, -1, limits->frameSize * 2);
-    httpSetQueueLimits(conn->outputq, limits->frameSize, -1, limits->frameSize * 2);
+    httpSetQueueLimits(conn->inputq, limits->frameSize, -1, net->inputq->max);
+    httpSetQueueLimits(conn->outputq, limits->frameSize, -1, net->inputq->max);
 #endif
-
     httpSetState(conn, HTTP_STATE_BEGIN);
     httpAddConn(net, conn);
     return conn;
@@ -94,11 +110,13 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
         if (conn->tx) {
             httpClosePipeline(conn);
         }
+        if (conn->activeRequest) {
+            httpMonitorEvent(conn, HTTP_COUNTER_ACTIVE_REQUESTS, -1);
+            conn->activeRequest = 0;
+        }
         httpDisconnectConn(conn);
         httpRemoveConn(conn->net, conn);
         conn->destroyed = 1;
-        if (conn->keepAliveCount <= 0 && conn->net->protocol < 2) {
-        }
     }
 }
 
@@ -134,10 +152,12 @@ static void manageConn(HttpConn *conn, int flags)
         mprMark(conn->record);
         mprMark(conn->reqData);
         mprMark(conn->rx);
+        mprMark(conn->rxHead);
         mprMark(conn->sock);
         mprMark(conn->timeoutEvent);
         mprMark(conn->trace);
         mprMark(conn->tx);
+        mprMark(conn->txHead);
         mprMark(conn->user);
         mprMark(conn->username);
         mprMark(conn->writeq);
@@ -206,6 +226,8 @@ PUBLIC void httpResetClientConn(HttpConn *conn, bool keepHeaders)
 
 static void commonPrep(HttpConn *conn)
 {
+    HttpQueue   *q, *next;
+
     if (conn->timeoutEvent) {
         mprRemoveEvent(conn->timeoutEvent);
         conn->timeoutEvent = 0;
@@ -216,6 +238,32 @@ static void commonPrep(HttpConn *conn)
     conn->state = 0;
     conn->authRequested = 0;
     conn->complete = 0;
+
+    httpTraceQueues(conn);
+    for (q = conn->txHead->nextQ; q != conn->txHead; q = next) {
+        next = q->nextQ;
+        if (q->flags & HTTP_QUEUE_REQUEST) {
+            httpRemoveQueue(q);
+        } else {
+            q->flags &= (HTTP_QUEUE_OPENED | HTTP_QUEUE_OUTGOING);
+        }
+    }
+    conn->writeq = conn->txHead->nextQ;
+
+    for (q = conn->rxHead->nextQ; q != conn->rxHead; q = next) {
+        next = q->nextQ;
+        if (q->flags & HTTP_QUEUE_REQUEST) {
+            httpRemoveQueue(q);
+        } else {
+            q->flags &= (HTTP_QUEUE_OPENED);
+        }
+    }
+    conn->readq = conn->rxHead;
+    httpTraceQueues(conn);
+
+    httpDiscardData(conn, HTTP_QUEUE_TX);
+    httpDiscardData(conn, HTTP_QUEUE_RX);
+
     httpSetState(conn, HTTP_STATE_BEGIN);
     pickStreamNumber(conn);
 }
@@ -231,7 +279,7 @@ static void pickStreamNumber(HttpConn *conn)
         conn->stream = net->nextStream;
         net->nextStream += 2;
         if (conn->stream >= HTTP2_MAX_STREAM) {
-            //MOB - must recreate connection. Cannot use this connection any more.
+            //TODO - must recreate connection. Cannot use this connection any more.
         }
     }
 #endif
@@ -372,7 +420,7 @@ PUBLIC void httpSetConnNotifier(HttpConn *conn, HttpNotifier notifier)
 
 
 /*
-    password and authType can be null
+    Password and authType can be null
     User may be a combined user:password
  */
 PUBLIC void httpSetCredentials(HttpConn *conn, cchar *username, cchar *password, cchar *authType)
@@ -411,12 +459,6 @@ PUBLIC void httpSetHeadersCallback(HttpConn *conn, HttpHeadersCallback fn, void 
 {
     conn->headersCallback = fn;
     conn->headersCallbackArg = arg;
-}
-
-
-PUBLIC void httpSetIOCallback(HttpConn *conn, HttpIOCallback fn)
-{
-    conn->ioCallback = fn;
 }
 
 
@@ -473,11 +515,11 @@ PUBLIC void httpSetTimeout(HttpConn *conn, MprTicks requestTimeout, MprTicks ina
     if (inactivityTimeout >= 0) {
         if (inactivityTimeout == 0) {
             conn->limits->inactivityTimeout = HTTP_UNLIMITED;
-            // MOB - need separate timeouts for net
+            // TODO - need separate timeouts for net
             conn->net->limits->inactivityTimeout = HTTP_UNLIMITED;
         } else {
             conn->limits->inactivityTimeout = inactivityTimeout;
-            // MOB - need separate timeouts for net
+            // TODO - need separate timeouts for net
             conn->net->limits->inactivityTimeout = inactivityTimeout;
         }
     }
@@ -548,6 +590,35 @@ PUBLIC void httpSetConnData(HttpConn *conn, void *data)
 PUBLIC void httpSetConnReqData(HttpConn *conn, void *data)
 {
     conn->reqData = data;
+}
+
+
+PUBLIC void httpTraceQueues(HttpConn *conn)
+{
+#if DEBUG
+    HttpQueue   *q;
+
+    print("");
+    if (conn->inputq) {
+        printf("%s ", conn->rxHead->name);
+        for (q = conn->rxHead->prevQ; q != conn->rxHead; q = q->prevQ) {
+            printf("%s ", q->name);
+        }
+        printf(" <- INPUT\n");
+    }
+    if (conn->outputq) {
+        printf("%s ", conn->txHead->name);
+        for (q = conn->txHead->nextQ; q != conn->txHead; q = q->nextQ) {
+            printf("%s ", q->name);
+        }
+        printf("-> OUTPUT\n");
+    }
+    print("");
+    printf("READ   %s\n", conn->readq->name);
+    printf("WRITE  %s\n", conn->writeq->name);
+    printf("INPUT  %s\n", conn->inputq->name);
+    printf("OUTPUT %s\n", conn->outputq->name);
+#endif
 }
 
 /*

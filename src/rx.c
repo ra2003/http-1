@@ -46,6 +46,7 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->acceptEncoding);
         mprMark(rx->acceptLanguage);
         mprMark(rx->authDetails);
+        mprMark(rx->authType);
         mprMark(rx->conn);
         mprMark(rx->connection);
         mprMark(rx->contentLength);
@@ -106,9 +107,6 @@ PUBLIC void httpSetRequestCallback(HttpRequestCallback callback)
 }
 
 
-/*
-    Used by ejscript Request.close
- */
 PUBLIC void httpCloseRx(HttpConn *conn)
 {
     if (conn->rx && !conn->rx->remainingContent) {
@@ -116,7 +114,6 @@ PUBLIC void httpCloseRx(HttpConn *conn)
         conn->keepAliveCount = 0;
     }
     if (httpClientConn(conn)) {
-        //  MOB - review
         httpEnableNetEvents(conn->net);
     }
 }
@@ -169,6 +166,10 @@ PUBLIC cchar *httpGetCookies(HttpConn *conn)
 }
 
 
+/*
+    Extract a cookie.
+    The rx->cookies contains a list of header cookies. A site may submit multiple cookies separated by ";"
+ */
 PUBLIC cchar *httpGetCookie(HttpConn *conn, cchar *name)
 {
     HttpRx  *rx;
@@ -187,10 +188,11 @@ PUBLIC cchar *httpGetCookie(HttpConn *conn, cchar *name)
     nlen = slen(name);
     while ((value = strstr(cookie, name)) != 0) {
         /* Ignore corrupt cookies of the form "name=;" */
-        if ((value == cookie || value[-1] == ' ' || value[-1] == ';') && value[nlen] == '=' && value[nlen+1] != ';') {
+        if ((value == rx->cookie || value[-1] == ' ' || value[-1] == ';') && value[nlen] == '=' && value[nlen+1] != ';') {
             break;
         }
-        cookie += nlen;
+        cookie += (value - cookie) + nlen;
+
     }
     if (value == 0) {
         return 0;
@@ -283,7 +285,7 @@ PUBLIC int httpGetStatus(HttpConn *conn)
 }
 
 
-PUBLIC char *httpGetStatusMessage(HttpConn *conn)
+PUBLIC cchar *httpGetStatusMessage(HttpConn *conn)
 {
     return (conn->rx) ? conn->rx->statusMessage : 0;
 }
@@ -501,14 +503,14 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn)
 
     rx = conn->rx;
     if (!(rx->flags & (HTTP_OPTIONS | HTTP_TRACE))) {
-        if ((cp = strchr(rx->pathInfo, '.')) != 0 && (extra = strchr(cp, '/')) != 0) {
+        if ((cp = schr(rx->pathInfo, '.')) != 0 && (extra = schr(cp, '/')) != 0) {
             len = extra - rx->pathInfo;
             if (0 < len && len < slen(rx->pathInfo)) {
                 rx->extraPath = sclone(&rx->pathInfo[len]);
-                rx->pathInfo[len] = '\0';
+                rx->pathInfo = snclone(rx->pathInfo, len);
             }
         }
-        if ((cp = strchr(rx->target, '.')) != 0 && (extra = strchr(cp, '/')) != 0) {
+        if ((cp = schr(rx->target, '.')) != 0 && (extra = schr(cp, '/')) != 0) {
             len = extra - rx->target;
             if (0 < len && len < slen(rx->target)) {
                 rx->target[len] = '\0';

@@ -39,7 +39,7 @@ PUBLIC void httpGetUriAddress(HttpUri *uri, cchar **ip, int *port)
 /*
     Determine if the current network connection can handle the current URI without redirection
  */
-static bool canUse(HttpNet *net, HttpUri *uri, MprSsl *ssl, cchar *ip, int port)
+static bool canUse(HttpNet *net, HttpConn *conn, HttpUri *uri, MprSsl *ssl, cchar *ip, int port)
 {
     MprSocket   *sock;
 
@@ -49,6 +49,9 @@ static bool canUse(HttpNet *net, HttpUri *uri, MprSsl *ssl, cchar *ip, int port)
         return 0;
     }
     if (port != net->port || !smatch(ip, net->ip) || uri->secure != (sock->ssl != 0) || sock->ssl != ssl) {
+        return 0;
+    }
+    if (net->protocol < 2 && conn->keepAliveCount <= 1) {
         return 0;
     }
     return 1;
@@ -95,16 +98,19 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *url, MprSsl *ssl)
             mprCloseSocket(net->sock, 0);
             net->sock = 0;
 
-        } else if (canUse(net, uri, ssl, ip, port)) {
+        } else if (canUse(net, conn, uri, ssl, ip, port)) {
             httpTrace(net->trace, "client.connection.reuse", "context", "reuse:%d", conn->keepAliveCount);
 
-        } else if (net->protocol >= 2 && mprGetListLength(net->connections) > 1) {
-            httpError(conn, HTTP_CODE_COMMS_ERROR, "Cannot use network for %s due to other existing requests", ip);
-            return MPR_ERR_CANT_FIND;
-        }
-        if (net->protocol < 2 && conn->keepAliveCount <= 1) {
-            mprCloseSocket(net->sock, 0);
-            net->sock = 0;
+        } else {
+            if (net->protocol >= 2) {
+                if (mprGetListLength(net->connections) > 1) {
+                    httpError(conn, HTTP_CODE_COMMS_ERROR, "Cannot use network for %s due to other existing requests", ip);
+                    return MPR_ERR_CANT_FIND;
+                }
+            } else {
+                mprCloseSocket(net->sock, 0);
+                net->sock = 0;
+            }
         }
     }
     if (!net->sock) {
@@ -125,8 +131,8 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *url, MprSsl *ssl)
 #endif
     }
     httpCreatePipeline(conn);
-    httpSetState(conn, HTTP_STATE_CONNECTED);
     setDefaultHeaders(conn);
+    httpSetState(conn, HTTP_STATE_CONNECTED);
     protocol = net->protocol < 2 ? "HTTP/1.1" : "HTTP/2";
     httpTrace(net->trace, "client.request", "request", "method='%s', url='%s', protocol='%s'", tx->method, url, protocol);
     return 0;
@@ -186,11 +192,9 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, cchar **url)
         if (conn->username == 0 || conn->authType == 0) {
             httpError(conn, rx->status, "Authentication required");
 
-#if UNUSED
-        //  MOB - what is this?
-        } else if (conn->authRequested && smatch(conn->authType, tx->authType)) {
-            httpError(conn, rx->status, "Authentication failed");
-#endif
+        } else if (conn->authRequested && smatch(conn->authType, rx->authType)) {
+            httpError(conn, rx->status, "Authentication failed, wrong authentication type");
+
         } else {
             assert(httpClientConn(conn));
             if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {
@@ -198,6 +202,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, cchar **url)
             }
             return 1;
         }
+
     } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && conn->followRedirects) {
         if (rx->redirect) {
             *url = rx->redirect;
@@ -221,7 +226,7 @@ PUBLIC void httpEnableUpload(HttpConn *conn)
 
 
 /*
-    MOB - need to test these
+    TODO - need to test these
     Read data. If sync mode, this will block. If async, will never block.
     Will return what data is available up to the requested size.
     Timeout in milliseconds to wait. Set to -1 to use the default inactivity timeout. Set to zero to wait forever.
@@ -258,7 +263,7 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
                 break;
             }
             delay = min(limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
-            //  MOB - review
+            //  TODO - review
             httpEnableNetEvents(conn->net);
             mprWaitForEvent(conn->dispatcher, delay, dispatcherMark);
             if (mprGetRemainingTicks(start, timeout) <= 0) {
@@ -355,7 +360,6 @@ PUBLIC char *httpReadString(HttpConn *conn)
 
 
 /*
-    MOB - need to test
     Convenience method to issue a client http request.
     Assumes the Mpr and Http services are created and initialized.
  */
@@ -445,7 +449,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
 
 /*
     Write upload data. This routine blocks. If you need non-blocking ... cut and paste.
-    MOB - what about non-blocking upload
+    TODO - what about non-blocking upload
  */
 PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *formData)
 {
@@ -531,12 +535,12 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     start = conn->http->now;
     dispatcherMark = mprGetEventMark(conn->dispatcher);
 
-    //  MOB - how does this work with http2?
+    //  TODO - how does this work with http2?
     while (conn->state < state && !conn->error && !mprIsSocketEof(conn->sock)) {
         if (httpRequestExpired(conn, -1)) {
             return MPR_ERR_TIMEOUT;
         }
-        //  MOB - review
+        //  TODO - review
         httpEnableNetEvents(conn->net);
         delay = min(limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
         delay = max(delay, 0);

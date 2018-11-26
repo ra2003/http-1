@@ -14,9 +14,8 @@
 
 /********************************** Forwards **********************************/
 
-static int matchChunk(HttpConn *conn, HttpRoute *route, int dir);
-static int openChunk(HttpQueue *q);
 static void incomingChunk(HttpQueue *q, HttpPacket *packet);
+static bool needChunking(HttpQueue *q);
 static void outgoingChunkService(HttpQueue *q);
 static void setChunkPrefix(HttpQueue *q, HttpPacket *packet);
 
@@ -32,49 +31,9 @@ PUBLIC int httpOpenChunkFilter()
         return MPR_ERR_CANT_CREATE;
     }
     HTTP->chunkFilter = filter;
-    filter->match = matchChunk;
-    filter->open = openChunk;
+    filter->flags |= HTTP_STAGE_INTERNAL;
     filter->incoming = incomingChunk;
     filter->outgoingService = outgoingChunkService;
-    return 0;
-}
-
-
-/*
-    This is called twice: once for TX and once for RX
- */
-static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
-{
-    HttpRx  *rx;
-    HttpTx  *tx;
-
-    rx = conn->rx;
-    tx = conn->tx;
-
-    if (conn->net->protocol == 2 || conn->upgraded || (tx->parsedUri && tx->parsedUri->webSockets)) {
-        return HTTP_ROUTE_OMIT_FILTER;
-    }
-    if (dir & HTTP_STAGE_TX) {
-        /*
-            If content length is defined, don't need chunking - but only if chunking not explicitly asked for.
-            Disable chunking if explicitly turned off via the X_APPWEB_CHUNK_SIZE header which may set the
-            chunk size to zero.
-         */
-        if ((tx->length >= 0 && tx->chunkSize < 0) || tx->chunkSize == 0) {
-            return HTTP_ROUTE_OMIT_FILTER;
-        }
-    } else {
-        if (conn->state >= HTTP_STATE_PARSED && rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
-            return HTTP_ROUTE_OMIT_FILTER;
-        }
-    }
-    return HTTP_ROUTE_OK;
-}
-
-
-static int openChunk(HttpQueue *q)
-{
-    q->packetSize = min(q->conn->limits->bufferSize, q->max);
     return 0;
 }
 
@@ -98,7 +57,7 @@ PUBLIC void httpInitChunking(HttpConn *conn)
 
 /*
     Filter chunk headers and leave behind pure data. This is called for chunked and unchunked data.
-    Chunked data format is:
+    Unchunked data is simply passed upstream. Chunked data format is:
         Chunk spec <CRLF>
         Data <CRLF>
         Chunk spec (size == 0) <CRLF>
@@ -127,10 +86,21 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
     rx = conn->rx;
 
     if (rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
+        len = httpGetPacketLength(packet);
+        nbytes = min(rx->remainingContent, httpGetPacketLength(packet));
+        rx->remainingContent -= nbytes;
+        if (rx->remainingContent <= 0) {
+            httpSetEof(conn);
+#if KEEP
+            /* HTTP/1.1 pipelining is not implemented reliably by modern browsers */
+            if (nbytes < len && (tail = httpSplitPacket(packet, nbytes)) != 0) {
+                httpPutPacket(conn->inputq, tail);
+            }
+#endif
+        }
         httpPutPacketToNext(q, packet);
         return;
     }
-
     httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
     for (packet = httpGetPacket(q); packet && !conn->error && !rx->eof; packet = httpGetPacket(q)) {
         while (packet && !conn->error && !rx->eof) {
@@ -146,7 +116,7 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
                 if (nbytes < len && (tail = httpSplitPacket(packet, nbytes)) != 0) {
                     httpPutPacketToNext(q, packet);
                     packet = tail;
-                } else {
+                } else if (len > 0) {
                     httpPutPacketToNext(q, packet);
                     packet = 0;
                 }
@@ -218,6 +188,12 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
                 return;
             }
         }
+#if KEEP
+        /* HTTP/1.1 pipelining is not implemented reliably by modern browsers */
+        if (packet && httpGetPacketLength(packet)) {
+            httpPutPacket(conn->inputq, tail);
+        }
+#endif
     }
     if (packet) {
         /* Transfer END packet */
@@ -231,60 +207,76 @@ static void outgoingChunkService(HttpQueue *q)
     HttpConn    *conn;
     HttpPacket  *packet, *finalChunk;
     HttpTx      *tx;
-    cchar       *value;
 
     conn = q->conn;
     tx = conn->tx;
 
     if (!(q->flags & HTTP_QUEUE_SERVICED)) {
-        /*
-            If we don't know the content length yet (tx->length < 0) and if the last packet is the end packet. Then
-            we have all the data. Thus we can determine the actual content length and can bypass the chunk handler.
-         */
-        if (tx->length < 0 && (value = mprLookupKey(tx->headers, "Content-Length")) != 0) {
-            tx->length = stoi(value);
-        }
-        if (tx->length < 0 && tx->chunkSize < 0) {
-            if (q->last->flags & HTTP_PACKET_END) {
-                if (q->count > 0) {
-                    tx->length = q->count;
-                }
-            } else {
-                tx->chunkSize = min(conn->limits->chunkSize, q->max);
-            }
-        }
-        if (tx->flags & HTTP_TX_USE_OWN_HEADERS || conn->net->protocol != 1) {
-            tx->chunkSize = -1;
-        }
+        tx->needChunking = needChunking(q);
     }
-    if (tx->chunkSize <= 0 || conn->upgraded) {
+    if (!tx->needChunking) {
         httpDefaultOutgoingServiceStage(q);
-    } else {
-        for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
-            if (packet->flags & HTTP_PACKET_DATA) {
-                httpPutBackPacket(q, packet);
-                httpJoinPackets(q, tx->chunkSize);
-                packet = httpGetPacket(q);
-                if (httpGetPacketLength(packet) > tx->chunkSize) {
-                    httpResizePacket(q, packet, tx->chunkSize);
-                }
+        return;
+    }
+    for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
+        if (packet->flags & HTTP_PACKET_DATA) {
+            httpPutBackPacket(q, packet);
+            httpJoinPackets(q, tx->chunkSize);
+            packet = httpGetPacket(q);
+            if (httpGetPacketLength(packet) > tx->chunkSize) {
+                httpResizePacket(q, packet, tx->chunkSize);
             }
-            if (!httpWillNextQueueAcceptPacket(q, packet)) {
-                httpPutBackPacket(q, packet);
-                return;
-            }
-            if (packet->flags & HTTP_PACKET_DATA) {
-                setChunkPrefix(q, packet);
+        }
+        if (!httpWillNextQueueAcceptPacket(q, packet)) {
+            httpPutBackPacket(q, packet);
+            return;
+        }
+        if (packet->flags & HTTP_PACKET_DATA) {
+            setChunkPrefix(q, packet);
 
-            } else if (packet->flags & HTTP_PACKET_END) {
-                /* Insert a packet for the final chunk */
-                finalChunk = httpCreateDataPacket(0);
-                setChunkPrefix(q, finalChunk);
-                httpPutPacketToNext(q, finalChunk);
+        } else if (packet->flags & HTTP_PACKET_END) {
+            /* Insert a packet for the final chunk */
+            finalChunk = httpCreateDataPacket(0);
+            setChunkPrefix(q, finalChunk);
+            httpPutPacketToNext(q, finalChunk);
+        }
+        httpPutPacketToNext(q, packet);
+    }
+}
+
+
+static bool needChunking(HttpQueue *q)
+{
+    HttpConn    *conn;
+    HttpTx      *tx;
+    cchar       *value;
+
+    conn = q->conn;
+    tx = conn->tx;
+
+    if (conn->net->protocol >= 2 || conn->upgraded) {
+        return 0;
+    }
+    /*
+        If we don't know the content length yet (tx->length < 0) and if the last packet is the end packet. Then
+        we have all the data. Thus we can determine the actual content length and can bypass the chunk handler.
+     */
+    if (tx->length < 0 && (value = mprLookupKey(tx->headers, "Content-Length")) != 0) {
+        tx->length = stoi(value);
+    }
+    if (tx->length < 0 && tx->chunkSize < 0) {
+        if (q->last->flags & HTTP_PACKET_END) {
+            if (q->count > 0) {
+                tx->length = q->count;
             }
-            httpPutPacketToNext(q, packet);
+        } else {
+            tx->chunkSize = min(conn->limits->chunkSize, q->max);
         }
     }
+    if (tx->flags & HTTP_TX_USE_OWN_HEADERS || conn->net->protocol != 1) {
+        tx->chunkSize = -1;
+    }
+    return tx->chunkSize > 0;
 }
 
 

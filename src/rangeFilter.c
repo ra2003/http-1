@@ -16,7 +16,7 @@
 
 /********************************** Forwards **********************************/
 
-static bool applyRange(HttpQueue *q, HttpPacket *packet);
+static HttpPacket *selectBytes(HttpQueue *q, HttpPacket *packet);
 static void createRangeBoundary(HttpConn *conn);
 static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range);
 static HttpPacket *createFinalRangePacket(HttpConn *conn);
@@ -95,6 +95,9 @@ static void startRange(HttpQueue *q)
         tx->outputRanges = 0;
     } else {
         tx->status = HTTP_CODE_PARTIAL;
+        /*
+            More than one range so create a range boundary (like chunking)
+         */
         if (tx->outputRanges->next) {
             createRangeBoundary(conn);
         }
@@ -125,27 +128,24 @@ static void outgoingRangeService(HttpQueue *q)
     }
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (packet->flags & HTTP_PACKET_DATA) {
-            if (!applyRange(q, packet)) {
-                return;
+            if ((packet = selectBytes(q, packet)) == 0) {
+                continue;
             }
-        } else {
-            /*
-                Send headers and end packet downstream
-             */
-            if (packet->flags & HTTP_PACKET_END && tx->rangeBoundary) {
+        } else if (packet->flags & HTTP_PACKET_END) {
+            if (tx->rangeBoundary) {
                 httpPutPacketToNext(q, createFinalRangePacket(conn));
             }
-            if (!httpWillNextQueueAcceptPacket(q, packet)) {
-                httpPutBackPacket(q, packet);
-                return;
-            }
-            httpPutPacketToNext(q, packet);
         }
+        if (!httpWillNextQueueAcceptPacket(q, packet)) {
+            httpPutBackPacket(q, packet);
+            return;
+        }
+        httpPutPacketToNext(q, packet);
     }
 }
 
 
-static bool applyRange(HttpQueue *q, HttpPacket *packet)
+static HttpPacket *selectBytes(HttpQueue *q, HttpPacket *packet)
 {
     HttpRange   *range;
     HttpConn    *conn;
@@ -155,28 +155,24 @@ static bool applyRange(HttpQueue *q, HttpPacket *packet)
 
     conn = q->conn;
     tx = conn->tx;
-    range = tx->currentRange;
-
-    if (mprNeedYield()) {
-        httpScheduleQueue(q);
-        httpPutBackPacket(q, packet);
+    
+    if ((range = tx->currentRange) == 0) {
         return 0;
     }
+
     /*
         Process the data packet over multiple ranges ranges until all the data is processed or discarded.
-        A packet may contain data or it may be empty with an associated entityLength. If empty, range packets
-        are filled with entity data as required.
      */
     while (range && packet) {
-        length = httpGetPacketEntityLength(packet);
+        length = httpGetPacketLength(packet);
         if (length <= 0) {
-            break;
+            return 0;
         }
         endPacket = tx->rangePos + length;
         if (endPacket < range->start) {
             /* Packet is before the next range, so discard the entire packet and seek forwards */
             tx->rangePos += length;
-            break;
+            return 0;
 
         } else if (tx->rangePos < range->start) {
             /*  Packet starts before range so skip some data, but some packet data is in range */
@@ -185,37 +181,33 @@ static bool applyRange(HttpQueue *q, HttpPacket *packet)
             if (gap < length) {
                 httpAdjustPacketStart(packet, (ssize) gap);
             }
+            if (tx->rangePos >= range->end) {
+                range = tx->currentRange = range->next;
+            }
             /* Keep going and examine next range */
 
         } else {
             /* In range */
             assert(range->start <= tx->rangePos && tx->rangePos < range->end);
             span = min(length, (range->end - tx->rangePos));
+            span = max(span, 0);
             count = (ssize) min(span, q->nextQ->packetSize);
             assert(count > 0);
-            if (!httpWillNextQueueAcceptSize(q, count)) {
-                httpPutBackPacket(q, packet);
-                return 0;
-            }
             if (length > count) {
                 /* Split packet if packet extends past range */
                 httpPutBackPacket(q, httpSplitPacket(packet, count));
             }
-            if (packet->fill && (*packet->fill)(q, packet, tx->rangePos, count) < 0) {
-                return 0;
-            }
             if (tx->rangeBoundary) {
                 httpPutPacketToNext(q, createRangePacket(conn, range));
             }
-            httpPutPacketToNext(q, packet);
-            packet = 0;
             tx->rangePos += count;
-        }
-        if (tx->rangePos >= range->end) {
-            tx->currentRange = range = range->next;
+            if (tx->rangePos >= range->end) {
+                tx->currentRange = range->next;
+            }
+            break;
         }
     }
-    return 1;
+    return packet;
 }
 
 
@@ -232,7 +224,7 @@ static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range)
 
     length = (tx->entityLength >= 0) ? itos(tx->entityLength) : "*";
     packet = httpCreatePacket(HTTP_RANGE_BUFSIZE);
-    packet->flags |= HTTP_PACKET_RANGE;
+    packet->flags |= HTTP_PACKET_RANGE | HTTP_PACKET_DATA;
     mprPutToBuf(packet->content,
         "\r\n--%s\r\n"
         "Content-Range: bytes %lld-%lld/%s\r\n\r\n",
@@ -252,7 +244,7 @@ static HttpPacket *createFinalRangePacket(HttpConn *conn)
     tx = conn->tx;
 
     packet = httpCreatePacket(HTTP_RANGE_BUFSIZE);
-    packet->flags |= HTTP_PACKET_RANGE;
+    packet->flags |= HTTP_PACKET_RANGE | HTTP_PACKET_DATA;
     mprPutToBuf(packet->content, "\r\n--%s--\r\n", tx->rangeBoundary);
     return packet;
 }

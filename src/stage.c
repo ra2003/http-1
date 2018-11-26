@@ -21,13 +21,21 @@ static void manageStage(HttpStage *stage, int flags);
  */
 static void outgoing(HttpQueue *q, HttpPacket *packet)
 {
-    int     enableService;
+    httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
+}
 
-    /*
-        Handlers service routines must only be auto-enabled if better than ready.
-     */
-    enableService = !(q->stage->flags & HTTP_STAGE_HANDLER) || (q->conn->state >= HTTP_STATE_READY) ? 1 : 0;
-    httpPutForService(q, packet, enableService);
+
+PUBLIC void httpDefaultOutgoingServiceStage(HttpQueue *q)
+{
+    HttpPacket    *packet;
+
+    for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
+        if (!httpWillNextQueueAcceptPacket(q, packet)) {
+            httpPutBackPacket(q, packet);
+            return;
+        }
+        httpPutPacketToNext(q, packet);
+    }
 }
 
 
@@ -57,11 +65,6 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
             /* Zero length packet means eof */
             httpPutForService(q, packet, HTTP_DELAY_SERVICE);
         }
-#if MOVED
-        if (q == q->conn->readq) {
-            HTTP_NOTIFY(q->conn, HTTP_EVENT_READABLE, 0);
-        }
-#endif
     }
 }
 
@@ -71,20 +74,6 @@ PUBLIC void httpDefaultIncoming(HttpQueue *q, HttpPacket *packet)
     assert(q);
     assert(packet);
     httpPutForService(q, packet, HTTP_DELAY_SERVICE);
-}
-
-
-PUBLIC void httpDefaultOutgoingServiceStage(HttpQueue *q)
-{
-    HttpPacket    *packet;
-
-    for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
-        if (!httpWillNextQueueAcceptPacket(q, packet)) {
-            httpPutBackPacket(q, packet);
-            return;
-        }
-        httpPutPacketToNext(q, packet);
-    }
 }
 
 

@@ -144,6 +144,10 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             rx->session = allocSessionObj(conn, id, NULL);
             rx->traceId = sfmt("%d-%d-%d-%d", conn->net->address->seqno, rx->session->seqno, conn->net->seqno, rx->seqno);
             flags = (route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
+            if (conn->secure) {
+                flags |= HTTP_COOKIE_SECURE;
+            }
+            flags |= HTTP_COOKIE_SAME_LAX;
             cookie = route->cookie ? route->cookie : HTTP_SESSION_COOKIE;
             lifespan = (route->flags & HTTP_ROUTE_PERSIST_COOKIE) ? rx->session->lifespan : 0;
             url = (route->prefix && *route->prefix) ? route->prefix : "/";
@@ -365,11 +369,16 @@ PUBLIC int httpAddSecurityToken(HttpConn *conn, bool recreate)
 {
     HttpRoute   *route;
     cchar       *securityToken, *url;
+    int         flags;
 
     route = conn->rx->route;
     securityToken = httpGetSecurityToken(conn, recreate);
     url = (route->prefix && *route->prefix) ? route->prefix : "/";
-    httpSetCookie(conn, ME_XSRF_COOKIE, securityToken, url, NULL,  0, 0);
+    flags = (route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
+    if (conn->secure) {
+        flags |= HTTP_COOKIE_SECURE;
+    }
+    httpSetCookie(conn, ME_XSRF_COOKIE, securityToken, url, NULL,  0, flags);
     httpSetHeaderString(conn, ME_XSRF_HEADER, securityToken);
     return 0;
 }

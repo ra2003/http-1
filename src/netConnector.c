@@ -23,7 +23,6 @@ static void netOutgoing(HttpQueue *q, HttpPacket *packet);
 static void netOutgoingService(HttpQueue *q);
 static HttpPacket *readPacket(HttpNet *net);
 static void resumeEvents(HttpNet *net, MprEvent *event);
-static void setupWaitHandler(HttpNet *net, int eventMask);
 
 #if ME_HTTP_HTTP2
 static int sleuthProtocol(HttpNet *net, HttpPacket *packet);
@@ -81,7 +80,7 @@ PUBLIC HttpNet *httpAccept(HttpEndpoint *endpoint, MprEvent *event)
     }
     if ((value = httpMonitorNetEvent(net, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1)) > limits->connectionsMax) {
         mprLog("net error", 0, "Too many concurrent connections, active: %d, max:%d", (int) value, limits->connectionsMax);
-        mprCloseSocket(sock, 0);
+        httpDestroyNet(net);
         return 0;
     }
     address = net->address;
@@ -91,9 +90,8 @@ PUBLIC HttpNet *httpAccept(HttpEndpoint *endpoint, MprEvent *event)
             address->banUntil = 0;
         } else {
             mprLog("net info", 3, "Network connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
-            //  MOB - address->banStatus not implemented
-            //  MOB -- update doc
-            mprCloseSocket(sock, 0);
+            //  TODO - address->banStatus not implemented
+            httpDestroyNet(net);
             return 0;
         }
     }
@@ -145,7 +143,7 @@ PUBLIC void httpIOEvent(HttpNet *net, MprEvent *event)
         }
 #endif
         if (net->protocol) {
-            httpPutPacketToNext(net->inputq, packet);
+            httpPutPacket(net->inputq, packet);
         }
     }
     httpServiceQueues(net, 0);
@@ -204,12 +202,11 @@ static HttpPacket *readPacket(HttpNet *net)
             net->secure = 1;
             sock = net->sock;
             if (sock->peerCert) {
-                //  MOB - can't use trace with "net" -- but really want to
-                mprLog("info http ssl", 6,
-                    "Connection secured cipher:'%s', peerName:'%s', subject:'%s', issuer:'%s', session:'%s'",
+                httpTrace(net->trace, "net.ssl", "context",
+                    "msg:'Connection secured', cipher:'%s', peerName:'%s', subject:'%s', issuer:'%s', session:'%s'",
                     sock->cipher, sock->peerName, sock->peerCert, sock->peerCertIssuer, sock->session);
             } else {
-                mprLog("info http ssl", 6, "Connection secured, cipher:'%s', session:'%s'", sock->cipher, sock->session);
+                httpTrace(net->trace, "net.ssl", "context", "msg:'Connection secured', cipher:'%s', session:'%s'", sock->cipher, sock->session);
             }
             if (mprGetLogLevel() >= 5) {
                 mprLog("info http ssl", 6, "SSL State: %s", mprGetSocketState(sock));
@@ -240,12 +237,12 @@ static HttpPacket *getPacket(HttpNet *net, ssize *lenp)
 
 #if ME_HTTP_HTTP2
     if (net->protocol < 2) {
-        size = net->inputq ? net->inputq->packetSize : ME_MAX_QBUFFER;
+        size = net->inputq ? net->inputq->packetSize : ME_PACKET_SIZE;
     } else {
         size = (net->inputq ? net->inputq->packetSize : HTTP2_DEFAULT_FRAME_SIZE) + HTTP2_FRAME_OVERHEAD;
     }
 #else
-    size = net->inputq ? net->inputq->packetSize : ME_MAX_QBUFFER;
+    size = net->inputq ? net->inputq->packetSize : ME_PACKET_SIZE;
 #endif
     if (!net->inputq || (packet = httpGetPacket(net->inputq)) == NULL) {
         if ((packet = httpCreateDataPacket(size)) == 0) {
@@ -332,11 +329,11 @@ PUBLIC void httpEnableNetEvents(HttpNet *net)
         mprQueueEvent(net->dispatcher, event);
         return;
     }
-    setupWaitHandler(net, httpGetNetEventMask(net));
+    httpSetupWaitHandler(net, httpGetNetEventMask(net));
 }
 
 
-static void setupWaitHandler(HttpNet *net, int eventMask)
+PUBLIC void httpSetupWaitHandler(HttpNet *net, int eventMask)
 {
     MprSocket   *sp;
 
@@ -376,7 +373,6 @@ static void netOutgoingService(HttpQueue *q)
     int         errCode;
 
     net = q->net;
-    //  MOB - who uses this
     net->writeBlocked = 0;
 
     while (q->first || q->ioIndex) {
@@ -406,7 +402,7 @@ static void netOutgoingService(HttpQueue *q)
             adjustNetVec(q, written);
 
         } else {
-            /* Socket full */
+            /* Socket full or SSL negotiate */
             break;
         }
     }

@@ -13,16 +13,21 @@ HTTP(1)                          User Commands                         HTTP(1)
        <B>http</B>
            <B>--auth basic|digest</B>
            <B>--benchmark</B>
+           <B>--ca file</B>
            <B>--cert file</B>
            <B>--chunk size</B>
+           <B>--ciphers cipher,...</B>
            <B>--continue</B>
            <B>--cookie cookieString</B>
-           <B>--data</B>
+           <B>--data bodyData</B>
            <B>--debugger</B>
            <B>--delete</B>
            <B>--form string</B>
+           <B>--frame size</B>
            <B>--header 'key: value'</B>
            <B>--host hostName</B>
+           <B>--http1</B>
+           <B>--http2</B>
            <B>--iterations count</B>
            <B>--key file</B>
            <B>--log logSpec</B>
@@ -41,6 +46,7 @@ HTTP(1)                          User Commands                         HTTP(1)
            <B>--showHeaders</B>
            <B>--showStatus</B>
            <B>--single</B>
+           <B>--streams count</B>
            <B>--threads count</B>
            <B>--timeout seconds</B>
            <B>--upload</B>
@@ -48,6 +54,7 @@ HTTP(1)                          User Commands                         HTTP(1)
            <B>--verify</B>
            <B>--verbose</B>
            <B>--workers count</B>
+           <B>--window size</B>
            <B>--zero</B>
            <B>[files] url</B>
 
@@ -63,20 +70,23 @@ HTTP(1)                          User Commands                         HTTP(1)
        <B>--benchmark</B>
               Output timing results after retrieving URLs.
 
-       <B>--cert file</B>
-              Certificate  to  send  to the server to identify the client.  If
-              using --cert, you will need to use --key to specify the  private
-              key file.
-
-       <B>--cacert bundle</B>
+       <B>--ca bundle-file</B>
               Certificate  bundle  to  use when validating the server certifi-
               cate.
+
+       <B>--cert file</B>
+              Certificate to send to the server to identify  the  client.   If
+              using  --cert, you will need to use --key to specify the private
+              key file.
 
        <B>--chunk size</B>
               Request that web  server  use  use  transfer  encoding  for  the
               response  and  break  the  response  data  into  chunks  of  the
               requested size. This is an custom header and will be ignored  by
               other web servers.
+
+       <B>--ciphers cipher, ...</B>
+              List of ciphers to use with SSL connections.
 
        <B>--continue</B>
               Continue on errors. Default is to stop on the first error.
@@ -100,65 +110,69 @@ HTTP(1)                          User Commands                         HTTP(1)
               encoded. ie. "name=paul&amp;address=uk".  You cannot use this switch
               with either the --datafile or --form switches.
 
+       <B>--frame size</B>
+              Set the maximum HTTP/2 input frame  packet  size.  (default  and
+              minimum of 16K).
+
        <B>--header "key: value"</B>
-              Add a custom header to send with the request. Multiple  --header
+              Add  a custom header to send with the request. Multiple --header
               switches can be supplied.
 
        <B>--host name</B>
-              Prepend  all  URLs  with  the specified host. For example if '-h
-              www.myHost.com:8888" were used with the URL "/", then http  will
+              Prepend all URLs with the specified host.  For  example  if  '-h
+              www.myHost.com:8888"  were used with the URL "/", then http will
               retrieve http://www.myHost.com:8888/.
 
        <B>--iterations count</B>
-              Retrieve  the  URLs  iterations  times. Useful for load testing.
+              Retrieve the URLs iterations times.  Useful  for  load  testing.
               This switch can also be abbreviated as <B>-i</B>.
 
        <B>--key file</B>
-              Private key file to use with the certificate file specified  via
+              Private  key file to use with the certificate file specified via
               --cert.
 
        <B>--log logSpec</B>
-              Specify  a  file  to  log  messages.  The syntax is: <B>"--log log-</B>
-              <B>File[:logLevel]"</B>.  Level 3 will trace the request  and  response
+              Specify a file to log messages.   The  syntax  is:  <B>"--log  log-</B>
+              <B>File[:logLevel]"</B>.   Level  3 will trace the request and response
               headers.
 
        <B>--method method</B>
-              Set  the  HTTP  method.  Values  may be "GET", "PUT", "OPTIONS",
+              Set the HTTP method. Values  may  be  "GET",  "PUT",  "OPTIONS",
               "TRACE".
 
        <B>--nofollow</B>
-              Don't automatically follow redirects.  Normal  behaviour  is  to
-              follow  redirects and reissue the request if the server responds
+              Don't  automatically  follow  redirects.  Normal behaviour is to
+              follow redirects and reissue the request if the server  responds
               with a redirection response (30X response).
 
        <B>--noout</B>
-              Run in quiet mode and do no output. Suppress  tracing  requests.
+              Run  in  quiet mode and do no output. Suppress tracing requests.
               This switch can also be abbreviated as <B>-n </B>or as <B>--quiet </B>or <B>-q</B>.
 
        <B>--out file</B>
               Save response output to the given file.
 
        <B>--password passPhrase</B>
-              Specify  a  password  to  send with the request. Requires a user
+              Specify a password to send with the  request.  Requires  a  user
               name to be also specified via --user.
 
        <B>--post </B>Issue a POST request. This is an alias for --method POST.
 
        <B>--printable</B>
-              Make binary output printable by printing  hex  digits  for  each
+              Make  binary  output  printable  by printing hex digits for each
               character.
 
        <B>--protocol HTTP_VERSION</B>
-              Use  the  specified  HTTP protocol. httpVersion should be either
+              Use the specified HTTP protocol. httpVersion  should  be  either
               '0' for HTTP/1.0 or 1 for HTTP/1.1.
 
        <B>--put  </B>Issue a PUT request. This is an alias for --method PUT.
 
        <B>--range byteRange</B>
-              Request that only the specified byte range of data  be  returned
-              with  the  response.  This  will  add  a  "Range"  header to the
-              request.  The range format   is:   Range:  bytes=n1-n2,n3-n4,...
-              where  n1  is  first byte position and n2 is last byte position.
+              Request  that  only the specified byte range of data be returned
+              with the response.  This  will  add  a  "Range"  header  to  the
+              request.   The  range  format  is:  Range: bytes=n1-n2,n3-n4,...
+              where n1 is first byte position and n2 is  last  byte  position.
               Multiple --range switches can be supplied.  Examples:
 
               0-49             first 50 bytes
@@ -173,12 +187,16 @@ HTTP(1)                          User Commands                         HTTP(1)
               Output HTTP headers to stdout. Useful for debugging.
 
        <B>--showStatus</B>
-              Output the HTTP response code to  stdout.   If  this  switch  is
+              Output  the  HTTP  response  code  to stdout.  If this switch is
               used, the command will always exit with zero status.
 
        <B>--single</B>
-              Single  step  between  requests by pausing for user input before
+              Single step between requests by pausing for  user  input  before
               proceeding.
+
+       <B>--streams count</B>
+              Maximum  number of HTTP/2 streams multiplexed over a single con-
+              nection.
 
        <B>--threads loadThreads</B>
               Number of threads to use. Each URL  will  be  retrieved  by  all
@@ -211,11 +229,15 @@ HTTP(1)                          User Commands                         HTTP(1)
               ple times for more verbose tracing.  This  switch  can  also  be
               abbreviated as <B>-v</B>.
 
+       <B>--window size</B>
+              Set the maximum HTTP/2 input window flow control size. (Defaults
+              65535).
+
        <B>--workers count</B>
               Specify the number of worker threads to use. Worker threads tem-
               porarily assigned to process callbacks.
 
-       <B>--zero </B>Exit with a zero status for any valid  HTTP  response.  Normally
+       <B>--zero </B>Exit  with  a  zero status for any valid HTTP response. Normally
               returns a non-zero status if the HTTP response code is not a 2XX
               or 3XX series response code.
 

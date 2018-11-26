@@ -69,7 +69,7 @@ static void testCreateUri()
 
     uri = httpCreateUri("https", 0);
     checkUri(uri, "null-null-0-https-null-null-null");
-    
+
     uri = httpCreateUri("http://", 0);
     checkUri(uri, "http-null-0-null-null-null-null");
 
@@ -141,7 +141,7 @@ static void testCreateUri()
 
     uri = httpCreateUri("http://localhost:", 0);
     checkUri(uri, "http-localhost-0-null-null-null-null");
-    
+
     uri = httpCreateUri("http://local#host/", 0);
     checkUri(uri, "http-local-0-null-null-host/-null");
 
@@ -264,7 +264,7 @@ static void testFormatUri()
 }
 
 
-static void testLink() 
+static void testLink()
 {
 #if FUTURE
     HttpConn        *conn;
@@ -272,7 +272,7 @@ static void testLink()
     cchar           *s;
 
     endpoint = httpCreateEndpoint(NULL, 80, NULL);
-    conn = httpCreateConn(endpoint, NULL);
+    conn = httpCreateConn(endpoint);
     conn->rx = httpCreateRx(conn);
     conn->rx->route = httpCreateRoute(NULL);
 
@@ -290,7 +290,7 @@ static void testResolve()
     HttpEndpoint    *endpoint;
 
     endpoint = httpCreateEndpoint(NULL, 80, NULL);
-    conn = httpCreateConn(endpoint, NULL);
+    conn = httpCreateConn(endpoint);
     conn->rx = httpCreateRx(conn);
     conn->rx->route = httpCreateRoute(NULL);
 
@@ -322,10 +322,10 @@ int main(int argc, char **argv)
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software. All Rights Reserved.
     Copyright (c) Michael O'Brien. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
     You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound

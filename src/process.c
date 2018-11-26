@@ -11,7 +11,7 @@
 /********************************** Forwards **********************************/
 
 static void addMatchEtag(HttpConn *conn, char *etag);
-static void createErrorRequest(HttpQueue *q);
+static void prepErrorDoc(HttpQueue *q);
 static bool mapMethod(HttpConn *conn);
 static void measureRequest(HttpQueue *q);
 static bool parseRange(HttpConn *conn, char *value);
@@ -24,6 +24,8 @@ static void processHeaders(HttpQueue *q);
 static void processParsed(HttpQueue *q);
 static void processReady(HttpQueue *q);
 static bool processRunning(HttpQueue *q);
+static bool pumpOutput(HttpQueue *q);
+static void routeRequest(HttpConn *conn);
 static int sendContinue(HttpQueue *q);
 
 /*********************************** Code *************************************/
@@ -44,7 +46,7 @@ PUBLIC void httpProcess(HttpQueue *q)
     }
     conn = q->conn;
 
-    for (count = 0, more = 1; more && count < 20; count++) {
+    for (count = 0, more = 1; more && count < 10; count++) {
         switch (conn->state) {
         case HTTP_STATE_PARSED:
             processFirst(q);
@@ -79,7 +81,6 @@ PUBLIC void httpProcess(HttpQueue *q)
             more = 0;
             break;
         }
-        //  OPT - don't need to do this on every cycle
         httpServiceQueues(conn->net, HTTP_BLOCK);
     }
     if (conn->complete && httpServerConn(conn)) {
@@ -97,7 +98,6 @@ static void processFirst(HttpQueue *q)
     HttpNet     *net;
     HttpConn    *conn;
     HttpRx      *rx;
-    char        *hostname;
 
     net = q->net;
     conn = q->conn;
@@ -107,22 +107,10 @@ static void processFirst(HttpQueue *q)
         conn->startMark = mprGetHiResTicks();
         conn->started = conn->http->now;
         conn->http->totalRequests++;
-        hostname = rx->hostHeader;
-        if (schr(rx->hostHeader, ':')) {
-            mprParseSocketAddress(rx->hostHeader, &hostname, NULL, NULL, 0);
-        }
-        if ((conn->host = httpMatchHost(net, hostname)) == 0) {
-            conn->host = mprGetFirstItem(net->endpoint->hosts);
-            httpError(conn, HTTP_CODE_NOT_FOUND, "No listening endpoint for request for %s", rx->hostHeader);
-        }
-        if (!rx->originalUri) {
-            rx->originalUri = rx->uri;
-        }
-        parseUri(conn);
         httpSetState(conn, HTTP_STATE_FIRST);
 
     } else {
-#if MOB
+#if TODO /* TODO: 100 Continue */
         if (rx->status != HTTP_CODE_CONTINUE) {
             /*
                 Ignore Expect status responses. NOTE: Clients have already created their Tx pipeline.
@@ -255,12 +243,12 @@ static void processHeaders(HttpQueue *q)
                 if (rx->flags & (HTTP_POST | HTTP_PUT)) {
                     if (httpServerConn(conn)) {
                         rx->form = scontains(rx->mimeType, "application/x-www-form-urlencoded") != 0;
+                        rx->json = sstarts(rx->mimeType, "application/json");
                         rx->upload = scontains(rx->mimeType, "multipart/form-data") != 0;
                     }
-                } else {
-                    rx->form = rx->upload = 0;
                 }
             } else if (strcasecmp(key, "cookie") == 0) {
+                /* Should be only one cookie header really with semicolon delimmited key/value pairs */
                 if (rx->cookie && *rx->cookie) {
                     rx->cookie = sjoin(rx->cookie, "; ", value, NULL);
                 } else {
@@ -460,25 +448,10 @@ static void processHeaders(HttpQueue *q)
             break;
         }
     }
-    if (rx->form && rx->length >= conn->limits->rxFormSize && conn->limits->rxFormSize != HTTP_UNLIMITED) {
-        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Request form of %lld bytes is too big. Limit %lld", rx->length, conn->limits->rxFormSize);
-    }
-    if (conn->error) {
-        /* Cannot reliably continue with keep-alive as the headers have not been correctly parsed */
-        conn->keepAliveCount = 0;
-    }
     if (net->protocol == 0 && !keepAliveHeader) {
         conn->keepAliveCount = 0;
     }
-    if (httpClientConn(conn) && conn->keepAliveCount <= 0 && rx->length < 0) {
-        /*
-            Google does responses with a body and without a Content-Lenght like this:
-                Connection: close
-                Location: URI
-         */
-        rx->remainingContent = rx->redirect ? 0 : HTTP_UNLIMITED;
-    }
+
 }
 
 
@@ -487,39 +460,67 @@ static void processHeaders(HttpQueue *q)
  */
 static void processParsed(HttpQueue *q)
 {
+    HttpNet     *net;
     HttpConn    *conn;
     HttpRx      *rx;
     HttpTx      *tx;
+    cchar       *hostname;
 
+    net = q->net;
     conn = q->conn;
     rx = conn->rx;
     tx = conn->tx;
 
-    if (httpIsServer(conn->net)) {
-        httpAddQueryParams(conn);
-        mapMethod(conn);
-#if STREAMXX
-        rx->streaming = httpGetStreaming(conn->host, rx->mimeType, rx->uri);
-        if (rx->streaming) {
-            httpRouteRequest(conn);
+    if (httpServerConn(conn)) {
+        hostname = rx->hostHeader;
+        if (schr(rx->hostHeader, ':')) {
+            mprParseSocketAddress(rx->hostHeader, &hostname, NULL, NULL, 0);
         }
-#else
-        httpRouteRequest(conn);
-#endif
+        if ((conn->host = httpMatchHost(net, hostname)) == 0) {
+            conn->host = mprGetFirstItem(net->endpoint->hosts);
+            httpError(conn, HTTP_CODE_NOT_FOUND, "No listening endpoint for request for %s", rx->hostHeader);
+        }
+        if (!rx->originalUri) {
+            rx->originalUri = rx->uri;
+        }
+        parseUri(conn);
+    }
+
+    if (rx->form && rx->length >= conn->limits->rxFormSize && conn->limits->rxFormSize != HTTP_UNLIMITED) {
+        httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
+            "Request form of %lld bytes is too big. Limit %lld", rx->length, conn->limits->rxFormSize);
+    }
+    if (conn->error) {
+        /* Cannot reliably continue with keep-alive as the headers have not been correctly parsed */
+        conn->keepAliveCount = 0;
+    }
+    if (httpClientConn(conn) && conn->keepAliveCount <= 0 && rx->length < 0 && rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
         /*
-            Delay testing rxBodySize till after routing for streaming requests. This way, recieveBodySize
-            can be defined per route.
+            Google does responses with a body and without a Content-Length like this:
+                Connection: close
+                Location: URI
          */
+        rx->remainingContent = rx->redirect ? 0 : HTTP_UNLIMITED;
+    }
+
+    if (httpIsServer(conn->net)) {
+        //  TODO is rx->length getting set for HTTP/2?
         if (!rx->upload && rx->length >= conn->limits->rxBodySize && conn->limits->rxBodySize != HTTP_UNLIMITED) {
             httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Request content length %lld bytes is too big. Limit %lld", rx->length, conn->limits->rxBodySize);
             return;
         }
-        httpCreatePipeline(conn);
-        httpStartPipeline(conn);
-
-#if ME_HTTP_WEB_SOCKETS
+        httpAddQueryParams(conn);
+        rx->streaming = httpGetStreaming(conn->host, rx->mimeType, rx->uri);
+        if (rx->streaming && httpServerConn(conn)) {
+            /*
+                Disable upload if streaming, used by PHP to stream input and process file upload in PHP.
+             */
+            rx->upload = 0;
+            routeRequest(conn);
+        }
     } else {
+#if ME_HTTP_WEB_SOCKETS
         if (conn->upgraded && !httpVerifyWebSocketsHandshake(conn)) {
             httpSetState(conn, HTTP_STATE_FINALIZED);
             return;
@@ -529,24 +530,77 @@ static void processParsed(HttpQueue *q)
     httpSetState(conn, HTTP_STATE_CONTENT);
     if (rx->remainingContent == 0) {
         httpSetEof(conn);
+        httpFinalizeInput(conn);
     }
-    return;
+}
+
+
+static void routeRequest(HttpConn *conn)
+{
+    HttpRx      *rx;
+
+    rx = conn->rx;
+    httpRouteRequest(conn);
+    httpCreatePipeline(conn);
+    httpStartPipeline(conn);
+    httpStartHandler(conn);
+}
+
+
+static bool pumpOutput(HttpQueue *q)
+{
+    HttpConn    *conn;
+    HttpTx      *tx;
+    HttpQueue   *wq;
+    ssize       count;
+
+    conn = q->conn;
+    tx = conn->tx;
+
+    if (tx->started && !conn->net->writeBlocked) {
+        wq = conn->writeq;
+        count = wq->count;
+        if (!tx->finalizedOutput) {
+            HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
+            if (tx->handler->writable) {
+                tx->handler->writable(wq);
+            }
+        }
+        return (wq->count - count) ? 0 : 1;
+    }
+    return 0;
 }
 
 
 static bool processContent(HttpQueue *q)
 {
     HttpConn    *conn;
+    HttpRx      *rx;
+    HttpPacket  *packet;
 
     conn = q->conn;
-    if (conn->rx->eof) {
-        if (!conn->tx->started) {
-            httpStartHandler(conn);
+    rx = conn->rx;
+
+    if (rx->eof) {
+        if (httpServerConn(conn)) {
+            if (httpAddBodyParams(conn) < 0) {
+                httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad request parameters");
+                return 1;
+            }
+            mapMethod(conn);
+            if (!rx->route) {
+                routeRequest(conn);
+            }
+            while ((packet = httpGetPacket(conn->rxHead)) != 0) {
+                httpPutPacket(conn->readq, packet);
+            }
         }
         httpSetState(conn, HTTP_STATE_READY);
-        return 1;
+        if (conn->readq->first) {
+            HTTP_NOTIFY(conn, HTTP_EVENT_READABLE, 0);
+        }
     }
-    return 0;
+    return pumpOutput(q) || rx->eof;
 }
 
 
@@ -568,34 +622,17 @@ static void processReady(HttpQueue *q)
 
 static bool processRunning(HttpQueue *q)
 {
-    HttpNet     *net;
     HttpConn    *conn;
     HttpTx      *tx;
-    HttpQueue   *wq;
-    ssize       count;
 
     conn = q->conn;
-    net = conn->net;
     tx = conn->tx;
-    assert(conn->rx->eof);
 
     if (tx->finalized && tx->finalizedConnector) {
         httpSetState(conn, HTTP_STATE_FINALIZED);
         return 1;
     }
-    if (tx->started && !net->writeBlocked) {
-        wq = conn->writeq;
-        count = wq->count;
-        if (!tx->finalizedOutput) {
-            HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
-            if (tx->handler->writable) {
-                tx->handler->writable(wq);
-            }
-        }
-        httpServiceQueues(net, 0);
-        return (wq->count - count) ? 0 : 1;
-    }
-    return 1;
+    return pumpOutput(q);
 }
 
 
@@ -611,7 +648,7 @@ static void processFinalized(HttpQueue *q)
 
     assert(tx->finalized);
     assert(tx->finalizedOutput);
-    assert(tx->finalizedConnector);
+    assert(tx->finalizedInput);
 
 #if ME_TRACE_MEM
     mprDebug(1, "Request complete, status %d, error %d, connError %d, %s%s, memsize %.2f MB",
@@ -638,10 +675,11 @@ static void processFinalized(HttpQueue *q)
         httpTrace(conn->trace, "http.connection.close", "network", "msg:'%s'", conn->errorMsg);
     }
     if (tx->errorDocument && !smatch(tx->errorDocument, rx->uri)) {
-        createErrorRequest(q);
+        prepErrorDoc(q);
+    } else {
+        conn->complete = 1;
+        httpSetState(conn, HTTP_STATE_COMPLETE);
     }
-    conn->complete = 1;
-    httpSetState(conn, HTTP_STATE_COMPLETE);
 }
 
 
@@ -686,15 +724,11 @@ static void measureRequest(HttpQueue *q)
 }
 
 
-static void createErrorRequest(HttpQueue *q)
+static void prepErrorDoc(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpRx      *rx;
     HttpTx      *tx;
-    HttpPacket  *packet;
-    MprBuf      *buf;
-    char        *cp, *headers, *originalUri;
-    int         key;
 
     conn = q->conn;
     rx = conn->rx;
@@ -704,62 +738,29 @@ static void createErrorRequest(HttpQueue *q)
     }
     httpTrace(conn->trace, "http.errordoc", "context", "location:'%s', status:%d", tx->errorDocument, tx->status);
 
-    originalUri = rx->uri;
+    httpClosePipeline(conn);
+    httpDiscardData(conn, HTTP_QUEUE_RX);
+    httpDiscardData(conn, HTTP_QUEUE_TX);
+
     conn->rx = httpCreateRx(conn);
     conn->tx = httpCreateTx(conn, NULL);
 
-    /* Preserve the old status */
+    conn->rx->headers = rx->headers;
+    conn->rx->method = rx->method;
+    conn->rx->originalUri = rx->uri;
+    conn->rx->uri = (char*) tx->errorDocument;
     conn->tx->status = tx->status;
-    conn->rx->originalUri = originalUri;
+    rx->conn = tx->conn = 0;
+
     conn->error = 0;
     conn->errorMsg = 0;
     conn->upgraded = 0;
-
-    packet = httpCreateDataPacket(ME_BUFSIZE);
-    mprPutToBuf(packet->content, "%s %s %s\r\n", rx->method, tx->errorDocument, httpGetProtocol(conn->net));
-    /*
-        Sever the old Rx and Tx for GC
-     */
-    rx->conn = 0;
-    tx->conn = 0;
-
-    /*
-        Reconstruct the headers. Change nulls to '\r', ' ', or ':' as appropriate
-     */
-    key = 0;
-    headers = 0;
-    /*
-        Ensure buffer always has a trailing null (one past buf->end)
-     */
-    buf = rx->headerPacket->content;
-    mprAddNullToBuf(buf);
-    for (cp = buf->data; cp < &buf->end[-1]; cp++) {
-        if (*cp == '\0') {
-            if (cp[1] == '\n') {
-                if (!headers) {
-                    headers = &cp[2];
-                }
-                *cp = '\r';
-                if (&cp[4] <= buf->end && cp[2] == '\r' && cp[3] == '\n') {
-                    cp[4] = '\0';
-                }
-                key = 0;
-            } else if (!key) {
-                *cp = ':';
-                key = 1;
-            } else {
-                *cp = ' ';
-            }
-        }
-    }
-    if (!headers || headers >= buf->end) {
-        headers = "\r\n";
-    }
-    mprPutStringToBuf(packet->content, headers);
-    httpPutBackPacket(q, packet);
-    conn->state = HTTP_STATE_CONNECTED;
+    conn->state = HTTP_STATE_PARSED;
     conn->errorDoc = 1;
     conn->keepAliveCount = 0;
+
+    parseUri(conn);
+    routeRequest(conn);
 }
 
 

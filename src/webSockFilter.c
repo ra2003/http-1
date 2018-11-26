@@ -14,7 +14,7 @@
     Message frame states
  */
 #define WS_BEGIN       0
-#define WS_EXT_DATA    1                /* Unused */
+#define WS_EXT_DATA    1
 #define WS_MSG         2
 #define WS_CLOSED      3
 
@@ -254,7 +254,6 @@ static int openWebSock(HttpQueue *q)
 {
     HttpConn        *conn;
     HttpWebSocket   *ws;
-    HttpPacket      *packet;
 
     assert(q);
     conn = q->conn;
@@ -265,10 +264,10 @@ static int openWebSock(HttpQueue *q)
     ws->closeStatus = WS_STATUS_NO_STATUS;
     conn->timeoutCallback = webSockTimeout;
 
-    if ((packet = httpGetPacket(conn->writeq)) != 0) {
-        assert(packet->flags & HTTP_PACKET_HEADER);
-        httpPutForService(q, packet, HTTP_SCHEDULE_QUEUE);
-    }
+    /*
+        Create an empty data packet to force the headers out
+     */
+    httpPutPacketToNext(q->pair, httpCreateDataPacket(0));
     conn->tx->responded = 0;
     return 0;
 }
@@ -340,7 +339,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
          */
         httpJoinPacketForService(q, packet, 0);
     }
-    httpTracePacket(conn->trace, "request.websockets.data", "body", 0, packet, "state:%d, frame:%d, length:%zu",
+    httpTracePacket(conn->trace, "request.websockets.data", "packet", 0, packet, "state:%d, frame:%d, length:%zu",
         ws->state, ws->frameState, httpGetPacketLength(packet));
 
     if (packet->flags & HTTP_PACKET_END) {
@@ -561,12 +560,12 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
     assert(content);
 
     mprAddNullToBuf(content);
-    httpTrace(conn->trace, "websockets.rx.packet", "body", "wsSeq:%d, wsTypeName:'%s', wsType:%d, wsLast:%d, wsLength:%zu",
+    httpTrace(conn->trace, "websockets.rx.packet", "context", "wsSeq:%d, wsTypeName:'%s', wsType:%d, wsLast:%d, wsLength:%zu",
          ws->rxSeq++, codetxt[packet->type], packet->type, packet->last, mprGetBufLength(content));
 
     switch (packet->type) {
     case WS_MSG_TEXT:
-        httpTracePacket(conn->trace, "websockets.rx.data", "body", 0, packet, 0);
+        httpTracePacket(conn->trace, "websockets.rx.data", "packet", 0, packet, 0);
         /* Fall through */
 
     case WS_MSG_BINARY:
@@ -630,6 +629,9 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
             if (packet->last) {
                 ws->currentMessageType = 0;
             }
+        }
+        if (conn->readq->first) {
+            HTTP_NOTIFY(conn, HTTP_EVENT_READABLE, 0);
         }
         break;
 
@@ -819,7 +821,6 @@ PUBLIC ssize httpSendBlock(HttpConn *conn, int type, cchar *buf, ssize len, int 
 
     httpFlushQueue(q, flags);
     if (httpClientConn(conn)) {
-        //  MOB - review
         httpEnableNetEvents(conn->net);
     }
     return totalWritten;
@@ -932,7 +933,7 @@ static void outgoingWebSockService(HttpQueue *q)
             }
             *prefix = '\0';
             mprAdjustBufEnd(packet->prefix, prefix - packet->prefix->start);
-            httpTracePacket(conn->trace, "websockets.tx.packet", "body", 0, packet,
+            httpTracePacket(conn->trace, "websockets.tx.packet", "packet", 0, packet,
                 "wsSeqno:%d, wsTypeName:\"%s\", wsType:%d, wsLast:%d, wsLength:%zd",
                 ws->txSeq++, codetxt[packet->type], packet->type, packet->last, httpGetPacketLength(packet));
         }

@@ -9,7 +9,9 @@
 
 /********************************** Forwards **********************************/
 
+static void initQueue(HttpNet *net, HttpConn *conn, HttpQueue *q, cchar *name, int dir);
 static void manageQueue(HttpQueue *q, int flags);
+static void serviceQueue(HttpQueue *q);
 
 /************************************ Code ************************************/
 /*
@@ -24,7 +26,7 @@ PUBLIC HttpQueue *httpCreateQueueHead(HttpNet *net, HttpConn *conn, cchar *name,
     if ((q = mprAllocObj(HttpQueue, manageQueue)) == 0) {
         return 0;
     }
-    httpInitQueue(net, conn, q, name, dir);
+    initQueue(net, conn, q, name, dir);
     httpInitSchedulerQueue(q);
     return q;
 }
@@ -41,13 +43,31 @@ PUBLIC HttpQueue *httpCreateQueue(HttpNet *net, HttpConn *conn, HttpStage *stage
     if ((q = mprAllocObj(HttpQueue, manageQueue)) == 0) {
         return 0;
     }
-    httpInitQueue(net, conn, q, stage->name, dir);
+    initQueue(net, conn, q, stage->name, dir);
     httpInitSchedulerQueue(q);
     httpAssignQueueCallbacks(q, stage, dir);
     if (prev) {
         httpAppendQueue(q, prev);
     }
     return q;
+}
+
+
+static void initQueue(HttpNet *net, HttpConn *conn, HttpQueue *q, cchar *name, int dir)
+{
+    q->net = net;
+    q->conn = conn;
+    q->flags = dir == HTTP_QUEUE_TX ? HTTP_QUEUE_OUTGOING : 0;
+    q->nextQ = q;
+    q->prevQ = q;
+    q->name = sfmt("%s-%s", name, dir == HTTP_QUEUE_TX ? "tx" : "rx");
+    if (conn && conn->tx && conn->tx->chunkSize > 0) {
+        q->packetSize = conn->tx->chunkSize;
+    } else {
+        q->packetSize = net->limits->bufferSize;
+    }
+    q->max = q->packetSize * 4;
+    q->low = q->max / 4;
 }
 
 
@@ -96,24 +116,6 @@ PUBLIC void httpAssignQueueCallbacks(HttpQueue *q, HttpStage *stage, int dir)
 }
 
 
-PUBLIC void httpInitQueue(HttpNet *net, HttpConn *conn, HttpQueue *q, cchar *name, int dir)
-{
-    q->net = net;
-    q->conn = conn;
-    q->flags = dir == HTTP_QUEUE_TX ? HTTP_QUEUE_OUTGOING : 0;
-    q->nextQ = q;
-    q->prevQ = q;
-    q->name = sfmt("%s-%s", name, dir == HTTP_QUEUE_TX ? "tx" : "rx");
-    q->max = net->limits->bufferSize;
-    q->low = q->max / 4;
-    if (conn && conn->tx && conn->tx->chunkSize > 0) {
-        q->packetSize = conn->tx->chunkSize;
-    } else {
-        q->packetSize = q->max;
-    }
-}
-
-
 PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize packetSize, ssize low, ssize max)
 {
     if (packetSize > 0) {
@@ -156,7 +158,6 @@ PUBLIC bool httpIsSuspendQueue(HttpQueue *q)
 
 /*
     Remove all data in the queue. If removePackets is true, actually remove the packet too.
-    MOB - seems like we only ever call with removePackets == true
     This preserves the header and EOT packets.
  */
 PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
@@ -184,8 +185,9 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
                 continue;
             } else {
                 len = httpGetPacketLength(packet);
-                //  MOB - should do this in caller or have higher level routine that does this with "conn" as arg
-                if (q->conn && q->conn->tx) {
+                //  TODO - should do this in caller or have higher level routine that does this with "conn" as arg
+                //  TODO - or should we just set tx->length to zero?
+                if (q->conn && q->conn->tx && q->conn->tx->length > 0) {
                     q->conn->tx->length -= len;
                 }
                 q->count -= len;
@@ -205,6 +207,8 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
     Return true if there is room for more data. If blocking is requested, the call will block until
     the queue count falls below the queue max. WARNING: Be very careful when using blocking == true.
     Should only be used by end applications and not by middleware.
+    NOTE: may return early if the inactivityTimeout expires.
+    WARNING: may yield.
  */
 PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 {
@@ -218,7 +222,6 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
     httpScheduleQueue(q);
     httpServiceQueues(net, flags);
 
-    //  MOB - review
     if (flags & HTTP_BLOCK) {
         /*
             Blocking mode: Fully drain the pipeline. This blocks until the connector has written all the data
@@ -232,7 +235,8 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
                 break;
             }
             net->lastActivity = net->http->now;
-            httpResumeQueue(net->outputq);
+            httpResumeQueue(net->socketq);
+            httpScheduleQueue(net->socketq);
             httpServiceQueues(net, flags);
         }
     }
@@ -240,7 +244,6 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 }
 
 
-//  MOB - move this to conn
 PUBLIC void httpFlush(HttpConn *conn)
 {
     httpFlushQueue(conn->writeq, HTTP_NON_BLOCK);
@@ -249,7 +252,6 @@ PUBLIC void httpFlush(HttpConn *conn)
 
 /*
     Flush the write queue. In sync mode, this call may yield.
-    MOB - move to conn
  */
 PUBLIC void httpFlushAll(HttpConn *conn)
 {
@@ -360,11 +362,11 @@ PUBLIC void httpScheduleQueue(HttpQueue *q)
 }
 
 
-PUBLIC void httpServiceQueue(HttpQueue *q)
+static void serviceQueue(HttpQueue *q)
 {
     /*
         Hold the queue for GC while scheduling.
-        MOB - review
+        TODO - this is probably not required as the queue is always linked into a pipeline
      */
     q->net->holdq = q;
 
@@ -394,7 +396,6 @@ PUBLIC void httpServiceQueue(HttpQueue *q)
 /*
     Run the queue service routines until there is no more work to be done.
     If flags & HTTP_BLOCK, this routine may block while yielding.  Return true if actual work was done.
-    MOB - move back into queue.c
  */
 PUBLIC bool httpServiceQueues(HttpNet *net, int flags)
 {
@@ -412,15 +413,12 @@ PUBLIC bool httpServiceQueues(HttpNet *net, int flags)
             q->flags |= HTTP_QUEUE_RESERVICE;
         } else {
             assert(q->schedulePrev == q->scheduleNext);
-            httpServiceQueue(q);
+            serviceQueue(q);
             workDone = 1;
         }
         if (mprNeedYield() && (flags & HTTP_BLOCK)) {
             mprYield(0);
         }
-        //MOB
-        mprYield(0);
-
     }
     /*
         Always do a yield if requested even if there are no queues to service

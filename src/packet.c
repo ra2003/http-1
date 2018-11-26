@@ -26,7 +26,7 @@ PUBLIC HttpPacket *httpCreatePacket(ssize size)
         return 0;
     }
     if (size != 0) {
-        if ((packet->content = mprCreateBuf(size < 0 ? ME_MAX_QBUFFER: (ssize) size, -1)) == 0) {
+        if ((packet->content = mprCreateBuf(size < 0 ? ME_PACKET_SIZE: (ssize) size, -1)) == 0) {
             return 0;
         }
     }
@@ -330,7 +330,6 @@ PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
     assert(packet);
     assert(q->put);
 
-    //  MOB - where is the best place for this?
     if (!packet->conn) {
         packet->conn = q->conn;
     }
@@ -345,11 +344,10 @@ PUBLIC void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
 {
     assert(packet);
 
-    if (!packet->conn) {
-        packet->conn = q->conn;
-    }
-    if (q->nextQ && q->nextQ->put) {
+    if (q->nextQ && q->nextQ->put && q != q->nextQ) {
         httpPutPacket(q->nextQ, packet);
+    } else {
+        httpPutForService(q->nextQ, packet, 0);
     }
 }
 
@@ -377,7 +375,6 @@ PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
     if (!packet->conn) {
         packet->conn = q->conn;
     }
-
     if (packet) {
         packet->next = q->first;
         if (q->first == 0) {
@@ -408,9 +405,6 @@ PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
     } else {
         q->first = packet;
         q->last = packet;
-    }
-    if (!packet->conn) {
-        packet->conn = q->conn;
     }
     if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
         httpScheduleQueue(q);

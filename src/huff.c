@@ -18,32 +18,27 @@ static int decodeHuff(uchar *state, uchar *src, int len, uchar *dst, uint last);
 
 /*********************************** Code *************************************/
 
-//  CPU_ENDIAN == ME_LITTLE_ENDIAN
-//  MOB -- CLEAN
-#if (NGX_PTR_SIZE == 8)
-#if (NGX_HAVE_LITTLE_ENDIAN)
-#if (NGX_HAVE_GCC_BSWAP64)
-#define encodeBuf(dst, buf)                                 \
-    (*(uint64_t *) (dst) = __builtin_bswap64(buf))
-#else
-#define encodeBuf(dst, buf)                                 \
-    ((dst)[0] = (uchar) ((buf) >> 56),                                       \
-     (dst)[1] = (uchar) ((buf) >> 48),                                       \
-     (dst)[2] = (uchar) ((buf) >> 40),                                       \
-     (dst)[3] = (uchar) ((buf) >> 32),                                       \
-     (dst)[4] = (uchar) ((buf) >> 24),                                       \
-     (dst)[5] = (uchar) ((buf) >> 16),                                       \
-     (dst)[6] = (uchar) ((buf) >> 8),                                        \
-     (dst)[7] = (uchar)  (buf))
+#if KEEP
+#if ME_64
+    #if (ME_ENDIAN == ME_LITTLE_ENDIAN)
+        #define encodeBuf(dst, buf) \
+            ((dst)[0] = (uchar) ((buf) >> 56), \
+            (dst)[1] = (uchar) ((buf) >> 48),  \
+            (dst)[2] = (uchar) ((buf) >> 40),  \
+            (dst)[3] = (uchar) ((buf) >> 32),  \
+            (dst)[4] = (uchar) ((buf) >> 24),  \
+            (dst)[5] = (uchar) ((buf) >> 16),  \
+            (dst)[6] = (uchar) ((buf) >> 8),   \
+            (dst)[7] = (uchar)  (buf))
+    #else /* BIG_ENDIAN */
+        #define encodeBuf(dst, buf) (*(uint64 *) (dst) = (buf))
+    #endif
+#else /* 32 bit */
+    #define encodeBuf(dst, buf) (*(uint *) (dst) = htonl(buf))
+#endif
 #endif
 
-#else /* !NGX_HAVE_LITTLE_ENDIAN */
-#define encodeBuf(dst, buf) (*(uint64_t *) (dst) = (buf))
-#endif
-
-#else /* NGX_PTR_SIZE == 4 */
-#define encodeBuf(dst, buf) (*(uint32_t *) (dst) = htonl(buf))
-#endif
+#define encodeBuf(dst, buf) (*(uint *) (dst) = htonl(buf))
 
 typedef struct Decodes {
     uchar  next;
@@ -1337,8 +1332,8 @@ static Decodes decodes[256][16] = {
 };
 
 typedef struct Encodes {
-    uint32_t  code;
-    uint32_t  len;
+    uint  code;
+    uint  len;
 } Encodes;
 
 static Encodes  encodes[256] = {
@@ -1479,7 +1474,7 @@ static Encodes  encodesLower[256] =
 
 /*
     Return the size of the decoded string.
-    MOB - not a good api -- can overflow dst. dst should provide a size that must not be overflowed
+    TODO - not a good api -- can overflow dst. dst should provide a size that must not be overflowed
  */
 static int decodeHuff(uchar *state, uchar *src, int len, uchar *dst, uint last)
 {
@@ -1537,7 +1532,7 @@ PUBLIC cchar *httpHuffDecode(uchar *src, int len)
     value = mprAlloc(alen);
     state = 0;
     if ((size = decodeHuff(&state, src, len, value, 1)) < 0) {
-        //  MOB - what do do here?
+        //  TODO - what do do here?
         return 0;
     }
     assert(size < alen);
@@ -1567,7 +1562,7 @@ static uint encodeHuff(cchar *src, ssize len, uchar *dst, uint lower)
             buf |= code << (sizeof(buf) * 8 - pending);
             continue;
         }
-        if (hlen + sizeof(buf) >= len) {
+        if ((hlen + sizeof(buf)) >= (uint) len) {
             return 0;
         }
         pending -= sizeof(buf) * 8;

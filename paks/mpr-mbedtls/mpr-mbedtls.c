@@ -192,7 +192,6 @@ static void closeMbed(MprSocket *sp, bool gracefully)
 static int configMbed(MprSsl *ssl, int flags, char **errorMsg)
 {
     MbedConfig          *cfg;
-    MprList             *alpn;
     mbedtls_ssl_config  *mconf;
     cuchar              dhm_p[] = MBEDTLS_DHM_RFC3526_MODP_2048_P_BIN;
     cuchar              dhm_g[] = MBEDTLS_DHM_RFC3526_MODP_2048_G_BIN;

@@ -346,7 +346,7 @@ PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
 {
     HttpEndpoint    *endpoint;
-    char            *ip;
+    cchar           *ip;
     int             port, next, count;
 
     if (mprParseSocketAddress(name, &ip, &port, NULL, -1) < 0) {
@@ -386,6 +386,9 @@ PUBLIC HttpHost *httpLookupHostOnEndpoint(HttpEndpoint *endpoint, cchar *name)
     HttpHost    *host;
     int         matches[ME_MAX_ROUTE_MATCHES * 2], next;
 
+    if (!endpoint) {
+        return 0;
+    }
     for (next = 0; (host = mprGetNextItem(endpoint->hosts, &next)) != 0; ) {
         if (host->hostname == 0 || *host->hostname == 0 || name == 0 || *name == 0) {
             return host;

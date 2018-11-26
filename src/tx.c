@@ -35,12 +35,6 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     tx->chunkSize = -1;
     tx->cookies = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
 
-    tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(net, conn, "TxHead", HTTP_QUEUE_TX);
-    conn->writeq = tx->queue[HTTP_QUEUE_TX];
-
-    tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(net, conn, "RxHead", 0);
-    conn->readq = tx->queue[HTTP_QUEUE_RX];
-
     if (headers) {
         tx->headers = headers;
     } else {
@@ -70,9 +64,6 @@ static void manageTx(HttpTx *tx, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(tx->altBody);
-#if UNUSED
-        mprMark(tx->authType);
-#endif
         mprMark(tx->cache);
         mprMark(tx->cacheBuffer);
         mprMark(tx->cachedContent);
@@ -92,8 +83,6 @@ static void manageTx(HttpTx *tx, int flags)
         mprMark(tx->outputPipeline);
         mprMark(tx->outputRanges);
         mprMark(tx->parsedUri);
-        mprMark(tx->queue[0]);
-        mprMark(tx->queue[1]);
         mprMark(tx->rangeBoundary);
         mprMark(tx->webSockKey);
     }
@@ -298,23 +287,24 @@ PUBLIC void httpFinalizeConnector(HttpConn *conn)
  */
 PUBLIC void httpFinalize(HttpConn *conn)
 {
-    HttpTx  *tx;
+    HttpTx      *tx;
 
     tx = conn->tx;
     if (!tx || tx->finalized) {
         return;
     }
-    tx->finalized = 1;
     if (conn->rx->session) {
         httpWriteSession(conn);
     }
+    httpFinalizeInput(conn);
     httpFinalizeOutput(conn);
+    tx->finalized = 1;
 }
 
 
 /*
-    This means the caller has generated the entire transmit body. Note: the data may not yet have drained from
-    the pipeline or socket and the caller may not have read a response.
+    The handler has generated the entire transmit body. Note: the data may not yet have drained from
+    the pipeline or socket and the caller may not have read all the input body content.
  */
 PUBLIC void httpFinalizeOutput(HttpConn *conn)
 {
@@ -324,8 +314,6 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
     if (!tx || tx->finalizedOutput) {
         return;
     }
-    assert(conn->writeq);
-
     tx->responded = 1;
     tx->finalizedOutput = 1;
     if (!(tx->flags & HTTP_TX_PIPELINE)) {
@@ -333,7 +321,27 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
         tx->pendingFinalize = 1;
         return;
     }
-    httpPutPacket(httpServerConn(conn) ? conn->writeq->nextQ : conn->writeq, httpCreateEndPacket());
+    if (tx->finalizedInput) {
+        httpFinalize(conn);
+    }
+    httpPutPacket(conn->writeq, httpCreateEndPacket());
+}
+
+
+/*
+    This means the handler has processed all the input
+ */
+PUBLIC void httpFinalizeInput(HttpConn *conn)
+{
+    HttpTx      *tx;
+
+    tx = conn->tx;
+    if (tx && !tx->finalizedInput) {
+        tx->finalizedInput = 1;
+        if (tx->finalizedOutput) {
+            httpFinalize(conn);
+        }
+    }
 }
 
 
@@ -346,6 +354,12 @@ PUBLIC int httpIsFinalized(HttpConn *conn)
 PUBLIC int httpIsOutputFinalized(HttpConn *conn)
 {
     return conn->tx->finalizedOutput;
+}
+
+
+PUBLIC int httpIsInputFinalized(HttpConn *conn)
+{
+    return conn->tx->finalizedInput;
 }
 
 
@@ -414,7 +428,7 @@ PUBLIC void *httpGetQueueData(HttpConn *conn)
 {
     HttpQueue     *q;
 
-    q = conn->tx->queue[HTTP_QUEUE_TX];
+    q = conn->writeq;
     return q->nextQ->queueData;
 }
 
@@ -424,15 +438,9 @@ PUBLIC void httpOmitBody(HttpConn *conn)
     HttpTx  *tx;
 
     tx = conn->tx;
-    if (!tx) {
-        return;
-    }
-    tx->flags |= HTTP_TX_NO_BODY;
-    tx->length = -1;
-    if (tx->flags & HTTP_TX_HEADERS_CREATED) {
-        /* Connectors will detect this also and disconnect */
-        //  MOB - where
-    } else {
+    if (tx && !(tx->flags & HTTP_TX_HEADERS_CREATED)) {
+        tx->flags |= HTTP_TX_NO_BODY;
+        tx->length = -1;
         httpDiscardData(conn, HTTP_QUEUE_TX);
     }
 }
@@ -517,7 +525,8 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     MprTicks lifespan, int flags)
 {
     HttpRx      *rx;
-    char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *secure, *httponly;
+    cchar       *domain, *domainAtt;
+    char        *cp, *expiresAtt, *expires, *secure, *httpOnly, *sameSite;
 
     rx = conn->rx;
     if (path == 0) {
@@ -565,10 +574,15 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
         expires = expiresAtt = "";
     }
     secure = (conn->secure & (flags & HTTP_COOKIE_SECURE)) ? "; secure" : "";
-    httponly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
-
+    httpOnly = (flags & HTTP_COOKIE_HTTP) ?  "; httponly" : "";
+    sameSite = "";
+    if (flags & HTTP_COOKIE_SAME_LAX) {
+        sameSite = "; SameSite=Lax";
+    } else if (flags & HTTP_COOKIE_SAME_STRICT) {
+        sameSite = "; SameSite=Strict";
+    }
     mprAddKey(conn->tx->cookies, name,
-        sjoin(value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httponly, NULL));
+        sjoin(value, "; path=", path, domainAtt, domain, expiresAtt, expires, secure, httpOnly, sameSite, NULL));
 
     if ((cp = mprLookupKey(conn->tx->headers, "Cache-Control")) == 0 || !scontains(cp, "no-cache")) {
         httpAppendHeader(conn, "Cache-Control", "no-cache=\"set-cookie\"");
@@ -627,7 +641,6 @@ PUBLIC HttpPacket *httpCreateHeaders(HttpQueue *q, HttpPacket *packet)
 
     if (!packet) {
         packet = httpCreateHeaderPacket();
-        //  MOB - this should be pushed into the create routine
         packet->conn = q->conn;
     }
 #if ME_HTTP_HTTP2
@@ -707,9 +720,8 @@ PUBLIC void httpDefineHeaders(HttpConn *conn)
 
     } else if (httpServerConn(conn)) {
         /* Server must not emit a content length header for 1XX, 204 and 304 status */
-        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304 ||
-                tx->flags & HTTP_TX_NO_LENGTH)) {
-            if (length >= 0) {
+        if (!((100 <= tx->status && tx->status <= 199) || tx->status == 204 || tx->status == 304 || tx->flags & HTTP_TX_NO_LENGTH)) {
+            if (length > 0 || (length == 0 && conn->net->protocol < 2)) {
                 httpAddHeader(conn, "Content-Length", "%lld", length);
             }
         }
@@ -930,7 +942,6 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
         return MPR_ERR_CANT_WRITE;
     }
     if (httpClientConn(conn)) {
-        //  MOB - review
         httpEnableNetEvents(conn->net);
     }
     return totalWritten;

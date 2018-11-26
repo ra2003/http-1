@@ -1,7 +1,11 @@
 /*
     uploadFilter.c - Upload file filter.
+
     The upload filter processes post data according to RFC-1867 ("multipart/form-data" post data).
     It saves the uploaded files in a configured upload directory.
+
+    The upload filter is configured in the standard pipeline before the request is parsed and routed.
+
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
  */
 
@@ -36,17 +40,20 @@ typedef struct Upload {
 /********************************** Forwards **********************************/
 
 static void addUploadFile(HttpConn *conn, HttpUploadFile *upfile);
+static Upload *allocUpload(HttpQueue *q);
+static void cleanUploadedFiles(HttpConn *conn);
 static void closeUpload(HttpQueue *q);
 static char *getBoundary(char *buf, ssize bufLen, char *boundary, ssize boundaryLen, bool *pureData);
+static cchar *getUploadDir(HttpConn *conn);
 static void incomingUpload(HttpQueue *q, HttpPacket *packet);
 static void manageHttpUploadFile(HttpUploadFile *file, int flags);
 static void manageUpload(Upload *up, int flags);
-static int matchUpload(HttpConn *conn, HttpRoute *route, int dir);
 static int openUpload(HttpQueue *q);
 static int  processUploadBoundary(HttpQueue *q, char *line);
 static int  processUploadHeader(HttpQueue *q, char *line);
 static int  processUploadData(HttpQueue *q);
-static void cleanUploadedFiles(HttpConn *conn);
+static void renameUploadedFiles(HttpConn *conn);
+static void  startUpload(HttpQueue *q);
 
 /************************************* Code ***********************************/
 
@@ -58,59 +65,19 @@ PUBLIC int httpOpenUploadFilter()
         return MPR_ERR_CANT_CREATE;
     }
     HTTP->uploadFilter = filter;
-    filter->match = matchUpload;
+    filter->flags |= HTTP_STAGE_INTERNAL;
     filter->open = openUpload;
     filter->close = closeUpload;
+    filter->start = startUpload;
     filter->incoming = incomingUpload;
     return 0;
 }
 
 
 /*
-    Match if this request needs the upload filter. Return true if needed.
- */
-static int matchUpload(HttpConn *conn, HttpRoute *route, int dir)
-{
-    HttpRx  *rx;
-    char    *pat;
-    ssize   len;
-
-    if (!(dir & HTTP_STAGE_RX)) {
-        return HTTP_ROUTE_OMIT_FILTER;
-    }
-    rx = conn->rx;
-    if (!(rx->flags & HTTP_POST) || rx->remainingContent <= 0) {
-        return HTTP_ROUTE_OMIT_FILTER;
-    }
-    pat = "multipart/form-data";
-    len = strlen(pat);
-    if (sncaselesscmp(rx->mimeType, pat, len) == 0) {
-        rx->upload = 1;
-        return HTTP_ROUTE_OK;
-    }
-    return HTTP_ROUTE_OMIT_FILTER;
-}
-
-
-static cchar *getUploadDir(HttpRoute *route)
-{
-    cchar   *uploadDir;
-
-    if ((uploadDir = httpGetDir(route, "upload")) == 0) {
-#if ME_WIN_LIKE
-        uploadDir = mprNormalizePath(getenv("TEMP"));
-#else
-        uploadDir = sclone("/tmp");
-#endif
-    }
-    return uploadDir;
-}
-
-
-/*
     Initialize the upload filter for a new request
  */
-static int openUpload(HttpQueue *q)
+static Upload *allocUpload(HttpQueue *q)
 {
     HttpConn    *conn;
     HttpRx      *rx;
@@ -120,16 +87,13 @@ static int openUpload(HttpQueue *q)
 
     conn = q->conn;
     rx = conn->rx;
-
     if ((up = mprAllocObj(Upload, manageUpload)) == 0) {
-        return MPR_ERR_MEMORY;
+        return 0;
     }
     q->queueData = up;
     up->contentState = HTTP_UPLOAD_BOUNDARY;
-    rx->autoDelete = rx->route->autoDelete;
-    rx->renameUploads = rx->route->renameUploads;
 
-    uploadDir = getUploadDir(rx->route);
+    uploadDir = getUploadDir(conn);
     httpSetParam(conn, "UPLOAD_DIR", uploadDir);
 
     if ((boundary = strstr(rx->mimeType, "boundary=")) != 0) {
@@ -139,9 +103,9 @@ static int openUpload(HttpQueue *q)
     }
     if (up->boundaryLen == 0 || *up->boundary == '\0') {
         httpError(conn, HTTP_CODE_BAD_REQUEST, "Bad boundary");
-        return MPR_ERR_BAD_ARGS;
+        return 0;
     }
-    return 0;
+    return up;
 }
 
 
@@ -158,19 +122,49 @@ static void manageUpload(Upload *up, int flags)
 }
 
 
-/*
-    Cleanup when the entire request has complete
- */
-static void closeUpload(HttpQueue *q)
+static void freeUpload(HttpQueue *q)
 {
     HttpUploadFile  *file;
     Upload          *up;
 
-    up = q->queueData;
-    cleanUploadedFiles(q->conn);
-    if (up->currentFile) {
-        file = up->currentFile;
-        file->filename = 0;
+    if ((up = q->queueData) != 0) {
+        if (up->currentFile) {
+            file = up->currentFile;
+            file->filename = 0;
+        }
+        q->queueData = 0;
+    }
+}
+
+
+static int openUpload(HttpQueue *q)
+{
+    /* Necessary because we want closeUpload to be able to clean files */
+    return 0;
+}
+
+
+static void closeUpload(HttpQueue *q)
+{
+    Upload      *up;
+
+    if ((up = q->queueData) != 0) {
+        cleanUploadedFiles(q->conn);
+        freeUpload(q);
+    }
+}
+
+
+/*
+    Start is invoked when the full request pipeline is started. For upload, this actually happens after
+    all input has been received.
+ */
+static void startUpload(HttpQueue *q)
+{
+    Upload      *up;
+
+    if ((up = q->queueData) != 0) {
+        renameUploadedFiles(q->conn);
     }
 }
 
@@ -193,17 +187,23 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
 
     conn = q->conn;
     rx = conn->rx;
-    up = q->queueData;
-    if (conn->error) {
+    if (!rx->upload || conn->error) {
+        httpPutPacketToNext(q, packet);
         return;
     }
-    if (httpGetPacketLength(packet) == 0) {
+    if ((up = q->queueData) == 0) {
+        if ((up = allocUpload(q)) == 0) {
+            return;
+        }
+    }
+    if (packet->flags & HTTP_PACKET_END) {
         if (up->contentState != HTTP_UPLOAD_CONTENT_END) {
             httpError(conn, HTTP_CODE_BAD_REQUEST, "Client supplied insufficient upload data");
         }
         httpPutPacketToNext(q, packet);
         return;
     }
+
     /*
         Put the packet data onto the service queue for buffering. This aggregates input data incase we don't have
         a complete mime record yet.
@@ -380,7 +380,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
                 /*
                     Create the file to hold the uploaded data
                  */
-                uploadDir = getUploadDir(rx->route);
+                uploadDir = getUploadDir(conn);
                 up->tmpPath = mprGetTempPath(uploadDir);
                 if (up->tmpPath == 0) {
                     if (!mprPathExists(uploadDir, X_OK)) {
@@ -437,12 +437,11 @@ static void defineFileFields(HttpQueue *q, Upload *up)
     char            *key;
 
     conn = q->conn;
+#if DEPRECATED || 1
     if (conn->tx->handler == conn->http->ejsHandler) {
-        /*
-            Ejscript manages this for itself
-         */
         return;
     }
+#endif
     up = q->queueData;
     file = up->currentFile;
     key = sjoin("FILE_CLIENT_FILENAME_", up->name, NULL);
@@ -582,7 +581,6 @@ static int processUploadData(HttpQueue *q)
                 mprPutCharToBuf(packet->content, '&');
             } else {
                 conn->rx->mimeType = sclone("application/x-www-form-urlencoded");
-
             }
             mprPutToBuf(packet->content, "%s=%s", up->name, data);
         }
@@ -654,26 +652,57 @@ static void cleanUploadedFiles(HttpConn *conn)
 {
     HttpRx          *rx;
     HttpUploadFile  *file;
-    cchar           *path, *uploadDir;
     int             index;
 
     rx = conn->rx;
-    uploadDir = getUploadDir(rx->route);
 
     for (ITERATE_ITEMS(rx->files, file, index)) {
-        if (file->filename) {
-            if (rx->autoDelete) {
+        if (file->filename && rx->route) {
+            if (rx->route->autoDelete && !rx->route->renameUploads) {
                 mprDeletePath(file->filename);
-
-            } else if (rx->renameUploads) {
-                path = mprJoinPath(uploadDir, file->clientFilename);
-                if (rename(file->filename, path) != 0) {
-                    mprLog("http error", 0, "Cannot rename %s to %s", file->filename, path);
-                }
             }
             file->filename = 0;
         }
     }
+}
+
+
+static void renameUploadedFiles(HttpConn *conn)
+{
+    HttpRx          *rx;
+    HttpUploadFile  *file;
+    cchar           *path, *uploadDir;
+    int             index;
+
+    rx = conn->rx;
+    uploadDir = getUploadDir(conn);
+
+    for (ITERATE_ITEMS(rx->files, file, index)) {
+        if (file->filename && rx->route) {
+            if (rx->route->renameUploads) {
+                path = mprJoinPath(uploadDir, file->clientFilename);
+                if (rename(file->filename, path) != 0) {
+                    mprLog("http error", 0, "Cannot rename %s to %s", file->filename, path);
+                }
+                file->filename = path;
+            }
+        }
+    }
+}
+
+
+static cchar *getUploadDir(HttpConn *conn)
+{
+    cchar   *uploadDir;
+
+    if ((uploadDir = httpGetDir(conn->host->defaultRoute, "upload")) == 0) {
+#if ME_WIN_LIKE
+        uploadDir = mprNormalizePath(getenv("TEMP"));
+#else
+        uploadDir = sclone("/tmp");
+#endif
+    }
+    return uploadDir;
 }
 
 /*

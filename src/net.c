@@ -65,10 +65,10 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
 #if ME_HTTP_HTTP2
     /*
         The socket queue will typically send and accept packets of HTTP2_DEFAULT_FRAME_SIZE plus the frame size overhead.
-        Set the max to fit two packets. Note that HTTP/2 flow control happens on the http filters and not on the socketq.
+        Set the max to fit four packets. Note that HTTP/2 flow control happens on the http filters and not on the socketq.
         Other queues created in netConnector after the protocol is known.
      */
-    httpSetQueueLimits(net->socketq, HTTP2_DEFAULT_FRAME_SIZE + HTTP2_FRAME_OVERHEAD, -1, HTTP2_DEFAULT_FRAME_SIZE * 2);
+    httpSetQueueLimits(net->socketq, HTTP2_DEFAULT_FRAME_SIZE + HTTP2_FRAME_OVERHEAD, -1, HTTP2_DEFAULT_FRAME_SIZE * 4);
     net->rxHeaders = createHeaderTable(HTTP2_TABLE_SIZE);
     net->txHeaders = createHeaderTable(HTTP2_TABLE_SIZE);
 #endif
@@ -242,9 +242,6 @@ PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol)
 
     http = net->http;
     protocol = net->protocol = protocol > 0 ? protocol : HTTP_1_1;
-    if (protocol >= 2) {
-        net->limits->keepAliveMax = 0;
-    }
 
     /*
         Create queues connected to the appropriate protocol filter. Supply conn for HTTP/1.
@@ -276,7 +273,9 @@ PUBLIC void httpNetClosed(HttpNet *net)
 
     for (ITERATE_ITEMS(net->connections, conn, next)) {
         if (conn->state < HTTP_STATE_PARSED) {
-            conn->errorMsg = sfmt("Peer closed connection before receiving a response");
+            if (!conn->errorMsg) {
+                conn->errorMsg = sfmt("Peer closed connection before receiving a response");
+            }
             if (!net->errorMsg) {
                 net->errorMsg = conn->errorMsg;
             }
@@ -347,6 +346,20 @@ PUBLIC void httpSetAsync(HttpNet *net, bool async)
 }
 
 
+//  TODO - naming. Some have Net, some not.
+
+PUBLIC void httpSetIOCallback(HttpNet *net, HttpIOCallback fn)
+{
+    net->ioCallback = fn;
+}
+
+
+PUBLIC void httpSetNetContext(HttpNet *net, void *context)
+{
+    net->context = context;
+}
+
+
 static void netTimeout(HttpNet *net, MprEvent *mprEvent)
 {
     if (net->destroyed) {
@@ -358,7 +371,7 @@ static void netTimeout(HttpNet *net, MprEvent *mprEvent)
 
 
 
-//  MOB - review all these
+//  TODO - review all these
 /*
     Used by ejs
  */
@@ -374,7 +387,7 @@ PUBLIC void httpUseWorker(HttpNet *net, MprDispatcher *dispatcher, MprEvent *eve
 }
 
 
-//  MOB comment?
+//  TODO comment?
 PUBLIC void httpUsePrimary(HttpNet *net)
 {
     lock(net->http);
@@ -387,7 +400,7 @@ PUBLIC void httpUsePrimary(HttpNet *net)
 }
 
 
-//  MOB - legacy httpBorrowConn?
+//  TODO - legacy httpBorrowConn?
 PUBLIC void httpBorrowNet(HttpNet *net)
 {
     assert(!net->borrowed);
@@ -398,7 +411,7 @@ PUBLIC void httpBorrowNet(HttpNet *net)
 }
 
 
-//  MOB - legacy httpReturnConn?
+//  TODO - legacy httpReturnConn?
 PUBLIC void httpReturnNet(HttpNet *net)
 {
     assert(net->borrowed);
@@ -455,7 +468,7 @@ PUBLIC cchar *httpGetProtocol(HttpNet *net)
 {
     if (net->protocol == 0) {
         return "HTTP/1.0";
-    } else if (net->protocol > 2) {
+    } else if (net->protocol >= 2) {
         return "HTTP/2";
     } else {
         return "HTTP/1.1";

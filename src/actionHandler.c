@@ -15,7 +15,7 @@
 static void startAction(HttpQueue *q)
 {
     HttpConn    *conn;
-    HttpAction     action;
+    HttpAction  action;
     cchar       *name;
 
     conn = q->conn;

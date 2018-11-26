@@ -8,7 +8,7 @@
     2: error, result
     3: context
     4: packet
-    5: network
+    5: detail
  */
 
 /********************************* Includes ***********************************/
@@ -54,7 +54,7 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
         mprAddKey(trace->events, "result", ITOP(2));
         mprAddKey(trace->events, "context", ITOP(3));
         mprAddKey(trace->events, "packet", ITOP(4));
-        mprAddKey(trace->events, "network", ITOP(5));
+        mprAddKey(trace->events, "detail", ITOP(5));
 
         /*
             Max log file size

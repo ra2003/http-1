@@ -28,9 +28,10 @@ typedef struct ThreadData {
 typedef struct Stream {
     HttpConn    *conn;              /* connection handle */
     int         count;
+    int         follow;             /* Current follow redirect count */
     MprFile     *outFile;
     cchar       *redirect;          /* Redirect URL */
-    int         retries;
+    int         retries;            /* Current retry count */
     MprEvent    *timeout;           /* Timeout event */
     ThreadData  *threadData;
     bool        written;
@@ -61,6 +62,8 @@ typedef struct App {
     int         iterations;         /* URLs to fetch (per thread) */
     cchar       *key;               /* Private key file */
     int         loadThreads;        /* Number of threads to use for URL requests */
+    int         maxRetries;         /* Times to retry a failed request */
+    int         maxFollow;          /* Times to follow a redirect */
     char        *method;            /* HTTP method when URL on cmd line */
     MprMutex    *mutex;             /* Multithread sync */
     bool        needSsl;            /* Need SSL for request */
@@ -73,7 +76,6 @@ typedef struct App {
     int         printable;          /* Make binary output printable */
     int         protocol;           /**< HTTP protocol: 0 for HTTP/1.0, 1 for HTTP/1.1 or 2+ */
     char        *ranges;            /* Request ranges */
-    int         retries;            /* Times to retry a failed request */
     int         sequence;           /* Sequence requests with a custom header */
     int         status;             /* Status for single requests */
     int         showStatus;         /* Output the Http response status */
@@ -236,8 +238,9 @@ static void setDefaults()
     app->host = sclone("localhost");
     app->iterations = 1;
     app->loadThreads = 1;
+    app->maxFollow = 5;
+    app->maxRetries = 2;
     app->protocol = 1;
-    app->retries = 2;
     app->success = 1;
     app->streams = 1;
 
@@ -384,7 +387,7 @@ static int parseArgs(int argc, char **argv)
 
         } else if (smatch(argp, "--debugger") || smatch(argp, "-D")) {
             mprSetDebugMode(1);
-            app->retries = 0;
+            app->maxRetries = 0;
             app->timeout = HTTP_UNLIMITED;
 
         } else if (smatch(argp, "--delete")) {
@@ -443,13 +446,13 @@ static int parseArgs(int argc, char **argv)
                 }
             }
 
-        } else if (smatch(argp, "--http0") || smatch(argp, "-h0")) {
+        } else if (smatch(argp, "--http0") || smatch(argp, "--h0")) {
             app->protocol = 0;
 
-        } else if (smatch(argp, "--http1") || smatch(argp, "-h1")) {
+        } else if (smatch(argp, "--http1") || smatch(argp, "--h1")) {
             app->protocol = 1;
 
-        } else if (smatch(argp, "--http2") || smatch(argp, "-h2")) {
+        } else if (smatch(argp, "--http2") || smatch(argp, "--h2")) {
             app->protocol = 2;
 
         } else if (smatch(argp, "--iterations") || smatch(argp, "-i")) {
@@ -544,7 +547,7 @@ static int parseArgs(int argc, char **argv)
             if (nextArg >= argc) {
                 return showUsage();
             } else {
-                app->retries = atoi(argv[++nextArg]);
+                app->maxRetries = atoi(argv[++nextArg]);
             }
 
         } else if (smatch(argp, "--self")) {
@@ -940,7 +943,7 @@ static Stream *createStream(ThreadData *td, HttpConn *conn)
 
     /*
         Create file to save output
-        MOB - what if iterations?
+        TODO - what if iterations?
      */
     if (app->outFilename) {
         path = app->loadThreads > 1 ? sfmt("%s-%s.tmp", app->outFilename, mprGetCurrentThreadName()): app->outFilename;
@@ -971,8 +974,8 @@ static void startRequest(HttpConn *conn)
     }
     stream->written = 0;
 
-    //  MOB - reivew
-    //  MOB - why
+    //  TODO - reivew
+    //  TODO - why
     authType = conn->authType;
 
     app->url = stream->redirect ? stream->redirect : app->url;
@@ -1058,24 +1061,33 @@ static void checkRequestState(HttpConn *conn)
                     httpError(conn, HTTP_CODE_BAD_REQUEST, "Invalid redirect");
                     break;
                 }
-            } else {
-                if (++stream->retries >= app->retries) {
-                    httpError(conn, HTTP_CODE_NO_RESPONSE, "Too many retries");
+                if (++stream->follow >= app->maxFollow) {
+                    httpError(conn, HTTP_CODE_NO_RESPONSE, "Too many redirects");
                     break;
                 }
+                mprDebug("http", 4, "redirect %d of %d for: %s %s", stream->follow, app->maxFollow, app->method, app->url);
+            } else {
 #if FUTURE
-                //  MOB - check this
+                //  TODO - check this
                 if (conn->rx && conn->rx->status == HTTP_CODE_UNAUTHORIZED && authType && smatch(authType, conn->authType)) {
                     httpError(conn, HTTP_CODE_UNAUTHORIZED, "Authentication failed");
-                    //MOB - should this stop all requests?
+                    //TODO - should this stop all requests?
                     break;
                 }
 #endif
+                if (++stream->retries >= app->maxRetries) {
+                    httpError(conn, HTTP_CODE_NO_RESPONSE, "Too many retries");
+                    break;
+                }
+                stream->follow = 0;
+                mprDebug("http", 4, "retry %d of %d for: %s %s", stream->retries, app->maxRetries, app->method, app->url);
             }
-            mprDebug("http", 4, "retry %d of %d for: %s %s", stream->retries, app->retries, app->method, app->url);
+            stream->count--;
             httpSetState(conn, HTTP_STATE_COMPLETE);
 
         } else {
+            stream->retries = 0;
+            stream->follow = 0;
             parseStatus(conn);
         }
         break;
@@ -1087,7 +1099,6 @@ static void checkRequestState(HttpConn *conn)
 
     case HTTP_STATE_COMPLETE:
         processResponse(conn);
-        stream->retries = 0;
         mprCreateEvent(conn->dispatcher, "startRequest", 0, startRequest, conn, 0);
     }
 }
@@ -1098,7 +1109,7 @@ static void parseStatus(HttpConn *conn)
     HttpRx      *rx;
 
     if (conn->net->error) {
-        //  MOB - need to stop all streams on this network
+        //  TODO - need to stop all streams on this network
         httpNetError(conn->net, "Connection I/O error");
 
     } else if (conn->error) {
@@ -1231,7 +1242,7 @@ static int processResponse(HttpConn *conn)
 }
 
 
-//  MOB - but this is blocking?
+//  TODO - but this is blocking?
 static void readBody(HttpConn *conn)
 {
     Stream      *stream;
@@ -1264,7 +1275,7 @@ static int setContentLength(HttpConn *conn)
 
     len = 0;
     if (app->upload) {
-        //  MOB?
+        //  TODO?
         httpEnableUpload(conn);
         return 0;
     }
@@ -1291,7 +1302,7 @@ static int setContentLength(HttpConn *conn)
 }
 
 
-//  MOB - how to make this non-blocking?
+//  TODO - how to make this non-blocking?
 static ssize writeBody(HttpConn *conn)
 {
     MprFile     *file;

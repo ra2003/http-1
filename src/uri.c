@@ -249,7 +249,7 @@ PUBLIC HttpUri *httpCreateUriFromParts(cchar *scheme, cchar *host, int port, cch
 PUBLIC HttpUri *httpCloneUri(HttpUri *base, int flags)
 {
     HttpUri     *up;
-    char        *path, *cp, *tok;
+    cchar       *path, *cp, *tok;
 
     if ((up = mprAllocObj(HttpUri, manageUri)) == 0) {
         up->valid = 0;
@@ -432,7 +432,8 @@ PUBLIC char *httpFormatUri(cchar *scheme, cchar *host, int port, cchar *path, cc
 PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
 {
     HttpUri     *uri;
-    char        *basePath, *bp, *cp, *tp, *startDiff;
+    cchar       *bp, *startDiff, *tp;
+    char        *basePath, *cp, *path;
     int         i, baseSegments, commonSegments;
 
     if (base == 0) {
@@ -491,7 +492,7 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
     uri->scheme = 0;
     uri->port = 0;
 
-    uri->path = cp = mprAlloc(baseSegments * 3 + (int) slen(target->path) + 2);
+    uri->path = path = cp = mprAlloc(baseSegments * 3 + (int) slen(target->path) + 2);
     for (i = commonSegments; i < baseSegments; i++) {
         *cp++ = '.';
         *cp++ = '.';
@@ -505,7 +506,7 @@ PUBLIC HttpUri *httpGetRelativeUri(HttpUri *base, HttpUri *target, int clone)
          */
         cp[-1] = '\0';
     } else {
-        strcpy(uri->path, ".");
+        strcpy(path, ".");
     }
     return uri;
 }
@@ -921,10 +922,10 @@ static int getDefaultPort(cchar *scheme)
 
 static void trimPathToDirname(HttpUri *uri)
 {
-    char        *path, *cp;
-    int         len;
+    char    *path, *cp;
+    int     len;
 
-    path = uri->path;
+    path = (char*) uri->path;
     len = (int) slen(path);
     if (path[len - 1] == '/') {
         if (len > 1) {

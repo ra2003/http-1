@@ -58,7 +58,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     mprAddKey(svars, "SERVER_ADDR", sock->acceptIp);
     mprAddKey(svars, "SERVER_NAME", host->name);
     mprAddKeyFmt(svars, "SERVER_PORT", "%d", sock->acceptPort);
-    mprAddKey(svars, "SERVER_PROTOCOL", httpGetProtocol(conn->net));
+    mprAddKey(svars, "SERVER_PROTOCOL", sclone(httpGetProtocol(conn->net)));
     mprAddKey(svars, "SERVER_SOFTWARE", conn->http->software);
 
     /*
@@ -128,9 +128,9 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
                 Append to existing keywords
              */
             prior = mprReadJsonObj(params, keyword);
-#if ME_EJS_PRODUCT || ME_EJSCRIPT_PRODUCT
+#if (ME_EJS_PRODUCT || ME_EJSCRIPT_PRODUCT) && (DEPRECATED || 1)
             /*
-                Just for ejscript, we allow embedded ".[]" in the keys
+                We allow embedded ".[]" in the keys
              */
             if (prior && prior->type == MPR_JSON_VALUE) {
                 if (*value) {
@@ -177,16 +177,17 @@ PUBLIC int httpAddBodyParams(HttpConn *conn)
     rx = conn->rx;
     q = conn->readq;
 
-    //  MOB - should really have a config for this
-    if (rx->eof && (rx->flags & HTTP_POST) && q->first && q->first->content && !(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
-        content = q->first->content;
+    if (rx->eof && (rx->form || rx->upload || rx->json) && !(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
         httpJoinPackets(q, -1);
-        if (rx->form || rx->upload) {
+        if (q->first && q->first->content) {
+            content = q->first->content;
             mprAddNullToBuf(content);
-            addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
-        } else if (sstarts(rx->mimeType, "application/json")) {
-            if (mprParseJsonInto(httpGetBodyInput(conn), httpGetParams(conn)) == 0) {
-                return MPR_ERR_BAD_FORMAT;
+            if (rx->json) {
+                if (mprParseJsonInto(httpGetBodyInput(conn), httpGetParams(conn)) == 0) {
+                    return MPR_ERR_BAD_FORMAT;
+                }
+            } else {
+                addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
             }
         }
         rx->flags |= HTTP_ADDED_BODY_PARAMS;
@@ -252,7 +253,7 @@ static int sortParam(MprJson **j1, MprJson **j2)
     Return the request parameters as a string.
     This will return the exact same string regardless of the order of form parameters.
  */
-PUBLIC char *httpGetParamsString(HttpConn *conn)
+PUBLIC cchar *httpGetParamsString(HttpConn *conn)
 {
     HttpRx      *rx;
     MprJson     *jp, *params;

@@ -3,6 +3,10 @@
  */
 {
     http: {
+        directories: {
+            /* Relative to documents or absolute */
+            upload: 'uploaded',
+        },
         documents: 'web',
         server: {
             listen: [
@@ -79,16 +83,7 @@
             }, {
                 pattern: '^/upload/',
                 prefix: '/upload',
-                pipeline: {
-                    filters: [{
-                        name: 'uploadFilter',
-                        extensions: [ '*' ],
-                    }],
-                },
-                directories: {
-                    /* Relative to documents or absolute */
-                    upload: 'uploaded',
-                },
+                deleteUploads: false,
             },
         ],
     },

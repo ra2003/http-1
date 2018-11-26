@@ -158,7 +158,7 @@
 
             /*
                 Type of authentication protocol to use
-                Set to: basic, digest, form or none
+                Set to: app, basic, digest, form or none
              */
             type: "basic",
 
@@ -171,7 +171,6 @@
                     roles:    ["user", "administrator", "purchase"],
                 },
             },
-
         },
 
         /*
@@ -378,14 +377,16 @@
             clients:            100,            /* Maximum number of simultaneous clients */
             connections:        50,             /* Maximum number of simultaneous connections */
             files:              "unlimited",    /* Maximum number of open files */
-            keepAlive:          200,            /* Number of request to permit on a connection */
+            frame:              "16K",          /* Maximum HTTP/2 input frame size */
+            keepAlive:          200,            /* Maximum HTTP/1 serial requests on a connection */
             processes:          "unlimited",    /* Maximum number of processes to run */
             rxBody:             "100K",         /* Maximum receive body data */
             rxForm:             "32K",          /* Maximum receive form body data */
             rxHeader:           "32K",          /* Maximum receive HTTP headers size */
             memory:             "200MB",        /* Maximum memory heap usage */
-            requests:           20,             /* Maximum simultaneous requests */
-            sessions:           100,            /* Maximum client sessions */
+            requests:           20,             /* Maximum simultaneous requests per client */
+            sessions:           100,            /* Maximum total client sessions */
+            streams:            20,             /* Maximum simultaneous HTTP/2 streams per connection */
             txBody:             "2GB",          /* Maximum transmit body size */
             upload:             "2GB",          /* Maximum file upload size */
             uri:                "8K",           /* Maximum URL size */
@@ -393,7 +394,43 @@
             webSocketsMessage:  "50K",          /* Maximum WebSockets message size */
             webSocketsPacket:   "50K",          /* Maximum WebSockets packet size */
             webSocketsFrame:    "4K",           /* Maximum Websockets frame size */
+            window:             65535,          /* HTTP/2 window size */
             workers:            4,              /* Maximum number of worker threads */
+        },
+
+        /*
+            Log file configuration
+         */
+        log: {
+            /*
+                Log filename or destination
+             */
+            location: "stdout",
+
+            /*
+                Verbosity level (0-5)
+             */
+            level: "2",
+
+            /*
+                Keep up to 5 log files
+             */
+            backup: 5,
+
+            /*
+                Start a new log file on restart
+             */
+            anew: true,
+
+            /*
+                Maximum log file size before starting a new log file
+             */
+            size: "10MB",
+
+            /*
+                Add a timestamp to the log file
+             */
+            timestamp: "1hr",
         },
 
         /*
@@ -432,7 +469,7 @@
                 Ordered list of filters with extensions for which the filter will apply
              */
             filters: [{
-                name: "uploadFilter",
+                name: "myFilter",
                 extensions: [ "txt", "*" ],
             }],
 
@@ -564,40 +601,6 @@
                 "https://127.0.0.1:4443",
             ],
 
-            /*
-                Log file configuration
-             */
-            log: {
-                /*
-                    Log filename or destination
-                 */
-                location: "stdout",
-
-                /*
-                    Verbosity level (0-5)
-                 */
-                level: "2",
-
-                /*
-                    Keep up to 5 log files
-                 */
-                backup: 5,
-
-                /*
-                    Start a new log file on restart
-                 */
-                anew: true,
-
-                /*
-                    Maximum log file size before starting a new log file
-                 */
-                size: "10MB",
-
-                /*
-                    Add a timestamp to the log file
-                 */
-                timestamp: "1hr",
-            },
 
             /*
                 Load the named modules
@@ -878,7 +881,8 @@
         },
 
         /*
-            Set to include a XSRF token to minimize CSRF vulnerabilies
+            Set to include a XSRF token to minimize CSRF vulnerabilies.
+            In the future, if all browsers support the SameSite header, then this may not be required.
          */
         xsrf: true,
     },

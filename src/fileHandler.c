@@ -16,11 +16,42 @@
 
 /***************************** Forward Declarations ***************************/
 
+static void closeFileHandler(HttpQueue *q);
 static void handleDeleteRequest(HttpQueue *q);
 static void handlePutRequest(HttpQueue *q);
+static void incomingFile(HttpQueue *q, HttpPacket *packet);
+static int openFileHandler(HttpQueue *q);
+static void outgoingFileService(HttpQueue *q);
 static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize size);
+static void readyFileHandler(HttpQueue *q);
+static int rewriteFileHandler(HttpConn *conn);
+static void startFileHandler(HttpQueue *q);
 
 /*********************************** Code *************************************/
+/*
+    Loadable module initialization
+ */
+PUBLIC int httpOpenFileHandler()
+{
+    HttpStage     *handler;
+
+    /*
+        This handler serves requests without using thread workers.
+     */
+    if ((handler = httpCreateHandler("fileHandler", NULL)) == 0) {
+        return MPR_ERR_CANT_CREATE;
+    }
+    handler->rewrite = rewriteFileHandler;
+    handler->open = openFileHandler;
+    handler->close = closeFileHandler;
+    handler->start = startFileHandler;
+    handler->ready = readyFileHandler;
+    handler->outgoingService = outgoingFileService;
+    handler->incoming = incomingFile;
+    HTTP->fileHandler = handler;
+    return 0;
+}
+
 /*
     Rewrite the request for directories, indexes and compressed content.
  */
@@ -54,6 +85,9 @@ static int rewriteFileHandler(HttpConn *conn)
 }
 
 
+/*
+    This is called after the headers are parsed
+ */
 static int openFileHandler(HttpQueue *q)
 {
     HttpRx      *rx;
@@ -140,6 +174,9 @@ static int openFileHandler(HttpQueue *q)
 }
 
 
+/*
+    Called when the request is complete
+ */
 static void closeFileHandler(HttpQueue *q)
 {
     HttpTx  *tx;
@@ -152,6 +189,9 @@ static void closeFileHandler(HttpQueue *q)
 }
 
 
+/*
+    Called when all the body content has been received, but may not have yet been processed by our incoming()
+ */
 static void startFileHandler(HttpQueue *q)
 {
     HttpConn    *conn;
@@ -161,18 +201,33 @@ static void startFileHandler(HttpQueue *q)
     conn = q->conn;
     tx = conn->tx;
 
-    if ((conn->rx->flags & (HTTP_GET | HTTP_POST)) && !(tx->flags & HTTP_TX_NO_BODY)) {
-        if (tx->entityLength >= 0 && !conn->error) {
+    if (conn->rx->flags & HTTP_HEAD) {
+        tx->length = tx->entityLength;
+        httpFinalizeOutput(conn);
+
+    } else if (conn->rx->flags & HTTP_PUT) {
+        /*
+            Delay finalizing output until all input data is received incase the socket is disconnected
+            httpFinalizeOutput(conn);
+         */
+
+    } else if (conn->rx->flags & (HTTP_GET | HTTP_POST)) {
+        if ((!(tx->flags & HTTP_TX_NO_BODY)) && (tx->entityLength >= 0 && !conn->error)) {
             /*
                 Create a single data packet based on the actual entity (file) length
              */
             packet = httpCreateEntityPacket(0, tx->entityLength, readFileData);
-            //MOB - what is this about?
+
+            /*
+                Set the content length if not chunking and not using ranges
+             */
             if (!tx->outputRanges && tx->chunkSize < 0) {
                 tx->length = tx->entityLength;
             }
             httpPutPacket(q, packet);
         }
+    } else {
+        httpFinalizeOutput(conn);
     }
 }
 
@@ -232,11 +287,10 @@ static void outgoingFileService(HttpQueue *q)
     HttpConn    *conn;
     HttpPacket  *data, *packet;
     ssize       size, nbytes;
-    bool        finalize;
 
     conn = q->conn;
-    finalize = 0;
 
+#if 0
     /*
         There will be only one entity data packet. PrepPacket will read data into the packet and then
         put the remaining entity packet on the queue where it will be examined again until the down stream queue is full.
@@ -245,33 +299,81 @@ static void outgoingFileService(HttpQueue *q)
         if (packet->fill) {
             size = min(packet->esize, q->packetSize);
             size = min(size, q->nextQ->packetSize);
-            packet->epos += size;
-            packet->esize -= size;
-            data = httpCreateDataPacket(size);
-            if ((nbytes = readFileData(q, data, q->ioPos, size)) < 0) {
-                httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot read document");
-                return;
+            if (size > 0) {
+                data = httpCreateDataPacket(size);
+                if ((nbytes = readFileData(q, data, q->ioPos, size)) < 0) {
+                    httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot read document");
+                    return;
+                }
+                q->ioPos += nbytes;
+                packet->epos += nbytes;
+                packet->esize -= nbytes;
+                if (packet->esize > 0) {
+                    httpPutBackPacket(q, packet);
+                }
+                /*
+                    This may split the packet and put back the tail portion ahead of the just putback entity packet.
+                 */
+                if (!httpWillNextQueueAcceptPacket(q, data)) {
+                    httpPutBackPacket(q, data);
+                    if (packet->esize == 0) {
+                        httpFinalizeOutput(conn);
+                    }
+                    break;
+                }
+                httpPutPacketToNext(q, data);
             }
-            q->ioPos += nbytes;
-            if (packet->esize > 0) {
-                /* Put back the entity packet for another go */
-                httpPutBackPacket(q, packet);
-            } else {
-                finalize = 1;
+            if (packet->esize == 0) {
+                httpFinalizeOutput(conn);
             }
         } else {
-            data = packet;
-        }
-        if (!httpWillNextQueueAcceptPacket(q, data)) {
-            httpPutBackPacket(q, data);
-            return;
-        }
-        httpPutPacketToNext(q, data);
-        if (finalize) {
-            httpFinalize(conn);
-            finalize = 0;
+            /* Don't flow control as the packet is already consuming memory */
+            httpPutPacketToNext(q, packet);
         }
     }
+#else
+    /*
+        The queue will contain an entity packet which holds the position from which to read in the file.
+        If the downstream queue is full, the data packet will be put onto the queue ahead of the entity packet.
+        When EOF, and END packet will be added to the queue via httpFinalizeOutput which will then be sent.
+     */
+    for (packet = q->first; packet; packet = q->first) {
+        if (packet->fill) {
+            size = min(packet->esize, q->packetSize);
+            size = min(size, q->nextQ->packetSize);
+            if (size > 0) {
+                data = httpCreateDataPacket(size);
+                if ((nbytes = readFileData(q, data, q->ioPos, size)) < 0) {
+                    httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot read document");
+                    return;
+                }
+                q->ioPos += nbytes;
+                packet->epos += nbytes;
+                packet->esize -= nbytes;
+                if (packet->esize == 0) {
+                    httpGetPacket(q);
+                }
+                /*
+                    This may split the packet and put back the tail portion ahead of the just putback entity packet.
+                 */
+                if (!httpWillNextQueueAcceptPacket(q, data)) {
+                    httpPutBackPacket(q, data);
+                    return;
+                }
+                httpPutPacketToNext(q, data);
+            } else {
+                httpGetPacket(q);
+            }
+        } else {
+            /* Don't flow control as the packet is already consuming memory */
+            packet = httpGetPacket(q);
+            httpPutPacketToNext(q, packet);
+        }
+        if (!conn->tx->finalizedOutput && !q->first) {
+            httpFinalizeOutput(conn);
+        }
+    }
+#endif
 }
 
 
@@ -293,11 +395,7 @@ static void incomingFile(HttpQueue *q, HttpPacket *packet)
     rx = conn->rx;
     file = (MprFile*) q->queueData;
 
-    if (file == 0) {
-        /*  Not a PUT so just ignore the incoming data.  */
-        return;
-    }
-    if (httpGetPacketLength(packet) == 0) {
+    if (packet->flags & HTTP_PACKET_END) {
         /* End of input */
         if (file) {
             mprCloseFile(file);
@@ -308,19 +406,23 @@ static void incomingFile(HttpQueue *q, HttpPacket *packet)
             mprGetPathInfo(tx->filename, &tx->fileInfo);
             tx->etag = itos(tx->fileInfo.inode + tx->fileInfo.size + tx->fileInfo.mtime);
         }
-        httpFinalize(conn);
-        return;
-    }
-    buf = packet->content;
-    len = mprGetBufLength(buf);
-    assert(len > 0);
+        httpFinalizeInput(conn);
+        if (rx->flags & HTTP_PUT) {
+            httpFinalizeOutput(conn);
+        }
 
-    range = rx->inputRange;
-    if (range && mprSeekFile(file, SEEK_SET, range->start) != range->start) {
-        httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot seek to range start to %lld", range->start);
+    } else if (file) {
+        buf = packet->content;
+        len = mprGetBufLength(buf);
+        if (len > 0) {
+            range = rx->inputRange;
+            if (range && mprSeekFile(file, SEEK_SET, range->start) != range->start) {
+                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot seek to range start to %lld", range->start);
 
-    } else if (mprWriteFile(file, mprGetBufStart(buf), len) != len) {
-        httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot PUT to %s", tx->filename);
+            } else if (mprWriteFile(file, mprGetBufStart(buf), len) != len) {
+                httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot PUT to %s", tx->filename);
+            }
+        }
     }
 }
 
@@ -364,6 +466,9 @@ static void handlePutRequest(HttpQueue *q)
     if (!tx->fileInfo.isReg) {
         httpSetHeaderString(conn, "Location", conn->rx->uri);
     }
+    /*
+        These are both success returns. 204 means already existed.
+     */
     httpSetStatus(conn, tx->fileInfo.isReg ? HTTP_CODE_NO_CONTENT : HTTP_CODE_CREATED);
     q->pair->queueData = (void*) file;
 }
@@ -462,31 +567,6 @@ PUBLIC int httpHandleDirectory(HttpConn *conn)
     }
 #endif
     return HTTP_ROUTE_OK;
-}
-
-
-/*
-    Loadable module initialization
- */
-PUBLIC int httpOpenFileHandler()
-{
-    HttpStage     *handler;
-
-    /*
-        This handler serves requests without using thread workers.
-     */
-    if ((handler = httpCreateHandler("fileHandler", NULL)) == 0) {
-        return MPR_ERR_CANT_CREATE;
-    }
-    handler->rewrite = rewriteFileHandler;
-    handler->open = openFileHandler;
-    handler->close = closeFileHandler;
-    handler->start = startFileHandler;
-    handler->ready = readyFileHandler;
-    handler->outgoingService = outgoingFileService;
-    handler->incoming = incomingFile;
-    HTTP->fileHandler = handler;
-    return 0;
 }
 
 

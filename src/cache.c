@@ -162,11 +162,9 @@ static void outgoingCacheFilterService(HttpQueue *q)
     MprKey      *kp;
     cchar       *cachedData;
     ssize       size;
-    int         foundDataPacket;
 
     conn = q->conn;
     tx = conn->tx;
-    foundDataPacket = 0;
     cachedData = 0;
 
     if (tx->status < 200 || tx->status > 299) {
@@ -189,30 +187,27 @@ static void outgoingCacheFilterService(HttpQueue *q)
             httpPutBackPacket(q, packet);
             return;
         }
-        if (packet->flags & HTTP_PACKET_HEADER) {
-            if (!cachedData && tx->cacheBuffer) {
-                /*
-                    Add defined headers to the start of the cache buffer. Separate with a double newline.
-                 */
-                mprPutToBuf(tx->cacheBuffer, "X-Status: %d\n", tx->status);
-                for (kp = 0; (kp = mprGetNextKey(tx->headers, kp)) != 0; ) {
-                    mprPutToBuf(tx->cacheBuffer, "%s: %s\n", kp->key, (char*) kp->data);
-                }
-                mprPutCharToBuf(tx->cacheBuffer, '\n');
-            }
-
-        } else if (packet->flags & HTTP_PACKET_DATA) {
+        if (packet->flags & HTTP_PACKET_DATA) {
             if (cachedData) {
                 /*
-                    Using X-SendCache. Replace the data with the cached response.
+                    Using X-SendCache. Discard the packet.
                  */
-                mprFlushBuf(packet->content);
-                mprPutBlockToBuf(packet->content, cachedData, (ssize) tx->length);
-
+                continue;
+                
             } else if (tx->cacheBuffer) {
                 /*
                     Save the response packet to the cache buffer. Will write below in saveCachedResponse.
                  */
+                if (mprGetBufLength(tx->cacheBuffer) == 0) {
+                    /*
+                        Add defined headers to the start of the cache buffer. Separate with a double newline.
+                     */
+                    mprPutToBuf(tx->cacheBuffer, "X-Status: %d\n", tx->status);
+                    for (kp = 0; (kp = mprGetNextKey(tx->headers, kp)) != 0; ) {
+                        mprPutToBuf(tx->cacheBuffer, "%s: %s\n", kp->key, (char*) kp->data);
+                    }
+                    mprPutCharToBuf(tx->cacheBuffer, '\n');
+                }
                 size = mprGetBufLength(packet->content);
                 if ((tx->cacheBufferLength + size) < conn->limits->cacheItemSize) {
                     mprPutBlockToBuf(tx->cacheBuffer, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
@@ -223,10 +218,9 @@ static void outgoingCacheFilterService(HttpQueue *q)
                         tx->cacheBufferLength + size, conn->limits->cacheItemSize);
                 }
             }
-            foundDataPacket = 1;
 
         } else if (packet->flags & HTTP_PACKET_END) {
-            if (cachedData && !foundDataPacket) {
+            if (cachedData) {
                 /*
                     Using X-SendCache but there was no data packet to replace. So do the write here.
                  */

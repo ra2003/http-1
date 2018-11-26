@@ -278,7 +278,7 @@ static void parseAttach(HttpRoute *route, cchar *key, MprJson *prop)
 {
     HttpEndpoint    *endpoint;
     MprJson         *child;
-    char            *ip;
+    cchar           *ip;
     int             ji, port;
 
     if (prop->type & MPR_JSON_VALUE) {
@@ -307,11 +307,15 @@ static void parseAttach(HttpRoute *route, cchar *key, MprJson *prop)
     }
 }
 
+
 static void parseAuth(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (prop->type & MPR_JSON_STRING) {
         /* Permits auth: "app" to set the store */
-        parseAuthStore(route, key, prop);
+        if (smatch(prop->value, "none")) {
+            httpSetAuthStore(route->auth, NULL);
+            httpSetAuthType(route->auth, NULL, 0);
+        }
     } else if (prop->type == MPR_JSON_OBJ) {
         httpParseAll(route, key, prop);
     }
@@ -456,7 +460,7 @@ static void parseAuthType(HttpRoute *route, cchar *key, MprJson *prop)
     if (httpSetAuthType(auth, type, 0) < 0) {
         httpParseError(route, "The %s AuthType is not available on this platform", type);
     }
-    if (type && !smatch(type, "none")) {
+    if (type && !smatch(type, "none") && !smatch(type, "app")) {
         httpAddRouteCondition(route, "auth", 0, 0);
     }
     if (smatch(type, "basic") || smatch(type, "digest")) {
@@ -1329,7 +1333,7 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
     HttpEndpoint    *endpoint, *dual;
     HttpHost        *host;
     MprJson         *child;
-    char            *ip;
+    cchar           *ip;
     int             ji, port, secure;
 
     if (route->flags & (HTTP_ROUTE_HOSTED | HTTP_ROUTE_OWN_LISTEN)) {
@@ -1387,7 +1391,7 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
         timestamp: '1hr',
     }
  */
-static void parseServerLog(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseLog(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprTicks    timestamp;
     cchar       *location;
@@ -1663,7 +1667,6 @@ static void parseStealth(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-#if STREAMXX
 static void parseStream(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -1677,7 +1680,6 @@ static void parseStream(HttpRoute *route, cchar *key, MprJson *prop)
         httpSetStreaming(route->host, mime, uri, smatch(stream, "false") || smatch(stream, ""));
     }
 }
-#endif
 
 
 /*
@@ -1943,6 +1945,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.limits.upload", parseLimitsUpload);
     httpAddConfig("http.limits.uri", parseLimitsUri);
     httpAddConfig("http.limits.workers", parseLimitsWorkers);
+    httpAddConfig("http.log", parseLog);
     httpAddConfig("http.methods", parseMethods);
     httpAddConfig("http.mode", parseMode);
     httpAddConfig("http.name", parseName);
@@ -1962,7 +1965,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.server.account", parseServerAccount);
     httpAddConfig("http.server.defenses", parseServerDefenses);
     httpAddConfig("http.server.listen", parseServerListen);
-    httpAddConfig("http.server.log", parseServerLog);
     httpAddConfig("http.server.modules", parseServerModules);
     httpAddConfig("http.server.monitors", parseServerMonitors);
     httpAddConfig("http.showErrors", parseShowErrors);
@@ -1981,9 +1983,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl.verify.client", parseSslVerifyClient);
     httpAddConfig("http.ssl.verify.issuer", parseSslVerifyIssuer);
     httpAddConfig("http.stealth", parseStealth);
-#if STREAMXX
     httpAddConfig("http.stream", parseStream);
-#endif
     httpAddConfig("http.target", parseTarget);
     httpAddConfig("http.timeouts", parseTimeouts);
     httpAddConfig("http.timeouts.exit", parseTimeoutsExit);
@@ -2005,6 +2005,10 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.limits.webSocketsMessage", parseLimitsWebSocketsMessage);
     httpAddConfig("http.limits.webSocketsPacket", parseLimitsWebSocketsPacket);
     httpAddConfig("http.limits.webSocketsFrame", parseLimitsWebSocketsFrame);
+#endif
+
+#if DEPRECATE || 1
+    httpAddConfig("http.server.log", parseLog);
 #endif
     return 0;
 }

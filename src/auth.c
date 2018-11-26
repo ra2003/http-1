@@ -31,15 +31,15 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password);
 PUBLIC void httpInitAuth()
 {
     /*
-        Auth protocol types: basic, digest, form
-        These are typically not used for web frameworks like ESP or PHP
+        Auth protocol types: basic, digest, form, app
      */
     httpCreateAuthType("basic", httpBasicLogin, httpBasicParse, httpBasicSetHeaders);
     httpCreateAuthType("digest", httpDigestLogin, httpDigestParse, httpDigestSetHeaders);
     httpCreateAuthType("form", formLogin, formParse, NULL);
+    httpCreateAuthType("app", NULL, NULL, NULL);
 
     /*
-        Stores: app, config, system
+        Stores: app (custom in user app), config (config file directives), system (PAM / native O/S)
      */
     httpCreateAuthStore("app", NULL);
     httpCreateAuthStore("config", configVerifyUser);
@@ -225,7 +225,6 @@ PUBLIC HttpAuthStore *httpCreateAuthStore(cchar *name, HttpVerifyUser verifyUser
 }
 
 
-
 PUBLIC int httpCreateAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth parseAuth, HttpSetAuth setAuth)
 {
     HttpAuthType    *type;
@@ -237,7 +236,9 @@ PUBLIC int httpCreateAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth 
     type->askLogin = askLogin;
     type->parseAuth = parseAuth;
     type->setAuth = setAuth;
-
+    if (!smatch(name, "app")) {
+        type->flags = HTTP_AUTH_TYPE_CONDITION;
+    }
     if (mprAddKey(HTTP->authTypes, name, type) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
@@ -246,30 +247,30 @@ PUBLIC int httpCreateAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth 
 
 
 /*
-    Get the username and password credentials. If using an in-protocol auth scheme like basic|digest, the
-    rx->authDetails will contain the credentials and the parseAuth callback will be invoked to parse.
-    Otherwise, it is expected that "username" and "password" fields are present in the request parameters.
-
-    This is called by authCondition which thereafter calls httpLogin
+    Get the username and password credentials. Called by authCondition which thereafter calls httpLogin.
+    If using an in-protocol auth scheme like basic|digest, the rx->authDetails will contain the credentials
+    and the parseAuth callback will be invoked to parse. Otherwise, it is expected that "username" and
+    "password" fields are present in the request parameters.
  */
 PUBLIC bool httpGetCredentials(HttpConn *conn, cchar **username, cchar **password)
 {
     HttpAuth    *auth;
+    HttpRx      *rx;
 
     assert(username);
     assert(password);
+
+    rx = conn->rx;
+
     *username = *password = NULL;
 
-    auth = conn->rx->route->auth;
-    if (!auth || !auth->type) {
+    auth = rx->route->auth;
+    if (!auth || !auth->type || !(auth->type->flags & HTTP_AUTH_TYPE_CONDITION)) {
         return 0;
     }
     if (auth->type) {
-        if (conn->authType && !smatch(conn->authType, auth->type->name)) {
-            if (!(smatch(auth->type->name, "form") && conn->rx->flags & HTTP_POST)) {
-                /* If a posted form authentication, ignore any basic|digest details in request */
-                return 0;
-            }
+        if (rx->authType && !smatch(rx->authType, auth->type->name)) {
+            return 0;
         }
         if (auth->type->parseAuth && (auth->type->parseAuth)(conn, username, password) < 0) {
             return 0;
@@ -557,6 +558,12 @@ PUBLIC void httpSetAuthStoreSessions(HttpAuthStore *store, bool noSession)
 }
 
 
+PUBLIC void httpSetAuthStoreVerify(HttpAuthStore *store, HttpVerifyUser verifyUser)
+{
+    store->verifyUser = verifyUser;
+}
+
+
 PUBLIC void httpSetAuthSession(HttpAuth *auth, bool enable)
 {
     auth->flags &= ~HTTP_AUTH_NO_SESSION;
@@ -568,6 +575,10 @@ PUBLIC void httpSetAuthSession(HttpAuth *auth, bool enable)
 
 PUBLIC int httpSetAuthStore(HttpAuth *auth, cchar *store)
 {
+    if (store == 0 || *store == '\0' || smatch(store, "none")) {
+        auth->store = 0;
+        return 0;
+    }
     if ((auth->store = mprLookupKey(HTTP->authStores, store)) == 0) {
         return MPR_ERR_CANT_FIND;
     }
@@ -628,7 +639,7 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     HttpRx      *rx;
     HttpAuth    *auth;
     bool        success;
-    char        *requiredPassword;
+    cchar       *requiredPassword;
 
     rx = conn->rx;
     auth = rx->route->auth;

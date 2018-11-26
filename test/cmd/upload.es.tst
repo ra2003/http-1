@@ -4,7 +4,7 @@
 
 require support
 
-let uploadDir = Path('web/tmp')
+let uploadDir = Path('uploaded')
 
 cleanDir(uploadDir)
 

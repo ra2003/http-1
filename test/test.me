@@ -5,7 +5,12 @@
 Me.load({
     targets: {
         test: {
-            action: `run('testme --depth ' + me.settings.depth)`,
+            action: `
+                me.env.TE_PROTOCOL = 'http1'
+                run('testme --depth ' + me.settings.depth)
+                me.env.TE_PROTOCOL = 'http2'
+                run('testme --depth ' + me.settings.depth)
+            `,
             platforms: [ 'local' ],
             depends: [ 'test-prep' ],
         },

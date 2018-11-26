@@ -9,4 +9,3 @@ http("-i 300 /index.html")
 
 //  Multiple requests to test keep-alive
 http("--chunk 100 -i 300 /index.html")
-

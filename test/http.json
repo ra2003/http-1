@@ -8,11 +8,16 @@
             listen: [
                 'http://127.0.0.1:4100',
                 'https://127.0.0.1:4443',
-            ],
+            ]
         },
         ssl: {
             certificate: '../src/certs/samples/test.crt',
             key: '../src/certs/samples/test.key',
         },
+        _trace: {
+            location: 'stdout',
+            level: '2',
+            formatter: 'simple',
+        }
     },
 }

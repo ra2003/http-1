@@ -13,7 +13,7 @@
 
 static HttpConn *findConn(HttpQueue *q);
 static char *getToken(HttpPacket *packet, cchar *delim);
-static bool getHeaders(HttpQueue *q, HttpPacket *packet);
+static bool gotHeaders(HttpQueue *q, HttpPacket *packet);
 static void incomingHttp1(HttpQueue *q, HttpPacket *packet);
 static bool monitorActiveRequests(HttpConn *conn);
 static void outgoingHttp1(HttpQueue *q, HttpPacket *packet);
@@ -22,6 +22,7 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet);
 static HttpPacket *parseHeaders(HttpQueue *q, HttpPacket *packet);
 static void parseRequestLine(HttpQueue *q, HttpPacket *packet);
 static void parseResponseLine(HttpQueue *q, HttpPacket *packet);
+static void tracePacket(HttpQueue *q, HttpPacket *packet);
 
 /*********************************** Code *************************************/
 /*
@@ -57,19 +58,22 @@ static void incomingHttp1(HttpQueue *q, HttpPacket *packet)
     httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
 
     for (packet = httpGetPacket(q); packet && !conn->error; packet = httpGetPacket(q)) {
+        if (httpTracing(q->net)) {
+            httpTracePacket(q->net->trace, "http1.rx", "packet", 0, packet, NULL);
+        }
         if (conn->state < HTTP_STATE_PARSED) {
-            packet = parseHeaders(q, packet);
-            httpProcess(conn->inputq);
-            if (packet && conn->state < HTTP_STATE_PARSED) {
-                httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
-                break;
+            if ((packet = parseHeaders(q, packet)) != 0) {
+                if (conn->state < HTTP_STATE_PARSED) {
+                    httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
+                    break;
+                }
             }
+            httpProcess(conn->inputq);
         }
         if (packet) {
             httpPutPacket(conn->inputq, packet);
-            /* This will pump output if required */
-            httpProcess(conn->inputq);
         }
+        httpProcess(conn->inputq);
     }
 }
 
@@ -85,7 +89,29 @@ static void outgoingHttp1Service(HttpQueue *q)
     HttpPacket  *packet;
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
+        tracePacket(q, packet);
         httpPutPacket(q->net->socketq, packet);
+    }
+}
+
+
+static void tracePacket(HttpQueue *q, HttpPacket *packet)
+{
+    HttpNet     *net;
+    cchar       *type;
+
+
+    net = q->net;
+    type = (packet->type & HTTP_PACKET_HEADER) ? "headers" : "data";
+    if (httpTracing(net) && !net->skipTrace) {
+        if (net->bytesWritten >= net->trace->maxContent) {
+            httpTrace(net->trace, "http1.tx", "packet", "msg: 'Abbreviating packet trace'");
+            net->skipTrace = 1;
+        } else {
+            httpTracePacket(net->trace, "http1.tx", "packet", HTTP_TRACE_HEX, packet, "type=%s, length=%zd,", type, httpGetPacketLength(packet));
+        }
+    } else {
+        httpTrace(net->trace, "http1.tx", "packet", "type=%s, length=%zd,", type, httpGetPacketLength(packet));
     }
 }
 
@@ -104,15 +130,20 @@ static HttpPacket *parseHeaders(HttpQueue *q, HttpPacket *packet)
     rx = conn->rx;
     limits = conn->limits;
 
-    if (!monitorActiveRequests(conn) || !getHeaders(q, packet)) {
+    if (!monitorActiveRequests(conn)) {
         return 0;
     }
+    if (!gotHeaders(q, packet)) {
+        /* Don't yet have a complete header */
+        return packet;
+    }
+    rx->headerPacket = packet;
+
     if (httpServerConn(conn)) {
         parseRequestLine(q, packet);
     } else {
         parseResponseLine(q, packet);
     }
-    rx->headerPacket = packet;
     return parseFields(q, packet);
 }
 
@@ -124,7 +155,7 @@ static bool monitorActiveRequests(HttpConn *conn)
 
     limits = conn->limits;
 
-    //  MOB - find a better place for this?  Where does http2 do this
+    //  TODO - find a better place for this?  Where does http2 do this
     if (httpServerConn(conn) && !conn->activeRequest) {
         /*
             ErrorDocuments may come through here twice so test activeRequest to keep counters valid.
@@ -155,7 +186,8 @@ static cchar *eatBlankLines(HttpPacket *packet)
     return start;
 }
 
-static bool getHeaders(HttpQueue *q, HttpPacket *packet)
+
+static bool gotHeaders(HttpQueue *q, HttpPacket *packet)
 {
     HttpConn    *conn;
     HttpLimits  *limits;
@@ -166,23 +198,16 @@ static bool getHeaders(HttpQueue *q, HttpPacket *packet)
     limits = conn->limits;
     start = eatBlankLines(packet);
     len = httpGetPacketLength(packet);
-    if ((end = sncontains(start, "\r\n\r\n", len)) == 0 && (end = sncontains(start, "\n\n", len)) == 0) {
-        if (len >= limits->headerSize) {
-            httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
-                "Header too big. Length %zd vs limit %d", len, limits->headerSize);
-            return 0;
-        }
+
+    if ((end = sncontains(start, "\r\n\r\n", len)) != 0 || (end = sncontains(start, "\n\n", len)) != 0) {
+        len = end - start;
+    }
+    if (len >= limits->headerSize || len >= q->max) {
+        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
+            "Header too big. Length %zd vs limit %d", len, limits->headerSize);
         return 0;
     }
-    httpTracePacket(q->net->trace, "http1.rx", "headers", 0, packet, NULL);
-
-    /*
-        We have a complete header set
-     */
-    len = end - start;
-    if (len >= limits->headerSize) {
-        httpLimitError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE, "Header too big. Length %zd vs limit %d", len,
-            limits->headerSize);
+    if (!end) {
         return 0;
     }
     return 1;
@@ -295,14 +320,17 @@ static void parseResponseLine(HttpQueue *q, HttpPacket *packet)
 }
 
 
+/*
+    Parse the header fields and return a following body packet if present.
+    Return zero on errors.
+ */
 static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet)
 {
     HttpConn    *conn;
     HttpRx      *rx;
     HttpTx      *tx;
     HttpLimits  *limits;
-    char        *key, *value, *hvalue;
-    cchar       *oldValue;
+    char        *key, *value;
     int         count, keepAliveHeader;
 
     conn = q->conn;
@@ -329,13 +357,11 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet)
             httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header key value");
             return 0;
         }
-        if ((oldValue = mprLookupKey(rx->headers, key)) != 0) {
-            //  MOB - does this work for cookies?
-            hvalue = sfmt("%s, %s", oldValue, value);
+        if (scaselessmatch(key, "set-cookie")) {
+            mprAddDuplicateKey(rx->headers, key, value);
         } else {
-            hvalue = sclone(value);
+            mprAddKey(rx->headers, key, value);
         }
-        mprAddKey(rx->headers, key, hvalue);
     }
     /*
         Split the headers and retain the data for later. Step over "\r\n" after headers except if chunked
@@ -347,6 +373,9 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet)
         mprAdjustBufStart(packet->content, 2);
     }
     httpSetState(conn, HTTP_STATE_PARSED);
+    /*
+        If data remaining, it is body post data
+     */
     return httpGetPacketLength(packet) ? packet : 0;
 }
 
@@ -466,9 +495,6 @@ PUBLIC void httpCreateHeaders1(HttpQueue *q, HttpPacket *packet)
     }
     tx->headerSize = mprGetBufLength(buf);
     tx->flags |= HTTP_TX_HEADERS_CREATED;
-#if UNUSED
-    tx->authType = conn->authType;
-#endif
 }
 
 

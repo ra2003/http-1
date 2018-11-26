@@ -37,7 +37,7 @@ PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...)
             for (ITERATE_ITEMS(net->connections, conn, next)) {
                 httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "%s", msg);
             }
-            // MOB httpMonitorNetEvent(net, HTTP_COUNTER_BAD_REQUEST_ERRORS, 1);
+            // TODO httpMonitorNetEvent(net, HTTP_COUNTER_BAD_REQUEST_ERRORS, 1);
         }
     }
     va_end(args);

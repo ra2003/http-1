@@ -343,30 +343,30 @@ static void terminateHttp(int state, int how, int status)
  */
 static bool isIdle(bool traceRequests)
 {
-    HttpNet         *net;
     Http            *http;
+    HttpNet         *net;
+    HttpConn        *conn;
     MprTicks        now;
-    int             next;
+    static MprTicks lastTrace = 0;
+    int             next, nextConn;
 
     if ((http = MPR->httpService) != 0) {
         now = http->now;
         lock(http->networks);
         for (ITERATE_ITEMS(http->networks, net, next)) {
-#if MOB
-    HttpConn        *conn;
-    static MprTicks lastTrace = 0;
-            if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
-                if (traceRequests && lastTrace < now) {
-                    if (conn->rx) {
-                        mprLog("info http", 2, "Request for \"%s\" is still active",
-                            conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
+            for (ITERATE_ITEMS(net->connections, conn, nextConn)) {
+                if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
+                    if (traceRequests && lastTrace < now) {
+                        if (conn->rx) {
+                            mprLog("info http", 2, "Request for \"%s\" is still active",
+                                conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
+                        }
+                        lastTrace = now;
                     }
-                    lastTrace = now;
+                    unlock(http->networks);
+                    return 0;
                 }
-                unlock(http->networks);
-                return 0;
             }
-#endif
         }
         unlock(http->networks);
     } else {
@@ -451,7 +451,7 @@ PUBLIC HttpHost *httpLookupHost(cchar *name)
 PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
 {
     memset(limits, 0, sizeof(HttpLimits));
-    limits->bufferSize = ME_MAX_QBUFFER;
+    limits->bufferSize = ME_PACKET_SIZE;
     limits->cacheItemSize = ME_MAX_CACHE_ITEM;
     limits->chunkSize = ME_MAX_CHUNK;
     limits->clientMax = ME_MAX_CLIENTS;

@@ -39,27 +39,15 @@ static void incomingTail(HttpQueue *q, HttpPacket *packet)
 
     conn = q->conn;
     rx = conn->rx;
-    MprBuf *bp = packet->content;
 
-    /*
-        Detect Rx EOF. If using HTTP/1 chunk encoded input, the ChunkFilter will do this.
-        Otherwise we're responsibile here to detect EOF.
-     */
     if (q->net->eof) {
         httpSetEof(conn);
-    }
-    if (rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
-        rx->remainingContent -= httpGetPacketLength(packet);
-        if (rx->remainingContent <= 0) {
-            httpSetEof(conn);
-        }
     }
     httpPutPacketToNext(q, packet);
     if (rx->eof) {
         httpPutPacketToNext(q, httpCreateEndPacket());
     }
-    if (conn->readq->first) {
-        bp = conn->readq->first->content;
+    if (rx->route && conn->readq->first) {
         HTTP_NOTIFY(conn, HTTP_EVENT_READABLE, 0);
     }
 }

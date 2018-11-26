@@ -20,14 +20,37 @@
 /****************************** Forward Declarations **************************/
 
 static void filterDirList(HttpConn *conn, MprList *list);
+static void manageDir(HttpDir *dir, int flags);
 static int  matchDirPattern(cchar *pattern, cchar *file);
 static void outputFooter(HttpQueue *q);
 static void outputHeader(HttpQueue *q, cchar *dir, int nameSize);
 static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *dir, int nameSize);
 static void parseQuery(HttpConn *conn);
 static void sortList(HttpConn *conn, MprList *list);
+static void startDir(HttpQueue *q);
 
 /************************************* Code ***********************************/
+/*
+    Loadable module initialization
+ */
+PUBLIC int httpOpenDirHandler()
+{
+    HttpStage   *handler;
+    HttpDir     *dir;
+
+    if ((handler = httpCreateHandler("dirHandler", NULL)) == 0) {
+        return MPR_ERR_CANT_CREATE;
+    }
+    if ((handler->stageData = dir = mprAllocObj(HttpDir, manageDir)) == 0) {
+        return MPR_ERR_MEMORY;
+    }
+    HTTP->dirHandler = handler;
+    handler->flags |= HTTP_STAGE_INTERNAL;
+    handler->start = startDir;
+    dir->sortOrder = 1;
+    return 0;
+}
+
 /*
     Test if this request is for a directory listing. This routine is called directly by the
     fileHandler. Directory listings are enabled in a route via "Options Indexes".
@@ -600,28 +623,6 @@ PUBLIC HttpDir *httpGetDirObj(HttpRoute *route)
     }
     assert(dir);
     return dir;
-}
-
-
-/*
-    Loadable module initialization
- */
-PUBLIC int httpOpenDirHandler()
-{
-    HttpStage   *handler;
-    HttpDir     *dir;
-
-    if ((handler = httpCreateHandler("dirHandler", NULL)) == 0) {
-        return MPR_ERR_CANT_CREATE;
-    }
-    if ((handler->stageData = dir = mprAllocObj(HttpDir, manageDir)) == 0) {
-        return MPR_ERR_MEMORY;
-    }
-    handler->flags |= HTTP_STAGE_INTERNAL;
-    handler->start = startDir;
-    HTTP->dirHandler = handler;
-    dir->sortOrder = 1;
-    return 0;
 }
 
 

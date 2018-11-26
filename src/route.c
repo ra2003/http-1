@@ -67,11 +67,8 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->defaultLanguage = sclone("en");
     route->home = route->documents = mprGetCurrentPath();
     route->flags = HTTP_ROUTE_STEALTH;
-#if FUTURE
-    /* Enable in version 6 */
     route->flags |= HTTP_ROUTE_ENV_ESCAPE;
     route->envPrefix = sclone("CGI_");
-#endif
     route->host = host;
     route->http = HTTP;
     route->lifespan = ME_MAX_CACHE_DURATION;
@@ -95,9 +92,9 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
 
     httpAddRouteMethods(route, NULL);
     httpAddRouteFilter(route, http->rangeFilter->name, NULL, HTTP_STAGE_TX);
-
-    httpAddRouteFilter(route, http->chunkFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
-
+    if (http->uploadFilter) {
+        httpAddRouteFilter(route, http->uploadFilter->name, NULL, HTTP_STAGE_TX);
+    }
     /*
         Standard headers for all routes. These should not break typical content
         Users then vary via header directives
@@ -275,7 +272,7 @@ PUBLIC HttpRoute *httpCreateDefaultRoute(HttpHost *host)
 
 
 /*
-    Create and configure a basic route. This is used for client side and Ejscript routes. Host may be null.
+    Create and configure a basic route. This is used for client side routes. Host may be null.
  */
 PUBLIC HttpRoute *httpCreateConfiguredRoute(HttpHost *host, int serverSide)
 {
@@ -290,9 +287,6 @@ PUBLIC HttpRoute *httpCreateConfiguredRoute(HttpHost *host, int serverSide)
 #if ME_HTTP_WEB_SOCKETS
     httpAddRouteFilter(route, http->webSocketFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
 #endif
-    if (serverSide) {
-        httpAddRouteFilter(route, http->uploadFilter->name, NULL, HTTP_STAGE_RX);
-    }
     return route;
 }
 
@@ -429,7 +423,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
 static int matchRoute(HttpConn *conn, HttpRoute *route)
 {
     HttpRx      *rx;
-    char        *savePathInfo, *pathInfo;
+    cchar       *savePathInfo, *pathInfo;
     int         rc;
 
     assert(conn);
@@ -521,8 +515,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     if (route->requestHeaders) {
         for (next = 0; (op = mprGetNextItem(route->requestHeaders, &next)) != 0; ) {
             if ((header = httpGetHeader(conn, op->name)) != 0) {
-                count = pcre_exec(op->mdata, NULL, header, (int) slen(header), 0, 0,
-                    matched, sizeof(matched) / sizeof(int));
+                count = pcre_exec(op->mdata, NULL, header, (int) slen(header), 0, 0, matched, sizeof(matched) / sizeof(int));
                 result = count > 0;
                 if (op->flags & HTTP_ROUTE_NOT) {
                     result = !result;
@@ -536,8 +529,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     if (route->params) {
         for (next = 0; (op = mprGetNextItem(route->params, &next)) != 0; ) {
             if ((field = httpGetParam(conn, op->name, "")) != 0) {
-                count = pcre_exec(op->mdata, NULL, field, (int) slen(field), 0, 0,
-                    matched, sizeof(matched) / sizeof(int));
+                count = pcre_exec(op->mdata, NULL, field, (int) slen(field), 0, 0, matched, sizeof(matched) / sizeof(int));
                 result = count > 0;
                 if (op->flags & HTTP_ROUTE_NOT) {
                     result = !result;
@@ -777,10 +769,13 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     HttpStage   *stage;
     HttpStage   *filter;
     char        *extlist, *word, *tok;
-    int         pos, next;
+    int         next;
 
     assert(route);
 
+    if (smatch(name, "uploadFilter") || smatch(name, "chunkFilter")) {
+        return 0;
+    }
     for (ITERATE_ITEMS(route->outputStages, stage, next)) {
         if (smatch(stage->name, name)) {
             mprLog("warn http route", 0, "Stage \"%s\" is already configured for the route \"%s\". Ignoring.",
@@ -821,13 +816,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     }
     if (direction & HTTP_STAGE_TX && filter->outgoing) {
         GRADUATE_LIST(route, outputStages);
-        if (smatch(name, "cacheFilter") &&
-                (pos = mprGetListLength(route->outputStages) - 1) >= 0 &&
-                smatch(((HttpStage*) mprGetLastItem(route->outputStages))->name, "chunkFilter")) {
-            mprInsertItemAtPos(route->outputStages, pos, filter);
-        } else {
-            mprAddItem(route->outputStages, filter);
-        }
+        mprAddItem(route->outputStages, filter);
     }
     return 0;
 }
@@ -1511,7 +1500,6 @@ PUBLIC int httpSetRouteTarget(HttpRoute *route, cchar *rule, cchar *details)
             return MPR_ERR_BAD_SYNTAX;
         }
         route->target = finalizeReplacement(route, redirect);
-        return 0;
 
     } else if (scaselessmatch(rule, "run")) {
         route->target = finalizeReplacement(route, details);
@@ -1885,7 +1873,7 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
 PUBLIC cchar *httpGetRouteTop(HttpConn *conn)
 {
     HttpRx  *rx;
-    char   *pp, *top;
+    cchar   *pp, *top;
     int     count;
 
     rx = conn->rx;
@@ -1899,9 +1887,6 @@ PUBLIC cchar *httpGetRouteTop(HttpConn *conn)
         if (*pp == '/' && count++ > 0) {
             top = sjoin(top, "../", NULL);
         }
-    }
-    if (*top) {
-        top[slen(top) - 1] = '\0';
     }
     return top;
 }
@@ -2088,7 +2073,7 @@ static int testCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *conditio
 
 
 /*
-    Allow/Deny authorization
+    Allow/Deny authorization based on network IP
  */
 static int allowDenyCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
@@ -2140,6 +2125,7 @@ static int allowDenyCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
 /*
     This condition is used to implement all user authentication for routes
+    It accesses form body parameters for login.
  */
 static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
@@ -2150,8 +2136,8 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     assert(route);
 
     auth = route->auth;
-    if (!auth || !auth->type) {
-        /* Authentication not required */
+    if (!auth || !auth->type || !(auth->type->flags & HTTP_AUTH_TYPE_CONDITION)) {
+        /* Authentication not required or not using authCondition */
         return HTTP_ROUTE_OK;
     }
     if (!httpIsAuthenticated(conn)) {
@@ -2182,6 +2168,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
 /*
     This condition is used for "Condition unauthorized"
+    It accesses form body parameters for login.
  */
 static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
@@ -2189,7 +2176,7 @@ static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *
     cchar       *username, *password;
 
     auth = route->auth;
-    if (!auth || !auth->type) {
+    if (!auth || !auth->type || !(auth->type->flags & HTTP_AUTH_TYPE_CONDITION)) {
         return HTTP_ROUTE_REJECT;
     }
     if (httpIsAuthenticated(conn)) {
@@ -2260,6 +2247,9 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 }
 
 
+/*
+    Test if a condition matches by regular expression
+ */
 static int matchCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 {
     char    *str;
@@ -2279,7 +2269,7 @@ static int matchCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
 
 /*
-    Test if the connection is secure
+    Test if the connection is secure.
     Set op->details to a non-zero "age" to emit a Strict-Transport-Security header
     A negative age signifies to "includeSubDomains"
  */
@@ -2836,6 +2826,7 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
             } else if (smatch(value, "uri")) {
                 mprPutStringToBuf(buf, rx->uri);
             }
+
         } else if (smatch(key, "ssl")) {
             value = stok(value, "=", &defaultValue);
             if (smatch(value, "state")) {

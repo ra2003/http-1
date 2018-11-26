@@ -7,44 +7,44 @@
         objects = {
 
 /* Begin PBXAggregateTarget section */
-		E661C77AE661E1CE00000006 /* install-certs */ = {
+		ACD3231CACD33DCA00000006 /* install-certs */ = {
     			isa = PBXAggregateTarget;
-    			buildConfigurationList = E661C77AE661E1CE00000005 /* Build configuration list for PBXAggregateTarget "install-certs" */;
+    			buildConfigurationList = ACD3231CACD33DCA00000005 /* Build configuration list for PBXAggregateTarget "install-certs" */;
     			buildPhases = (
-    				E661C77AE661E1CE00000007,
+    				ACD3231CACD33DCA00000007,
     			);
     			dependencies = (
-				E661C77AE661E1CE00000008 /* PBXTargetDependency Prep */,
+				ACD3231CACD33DCA00000008 /* PBXTargetDependency Prep */,
 			);
     			name = install-certs;
     			productName = install-certs;
     		};
-		E661C77AE661E1CE0000000A /* All */ = {
+		ACD3231CACD33DCA0000000A /* All */ = {
     			isa = PBXAggregateTarget;
-    			buildConfigurationList = E661C77AE661E1CE00000009 /* Build configuration list for PBXAggregateTarget "All" */;
+    			buildConfigurationList = ACD3231CACD33DCA00000009 /* Build configuration list for PBXAggregateTarget "All" */;
     			buildPhases = (
     				
     			);
     			dependencies = (
-				E661C77AE661E1CE0000000B /* PBXTargetDependency http-server */,
-				E661C77AE661E1CE0000000C /* PBXTargetDependency httpcmd */,
-				E661C77AE661E1CE0000000D /* PBXTargetDependency install-certs */,
-				E661C77AE661E1CE0000000E /* PBXTargetDependency libhttp */,
-				E661C77AE661E1CE0000000F /* PBXTargetDependency libmbedtls */,
-				E661C77AE661E1CE00000010 /* PBXTargetDependency libmpr */,
-				E661C77AE661E1CE00000011 /* PBXTargetDependency libmpr-mbedtls */,
-				E661C77AE661E1CE00000012 /* PBXTargetDependency libpcre */,
-				E661C77AE661E1CE00000013 /* PBXTargetDependency All */,
-				E661C77AE661E1CE00000014 /* PBXTargetDependency Prep */,
+				ACD3231CACD33DCA0000000B /* PBXTargetDependency http-server */,
+				ACD3231CACD33DCA0000000C /* PBXTargetDependency httpcmd */,
+				ACD3231CACD33DCA0000000D /* PBXTargetDependency install-certs */,
+				ACD3231CACD33DCA0000000E /* PBXTargetDependency libhttp */,
+				ACD3231CACD33DCA0000000F /* PBXTargetDependency libmbedtls */,
+				ACD3231CACD33DCA00000010 /* PBXTargetDependency libmpr */,
+				ACD3231CACD33DCA00000011 /* PBXTargetDependency libmpr-mbedtls */,
+				ACD3231CACD33DCA00000012 /* PBXTargetDependency libpcre */,
+				ACD3231CACD33DCA00000013 /* PBXTargetDependency All */,
+				ACD3231CACD33DCA00000014 /* PBXTargetDependency Prep */,
 			);
     			name = All;
     			productName = All;
     		};
-		E661C77AE661E1CE00000016 /* Prep */ = {
+		ACD3231CACD33DCA00000016 /* Prep */ = {
     			isa = PBXAggregateTarget;
-    			buildConfigurationList = E661C77AE661E1CE00000015 /* Build configuration list for PBXAggregateTarget "Prep" */;
+    			buildConfigurationList = ACD3231CACD33DCA00000015 /* Build configuration list for PBXAggregateTarget "Prep" */;
     			buildPhases = (
-    				E661C77AE661E1CE00000017,
+    				ACD3231CACD33DCA00000017,
     			);
     			dependencies = (
 			);
@@ -54,403 +54,403 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		E661C77AE661E1CE00000018 /* http-server.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000019 /* http-server.c */; };
-		E661C77AE661E1CE0000001A /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000001B /* http.c */; };
-		E661C77AE661E1CE0000001C /* actionHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000001D /* actionHandler.c */; };
-		E661C77AE661E1CE0000001E /* auth.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000001F /* auth.c */; };
-		E661C77AE661E1CE00000020 /* basic.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000021 /* basic.c */; };
-		E661C77AE661E1CE00000022 /* cache.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000023 /* cache.c */; };
-		E661C77AE661E1CE00000024 /* chunkFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000025 /* chunkFilter.c */; };
-		E661C77AE661E1CE00000026 /* client.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000027 /* client.c */; };
-		E661C77AE661E1CE00000028 /* config.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000029 /* config.c */; };
-		E661C77AE661E1CE0000002A /* conn.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000002B /* conn.c */; };
-		E661C77AE661E1CE0000002C /* digest.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000002D /* digest.c */; };
-		E661C77AE661E1CE0000002E /* dirHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000002F /* dirHandler.c */; };
-		E661C77AE661E1CE00000030 /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000031 /* endpoint.c */; };
-		E661C77AE661E1CE00000032 /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000033 /* error.c */; };
-		E661C77AE661E1CE00000034 /* fileHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000035 /* fileHandler.c */; };
-		E661C77AE661E1CE00000036 /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000037 /* host.c */; };
-		E661C77AE661E1CE00000038 /* monitor.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000039 /* monitor.c */; };
-		E661C77AE661E1CE0000003A /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000003B /* netConnector.c */; };
-		E661C77AE661E1CE0000003C /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000003D /* packet.c */; };
-		E661C77AE661E1CE0000003E /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000003F /* pam.c */; };
-		E661C77AE661E1CE00000040 /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000041 /* passHandler.c */; };
-		E661C77AE661E1CE00000042 /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000043 /* pipeline.c */; };
-		E661C77AE661E1CE00000044 /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000045 /* queue.c */; };
-		E661C77AE661E1CE00000046 /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000047 /* rangeFilter.c */; };
-		E661C77AE661E1CE00000048 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000049 /* route.c */; };
-		E661C77AE661E1CE0000004A /* rx.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000004B /* rx.c */; };
-		E661C77AE661E1CE0000004C /* sendConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000004D /* sendConnector.c */; };
-		E661C77AE661E1CE0000004E /* service.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000004F /* service.c */; };
-		E661C77AE661E1CE00000050 /* session.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000051 /* session.c */; };
-		E661C77AE661E1CE00000052 /* stage.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000053 /* stage.c */; };
-		E661C77AE661E1CE00000054 /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000055 /* trace.c */; };
-		E661C77AE661E1CE00000056 /* tx.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000057 /* tx.c */; };
-		E661C77AE661E1CE00000058 /* uploadFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000059 /* uploadFilter.c */; };
-		E661C77AE661E1CE0000005A /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000005B /* uri.c */; };
-		E661C77AE661E1CE0000005C /* user.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000005D /* user.c */; };
-		E661C77AE661E1CE0000005E /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000005F /* var.c */; };
-		E661C77AE661E1CE00000060 /* webSockFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000061 /* webSockFilter.c */; };
-		E661C77AE661E1CE00000062 /* mbedtls.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000063 /* mbedtls.c */; };
-		E661C77AE661E1CE00000064 /* mprLib.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000065 /* mprLib.c */; };
-		E661C77AE661E1CE00000066 /* mpr-mbedtls.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000067 /* mpr-mbedtls.c */; };
-		E661C77AE661E1CE00000068 /* pcre.c in Sources */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000069 /* pcre.c */; };
-		E661C77AE661E1CE0000006A /* libhttp.a for http-server */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000006B; };
-		E661C77AE661E1CE0000006C /* libpcre.a for http-server */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000006D; };
-		E661C77AE661E1CE0000006E /* libmpr.a for http-server */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000006F; };
-		E661C77AE661E1CE00000070 /* libmpr-mbedtls.a for http-server */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000071; };
-		E661C77AE661E1CE00000072 /* libmbedtls.a for http-server */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000073; };
-		E661C77AE661E1CE00000074 /* libhttp.a for httpcmd */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000006B; };
-		E661C77AE661E1CE00000075 /* libpcre.a for httpcmd */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000006D; };
-		E661C77AE661E1CE00000076 /* libmpr.a for httpcmd */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000006F; };
-		E661C77AE661E1CE00000077 /* libmpr-mbedtls.a for httpcmd */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000071; };
-		E661C77AE661E1CE00000078 /* libmbedtls.a for httpcmd */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000073; };
-		E661C77AE661E1CE00000079 /* libpcre.a for libhttp */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000006D; };
-		E661C77AE661E1CE0000007A /* libmpr.a for libhttp */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE0000006F; };
-		E661C77AE661E1CE0000007B /* libmpr-mbedtls.a for libhttp */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000071; };
-		E661C77AE661E1CE0000007C /* libmbedtls.a for libhttp */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000073; };
-		E661C77AE661E1CE0000007D /* libmpr-mbedtls.a for libmpr */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000071; };
-		E661C77AE661E1CE0000007E /* libmbedtls.a for libmpr */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000073; };
-		E661C77AE661E1CE0000007F /* libmbedtls.a for libmpr-mbedtls */ = {isa = PBXBuildFile; fileRef = E661C77AE661E1CE00000073; };
+		ACD3231CACD33DCA00000018 /* http-server.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000019 /* http-server.c */; };
+		ACD3231CACD33DCA0000001A /* http.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000001B /* http.c */; };
+		ACD3231CACD33DCA0000001C /* actionHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000001D /* actionHandler.c */; };
+		ACD3231CACD33DCA0000001E /* auth.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000001F /* auth.c */; };
+		ACD3231CACD33DCA00000020 /* basic.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000021 /* basic.c */; };
+		ACD3231CACD33DCA00000022 /* cache.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000023 /* cache.c */; };
+		ACD3231CACD33DCA00000024 /* chunkFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000025 /* chunkFilter.c */; };
+		ACD3231CACD33DCA00000026 /* client.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000027 /* client.c */; };
+		ACD3231CACD33DCA00000028 /* config.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000029 /* config.c */; };
+		ACD3231CACD33DCA0000002A /* conn.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000002B /* conn.c */; };
+		ACD3231CACD33DCA0000002C /* digest.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000002D /* digest.c */; };
+		ACD3231CACD33DCA0000002E /* dirHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000002F /* dirHandler.c */; };
+		ACD3231CACD33DCA00000030 /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000031 /* endpoint.c */; };
+		ACD3231CACD33DCA00000032 /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000033 /* error.c */; };
+		ACD3231CACD33DCA00000034 /* fileHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000035 /* fileHandler.c */; };
+		ACD3231CACD33DCA00000036 /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000037 /* host.c */; };
+		ACD3231CACD33DCA00000038 /* monitor.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000039 /* monitor.c */; };
+		ACD3231CACD33DCA0000003A /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000003B /* netConnector.c */; };
+		ACD3231CACD33DCA0000003C /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000003D /* packet.c */; };
+		ACD3231CACD33DCA0000003E /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000003F /* pam.c */; };
+		ACD3231CACD33DCA00000040 /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000041 /* passHandler.c */; };
+		ACD3231CACD33DCA00000042 /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000043 /* pipeline.c */; };
+		ACD3231CACD33DCA00000044 /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000045 /* queue.c */; };
+		ACD3231CACD33DCA00000046 /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000047 /* rangeFilter.c */; };
+		ACD3231CACD33DCA00000048 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000049 /* route.c */; };
+		ACD3231CACD33DCA0000004A /* rx.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000004B /* rx.c */; };
+		ACD3231CACD33DCA0000004C /* sendConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000004D /* sendConnector.c */; };
+		ACD3231CACD33DCA0000004E /* service.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000004F /* service.c */; };
+		ACD3231CACD33DCA00000050 /* session.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000051 /* session.c */; };
+		ACD3231CACD33DCA00000052 /* stage.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000053 /* stage.c */; };
+		ACD3231CACD33DCA00000054 /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000055 /* trace.c */; };
+		ACD3231CACD33DCA00000056 /* tx.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000057 /* tx.c */; };
+		ACD3231CACD33DCA00000058 /* uploadFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000059 /* uploadFilter.c */; };
+		ACD3231CACD33DCA0000005A /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000005B /* uri.c */; };
+		ACD3231CACD33DCA0000005C /* user.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000005D /* user.c */; };
+		ACD3231CACD33DCA0000005E /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000005F /* var.c */; };
+		ACD3231CACD33DCA00000060 /* webSockFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000061 /* webSockFilter.c */; };
+		ACD3231CACD33DCA00000062 /* mbedtls.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000063 /* mbedtls.c */; };
+		ACD3231CACD33DCA00000064 /* mprLib.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000065 /* mprLib.c */; };
+		ACD3231CACD33DCA00000066 /* mpr-mbedtls.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000067 /* mpr-mbedtls.c */; };
+		ACD3231CACD33DCA00000068 /* pcre.c in Sources */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000069 /* pcre.c */; };
+		ACD3231CACD33DCA0000006A /* libhttp.a for http-server */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000006B; };
+		ACD3231CACD33DCA0000006C /* libpcre.a for http-server */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000006D; };
+		ACD3231CACD33DCA0000006E /* libmpr.a for http-server */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000006F; };
+		ACD3231CACD33DCA00000070 /* libmpr-mbedtls.a for http-server */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000071; };
+		ACD3231CACD33DCA00000072 /* libmbedtls.a for http-server */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000073; };
+		ACD3231CACD33DCA00000074 /* libhttp.a for httpcmd */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000006B; };
+		ACD3231CACD33DCA00000075 /* libpcre.a for httpcmd */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000006D; };
+		ACD3231CACD33DCA00000076 /* libmpr.a for httpcmd */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000006F; };
+		ACD3231CACD33DCA00000077 /* libmpr-mbedtls.a for httpcmd */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000071; };
+		ACD3231CACD33DCA00000078 /* libmbedtls.a for httpcmd */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000073; };
+		ACD3231CACD33DCA00000079 /* libpcre.a for libhttp */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000006D; };
+		ACD3231CACD33DCA0000007A /* libmpr.a for libhttp */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA0000006F; };
+		ACD3231CACD33DCA0000007B /* libmpr-mbedtls.a for libhttp */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000071; };
+		ACD3231CACD33DCA0000007C /* libmbedtls.a for libhttp */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000073; };
+		ACD3231CACD33DCA0000007D /* libmpr-mbedtls.a for libmpr */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000071; };
+		ACD3231CACD33DCA0000007E /* libmbedtls.a for libmpr */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000073; };
+		ACD3231CACD33DCA0000007F /* libmbedtls.a for libmpr-mbedtls */ = {isa = PBXBuildFile; fileRef = ACD3231CACD33DCA00000073; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		E661C77AE661E1CE00000080 /* PBXContainerItemProxy Prep from http-server */ = {
+		ACD3231CACD33DCA00000080 /* PBXContainerItemProxy Prep from http-server */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE00000081 /* PBXContainerItemProxy libmbedtls from http-server */ = {
+		ACD3231CACD33DCA00000081 /* PBXContainerItemProxy libmbedtls from http-server */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000082;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000082;
     			remoteInfo = libmbedtls;
     		};
-		E661C77AE661E1CE00000083 /* PBXContainerItemProxy libmpr-mbedtls from http-server */ = {
+		ACD3231CACD33DCA00000083 /* PBXContainerItemProxy libmpr-mbedtls from http-server */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000084;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000084;
     			remoteInfo = libmpr-mbedtls;
     		};
-		E661C77AE661E1CE00000085 /* PBXContainerItemProxy libmpr from http-server */ = {
+		ACD3231CACD33DCA00000085 /* PBXContainerItemProxy libmpr from http-server */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000086;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000086;
     			remoteInfo = libmpr;
     		};
-		E661C77AE661E1CE00000087 /* PBXContainerItemProxy libpcre from http-server */ = {
+		ACD3231CACD33DCA00000087 /* PBXContainerItemProxy libpcre from http-server */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000088;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000088;
     			remoteInfo = libpcre;
     		};
-		E661C77AE661E1CE00000089 /* PBXContainerItemProxy libhttp from http-server */ = {
+		ACD3231CACD33DCA00000089 /* PBXContainerItemProxy libhttp from http-server */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE0000008A;
+    			remoteGlobalIDString = ACD3231CACD33DCA0000008A;
     			remoteInfo = libhttp;
     		};
-		E661C77AE661E1CE0000008B /* PBXContainerItemProxy Prep from httpcmd */ = {
+		ACD3231CACD33DCA0000008B /* PBXContainerItemProxy Prep from httpcmd */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE0000008C /* PBXContainerItemProxy libmbedtls from httpcmd */ = {
+		ACD3231CACD33DCA0000008C /* PBXContainerItemProxy libmbedtls from httpcmd */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000082;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000082;
     			remoteInfo = libmbedtls;
     		};
-		E661C77AE661E1CE0000008D /* PBXContainerItemProxy libmpr-mbedtls from httpcmd */ = {
+		ACD3231CACD33DCA0000008D /* PBXContainerItemProxy libmpr-mbedtls from httpcmd */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000084;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000084;
     			remoteInfo = libmpr-mbedtls;
     		};
-		E661C77AE661E1CE0000008E /* PBXContainerItemProxy libmpr from httpcmd */ = {
+		ACD3231CACD33DCA0000008E /* PBXContainerItemProxy libmpr from httpcmd */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000086;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000086;
     			remoteInfo = libmpr;
     		};
-		E661C77AE661E1CE0000008F /* PBXContainerItemProxy libpcre from httpcmd */ = {
+		ACD3231CACD33DCA0000008F /* PBXContainerItemProxy libpcre from httpcmd */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000088;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000088;
     			remoteInfo = libpcre;
     		};
-		E661C77AE661E1CE00000090 /* PBXContainerItemProxy libhttp from httpcmd */ = {
+		ACD3231CACD33DCA00000090 /* PBXContainerItemProxy libhttp from httpcmd */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE0000008A;
+    			remoteGlobalIDString = ACD3231CACD33DCA0000008A;
     			remoteInfo = libhttp;
     		};
-		E661C77AE661E1CE00000091 /* PBXContainerItemProxy Prep from install-certs */ = {
+		ACD3231CACD33DCA00000091 /* PBXContainerItemProxy Prep from install-certs */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE00000092 /* PBXContainerItemProxy Prep from libhttp */ = {
+		ACD3231CACD33DCA00000092 /* PBXContainerItemProxy Prep from libhttp */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE00000093 /* PBXContainerItemProxy libmbedtls from libhttp */ = {
+		ACD3231CACD33DCA00000093 /* PBXContainerItemProxy libmbedtls from libhttp */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000082;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000082;
     			remoteInfo = libmbedtls;
     		};
-		E661C77AE661E1CE00000094 /* PBXContainerItemProxy libmpr-mbedtls from libhttp */ = {
+		ACD3231CACD33DCA00000094 /* PBXContainerItemProxy libmpr-mbedtls from libhttp */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000084;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000084;
     			remoteInfo = libmpr-mbedtls;
     		};
-		E661C77AE661E1CE00000095 /* PBXContainerItemProxy libmpr from libhttp */ = {
+		ACD3231CACD33DCA00000095 /* PBXContainerItemProxy libmpr from libhttp */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000086;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000086;
     			remoteInfo = libmpr;
     		};
-		E661C77AE661E1CE00000096 /* PBXContainerItemProxy libpcre from libhttp */ = {
+		ACD3231CACD33DCA00000096 /* PBXContainerItemProxy libpcre from libhttp */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000088;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000088;
     			remoteInfo = libpcre;
     		};
-		E661C77AE661E1CE00000097 /* PBXContainerItemProxy Prep from libmbedtls */ = {
+		ACD3231CACD33DCA00000097 /* PBXContainerItemProxy Prep from libmbedtls */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE00000098 /* PBXContainerItemProxy Prep from libmpr */ = {
+		ACD3231CACD33DCA00000098 /* PBXContainerItemProxy Prep from libmpr */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE00000099 /* PBXContainerItemProxy libmbedtls from libmpr */ = {
+		ACD3231CACD33DCA00000099 /* PBXContainerItemProxy libmbedtls from libmpr */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000082;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000082;
     			remoteInfo = libmbedtls;
     		};
-		E661C77AE661E1CE0000009A /* PBXContainerItemProxy libmpr-mbedtls from libmpr */ = {
+		ACD3231CACD33DCA0000009A /* PBXContainerItemProxy libmpr-mbedtls from libmpr */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000084;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000084;
     			remoteInfo = libmpr-mbedtls;
     		};
-		E661C77AE661E1CE0000009B /* PBXContainerItemProxy Prep from libmpr-mbedtls */ = {
+		ACD3231CACD33DCA0000009B /* PBXContainerItemProxy Prep from libmpr-mbedtls */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE0000009C /* PBXContainerItemProxy libmbedtls from libmpr-mbedtls */ = {
+		ACD3231CACD33DCA0000009C /* PBXContainerItemProxy libmbedtls from libmpr-mbedtls */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000082;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000082;
     			remoteInfo = libmbedtls;
     		};
-		E661C77AE661E1CE0000009D /* PBXContainerItemProxy Prep from libpcre */ = {
+		ACD3231CACD33DCA0000009D /* PBXContainerItemProxy Prep from libpcre */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE0000009E /* PBXContainerItemProxy Prep from All */ = {
+		ACD3231CACD33DCA0000009E /* PBXContainerItemProxy Prep from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000016;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000016;
     			remoteInfo = Prep;
     		};
-		E661C77AE661E1CE0000009F /* PBXContainerItemProxy libmbedtls from All */ = {
+		ACD3231CACD33DCA0000009F /* PBXContainerItemProxy libmbedtls from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000082;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000082;
     			remoteInfo = libmbedtls;
     		};
-		E661C77AE661E1CE000000A0 /* PBXContainerItemProxy libmpr-mbedtls from All */ = {
+		ACD3231CACD33DCA000000A0 /* PBXContainerItemProxy libmpr-mbedtls from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000084;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000084;
     			remoteInfo = libmpr-mbedtls;
     		};
-		E661C77AE661E1CE000000A1 /* PBXContainerItemProxy libmpr from All */ = {
+		ACD3231CACD33DCA000000A1 /* PBXContainerItemProxy libmpr from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000086;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000086;
     			remoteInfo = libmpr;
     		};
-		E661C77AE661E1CE000000A2 /* PBXContainerItemProxy libpcre from All */ = {
+		ACD3231CACD33DCA000000A2 /* PBXContainerItemProxy libpcre from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000088;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000088;
     			remoteInfo = libpcre;
     		};
-		E661C77AE661E1CE000000A3 /* PBXContainerItemProxy libhttp from All */ = {
+		ACD3231CACD33DCA000000A3 /* PBXContainerItemProxy libhttp from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE0000008A;
+    			remoteGlobalIDString = ACD3231CACD33DCA0000008A;
     			remoteInfo = libhttp;
     		};
-		E661C77AE661E1CE000000A4 /* PBXContainerItemProxy http-server from All */ = {
+		ACD3231CACD33DCA000000A4 /* PBXContainerItemProxy http-server from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE000000A5;
+    			remoteGlobalIDString = ACD3231CACD33DCA000000A5;
     			remoteInfo = http-server;
     		};
-		E661C77AE661E1CE000000A6 /* PBXContainerItemProxy httpcmd from All */ = {
+		ACD3231CACD33DCA000000A6 /* PBXContainerItemProxy httpcmd from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE000000A7;
+    			remoteGlobalIDString = ACD3231CACD33DCA000000A7;
     			remoteInfo = httpcmd;
     		};
-		E661C77AE661E1CE000000A8 /* PBXContainerItemProxy install-certs from All */ = {
+		ACD3231CACD33DCA000000A8 /* PBXContainerItemProxy install-certs from All */ = {
     			isa = PBXContainerItemProxy;
-    			containerPortal = E661C77AE661E1CE00000001 /* Project object */;
+    			containerPortal = ACD3231CACD33DCA00000001 /* Project object */;
     			proxyType = 1;
-    			remoteGlobalIDString = E661C77AE661E1CE00000006;
+    			remoteGlobalIDString = ACD3231CACD33DCA00000006;
     			remoteInfo = install-certs;
     		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		E661C77AE661E1CE00000019 /* http-server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http-server.c; path = test/http-server.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000A9 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = build/macosx-x64-static/inc/http.h; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000AA /* http-server */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http-server; sourceTree = BUILT_PRODUCTS_DIR; };
-		E661C77AE661E1CE0000001B /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000AB /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = src/http.h; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000AC /* httpcmd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
-		E661C77AE661E1CE0000001D /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000001F /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000021 /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000023 /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000025 /* chunkFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chunkFilter.c; path = src/chunkFilter.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000027 /* client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = client.c; path = src/client.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000029 /* config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = config.c; path = src/config.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000002B /* conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = conn.c; path = src/conn.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000002D /* digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = digest.c; path = src/digest.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000002F /* dirHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dirHandler.c; path = src/dirHandler.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000031 /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000AD /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = build/macosx-x64-static/inc/pcre.h; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000033 /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000035 /* fileHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fileHandler.c; path = src/fileHandler.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000037 /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000039 /* monitor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = monitor.c; path = src/monitor.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000003B /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000003D /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000003F /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000041 /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000043 /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000045 /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000047 /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000049 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000004B /* rx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rx.c; path = src/rx.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000004D /* sendConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sendConnector.c; path = src/sendConnector.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000004F /* service.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = service.c; path = src/service.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000051 /* session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = session.c; path = src/session.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000053 /* stage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stage.c; path = src/stage.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000055 /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000057 /* tx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tx.c; path = src/tx.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000059 /* uploadFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uploadFilter.c; path = src/uploadFilter.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000005B /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = src/uri.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000005D /* user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = user.c; path = src/user.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000005F /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000061 /* webSockFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSockFilter.c; path = src/webSockFilter.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000006B /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E661C77AE661E1CE00000063 /* mbedtls.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mbedtls.c; path = src/mbedtls/mbedtls.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000AE /* mbedtls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mbedtls.h; path = src/mbedtls/mbedtls.h; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000073 /* libmbedtls */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmbedtls.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E661C77AE661E1CE00000065 /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/mpr/mprLib.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000AF /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = src/mpr/mpr.h; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000006F /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E661C77AE661E1CE00000067 /* mpr-mbedtls.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mpr-mbedtls.c; path = src/mpr-mbedtls/mpr-mbedtls.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000B0 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = build/macosx-x64-static/inc/mpr.h; sourceTree = "<group>"; };
-		E661C77AE661E1CE00000071 /* libmpr-mbedtls */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr-mbedtls.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E661C77AE661E1CE00000069 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/pcre/pcre.c; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000B1 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-static/inc/me.h; sourceTree = "<group>"; };
-		E661C77AE661E1CE000000B2 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = src/pcre/pcre.h; sourceTree = "<group>"; };
-		E661C77AE661E1CE0000006D /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACD3231CACD33DCA00000019 /* http-server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http-server.c; path = test/http-server.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000A9 /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = build/macosx-x64-static/inc/http.h; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000AA /* http-server */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http-server; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACD3231CACD33DCA0000001B /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http.c; path = src/http.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000AB /* http.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http.h; path = src/http.h; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000AC /* httpcmd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = http; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACD3231CACD33DCA0000001D /* actionHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actionHandler.c; path = src/actionHandler.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000001F /* auth.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = auth.c; path = src/auth.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000021 /* basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = basic.c; path = src/basic.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000023 /* cache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cache.c; path = src/cache.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000025 /* chunkFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chunkFilter.c; path = src/chunkFilter.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000027 /* client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = client.c; path = src/client.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000029 /* config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = config.c; path = src/config.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000002B /* conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = conn.c; path = src/conn.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000002D /* digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = digest.c; path = src/digest.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000002F /* dirHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dirHandler.c; path = src/dirHandler.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000031 /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000AD /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = build/macosx-x64-static/inc/pcre.h; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000033 /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000035 /* fileHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fileHandler.c; path = src/fileHandler.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000037 /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000039 /* monitor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = monitor.c; path = src/monitor.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000003B /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000003D /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000003F /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000041 /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000043 /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000045 /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000047 /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000049 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000004B /* rx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rx.c; path = src/rx.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000004D /* sendConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sendConnector.c; path = src/sendConnector.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000004F /* service.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = service.c; path = src/service.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000051 /* session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = session.c; path = src/session.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000053 /* stage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stage.c; path = src/stage.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000055 /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000057 /* tx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tx.c; path = src/tx.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000059 /* uploadFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uploadFilter.c; path = src/uploadFilter.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000005B /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = src/uri.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000005D /* user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = user.c; path = src/user.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000005F /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000061 /* webSockFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = webSockFilter.c; path = src/webSockFilter.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000006B /* libhttp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libhttp.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACD3231CACD33DCA00000063 /* mbedtls.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mbedtls.c; path = src/mbedtls/mbedtls.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000AE /* mbedtls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mbedtls.h; path = src/mbedtls/mbedtls.h; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000073 /* libmbedtls */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmbedtls.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACD3231CACD33DCA00000065 /* mprLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mprLib.c; path = src/mpr/mprLib.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000AF /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = src/mpr/mpr.h; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000006F /* libmpr */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACD3231CACD33DCA00000067 /* mpr-mbedtls.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mpr-mbedtls.c; path = src/mpr-mbedtls/mpr-mbedtls.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000B0 /* mpr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mpr.h; path = build/macosx-x64-static/inc/mpr.h; sourceTree = "<group>"; };
+		ACD3231CACD33DCA00000071 /* libmpr-mbedtls */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmpr-mbedtls.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACD3231CACD33DCA00000069 /* pcre.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre.c; path = src/pcre/pcre.c; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000B1 /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-static/inc/me.h; sourceTree = "<group>"; };
+		ACD3231CACD33DCA000000B2 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = src/pcre/pcre.h; sourceTree = "<group>"; };
+		ACD3231CACD33DCA0000006D /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		E661C77AE661E1CE000000B3 /* Frameworks and Libraries for http-server */ = {
+		ACD3231CACD33DCA000000B3 /* Frameworks and Libraries for http-server */ = {
                 isa = PBXFrameworksBuildPhase;
                 buildActionMask = 2147483647;
                 files = (
-    				E661C77AE661E1CE0000006A /* libhttp */,
-				E661C77AE661E1CE0000006C /* libpcre */,
-				E661C77AE661E1CE0000006E /* libmpr */,
-				E661C77AE661E1CE00000070 /* libmpr-mbedtls */,
-				E661C77AE661E1CE00000072 /* libmbedtls */,				
+    				ACD3231CACD33DCA0000006A /* libhttp */,
+				ACD3231CACD33DCA0000006C /* libpcre */,
+				ACD3231CACD33DCA0000006E /* libmpr */,
+				ACD3231CACD33DCA00000070 /* libmpr-mbedtls */,
+				ACD3231CACD33DCA00000072 /* libmbedtls */,				
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
-		E661C77AE661E1CE000000B4 /* Frameworks and Libraries for httpcmd */ = {
+		ACD3231CACD33DCA000000B4 /* Frameworks and Libraries for httpcmd */ = {
                 isa = PBXFrameworksBuildPhase;
                 buildActionMask = 2147483647;
                 files = (
-    				E661C77AE661E1CE00000074 /* libhttp */,
-				E661C77AE661E1CE00000075 /* libpcre */,
-				E661C77AE661E1CE00000076 /* libmpr */,
-				E661C77AE661E1CE00000077 /* libmpr-mbedtls */,
-				E661C77AE661E1CE00000078 /* libmbedtls */,				
+    				ACD3231CACD33DCA00000074 /* libhttp */,
+				ACD3231CACD33DCA00000075 /* libpcre */,
+				ACD3231CACD33DCA00000076 /* libmpr */,
+				ACD3231CACD33DCA00000077 /* libmpr-mbedtls */,
+				ACD3231CACD33DCA00000078 /* libmbedtls */,				
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
-		E661C77AE661E1CE000000B5 /* Frameworks and Libraries for libhttp */ = {
+		ACD3231CACD33DCA000000B5 /* Frameworks and Libraries for libhttp */ = {
                 isa = PBXFrameworksBuildPhase;
                 buildActionMask = 2147483647;
                 files = (
-    				E661C77AE661E1CE00000079 /* libpcre */,
-				E661C77AE661E1CE0000007A /* libmpr */,
-				E661C77AE661E1CE0000007B /* libmpr-mbedtls */,
-				E661C77AE661E1CE0000007C /* libmbedtls */,				
+    				ACD3231CACD33DCA00000079 /* libpcre */,
+				ACD3231CACD33DCA0000007A /* libmpr */,
+				ACD3231CACD33DCA0000007B /* libmpr-mbedtls */,
+				ACD3231CACD33DCA0000007C /* libmbedtls */,				
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
-		E661C77AE661E1CE000000B6 /* Frameworks and Libraries for libmbedtls */ = {
+		ACD3231CACD33DCA000000B6 /* Frameworks and Libraries for libmbedtls */ = {
                 isa = PBXFrameworksBuildPhase;
                 buildActionMask = 2147483647;
                 files = (
@@ -458,24 +458,24 @@
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
-		E661C77AE661E1CE000000B7 /* Frameworks and Libraries for libmpr */ = {
+		ACD3231CACD33DCA000000B7 /* Frameworks and Libraries for libmpr */ = {
                 isa = PBXFrameworksBuildPhase;
                 buildActionMask = 2147483647;
                 files = (
-    				E661C77AE661E1CE0000007D /* libmpr-mbedtls */,
-				E661C77AE661E1CE0000007E /* libmbedtls */,				
+    				ACD3231CACD33DCA0000007D /* libmpr-mbedtls */,
+				ACD3231CACD33DCA0000007E /* libmbedtls */,				
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
-		E661C77AE661E1CE000000B8 /* Frameworks and Libraries for libmpr-mbedtls */ = {
+		ACD3231CACD33DCA000000B8 /* Frameworks and Libraries for libmpr-mbedtls */ = {
                 isa = PBXFrameworksBuildPhase;
                 buildActionMask = 2147483647;
                 files = (
-    				E661C77AE661E1CE0000007F /* libmbedtls */,				
+    				ACD3231CACD33DCA0000007F /* libmbedtls */,				
                 );
                 runOnlyForDeploymentPostprocessing = 0;
             };
-		E661C77AE661E1CE000000B9 /* Frameworks and Libraries for libpcre */ = {
+		ACD3231CACD33DCA000000B9 /* Frameworks and Libraries for libpcre */ = {
                 isa = PBXFrameworksBuildPhase;
                 buildActionMask = 2147483647;
                 files = (
@@ -486,131 +486,131 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		E661C77AE661E1CE000000BA /* Top Group */ = {
+		ACD3231CACD33DCA000000BA /* Top Group */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE000000BB /* libhttp */,
-				E661C77AE661E1CE000000BC /* libmbedtls */,
-				E661C77AE661E1CE000000BD /* libmpr */,
-				E661C77AE661E1CE000000BE /* libmpr-mbedtls */,
-				E661C77AE661E1CE000000BF /* libpcre */,
-				E661C77AE661E1CE000000C0 /* http-server */,
-				E661C77AE661E1CE000000C1 /* httpcmd */,
-				E661C77AE661E1CE000000C2 /* Products */,
+				ACD3231CACD33DCA000000BB /* libhttp */,
+				ACD3231CACD33DCA000000BC /* libmbedtls */,
+				ACD3231CACD33DCA000000BD /* libmpr */,
+				ACD3231CACD33DCA000000BE /* libmpr-mbedtls */,
+				ACD3231CACD33DCA000000BF /* libpcre */,
+				ACD3231CACD33DCA000000C0 /* http-server */,
+				ACD3231CACD33DCA000000C1 /* httpcmd */,
+				ACD3231CACD33DCA000000C2 /* Products */,
 			);
                 sourceTree = "<group>";
             };
-		E661C77AE661E1CE000000C0 /* http-server */ = {
+		ACD3231CACD33DCA000000C0 /* http-server */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE00000019 /* http-server.c */,
+				ACD3231CACD33DCA00000019 /* http-server.c */,
 			);
                 name = "http-server";
                 path = ..;
                 sourceTree = SOURCE_ROOT;
             };
-		E661C77AE661E1CE000000C1 /* httpcmd */ = {
+		ACD3231CACD33DCA000000C1 /* httpcmd */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE0000001B /* http.c */,
+				ACD3231CACD33DCA0000001B /* http.c */,
 			);
                 name = "httpcmd";
                 path = ..;
                 sourceTree = SOURCE_ROOT;
             };
-		E661C77AE661E1CE000000BB /* libhttp */ = {
+		ACD3231CACD33DCA000000BB /* libhttp */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE000000AB /* http.h */,
-				E661C77AE661E1CE0000001D /* actionHandler.c */,
-				E661C77AE661E1CE0000001F /* auth.c */,
-				E661C77AE661E1CE00000021 /* basic.c */,
-				E661C77AE661E1CE00000023 /* cache.c */,
-				E661C77AE661E1CE00000025 /* chunkFilter.c */,
-				E661C77AE661E1CE00000027 /* client.c */,
-				E661C77AE661E1CE00000029 /* config.c */,
-				E661C77AE661E1CE0000002B /* conn.c */,
-				E661C77AE661E1CE0000002D /* digest.c */,
-				E661C77AE661E1CE0000002F /* dirHandler.c */,
-				E661C77AE661E1CE00000031 /* endpoint.c */,
-				E661C77AE661E1CE00000033 /* error.c */,
-				E661C77AE661E1CE00000035 /* fileHandler.c */,
-				E661C77AE661E1CE00000037 /* host.c */,
-				E661C77AE661E1CE00000039 /* monitor.c */,
-				E661C77AE661E1CE0000003B /* netConnector.c */,
-				E661C77AE661E1CE0000003D /* packet.c */,
-				E661C77AE661E1CE0000003F /* pam.c */,
-				E661C77AE661E1CE00000041 /* passHandler.c */,
-				E661C77AE661E1CE00000043 /* pipeline.c */,
-				E661C77AE661E1CE00000045 /* queue.c */,
-				E661C77AE661E1CE00000047 /* rangeFilter.c */,
-				E661C77AE661E1CE00000049 /* route.c */,
-				E661C77AE661E1CE0000004B /* rx.c */,
-				E661C77AE661E1CE0000004D /* sendConnector.c */,
-				E661C77AE661E1CE0000004F /* service.c */,
-				E661C77AE661E1CE00000051 /* session.c */,
-				E661C77AE661E1CE00000053 /* stage.c */,
-				E661C77AE661E1CE00000055 /* trace.c */,
-				E661C77AE661E1CE00000057 /* tx.c */,
-				E661C77AE661E1CE00000059 /* uploadFilter.c */,
-				E661C77AE661E1CE0000005B /* uri.c */,
-				E661C77AE661E1CE0000005D /* user.c */,
-				E661C77AE661E1CE0000005F /* var.c */,
-				E661C77AE661E1CE00000061 /* webSockFilter.c */,
+				ACD3231CACD33DCA000000AB /* http.h */,
+				ACD3231CACD33DCA0000001D /* actionHandler.c */,
+				ACD3231CACD33DCA0000001F /* auth.c */,
+				ACD3231CACD33DCA00000021 /* basic.c */,
+				ACD3231CACD33DCA00000023 /* cache.c */,
+				ACD3231CACD33DCA00000025 /* chunkFilter.c */,
+				ACD3231CACD33DCA00000027 /* client.c */,
+				ACD3231CACD33DCA00000029 /* config.c */,
+				ACD3231CACD33DCA0000002B /* conn.c */,
+				ACD3231CACD33DCA0000002D /* digest.c */,
+				ACD3231CACD33DCA0000002F /* dirHandler.c */,
+				ACD3231CACD33DCA00000031 /* endpoint.c */,
+				ACD3231CACD33DCA00000033 /* error.c */,
+				ACD3231CACD33DCA00000035 /* fileHandler.c */,
+				ACD3231CACD33DCA00000037 /* host.c */,
+				ACD3231CACD33DCA00000039 /* monitor.c */,
+				ACD3231CACD33DCA0000003B /* netConnector.c */,
+				ACD3231CACD33DCA0000003D /* packet.c */,
+				ACD3231CACD33DCA0000003F /* pam.c */,
+				ACD3231CACD33DCA00000041 /* passHandler.c */,
+				ACD3231CACD33DCA00000043 /* pipeline.c */,
+				ACD3231CACD33DCA00000045 /* queue.c */,
+				ACD3231CACD33DCA00000047 /* rangeFilter.c */,
+				ACD3231CACD33DCA00000049 /* route.c */,
+				ACD3231CACD33DCA0000004B /* rx.c */,
+				ACD3231CACD33DCA0000004D /* sendConnector.c */,
+				ACD3231CACD33DCA0000004F /* service.c */,
+				ACD3231CACD33DCA00000051 /* session.c */,
+				ACD3231CACD33DCA00000053 /* stage.c */,
+				ACD3231CACD33DCA00000055 /* trace.c */,
+				ACD3231CACD33DCA00000057 /* tx.c */,
+				ACD3231CACD33DCA00000059 /* uploadFilter.c */,
+				ACD3231CACD33DCA0000005B /* uri.c */,
+				ACD3231CACD33DCA0000005D /* user.c */,
+				ACD3231CACD33DCA0000005F /* var.c */,
+				ACD3231CACD33DCA00000061 /* webSockFilter.c */,
 			);
                 name = "libhttp";
                 path = ..;
                 sourceTree = SOURCE_ROOT;
             };
-		E661C77AE661E1CE000000BC /* libmbedtls */ = {
+		ACD3231CACD33DCA000000BC /* libmbedtls */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE000000AE /* mbedtls.h */,
-				E661C77AE661E1CE00000063 /* mbedtls.c */,
+				ACD3231CACD33DCA000000AE /* mbedtls.h */,
+				ACD3231CACD33DCA00000063 /* mbedtls.c */,
 			);
                 name = "libmbedtls";
                 path = ..;
                 sourceTree = SOURCE_ROOT;
             };
-		E661C77AE661E1CE000000BD /* libmpr */ = {
+		ACD3231CACD33DCA000000BD /* libmpr */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE000000AF /* mpr.h */,
-				E661C77AE661E1CE00000065 /* mprLib.c */,
+				ACD3231CACD33DCA000000AF /* mpr.h */,
+				ACD3231CACD33DCA00000065 /* mprLib.c */,
 			);
                 name = "libmpr";
                 path = ..;
                 sourceTree = SOURCE_ROOT;
             };
-		E661C77AE661E1CE000000BE /* libmpr-mbedtls */ = {
+		ACD3231CACD33DCA000000BE /* libmpr-mbedtls */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE00000067 /* mpr-mbedtls.c */,
+				ACD3231CACD33DCA00000067 /* mpr-mbedtls.c */,
 			);
                 name = "libmpr-mbedtls";
                 path = ..;
                 sourceTree = SOURCE_ROOT;
             };
-		E661C77AE661E1CE000000BF /* libpcre */ = {
+		ACD3231CACD33DCA000000BF /* libpcre */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE000000B2 /* pcre.h */,
-				E661C77AE661E1CE00000069 /* pcre.c */,
+				ACD3231CACD33DCA000000B2 /* pcre.h */,
+				ACD3231CACD33DCA00000069 /* pcre.c */,
 			);
                 name = "libpcre";
                 path = ..;
                 sourceTree = SOURCE_ROOT;
             };
-		E661C77AE661E1CE000000C2 /* Products */ = {
+		ACD3231CACD33DCA000000C2 /* Products */ = {
                 isa = PBXGroup;
                 children = (
-				E661C77AE661E1CE000000AA /* http-server */,
-				E661C77AE661E1CE000000AC /* httpcmd */,
-				E661C77AE661E1CE0000006B /* libhttp */,
-				E661C77AE661E1CE00000073 /* libmbedtls */,
-				E661C77AE661E1CE0000006F /* libmpr */,
-				E661C77AE661E1CE00000071 /* libmpr-mbedtls */,
-				E661C77AE661E1CE0000006D /* libpcre */,
+				ACD3231CACD33DCA000000AA /* http-server */,
+				ACD3231CACD33DCA000000AC /* httpcmd */,
+				ACD3231CACD33DCA0000006B /* libhttp */,
+				ACD3231CACD33DCA00000073 /* libmbedtls */,
+				ACD3231CACD33DCA0000006F /* libmpr */,
+				ACD3231CACD33DCA00000071 /* libmpr-mbedtls */,
+				ACD3231CACD33DCA0000006D /* libpcre */,
 			);
                 name = "Products";
                 path = ..;
@@ -619,146 +619,146 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E661C77AE661E1CE000000A5 /* http-server */ = {
+		ACD3231CACD33DCA000000A5 /* http-server */ = {
     			isa = PBXNativeTarget;
-    			buildConfigurationList = E661C77AE661E1CE000000C4 /* Build configuration list for PBXNativeTarget "http-server" */;
+    			buildConfigurationList = ACD3231CACD33DCA000000C4 /* Build configuration list for PBXNativeTarget "http-server" */;
     			buildPhases = (
-    				E661C77AE661E1CE000000C3 /* Sources */,
-    				E661C77AE661E1CE000000B3 /* Frameworks */,
+    				ACD3231CACD33DCA000000C3 /* Sources */,
+    				ACD3231CACD33DCA000000B3 /* Frameworks */,
     			);
     			buildRules = (
     			);
     			dependencies = (
-    				E661C77AE661E1CE000000C5 /* Prep */,
-				E661C77AE661E1CE000000C6 /* libmbedtls */,
-				E661C77AE661E1CE000000C7 /* libmpr-mbedtls */,
-				E661C77AE661E1CE000000C8 /* libmpr */,
-				E661C77AE661E1CE000000C9 /* libpcre */,
-				E661C77AE661E1CE000000CA /* libhttp */,				
+    				ACD3231CACD33DCA000000C5 /* Prep */,
+				ACD3231CACD33DCA000000C6 /* libmbedtls */,
+				ACD3231CACD33DCA000000C7 /* libmpr-mbedtls */,
+				ACD3231CACD33DCA000000C8 /* libmpr */,
+				ACD3231CACD33DCA000000C9 /* libpcre */,
+				ACD3231CACD33DCA000000CA /* libhttp */,				
     			);
     			name = http-server;
     			productName = http;
-    			productReference = E661C77AE661E1CE000000AA /* http-server */;
+    			productReference = ACD3231CACD33DCA000000AA /* http-server */;
     			productType = "com.apple.product-type.tool";
     		};
-		E661C77AE661E1CE000000A7 /* httpcmd */ = {
+		ACD3231CACD33DCA000000A7 /* httpcmd */ = {
     			isa = PBXNativeTarget;
-    			buildConfigurationList = E661C77AE661E1CE000000CC /* Build configuration list for PBXNativeTarget "httpcmd" */;
+    			buildConfigurationList = ACD3231CACD33DCA000000CC /* Build configuration list for PBXNativeTarget "httpcmd" */;
     			buildPhases = (
-    				E661C77AE661E1CE000000CB /* Sources */,
-    				E661C77AE661E1CE000000B4 /* Frameworks */,
+    				ACD3231CACD33DCA000000CB /* Sources */,
+    				ACD3231CACD33DCA000000B4 /* Frameworks */,
     			);
     			buildRules = (
     			);
     			dependencies = (
-    				E661C77AE661E1CE000000CD /* Prep */,
-				E661C77AE661E1CE000000CE /* libmbedtls */,
-				E661C77AE661E1CE000000CF /* libmpr-mbedtls */,
-				E661C77AE661E1CE000000D0 /* libmpr */,
-				E661C77AE661E1CE000000D1 /* libpcre */,
-				E661C77AE661E1CE000000D2 /* libhttp */,				
+    				ACD3231CACD33DCA000000CD /* Prep */,
+				ACD3231CACD33DCA000000CE /* libmbedtls */,
+				ACD3231CACD33DCA000000CF /* libmpr-mbedtls */,
+				ACD3231CACD33DCA000000D0 /* libmpr */,
+				ACD3231CACD33DCA000000D1 /* libpcre */,
+				ACD3231CACD33DCA000000D2 /* libhttp */,				
     			);
     			name = httpcmd;
     			productName = http;
-    			productReference = E661C77AE661E1CE000000AC /* httpcmd */;
+    			productReference = ACD3231CACD33DCA000000AC /* httpcmd */;
     			productType = "com.apple.product-type.tool";
     		};
-		E661C77AE661E1CE0000008A /* libhttp */ = {
+		ACD3231CACD33DCA0000008A /* libhttp */ = {
     			isa = PBXNativeTarget;
-    			buildConfigurationList = E661C77AE661E1CE000000D4 /* Build configuration list for PBXNativeTarget "libhttp" */;
+    			buildConfigurationList = ACD3231CACD33DCA000000D4 /* Build configuration list for PBXNativeTarget "libhttp" */;
     			buildPhases = (
-    				E661C77AE661E1CE000000D3 /* Sources */,
-    				E661C77AE661E1CE000000B5 /* Frameworks */,
+    				ACD3231CACD33DCA000000D3 /* Sources */,
+    				ACD3231CACD33DCA000000B5 /* Frameworks */,
     			);
     			buildRules = (
     			);
     			dependencies = (
-    				E661C77AE661E1CE000000D5 /* Prep */,
-				E661C77AE661E1CE000000D6 /* libmbedtls */,
-				E661C77AE661E1CE000000D7 /* libmpr-mbedtls */,
-				E661C77AE661E1CE000000D8 /* libmpr */,
-				E661C77AE661E1CE000000D9 /* libpcre */,				
+    				ACD3231CACD33DCA000000D5 /* Prep */,
+				ACD3231CACD33DCA000000D6 /* libmbedtls */,
+				ACD3231CACD33DCA000000D7 /* libmpr-mbedtls */,
+				ACD3231CACD33DCA000000D8 /* libmpr */,
+				ACD3231CACD33DCA000000D9 /* libpcre */,				
     			);
     			name = libhttp;
     			productName = http;
-    			productReference = E661C77AE661E1CE0000006B /* libhttp */;
+    			productReference = ACD3231CACD33DCA0000006B /* libhttp */;
     			productType = "com.apple.product-type.library.dynamic";
     		};
-		E661C77AE661E1CE00000082 /* libmbedtls */ = {
+		ACD3231CACD33DCA00000082 /* libmbedtls */ = {
     			isa = PBXNativeTarget;
-    			buildConfigurationList = E661C77AE661E1CE000000DB /* Build configuration list for PBXNativeTarget "libmbedtls" */;
+    			buildConfigurationList = ACD3231CACD33DCA000000DB /* Build configuration list for PBXNativeTarget "libmbedtls" */;
     			buildPhases = (
-    				E661C77AE661E1CE000000DA /* Sources */,
-    				E661C77AE661E1CE000000B6 /* Frameworks */,
+    				ACD3231CACD33DCA000000DA /* Sources */,
+    				ACD3231CACD33DCA000000B6 /* Frameworks */,
     			);
     			buildRules = (
     			);
     			dependencies = (
-    				E661C77AE661E1CE000000DC /* Prep */,				
+    				ACD3231CACD33DCA000000DC /* Prep */,				
     			);
     			name = libmbedtls;
     			productName = http;
-    			productReference = E661C77AE661E1CE00000073 /* libmbedtls */;
+    			productReference = ACD3231CACD33DCA00000073 /* libmbedtls */;
     			productType = "com.apple.product-type.library.dynamic";
     		};
-		E661C77AE661E1CE00000086 /* libmpr */ = {
+		ACD3231CACD33DCA00000086 /* libmpr */ = {
     			isa = PBXNativeTarget;
-    			buildConfigurationList = E661C77AE661E1CE000000DE /* Build configuration list for PBXNativeTarget "libmpr" */;
+    			buildConfigurationList = ACD3231CACD33DCA000000DE /* Build configuration list for PBXNativeTarget "libmpr" */;
     			buildPhases = (
-    				E661C77AE661E1CE000000DD /* Sources */,
-    				E661C77AE661E1CE000000B7 /* Frameworks */,
+    				ACD3231CACD33DCA000000DD /* Sources */,
+    				ACD3231CACD33DCA000000B7 /* Frameworks */,
     			);
     			buildRules = (
     			);
     			dependencies = (
-    				E661C77AE661E1CE000000DF /* Prep */,
-				E661C77AE661E1CE000000E0 /* libmbedtls */,
-				E661C77AE661E1CE000000E1 /* libmpr-mbedtls */,				
+    				ACD3231CACD33DCA000000DF /* Prep */,
+				ACD3231CACD33DCA000000E0 /* libmbedtls */,
+				ACD3231CACD33DCA000000E1 /* libmpr-mbedtls */,				
     			);
     			name = libmpr;
     			productName = http;
-    			productReference = E661C77AE661E1CE0000006F /* libmpr */;
+    			productReference = ACD3231CACD33DCA0000006F /* libmpr */;
     			productType = "com.apple.product-type.library.dynamic";
     		};
-		E661C77AE661E1CE00000084 /* libmpr-mbedtls */ = {
+		ACD3231CACD33DCA00000084 /* libmpr-mbedtls */ = {
     			isa = PBXNativeTarget;
-    			buildConfigurationList = E661C77AE661E1CE000000E3 /* Build configuration list for PBXNativeTarget "libmpr-mbedtls" */;
+    			buildConfigurationList = ACD3231CACD33DCA000000E3 /* Build configuration list for PBXNativeTarget "libmpr-mbedtls" */;
     			buildPhases = (
-    				E661C77AE661E1CE000000E2 /* Sources */,
-    				E661C77AE661E1CE000000B8 /* Frameworks */,
+    				ACD3231CACD33DCA000000E2 /* Sources */,
+    				ACD3231CACD33DCA000000B8 /* Frameworks */,
     			);
     			buildRules = (
     			);
     			dependencies = (
-    				E661C77AE661E1CE000000E4 /* Prep */,
-				E661C77AE661E1CE000000E5 /* libmbedtls */,				
+    				ACD3231CACD33DCA000000E4 /* Prep */,
+				ACD3231CACD33DCA000000E5 /* libmbedtls */,				
     			);
     			name = libmpr-mbedtls;
     			productName = http;
-    			productReference = E661C77AE661E1CE00000071 /* libmpr-mbedtls */;
+    			productReference = ACD3231CACD33DCA00000071 /* libmpr-mbedtls */;
     			productType = "com.apple.product-type.library.dynamic";
     		};
-		E661C77AE661E1CE00000088 /* libpcre */ = {
+		ACD3231CACD33DCA00000088 /* libpcre */ = {
     			isa = PBXNativeTarget;
-    			buildConfigurationList = E661C77AE661E1CE000000E7 /* Build configuration list for PBXNativeTarget "libpcre" */;
+    			buildConfigurationList = ACD3231CACD33DCA000000E7 /* Build configuration list for PBXNativeTarget "libpcre" */;
     			buildPhases = (
-    				E661C77AE661E1CE000000E6 /* Sources */,
-    				E661C77AE661E1CE000000B9 /* Frameworks */,
+    				ACD3231CACD33DCA000000E6 /* Sources */,
+    				ACD3231CACD33DCA000000B9 /* Frameworks */,
     			);
     			buildRules = (
     			);
     			dependencies = (
-    				E661C77AE661E1CE000000E8 /* Prep */,				
+    				ACD3231CACD33DCA000000E8 /* Prep */,				
     			);
     			name = libpcre;
     			productName = http;
-    			productReference = E661C77AE661E1CE0000006D /* libpcre */;
+    			productReference = ACD3231CACD33DCA0000006D /* libpcre */;
     			productType = "com.apple.product-type.library.dynamic";
     		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		E661C77AE661E1CE00000007 /* ShellScript for install-certs */ = {
+		ACD3231CACD33DCA00000007 /* ShellScript for install-certs */ = {
     			isa = PBXShellScriptBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
@@ -775,7 +775,15 @@
 ../src/certs/samples/test.key
     			);
     			outputPaths = (
-    ../build/macosx-x64-static/bin
+    ../build/macosx-x64-static/bin/ca.crt,
+../build/macosx-x64-static/bin/ca.key,
+../build/macosx-x64-static/bin/ec.crt,
+../build/macosx-x64-static/bin/ec.key,
+../build/macosx-x64-static/bin/roots.crt,
+../build/macosx-x64-static/bin/self.crt,
+../build/macosx-x64-static/bin/self.key,
+../build/macosx-x64-static/bin/test.crt,
+../build/macosx-x64-static/bin/test.key
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     			shellPath = /bin/bash;
@@ -793,7 +801,7 @@ cd ..
 	cp src/certs/samples/test.key build/macosx-x64-static/bin/test.key
 ";
     		};
-		E661C77AE661E1CE00000017 /* ShellScript for Prep */ = {
+		ACD3231CACD33DCA00000017 /* ShellScript for Prep */ = {
     			isa = PBXShellScriptBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
@@ -851,306 +859,306 @@ fi";
 /* End PBXShellScriptBuildPhase section */
 
     /* Begin PBXProject section */
-    		E661C77AE661E1CE00000001 /* Project object */ = {
+    		ACD3231CACD33DCA00000001 /* Project object */ = {
     			isa = PBXProject;
     			attributes = {
     				LastUpgradeCheck = 0430;
     				ORGANIZATIONNAME = "embedthis";
     			};
-    			buildConfigurationList = E661C77AE661E1CE00000002 /* Build configuration list for PBXProject "http" */;
+    			buildConfigurationList = ACD3231CACD33DCA00000002 /* Build configuration list for PBXProject "http" */;
     			compatibilityVersion = "Xcode 3.2";
     			developmentRegion = English;
     			hasScannedForEncodings = 0;
     			knownRegions = (
     				en,
     			);
-    			mainGroup = E661C77AE661E1CE000000BA;
-    			productRefGroup = E661C77AE661E1CE000000C2 /* Products */;
+    			mainGroup = ACD3231CACD33DCA000000BA;
+    			productRefGroup = ACD3231CACD33DCA000000C2 /* Products */;
     			projectDirPath = "";
     			projectRoot = "";
     			targets = (
-				E661C77AE661E1CE0000000A /* All */,
-				E661C77AE661E1CE00000016 /* Prep */,
-				E661C77AE661E1CE0000008A /* libhttp */,
-				E661C77AE661E1CE00000082 /* libmbedtls */,
-				E661C77AE661E1CE00000086 /* libmpr */,
-				E661C77AE661E1CE00000084 /* libmpr-mbedtls */,
-				E661C77AE661E1CE00000088 /* libpcre */,
-				E661C77AE661E1CE000000A5 /* http-server */,
-				E661C77AE661E1CE000000A7 /* httpcmd */,
-				E661C77AE661E1CE00000006 /* install-certs */,
+				ACD3231CACD33DCA0000000A /* All */,
+				ACD3231CACD33DCA00000016 /* Prep */,
+				ACD3231CACD33DCA0000008A /* libhttp */,
+				ACD3231CACD33DCA00000082 /* libmbedtls */,
+				ACD3231CACD33DCA00000086 /* libmpr */,
+				ACD3231CACD33DCA00000084 /* libmpr-mbedtls */,
+				ACD3231CACD33DCA00000088 /* libpcre */,
+				ACD3231CACD33DCA000000A5 /* http-server */,
+				ACD3231CACD33DCA000000A7 /* httpcmd */,
+				ACD3231CACD33DCA00000006 /* install-certs */,
 			);
     		};
     /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		E661C77AE661E1CE000000C3 /* http-server Sources */ = {
+		ACD3231CACD33DCA000000C3 /* http-server Sources */ = {
     			isa = PBXSourcesBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
-    				E661C77AE661E1CE00000018 /* http-server.c in Sources */,
+    				ACD3231CACD33DCA00000018 /* http-server.c in Sources */,
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     		};
-		E661C77AE661E1CE000000CB /* httpcmd Sources */ = {
+		ACD3231CACD33DCA000000CB /* httpcmd Sources */ = {
     			isa = PBXSourcesBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
-    				E661C77AE661E1CE0000001A /* http.c in Sources */,
+    				ACD3231CACD33DCA0000001A /* http.c in Sources */,
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     		};
-		E661C77AE661E1CE000000D3 /* libhttp Sources */ = {
+		ACD3231CACD33DCA000000D3 /* libhttp Sources */ = {
     			isa = PBXSourcesBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
-    				E661C77AE661E1CE0000001C /* actionHandler.c in Sources */,
-				E661C77AE661E1CE0000001E /* auth.c in Sources */,
-				E661C77AE661E1CE00000020 /* basic.c in Sources */,
-				E661C77AE661E1CE00000022 /* cache.c in Sources */,
-				E661C77AE661E1CE00000024 /* chunkFilter.c in Sources */,
-				E661C77AE661E1CE00000026 /* client.c in Sources */,
-				E661C77AE661E1CE00000028 /* config.c in Sources */,
-				E661C77AE661E1CE0000002A /* conn.c in Sources */,
-				E661C77AE661E1CE0000002C /* digest.c in Sources */,
-				E661C77AE661E1CE0000002E /* dirHandler.c in Sources */,
-				E661C77AE661E1CE00000030 /* endpoint.c in Sources */,
-				E661C77AE661E1CE00000032 /* error.c in Sources */,
-				E661C77AE661E1CE00000034 /* fileHandler.c in Sources */,
-				E661C77AE661E1CE00000036 /* host.c in Sources */,
-				E661C77AE661E1CE00000038 /* monitor.c in Sources */,
-				E661C77AE661E1CE0000003A /* netConnector.c in Sources */,
-				E661C77AE661E1CE0000003C /* packet.c in Sources */,
-				E661C77AE661E1CE0000003E /* pam.c in Sources */,
-				E661C77AE661E1CE00000040 /* passHandler.c in Sources */,
-				E661C77AE661E1CE00000042 /* pipeline.c in Sources */,
-				E661C77AE661E1CE00000044 /* queue.c in Sources */,
-				E661C77AE661E1CE00000046 /* rangeFilter.c in Sources */,
-				E661C77AE661E1CE00000048 /* route.c in Sources */,
-				E661C77AE661E1CE0000004A /* rx.c in Sources */,
-				E661C77AE661E1CE0000004C /* sendConnector.c in Sources */,
-				E661C77AE661E1CE0000004E /* service.c in Sources */,
-				E661C77AE661E1CE00000050 /* session.c in Sources */,
-				E661C77AE661E1CE00000052 /* stage.c in Sources */,
-				E661C77AE661E1CE00000054 /* trace.c in Sources */,
-				E661C77AE661E1CE00000056 /* tx.c in Sources */,
-				E661C77AE661E1CE00000058 /* uploadFilter.c in Sources */,
-				E661C77AE661E1CE0000005A /* uri.c in Sources */,
-				E661C77AE661E1CE0000005C /* user.c in Sources */,
-				E661C77AE661E1CE0000005E /* var.c in Sources */,
-				E661C77AE661E1CE00000060 /* webSockFilter.c in Sources */,
+    				ACD3231CACD33DCA0000001C /* actionHandler.c in Sources */,
+				ACD3231CACD33DCA0000001E /* auth.c in Sources */,
+				ACD3231CACD33DCA00000020 /* basic.c in Sources */,
+				ACD3231CACD33DCA00000022 /* cache.c in Sources */,
+				ACD3231CACD33DCA00000024 /* chunkFilter.c in Sources */,
+				ACD3231CACD33DCA00000026 /* client.c in Sources */,
+				ACD3231CACD33DCA00000028 /* config.c in Sources */,
+				ACD3231CACD33DCA0000002A /* conn.c in Sources */,
+				ACD3231CACD33DCA0000002C /* digest.c in Sources */,
+				ACD3231CACD33DCA0000002E /* dirHandler.c in Sources */,
+				ACD3231CACD33DCA00000030 /* endpoint.c in Sources */,
+				ACD3231CACD33DCA00000032 /* error.c in Sources */,
+				ACD3231CACD33DCA00000034 /* fileHandler.c in Sources */,
+				ACD3231CACD33DCA00000036 /* host.c in Sources */,
+				ACD3231CACD33DCA00000038 /* monitor.c in Sources */,
+				ACD3231CACD33DCA0000003A /* netConnector.c in Sources */,
+				ACD3231CACD33DCA0000003C /* packet.c in Sources */,
+				ACD3231CACD33DCA0000003E /* pam.c in Sources */,
+				ACD3231CACD33DCA00000040 /* passHandler.c in Sources */,
+				ACD3231CACD33DCA00000042 /* pipeline.c in Sources */,
+				ACD3231CACD33DCA00000044 /* queue.c in Sources */,
+				ACD3231CACD33DCA00000046 /* rangeFilter.c in Sources */,
+				ACD3231CACD33DCA00000048 /* route.c in Sources */,
+				ACD3231CACD33DCA0000004A /* rx.c in Sources */,
+				ACD3231CACD33DCA0000004C /* sendConnector.c in Sources */,
+				ACD3231CACD33DCA0000004E /* service.c in Sources */,
+				ACD3231CACD33DCA00000050 /* session.c in Sources */,
+				ACD3231CACD33DCA00000052 /* stage.c in Sources */,
+				ACD3231CACD33DCA00000054 /* trace.c in Sources */,
+				ACD3231CACD33DCA00000056 /* tx.c in Sources */,
+				ACD3231CACD33DCA00000058 /* uploadFilter.c in Sources */,
+				ACD3231CACD33DCA0000005A /* uri.c in Sources */,
+				ACD3231CACD33DCA0000005C /* user.c in Sources */,
+				ACD3231CACD33DCA0000005E /* var.c in Sources */,
+				ACD3231CACD33DCA00000060 /* webSockFilter.c in Sources */,
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     		};
-		E661C77AE661E1CE000000DA /* libmbedtls Sources */ = {
+		ACD3231CACD33DCA000000DA /* libmbedtls Sources */ = {
     			isa = PBXSourcesBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
-    				E661C77AE661E1CE00000062 /* mbedtls.c in Sources */,
+    				ACD3231CACD33DCA00000062 /* mbedtls.c in Sources */,
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     		};
-		E661C77AE661E1CE000000DD /* libmpr Sources */ = {
+		ACD3231CACD33DCA000000DD /* libmpr Sources */ = {
     			isa = PBXSourcesBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
-    				E661C77AE661E1CE00000064 /* mprLib.c in Sources */,
+    				ACD3231CACD33DCA00000064 /* mprLib.c in Sources */,
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     		};
-		E661C77AE661E1CE000000E2 /* libmpr-mbedtls Sources */ = {
+		ACD3231CACD33DCA000000E2 /* libmpr-mbedtls Sources */ = {
     			isa = PBXSourcesBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
-    				E661C77AE661E1CE00000066 /* mpr-mbedtls.c in Sources */,
+    				ACD3231CACD33DCA00000066 /* mpr-mbedtls.c in Sources */,
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     		};
-		E661C77AE661E1CE000000E6 /* libpcre Sources */ = {
+		ACD3231CACD33DCA000000E6 /* libpcre Sources */ = {
     			isa = PBXSourcesBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
-    				E661C77AE661E1CE00000068 /* pcre.c in Sources */,
+    				ACD3231CACD33DCA00000068 /* pcre.c in Sources */,
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		E661C77AE661E1CE000000C5 /* PBXTargetDependency http-server depends on Prep */ = {
+		ACD3231CACD33DCA000000C5 /* PBXTargetDependency http-server depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE00000080 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA00000080 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000C6 /* PBXTargetDependency http-server depends on libmbedtls */ = {
+		ACD3231CACD33DCA000000C6 /* PBXTargetDependency http-server depends on libmbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000082 /* libmbedtls */;
-    			targetProxy = E661C77AE661E1CE00000081 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000082 /* libmbedtls */;
+    			targetProxy = ACD3231CACD33DCA00000081 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000C7 /* PBXTargetDependency http-server depends on libmpr-mbedtls */ = {
+		ACD3231CACD33DCA000000C7 /* PBXTargetDependency http-server depends on libmpr-mbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000084 /* libmpr-mbedtls */;
-    			targetProxy = E661C77AE661E1CE00000083 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000084 /* libmpr-mbedtls */;
+    			targetProxy = ACD3231CACD33DCA00000083 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000C8 /* PBXTargetDependency http-server depends on libmpr */ = {
+		ACD3231CACD33DCA000000C8 /* PBXTargetDependency http-server depends on libmpr */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000086 /* libmpr */;
-    			targetProxy = E661C77AE661E1CE00000085 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000086 /* libmpr */;
+    			targetProxy = ACD3231CACD33DCA00000085 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000C9 /* PBXTargetDependency http-server depends on libpcre */ = {
+		ACD3231CACD33DCA000000C9 /* PBXTargetDependency http-server depends on libpcre */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000088 /* libpcre */;
-    			targetProxy = E661C77AE661E1CE00000087 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000088 /* libpcre */;
+    			targetProxy = ACD3231CACD33DCA00000087 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000CA /* PBXTargetDependency http-server depends on libhttp */ = {
+		ACD3231CACD33DCA000000CA /* PBXTargetDependency http-server depends on libhttp */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE0000008A /* libhttp */;
-    			targetProxy = E661C77AE661E1CE00000089 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA0000008A /* libhttp */;
+    			targetProxy = ACD3231CACD33DCA00000089 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000CD /* PBXTargetDependency httpcmd depends on Prep */ = {
+		ACD3231CACD33DCA000000CD /* PBXTargetDependency httpcmd depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE0000008B /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA0000008B /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000CE /* PBXTargetDependency httpcmd depends on libmbedtls */ = {
+		ACD3231CACD33DCA000000CE /* PBXTargetDependency httpcmd depends on libmbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000082 /* libmbedtls */;
-    			targetProxy = E661C77AE661E1CE0000008C /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000082 /* libmbedtls */;
+    			targetProxy = ACD3231CACD33DCA0000008C /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000CF /* PBXTargetDependency httpcmd depends on libmpr-mbedtls */ = {
+		ACD3231CACD33DCA000000CF /* PBXTargetDependency httpcmd depends on libmpr-mbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000084 /* libmpr-mbedtls */;
-    			targetProxy = E661C77AE661E1CE0000008D /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000084 /* libmpr-mbedtls */;
+    			targetProxy = ACD3231CACD33DCA0000008D /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000D0 /* PBXTargetDependency httpcmd depends on libmpr */ = {
+		ACD3231CACD33DCA000000D0 /* PBXTargetDependency httpcmd depends on libmpr */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000086 /* libmpr */;
-    			targetProxy = E661C77AE661E1CE0000008E /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000086 /* libmpr */;
+    			targetProxy = ACD3231CACD33DCA0000008E /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000D1 /* PBXTargetDependency httpcmd depends on libpcre */ = {
+		ACD3231CACD33DCA000000D1 /* PBXTargetDependency httpcmd depends on libpcre */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000088 /* libpcre */;
-    			targetProxy = E661C77AE661E1CE0000008F /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000088 /* libpcre */;
+    			targetProxy = ACD3231CACD33DCA0000008F /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000D2 /* PBXTargetDependency httpcmd depends on libhttp */ = {
+		ACD3231CACD33DCA000000D2 /* PBXTargetDependency httpcmd depends on libhttp */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE0000008A /* libhttp */;
-    			targetProxy = E661C77AE661E1CE00000090 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA0000008A /* libhttp */;
+    			targetProxy = ACD3231CACD33DCA00000090 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE00000008 /* PBXTargetDependency install-certs depends on Prep */ = {
+		ACD3231CACD33DCA00000008 /* PBXTargetDependency install-certs depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE00000091 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA00000091 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000D5 /* PBXTargetDependency libhttp depends on Prep */ = {
+		ACD3231CACD33DCA000000D5 /* PBXTargetDependency libhttp depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE00000092 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA00000092 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000D6 /* PBXTargetDependency libhttp depends on libmbedtls */ = {
+		ACD3231CACD33DCA000000D6 /* PBXTargetDependency libhttp depends on libmbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000082 /* libmbedtls */;
-    			targetProxy = E661C77AE661E1CE00000093 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000082 /* libmbedtls */;
+    			targetProxy = ACD3231CACD33DCA00000093 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000D7 /* PBXTargetDependency libhttp depends on libmpr-mbedtls */ = {
+		ACD3231CACD33DCA000000D7 /* PBXTargetDependency libhttp depends on libmpr-mbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000084 /* libmpr-mbedtls */;
-    			targetProxy = E661C77AE661E1CE00000094 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000084 /* libmpr-mbedtls */;
+    			targetProxy = ACD3231CACD33DCA00000094 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000D8 /* PBXTargetDependency libhttp depends on libmpr */ = {
+		ACD3231CACD33DCA000000D8 /* PBXTargetDependency libhttp depends on libmpr */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000086 /* libmpr */;
-    			targetProxy = E661C77AE661E1CE00000095 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000086 /* libmpr */;
+    			targetProxy = ACD3231CACD33DCA00000095 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000D9 /* PBXTargetDependency libhttp depends on libpcre */ = {
+		ACD3231CACD33DCA000000D9 /* PBXTargetDependency libhttp depends on libpcre */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000088 /* libpcre */;
-    			targetProxy = E661C77AE661E1CE00000096 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000088 /* libpcre */;
+    			targetProxy = ACD3231CACD33DCA00000096 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000DC /* PBXTargetDependency libmbedtls depends on Prep */ = {
+		ACD3231CACD33DCA000000DC /* PBXTargetDependency libmbedtls depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE00000097 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA00000097 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000DF /* PBXTargetDependency libmpr depends on Prep */ = {
+		ACD3231CACD33DCA000000DF /* PBXTargetDependency libmpr depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE00000098 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA00000098 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000E0 /* PBXTargetDependency libmpr depends on libmbedtls */ = {
+		ACD3231CACD33DCA000000E0 /* PBXTargetDependency libmpr depends on libmbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000082 /* libmbedtls */;
-    			targetProxy = E661C77AE661E1CE00000099 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000082 /* libmbedtls */;
+    			targetProxy = ACD3231CACD33DCA00000099 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000E1 /* PBXTargetDependency libmpr depends on libmpr-mbedtls */ = {
+		ACD3231CACD33DCA000000E1 /* PBXTargetDependency libmpr depends on libmpr-mbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000084 /* libmpr-mbedtls */;
-    			targetProxy = E661C77AE661E1CE0000009A /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000084 /* libmpr-mbedtls */;
+    			targetProxy = ACD3231CACD33DCA0000009A /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000E4 /* PBXTargetDependency libmpr-mbedtls depends on Prep */ = {
+		ACD3231CACD33DCA000000E4 /* PBXTargetDependency libmpr-mbedtls depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE0000009B /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA0000009B /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000E5 /* PBXTargetDependency libmpr-mbedtls depends on libmbedtls */ = {
+		ACD3231CACD33DCA000000E5 /* PBXTargetDependency libmpr-mbedtls depends on libmbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000082 /* libmbedtls */;
-    			targetProxy = E661C77AE661E1CE0000009C /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000082 /* libmbedtls */;
+    			targetProxy = ACD3231CACD33DCA0000009C /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE000000E8 /* PBXTargetDependency libpcre depends on Prep */ = {
+		ACD3231CACD33DCA000000E8 /* PBXTargetDependency libpcre depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE0000009D /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA0000009D /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE00000014 /* PBXTargetDependency All depends on Prep */ = {
+		ACD3231CACD33DCA00000014 /* PBXTargetDependency All depends on Prep */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000016 /* Prep */;
-    			targetProxy = E661C77AE661E1CE0000009E /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000016 /* Prep */;
+    			targetProxy = ACD3231CACD33DCA0000009E /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE0000000F /* PBXTargetDependency All depends on libmbedtls */ = {
+		ACD3231CACD33DCA0000000F /* PBXTargetDependency All depends on libmbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000082 /* libmbedtls */;
-    			targetProxy = E661C77AE661E1CE0000009F /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000082 /* libmbedtls */;
+    			targetProxy = ACD3231CACD33DCA0000009F /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE00000011 /* PBXTargetDependency All depends on libmpr-mbedtls */ = {
+		ACD3231CACD33DCA00000011 /* PBXTargetDependency All depends on libmpr-mbedtls */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000084 /* libmpr-mbedtls */;
-    			targetProxy = E661C77AE661E1CE000000A0 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000084 /* libmpr-mbedtls */;
+    			targetProxy = ACD3231CACD33DCA000000A0 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE00000010 /* PBXTargetDependency All depends on libmpr */ = {
+		ACD3231CACD33DCA00000010 /* PBXTargetDependency All depends on libmpr */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000086 /* libmpr */;
-    			targetProxy = E661C77AE661E1CE000000A1 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000086 /* libmpr */;
+    			targetProxy = ACD3231CACD33DCA000000A1 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE00000012 /* PBXTargetDependency All depends on libpcre */ = {
+		ACD3231CACD33DCA00000012 /* PBXTargetDependency All depends on libpcre */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000088 /* libpcre */;
-    			targetProxy = E661C77AE661E1CE000000A2 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000088 /* libpcre */;
+    			targetProxy = ACD3231CACD33DCA000000A2 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE0000000E /* PBXTargetDependency All depends on libhttp */ = {
+		ACD3231CACD33DCA0000000E /* PBXTargetDependency All depends on libhttp */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE0000008A /* libhttp */;
-    			targetProxy = E661C77AE661E1CE000000A3 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA0000008A /* libhttp */;
+    			targetProxy = ACD3231CACD33DCA000000A3 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE0000000B /* PBXTargetDependency All depends on http-server */ = {
+		ACD3231CACD33DCA0000000B /* PBXTargetDependency All depends on http-server */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE000000A5 /* http-server */;
-    			targetProxy = E661C77AE661E1CE000000A4 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA000000A5 /* http-server */;
+    			targetProxy = ACD3231CACD33DCA000000A4 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE0000000C /* PBXTargetDependency All depends on httpcmd */ = {
+		ACD3231CACD33DCA0000000C /* PBXTargetDependency All depends on httpcmd */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE000000A7 /* httpcmd */;
-    			targetProxy = E661C77AE661E1CE000000A6 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA000000A7 /* httpcmd */;
+    			targetProxy = ACD3231CACD33DCA000000A6 /* PBXContainerItemProxy */;
     		};
-		E661C77AE661E1CE0000000D /* PBXTargetDependency All depends on install-certs */ = {
+		ACD3231CACD33DCA0000000D /* PBXTargetDependency All depends on install-certs */ = {
     			isa = PBXTargetDependency;
-    			target = E661C77AE661E1CE00000006 /* install-certs */;
-    			targetProxy = E661C77AE661E1CE000000A8 /* PBXContainerItemProxy */;
+    			target = ACD3231CACD33DCA00000006 /* install-certs */;
+    			targetProxy = ACD3231CACD33DCA000000A8 /* PBXContainerItemProxy */;
     		};
 /* End PBXTargetDependency section */
 
     /* Begin XCBuildConfiguration section */
-    		E661C77AE661E1CE00000003 /* Debug */ = {
+    		ACD3231CACD33DCA00000003 /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     
@@ -1235,7 +1243,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE00000004 /* Release */ = {
+    		ACD3231CACD33DCA00000004 /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     
@@ -1321,7 +1329,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000E9 /* Debug */ = {
+		ACD3231CACD33DCA000000E9 /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = http-server;
@@ -1339,7 +1347,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000EA /* Release */ = {
+    		ACD3231CACD33DCA000000EA /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = http-server;
@@ -1357,7 +1365,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000EB /* Debug */ = {
+		ACD3231CACD33DCA000000EB /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = http;
@@ -1375,7 +1383,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000EC /* Release */ = {
+    		ACD3231CACD33DCA000000EC /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = http;
@@ -1393,7 +1401,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000ED /* Debug */ = {
+		ACD3231CACD33DCA000000ED /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = install-certs;
@@ -1409,7 +1417,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000EE /* Release */ = {
+    		ACD3231CACD33DCA000000EE /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = install-certs;
@@ -1425,7 +1433,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000EF /* Debug */ = {
+		ACD3231CACD33DCA000000EF /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libhttp;
@@ -1446,7 +1454,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000F0 /* Release */ = {
+    		ACD3231CACD33DCA000000F0 /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libhttp;
@@ -1467,7 +1475,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000F1 /* Debug */ = {
+		ACD3231CACD33DCA000000F1 /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libmbedtls;
@@ -1485,7 +1493,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000F2 /* Release */ = {
+    		ACD3231CACD33DCA000000F2 /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libmbedtls;
@@ -1503,7 +1511,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000F3 /* Debug */ = {
+		ACD3231CACD33DCA000000F3 /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libmpr;
@@ -1522,7 +1530,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000F4 /* Release */ = {
+    		ACD3231CACD33DCA000000F4 /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libmpr;
@@ -1541,7 +1549,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000F5 /* Debug */ = {
+		ACD3231CACD33DCA000000F5 /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libmpr-mbedtls;
@@ -1560,7 +1568,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000F6 /* Release */ = {
+    		ACD3231CACD33DCA000000F6 /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libmpr-mbedtls;
@@ -1579,7 +1587,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000F7 /* Debug */ = {
+		ACD3231CACD33DCA000000F7 /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libpcre;
@@ -1597,7 +1605,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000F8 /* Release */ = {
+    		ACD3231CACD33DCA000000F8 /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = libpcre;
@@ -1615,7 +1623,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000F9 /* Debug */ = {
+		ACD3231CACD33DCA000000F9 /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = All;
@@ -1631,7 +1639,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000FA /* Release */ = {
+    		ACD3231CACD33DCA000000FA /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = All;
@@ -1647,7 +1655,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Release;
     		};
-		E661C77AE661E1CE000000FB /* Debug */ = {
+		ACD3231CACD33DCA000000FB /* Debug */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = Prep;
@@ -1663,7 +1671,7 @@ ENABLE_TESTABILITY = YES;
     			};
     			name = Debug;
     		};
-    		E661C77AE661E1CE000000FC /* Release */ = {
+    		ACD3231CACD33DCA000000FC /* Release */ = {
     			isa = XCBuildConfiguration;
     			buildSettings = {
     				PRODUCT_NAME = Prep;
@@ -1682,106 +1690,106 @@ ENABLE_TESTABILITY = YES;
 /* End XCBuildConfiguration section */
 
     /* Begin XCConfigurationList section */
-    		E661C77AE661E1CE00000002 /* Build configuration list for PBXProject "http" */ = {
+    		ACD3231CACD33DCA00000002 /* Build configuration list for PBXProject "http" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE00000003 /* Debug */,
-    				E661C77AE661E1CE00000004 /* Release */,
+    				ACD3231CACD33DCA00000003 /* Debug */,
+    				ACD3231CACD33DCA00000004 /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE000000C4 /* Build configuration list for PBXNativeTarget "http-server" */ = {
+		ACD3231CACD33DCA000000C4 /* Build configuration list for PBXNativeTarget "http-server" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000E9 /* Debug */,
-    				E661C77AE661E1CE000000EA /* Release */,
+    				ACD3231CACD33DCA000000E9 /* Debug */,
+    				ACD3231CACD33DCA000000EA /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE000000CC /* Build configuration list for PBXNativeTarget "httpcmd" */ = {
+		ACD3231CACD33DCA000000CC /* Build configuration list for PBXNativeTarget "httpcmd" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000EB /* Debug */,
-    				E661C77AE661E1CE000000EC /* Release */,
+    				ACD3231CACD33DCA000000EB /* Debug */,
+    				ACD3231CACD33DCA000000EC /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE00000005 /* Build configuration list for PBXNativeTarget "install-certs" */ = {
+		ACD3231CACD33DCA00000005 /* Build configuration list for PBXNativeTarget "install-certs" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000ED /* Debug */,
-    				E661C77AE661E1CE000000EE /* Release */,
+    				ACD3231CACD33DCA000000ED /* Debug */,
+    				ACD3231CACD33DCA000000EE /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE000000D4 /* Build configuration list for PBXNativeTarget "libhttp" */ = {
+		ACD3231CACD33DCA000000D4 /* Build configuration list for PBXNativeTarget "libhttp" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000EF /* Debug */,
-    				E661C77AE661E1CE000000F0 /* Release */,
+    				ACD3231CACD33DCA000000EF /* Debug */,
+    				ACD3231CACD33DCA000000F0 /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE000000DB /* Build configuration list for PBXNativeTarget "libmbedtls" */ = {
+		ACD3231CACD33DCA000000DB /* Build configuration list for PBXNativeTarget "libmbedtls" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000F1 /* Debug */,
-    				E661C77AE661E1CE000000F2 /* Release */,
+    				ACD3231CACD33DCA000000F1 /* Debug */,
+    				ACD3231CACD33DCA000000F2 /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE000000DE /* Build configuration list for PBXNativeTarget "libmpr" */ = {
+		ACD3231CACD33DCA000000DE /* Build configuration list for PBXNativeTarget "libmpr" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000F3 /* Debug */,
-    				E661C77AE661E1CE000000F4 /* Release */,
+    				ACD3231CACD33DCA000000F3 /* Debug */,
+    				ACD3231CACD33DCA000000F4 /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE000000E3 /* Build configuration list for PBXNativeTarget "libmpr-mbedtls" */ = {
+		ACD3231CACD33DCA000000E3 /* Build configuration list for PBXNativeTarget "libmpr-mbedtls" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000F5 /* Debug */,
-    				E661C77AE661E1CE000000F6 /* Release */,
+    				ACD3231CACD33DCA000000F5 /* Debug */,
+    				ACD3231CACD33DCA000000F6 /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE000000E7 /* Build configuration list for PBXNativeTarget "libpcre" */ = {
+		ACD3231CACD33DCA000000E7 /* Build configuration list for PBXNativeTarget "libpcre" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000F7 /* Debug */,
-    				E661C77AE661E1CE000000F8 /* Release */,
+    				ACD3231CACD33DCA000000F7 /* Debug */,
+    				ACD3231CACD33DCA000000F8 /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE00000009 /* Build configuration list for PBXNativeTarget "All" */ = {
+		ACD3231CACD33DCA00000009 /* Build configuration list for PBXNativeTarget "All" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000F9 /* Debug */,
-    				E661C77AE661E1CE000000FA /* Release */,
+    				ACD3231CACD33DCA000000F9 /* Debug */,
+    				ACD3231CACD33DCA000000FA /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
-		E661C77AE661E1CE00000015 /* Build configuration list for PBXNativeTarget "Prep" */ = {
+		ACD3231CACD33DCA00000015 /* Build configuration list for PBXNativeTarget "Prep" */ = {
     			isa = XCConfigurationList;
     			buildConfigurations = (
-    				E661C77AE661E1CE000000FB /* Debug */,
-    				E661C77AE661E1CE000000FC /* Release */,
+    				ACD3231CACD33DCA000000FB /* Debug */,
+    				ACD3231CACD33DCA000000FC /* Release */,
     			);
     			defaultConfigurationIsVisible = 0;
     			defaultConfigurationName = Release;
     		};
 /* End XCConfigurationList section */
 	};
-	rootObject = E661C77AE661E1CE00000001 /* Project object */;
+	rootObject = ACD3231CACD33DCA00000001 /* Project object */;
 }

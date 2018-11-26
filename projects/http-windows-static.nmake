@@ -3,7 +3,7 @@
 #
 
 NAME                  = http
-VERSION               = 7.0.3
+VERSION               = 7.0.4
 
 OS                    = windows
 PA                    = $(PROCESSOR_ARCHITECTURE)

@@ -13,6 +13,7 @@
 
 /********************************** Forwards **********************************/
 
+static HttpAddress *growAddresses(HttpNet *net, HttpAddress *address, int counterIndex);
 static MprTicks lookupTicks(MprHash *args, cchar *key, MprTicks defaultValue);
 static void stopMonitors();
 
@@ -88,7 +89,7 @@ static void invokeDefenses(HttpMonitor *monitor, MprHash *args)
                 sd->suppressUntil = http->now + defense->suppressPeriod;
             }
         }
-        httpTrace(0, "monitor.defense.invoke", "context", "defense:'%s',remedy:'%s'", defense->name, defense->remedy);
+        httpTrace(http->trace, "monitor.defense.invoke", "context", "defense:'%s', remedy:'%s'", defense->name, defense->remedy);
 
         /*  WARNING: yields */
         remedyProc(args);
@@ -125,7 +126,7 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
         period = monitor->period / 1000;
         address = ip ? sfmt(" %s", ip) : "";
         msg = sfmt(fmt, address, monitor->counterName, counter->value, period, monitor->limit);
-        httpTrace(0, "monitor.check", "context", "msg:'%s'", msg);
+        httpTrace(HTTP->trace, "monitor.check", "context", "msg:'%s'", msg);
 
         subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
@@ -152,7 +153,7 @@ PUBLIC void httpPruneMonitors()
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
         if (address->banUntil && address->banUntil < http->now) {
-            httpTrace(0, "monitor.ban.stop", "context", "client:'%s'", kp->key);
+            httpTrace(http->trace, "monitor.ban.stop", "context", "client:'%s'", kp->key);
             address->banUntil = 0;
         }
         if ((address->updated + period) < http->now && address->banUntil == 0) {
@@ -332,56 +333,84 @@ static void stopMonitors()
 }
 
 
-/*
-    Register a monitor event
-    This code is very carefully coded for maximum speed to minimize locks for keep-alive requests.
-    There are some tolerated race conditions.
- */
-PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
+PUBLIC HttpAddress *httpMonitorAddress(HttpNet *net, int counterIndex)
 {
     Http            *http;
     HttpAddress     *address;
-    HttpCounter     *counter;
+    int             count;
     static int      seqno = 0;
-    int             ncounters;
 
-    http = conn->http;
-    address = conn->address;
-
-    if (!address) {
-        lock(http->addresses);
-        address = mprLookupKey(http->addresses, conn->ip);
-        if (!address || address->ncounters <= counterIndex) {
-            ncounters = ((counterIndex + 0xF) & ~0xF);
-            if (address) {
-                address = mprRealloc(address, sizeof(HttpAddress) * ncounters * sizeof(HttpCounter));
-                memset(&address[address->ncounters], 0, (ncounters - address->ncounters) * sizeof(HttpCounter));
-            } else {
-                address = mprAllocBlock(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter),
-                    MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO);
-                mprSetManager(address, (MprManager) manageAddress);
-            }
-            if (!address) {
-                unlock(http->addresses);
-                return 0;
-            }
-            address->ncounters = ncounters;
-            address->seqno = ++seqno;
-            mprAddKey(http->addresses, conn->ip, address);
-        }
-        conn->address = address;
-        if (!http->monitorsStarted) {
-            startMonitors();
-        }
+    address = net->address;
+    if (address) {
+        return address;
+    }
+    http = net->http;
+    count = mprGetHashLength(http->addresses);
+    if (count > net->limits->clientMax) {
+        mprLog("net erro", 0, "Too many concurrent clients, active: %d, max:%d", count, net->limits->clientMax);
+        return 0;
+    }
+    if (counterIndex <= 0) {
+        counterIndex = HTTP_COUNTER_MAX;
+    }
+    lock(http->addresses);
+    address = mprLookupKey(http->addresses, net->ip);
+    if ((address = growAddresses(net, address, counterIndex)) == 0) {
         unlock(http->addresses);
+        return 0;
+    }
+    address->seqno = ++seqno;
+    mprAddKey(http->addresses, net->ip, address);
+
+    net->address = address;
+    if (!http->monitorsStarted) {
+        startMonitors();
+    }
+    unlock(http->addresses);
+    return address;
+}
+
+
+static HttpAddress *growAddresses(HttpNet *net, HttpAddress *address, int counterIndex)
+{
+    int     ncounters;
+
+    if (!address || address->ncounters <= counterIndex) {
+        ncounters = ((counterIndex + 0xF) & ~0xF);
+        if (address) {
+            address = mprRealloc(address, sizeof(HttpAddress) * ncounters * sizeof(HttpCounter));
+            memset(&address[address->ncounters], 0, (ncounters - address->ncounters) * sizeof(HttpCounter));
+        } else {
+            address = mprAllocBlock(sizeof(HttpAddress) * ncounters * sizeof(HttpCounter), MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO);
+            mprSetManager(address, (MprManager) manageAddress);
+        }
+        address->ncounters = ncounters;
+    }
+    return address;
+}
+
+
+PUBLIC int64 httpMonitorNetEvent(HttpNet *net, int counterIndex, int64 adj)
+{
+    HttpAddress     *address;
+    HttpCounter     *counter;
+
+    if ((address = httpMonitorAddress(net, counterIndex)) == 0) {
+        return 0;
     }
     counter = &address->counters[counterIndex];
     mprAtomicAdd64((int64*) &counter->value, adj);
     /*
         Tolerated race with "updated" and the return value
      */
-    address->updated = http->now;
+    address->updated = net->http->now;
     return counter->value;
+}
+
+
+PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
+{
+    return httpMonitorNetEvent(conn->net, counterIndex, adj);
 }
 
 
@@ -507,7 +536,7 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
         return MPR_ERR_CANT_FIND;
     }
     if (address->banUntil < http->now) {
-        httpTrace(NULL, "monitor.ban.start", "error", "client:'%s',duration:%lld", ip, period / 1000);
+        httpTrace(http->trace, "monitor.ban.start", "error", "client:'%s', duration:%lld", ip, period / 1000);
     }
     banUntil = http->now + period;
     address->banUntil = max(banUntil, address->banUntil);
@@ -566,17 +595,17 @@ static void cmdRemedy(MprHash *args)
         command = strim(command, "&", MPR_TRIM_END);
     }
     argc = mprMakeArgv(command, &argv, 0);
-    cmd->stdoutBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
-    cmd->stderrBuf = mprCreateBuf(ME_MAX_BUFFER, -1);
+    cmd->stdoutBuf = mprCreateBuf(ME_BUFSIZE, -1);
+    cmd->stderrBuf = mprCreateBuf(ME_BUFSIZE, -1);
 
-    httpTrace(0, "monitor.remedy.cmd", "context", "remedy:'%s'", command);
+    httpTrace(HTTP->trace, "monitor.remedy.cmd", "context", "remedy:'%s'", command);
     if (mprStartCmd(cmd, argc, argv, NULL, MPR_CMD_DETACH | MPR_CMD_IN) < 0) {
-        httpTrace(0, "monitor.rememdy.cmd.error", "error", "msg:'Cannot start command. %s", command);
+        httpTrace(HTTP->trace, "monitor.rememdy.cmd.error", "error", "msg:'Cannot start command. %s'", command);
         return;
     }
     if (data) {
         if (mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
-            httpTrace(0, "monitor.remedy.cmd.error", "error", "msg:'Cannot write to command. %s'", command);
+            httpTrace(HTTP->trace, "monitor.remedy.cmd.error", "error", "msg:'Cannot write to command. %s'", command);
             return;
         }
     }
@@ -585,7 +614,7 @@ static void cmdRemedy(MprHash *args)
         rc = mprWaitForCmd(cmd, ME_HTTP_REMEDY_TIMEOUT);
         status = mprGetCmdExitStatus(cmd);
         if (rc < 0 || status != 0) {
-            httpTrace(0, "monitor.remedy.cmd.error", "error", "msg:'Remedy failed. %s. %s', command: '%s'",
+            httpTrace(HTTP->trace, "monitor.remedy.cmd.error", "error", "msg:'Remedy failed. %s. %s', command: '%s'",
                 mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf), command);
             return;
         }
@@ -609,7 +638,7 @@ static void delayRemedy(MprHash *args)
             address->delayUntil = max(delayUntil, address->delayUntil);
             delay = (int) lookupTicks(args, "DELAY", ME_HTTP_DELAY);
             address->delay = max(delay, address->delay);
-            httpTrace(0, "monitor.delay.start", "context", "client:'%s',delay:%d", ip, address->delay);
+            httpTrace(http->trace, "monitor.delay.start", "context", "client:'%s', delay:%d", ip, address->delay);
         }
     }
 }
@@ -637,13 +666,13 @@ static void httpRemedy(MprHash *args)
         method = "POST";
     }
     msg = smatch(method, "POST") ? mprLookupKey(args, "MESSAGE") : 0;
-    if ((conn = httpRequest(method, uri, msg, &err)) == 0) {
-        httpTrace(0, "monitor.remedy.http.error", "error", "msg:'%s'", err);
+    if ((conn = httpRequest(method, uri, msg, HTTP_1_1, &err)) == 0) {
+        httpTrace(HTTP->trace, "monitor.remedy.http.error", "error", "msg:'%s'", err);
         return;
     }
     status = httpGetStatus(conn);
     if (status != HTTP_CODE_OK) {
-        httpTrace(0, "monitor.remedy.http.error", "error", "status:%d,uri:'%s'", status, uri);
+        httpTrace(HTTP->trace, "monitor.remedy.http.error", "error", "status:%d, uri:'%s'", status, uri);
     }
 }
 

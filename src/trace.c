@@ -2,14 +2,13 @@
     trace.c -- Trace data
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
 
-    Event type default labels:
-
-        request: 1
-        result:  2
-        context: 3
-        form:    4
-        body:    5
-        debug:   5
+    Event types and trace levels:
+    0: debug
+    1: request
+    2: error, result
+    3: context
+    4: packet
+    5: network
  */
 
 /********************************* Includes ***********************************/
@@ -21,14 +20,14 @@
 static void manageTrace(HttpTrace *trace, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
+        mprMark(trace->buf);
+        mprMark(trace->events);
         mprMark(trace->file);
         mprMark(trace->format);
         mprMark(trace->lastTime);
-        mprMark(trace->buf);
-        mprMark(trace->path);
-        mprMark(trace->events);
         mprMark(trace->mutex);
         mprMark(trace->parent);
+        mprMark(trace->path);
     }
 }
 
@@ -49,15 +48,19 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
         if ((trace->events = mprCreateHash(0, MPR_HASH_STATIC_VALUES)) == 0) {
             return 0;
         }
+        mprAddKey(trace->events, "debug", ITOP(0));
         mprAddKey(trace->events, "request", ITOP(1));
-        mprAddKey(trace->events, "result", ITOP(2));
         mprAddKey(trace->events, "error", ITOP(2));
+        mprAddKey(trace->events, "result", ITOP(2));
         mprAddKey(trace->events, "context", ITOP(3));
-        mprAddKey(trace->events, "form", ITOP(4));
-        mprAddKey(trace->events, "body", ITOP(5));
-        mprAddKey(trace->events, "debug", ITOP(5));
+        mprAddKey(trace->events, "packet", ITOP(4));
+        mprAddKey(trace->events, "network", ITOP(5));
 
+        /*
+            Max log file size
+         */
         trace->size = HTTP_TRACE_MAX_SIZE;
+        trace->maxContent = MAXINT;
         trace->formatter = httpDetailTraceFormatter;
         trace->logger = httpWriteTraceLogFile;
         trace->mutex = mprCreateLock();
@@ -111,6 +114,12 @@ PUBLIC void httpSetTraceFormatterName(HttpTrace *trace, cchar *name)
         }
         mprAddKey(trace->events, "result", ITOP(0));
         formatter = httpCommonTraceFormatter;
+
+#if FUTURE
+    } else if (smatch(name, "simple")) {
+       formatter = httpSimpleTraceFormatter;
+#endif
+
     } else {
        formatter = httpDetailTraceFormatter;
     }
@@ -136,167 +145,76 @@ PUBLIC void httpSetTraceLogger(HttpTrace *trace, HttpTraceLogger callback)
 
 
 /*
-    Internal convenience: Used for incoming and outgoing packets.
+    Inner routine for httpTrace()
  */
-PUBLIC bool httpTraceBody(HttpConn *conn, bool outgoing, HttpPacket *packet, ssize len)
+PUBLIC bool httpLogProc(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *fmt, ...)
 {
-    cchar   *event, *type;
+    va_list     args;
 
-    if (!conn) {
+    assert(event && *event);
+    assert(type && *type);
+
+    va_start(args, fmt);
+    httpFormatTrace(trace, event, type, flags, NULL, 0, fmt, args);
+    va_end(args);
+    return 1;
+}
+
+
+PUBLIC bool httpTracePacket(HttpTrace *trace, cchar *event, cchar *type, int flags, HttpPacket *packet, cchar *fmt, ...)
+{
+    va_list     args;
+    int         level;
+
+    assert(packet);
+
+    if (!trace || !packet) {
         return 0;
     }
-    if (len < 0) {
-        len = httpGetPacketLength(packet);
+    level = PTOI(mprLookupKey(trace->events, type));
+    if (level > HTTP->traceLevel) { \
+        return 0;
     }
-    if (outgoing) {
-        if (conn->endpoint) {
-            type = "body";
-            event = "tx.body.data";
-        } else {
-            if (sstarts(conn->tx->mimeType, "application/x-www-form-urlencoded")) {
-                type = "form";
-                event = "tx.body.form";
-            } else {
-                type = "body";
-                event = "tx.body.data";
-            }
-        }
-    } else {
-        if (conn->endpoint) {
-            if (conn->rx->form) {
-                type = "form";
-                event = "rx.body.form";
-            } else {
-                type = "body";
-                event = "rx.body.data";
-            }
-        } else {
-            type = "body";
-            event = "rx.body.data";
-        }
-    }
-    return httpTracePacket(conn, event, type, packet, "length:%zd", len);
+    va_start(args, fmt);
+    httpFormatTrace(trace, event, type, flags | HTTP_TRACE_PACKET, (char*) packet, 0, fmt, args);
+    va_end(args);
+    return 1;
 }
 
 
 /*
-    Trace request body content
+    Trace request body data
  */
-PUBLIC bool httpTraceContent(HttpConn *conn, cchar *event, cchar *type, cchar *buf, ssize len, cchar *values, ...)
+PUBLIC bool httpTraceData(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *buf, ssize len, cchar *fmt, ...)
 {
     Http        *http;
-    HttpTrace   *trace;
-    va_list     ap;
+    va_list     args;
     int         level;
 
-    assert(conn);
+    assert(trace);
     assert(buf);
 
     http = HTTP;
     if (http->traceLevel == 0) {
         return 0;
     }
-    if (conn) {
-        if (conn->rx->skipTrace) {
-            return 0;
-        }
-        trace = conn->trace;
-    } else {
-        trace = http->trace;
-    }
     level = PTOI(mprLookupKey(trace->events, type));
-    if (level == 0 || level > http->traceLevel) {
+    if (level > http->traceLevel) {
         return 0;
     }
-    if (conn) {
-        if ((smatch(event, "rx.body.data") && (conn->rx->bytesRead >= conn->trace->maxContent)) ||
-            (smatch(event, "tx.body.data") && (conn->tx->bytesWritten >= conn->trace->maxContent))) {
-            if (!conn->rx->webSocket) {
-                conn->rx->skipTrace = 1;
-                httpTrace(conn, event, type, "msg: 'Abbreviating body trace'");
-            }
-            return 0;
-        }
-    }
-    if (values) {
-        va_start(ap, values);
-        values = sfmtv(values, ap);
-        va_end(ap);
-    }
-    httpFormatTrace(trace, conn, event, type, values, buf, len);
+    va_start(args, fmt);
+    httpFormatTrace(trace, event, type, flags, buf, len, fmt, args);
+    va_end(args);
     return 1;
 }
 
 
 /*
-    Trace any packet
+    Format and emit trace
  */
-PUBLIC bool httpTracePacket(HttpConn *conn, cchar *event, cchar *type, HttpPacket *packet, cchar *values, ...)
+PUBLIC void httpFormatTrace(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *buf, ssize len, cchar *fmt, va_list args)
 {
-    va_list     ap;
-    int         level;
-
-    assert(conn);
-    assert(packet);
-
-    if (!conn || conn->http->traceLevel == 0 || conn->rx->skipTrace) {
-        return 0;
-    }
-    level = PTOI(mprLookupKey(conn->trace->events, type));
-    if (level == 0 || level > conn->http->traceLevel) { \
-        return 0;
-    }
-    if (packet->prefix) {
-        httpTraceContent(conn, event, type, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix), 0);
-    }
-    if (values) {
-        va_start(ap, values);
-        values = sfmtv(values, ap);
-        va_end(ap);
-    }
-    if (packet->content) {
-        if (values) {
-            httpTraceContent(conn, event, type, mprGetBufStart(packet->content), httpGetPacketLength(packet), "%s", values);
-        } else {
-            httpTraceContent(conn, event, type, mprGetBufStart(packet->content), httpGetPacketLength(packet), 0);
-        }
-    }
-    return 1;
-}
-
-
-/*
-    Inner routine for httpTrace()
-    Conn may be null.
- */
-PUBLIC bool httpTraceProc(HttpConn *conn, cchar *event, cchar *type, cchar *values, ...)
-{
-    HttpTrace   *trace;
-    va_list     ap;
-
-    assert(event && *event);
-    assert(type && *type);
-
-    if (conn && conn->rx->skipTrace) {
-        return 0;
-    }
-    trace = conn ? conn->trace : HTTP->trace;
-
-    if (values) {
-        va_start(ap, values);
-        values = sfmtv(values, ap);
-        va_end(ap);
-    }
-    httpFormatTrace(trace, conn, event, type, values, 0, 0);
-    return 1;
-}
-
-
-
-PUBLIC void httpFormatTrace(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values, cchar *buf,
-    ssize len)
-{
-    (trace->formatter)(trace, conn, event, type, values, buf, len);
+    (trace->formatter)(trace, event, type, flags, buf, len, fmt, args);
 }
 
 
@@ -310,70 +228,77 @@ PUBLIC void httpWriteTrace(HttpTrace *trace, cchar *buf, ssize len)
 
 
 /*
-    Get a printable version of a buffer. Return a pointer to the start of printable data.
-    This will use the tx or rx mime type if possible.
-    Skips UTF encoding prefixes
+    Format a detailed request message
  */
-PUBLIC cchar *httpMakePrintable(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *buf, ssize *lenp)
+PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *data, ssize len, cchar *fmt, va_list args)
 {
-    cchar   *start, *cp, *digits;
-    char    *data, *dp;
-    ssize   len;
-    int     i;
+    HttpPacket  *packet;
+    MprBuf      *buf;
+    MprTime     now;
+    char        *msg;
+    bool        hex;
 
-    if (conn) {
-        if (smatch(event, "rx.body")) {
-            if (sstarts(mprLookupMime(0, conn->rx->mimeType), "text/")) {
-                return buf;
-            }
-        } else if (smatch(event, "tx.body")) {
-            if (sstarts(mprLookupMime(0, conn->tx->mimeType), "text/")) {
-                return buf;
-            }
+    assert(trace);
+    lock(trace);
+
+    hex = (trace->flags & HTTP_TRACE_HEX) ? 1 : 0;
+
+    if (!trace->buf) {
+        trace->buf = mprCreateBuf(0, 0);
+    }
+    buf = trace->buf;
+    mprFlushBuf(buf);
+
+    now = mprGetTime();
+    if (trace->lastMark < (now + TPS) || trace->lastTime == 0) {
+        trace->lastTime = mprGetDate("%T");
+        trace->lastMark = now;
+    }
+
+    if (event && type) {
+        if (scontains(event, ".tx")) {
+            mprPutToBuf(buf, "%s SEND event=%s type=%s", trace->lastTime, event, type);
+        } else {
+            mprPutToBuf(buf, "%s RECV event=%s type=%s", trace->lastTime, event, type);
         }
     }
-    start = buf;
-    len = *lenp;
-    if (len > 3 && start[0] == (char) 0xef && start[1] == (char) 0xbb && start[2] == (char) 0xbf) {
-        /* Step over UTF encoding */
-        start += 3;
-        *lenp -= 3;
+    if (fmt) {
+        mprPutCharToBuf(buf, ' ');
+        msg = sfmtv(fmt, args);
+        mprPutStringToBuf(buf, msg);
     }
-    len = min(len, trace->maxContent);
-
-    for (i = 0; i < len; i++) {
-        if (!isprint((uchar) start[i]) && start[i] != '\n' && start[i] != '\r' && start[i] != '\t') {
-            data = mprAlloc(len * 3 + ((len / 16) + 1) + 1);
-            digits = "0123456789ABCDEF";
-            for (i = 0, cp = start, dp = data; cp < &start[len]; cp++) {
-                *dp++ = digits[(*cp >> 4) & 0x0f];
-                *dp++ = digits[*cp & 0x0f];
-                *dp++ = ' ';
-                if ((++i % 16) == 0) {
-                    *dp++ = '\n';
-                }
-            }
-            *dp++ = '\n';
-            *dp = '\0';
-            start = data;
-            *lenp = dp - start;
-            break;
+    if (fmt || event || type) {
+        mprPutStringToBuf(buf, "\n");
+    }
+    if (flags & HTTP_TRACE_PACKET) {
+        packet = (HttpPacket*) data;
+        if (packet->prefix) {
+            len = mprGetBufLength(packet->prefix);
+            data = httpMakePrintable(trace, packet->prefix->start, &hex, &len);
+            mprPutBlockToBuf(buf, data, len);
         }
+        if (packet->content) {
+            len = mprGetBufLength(packet->content);
+            data = httpMakePrintable(trace, packet->content->start, &hex, &len);
+            mprPutBlockToBuf(buf, data, len);
+        }
+        mprPutStringToBuf(buf, "\n");
+    } else if (data && len > 0) {
+        data = httpMakePrintable(trace, data, &hex, &len);
+        mprPutBlockToBuf(buf, data, len);
+        mprPutStringToBuf(buf, "\n");
     }
-    return start;
+    httpWriteTrace(trace, mprGetBufStart(buf), mprGetBufLength(buf));
+    unlock(trace);
 }
 
 
-/*
-    Format a detailed request message
- */
-PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *event, cchar *type, cchar *values,
-    cchar *data, ssize len)
+#if FUTURE
+PUBLIC void httpSimpleTraceFormatter(HttpTrace *trace, cchar *event, cchar *type, int flags cchar *data, ssize len, cchar *fmt, va_list args)
 {
     MprBuf      *buf;
-    MprTime     now;
-    char        *cp;
-    int         client, sessionSeqno, gotColon;
+    char        *msg;
+    bool        hex;
 
     assert(trace);
     assert(event);
@@ -386,49 +311,154 @@ PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ev
     buf = trace->buf;
     mprFlushBuf(buf);
 
-    if (conn) {
-        now = mprGetTime();
-        if (trace->lastMark < (now + TPS) || trace->lastTime == 0) {
-            trace->lastTime = mprGetDate("%T");
-            trace->lastMark = now;
-        }
-        client = conn->address ? conn->address->seqno : 0;
-        sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-        mprPutToBuf(buf, "%s %d-%d-%d-%d %s", trace->lastTime, client, sessionSeqno, conn->seqno, conn->rx->seqno, event);
-    } else {
-        mprPutToBuf(buf, "%s: %s", trace->lastTime, event);
-    }
-    if (values) {
-        mprPutCharToBuf(buf, ' ');
-        gotColon = 0;
-        for (cp = (char*) values; *cp; cp++) {
-            if (cp[0] == ':' && !gotColon) {
-                cp[0] = '=';
-                gotColon = 1;
-            } else if (cp[0] == ',') {
-                cp[0] = ' ';
-                gotColon = 0;
-            }
-        }
-        mprPutStringToBuf(buf, values);
-        mprPutCharToBuf(buf, '\n');
-    }
-    if (data) {
-        mprPutToBuf(buf, "\n----\n");
-        data = httpMakePrintable(trace, conn, event, data, &len);
+    if (data && len > 0) {
+        hex = 0;
+        data = httpMakePrintable(trace, data, &hex, &len);
         mprPutBlockToBuf(buf, data, len);
-        if (len > 0 && data[len - 1] != '\n') {
-            mprPutCharToBuf(buf, '\n');
-        }
-        mprPutToBuf(buf, "----\n");
     }
-    if (!values && !data) {
-        mprPutCharToBuf(buf, '\n');
+    mprPutToBuf(buf, "%s %s", event, type);
+    if (fmt) {
+        mprPutCharToBuf(buf, ' ');
+        msg = sfmtv(fmt, args);
+        mprPutStringToBuf(buf, msg);
     }
+    mprPutStringToBuf(buf, "\n");
+
     httpWriteTrace(trace, mprGetBufStart(buf), mprGetBufLength(buf));
     unlock(trace);
 }
+#endif
 
+
+/*
+    Common Log Formatter (NCSA)
+    This formatter only emits messages only for connections at their complete event.
+ */
+PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, cchar *type, cchar *event, int flags, cchar *data, ssize len, cchar *msg, va_list args)
+{
+    HttpConn    *conn;
+    HttpRx      *rx;
+    HttpTx      *tx;
+    MprBuf      *buf;
+    cchar       *fmt, *cp, *qualifier, *timeText, *value;
+    char        c, keyBuf[256];
+    int         buflen;
+
+    assert(trace);
+    assert(type && *type);
+    assert(event && *event);
+
+    conn = (HttpConn*) data;
+    if (!conn || len != 0) {
+        return;
+    }
+    if (!smatch(event, "result")) {
+        return;
+    }
+    rx = conn->rx;
+    tx = conn->tx;
+    fmt = trace->format;
+    if (fmt == 0 || fmt[0] == '\0') {
+        fmt = ME_HTTP_LOG_FORMAT;
+    }
+    buflen = ME_MAX_URI + 256;
+    buf = mprCreateBuf(buflen, buflen);
+
+    while ((c = *fmt++) != '\0') {
+        if (c != '%' || (c = *fmt++) == '%') {
+            mprPutCharToBuf(buf, c);
+            continue;
+        }
+        switch (c) {
+        case 'a':                           /* Remote IP */
+            mprPutStringToBuf(buf, conn->ip);
+            break;
+
+        case 'A':                           /* Local IP */
+            mprPutStringToBuf(buf, conn->sock->listenSock->ip);
+            break;
+
+        case 'b':
+            if (tx->bytesWritten == 0) {
+                mprPutCharToBuf(buf, '-');
+            } else {
+                mprPutIntToBuf(buf, tx->bytesWritten);
+            }
+            break;
+
+        case 'B':                           /* Bytes written (minus headers) */
+            mprPutIntToBuf(buf, (tx->bytesWritten - tx->headerSize));
+            break;
+
+        case 'h':                           /* Remote host */
+            mprPutStringToBuf(buf, conn->ip);
+            break;
+
+        case 'l':                           /* user identity - unknown */
+            mprPutCharToBuf(buf, '-');
+            break;
+
+        case 'n':                           /* Local host */
+            mprPutStringToBuf(buf, rx->parsedUri->host);
+            break;
+
+        case 'O':                           /* Bytes written (including headers) */
+            mprPutIntToBuf(buf, tx->bytesWritten);
+            break;
+
+        case 'r':                           /* First line of request */
+            mprPutToBuf(buf, "%s %s %s", rx->method, rx->uri, httpGetProtocol(conn->net));
+            break;
+
+        case 's':                           /* Response code */
+            mprPutIntToBuf(buf, tx->status);
+            break;
+
+        case 't':                           /* Time */
+            mprPutCharToBuf(buf, '[');
+            timeText = mprFormatLocalTime(MPR_DEFAULT_DATE, mprGetTime());
+            mprPutStringToBuf(buf, timeText);
+            mprPutCharToBuf(buf, ']');
+            break;
+
+        case 'u':                           /* Remote username */
+            mprPutStringToBuf(buf, conn->username ? conn->username : "-");
+            break;
+
+        case '{':                           /* Header line "{header}i" */
+            qualifier = fmt;
+            if ((cp = schr(qualifier, '}')) != 0) {
+                fmt = &cp[1];
+                switch (*fmt++) {
+                case 'i':
+                    sncopy(keyBuf, sizeof(keyBuf), qualifier, cp - qualifier);
+                    value = (char*) mprLookupKey(rx->headers, keyBuf);
+                    mprPutStringToBuf(buf, value ? value : "-");
+                    break;
+                default:
+                    mprPutSubStringToBuf(buf, qualifier, qualifier - cp);
+                }
+
+            } else {
+                mprPutCharToBuf(buf, c);
+            }
+            break;
+
+        case '>':
+            if (*fmt == 's') {
+                fmt++;
+                mprPutIntToBuf(buf, tx->status);
+            }
+            break;
+
+        default:
+            mprPutCharToBuf(buf, c);
+            break;
+        }
+    }
+    mprPutCharToBuf(buf, '\n');
+    httpWriteTrace(trace, mprBufToString(buf), mprGetBufLength(buf));
+}
 
 /************************************** TraceLogFile **************************/
 
@@ -495,7 +525,7 @@ PUBLIC int httpOpenTraceLogFile(HttpTrace *trace)
 
 
 /*
-    Start tracing when instructed via a command line option. No backup, max size or custom format.
+    Start tracing when instructed via a command line option.
  */
 PUBLIC int httpStartTracing(cchar *traceSpec)
 {
@@ -559,136 +589,65 @@ PUBLIC void httpWriteTraceLogFile(HttpTrace *trace, cchar *buf, ssize len)
 
 
 /*
-    Common Log Formatter (NCSA)
-    This formatter only emits messages only for connections at their complete event.
+    Get a printable version of a buffer. Return a pointer to the start of printable data.
+    This will use the tx or rx mime type if possible.
+    Skips UTF encoding prefixes
  */
-PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *type, cchar *event, cchar *valuesUnused,
-    cchar *bufUnused, ssize lenUnused)
+PUBLIC cchar *httpMakePrintable(HttpTrace *trace, cchar *buf, bool *hex, ssize *lenp)
 {
-    HttpRx      *rx;
-    HttpTx      *tx;
-    MprBuf      *buf;
-    cchar       *fmt, *cp, *qualifier, *timeText, *value;
-    char        c, keyBuf[256];
-    int         len;
+    cchar   *start, *cp, *digits, *sol;
+    char    *data, *dp;
+    ssize   len, bsize, lines;
+    int     i, j;
 
-    assert(trace);
-    assert(type && *type);
-    assert(event && *event);
-
-    if (!conn) {
-        return;
+    start = buf;
+    len = *lenp;
+    if (len > 3 && start[0] == (char) 0xef && start[1] == (char) 0xbb && start[2] == (char) 0xbf) {
+        /* Step over UTF encoding */
+        start += 3;
+        *lenp -= 3;
     }
-    assert(type && *type);
-    assert(event && *event);
-
-    if (!smatch(event, "result")) {
-        return;
-    }
-    rx = conn->rx;
-    tx = conn->tx;
-    fmt = trace->format;
-    if (fmt == 0) {
-        fmt = ME_HTTP_LOG_FORMAT;
-    }
-    len = ME_MAX_URI + 256;
-    buf = mprCreateBuf(len, len);
-
-    while ((c = *fmt++) != '\0') {
-        if (c != '%' || (c = *fmt++) == '%') {
-            mprPutCharToBuf(buf, c);
-            continue;
-        }
-        switch (c) {
-        case 'a':                           /* Remote IP */
-            mprPutStringToBuf(buf, conn->ip);
-            break;
-
-        case 'A':                           /* Local IP */
-            mprPutStringToBuf(buf, conn->sock->listenSock->ip);
-            break;
-
-        case 'b':
-            if (tx->bytesWritten == 0) {
-                mprPutCharToBuf(buf, '-');
-            } else {
-                mprPutIntToBuf(buf, tx->bytesWritten);
-            }
-            break;
-
-        case 'B':                           /* Bytes written (minus headers) */
-            mprPutIntToBuf(buf, (tx->bytesWritten - tx->headerSize));
-            break;
-
-        case 'h':                           /* Remote host */
-            mprPutStringToBuf(buf, conn->ip);
-            break;
-
-        case 'l':                           /* user identity - unknown */
-            mprPutCharToBuf(buf, '-');
-            break;
-
-        case 'n':                           /* Local host */
-            mprPutStringToBuf(buf, rx->parsedUri->host);
-            break;
-
-        case 'O':                           /* Bytes written (including headers) */
-            mprPutIntToBuf(buf, tx->bytesWritten);
-            break;
-
-        case 'r':                           /* First line of request */
-            mprPutToBuf(buf, "%s %s %s", rx->method, rx->uri, conn->protocol);
-            break;
-
-        case 's':                           /* Response code */
-            mprPutIntToBuf(buf, tx->status);
-            break;
-
-        case 't':                           /* Time */
-            mprPutCharToBuf(buf, '[');
-            timeText = mprFormatLocalTime(MPR_DEFAULT_DATE, mprGetTime());
-            mprPutStringToBuf(buf, timeText);
-            mprPutCharToBuf(buf, ']');
-            break;
-
-        case 'u':                           /* Remote username */
-            mprPutStringToBuf(buf, conn->username ? conn->username : "-");
-            break;
-
-        case '{':                           /* Header line "{header}i" */
-            qualifier = fmt;
-            if ((cp = schr(qualifier, '}')) != 0) {
-                fmt = &cp[1];
-                switch (*fmt++) {
-                case 'i':
-                    sncopy(keyBuf, sizeof(keyBuf), qualifier, cp - qualifier);
-                    value = (char*) mprLookupKey(rx->headers, keyBuf);
-                    mprPutStringToBuf(buf, value ? value : "-");
-                    break;
-                default:
-                    mprPutSubStringToBuf(buf, qualifier, qualifier - cp);
+    for (i = 0; i < len; i++) {
+        if (*hex || (!isprint((uchar) start[i]) && start[i] != '\n' && start[i] != '\r' && start[i] != '\t')) {
+            /*
+                Round up lines, 4 chars per byte plush 3 chars per line (||\n)
+             */
+            lines = len / 16 + 1;
+            bsize = ((lines * 16) * 4) + (lines * 5) + 2;
+            data = mprAlloc(bsize);
+            digits = "0123456789ABCDEF";
+            for (i = 0, cp = start, dp = data; cp < &start[len]; ) {
+                sol = cp;
+                for (j = 0; j < 16 && cp < &start[len]; j++, cp++) {
+                    *dp++ = digits[(*cp >> 4) & 0x0f];
+                    *dp++ = digits[*cp & 0x0f];
+                    *dp++ = ' ';
                 }
-
-            } else {
-                mprPutCharToBuf(buf, c);
+                for (; j < 16; j++) {
+                    *dp++ = ' '; *dp++ = ' '; *dp++ = ' ';
+                }
+                *dp++ = ' '; *dp++ = ' '; *dp++ = '|';
+                for (j = 0, cp = sol; j < 16 && cp < &start[len]; j++, cp++) {
+                    *dp++ = isprint(*cp) ? *cp : '.';
+                }
+                for (; j < 16; j++) {
+                    *dp++ = ' ';
+                }
+                *dp++ = '|';
+                *dp++ = '\n';
+                assert((dp - data) <= bsize);
             }
-            break;
-
-        case '>':
-            if (*fmt == 's') {
-                fmt++;
-                mprPutIntToBuf(buf, tx->status);
-            }
-            break;
-
-        default:
-            mprPutCharToBuf(buf, c);
+            *dp = '\0';
+            assert((dp - data) <= bsize);
+            start = data;
+            *lenp = dp - start;
+            *hex = 1;
             break;
         }
     }
-    mprPutCharToBuf(buf, '\n');
-    httpWriteTrace(trace, mprBufToString(buf), mprGetBufLength(buf));
+    return start;
 }
+
 
 /*
     Copyright (c) Embedthis Software. All Rights Reserved.

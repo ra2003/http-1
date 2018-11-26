@@ -1,7 +1,7 @@
 /*
     netConnector.c -- General network connector.
 
-    The Network connector handles output data (only) from upstream handlers and filters. It uses vectored writes to
+    The Network connector handles I/O from upstream handlers and filters. It uses vectored writes to
     aggregate output packets into fewer actual I/O requests to the O/S.
 
     Copyright (c) All Rights Reserved. See details at the end of the file.
@@ -14,11 +14,20 @@
 /**************************** Forward Declarations ****************************/
 
 static void addPacketForNet(HttpQueue *q, HttpPacket *packet);
+static void addToNetVector(HttpQueue *q, char *ptr, ssize bytes);
 static void adjustNetVec(HttpQueue *q, ssize written);
 static MprOff buildNetVec(HttpQueue *q);
 static void freeNetPackets(HttpQueue *q, ssize written);
-static void netClose(HttpQueue *q);
+static HttpPacket *getPacket(HttpNet *net, ssize *size);
+static void netOutgoing(HttpQueue *q, HttpPacket *packet);
 static void netOutgoingService(HttpQueue *q);
+static HttpPacket *readPacket(HttpNet *net);
+static void resumeEvents(HttpNet *net, MprEvent *event);
+static void setupWaitHandler(HttpNet *net, int eventMask);
+
+#if ME_HTTP_HTTP2
+static int sleuthProtocol(HttpNet *net, HttpPacket *packet);
+#endif
 
 /*********************************** Code *************************************/
 /*
@@ -31,109 +40,375 @@ PUBLIC int httpOpenNetConnector()
     if ((stage = httpCreateConnector("netConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
-    stage->close = netClose;
+    stage->outgoing = netOutgoing;
     stage->outgoingService = netOutgoingService;
     HTTP->netConnector = stage;
     return 0;
 }
 
 
-static void netClose(HttpQueue *q)
+/*
+    Accept a new client connection on a new socket. This is invoked from acceptNet in endpoint.c
+    and will come arrive on a worker thread with a new dispatcher dedicated to this connection.
+ */
+PUBLIC HttpNet *httpAccept(HttpEndpoint *endpoint, MprEvent *event)
 {
-    HttpTx      *tx;
+    HttpNet     *net;
+    HttpAddress *address;
+    HttpLimits  *limits;
+    MprSocket   *sock;
+    int64       value;
 
-    tx = q->conn->tx;
-    if (tx->file) {
-        mprCloseFile(tx->file);
-        tx->file = 0;
+    assert(event);
+    assert(event->dispatcher);
+    assert(endpoint);
+
+    if (mprShouldDenyNewRequests()) {
+        return 0;
+    }
+    sock = event->sock;
+
+    if ((net = httpCreateNet(event->dispatcher, endpoint, -1, HTTP_NET_ASYNC)) == 0) {
+        mprCloseSocket(sock, 0);
+        return 0;
+    }
+    httpBindSocket(net, sock);
+    limits = net->limits;
+
+    if ((address = httpMonitorAddress(net, 0)) == 0) {
+        mprCloseSocket(sock, 0);
+        return 0;
+    }
+    if ((value = httpMonitorNetEvent(net, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1)) > limits->connectionsMax) {
+        mprLog("net error", 0, "Too many concurrent connections, active: %d, max:%d", (int) value, limits->connectionsMax);
+        mprCloseSocket(sock, 0);
+        return 0;
+    }
+    address = net->address;
+    if (address && address->banUntil) {
+        if (address->banUntil < net->http->now) {
+            mprLog("net info", 3, "Stop ban for client %s", net->ip);
+            address->banUntil = 0;
+        } else {
+            mprLog("net info", 3, "Network connection refused, client banned: %s", address->banMsg ? address->banMsg : "");
+            //  MOB - address->banStatus not implemented
+            //  MOB -- update doc
+            mprCloseSocket(sock, 0);
+            return 0;
+        }
+    }
+#if ME_COM_SSL
+    if (endpoint->ssl) {
+        if (mprUpgradeSocket(sock, endpoint->ssl, 0) < 0) {
+            httpMonitorNetEvent(net, HTTP_COUNTER_SSL_ERRORS, 1);
+            mprLog("net error", 0, "Cannot upgrade socket, %s", sock->errorMsg);
+            httpDestroyNet(net);
+            return 0;
+        }
+    }
+#endif
+    event->mask = MPR_READABLE;
+    event->timestamp = net->http->now;
+    (net->ioCallback)(net, event);
+    return net;
+}
+
+
+/*
+    Handle IO on the network. Initially the dispatcher will be set to the server->dispatcher and the first
+    I/O event will be handled on the server thread (or main thread). A request handler may create a new
+    net->dispatcher and transfer execution to a worker thread if required.
+ */
+PUBLIC void httpIOEvent(HttpNet *net, MprEvent *event)
+{
+    HttpPacket  *packet;
+
+    if (net->destroyed) {
+        /* Network connection has been destroyed */
+        return;
+    }
+    net->lastActivity = net->http->now;
+    if (event->mask & MPR_WRITABLE) {
+        httpResumeQueue(net->socketq);
+        httpScheduleQueue(net->socketq);
+    }
+    packet = 0;
+
+    if (event->mask & MPR_READABLE) {
+        packet = readPacket(net);
+    }
+    if (packet) {
+#if ME_HTTP_HTTP2
+        if (!net->protocol) {
+            int protocol = sleuthProtocol(net, packet);
+            httpSetNetProtocol(net, protocol);
+        }
+#endif
+        if (net->protocol) {
+            httpPutPacketToNext(net->inputq, packet);
+        }
+    }
+    httpServiceQueues(net, 0);
+
+    if (httpIsServer(net) && (net->error || net->eof)) {
+        httpDestroyNet(net);
+    } else if (httpIsClient(net) && net->eof) {
+        httpNetClosed(net);
+    } else if (net->async && !net->delay) {
+        httpEnableNetEvents(net);
+    }
+}
+
+
+#if ME_HTTP_HTTP2
+static int sleuthProtocol(HttpNet *net, HttpPacket *packet)
+{
+    MprBuf      *buf;
+    ssize       len;
+    int         protocol;
+
+    buf = packet->content;
+    protocol = 0;
+
+    if ((len = mprGetBufLength(buf)) < (sizeof(HTTP2_PREFACE) - 1)) {
+        return 0;
+    }
+    if (memcmp(buf->start, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
+        protocol = 1;
+    } else {
+        mprAdjustBufStart(buf, strlen(HTTP2_PREFACE));
+        protocol = 2;
+        httpTrace(net->trace, "net.rx", "context", "msg:'Detected HTTP/2 preface'");
+    }
+    return protocol;
+}
+#endif
+
+
+/*
+    Read data from the peer. This will use an existing packet on the inputq or allocate a new packet if required to
+    hold the data. Socket error messages are stored in net->errorMsg.
+ */
+static HttpPacket *readPacket(HttpNet *net)
+{
+    HttpPacket  *packet;
+    ssize       size, lastRead;
+
+    if ((packet = getPacket(net, &size)) != 0) {
+        lastRead = mprReadSocket(net->sock, mprGetBufEnd(packet->content), size);
+        net->eof = mprIsSocketEof(net->sock);
+
+#if ME_COM_SSL
+        if (net->sock->secured && !net->secure && net->sock->cipher) {
+            MprSocket   *sock;
+            net->secure = 1;
+            sock = net->sock;
+            if (sock->peerCert) {
+                //  MOB - can't use trace with "net" -- but really want to
+                mprLog("info http ssl", 6,
+                    "Connection secured cipher:'%s', peerName:'%s', subject:'%s', issuer:'%s', session:'%s'",
+                    sock->cipher, sock->peerName, sock->peerCert, sock->peerCertIssuer, sock->session);
+            } else {
+                mprLog("info http ssl", 6, "Connection secured, cipher:'%s', session:'%s'", sock->cipher, sock->session);
+            }
+            if (mprGetLogLevel() >= 5) {
+                mprLog("info http ssl", 6, "SSL State: %s", mprGetSocketState(sock));
+            }
+        }
+#endif
+        if (lastRead > 0) {
+            mprAdjustBufEnd(packet->content, lastRead);
+            return packet;
+        }
+        if (lastRead < 0 && net->eof) {
+            net->eof = 1;
+            return 0;
+        }
+    }
+    return 0;
+}
+
+
+/*
+    Get the packet into which to read data. Return in *size the length of data to attempt to read.
+ */
+static HttpPacket *getPacket(HttpNet *net, ssize *lenp)
+{
+    HttpPacket  *packet;
+    MprBuf      *buf;
+    ssize       size;
+
+#if ME_HTTP_HTTP2
+    if (net->protocol < 2) {
+        size = net->inputq ? net->inputq->packetSize : ME_MAX_QBUFFER;
+    } else {
+        size = (net->inputq ? net->inputq->packetSize : HTTP2_DEFAULT_FRAME_SIZE) + HTTP2_FRAME_OVERHEAD;
+    }
+#else
+    size = net->inputq ? net->inputq->packetSize : ME_MAX_QBUFFER;
+#endif
+    if (!net->inputq || (packet = httpGetPacket(net->inputq)) == NULL) {
+        if ((packet = httpCreateDataPacket(size)) == 0) {
+            return 0;
+        }
+    }
+    buf = packet->content;
+    mprResetBufIfEmpty(buf);
+    if (mprGetBufSpace(buf) < size && mprGrowBuf(buf, size) < 0) {
+        return 0;
+    }
+    *lenp = mprGetBufSpace(buf);
+    assert(*lenp > 0);
+    return packet;
+}
+
+
+PUBLIC int httpGetNetEventMask(HttpNet *net)
+{
+    MprSocket   *sock;
+    int         eventMask;
+
+    if ((sock = net->sock) == 0) {
+        return 0;
+    }
+    eventMask = 0;
+
+    if (httpQueuesNeedService(net) || mprSocketHasBufferedWrite(sock) ||
+            (net->socketq && (net->socketq->count > 0 || net->socketq->ioCount > 0))) {
+        if (!mprSocketHandshaking(sock)) {
+            /* Must wait to write until handshaking is complete */
+            eventMask |= MPR_WRITABLE;
+        }
+    }
+    if (!net->eof && (mprSocketHasBufferedRead(sock) || !net->inputq || (net->inputq->count < net->inputq->max))) {
+        eventMask |= MPR_READABLE;
+    }
+    return eventMask;
+}
+
+
+static bool netBanned(HttpNet *net)
+{
+    HttpAddress     *address;
+
+    if ((address = net->address) != 0 && address->delay) {
+        if (address->delayUntil > net->http->now) {
+            /*
+                Defensive counter measure - go slow
+             */
+            mprCreateEvent(net->dispatcher, "delayConn", net->delay, resumeEvents, net, 0);
+            httpTrace(net->trace, "monitor.delay.stop", "context", "msg:'Suspend I/O',client:'%s'", net->ip);
+            return 1;
+        } else {
+            address->delay = 0;
+            httpTrace(net->trace, "monitor.delay.stop", "context", "msg:'Resume I/O',client:'%s'", net->ip);
+        }
+    }
+    return 0;
+}
+
+
+/*
+    Defensive countermesasure - resume output after a delay
+ */
+static void resumeEvents(HttpNet *net, MprEvent *event)
+{
+    net->delay = 0;
+    mprCreateEvent(net->dispatcher, "resumeConn", 0, httpEnableNetEvents, net, 0);
+}
+
+
+PUBLIC void httpEnableNetEvents(HttpNet *net)
+{
+    if (mprShouldAbortRequests() || net->borrowed || net->error || netBanned(net)) {
+        return;
+    }
+    /*
+        Used by ejs
+     */
+    if (net->workerEvent) {
+        MprEvent *event = net->workerEvent;
+        net->workerEvent = 0;
+        mprQueueEvent(net->dispatcher, event);
+        return;
+    }
+    setupWaitHandler(net, httpGetNetEventMask(net));
+}
+
+
+static void setupWaitHandler(HttpNet *net, int eventMask)
+{
+    MprSocket   *sp;
+
+    if ((sp = net->sock) == 0) {
+        return;
+    }
+    if (eventMask) {
+        if (sp->handler == 0) {
+            mprAddSocketHandler(sp, eventMask, net->dispatcher, net->ioCallback, net, 0);
+        } else {
+            mprSetSocketDispatcher(sp, net->dispatcher);
+            mprEnableSocketEvents(sp, eventMask);
+        }
+        if (sp->flags & (MPR_SOCKET_BUFFERED_READ | MPR_SOCKET_BUFFERED_WRITE)) {
+            mprRecallWaitHandler(sp->handler);
+        }
+    } else if (sp->handler) {
+        mprWaitOn(sp->handler, eventMask);
+    }
+}
+
+
+static void netOutgoing(HttpQueue *q, HttpPacket *packet)
+{
+    assert(q == q->net->socketq);
+
+    if (q->net->socketq) {
+        httpPutForService(q->net->socketq, packet, HTTP_SCHEDULE_QUEUE);
     }
 }
 
 
 static void netOutgoingService(HttpQueue *q)
 {
-    HttpConn    *conn;
-    HttpTx      *tx;
+    HttpNet     *net;
     ssize       written;
     int         errCode;
 
-    conn = q->conn;
-    tx = conn->tx;
-    conn->lastActivity = conn->http->now;
-
-    if (tx->finalizedConnector) {
-        return;
-    }
-    if (tx->flags & HTTP_TX_NO_BODY) {
-        httpDiscardQueueData(q, 1);
-    }
-    if ((tx->bytesWritten + q->count) > conn->limits->txBodySize && conn->limits->txBodySize != HTTP_UNLIMITED) {
-        httpLimitError(conn, HTTP_CODE_REQUEST_TOO_LARGE | ((tx->bytesWritten) ? HTTP_ABORT : 0),
-            "Http transmission aborted. Exceeded transmission max body of %lld bytes", conn->limits->txBodySize);
-        if (tx->bytesWritten) {
-            httpFinalizeConnector(conn);
-            return;
-        }
-    }
-#if !ME_ROM
-    if (tx->flags & HTTP_TX_SENDFILE) {
-        /* Relay via the send connector */
-        if (tx->file == 0) {
-            if (tx->flags & HTTP_TX_HEADERS_CREATED) {
-                tx->flags &= ~HTTP_TX_SENDFILE;
-            } else {
-                tx->connector = conn->http->sendConnector;
-                httpSendOpen(q);
-            }
-        }
-        if (tx->file) {
-            httpSendOutgoingService(q);
-            return;
-        }
-    }
-#endif
-    tx->writeBlocked = 0;
+    net = q->net;
+    //  MOB - who uses this
+    net->writeBlocked = 0;
 
     while (q->first || q->ioIndex) {
         if (q->ioIndex == 0 && buildNetVec(q) <= 0) {
+            freeNetPackets(q, written);
             break;
         }
-        /*
-            Issue a single I/O request to write all the blocks in the I/O vector
-         */
-        assert(q->ioIndex > 0);
-        written = mprWriteSocketVector(conn->sock, q->iovec, q->ioIndex);
+        written = mprWriteSocketVector(net->sock, q->iovec, q->ioIndex);
         if (written < 0) {
             errCode = mprGetError();
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
                 /*  Socket full, wait for an I/O event */
-                tx->writeBlocked = 1;
+                net->writeBlocked = 1;
                 break;
             }
-            if (errCode == EPROTO && conn->secure) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR,
-                    "Cannot negotiate SSL with server: %s", conn->sock->errorMsg);
-            } else if (errCode != EPIPE && errCode != ECONNRESET && errCode != ECONNABORTED && errCode != ENOTCONN) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "netConnector: Cannot write. errno %d", errCode);
+            if (errCode == EPROTO && net->secure) {
+                httpNetError(net, "Cannot negotiate SSL with server: %s", net->sock->errorMsg);
             } else {
-                httpDisconnect(conn);
+                httpNetError(net, "netConnector: Cannot write. errno %d", errCode);
             }
-            httpFinalizeConnector(conn);
-            httpTrace(conn, "connection.io.error", "error", "msg:'Connector write error', errno: %d", errCode);
+            net->eof = 1;
+            net->error = 1;
             break;
 
         } else if (written > 0) {
-            tx->bytesWritten += written;
             freeNetPackets(q, written);
             adjustNetVec(q, written);
 
         } else {
+            /* Socket full */
             break;
         }
-    }
-    if (q->first && q->first->flags & HTTP_PACKET_END) {
-        httpFinalizeConnector(conn);
-        httpGetPacket(q);
     }
 }
 
@@ -143,38 +418,42 @@ static void netOutgoingService(HttpQueue *q)
  */
 static MprOff buildNetVec(HttpQueue *q)
 {
-    HttpConn    *conn;
-    HttpTx      *tx;
-    HttpPacket  *packet, *prev;
-
-    conn = q->conn;
-    tx = conn->tx;
+    HttpPacket  *packet;
 
     /*
-        Examine each packet and accumulate as many packets into the I/O vector as possible. Leave the packets on the queue
-        for now, they are removed after the IO is complete for the entire packet.
+        Examine each packet and accumulate as many packets into the I/O vector as possible. Leave the packets on
+        the queue for now, they are removed after the IO is complete for the entire packet.
      */
-    for (packet = prev = q->first; packet && !(packet->flags & HTTP_PACKET_END); packet = packet->next) {
-        if (packet->flags & HTTP_PACKET_HEADER) {
-            if (tx->chunkSize <= 0 && q->count > 0 && tx->length < 0) {
-                /* No content length, but not chunking. So have to close the connection to signify the content end */
-                conn->keepAliveCount = 0;
-            }
-            httpWriteHeaders(q, packet);
-        }
+     for (packet = q->first; packet; packet = packet->next) {
         if (q->ioIndex >= (ME_MAX_IOVEC - 2)) {
             break;
         }
         if (httpGetPacketLength(packet) > 0 || packet->prefix) {
             addPacketForNet(q, packet);
-        } else {
-            /* Remove empty packets */
-            prev->next = packet->next;
-            continue;
         }
-        prev = packet;
     }
     return q->ioCount;
+}
+
+
+/*
+    Add a packet to the io vector. Return the number of bytes added to the vector.
+ */
+static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
+{
+    HttpNet     *net;
+
+    net = q->net;
+    assert(q->count >= 0);
+    assert(q->ioIndex < (ME_MAX_IOVEC - 2));
+
+    net->bytesWritten += httpGetPacketLength(packet);
+    if (packet->prefix && mprGetBufLength(packet->prefix) > 0) {
+        addToNetVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));
+    }
+    if (packet->content && mprGetBufLength(packet->content) > 0) {
+        addToNetVector(q, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
+    }
 }
 
 
@@ -192,44 +471,16 @@ static void addToNetVector(HttpQueue *q, char *ptr, ssize bytes)
 }
 
 
-/*
-    Add a packet to the io vector. Return the number of bytes added to the vector.
- */
-static void addPacketForNet(HttpQueue *q, HttpPacket *packet)
-{
-    HttpConn    *conn;
-
-    conn = q->conn;
-    assert(q->count >= 0);
-    assert(q->ioIndex < (ME_MAX_IOVEC - 2));
-
-    if (packet->prefix) {
-        addToNetVector(q, mprGetBufStart(packet->prefix), mprGetBufLength(packet->prefix));
-    }
-    if (httpGetPacketLength(packet) > 0) {
-        addToNetVector(q, mprGetBufStart(packet->content), mprGetBufLength(packet->content));
-    }
-    if (httpTracing(conn) && packet->flags & HTTP_PACKET_DATA) {
-        httpTraceBody(conn, 1, packet, -1);
-    }
-}
-
-
 static void freeNetPackets(HttpQueue *q, ssize bytes)
 {
     HttpPacket  *packet;
+    HttpConn    *conn;
     ssize       len;
 
     assert(q->count >= 0);
     assert(bytes > 0);
 
-    /*
-        Loop while data to be accounted for and we have not hit the end of data packet.
-        Chunks will have the chunk header in the packet->prefix.
-        The final chunk trailer will be in a packet->prefix with no other data content.
-        Must leave this routine with the end packet still on the queue and all bytes accounted for.
-     */
-    while ((packet = q->first) != 0 && !(packet->flags & HTTP_PACKET_END) && bytes > 0) {
+    while ((packet = q->first) != 0) {
         if (packet->prefix) {
             len = mprGetBufLength(packet->prefix);
             len = min(len, bytes);
@@ -237,6 +488,7 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
             bytes -= len;
             /* Prefixes don't count in the q->count. No need to adjust */
             if (mprGetBufLength(packet->prefix) == 0) {
+                /* Ensure the prefix is not resent if all the content is not sent */
                 packet->prefix = 0;
             }
         }
@@ -248,15 +500,20 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
             q->count -= len;
             assert(q->count >= 0);
         }
+        if (packet->flags & HTTP_PACKET_END) {
+            if ((conn = packet->conn) != 0) {
+                httpFinalizeConnector(conn);
+                mprCreateEvent(q->net->dispatcher, "endRequest", 0, httpProcess, conn->inputq, 0);
+            }
+        }
         if (httpGetPacketLength(packet) == 0) {
-            /* Done with this packet - consume it */
-            assert(!(packet->flags & HTTP_PACKET_END));
+            /* Done with this packet - consume it. Important for flow control. */
             httpGetPacket(q);
         } else {
+            /* Packet still has data to be written */
             break;
         }
     }
-    assert(bytes == 0);
 }
 
 
@@ -297,7 +554,7 @@ static void adjustNetVec(HttpQueue *q, ssize written)
             }
         }
         /*
-            Compact
+            Compact the vector
          */
         for (j = 0; i < q->ioIndex; ) {
             iovec[j++] = iovec[i++];

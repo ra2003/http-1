@@ -14,7 +14,7 @@
       </ItemDefinitionGroup>
 
       <PropertyGroup Label="Globals">
-        <ProjectGuid>{4a62bf6e-e3d0-4846-a8e4-945e9d816482}</ProjectGuid>
+        <ProjectGuid>{3b9659d3-adc4-472e-a2ed-96eb57b4c2c9}</ProjectGuid>
         <RootNamespace />
         <Keyword>Win32Proj</Keyword>
       </PropertyGroup>
@@ -119,20 +119,27 @@
     <ClCompile Include="..\..\src\error.c" />
     <ClCompile Include="..\..\src\fileHandler.c" />
     <ClCompile Include="..\..\src\host.c" />
+    <ClCompile Include="..\..\src\hpack.c" />
+    <ClCompile Include="..\..\src\http1Filter.c" />
+    <ClCompile Include="..\..\src\http2Filter.c" />
+    <ClCompile Include="..\..\src\huff.c" />
     <ClCompile Include="..\..\src\monitor.c" />
+    <ClCompile Include="..\..\src\net.c" />
     <ClCompile Include="..\..\src\netConnector.c" />
     <ClCompile Include="..\..\src\packet.c" />
     <ClCompile Include="..\..\src\pam.c" />
     <ClCompile Include="..\..\src\passHandler.c" />
     <ClCompile Include="..\..\src\pipeline.c" />
+    <ClCompile Include="..\..\src\process.c" />
     <ClCompile Include="..\..\src\queue.c" />
     <ClCompile Include="..\..\src\rangeFilter.c" />
     <ClCompile Include="..\..\src\route.c" />
     <ClCompile Include="..\..\src\rx.c" />
-    <ClCompile Include="..\..\src\sendConnector.c" />
+    <ClCompile Include="..\..\src\server.c" />
     <ClCompile Include="..\..\src\service.c" />
     <ClCompile Include="..\..\src\session.c" />
     <ClCompile Include="..\..\src\stage.c" />
+    <ClCompile Include="..\..\src\tailFilter.c" />
     <ClCompile Include="..\..\src\trace.c" />
     <ClCompile Include="..\..\src\tx.c" />
     <ClCompile Include="..\..\src\uploadFilter.c" />
@@ -164,14 +171,14 @@ cd ..\projects\http-windows-static</Command>
 
     <ItemGroup>
       <ProjectReference Include="libmpr.vcxproj">
-      <Project>d0b6be03-b4b0-4ccf-b01d-3777dcdb611a</Project>
+      <Project>c377af24-b307-4aa9-b548-b8e182a51e23</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="libpcre.vcxproj">
-      <Project>b0bdf9c7-594a-4047-93f9-1da92f564ff2</Project>
+      <Project>8f9ec95c-2f57-48bf-9df2-e054cd728011</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       </ProjectReference>
     </ItemGroup>

@@ -19,8 +19,12 @@ Me.load({
                 `,
             },
         },
-
-        httpcmd: {
+        server: {
+            type: 'exe',
+            depends: [ 'libhttp' ],
+            sources: [ 'server.c' ],
+        },
+        http: {
             pname: 'http',
             path: '${BIN}/http${EXE}',
             type: 'exe',

@@ -81,9 +81,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->workers = -1;
     route->prefix = MPR->emptyString;
     route->trace = http->trace;
-#if DEPRECATE
-    route->serverPrefix = MPR->emptyString;
-#endif
+
     route->headers = mprCreateList(-1, MPR_LIST_STABLE);
     route->handlers = mprCreateList(-1, MPR_LIST_STABLE);
     route->indexes = mprCreateList(-1, MPR_LIST_STABLE);
@@ -97,6 +95,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
 
     httpAddRouteMethods(route, NULL);
     httpAddRouteFilter(route, http->rangeFilter->name, NULL, HTTP_STAGE_TX);
+
     httpAddRouteFilter(route, http->chunkFilter->name, NULL, HTTP_STAGE_RX | HTTP_STAGE_TX);
 
     /*
@@ -191,9 +190,6 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     route->updates = parent->updates;
     route->vars = parent->vars;
     route->workers = parent->workers;
-#if DEPRECATE
-    route->serverPrefix = parent->serverPrefix;
-#endif
     return route;
 }
 
@@ -256,9 +252,6 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->updates);
         mprMark(route->vars);
         mprMark(route->webSocketsProtocol);
-#if DEPRECATE
-        mprMark(route->serverPrefix);
-#endif
 
     } else if (flags & MPR_MANAGE_FREE) {
         if (route->patternCompiled && (route->flags & HTTP_ROUTE_FREE_PATTERN)) {
@@ -366,7 +359,7 @@ PUBLIC void httpStopRoute(HttpRoute *route)
 
 /*
     Find the matching route and handler for a request. If any errors occur, the pass handler is used to
-    pass errors via the net/sendfile connectors onto the client. This process may rewrite the request
+    pass errors via the net connector onto the client. This process may rewrite the request
     URI and may redirect the request.
  */
 PUBLIC void httpRouteRequest(HttpConn *conn)
@@ -689,7 +682,7 @@ PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename)
                     path = sjoin(filename, ext, NULL);
                 }
                 if (mprGetPathInfo(path, &info) == 0) {
-                    httpTrace(conn, "request.map", "context", "originalFilename:'%s',filename:'%s'", filename, path);
+                    httpTrace(conn->trace, "route.map", "context", "originalFilename:'%s', filename:'%s'", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(conn, "Content-Encoding", "gzip");
@@ -1439,26 +1432,6 @@ PUBLIC void httpSetRoutePreserveFrames(HttpRoute *route, bool on)
 }
 
 
-#if DEPRECATE
-PUBLIC void httpSetRouteServerPrefix(HttpRoute *route, cchar *prefix)
-{
-    assert(route);
-    assert(!smatch(prefix, "/"));
-
-    if (prefix && *prefix) {
-        if (smatch(prefix, "/")) {
-            route->serverPrefix = MPR->emptyString;
-        } else {
-            route->serverPrefix = sclone(prefix);
-        }
-    } else {
-        route->serverPrefix = MPR->emptyString;
-    }
-    assert(route->serverPrefix);
-}
-#endif
-
-
 PUBLIC void httpSetRouteSessionVisibility(HttpRoute *route, bool visible)
 {
     route->flags &= ~HTTP_ROUTE_VISIBLE_SESSION;
@@ -1946,7 +1919,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     HttpRx      *rx;
     HttpRoute   *route;
     cchar       *cp, *ep, *value;
-    char        key[ME_MAX_BUFFER];
+    char        key[ME_BUFSIZE];
 
     rx = conn->rx;
     route = rx->route;
@@ -1957,11 +1930,6 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     for (cp = template; *cp; cp++) {
         if (cp == template && *cp == '~') {
             mprPutStringToBuf(buf, httpGetRouteTop(conn));
-#if DEPRECATE
-        } else if (cp == template && *cp == '|') {
-            mprPutStringToBuf(buf, route->prefix);
-            mprPutStringToBuf(buf, route->serverPrefix);
-#endif
 
         } else if (*cp == '$' && cp[1] == '{' && (cp == template || cp[-1] != '\\')) {
             cp += 2;
@@ -2201,7 +2169,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!httpCanUser(conn, NULL)) {
-        httpTrace(conn, "auth.check", "error", "msg:'Access denied, user is not authorized for access'");
+        httpTrace(conn->trace, "auth.check", "error", "msg:'Access denied, user is not authorized for access'");
         if (!conn->tx->finalized) {
             httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
             /* Request has been denied and a response generated. So OK to accept this route. */
@@ -2372,11 +2340,11 @@ static int cmdUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
     command = expandTokens(conn, op->details);
     cmd = mprCreateCmd(conn->dispatcher);
-    httpTrace(conn, "request.run", "context", "command:'%s'", command);
+    httpTrace(conn->trace, "route.run", "context", "command:'%s'", command);
     if ((status = mprRunCmd(cmd, command, NULL, NULL, &out, &err, -1, 0)) != 0) {
         /* Don't call httpError, just set errorMsg which can be retrieved via: ${request:error} */
         conn->errorMsg = sfmt("Command failed: %s\nStatus: %d\n%s\n%s", command, status, out, err);
-        httpTrace(conn, "request.run.error", "error", "command:'%s',error:'%s'", command, conn->errorMsg);
+        httpTrace(conn->trace, "route.run.error", "error", "command:'%s', error:'%s'", command, conn->errorMsg);
         /* Continue */
     }
     mprDestroyCmd(cmd);
@@ -2496,13 +2464,6 @@ PUBLIC HttpRoute *httpDefineRoute(HttpRoute *parent, cchar *methods, cchar *patt
     if ((route = httpCreateInheritedRoute(parent)) == 0) {
         return 0;
     }
-#if DEPRECATE
-    if (schr(target, '-')) {
-        char   *controller, *action;
-        controller = ssplit(sclone(target), "-", &action);
-        target = sjoin(controller, "/", action, NULL);
-    }
-#endif
     httpSetRoutePattern(route, pattern, 0);
     if (methods) {
         httpSetRouteMethods(route, methods);
@@ -2520,19 +2481,11 @@ PUBLIC HttpRoute *httpAddRestfulRoute(HttpRoute *parent, cchar *methods, cchar *
 {
     cchar   *source;
 
-#if DEPRECATE
-    if (*resource == '{') {
-        pattern = sfmt("^%s%s/%s%s", parent->prefix, parent->serverPrefix, resource, pattern);
-    } else {
-        pattern = sfmt("^%s%s/{controller=%s}%s", parent->prefix, parent->serverPrefix, resource, pattern);
-    }
-#else
     if (*resource == '{') {
         pattern = sfmt("^%s/%s%s", parent->prefix, resource, pattern);
     } else {
         pattern = sfmt("^%s/{controller=%s}%s", parent->prefix, resource, pattern);
     }
-#endif
     if (target && *target) {
         target = sjoin("/", target, NULL);
     }
@@ -2603,11 +2556,7 @@ PUBLIC HttpRoute *httpAddWebSocketsRoute(HttpRoute *parent, cchar *action)
     HttpLimits  *limits;
     cchar       *path, *pattern;
 
-#if DEPRECATE
-    pattern = sfmt("^%s%s/{controller}/%s", parent->prefix, parent->serverPrefix, action);
-#else
     pattern = sfmt("^%s/{controller}/%s", parent->prefix, action);
-#endif
     path = sjoin("$1/", action, NULL);
     route = httpDefineRoute(parent, "GET", pattern, path, "${controller}.c");
     httpAddRouteFilter(route, "webSocketFilter", "", HTTP_STAGE_RX | HTTP_STAGE_TX);
@@ -2739,9 +2688,6 @@ static void defineHostVars(HttpRoute *route)
     mprAddKey(route->vars, "DOCUMENTS", route->documents);
     mprAddKey(route->vars, "HOME", route->home);
     mprAddKey(route->vars, "HOST", route->host->name);
-#if DEPRECATE
-    mprAddKey(route->vars, "SERVER_NAME", route->host->name);
-#endif
 }
 
 

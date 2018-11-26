@@ -1,5 +1,8 @@
 /*
     rangeFilter.c - Ranged request filter.
+
+    This is an output only filter to select a subet range of data to transfer to the client.
+
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
 
@@ -17,6 +20,7 @@ static bool applyRange(HttpQueue *q, HttpPacket *packet);
 static void createRangeBoundary(HttpConn *conn);
 static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range);
 static HttpPacket *createFinalRangePacket(HttpConn *conn);
+static void manageRange(HttpRange *range, int flags);
 static void outgoingRangeService(HttpQueue *q);
 static bool fixRangeLength(HttpConn *conn, HttpQueue *q);
 static int matchRange(HttpConn *conn, HttpRoute *route, int dir);
@@ -36,6 +40,28 @@ PUBLIC int httpOpenRangeFilter()
     filter->start = startRange;
     filter->outgoingService = outgoingRangeService;
     return 0;
+}
+
+
+PUBLIC HttpRange *httpCreateRange(HttpConn *conn, MprOff start, MprOff end)
+{
+    HttpRange     *range;
+
+    if ((range = mprAllocObj(HttpRange, manageRange)) == 0) {
+        return 0;
+    }
+    range->start = start;
+    range->end = end;
+    range->len = end - start;
+    return range;
+}
+
+
+static void manageRange(HttpRange *range, int flags)
+{
+    if (flags & MPR_MANAGE_MARK) {
+        mprMark(range->next);
+    }
 }
 
 

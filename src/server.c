@@ -1,9 +1,9 @@
 /**
-    http-server.c  -- Http server test program
+    server.c  -- Http server test program
 
     Copyright (c) All Rights Reserved. See copyright notice at the bottom of the file.
 
-    usage: http-server [options] 
+    usage: server [options] 
             --config configFile     # Use given config file instead 
             --debugger              # Disable timeouts to make debugging easier
             --home path             # Set the home working directory

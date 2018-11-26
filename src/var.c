@@ -58,7 +58,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     mprAddKey(svars, "SERVER_ADDR", sock->acceptIp);
     mprAddKey(svars, "SERVER_NAME", host->name);
     mprAddKeyFmt(svars, "SERVER_PORT", "%d", sock->acceptPort);
-    mprAddKey(svars, "SERVER_PROTOCOL", conn->protocol);
+    mprAddKey(svars, "SERVER_PROTOCOL", httpGetProtocol(conn->net));
     mprAddKey(svars, "SERVER_SOFTWARE", conn->http->software);
 
     /*
@@ -177,18 +177,16 @@ PUBLIC int httpAddBodyParams(HttpConn *conn)
     rx = conn->rx;
     q = conn->readq;
 
-    if (rx->eof && !(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
-        if (q->first && q->first->content) {
-            httpJoinPackets(q, -1);
-            content = q->first->content;
-            if (rx->form || rx->upload) {
-                mprAddNullToBuf(content);
-                addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
-
-            } else if (sstarts(rx->mimeType, "application/json")) {
-                if (mprParseJsonInto(httpGetBodyInput(conn), httpGetParams(conn)) == 0) {
-                    return MPR_ERR_BAD_FORMAT;
-                }
+    //  MOB - should really have a config for this
+    if (rx->eof && (rx->flags & HTTP_POST) && q->first && q->first->content && !(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
+        content = q->first->content;
+        httpJoinPackets(q, -1);
+        if (rx->form || rx->upload) {
+            mprAddNullToBuf(content);
+            addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
+        } else if (sstarts(rx->mimeType, "application/json")) {
+            if (mprParseJsonInto(httpGetBodyInput(conn), httpGetParams(conn)) == 0) {
+                return MPR_ERR_BAD_FORMAT;
             }
         }
         rx->flags |= HTTP_ADDED_BODY_PARAMS;

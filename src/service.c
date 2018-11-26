@@ -97,11 +97,10 @@ PUBLIC Http *httpCreate(int flags)
     }
     MPR->httpService = HTTP = http;
     http->software = sclone(ME_HTTP_SOFTWARE);
-    http->protocol = sclone("HTTP/1.1");
     http->mutex = mprCreateLock();
     http->stages = mprCreateHash(-1, MPR_HASH_STABLE);
     http->hosts = mprCreateList(-1, MPR_LIST_STABLE);
-    http->connections = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
+    http->networks = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
     http->authTypes = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE | MPR_HASH_STABLE);
     http->authStores = mprCreateHash(-1, MPR_HASH_CASELESS | MPR_HASH_UNIQUE | MPR_HASH_STABLE);
     http->routeSets = mprCreateHash(-1, MPR_HASH_STATIC_VALUES | MPR_HASH_STABLE);
@@ -123,10 +122,14 @@ PUBLIC Http *httpCreate(int flags)
     httpGetUserGroup();
     httpInitParser();
     httpInitAuth();
+#if ME_HTTP_HTTP2
+    httpOpenHttp2Filter();
+#endif
+    httpOpenHttp1Filter();
     httpOpenNetConnector();
-    httpOpenSendConnector();
     httpOpenRangeFilter();
     httpOpenChunkFilter();
+    httpOpenTailFilter();
 #if ME_HTTP_WEB_SOCKETS
     httpOpenWebSockFilter();
 #endif
@@ -170,7 +173,7 @@ PUBLIC Http *httpCreate(int flags)
 
 static void manageHttp(Http *http, int flags)
 {
-    HttpConn    *conn;
+    HttpNet     *net;
     int         next;
 
     if (flags & MPR_MANAGE_MARK) {
@@ -180,7 +183,7 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->clientHandler);
         mprMark(http->clientLimits);
         mprMark(http->clientRoute);
-        mprMark(http->connections);
+        mprMark(http->networks);
         mprMark(http->context);
         mprMark(http->counters);
         mprMark(http->currentDate);
@@ -197,7 +200,6 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->parsers);
         mprMark(http->platform);
         mprMark(http->platformDir);
-        mprMark(http->protocol);
         mprMark(http->proxyHost);
         mprMark(http->remedies);
         mprMark(http->routeConditions);
@@ -209,6 +211,7 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->sessionCache);
         mprMark(http->software);
         mprMark(http->stages);
+        mprMark(http->staticHeaders);
         mprMark(http->statusCodes);
         mprMark(http->timer);
         mprMark(http->timestamp);
@@ -216,15 +219,14 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->user);
 
         /*
-            Endpoints keep connections alive until a timeout. Keep marking even if no other references.
+            Server endpoints keep network connections alive until a timeout.
+            Keep marking even if no other references.
          */
-        lock(http->connections);
-        for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
-            if (httpServerConn(conn)) {
-                mprMark(conn);
+        for (ITERATE_ITEMS(http->networks, net, next)) {
+            if (httpIsServer(net)) {
+                mprMark(net);
             }
         }
-        unlock(http->connections);
     }
 }
 
@@ -265,33 +267,33 @@ PUBLIC void httpStopEndpoints()
     if ((http = HTTP) == 0) {
         return;
     }
-    lock(http->connections);
+    lock(http->networks);
     for (next = 0; (endpoint = mprGetNextItem(http->endpoints, &next)) != 0; ) {
         httpStopEndpoint(endpoint);
     }
-    unlock(http->connections);
+    unlock(http->networks);
 }
 
 
 /*
-    Called to close all connections owned by a service (e.g. ejs)
+    Called to close all networks owned by a service (e.g. ejs)
  */
-PUBLIC void httpStopConnections(void *data)
+PUBLIC void httpStopNetworks(void *data)
 {
     Http        *http;
-    HttpConn    *conn;
+    HttpNet     *net;
     int         next;
 
     if ((http = HTTP) == 0) {
         return;
     }
-    lock(http->connections);
-    for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
-        if (data == 0 || conn->data == data) {
-            httpDestroyConn(conn);
+    lock(http->networks);
+    for (ITERATE_ITEMS(http->networks, net, next)) {
+        if (data == 0 || net->data == data) {
+            httpDestroyNet(net);
         }
     }
-    unlock(http->connections);
+    unlock(http->networks);
 }
 
 
@@ -306,7 +308,7 @@ PUBLIC void httpDestroy()
     if ((http = HTTP) == 0) {
         return;
     }
-    httpStopConnections(0);
+    httpStopNetworks(0);
     httpStopEndpoints();
     httpSetDefaultHost(0);
 
@@ -341,16 +343,18 @@ static void terminateHttp(int state, int how, int status)
  */
 static bool isIdle(bool traceRequests)
 {
-    HttpConn        *conn;
+    HttpNet         *net;
     Http            *http;
     MprTicks        now;
     int             next;
-    static MprTicks lastTrace = 0;
 
     if ((http = MPR->httpService) != 0) {
         now = http->now;
-        lock(http->connections);
-        for (next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; ) {
+        lock(http->networks);
+        for (ITERATE_ITEMS(http->networks, net, next)) {
+#if MOB
+    HttpConn        *conn;
+    static MprTicks lastTrace = 0;
             if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
                 if (traceRequests && lastTrace < now) {
                     if (conn->rx) {
@@ -359,11 +363,12 @@ static bool isIdle(bool traceRequests)
                     }
                     lastTrace = now;
                 }
-                unlock(http->connections);
+                unlock(http->networks);
                 return 0;
             }
+#endif
         }
-        unlock(http->connections);
+        unlock(http->networks);
     } else {
         now = mprGetTicks();
     }
@@ -464,11 +469,22 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->requestParseTimeout = ME_MAX_PARSE_DURATION;
     limits->sessionTimeout = ME_MAX_SESSION_DURATION;
 
+#if ME_HTTP_WEB_SOCKETS
     limits->webSocketsMax = ME_MAX_WSS_SOCKETS;
     limits->webSocketsMessageSize = ME_MAX_WSS_MESSAGE;
     limits->webSocketsFrameSize = ME_MAX_WSS_FRAME;
     limits->webSocketsPacketSize = ME_MAX_WSS_PACKET;
     limits->webSocketsPing = ME_MAX_PING_DURATION;
+#endif
+
+#if ME_HTTP_HTTP2
+    /*
+        HTTP/2 parameters. Default frameSize must be 16K and windowSize 65535 by spec. Do not change.
+     */
+    limits->frameSize = HTTP2_DEFAULT_FRAME_SIZE;
+    limits->streamsMax = ME_MAX_STREAMS;
+    limits->windowSize = HTTP2_DEFAULT_WINDOW;
+#endif
 
     if (serverSide) {
         limits->rxFormSize = ME_MAX_RX_FORM;
@@ -592,46 +608,53 @@ PUBLIC void httpSetListenCallback(HttpListenCallback fn)
  */
 static void httpTimer(Http *http, MprEvent *event)
 {
+    HttpNet     *net;
     HttpConn    *conn;
     HttpStage   *stage;
     HttpLimits  *limits;
     MprModule   *module;
-    int         next, active, abort;
+    int         next, active, abort, nextConn;
 
     updateCurrentDate();
 
-    /*
-       Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
-       OPT - could check for expired connections every 10 seconds.
-     */
-    lock(http->connections);
-    for (active = 0, next = 0; (conn = mprGetNextItem(http->connections, &next)) != 0; active++) {
-        limits = conn->limits;
-        if (!conn->timeoutEvent) {
-            abort = mprIsStopping();
-            if (httpServerConn(conn) && (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED) &&
-                    (http->now - conn->started) > limits->requestParseTimeout) {
-                conn->timeout = HTTP_PARSE_TIMEOUT;
-                abort = 1;
-            } else if ((http->now - conn->lastActivity) > limits->inactivityTimeout) {
-                conn->timeout = HTTP_INACTIVITY_TIMEOUT;
-                abort = 1;
-            } else if ((http->now - conn->started) > limits->requestTimeout) {
-                conn->timeout = HTTP_REQUEST_TIMEOUT;
-                abort = 1;
-            } else if (!event) {
-                /* Called directly from httpStop to stop connections */
-                if (MPR->exitTimeout > 0) {
-                    if (conn->state == HTTP_STATE_COMPLETE ||
-                        (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED)) {
+    lock(http->networks);
+
+    if (!mprGetDebugMode()) {
+        for (next = 0; (net = mprGetNextItem(http->networks, &next)) != 0; active++) {
+            /*
+               Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
+             */
+            for (active = 0, nextConn = 0; (conn = mprGetNextItem(net->connections, &nextConn)) != 0; active++) {
+                limits = conn->limits;
+                abort = mprIsStopping();
+                if (httpServerConn(conn) && (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED) &&
+                        (http->now - conn->started) > limits->requestParseTimeout) {
+                    conn->timeout = HTTP_PARSE_TIMEOUT;
+                    abort = 1;
+                } else if ((http->now - conn->lastActivity) > limits->inactivityTimeout) {
+                    conn->timeout = HTTP_INACTIVITY_TIMEOUT;
+                    abort = 1;
+                } else if ((http->now - conn->started) > limits->requestTimeout) {
+                    conn->timeout = HTTP_REQUEST_TIMEOUT;
+                    abort = 1;
+                } else if (!event) {
+                    /* Called directly from httpStop to stop connections */
+                    if (MPR->exitTimeout > 0) {
+                        if (conn->state == HTTP_STATE_COMPLETE ||
+                            (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED)) {
+                            abort = 1;
+                        }
+                    } else {
                         abort = 1;
                     }
-                } else {
-                    abort = 1;
+                }
+                if (abort) {
+                    httpConnTimeout(conn);
                 }
             }
-            if (abort && !mprGetDebugMode()) {
-                httpScheduleConnTimeout(conn);
+            if ((http->now - net->lastActivity) > net->limits->inactivityTimeout) {
+                net->timeout = HTTP_INACTIVITY_TIMEOUT;
+                httpNetTimeout(net);
             }
         }
     }
@@ -640,7 +663,7 @@ static void httpTimer(Http *http, MprEvent *event)
         Check for unloadable modules
         OPT - could check for modules every minute
      */
-    if (mprGetListLength(http->connections) == 0) {
+    if (mprGetListLength(http->networks) == 0) {
         for (next = 0; (module = mprGetNextItem(MPR->moduleService->modules, &next)) != 0; ) {
             if (module->timeout) {
                 if (module->lastActivity + module->timeout < http->now) {
@@ -674,7 +697,7 @@ static void httpTimer(Http *http, MprEvent *event)
     } else {
         mprGC(MPR_GC_NO_BLOCK);
     }
-    unlock(http->connections);
+    unlock(http->networks);
 }
 
 
@@ -702,35 +725,28 @@ PUBLIC void httpSetTimestamp(MprTicks period)
 }
 
 
-PUBLIC void httpAddConn(HttpConn *conn)
+PUBLIC void httpAddNet(HttpNet *net)
 {
     Http    *http;
 
-    http = HTTP;
+    http = net->http;
+
+    mprAddItem(http->networks, net);
     http->now = mprGetTicks();
-    assert(http->now >= 0);
-    conn->started = http->now;
-    mprAddItem(http->connections, conn);
     updateCurrentDate();
 
     lock(http);
-    conn->seqno = (int) ++http->totalConnections;
-    if (!http->timer) {
-#if ME_DEBUG
-        if (!mprGetDebugMode())
-#endif
-        {
-            http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http,
-                MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
-        }
+    if (!http->timer && (!ME_DEBUG || !mprGetDebugMode())) {
+        http->timer = mprCreateTimerEvent(NULL, "httpTimer", HTTP_TIMER_PERIOD, httpTimer, http,
+            MPR_EVENT_CONTINUOUS | MPR_EVENT_QUICK);
     }
     unlock(http);
 }
 
 
-PUBLIC void httpRemoveConn(HttpConn *conn)
+PUBLIC void httpRemoveNet(HttpNet *net)
 {
-    mprRemoveItem(HTTP->connections, conn);
+    mprRemoveItem(net->http->networks, net);
 }
 
 
@@ -846,7 +862,7 @@ PUBLIC void httpGetStats(HttpStats *sp)
     sp->workersYielded = wstats.yielded;
     sp->workersMax = wstats.max;
 
-    sp->activeConnections = mprGetListLength(http->connections);
+    sp->activeConnections = mprGetListLength(http->networks);
     sp->activeProcesses = http->activeProcesses;
 
     mprGetCacheStats(http->sessionCache, &sp->activeSessions, &memSessions);
@@ -933,14 +949,14 @@ PUBLIC bool httpConfigure(HttpConfigureProc proc, void *data, MprTicks timeout)
         timeout = MAXINT;
     }
     do {
-        lock(http->connections);
+        lock(http->networks);
         /* Own request will count as 1 */
-        if (mprGetListLength(http->connections) == 0) {
+        if (mprGetListLength(http->networks) == 0) {
             (proc)(data);
-            unlock(http->connections);
+            unlock(http->networks);
             return 1;
         }
-        unlock(http->connections);
+        unlock(http->networks);
         mprSleep(10);
         /* Defaults to 10 secs */
     } while (mprGetRemainingTicks(mark, timeout) > 0);
@@ -1250,7 +1266,7 @@ PUBLIC int httpSetPlatform(cchar *platform)
         return MPR_ERR_BAD_ARGS;
     }
     http->platform = platform ? sclone(platform) : http->localPlatform;
-    mprLog("info http", 2, "Using platform %s", http->platform);
+    mprLog("info http", 4, "Using platform %s", http->platform);
     return 0;
 }
 

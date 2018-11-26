@@ -15,11 +15,18 @@ static void manageTx(HttpTx *tx, int flags);
 
 PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
 {
+    Http        *http;
+    HttpNet     *net;
     HttpTx      *tx;
+
+    assert(conn);
+    assert(conn->net);
 
     if ((tx = mprAllocObj(HttpTx, manageTx)) == 0) {
         return 0;
     }
+    http = conn->http;
+    net = conn->net;
     conn->tx = tx;
     tx->conn = conn;
     tx->status = HTTP_CODE_OK;
@@ -27,13 +34,12 @@ PUBLIC HttpTx *httpCreateTx(HttpConn *conn, MprHash *headers)
     tx->entityLength = -1;
     tx->chunkSize = -1;
     tx->cookies = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
-    tx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, 0);
 
-    tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(conn, "TxHead");
-    conn->writeq = tx->queue[HTTP_QUEUE_TX]->nextQ;
+    tx->queue[HTTP_QUEUE_TX] = httpCreateQueueHead(net, conn, "TxHead", HTTP_QUEUE_TX);
+    conn->writeq = tx->queue[HTTP_QUEUE_TX];
 
-    tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(conn, "RxHead");
-    conn->readq = tx->queue[HTTP_QUEUE_RX]->prevQ;
+    tx->queue[HTTP_QUEUE_RX] = httpCreateQueueHead(net, conn, "RxHead", 0);
+    conn->readq = tx->queue[HTTP_QUEUE_RX];
 
     if (headers) {
         tx->headers = headers;
@@ -64,7 +70,9 @@ static void manageTx(HttpTx *tx, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
         mprMark(tx->altBody);
+#if UNUSED
         mprMark(tx->authType);
+#endif
         mprMark(tx->cache);
         mprMark(tx->cacheBuffer);
         mprMark(tx->cachedContent);
@@ -95,7 +103,7 @@ static void manageTx(HttpTx *tx, int flags)
 /*
     Add key/value to the header hash. If already present, update the value
 */
-static void setHdr(HttpConn *conn, cchar *key, cchar *value)
+static void updateHdr(HttpConn *conn, cchar *key, cchar *value)
 {
     assert(key && *key);
     assert(value);
@@ -136,7 +144,7 @@ PUBLIC void httpAddHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
         value = MPR->emptyString;
     }
     if (conn->tx && !mprLookupKey(conn->tx->headers, key)) {
-        setHdr(conn, key, value);
+        updateHdr(conn, key, value);
     }
 }
 
@@ -150,7 +158,7 @@ PUBLIC void httpAddHeaderString(HttpConn *conn, cchar *key, cchar *value)
     assert(value);
 
     if (conn->tx && !mprLookupKey(conn->tx->headers, key)) {
-        setHdr(conn, key, sclone(value));
+        updateHdr(conn, key, sclone(value));
     }
 }
 
@@ -197,10 +205,10 @@ PUBLIC void httpAppendHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
                 mprAddDuplicateKey(conn->tx->headers, key, value);
             }
         } else {
-            setHdr(conn, key, sfmt("%s, %s", (char*) kp->data, value));
+            updateHdr(conn, key, sfmt("%s, %s", (char*) kp->data, value));
         }
     } else {
-        setHdr(conn, key, value);
+        updateHdr(conn, key, value);
     }
 }
 
@@ -224,10 +232,10 @@ PUBLIC void httpAppendHeaderString(HttpConn *conn, cchar *key, cchar *value)
         if (scaselessmatch(key, "Set-Cookie")) {
             mprAddDuplicateKey(conn->tx->headers, key, sclone(value));
         } else {
-            setHdr(conn, key, sfmt("%s, %s", oldValue, value));
+            updateHdr(conn, key, sfmt("%s, %s", oldValue, value));
         }
     } else {
-        setHdr(conn, key, sclone(value));
+        updateHdr(conn, key, sclone(value));
     }
 }
 
@@ -256,7 +264,7 @@ PUBLIC void httpSetHeader(HttpConn *conn, cchar *key, cchar *fmt, ...)
     va_start(vargs, fmt);
     value = sfmtv(fmt, vargs);
     va_end(vargs);
-    setHdr(conn, key, value);
+    updateHdr(conn, key, value);
 }
 
 
@@ -265,7 +273,7 @@ PUBLIC void httpSetHeaderString(HttpConn *conn, cchar *key, cchar *value)
     assert(key && *key);
     assert(value);
 
-    setHdr(conn, key, sclone(value));
+    updateHdr(conn, key, sclone(value));
 }
 
 
@@ -325,7 +333,7 @@ PUBLIC void httpFinalizeOutput(HttpConn *conn)
         tx->pendingFinalize = 1;
         return;
     }
-    httpPutForService(conn->writeq, httpCreateEndPacket(), HTTP_SCHEDULE_QUEUE);
+    httpPutPacket(httpServerConn(conn) ? conn->writeq->nextQ : conn->writeq, httpCreateEndPacket());
 }
 
 
@@ -348,7 +356,7 @@ PUBLIC int httpIsOutputFinalized(HttpConn *conn)
 PUBLIC ssize httpFormatResponsev(HttpConn *conn, cchar *fmt, va_list args)
 {
     HttpTx      *tx;
-    char        *body;
+    cchar       *body;
 
     tx = conn->tx;
     tx->responded = 1;
@@ -383,7 +391,7 @@ PUBLIC ssize httpFormatResponse(HttpConn *conn, cchar *fmt, ...)
 PUBLIC ssize httpFormatResponseBody(HttpConn *conn, cchar *title, cchar *fmt, ...)
 {
     va_list     args;
-    char        *msg, *body;
+    cchar       *msg, *body;
 
     va_start(args, fmt);
     body = fmt ? sfmtv(fmt, args) : conn->errorMsg;
@@ -423,6 +431,7 @@ PUBLIC void httpOmitBody(HttpConn *conn)
     tx->length = -1;
     if (tx->flags & HTTP_TX_HEADERS_CREATED) {
         /* Connectors will detect this also and disconnect */
+        //  MOB - where
     } else {
         httpDiscardData(conn, HTTP_QUEUE_TX);
     }
@@ -474,7 +483,7 @@ PUBLIC void httpRedirect(HttpConn *conn, int status, cchar *targetUri)
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n<p>The document has moved <a href=\"%s\">here</a>.</p></body></html>\r\n",
             msg, msg, targetUri);
-        httpTrace(conn, "request.redirect", "context", "status:%d,location:'%s'", status, targetUri);
+        httpTrace(conn->trace, "http.redirect", "context", "status:%d,location:'%s'", status, targetUri);
     } else {
         httpFormatResponse(conn,
             "<!DOCTYPE html>\r\n"
@@ -610,10 +619,34 @@ static void setCorsHeaders(HttpConn *conn)
 }
 
 
+PUBLIC HttpPacket *httpCreateHeaders(HttpQueue *q, HttpPacket *packet)
+{
+    HttpConn    *conn;
+
+    conn = q->conn;
+
+    if (!packet) {
+        packet = httpCreateHeaderPacket();
+        //  MOB - this should be pushed into the create routine
+        packet->conn = q->conn;
+    }
+#if ME_HTTP_HTTP2
+    if (q->net->protocol >= 2) {
+        httpCreateHeaders2(q, packet);
+    } else {
+        httpCreateHeaders1(q, packet);
+    }
+#else
+    httpCreateHeaders1(q, packet);
+#endif
+    return packet;
+}
+
+
 /*
-    Set headers for httpWriteHeaders. This defines standard headers.
+    Define headers for httpWriteHeaders. This defines standard headers.
  */
-static void setHeaders(HttpConn *conn, HttpPacket *packet)
+PUBLIC void httpDefineHeaders(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -624,11 +657,19 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
     MprOff      length;
     int         next;
 
-    assert(packet->flags == HTTP_PACKET_HEADER);
-
     rx = conn->rx;
     tx = conn->tx;
     route = rx->route;
+
+    if (tx->flags & HTTP_TX_HEADERS_CREATED) {
+        return;
+    }
+    tx->flags |= HTTP_TX_HEADERS_CREATED;
+
+    if (conn->headersCallback) {
+        /* Must be before headers below */
+        (conn->headersCallback)(conn->headersCallbackArg);
+    }
 
     /*
         Create headers for cookies
@@ -695,19 +736,21 @@ static void setHeaders(HttpConn *conn, HttpPacket *packet)
         if (!(route->flags & HTTP_ROUTE_STEALTH)) {
             httpAddHeaderString(conn, "Server", conn->http->software);
         }
-        /*
-            If keepAliveCount == 1
-         */
-        if (--conn->keepAliveCount > 0) {
-            assert(conn->keepAliveCount >= 1);
-            httpAddHeaderString(conn, "Connection", "Keep-Alive");
-            if (!(route->flags & HTTP_ROUTE_STEALTH)) {
-                httpAddHeader(conn, "Keep-Alive", "timeout=%lld, max=%d", conn->limits->inactivityTimeout / 1000,
-                    conn->keepAliveCount);
+        if (conn->net->protocol < 2) {
+            /*
+                If keepAliveCount == 1
+             */
+            if (--conn->keepAliveCount > 0) {
+                assert(conn->keepAliveCount >= 1);
+                httpAddHeaderString(conn, "Connection", "Keep-Alive");
+                if (!(route->flags & HTTP_ROUTE_STEALTH) || 1) {
+                    httpAddHeader(conn, "Keep-Alive", "timeout=%lld, max=%d", conn->limits->inactivityTimeout / 1000,
+                        conn->keepAliveCount);
+                }
+            } else {
+                /* Tell the peer to close the connection */
+                httpAddHeaderString(conn, "Connection", "close");
             }
-        } else {
-            /* Tell the peer to close the connection */
-            httpAddHeaderString(conn, "Connection", "close");
         }
         if (route->flags & HTTP_ROUTE_CORS) {
             setCorsHeaders(conn);
@@ -786,7 +829,7 @@ PUBLIC bool httpSetFilename(HttpConn *conn, cchar *filename, int flags)
 
     if (tx->flags & HTTP_TX_PIPELINE) {
         /* Filename being revised after pipeline created */
-        httpTrace(conn, "request.document", "context", "filename:'%s'", tx->filename);
+        httpTrace(conn->trace, "http.document", "context", "filename:'%s'", tx->filename);
     }
     return info->valid;
 }
@@ -811,109 +854,6 @@ PUBLIC void httpSetContentType(HttpConn *conn, cchar *mimeType)
     httpSetHeaderString(conn, "Content-Type", conn->tx->mimeType);
 }
 
-
-PUBLIC void httpWriteHeaders(HttpQueue *q, HttpPacket *packet)
-{
-    Http        *http;
-    HttpConn    *conn;
-    HttpTx      *tx;
-    HttpUri     *parsedUri;
-    HttpPacket  *altPacket;
-    MprKey      *kp;
-    MprBuf      *buf;
-
-    assert(packet->flags == HTTP_PACKET_HEADER);
-
-    conn = q->conn;
-    http = conn->http;
-    tx = conn->tx;
-    buf = packet->content;
-
-    if (tx->flags & HTTP_TX_HEADERS_CREATED) {
-        return;
-    }
-    tx->flags |= HTTP_TX_HEADERS_CREATED;
-    tx->responded = 1;
-    if (conn->headersCallback) {
-        /* Must be before headers below */
-        (conn->headersCallback)(conn->headersCallbackArg);
-    }
-    if (tx->flags & HTTP_TX_USE_OWN_HEADERS && !conn->error) {
-        conn->keepAliveCount = 0;
-        return;
-    }
-    setHeaders(conn, packet);
-
-    if (httpServerConn(conn)) {
-        mprPutStringToBuf(buf, conn->protocol);
-        mprPutCharToBuf(buf, ' ');
-        mprPutIntToBuf(buf, tx->status);
-        mprPutCharToBuf(buf, ' ');
-        mprPutStringToBuf(buf, httpLookupStatus(tx->status));
-        /* Server tracing of status happens in the "complete" event */
-
-    } else {
-        mprPutStringToBuf(buf, tx->method);
-        mprPutCharToBuf(buf, ' ');
-        parsedUri = tx->parsedUri;
-        if (http->proxyHost && *http->proxyHost) {
-            if (parsedUri->query && *parsedUri->query) {
-                mprPutToBuf(buf, "http://%s:%d%s?%s %s", http->proxyHost, http->proxyPort,
-                    parsedUri->path, parsedUri->query, conn->protocol);
-            } else {
-                mprPutToBuf(buf, "http://%s:%d%s %s", http->proxyHost, http->proxyPort, parsedUri->path, conn->protocol);
-            }
-        } else {
-            if (parsedUri->query && *parsedUri->query) {
-                mprPutToBuf(buf, "%s?%s %s", parsedUri->path, parsedUri->query, conn->protocol);
-            } else {
-                mprPutStringToBuf(buf, parsedUri->path);
-                mprPutCharToBuf(buf, ' ');
-                mprPutStringToBuf(buf, conn->protocol);
-            }
-        }
-        /* Client side trace */
-        httpTrace(conn, "tx.first.client", "request", "method:'%s',uri:'%s',protocol:'%s'", tx->method,
-            parsedUri->path, conn->protocol);
-    }
-    mprPutStringToBuf(buf, "\r\n");
-
-    /*
-        Output headers
-     */
-    kp = mprGetFirstKey(conn->tx->headers);
-    while (kp) {
-        mprPutStringToBuf(packet->content, kp->key);
-        mprPutStringToBuf(packet->content, ": ");
-        if (kp->data) {
-            mprPutStringToBuf(packet->content, kp->data);
-        }
-        mprPutStringToBuf(packet->content, "\r\n");
-        kp = mprGetNextKey(conn->tx->headers, kp);
-    }
-    httpTracePacket(conn, conn->endpoint ? "tx.headers.server" : "tx.headers.client", "context", packet, 0);
-
-    /*
-        By omitting the "\r\n" delimiter after the headers, chunks can emit "\r\nSize\r\n" as a single chunk delimiter
-     */
-    if (tx->chunkSize <= 0) {
-        mprPutStringToBuf(buf, "\r\n");
-    }
-    tx->headerSize = mprGetBufLength(buf);
-    tx->flags |= HTTP_TX_HEADERS_CREATED;
-    tx->authType = conn->authType;
-    q->count += httpGetPacketLength(packet);
-
-    if (tx->altBody) {
-        /* Error responses are emitted here */
-        httpDiscardQueueData(tx->queue[HTTP_QUEUE_TX]->nextQ, 0);
-        altPacket = httpCreateDataPacket(slen(tx->altBody));
-        mprPutStringToBuf(altPacket->content, tx->altBody);
-        packet = httpGetPacket(q);
-        httpPutBackPacket(q, altPacket);
-        httpPutBackPacket(q, packet);
-    }
-}
 
 
 PUBLIC bool httpFileExists(HttpConn *conn)
@@ -953,7 +893,7 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
     tx->responded = 1;
 
     for (totalWritten = 0; len > 0; ) {
-        if (conn->state >= HTTP_STATE_FINALIZED || conn->connError) {
+        if (conn->state >= HTTP_STATE_FINALIZED || conn->net->error) {
             return MPR_ERR_CANT_WRITE;
         }
         if (q->last && q->last != q->first && q->last->flags & HTTP_PACKET_DATA && mprGetBufSpace(q->last->content) > 0) {
@@ -963,7 +903,7 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
             if ((packet = httpCreateDataPacket(packetSize)) == 0) {
                 return MPR_ERR_MEMORY;
             }
-            httpPutForService(q, packet, HTTP_DELAY_SERVICE);
+            httpPutPacket(q, packet);
         }
         assert(mprGetBufSpace(packet->content) > 0);
         thisWrite = min(len, mprGetBufSpace(packet->content));
@@ -990,7 +930,8 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
         return MPR_ERR_CANT_WRITE;
     }
     if (httpClientConn(conn)) {
-        httpEnableConnEvents(conn);
+        //  MOB - review
+        httpEnableNetEvents(conn->net);
     }
     return totalWritten;
 }

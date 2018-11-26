@@ -26,7 +26,7 @@ PUBLIC HttpPacket *httpCreatePacket(ssize size)
         return 0;
     }
     if (size != 0) {
-        if ((packet->content = mprCreateBuf(size < 0 ? ME_MAX_BUFFER: (ssize) size, -1)) == 0) {
+        if ((packet->content = mprCreateBuf(size < 0 ? ME_MAX_QBUFFER: (ssize) size, -1)) == 0) {
             return 0;
         }
     }
@@ -39,6 +39,8 @@ static void managePacket(HttpPacket *packet, int flags)
     if (flags & MPR_MANAGE_MARK) {
         mprMark(packet->prefix);
         mprMark(packet->content);
+        mprMark(packet->data);
+        mprMark(packet->conn);
         /* Don't mark next packet, list owner will mark */
     }
 }
@@ -87,7 +89,7 @@ PUBLIC HttpPacket *httpCreateHeaderPacket()
 {
     HttpPacket    *packet;
 
-    if ((packet = httpCreatePacket(ME_MAX_BUFFER)) == 0) {
+    if ((packet = httpCreatePacket(ME_BUFSIZE)) == 0) {
         return 0;
     }
     packet->flags = HTTP_PACKET_HEADER;
@@ -144,6 +146,7 @@ PUBLIC HttpPacket *httpGetPacket(HttpQueue *q)
     HttpQueue     *prev;
     HttpPacket    *packet;
 
+    packet = 0;
     while (q->first) {
         if ((packet = q->first) != 0) {
             q->first = packet->next;
@@ -163,13 +166,27 @@ PUBLIC HttpPacket *httpGetPacket(HttpQueue *q)
             if (prev && prev->flags & HTTP_QUEUE_SUSPENDED) {
                 /*
                     This queue was full and now is below the low water mark. Back-enable the previous queue.
+                    Must only resume the queue if a packet was actually dequed.
                  */
                 httpResumeQueue(prev);
             }
         }
-        return packet;
+        break;
     }
-    return 0;
+    return packet;
+}
+
+
+PUBLIC void httpRemovePacket(HttpQueue *q, HttpPacket *prev, HttpPacket *packet)
+{
+    prev->next = packet->next;
+    if (q->last == packet) {
+        q->last = 0;
+    }
+    if (q->first == packet) {
+        q->first = 0;
+    }
+    q->count -= httpGetPacketLength(packet);
 }
 
 
@@ -209,20 +226,21 @@ PUBLIC bool httpIsPacketTooBig(HttpQueue *q, HttpPacket *packet)
  */
 PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
-    if (q->first == 0) {
-        /*  Just use the service queue as a holding queue while we aggregate the post data.  */
+    HttpPacket  *p, *last;
+
+    if (q->last == 0 || !(packet->flags & HTTP_PACKET_DATA)) {
         httpPutForService(q, packet, HTTP_DELAY_SERVICE);
 
     } else {
-        /* Skip over the header packet */
-        if (q->first && q->first->flags & HTTP_PACKET_HEADER) {
-            packet = q->first->next;
-            q->first = packet;
-        } else {
-            /* Aggregate all data into one packet and free the packet.  */
-            httpJoinPacket(q->first, packet);
+        /*
+            Find the last data packet and join with that
+         */
+        for (p = q->first, last = 0; p && !(p->flags & HTTP_PACKET_END); last = p, p = p->next);
+        assert(last);
+        if (last) {
+            httpJoinPacket(last, packet);
+            q->count += httpGetPacketLength(packet);
         }
-        q->count += httpGetPacketLength(packet);
     }
     if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
         httpScheduleQueue(q);
@@ -312,9 +330,11 @@ PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
     assert(packet);
     assert(q->put);
 
-    if (q->put) {
-        q->put(q, packet);
+    //  MOB - where is the best place for this?
+    if (!packet->conn) {
+        packet->conn = q->conn;
     }
+    q->put(q, packet);
 }
 
 
@@ -324,20 +344,12 @@ PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
 PUBLIC void httpPutPacketToNext(HttpQueue *q, HttpPacket *packet)
 {
     assert(packet);
-    assert(q->nextQ->put);
 
-    if (q->nextQ && q->nextQ->put) {
-        q->nextQ->put(q->nextQ, packet);
+    if (!packet->conn) {
+        packet->conn = q->conn;
     }
-}
-
-
-PUBLIC void httpPutPackets(HttpQueue *q)
-{
-    HttpPacket    *packet;
-
-    for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
-        httpPutPacketToNext(q, packet);
+    if (q->nextQ && q->nextQ->put) {
+        httpPutPacket(q->nextQ, packet);
     }
 }
 
@@ -353,12 +365,18 @@ PUBLIC bool httpNextQueueFull(HttpQueue *q)
 
 /*
     Put the packet back at the front of the queue
+    PutPacket sends to recieving function, PutBack/PutForService put to the queue
+    Also, PutBack does not have service option like PutForService does
  */
 PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
 {
     assert(packet);
     assert(packet->next == 0);
     assert(q->count >= 0);
+
+    if (!packet->conn) {
+        packet->conn = q->conn;
+    }
 
     if (packet) {
         packet->next = q->first;
@@ -378,6 +396,9 @@ PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
     assert(packet);
 
+    if (!packet->conn) {
+        packet->conn = q->conn;
+    }
     q->count += httpGetPacketLength(packet);
     packet->next = 0;
 
@@ -388,6 +409,9 @@ PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
         q->first = packet;
         q->last = packet;
     }
+    if (!packet->conn) {
+        packet->conn = q->conn;
+    }
     if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
         httpScheduleQueue(q);
     }
@@ -395,7 +419,7 @@ PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 
 
 /*
-    Resize and possibly split a packet so it fits in the downstream queue. Put back the 2nd portion of the split packet
+    Resize and possibly split a packet to be smaller than "size". Put back the 2nd portion of the split packet
     on the queue. Ensure that the packet is not larger than "size" if it is greater than zero. If size < 0, then
     use the default packet size. Return the tail packet.
  */
@@ -416,8 +440,10 @@ PUBLIC HttpPacket *httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size
             Calculate the size that will fit downstream
          */
         len = packet->content ? httpGetPacketLength(packet) : 0;
+        if (size < 0) {
+            size = len;
+        }
         size = min(size, len);
-        size = min(size, q->nextQ->packetSize);
         if (size == 0 || size == len) {
             return 0;
         }
@@ -432,7 +458,7 @@ PUBLIC HttpPacket *httpResizePacket(HttpQueue *q, HttpPacket *packet, ssize size
 
 /*
     Split a packet at a given offset and return the tail packet containing the data after the offset.
-    The prefix data remains with the original packet.
+    The prefix data remains with the original packet, the tail does not inherit the prefix.
  */
 PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 {
@@ -461,7 +487,7 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
                 To optimize, we allocate a new packet content buffer and the tail packet keeps the trimmed
                 original packet buffer.
              */
-            if ((tail = httpCreateDataPacket(0)) == 0) {
+            if ((tail = httpCreatePacket(0)) == 0) {
                 return 0;
             }
             tail->content = orig->content;
@@ -475,9 +501,9 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
 
         } else {
             count = httpGetPacketLength(orig) - offset;
-            size = max(count, ME_MAX_BUFFER);
+            size = max(count, ME_BUFSIZE);
             size = HTTP_PACKET_ALIGN(size);
-            if ((tail = httpCreateDataPacket(size)) == 0) {
+            if ((tail = httpCreatePacket(size)) == 0) {
                 return 0;
             }
             httpAdjustPacketEnd(orig, -count);
@@ -486,6 +512,7 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
             }
         }
     }
+    tail->conn = orig->conn;
     tail->flags = orig->flags;
     tail->type = orig->type;
     tail->last = orig->last;

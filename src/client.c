@@ -11,90 +11,125 @@
 /********************************* Forwards ***********************************/
 
 static void setDefaultHeaders(HttpConn *conn);
+static int clientRequest(HttpConn *conn, cchar *method, cchar *uri, cchar *data, int protocol, char **err);
 
 /*********************************** Code *************************************/
-
-static HttpConn *openConnection(HttpConn *conn, MprSsl *ssl)
+/*
+    Get the IP:PORT for a request URI
+ */
+PUBLIC void httpGetUriAddress(HttpUri *uri, cchar **ip, int *port)
 {
-    Http        *http;
-    HttpUri     *uri;
-    MprSocket   *sp;
-    char        *ip;
-    int         port, rc;
+    Http    *http;
 
-    assert(conn);
-
-    http = conn->http;
-    uri = conn->tx->parsedUri;
+    http = HTTP;
 
     if (!uri->host) {
-        ip = (http->proxyHost) ? http->proxyHost : http->defaultClientHost;
-        port = (http->proxyHost) ? http->proxyPort : http->defaultClientPort;
+        *ip = (http->proxyHost) ? http->proxyHost : http->defaultClientHost;
+        *port = (http->proxyHost) ? http->proxyPort : uri->port;
     } else {
-        ip = (http->proxyHost) ? http->proxyHost : uri->host;
-        port = (http->proxyHost) ? http->proxyPort : uri->port;
+        *ip = (http->proxyHost) ? http->proxyHost : uri->host;
+        *port = (http->proxyHost) ? http->proxyPort : uri->port;
     }
-    if (port == 0) {
-        port = (uri->secure) ? 443 : 80;
+    if (*port == 0) {
+        *port = (uri->secure) ? 443 : http->defaultClientPort;
     }
-    if (conn && conn->sock) {
-        if (conn->keepAliveCount-- <= 0 || port != conn->port || strcmp(ip, conn->ip) != 0 ||
-                uri->secure != (conn->sock->ssl != 0) || conn->sock->ssl != ssl) {
-            /*
-                Cannot reuse current socket. Close and open a new one below.
-             */
-            mprCloseSocket(conn->sock, 0);
-            conn->sock = 0;
-        } else {
-            httpTrace(conn, "connection.reuse", "context", "keepAlive:%d", conn->keepAliveCount);
+}
+
+
+/*
+    Determine if the current network connection can handle the current URI without redirection
+ */
+static bool canUse(HttpNet *net, HttpUri *uri, MprSsl *ssl, cchar *ip, int port)
+{
+    MprSocket   *sock;
+
+    assert(net);
+
+    if ((sock = net->sock) == 0) {
+        return 0;
+    }
+    if (port != net->port || !smatch(ip, net->ip) || uri->secure != (sock->ssl != 0) || sock->ssl != ssl) {
+        return 0;
+    }
+    return 1;
+}
+
+
+PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *url, MprSsl *ssl)
+{
+    HttpNet     *net;
+    HttpTx      *tx;
+    HttpUri     *uri;
+    cchar       *ip, *protocol;
+    int         port;
+
+    assert(conn);
+    assert(method && *method);
+    assert(url && *url);
+
+    net = conn->net;
+    if (httpServerConn(conn)) {
+        mprLog("client error", 0, "Cannot call httpConnect() in a server");
+        return MPR_ERR_BAD_STATE;
+    }
+    if (net->protocol <= 0) {
+        mprLog("client error", 0, "HTTP protocol to use has not been defined");
+        return MPR_ERR_BAD_STATE;
+    }
+    if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
+        httpResetClientConn(conn, 0);
+    }
+    tx = conn->tx;
+    tx->method = supper(method);
+    conn->authRequested = 0;
+    conn->startMark = mprGetHiResTicks();
+
+    if ((uri = tx->parsedUri = httpCreateUri(url, HTTP_COMPLETE_URI_PATH)) == 0) {
+        return MPR_ERR_BAD_ARGS;
+    }
+    ssl = uri->secure ? (ssl ? ssl : mprCreateSsl(0)) : 0;
+    httpGetUriAddress(uri, &ip, &port);
+
+    if (net->sock) {
+        if (net->error) {
+            mprCloseSocket(net->sock, 0);
+            net->sock = 0;
+
+        } else if (canUse(net, uri, ssl, ip, port)) {
+            httpTrace(net->trace, "client.connection.reuse", "context", "reuse:%d", conn->keepAliveCount);
+
+        } else if (net->protocol >= 2 && mprGetListLength(net->connections) > 1) {
+            httpError(conn, HTTP_CODE_COMMS_ERROR, "Cannot use network for %s due to other existing requests", ip);
+            return MPR_ERR_CANT_FIND;
+        }
+        if (net->protocol < 2 && conn->keepAliveCount <= 1) {
+            mprCloseSocket(net->sock, 0);
+            net->sock = 0;
         }
     }
-    if (conn->sock) {
-        return conn;
-    }
+    if (!net->sock) {
+        if (httpConnectNet(net, ip, port, ssl) < 0) {
+            return MPR_ERR_CANT_CONNECT;
+        }
+        conn->net = net;
+        conn->sock = net->sock;
+        conn->ip = net->ip;
+        conn->port = net->port;
+        conn->keepAliveCount = (net->protocol >= 2) ? 0 : conn->limits->keepAliveMax;
 
-    /*
-        New socket
-     */
-    if ((sp = mprCreateSocket()) == 0) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Cannot create socket for %s", httpUriToString(uri, 0));
-        return 0;
-    }
-    if ((rc = mprConnectSocket(sp, ip, port, MPR_SOCKET_NODELAY)) < 0) {
-        httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Cannot open socket on %s:%d", ip, port);
-        return 0;
-    }
-    conn->sock = sp;
-    conn->ip = sclone(ip);
-    conn->port = port;
-    conn->keepAliveCount = (conn->limits->keepAliveMax) ? conn->limits->keepAliveMax : 0;
-
-#if ME_COM_SSL
-    /*
-        Must be done even if using keep alive for repeat SSL requests
-     */
-    if (uri->secure) {
-        if (mprUpgradeSocket(sp, ssl, uri->host) < 0) {
-            conn->errorMsg = sp->errorMsg;
-            httpTrace(conn, "connection.upgrade.error", "error", "msg:'Cannot perform SSL upgrade. %s'", conn->errorMsg);
+#if ME_HTTP_WEB_SOCKETS
+        if (net->protocol == 1 && uri->webSockets && httpUpgradeWebSocket(conn) < 0) {
+            conn->errorMsg = net->errorMsg = net->sock->errorMsg;
             return 0;
         }
-        if (sp->peerCert) {
-            httpTrace(conn, "context", "connection.ssl",
-                "msg:'Connection secured with peer certificate', " \
-                "secure:true,cipher:'%s',peerName:'%s',subject:'%s',issuer:'%s'",
-                sp->cipher, sp->peerName, sp->peerCert, sp->peerCertIssuer);
-        }
-    }
 #endif
-#if ME_HTTP_WEB_SOCKETS
-    if (uri->webSockets && httpUpgradeWebSocket(conn) < 0) {
-        conn->errorMsg = sp->errorMsg;
-        return 0;
     }
-#endif
-    httpTrace(conn, "connection.peer", "context", "peer:'%s:%d'", conn->ip, conn->port);
-    return conn;
+    httpCreatePipeline(conn);
+    httpSetState(conn, HTTP_STATE_CONNECTED);
+    setDefaultHeaders(conn);
+    protocol = net->protocol < 2 ? "HTTP/1.1" : "HTTP/2";
+    httpTrace(net->trace, "client.request", "request", "method='%s', url='%s', protocol='%s'", tx->method, url, protocol);
+    return 0;
 }
 
 
@@ -104,82 +139,35 @@ static void setDefaultHeaders(HttpConn *conn)
 
     assert(conn);
 
-    if (smatch(conn->protocol, "HTTP/1.0")) {
-        conn->http10 = 1;
+    if (conn->username && conn->authType && ((ap = httpLookupAuthType(conn->authType)) != 0)) {
+        if ((ap->setAuth)(conn, conn->username, conn->password)) {
+            conn->authRequested = 1;
+        }
     }
-    if (conn->username && conn->authType) {
-        if ((ap = httpLookupAuthType(conn->authType)) != 0) {
-            if ((ap->setAuth)(conn, conn->username, conn->password)) {
-                conn->authRequested = 1;
+    if (conn->net->protocol < 2) {
+        if (conn->port != 80 && conn->port != 443) {
+            if (schr(conn->ip, ':')) {
+                httpAddHeader(conn, "Host", "[%s]:%d", conn->ip, conn->port);
+            } else {
+                httpAddHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
             }
-        }
-    }
-    if (conn->port != 80 && conn->port != 443) {
-        if (schr(conn->ip, ':')) {
-            httpAddHeader(conn, "Host", "[%s]:%d", conn->ip, conn->port);
         } else {
-            httpAddHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
+            httpAddHeaderString(conn, "Host", conn->ip);
         }
-    } else {
-        httpAddHeaderString(conn, "Host", conn->ip);
+        if (conn->keepAliveCount > 0) {
+            httpSetHeaderString(conn, "Connection", "Keep-Alive");
+        } else {
+            httpSetHeaderString(conn, "Connection", "close");
+        }
     }
     httpAddHeaderString(conn, "Accept", "*/*");
-    if (conn->keepAliveCount > 0) {
-        httpSetHeaderString(conn, "Connection", "Keep-Alive");
-    } else {
-        httpSetHeaderString(conn, "Connection", "close");
-    }
-}
-
-
-PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl *ssl)
-{
-    HttpTx  *tx;
-
-    assert(conn);
-    assert(method && *method);
-    assert(uri && *uri);
-
-    if (httpServerConn(conn)) {
-        httpError(conn, HTTP_CODE_BAD_GATEWAY, "Cannot call connect in a server");
-        return MPR_ERR_BAD_STATE;
-    }
-    if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
-        /* WARNING: this will erase headers */
-        httpPrepClientConn(conn, 0);
-    }
-    tx = conn->tx;
-    assert(conn->state == HTTP_STATE_BEGIN);
-
-    /*
-        Do not test if the URI is valid. Some test clients need the ability to create invalid URIs
-     */
-    if ((tx->parsedUri = httpCreateUri(uri, HTTP_COMPLETE_URI_PATH)) == 0) {
-        return MPR_ERR_BAD_ARGS;
-    }
-    if (tx->parsedUri->secure && !ssl) {
-        ssl = mprCreateSsl(0);
-    }
-    if (openConnection(conn, ssl) == 0) {
-        return MPR_ERR_CANT_OPEN;
-    }
-    conn->authRequested = 0;
-    tx->method = supper(method);
-    conn->startMark = mprGetHiResTicks();
-    /*
-        The receive pipeline is created when parsing the response in parseIncoming()
-     */
-    httpCreateTxPipeline(conn, conn->http->clientRoute);
-    httpSetState(conn, HTTP_STATE_CONNECTED);
-    setDefaultHeaders(conn);
-    return 0;
 }
 
 
 /*
     Check the response for authentication failures and redirections. Return true if a retry is requried.
  */
-PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
+PUBLIC bool httpNeedRetry(HttpConn *conn, cchar **url)
 {
     HttpRx          *rx;
     HttpTx          *tx;
@@ -191,15 +179,18 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
     rx = conn->rx;
     tx = conn->tx;
 
-    if (conn->state < HTTP_STATE_FIRST) {
+    if (conn->error || conn->state < HTTP_STATE_FIRST) {
         return 0;
     }
     if (rx->status == HTTP_CODE_UNAUTHORIZED) {
         if (conn->username == 0 || conn->authType == 0) {
             httpError(conn, rx->status, "Authentication required");
 
+#if UNUSED
+        //  MOB - what is this?
         } else if (conn->authRequested && smatch(conn->authType, tx->authType)) {
             httpError(conn, rx->status, "Authentication failed");
+#endif
         } else {
             assert(httpClientConn(conn));
             if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {
@@ -207,8 +198,7 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, char **url)
             }
             return 1;
         }
-    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY &&
-            conn->followRedirects) {
+    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && conn->followRedirects) {
         if (rx->redirect) {
             *url = rx->redirect;
             return 1;
@@ -231,6 +221,7 @@ PUBLIC void httpEnableUpload(HttpConn *conn)
 
 
 /*
+    MOB - need to test these
     Read data. If sync mode, this will block. If async, will never block.
     Will return what data is available up to the requested size.
     Timeout in milliseconds to wait. Set to -1 to use the default inactivity timeout. Set to zero to wait forever.
@@ -252,7 +243,7 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
     limits = conn->limits;
 
     if (flags == 0) {
-        flags = conn->async ? HTTP_NON_BLOCK : HTTP_BLOCK;
+        flags = conn->net->async ? HTTP_NON_BLOCK : HTTP_BLOCK;
     }
     if (timeout < 0) {
         timeout = limits->inactivityTimeout;
@@ -267,7 +258,8 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
                 break;
             }
             delay = min(limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
-            httpEnableConnEvents(conn);
+            //  MOB - review
+            httpEnableNetEvents(conn->net);
             mprWaitForEvent(conn->dispatcher, delay, dispatcherMark);
             if (mprGetRemainingTicks(start, timeout) <= 0) {
                 break;
@@ -285,7 +277,6 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
         assert(len <= q->count);
         if (len > 0) {
             len = mprGetBlockFromBuf(content, buf, len);
-            assert(len <= q->count);
         }
         buf += len;
         size -= len;
@@ -294,6 +285,7 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
         nbytes += len;
         if (mprGetBufLength(content) == 0) {
             httpGetPacket(q);
+
         }
         if (flags & HTTP_NON_BLOCK) {
             break;
@@ -345,10 +337,10 @@ PUBLIC char *httpReadString(HttpConn *conn)
         content = NULL;
         sofar = 0;
         while (1) {
-            if ((content = mprRealloc(content, sofar + ME_MAX_BUFFER)) == 0) {
+            if ((content = mprRealloc(content, sofar + ME_BUFSIZE)) == 0) {
                 return 0;
             }
-            nbytes = httpRead(conn, &content[sofar], ME_MAX_BUFFER);
+            nbytes = httpRead(conn, &content[sofar], ME_BUFSIZE);
             if (nbytes < 0) {
                 return 0;
             } else if (nbytes == 0) {
@@ -363,47 +355,27 @@ PUBLIC char *httpReadString(HttpConn *conn)
 
 
 /*
+    MOB - need to test
     Convenience method to issue a client http request.
     Assumes the Mpr and Http services are created and initialized.
  */
-PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
+PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, int protocol, char **err)
 {
+    HttpNet         *net;
     HttpConn        *conn;
     MprDispatcher   *dispatcher;
-    ssize           len;
 
-    if (err) {
-        *err = 0;
-    }
+    assert(err);
     dispatcher = mprCreateDispatcher("httpRequest", MPR_DISPATCHER_AUTO);
     mprStartDispatcher(dispatcher);
 
-    conn = httpCreateConn(NULL, dispatcher);
+    net = httpCreateNet(dispatcher, NULL, protocol, 0);
+    conn = httpCreateConn(net);
     mprAddRoot(conn);
 
-    /*
-       Open a connection to issue the request. Then finalize the request output - this forces the request out.
-     */
-    if (httpConnect(conn, method, uri, NULL) < 0) {
+    if (clientRequest(conn, method, uri, data, protocol, err) < 0) {
         mprRemoveRoot(conn);
-        httpDestroyConn(conn);
-        *err = sfmt("Cannot connect to %s", uri);
-        return 0;
-    }
-    if (data) {
-        len = slen(data);
-        if (httpWriteBlock(conn->writeq, data, len, HTTP_BLOCK) != len) {
-            mprRemoveRoot(conn);
-            httpDestroyConn(conn);
-            *err = sclone("Cannot write request body data");
-            return 0;
-        }
-    }
-    httpFinalizeOutput(conn);
-    if (httpWait(conn, HTTP_STATE_CONTENT, MPR_MAX_TIMEOUT) < 0) {
-        mprRemoveRoot(conn);
-        httpDestroyConn(conn);
-        *err = sclone("No response");
+        httpDestroyNet(net);
         return 0;
     }
     mprRemoveRoot(conn);
@@ -411,10 +383,38 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, char **err)
 }
 
 
+static int clientRequest(HttpConn *conn, cchar *method, cchar *uri, cchar *data, int protocol, char **err)
+{
+    ssize   len;
+
+    /*
+       Open a connection to issue the request. Then finalize the request output - this forces the request out.
+     */
+    *err = 0;
+    if (httpConnect(conn, method, uri, NULL) < 0) {
+        *err = sfmt("Cannot connect to %s", uri);
+        return MPR_ERR_CANT_CONNECT;
+    }
+    if (data) {
+        len = slen(data);
+        if (httpWriteBlock(conn->writeq, data, len, HTTP_BLOCK) != len) {
+            *err = sclone("Cannot write request body data");
+            return MPR_ERR_CANT_WRITE;
+        }
+    }
+    httpFinalizeOutput(conn);
+    if (httpWait(conn, HTTP_STATE_CONTENT, MPR_MAX_TIMEOUT) < 0) {
+        *err = sclone("No response");
+        return MPR_ERR_BAD_STATE;
+    }
+    return 0;
+}
+
+
 static int blockingFileCopy(HttpConn *conn, cchar *path)
 {
     MprFile     *file;
-    char        buf[ME_MAX_BUFFER];
+    char        buf[ME_BUFSIZE];
     ssize       bytes, nbytes, offset;
 
     file = mprOpenFile(path, O_RDONLY | O_BINARY, 0);
@@ -445,6 +445,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
 
 /*
     Write upload data. This routine blocks. If you need non-blocking ... cut and paste.
+    MOB - what about non-blocking upload
  */
 PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *formData)
 {
@@ -500,8 +501,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     int         justOne;
 
     limits = conn->limits;
-    if (conn->endpoint) {
-        assert(!conn->endpoint);
+    if (httpServerConn(conn)) {
         return MPR_ERR_BAD_STATE;
     }
     if (conn->state <= HTTP_STATE_BEGIN) {
@@ -530,11 +530,14 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     }
     start = conn->http->now;
     dispatcherMark = mprGetEventMark(conn->dispatcher);
+
+    //  MOB - how does this work with http2?
     while (conn->state < state && !conn->error && !mprIsSocketEof(conn->sock)) {
         if (httpRequestExpired(conn, -1)) {
             return MPR_ERR_TIMEOUT;
         }
-        httpEnableConnEvents(conn);
+        //  MOB - review
+        httpEnableNetEvents(conn->net);
         delay = min(limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
         delay = max(delay, 0);
         mprWaitForEvent(conn->dispatcher, delay, dispatcherMark);

@@ -10,9 +10,39 @@
 /********************************** Forwards **********************************/
 
 static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args);
-static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
+static cchar *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
 
 /*********************************** Code *************************************/
+
+PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...)
+{
+    va_list     args;
+    HttpConn    *conn;
+    cchar       *msg;
+    int         next;
+
+    if (net == 0 || fmt == 0) {
+        return;
+    }
+    va_start(args, fmt);
+    if (!net->error) {
+        net->error = 1;
+        net->errorMsg = msg = sfmtv(fmt, args);
+#if ME_HTTP_HTTP2
+        if (net->protocol >= 2 && !net->eof) {
+            httpSendGoAway(net, HTTP2_INTERNAL_ERROR, "5s", msg);
+        }
+#endif
+        if (httpIsServer(net)) {
+            for (ITERATE_ITEMS(net->connections, conn, next)) {
+                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "%s", msg);
+            }
+            // MOB httpMonitorNetEvent(net, HTTP_COUNTER_BAD_REQUEST_ERRORS, 1);
+        }
+    }
+    va_end(args);
+}
+
 
 PUBLIC void httpBadRequestError(HttpConn *conn, int flags, cchar *fmt, ...)
 {
@@ -121,14 +151,11 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     if (flags & (HTTP_ABORT | HTTP_CLOSE)) {
         conn->keepAliveCount = 0;
     }
-    if (flags & HTTP_ABORT) {
-        conn->connError++;
-    }
     if (!conn->error) {
-        conn->error++;
+        conn->error = 1;
         httpOmitBody(conn);
         conn->errorMsg = formatErrorv(conn, status, fmt, args);
-        httpTrace(conn, "request.error", "error", "msg:'%s'", conn->errorMsg);
+        httpTrace(conn->trace, "error", "error", "msg:'%s'", conn->errorMsg);
         HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
         if (httpServerConn(conn)) {
             if (status == HTTP_CODE_NOT_FOUND) {
@@ -152,10 +179,13 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                 }
             }
         }
+        if (flags & HTTP_ABORT) {
+            conn->disconnect = 1;
+        }
         httpFinalize(conn);
     }
-    if (flags & HTTP_ABORT) {
-        httpDisconnect(conn);
+    if (conn->disconnect && conn->net->protocol < 2) {
+        httpDisconnectConn(conn);
     }
 }
 
@@ -164,7 +194,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     Just format conn->errorMsg and set status - nothing more
     NOTE: this is an internal API. Users should use httpError()
  */
-static char *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
+static cchar *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
 {
     if (conn->errorMsg == 0) {
         conn->errorMsg = sfmtv(fmt, args);

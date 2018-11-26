@@ -54,7 +54,6 @@ static int rewriteFileHandler(HttpConn *conn)
 }
 
 
-
 static int openFileHandler(HttpQueue *q)
 {
     HttpRx      *rx;
@@ -98,7 +97,7 @@ static int openFileHandler(HttpQueue *q)
             httpOmitBody(conn);
         }
         if (!tx->fileInfo.isReg && !tx->fileInfo.isLink) {
-            httpTrace(conn, "request.document.error", "error", "msg:'Document is not a regular file',filename:'%s'",
+            httpTrace(conn->trace, "fileHandler.error", "error", "msg:'Document is not a regular file',filename:'%s'",
                 tx->filename);
             httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot serve document");
 
@@ -107,7 +106,7 @@ static int openFileHandler(HttpQueue *q)
             httpError(conn, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Http transmission aborted. File size exceeds max body of %lld bytes", conn->limits->txBodySize);
 
-        } else if (!(tx->connector == conn->http->sendConnector)) {
+        } else {
             /*
                 If using the net connector, open the file if a body must be sent with the response. The file will be
                 automatically closed when the request completes.
@@ -116,19 +115,24 @@ static int openFileHandler(HttpQueue *q)
                 tx->file = mprOpenFile(tx->filename, O_RDONLY | O_BINARY, 0);
                 if (tx->file == 0) {
                     if (rx->referrer && *rx->referrer) {
-                        httpTrace(conn, "request.document.error", "error",
-                            "msg:'Cannot open document',filename:'%s',referrer:'%s'",
+                        httpTrace(conn->trace, "fileHandler.error", "error", "msg:'Cannot open document',filename:'%s',referrer:'%s'",
                             tx->filename, rx->referrer);
                     } else {
-                        httpTrace(conn, "request.document.error", "error",
-                            "msg:'Cannot open document',filename:'%s'", tx->filename);
+                        httpTrace(conn->trace, "fileHandler.error", "error", "msg:'Cannot open document',filename:'%s'", tx->filename);
                     }
                     httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot open document");
                 }
             }
         }
-    } else if (rx->flags & (HTTP_DELETE | HTTP_OPTIONS | HTTP_PUT)) {
-        ;
+    } else if (rx->flags & HTTP_DELETE) {
+        handleDeleteRequest(q);
+
+    } else if (rx->flags & HTTP_OPTIONS) {
+        httpHandleOptions(q->conn);
+
+    } else if (rx->flags & HTTP_PUT) {
+        handlePutRequest(q);
+
     } else {
         httpError(conn, HTTP_CODE_BAD_METHOD, "Unsupported method");
     }
@@ -151,50 +155,35 @@ static void closeFileHandler(HttpQueue *q)
 static void startFileHandler(HttpQueue *q)
 {
     HttpConn    *conn;
-    HttpRx      *rx;
     HttpTx      *tx;
     HttpPacket  *packet;
 
     conn = q->conn;
-    rx = conn->rx;
     tx = conn->tx;
 
-    if (tx->finalized || conn->error) {
-        return;
-
-    } else if (rx->flags & HTTP_PUT) {
-        handlePutRequest(q);
-
-    } else if (rx->flags & HTTP_DELETE) {
-        handleDeleteRequest(q);
-
-    } else if (rx->flags & HTTP_OPTIONS) {
-        httpHandleOptions(q->conn);
-
-    } else if (!(tx->flags & HTTP_TX_NO_BODY)) {
-        if (tx->entityLength >= 0) {
+    if ((conn->rx->flags & (HTTP_GET | HTTP_POST)) && !(tx->flags & HTTP_TX_NO_BODY)) {
+        if (tx->entityLength >= 0 && !conn->error) {
             /*
                 Create a single data packet based on the actual entity (file) length
              */
             packet = httpCreateEntityPacket(0, tx->entityLength, readFileData);
+            //MOB - what is this about?
             if (!tx->outputRanges && tx->chunkSize < 0) {
                 tx->length = tx->entityLength;
             }
-            httpPutForService(q, packet, 0);
+            httpPutPacket(q, packet);
         }
     }
 }
 
 
 /*
-    The ready callback is invoked when all body data has been received
+    The ready callback is invoked when all the input body data has been received
+    The queue already contains a single data packet representing all the output data.
  */
 static void readyFileHandler(HttpQueue *q)
 {
-    /*
-        The queue already contains a single data packet representing all the output data.
-     */
-    httpFinalize(q->conn);
+    httpScheduleQueue(q);
 }
 
 
@@ -210,8 +199,8 @@ static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize si
     conn = q->conn;
     tx = conn->tx;
 
-    if (packet->content == 0 && (packet->content = mprCreateBuf(size, -1)) == 0) {
-        return MPR_ERR_MEMORY;
+    if (size <= 0) {
+        return 0;
     }
     if (mprGetBufSpace(packet->content) < size) {
         size = mprGetBufSpace(packet->content);
@@ -228,49 +217,7 @@ static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize si
         return MPR_ERR_CANT_READ;
     }
     mprAdjustBufEnd(packet->content, nbytes);
-    packet->esize -= nbytes;
-    assert(packet->esize == 0);
     return nbytes;
-}
-
-
-/*
-    Prepare a data packet for sending downstream. This involves reading file data into a suitably sized packet. Return
-    the 1 if the packet was sent entirely, return zero if the packet could not be completely sent. Return a negative
-    error code for write errors. This may split the packet if it exceeds the downstreams maximum packet size.
- */
-static int prepPacket(HttpQueue *q, HttpPacket *packet)
-{
-    HttpQueue   *nextQ;
-    ssize       size, nbytes;
-
-    if (mprNeedYield()) {
-        httpScheduleQueue(q);
-        return 0;
-    }
-    nextQ = q->nextQ;
-    if (packet->esize > nextQ->packetSize) {
-        httpPutBackPacket(q, httpSplitPacket(packet, nextQ->packetSize));
-        size = nextQ->packetSize;
-    } else {
-        size = (ssize) packet->esize;
-    }
-    if ((size + nextQ->count) > nextQ->max) {
-        /*
-            The downstream queue is full, so disable the queue and service downstream queue.
-            Will re-enable via a writable event on the connection.
-         */
-        httpSuspendQueue(q);
-        if (!(nextQ->flags & HTTP_QUEUE_SUSPENDED)) {
-            httpScheduleQueue(nextQ);
-        }
-        return 0;
-    }
-    if ((nbytes = readFileData(q, packet, q->ioPos, size)) < 0) {
-        return MPR_ERR_CANT_READ;
-    }
-    q->ioPos += nbytes;
-    return 1;
 }
 
 
@@ -283,24 +230,47 @@ static int prepPacket(HttpQueue *q, HttpPacket *packet)
 static void outgoingFileService(HttpQueue *q)
 {
     HttpConn    *conn;
-    HttpTx      *tx;
-    HttpPacket  *packet;
-    bool        usingSend;
-    int         rc;
+    HttpPacket  *data, *packet;
+    ssize       size, nbytes;
+    bool        finalize;
 
     conn = q->conn;
-    tx = conn->tx;
-    usingSend = (tx->connector == conn->http->sendConnector);
+    finalize = 0;
+
+    /*
+        There will be only one entity data packet. PrepPacket will read data into the packet and then
+        put the remaining entity packet on the queue where it will be examined again until the down stream queue is full.
+     */
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
-        if (!usingSend && !tx->outputRanges && packet->esize) {
-            if ((rc = prepPacket(q, packet)) < 0) {
-                return;
-            } else if (rc == 0) {
-                httpPutBackPacket(q, packet);
+        if (packet->fill) {
+            size = min(packet->esize, q->packetSize);
+            size = min(size, q->nextQ->packetSize);
+            packet->epos += size;
+            packet->esize -= size;
+            data = httpCreateDataPacket(size);
+            if ((nbytes = readFileData(q, data, q->ioPos, size)) < 0) {
+                httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot read document");
                 return;
             }
+            q->ioPos += nbytes;
+            if (packet->esize > 0) {
+                /* Put back the entity packet for another go */
+                httpPutBackPacket(q, packet);
+            } else {
+                finalize = 1;
+            }
+        } else {
+            data = packet;
         }
-        httpPutPacketToNext(q, packet);
+        if (!httpWillNextQueueAcceptPacket(q, data)) {
+            httpPutBackPacket(q, data);
+            return;
+        }
+        httpPutPacketToNext(q, data);
+        if (finalize) {
+            httpFinalize(conn);
+            finalize = 0;
+        }
     }
 }
 
@@ -338,6 +308,7 @@ static void incomingFile(HttpQueue *q, HttpPacket *packet)
             mprGetPathInfo(tx->filename, &tx->fileInfo);
             tx->etag = itos(tx->fileInfo.inode + tx->fileInfo.size + tx->fileInfo.mtime);
         }
+        httpFinalize(conn);
         return;
     }
     buf = packet->content;
@@ -417,6 +388,7 @@ static void handleDeleteRequest(HttpQueue *q)
         return;
     }
     httpSetStatus(conn, HTTP_CODE_NO_CONTENT);
+    httpFinalize(conn);
 }
 
 

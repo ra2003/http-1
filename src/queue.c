@@ -12,15 +12,19 @@
 static void manageQueue(HttpQueue *q, int flags);
 
 /************************************ Code ************************************/
-
-PUBLIC HttpQueue *httpCreateQueueHead(HttpConn *conn, cchar *name)
+/*
+    Create a queue head that has no processing callbacks
+ */
+PUBLIC HttpQueue *httpCreateQueueHead(HttpNet *net, HttpConn *conn, cchar *name, int dir)
 {
     HttpQueue   *q;
+
+    assert(net);
 
     if ((q = mprAllocObj(HttpQueue, manageQueue)) == 0) {
         return 0;
     }
-    httpInitQueue(conn, q, name);
+    httpInitQueue(net, conn, q, name, dir);
     httpInitSchedulerQueue(q);
     return q;
 }
@@ -30,24 +34,18 @@ PUBLIC HttpQueue *httpCreateQueueHead(HttpConn *conn, cchar *name)
     Create a queue associated with a connection.
     Prev may be set to the previous queue in a pipeline. If so, then the Conn.readq and writeq are updated.
  */
-PUBLIC HttpQueue *httpCreateQueue(HttpConn *conn, HttpStage *stage, int dir, HttpQueue *prev)
+PUBLIC HttpQueue *httpCreateQueue(HttpNet *net, HttpConn *conn, HttpStage *stage, int dir, HttpQueue *prev)
 {
     HttpQueue   *q;
 
     if ((q = mprAllocObj(HttpQueue, manageQueue)) == 0) {
         return 0;
     }
-    q->conn = conn;
-    httpInitQueue(conn, q, sfmt("%s-%s", stage->name, dir == HTTP_QUEUE_TX ? "tx" : "rx"));
+    httpInitQueue(net, conn, q, stage->name, dir);
     httpInitSchedulerQueue(q);
-    httpAssignQueue(q, stage, dir);
+    httpAssignQueueCallbacks(q, stage, dir);
     if (prev) {
-        httpAppendQueue(prev, q);
-        if (dir == HTTP_QUEUE_RX) {
-            conn->readq = conn->tx->queue[HTTP_QUEUE_RX]->prevQ;
-        } else {
-            conn->writeq = conn->tx->queue[HTTP_QUEUE_TX]->nextQ;
-        }
+        httpAppendQueue(q, prev);
     }
     return q;
 }
@@ -79,7 +77,10 @@ static void manageQueue(HttpQueue *q, int flags)
 }
 
 
-PUBLIC void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
+/*
+    Assign stage callbacks to a queue
+ */
+PUBLIC void httpAssignQueueCallbacks(HttpQueue *q, HttpStage *stage, int dir)
 {
     q->stage = stage;
     q->close = stage->close;
@@ -95,44 +96,44 @@ PUBLIC void httpAssignQueue(HttpQueue *q, HttpStage *stage, int dir)
 }
 
 
-PUBLIC void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
+PUBLIC void httpInitQueue(HttpNet *net, HttpConn *conn, HttpQueue *q, cchar *name, int dir)
 {
-    HttpTx      *tx;
-
-    tx = conn->tx;
+    q->net = net;
     q->conn = conn;
+    q->flags = dir == HTTP_QUEUE_TX ? HTTP_QUEUE_OUTGOING : 0;
     q->nextQ = q;
     q->prevQ = q;
-    q->name = sclone(name);
-    q->max = conn->limits->bufferSize;
-    q->low = q->max / 100 *  5;
-    if (tx && tx->chunkSize > 0) {
-        q->packetSize = tx->chunkSize;
+    q->name = sfmt("%s-%s", name, dir == HTTP_QUEUE_TX ? "tx" : "rx");
+    q->max = net->limits->bufferSize;
+    q->low = q->max / 4;
+    if (conn && conn->tx && conn->tx->chunkSize > 0) {
+        q->packetSize = conn->tx->chunkSize;
     } else {
         q->packetSize = q->max;
     }
 }
 
 
-PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize low, ssize max)
+PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize packetSize, ssize low, ssize max)
 {
-    q->low = low;
-    q->max = max;
+    if (packetSize > 0) {
+        q->packetSize = packetSize;
+    }
+    if (max >= 0) {
+        q->max = max;
+        q->low = q->max / 4;
+    }
+    if (low >= 0) {
+        q->low = low;
+    }
 }
 
 
-#if KEEP
-/*
-    Insert a queue after the previous element
- */
-PUBLIC void httpAppendQueueToHead(HttpQueue *head, HttpQueue *q)
+PUBLIC void httpPairQueues(HttpQueue *q1, HttpQueue *q2)
 {
-    q->nextQ = head;
-    q->prevQ = head->prevQ;
-    head->prevQ->nextQ = q;
-    head->prevQ = q;
+    q1->pair = q2;
+    q2->pair = q1;
 }
-#endif
 
 
 PUBLIC bool httpIsQueueSuspended(HttpQueue *q)
@@ -155,6 +156,7 @@ PUBLIC bool httpIsSuspendQueue(HttpQueue *q)
 
 /*
     Remove all data in the queue. If removePackets is true, actually remove the packet too.
+    MOB - seems like we only ever call with removePackets == true
     This preserves the header and EOT packets.
  */
 PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
@@ -182,7 +184,10 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
                 continue;
             } else {
                 len = httpGetPacketLength(packet);
-                q->conn->tx->length -= len;
+                //  MOB - should do this in caller or have higher level routine that does this with "conn" as arg
+                if (q->conn && q->conn->tx) {
+                    q->conn->tx->length -= len;
+                }
                 q->count -= len;
                 assert(q->count >= 0);
                 if (packet->content) {
@@ -196,47 +201,46 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
 
 
 /*
-    Flush queue data by scheduling the queue and servicing all scheduled queues. Return true if there is room for more data.
-    If blocking is requested, the call will block until the queue count falls below the queue max.
-    WARNING: Be very careful when using blocking == true. Should only be used by end applications and not by middleware.
+    Flush queue data toward the connector by scheduling the queue and servicing all scheduled queues.
+    Return true if there is room for more data. If blocking is requested, the call will block until
+    the queue count falls below the queue max. WARNING: Be very careful when using blocking == true.
+    Should only be used by end applications and not by middleware.
  */
 PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 {
-    HttpConn    *conn;
-    HttpTx      *tx;
+    HttpNet     *net;
 
-    conn = q->conn;
-    tx = conn->tx;
+    net = q->net;
 
     /*
         Initiate flushing
      */
     httpScheduleQueue(q);
-    httpServiceQueues(conn, flags);
+    httpServiceQueues(net, flags);
 
+    //  MOB - review
     if (flags & HTTP_BLOCK) {
         /*
             Blocking mode: Fully drain the pipeline. This blocks until the connector has written all the data
             to the O/S socket.
          */
-        while (tx->writeBlocked || conn->connectorq->count > 0 || conn->connectorq->ioCount) {
-            if (conn->connError) {
+        while (net->socketq->count > 0 || net->socketq->ioCount) {
+            if (net->error) {
                 break;
             }
-            assert(!tx->finalizedConnector);
-            assert(conn->connectorq->count > 0 || conn->connectorq->ioCount);
-            if (!mprWaitForSingleIO((int) conn->sock->fd, MPR_WRITABLE, conn->limits->inactivityTimeout)) {
+            if (!mprWaitForSingleIO((int) net->sock->fd, MPR_WRITABLE, net->limits->inactivityTimeout)) {
                 break;
             }
-            conn->lastActivity = conn->http->now;
-            httpResumeQueue(conn->connectorq);
-            httpServiceQueues(conn, flags);
+            net->lastActivity = net->http->now;
+            httpResumeQueue(net->outputq);
+            httpServiceQueues(net, flags);
         }
     }
     return (q->count < q->max) ? 1 : 0;
 }
 
 
+//  MOB - move this to conn
 PUBLIC void httpFlush(HttpConn *conn)
 {
     httpFlushQueue(conn->writeq, HTTP_NON_BLOCK);
@@ -245,18 +249,22 @@ PUBLIC void httpFlush(HttpConn *conn)
 
 /*
     Flush the write queue. In sync mode, this call may yield.
+    MOB - move to conn
  */
 PUBLIC void httpFlushAll(HttpConn *conn)
 {
-    httpFlushQueue(conn->writeq, conn->async ? HTTP_NON_BLOCK : HTTP_BLOCK);
+    httpFlushQueue(conn->writeq, conn->net->async ? HTTP_NON_BLOCK : HTTP_BLOCK);
 }
 
 
 PUBLIC void httpResumeQueue(HttpQueue *q)
 {
-    if (q) {
+    if (q && (q->flags & HTTP_QUEUE_SUSPENDED)) {
         q->flags &= ~HTTP_QUEUE_SUSPENDED;
         httpScheduleQueue(q);
+    }
+    if (q->count == 0 && q->prevQ->flags & HTTP_QUEUE_SUSPENDED) {
+        httpResumeQueue(q->prevQ);
     }
 }
 
@@ -313,12 +321,13 @@ PUBLIC void httpInitSchedulerQueue(HttpQueue *q)
 /*
     Append a queue after the previous element
  */
-PUBLIC void httpAppendQueue(HttpQueue *prev, HttpQueue *q)
+PUBLIC HttpQueue *httpAppendQueue(HttpQueue *q, HttpQueue *prev)
 {
     q->nextQ = prev->nextQ;
     q->prevQ = prev;
     prev->nextQ->prevQ = q;
     prev->nextQ = q;
+    return q;
 }
 
 
@@ -340,8 +349,7 @@ PUBLIC void httpScheduleQueue(HttpQueue *q)
 {
     HttpQueue     *head;
 
-    assert(q->conn);
-    head = q->conn->serviceq;
+    head = q->net->serviceq;
 
     if (q->scheduleNext == q && !(q->flags & HTTP_QUEUE_SUSPENDED)) {
         q->scheduleNext = head;
@@ -354,7 +362,11 @@ PUBLIC void httpScheduleQueue(HttpQueue *q)
 
 PUBLIC void httpServiceQueue(HttpQueue *q)
 {
-    q->conn->currentq = q;
+    /*
+        Hold the queue for GC while scheduling.
+        MOB - review
+     */
+    q->net->holdq = q;
 
     if (q->servicing) {
         q->flags |= HTTP_QUEUE_RESERVICE;
@@ -362,8 +374,8 @@ PUBLIC void httpServiceQueue(HttpQueue *q)
         /*
             Since we are servicing this "q" now, we can remove from the schedule queue if it is already queued.
          */
-        if (q->conn->serviceq->scheduleNext == q) {
-            httpGetNextQueueForService(q->conn->serviceq);
+        if (q->net->serviceq->scheduleNext == q) {
+            httpGetNextQueueForService(q->net->serviceq);
         }
         if (!(q->flags & HTTP_QUEUE_SUSPENDED)) {
             q->servicing = 1;
@@ -380,30 +392,70 @@ PUBLIC void httpServiceQueue(HttpQueue *q)
 
 
 /*
+    Run the queue service routines until there is no more work to be done.
+    If flags & HTTP_BLOCK, this routine may block while yielding.  Return true if actual work was done.
+    MOB - move back into queue.c
+ */
+PUBLIC bool httpServiceQueues(HttpNet *net, int flags)
+{
+    HttpQueue   *q;
+    bool        workDone;
+
+    workDone = 0;
+
+    /*
+        If switching to net->queues -- may need some limit on number of iterations
+     */
+    while ((q = httpGetNextQueueForService(net->serviceq)) != NULL) {
+        if (q->servicing) {
+            /* Called re-entrantly */
+            q->flags |= HTTP_QUEUE_RESERVICE;
+        } else {
+            assert(q->schedulePrev == q->scheduleNext);
+            httpServiceQueue(q);
+            workDone = 1;
+        }
+        if (mprNeedYield() && (flags & HTTP_BLOCK)) {
+            mprYield(0);
+        }
+        //MOB
+        mprYield(0);
+
+    }
+    /*
+        Always do a yield if requested even if there are no queues to service
+     */
+    if (mprNeedYield() && (flags & HTTP_BLOCK)) {
+        mprYield(0);
+    }
+    return workDone;
+}
+
+
+/*
     Return true if the next queue will accept this packet. If not, then disable the queue's service procedure.
     This may split the packet if it exceeds the downstreams maximum packet size.
  */
-PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
+PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpQueue *nextQ, HttpPacket *packet)
 {
-    HttpQueue   *nextQ;
-    ssize       size;
+    ssize       room, size;
 
-    nextQ = q->nextQ;
     size = httpGetPacketLength(packet);
-    if (size <= nextQ->packetSize && (size + nextQ->count) <= nextQ->max) {
+    room = min(nextQ->packetSize, nextQ->max - nextQ->count);
+    if (size <= room) {
         return 1;
     }
-    httpResizePacket(q, packet, 0);
-    size = httpGetPacketLength(packet);
-    assert(size <= nextQ->packetSize);
-    /*
-        Packet size is now acceptable. Accept the packet if the queue is mostly empty (< low) or if the
-        packet will fit entirely under the max or if the queue.
-        NOTE: queue maximums are advisory. We choose to potentially overflow the max here to optimize the case where
-        the queue may have say one byte and a max size packet would overflow by 1.
-     */
-    if (nextQ->count < nextQ->low || (size + nextQ->count) <= nextQ->max) {
-        return 1;
+    if (room > 0) {
+        /*
+            Resize the packet to fit downstream. This will putback the tail if required.
+         */
+        httpResizePacket(q, packet, room);
+        size = httpGetPacketLength(packet);
+        assert(size <= room);
+        assert(size <= nextQ->packetSize);
+        if (size > 0) {
+            return 1;
+        }
     }
     /*
         The downstream queue cannot accept this packet, so disable queue and mark the downstream queue as full and service
@@ -416,32 +468,10 @@ PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
 }
 
 
-#if KEEP
-PUBLIC bool httpWillQueueAcceptPacket(HttpQueue *q, HttpPacket *packet, bool split)
+PUBLIC bool httpWillNextQueueAcceptPacket(HttpQueue *q, HttpPacket *packet)
 {
-    ssize       size;
-
-    size = httpGetPacketLength(packet);
-    if (size <= q->packetSize && (size + q->count) <= q->max) {
-        return 1;
-    }
-    if (split) {
-        httpResizePacket(q, packet, 0);
-        size = httpGetPacketLength(packet);
-        assert(size <= q->packetSize);
-        if ((size + q->count) <= q->max) {
-            return 1;
-        }
-    }
-    /*
-        The downstream queue is full, so disable the queue and mark the downstream queue as full and service
-     */
-    if (!(q->flags & HTTP_QUEUE_SUSPENDED)) {
-        httpScheduleQueue(q);
-    }
-    return 0;
+    return httpWillQueueAcceptPacket(q, q->nextQ, packet);
 }
-#endif
 
 
 /*

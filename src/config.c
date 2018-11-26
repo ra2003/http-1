@@ -159,20 +159,6 @@ PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
     if ((obj = mprGetJsonObj(config, "include")) != 0) {
         parseInclude(route, config, obj);
     }
-#if DEPRECATE
-{
-    MprJson *obj;
-    if ((obj = mprGetJsonObj(config, "app.http")) != 0) {
-        mprRemoveJson(config, "app.http");
-        mprSetJsonObj(config, "http", obj);
-    }
-    if ((obj = mprGetJsonObj(config, "app.esp")) != 0) {
-        mprRemoveJson(config, "app.esp");
-        mprSetJsonObj(config, "esp", obj);
-    }
-}
-#endif
-
     if (!route->mode) {
         mode = mprGetJson(route->config, "pak.mode");
         if (!mode) {
@@ -231,14 +217,6 @@ PUBLIC void httpParseAll(HttpRoute *route, cchar *key, MprJson *prop)
         parseKey(route, key, child);
     }
 }
-
-
-#if DEPRECATE
-static void parseApp(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    httpParseAll(route, 0, prop);
-}
-#endif
 
 
 static void parseDirectories(HttpRoute *route, cchar *key, MprJson *prop)
@@ -533,13 +511,6 @@ static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
             }
             methods = getList(mprReadJsonObj(child, "methods"));
             urls = getList(mprReadJsonObj(child, "urls"));
-#if DEPRECATE
-            if (urls == 0) {
-                if ((urls = getList(mprReadJsonObj(child, "urls"))) != 0) {
-                    mprLog("error http config", 0, "Using deprecated property \"uris\", use \"urls\" instead");
-                }
-            }
-#endif
             mimeTypes = getList(mprReadJsonObj(child, "mime"));
             extensions = getList(mprReadJsonObj(child, "extensions"));
             if (smatch(mprReadJson(child, "unique"), "true")) {
@@ -820,12 +791,6 @@ static void parseLimitsConnections(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseLimitsFiles(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    mprSetFilesLimit(httpGetInt(prop->value));
-}
-
-
 static void parseLimitsDepletion(HttpRoute *route, cchar *key, MprJson *prop)
 {
     cchar   *policy;
@@ -849,6 +814,27 @@ static void parseLimitsDepletion(HttpRoute *route, cchar *key, MprJson *prop)
     }
     mprSetMemPolicy(flags);
 }
+
+
+static void parseLimitsFiles(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    mprSetFilesLimit(httpGetInt(prop->value));
+}
+
+
+#if ME_HTTP_HTTP2
+static void parseLimitsFrameSize(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    int     size;
+
+    size = httpGetInt(prop->value);
+    if (size < HTTP2_DEFAULT_FRAME_SIZE) {
+        size = HTTP2_DEFAULT_FRAME_SIZE;
+    }
+    route->limits->frameSize = size;
+}
+#endif
+
 
 static void parseLimitsKeepAlive(HttpRoute *route, cchar *key, MprJson *prop)
 {
@@ -895,6 +881,20 @@ static void parseLimitsRxHeader(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+#if ME_HTTP_HTTP2
+static void parseLimitsStreams(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    int     size;
+
+    size = httpGetInt(prop->value);
+    if (size < 1) {
+        size = 1;
+    }
+    route->limits->streamsMax = size;
+}
+#endif
+
+
 static void parseLimitsTxBody(HttpRoute *route, cchar *key, MprJson *prop)
 {
     route->limits->txBodySize = httpGetNumber(prop->value);
@@ -919,6 +919,7 @@ static void parseLimitsUpload(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+#if ME_HTTP_WEB_SOCKETS
 static void parseLimitsWebSockets(HttpRoute *route, cchar *key, MprJson *prop)
 {
     route->limits->webSocketsMax = httpGetInt(prop->value);
@@ -941,6 +942,7 @@ static void parseLimitsWebSocketsPacket(HttpRoute *route, cchar *key, MprJson *p
 {
     route->limits->webSocketsPacketSize = httpGetInt(prop->value);
 }
+#endif
 
 
 static void parseLimitsWorkers(HttpRoute *route, cchar *key, MprJson *prop)
@@ -953,6 +955,20 @@ static void parseLimitsWorkers(HttpRoute *route, cchar *key, MprJson *prop)
     }
     mprSetMaxWorkers(count);
 }
+
+
+#if ME_HTTP_HTTP2
+static void parseLimitsWindow(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    int     size;
+
+    size = httpGetInt(prop->value);
+    if (size < HTTP2_DEFAULT_WINDOW) {
+        size = HTTP2_DEFAULT_WINDOW;
+    }
+    route->limits->windowSize = size;
+}
+#endif
 
 
 static void parseMethods(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1450,12 +1466,6 @@ static void parseServerModules(HttpRoute *route, cchar *key, MprJson *prop)
         module = mprCreateModule(name, path, entry, HTTP);
 
         if (mprLoadModule(module) < 0) {
-#if DEPRECATE
-            module->entry = sfmt("ma%sInit", stitle(name));
-            if (mprLoadModule(module) < 0) {
-                httpParseError(route, "Cannot load module: %s", path);
-            }
-#endif
             break;
         }
     }
@@ -1486,14 +1496,6 @@ static void parseServerMonitors(HttpRoute *route, cchar *key, MprJson *prop)
         }
     }
 }
-
-
-#if DEPRECATE
-static void parseServerPrefix(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    httpSetRouteServerPrefix(route, prop->value);
-}
-#endif
 
 
 static void parseShowErrors(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1544,23 +1546,6 @@ static void parseSslAuthorityFile(HttpRoute *route, cchar *key, MprJson *prop)
         }
     }
 }
-
-
-#if DEPRECATE
-static void parseSslAuthorityDirectory(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    cchar   *path;
-
-    path = httpExpandRouteVars(route, prop->value);
-    if (path && *path) {
-        if (!mprPathExists(path, R_OK)) {
-            httpParseError(route, "Cannot find ssl.authority.directory %s", path);
-        } else {
-            mprSetSslCaPath(route->ssl, path);
-        }
-    }
-}
-#endif
 
 
 static void parseSslCertificate(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1678,6 +1663,7 @@ static void parseStealth(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+#if STREAMXX
 static void parseStream(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -1691,6 +1677,7 @@ static void parseStream(HttpRoute *route, cchar *key, MprJson *prop)
         httpSetStreaming(route->host, mime, uri, smatch(stream, "false") || smatch(stream, ""));
     }
 }
+#endif
 
 
 /*
@@ -1770,7 +1757,7 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
     int         anew, backup, ji;
 
     if (route->trace && route->trace->flags & MPR_LOG_CMDLINE) {
-        mprLog("info http config", 4, "Already tracing. Ignoring trace configuration");
+        mprLog("info http config", 0, "Already tracing. Ignoring trace configuration in config file.");
         return;
     }
     logSize = (ssize) httpGetNumber(mprReadJson(prop, "size"));
@@ -1955,10 +1942,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.limits.txBody", parseLimitsTxBody);
     httpAddConfig("http.limits.upload", parseLimitsUpload);
     httpAddConfig("http.limits.uri", parseLimitsUri);
-    httpAddConfig("http.limits.webSockets", parseLimitsWebSockets);
-    httpAddConfig("http.limits.webSocketsMessage", parseLimitsWebSocketsMessage);
-    httpAddConfig("http.limits.webSocketsPacket", parseLimitsWebSocketsPacket);
-    httpAddConfig("http.limits.webSocketsFrame", parseLimitsWebSocketsFrame);
     httpAddConfig("http.limits.workers", parseLimitsWorkers);
     httpAddConfig("http.methods", parseMethods);
     httpAddConfig("http.mode", parseMode);
@@ -1987,9 +1970,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl", parseSsl);
     httpAddConfig("http.ssl.authority", httpParseAll);
     httpAddConfig("http.ssl.authority.file", parseSslAuthorityFile);
-#if DEPRECATE
-    httpAddConfig("http.ssl.authority.directory", parseSslAuthorityDirectory);
-#endif
     httpAddConfig("http.ssl.certificate", parseSslCertificate);
     httpAddConfig("http.ssl.ciphers", parseSslCiphers);
     httpAddConfig("http.ssl.key", parseSslKey);
@@ -2001,7 +1981,9 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.ssl.verify.client", parseSslVerifyClient);
     httpAddConfig("http.ssl.verify.issuer", parseSslVerifyIssuer);
     httpAddConfig("http.stealth", parseStealth);
+#if STREAMXX
     httpAddConfig("http.stream", parseStream);
+#endif
     httpAddConfig("http.target", parseTarget);
     httpAddConfig("http.timeouts", parseTimeouts);
     httpAddConfig("http.timeouts.exit", parseTimeoutsExit);
@@ -2012,26 +1994,17 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.trace", parseTrace);
     httpAddConfig("http.xsrf", parseXsrf);
 
-#if DEPRECATE
-    httpAddConfig("app", parseApp);
-    httpAddConfig("http.domain", parseName);
-    httpAddConfig("http.handler", parsePipelineHandler);
-    httpAddConfig("http.limits.requestBody", parseLimitsRxBody);
-    httpAddConfig("http.limits.responseBody", parseLimitsTxBody);
-    httpAddConfig("http.limits.requestForm", parseLimitsRxForm);
-    httpAddConfig("http.limits.requestHeader", parseLimitsRxHeader);
-    httpAddConfig("http.serverPrefix", parseServerPrefix);
-    httpAddConfig("http.server.ssl", parseSsl);
-    httpAddConfig("http.server.ssl.authority", httpParseAll);
-    httpAddConfig("http.server.ssl.authority.file", parseSslAuthorityFile);
-    httpAddConfig("http.server.ssl.authority.directory", parseSslAuthorityDirectory);
-    httpAddConfig("http.server.ssl.certificate", parseSslCertificate);
-    httpAddConfig("http.server.ssl.ciphers", parseSslCiphers);
-    httpAddConfig("http.server.ssl.key", parseSslKey);
-    httpAddConfig("http.server.ssl.protocols", parseSslProtocols);
-    httpAddConfig("http.server.ssl.verify", httpParseAll);
-    httpAddConfig("http.server.ssl.verify.client", parseSslVerifyClient);
-    httpAddConfig("http.server.ssl.verify.issuer", parseSslVerifyIssuer);
+#if ME_HTTP_HTTP2
+    httpAddConfig("http.limits.frameSize", parseLimitsFrameSize);
+    httpAddConfig("http.limits.streams", parseLimitsStreams);
+    httpAddConfig("http.limits.window", parseLimitsWindow);
+#endif
+
+#if ME_HTTP_WEB_SOCKETS
+    httpAddConfig("http.limits.webSockets", parseLimitsWebSockets);
+    httpAddConfig("http.limits.webSocketsMessage", parseLimitsWebSocketsMessage);
+    httpAddConfig("http.limits.webSocketsPacket", parseLimitsWebSocketsPacket);
+    httpAddConfig("http.limits.webSocketsFrame", parseLimitsWebSocketsFrame);
 #endif
     return 0;
 }

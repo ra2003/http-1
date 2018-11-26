@@ -36,10 +36,12 @@ PUBLIC HttpHost *httpCreateHost()
 
     host->routes = mprCreateList(-1, MPR_LIST_STABLE);
     host->flags = HTTP_HOST_NO_TRACE;
+#if STREAMXX
     host->streams = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
     httpSetStreaming(host, "application/x-www-form-urlencoded", NULL, 0);
     httpSetStreaming(host, "application/json", NULL, 0);
     httpSetStreaming(host, "application/csp-report", NULL, 0);
+#endif
     httpAddHost(host);
     return host;
 }
@@ -58,7 +60,9 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
      */
     host->parent = parent;
     host->flags = parent->flags & HTTP_HOST_NO_TRACE;
+#if STREAMXX
     host->streams = parent->streams;
+#endif
     host->routes = mprCreateList(-1, MPR_LIST_STABLE);
     return host;
 }
@@ -76,7 +80,9 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->defaultRoute);
         mprMark(host->defaultEndpoint);
         mprMark(host->secureEndpoint);
+#if STREAMXX
         mprMark(host->streams);
+#endif
     } else if (flags & MPR_MANAGE_FREE) {
         if (host->nameCompiled) {
             free(host->nameCompiled);
@@ -405,6 +411,10 @@ PUBLIC HttpRoute *httpGetDefaultRoute(HttpHost *host)
 }
 
 
+#if STREAMXX
+/*
+    Determine if input body content should be streamed or buffered for requests with content of a given mime type.
+ */
 PUBLIC bool httpGetStreaming(HttpHost *host, cchar *mime, cchar *uri)
 {
     MprKey      *kp;
@@ -437,6 +447,7 @@ PUBLIC void httpSetStreaming(HttpHost *host, cchar *mime, cchar *uri, bool enabl
         kp->type = enable;
     }
 }
+#endif
 
 /*
     Copyright (c) Embedthis Software. All Rights Reserved.

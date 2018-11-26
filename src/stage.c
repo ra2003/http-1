@@ -32,7 +32,8 @@ static void outgoing(HttpQueue *q, HttpPacket *packet)
 
 
 /*
-    Incoming data routine.  Simply transfer the data upstream to the next filter or handler.
+    Default incoming data routine. Simply transfer the data upstream to the next filter or handler.
+    This will join incoming packets.
  */
 static void incoming(HttpQueue *q, HttpPacket *packet)
 {
@@ -42,18 +43,25 @@ static void incoming(HttpQueue *q, HttpPacket *packet)
     if (q->nextQ->put) {
         httpPutPacketToNext(q, packet);
     } else {
-        /* This queue is the last queue in the pipeline */
+        /*
+            No upstream put routine to accept the packet. So put on this queues service routine
+            for deferred processing. Join packets by default.
+         */
         if (httpGetPacketLength(packet) > 0) {
             if (packet->flags & HTTP_PACKET_SOLO) {
                 httpPutForService(q, packet, HTTP_DELAY_SERVICE);
             } else {
-                httpJoinPacketForService(q, packet, 0);
+                httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
             }
         } else {
             /* Zero length packet means eof */
             httpPutForService(q, packet, HTTP_DELAY_SERVICE);
         }
-        HTTP_NOTIFY(q->conn, HTTP_EVENT_READABLE, 0);
+#if MOVED
+        if (q == q->conn->readq) {
+            HTTP_NOTIFY(q->conn, HTTP_EVENT_READABLE, 0);
+        }
+#endif
     }
 }
 

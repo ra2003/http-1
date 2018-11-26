@@ -1,6 +1,10 @@
 /*
     chunkFilter.c - Transfer chunk endociding filter.
 
+    This is an output only filter to chunk encode output before writing to the client.
+    Input chunking is handled in httpProcess()/processContent(). In the future, it would
+    be nice to move that functionality here as an input filter.
+
     Copyright (c) All Rights Reserved. See details at the end of the file.
  */
 
@@ -12,6 +16,7 @@
 
 static int matchChunk(HttpConn *conn, HttpRoute *route, int dir);
 static int openChunk(HttpQueue *q);
+static void incomingChunk(HttpQueue *q, HttpPacket *packet);
 static void outgoingChunkService(HttpQueue *q);
 static void setChunkPrefix(HttpQueue *q, HttpPacket *packet);
 
@@ -29,6 +34,7 @@ PUBLIC int httpOpenChunkFilter()
     HTTP->chunkFilter = filter;
     filter->match = matchChunk;
     filter->open = openChunk;
+    filter->incoming = incomingChunk;
     filter->outgoingService = outgoingChunkService;
     return 0;
 }
@@ -39,11 +45,13 @@ PUBLIC int httpOpenChunkFilter()
  */
 static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
 {
+    HttpRx  *rx;
     HttpTx  *tx;
 
+    rx = conn->rx;
     tx = conn->tx;
 
-    if (conn->upgraded || (httpClientConn(conn) && tx->parsedUri && tx->parsedUri->webSockets)) {
+    if (conn->net->protocol == 2 || conn->upgraded || (tx->parsedUri && tx->parsedUri->webSockets)) {
         return HTTP_ROUTE_OMIT_FILTER;
     }
     if (dir & HTTP_STAGE_TX) {
@@ -55,6 +63,10 @@ static int matchChunk(HttpConn *conn, HttpRoute *route, int dir)
         if ((tx->length >= 0 && tx->chunkSize < 0) || tx->chunkSize == 0) {
             return HTTP_ROUTE_OMIT_FILTER;
         }
+    } else {
+        if (conn->state >= HTTP_STATE_PARSED && rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
+            return HTTP_ROUTE_OMIT_FILTER;
+        }
     }
     return HTTP_ROUTE_OK;
 }
@@ -64,6 +76,23 @@ static int openChunk(HttpQueue *q)
 {
     q->packetSize = min(q->conn->limits->bufferSize, q->max);
     return 0;
+}
+
+
+PUBLIC void httpInitChunking(HttpConn *conn)
+{
+    HttpRx      *rx;
+
+    rx = conn->rx;
+
+    /*
+        remainingContent will be revised by the chunk filter as chunks are processed and will
+        be set to zero when the last chunk has been received.
+     */
+    rx->flags |= HTTP_CHUNKED;
+    rx->chunkState = HTTP_CHUNK_START;
+    rx->remainingContent = HTTP_UNLIMITED;
+    rx->needInputPipeline = 1;
 }
 
 
@@ -81,84 +110,119 @@ static int openChunk(HttpQueue *q)
     Return number of bytes available to read.
     NOTE: may set rx->eof and return 0 bytes on EOF.
  */
-PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
+
+static void incomingChunk(HttpQueue *q, HttpPacket *packet)
 {
+    HttpNet     *net;
     HttpConn    *conn;
+    HttpPacket  *tail;
     HttpRx      *rx;
     MprBuf      *buf;
-    ssize       chunkSize;
+    ssize       chunkSize, len, nbytes;
     char        *start, *cp;
     int         bad;
 
-    if (!packet) {
-        return 0;
-    }
     conn = q->conn;
+    net = q->net;
     rx = conn->rx;
-    buf = packet->content;
-    assert(buf);
 
-    switch (rx->chunkState) {
-    case HTTP_CHUNK_UNCHUNKED:
-        assert(0);
-        return 0;
-
-    case HTTP_CHUNK_DATA:
-        if (rx->remainingContent > 0) {
-            return (ssize) min(rx->remainingContent, mprGetBufLength(buf));
-        }
-        /* End of chunk - prep for the next chunk */
-        rx->remainingContent = ME_MAX_BUFFER;
-        rx->chunkState = HTTP_CHUNK_START;
-        /* Fall through */
-
-    case HTTP_CHUNK_START:
-        /*
-            Validate:  "\r\nSIZE.*\r\n"
-         */
-        if (mprGetBufLength(buf) < 5) {
-            return 0;
-        }
-        start = mprGetBufStart(buf);
-        bad = (start[0] != '\r' || start[1] != '\n');
-        for (cp = &start[2]; cp < buf->end && *cp != '\n'; cp++) {}
-        if (cp >= buf->end || (*cp != '\n' && (cp - start) < 80)) {
-            return 0;
-        }
-        bad += (cp[-1] != '\r' || cp[0] != '\n');
-        if (bad) {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
-            return 0;
-        }
-        chunkSize = (int) stoiradix(&start[2], 16, NULL);
-        if (!isxdigit((uchar) start[2]) || chunkSize < 0) {
-            httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
-            return 0;
-        }
-        if (chunkSize == 0) {
-            /*
-                Last chunk. Consume the final "\r\n".
-             */
-            if ((cp + 2) >= buf->end) {
-                return 0;
-            }
-            cp += 2;
-            bad += (cp[-1] != '\r' || cp[0] != '\n');
-            if (bad) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad final chunk specification");
-                return 0;
-            }
-        }
-        mprAdjustBufStart(buf, (cp - start + 1));
-        /* Remaining content is set to the next chunk size */
-        rx->remainingContent = chunkSize;
-        rx->chunkState = (chunkSize == 0) ? HTTP_CHUNK_EOF : HTTP_CHUNK_DATA;
-        return min(chunkSize, mprGetBufLength(buf));
-
-    default:
-        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk state %d", rx->chunkState);
+    if (rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
+        httpPutPacketToNext(q, packet);
+        return;
     }
-    return 0;
+
+    httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
+    for (packet = httpGetPacket(q); packet && !conn->error && !rx->eof; packet = httpGetPacket(q)) {
+        while (packet && !conn->error && !rx->eof) {
+            switch (rx->chunkState) {
+            case HTTP_CHUNK_UNCHUNKED:
+                httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk state");
+                return;
+
+            case HTTP_CHUNK_DATA:
+                len = httpGetPacketLength(packet);
+                nbytes = min(rx->remainingContent, len);
+                rx->remainingContent -= nbytes;
+                if (nbytes < len && (tail = httpSplitPacket(packet, nbytes)) != 0) {
+                    httpPutPacketToNext(q, packet);
+                    packet = tail;
+                } else {
+                    httpPutPacketToNext(q, packet);
+                    packet = 0;
+                }
+                if (rx->remainingContent <= 0) {
+                    /* End of chunk - prep for the next chunk */
+                    rx->remainingContent = ME_BUFSIZE;
+                    rx->chunkState = HTTP_CHUNK_START;
+                }
+                if (!packet) {
+                    break;
+                }
+                /* Fall through */
+
+            case HTTP_CHUNK_START:
+                /*
+                    Validate:  "\r\nSIZE.*\r\n"
+                 */
+                buf = packet->content;
+                if (mprGetBufLength(buf) < 5) {
+                    httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
+                    return;
+                }
+                start = mprGetBufStart(buf);
+                bad = (start[0] != '\r' || start[1] != '\n');
+                for (cp = &start[2]; cp < buf->end && *cp != '\n'; cp++) {}
+                if (cp >= buf->end || (*cp != '\n' && (cp - start) < 80)) {
+                    httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
+                    return;
+                }
+                bad += (cp[-1] != '\r' || cp[0] != '\n');
+                if (bad) {
+                    httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
+                    return;
+                }
+                chunkSize = (int) stoiradix(&start[2], 16, NULL);
+                if (!isxdigit((uchar) start[2]) || chunkSize < 0) {
+                    httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
+                    return;
+                }
+                if (chunkSize == 0) {
+                    /*
+                        Last chunk. Consume the final "\r\n".
+                     */
+                    if ((cp + 2) >= buf->end) {
+                        return;
+                    }
+                    cp += 2;
+                    bad += (cp[-1] != '\r' || cp[0] != '\n');
+                    if (bad) {
+                        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad final chunk specification");
+                        return;
+                    }
+                }
+                mprAdjustBufStart(buf, (cp - start + 1));
+                /* Remaining content is set to the next chunk size */
+                rx->remainingContent = chunkSize;
+                if (chunkSize == 0) {
+                    rx->chunkState = HTTP_CHUNK_EOF;
+                    httpSetEof(conn);
+                } else if (rx->eof) {
+                    rx->chunkState = HTTP_CHUNK_EOF;
+                } else {
+                    rx->chunkState = HTTP_CHUNK_DATA;
+                }
+                break;
+
+            default:
+                httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk state %d", rx->chunkState);
+                return;
+            }
+        }
+    }
+    if (packet) {
+        /* Transfer END packet */
+        httpPutPacketToNext(q, packet);
+    }
 }
 
 
@@ -189,7 +253,7 @@ static void outgoingChunkService(HttpQueue *q)
                 tx->chunkSize = min(conn->limits->chunkSize, q->max);
             }
         }
-        if (tx->flags & HTTP_TX_USE_OWN_HEADERS || conn->http10) {
+        if (tx->flags & HTTP_TX_USE_OWN_HEADERS || conn->net->protocol != 1) {
             tx->chunkSize = -1;
         }
     }

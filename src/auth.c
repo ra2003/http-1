@@ -46,14 +46,6 @@ PUBLIC void httpInitAuth()
 #if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
     httpCreateAuthStore("system", httpPamVerifyUser);
 #endif
-
-#if DEPRECATE
-    httpCreateAuthStore("file", configVerifyUser);
-    httpCreateAuthStore("internal", configVerifyUser);
-#if ME_COMPILER_HAS_PAM && ME_HTTP_PAM
-    httpCreateAuthStore("pam", httpPamVerifyUser);
-#endif
-#endif
 }
 
 PUBLIC HttpAuth *httpCreateAuth()
@@ -166,7 +158,7 @@ PUBLIC bool httpAuthenticate(HttpConn *conn)
                 return 0;
             }
         }
-        httpTrace(conn, "auth.login.authenticated", "context",
+        httpTrace(conn->trace, "auth.login.authenticated", "context",
             "msg: 'Using cached authentication data', username:'%s'", username);
         conn->username = username;
         rx->authenticated = 1;
@@ -309,7 +301,7 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!username || !*username) {
-        httpTrace(conn, "auth.login.error", "error", "msg:'missing username'");
+        httpTrace(conn->trace, "auth.login.error", "error", "msg:'missing username'");
         return 0;
     }
     if (!auth->store) {
@@ -641,7 +633,7 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     rx = conn->rx;
     auth = rx->route->auth;
     if (!conn->user && (conn->user = mprLookupKey(auth->userCache, username)) == 0) {
-        httpTrace(conn, "auth.login.error", "error", "msg: 'Unknown user', username:'%s'", username);
+        httpTrace(conn->trace, "auth.login.error", "error", "msg: 'Unknown user', username:'%s'", username);
         return 0;
     }
     if (password) {
@@ -662,9 +654,9 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
             success = smatch(password, requiredPassword);
         }
         if (success) {
-            httpTrace(conn, "auth.login.authenticated", "context", "msg:'User authenticated', username:'%s'", username);
+            httpTrace(conn->trace, "auth.login.authenticated", "context", "msg:'User authenticated', username:'%s'", username);
         } else {
-            httpTrace(conn, "auth.login.error", "error", "msg:'Password failed to authenticate', username:'%s'", username);
+            httpTrace(conn->trace, "auth.login.error", "error", "msg:'Password failed to authenticate', username:'%s'", username);
         }
         return success;
     }

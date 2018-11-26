@@ -10,7 +10,7 @@
 
 /********************************** Forwards **********************************/
 
-static void acceptConn(HttpEndpoint *endpoint);
+static void acceptNet(HttpEndpoint *endpoint);
 static int manageEndpoint(HttpEndpoint *endpoint, int flags);
 
 /************************************ Code ************************************/
@@ -167,7 +167,7 @@ PUBLIC int httpStartEndpoint(HttpEndpoint *endpoint)
         return MPR_ERR_CANT_OPEN;
     }
     if (endpoint->async && !endpoint->sock->handler) {
-        mprAddSocketHandler(endpoint->sock, MPR_SOCKET_READABLE, endpoint->dispatcher, acceptConn, endpoint,
+        mprAddSocketHandler(endpoint->sock, MPR_SOCKET_READABLE, endpoint->dispatcher, acceptNet, endpoint,
             (endpoint->dispatcher ? 0 : MPR_WAIT_NEW_DISPATCHER) | MPR_WAIT_IMMEDIATE);
     } else {
         mprSetSocketBlockingMode(endpoint->sock, 1);
@@ -203,7 +203,7 @@ PUBLIC void httpStopEndpoint(HttpEndpoint *endpoint)
     manage the connection. When it returns, it immediately can listen for new connections without having to modify the
     event listen masks.
  */
-static void acceptConn(HttpEndpoint *endpoint)
+static void acceptNet(HttpEndpoint *endpoint)
 {
     MprDispatcher   *dispatcher;
     MprEvent        *event;
@@ -211,6 +211,10 @@ static void acceptConn(HttpEndpoint *endpoint)
     MprWaitHandler  *wp;
 
     if ((sock = mprAcceptSocket(endpoint->sock)) == 0) {
+        return;
+    }
+    if (mprShouldDenyNewRequests()) {
+        mprCloseSocket(sock, 0);
         return;
     }
     wp = endpoint->sock->handler;
@@ -221,7 +225,7 @@ static void acceptConn(HttpEndpoint *endpoint)
     } else {
         dispatcher = mprGetDispatcher();
     }
-    event = mprCreateEvent(dispatcher, "AcceptConn", 0, httpAcceptConn, endpoint, MPR_EVENT_DONT_QUEUE);
+    event = mprCreateEvent(dispatcher, "AcceptNet", 0, httpAccept, endpoint, MPR_EVENT_DONT_QUEUE);
     event->mask = wp->presentMask;
     event->sock = sock;
     event->handler = wp;
@@ -234,21 +238,21 @@ static void acceptConn(HttpEndpoint *endpoint)
 }
 
 
-PUBLIC HttpHost *httpMatchHost(HttpConn *conn, cchar *hostname)
+PUBLIC HttpHost *httpMatchHost(HttpNet *net, cchar *hostname)
 {
-    return httpLookupHostOnEndpoint(conn->endpoint, hostname);
+    return httpLookupHostOnEndpoint(net->endpoint, hostname);
 }
 
 
 PUBLIC MprSsl *httpMatchSsl(MprSocket *sp, cchar *hostname)
 {
-    HttpConn        *conn;
-    HttpHost        *host;
+    HttpNet     *net;
+    HttpHost    *host;
 
     assert(sp && sp->data);
-    conn = sp->data;
+    net = sp->data;
 
-    if ((host = httpMatchHost(conn, hostname)) == 0) {
+    if ((host = httpMatchHost(net, hostname)) == 0) {
         return 0;
     }
     return host->defaultRoute->ssl;
@@ -328,6 +332,9 @@ PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 #if ME_COM_SSL
     endpoint->ssl = ssl;
     mprSetSslMatch(ssl, httpMatchSsl);
+#if ME_HTTP_HTTP2
+    mprSetSslAlpn(ssl, "h2 http/1.1");
+#endif
     return 0;
 #else
     mprLog("error http", 0, "Configuration lacks SSL support");

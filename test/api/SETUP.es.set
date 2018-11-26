@@ -14,4 +14,4 @@ if (tphase() == 'Setup') {
     tset('TM_HTTPS', sslEndpoint)
 }
 
-startStopService('http-server', {address: httpEndpoint})
+startStopService('server', {address: httpEndpoint})

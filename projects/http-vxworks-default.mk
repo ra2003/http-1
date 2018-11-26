@@ -3,7 +3,7 @@
 #
 
 NAME                  := http
-VERSION               := 7.0.0
+VERSION               := 8.0.0
 PROFILE               ?= default
 ARCH                  ?= $(shell echo $(WIND_HOST_TYPE) | sed 's/-.*$(ME_ROOT_PREFIX)/')
 CPU                   ?= $(subst X86,PENTIUM,$(shell echo $(ARCH) | tr a-z A-Z))
@@ -81,9 +81,9 @@ ME_VAPP_PREFIX        ?= $(ME_APP_PREFIX)
 ME_SRC_PREFIX         ?= $(ME_ROOT_PREFIX)/usr/src/$(NAME)-$(VERSION)
 
 
-TARGETS               += $(BUILD)/bin/http-server.out
 TARGETS               += $(BUILD)/bin/http.out
 TARGETS               += $(BUILD)/.install-certs-modified
+TARGETS               += $(BUILD)/bin/server.out
 
 unexport CDPATH
 
@@ -132,27 +132,33 @@ clean:
 	rm -f "$(BUILD)/obj/error.o"
 	rm -f "$(BUILD)/obj/fileHandler.o"
 	rm -f "$(BUILD)/obj/host.o"
-	rm -f "$(BUILD)/obj/http-server.o"
+	rm -f "$(BUILD)/obj/hpack.o"
 	rm -f "$(BUILD)/obj/http.o"
+	rm -f "$(BUILD)/obj/http1Filter.o"
+	rm -f "$(BUILD)/obj/http2Filter.o"
+	rm -f "$(BUILD)/obj/huff.o"
 	rm -f "$(BUILD)/obj/mbedtls.o"
 	rm -f "$(BUILD)/obj/monitor.o"
 	rm -f "$(BUILD)/obj/mpr-mbedtls.o"
 	rm -f "$(BUILD)/obj/mpr-openssl.o"
 	rm -f "$(BUILD)/obj/mprLib.o"
+	rm -f "$(BUILD)/obj/net.o"
 	rm -f "$(BUILD)/obj/netConnector.o"
 	rm -f "$(BUILD)/obj/packet.o"
 	rm -f "$(BUILD)/obj/pam.o"
 	rm -f "$(BUILD)/obj/passHandler.o"
 	rm -f "$(BUILD)/obj/pcre.o"
 	rm -f "$(BUILD)/obj/pipeline.o"
+	rm -f "$(BUILD)/obj/process.o"
 	rm -f "$(BUILD)/obj/queue.o"
 	rm -f "$(BUILD)/obj/rangeFilter.o"
 	rm -f "$(BUILD)/obj/route.o"
 	rm -f "$(BUILD)/obj/rx.o"
-	rm -f "$(BUILD)/obj/sendConnector.o"
+	rm -f "$(BUILD)/obj/server.o"
 	rm -f "$(BUILD)/obj/service.o"
 	rm -f "$(BUILD)/obj/session.o"
 	rm -f "$(BUILD)/obj/stage.o"
+	rm -f "$(BUILD)/obj/tailFilter.o"
 	rm -f "$(BUILD)/obj/trace.o"
 	rm -f "$(BUILD)/obj/tx.o"
 	rm -f "$(BUILD)/obj/uploadFilter.o"
@@ -160,7 +166,6 @@ clean:
 	rm -f "$(BUILD)/obj/user.o"
 	rm -f "$(BUILD)/obj/var.o"
 	rm -f "$(BUILD)/obj/webSockFilter.o"
-	rm -f "$(BUILD)/bin/http-server.out"
 	rm -f "$(BUILD)/bin/http.out"
 	rm -f "$(BUILD)/.install-certs-modified"
 	rm -f "$(BUILD)/bin/libhttp.out"
@@ -168,6 +173,7 @@ clean:
 	rm -f "$(BUILD)/bin/libmpr.out"
 	rm -f "$(BUILD)/bin/libmpr-mbedtls.a"
 	rm -f "$(BUILD)/bin/libpcre.out"
+	rm -f "$(BUILD)/bin/server.out"
 
 clobber: clean
 	rm -fr ./$(BUILD)
@@ -183,41 +189,11 @@ $(BUILD)/inc/embedtls.h: $(DEPS_1)
 	cp src/mbedtls/embedtls.h $(BUILD)/inc/embedtls.h
 
 #
-#   me.h
-#
-
-$(BUILD)/inc/me.h: $(DEPS_2)
-
-#
-#   osdep.h
-#
-DEPS_3 += src/osdep/osdep.h
-DEPS_3 += $(BUILD)/inc/me.h
-
-$(BUILD)/inc/osdep.h: $(DEPS_3)
-	@echo '      [Copy] $(BUILD)/inc/osdep.h'
-	mkdir -p "$(BUILD)/inc"
-	cp src/osdep/osdep.h $(BUILD)/inc/osdep.h
-
-#
-#   mpr.h
-#
-DEPS_4 += src/mpr/mpr.h
-DEPS_4 += $(BUILD)/inc/me.h
-DEPS_4 += $(BUILD)/inc/osdep.h
-
-$(BUILD)/inc/mpr.h: $(DEPS_4)
-	@echo '      [Copy] $(BUILD)/inc/mpr.h'
-	mkdir -p "$(BUILD)/inc"
-	cp src/mpr/mpr.h $(BUILD)/inc/mpr.h
-
-#
 #   http.h
 #
-DEPS_5 += src/http.h
-DEPS_5 += $(BUILD)/inc/mpr.h
+DEPS_2 += src/http.h
 
-$(BUILD)/inc/http.h: $(DEPS_5)
+$(BUILD)/inc/http.h: $(DEPS_2)
 	@echo '      [Copy] $(BUILD)/inc/http.h'
 	mkdir -p "$(BUILD)/inc"
 	cp src/http.h $(BUILD)/inc/http.h
@@ -225,12 +201,41 @@ $(BUILD)/inc/http.h: $(DEPS_5)
 #
 #   mbedtls.h
 #
-DEPS_6 += src/mbedtls/mbedtls.h
+DEPS_3 += src/mbedtls/mbedtls.h
 
-$(BUILD)/inc/mbedtls.h: $(DEPS_6)
+$(BUILD)/inc/mbedtls.h: $(DEPS_3)
 	@echo '      [Copy] $(BUILD)/inc/mbedtls.h'
 	mkdir -p "$(BUILD)/inc"
 	cp src/mbedtls/mbedtls.h $(BUILD)/inc/mbedtls.h
+
+#
+#   me.h
+#
+
+$(BUILD)/inc/me.h: $(DEPS_4)
+
+#
+#   osdep.h
+#
+DEPS_5 += src/osdep/osdep.h
+DEPS_5 += $(BUILD)/inc/me.h
+
+$(BUILD)/inc/osdep.h: $(DEPS_5)
+	@echo '      [Copy] $(BUILD)/inc/osdep.h'
+	mkdir -p "$(BUILD)/inc"
+	cp src/osdep/osdep.h $(BUILD)/inc/osdep.h
+
+#
+#   mpr.h
+#
+DEPS_6 += src/mpr/mpr.h
+DEPS_6 += $(BUILD)/inc/me.h
+DEPS_6 += $(BUILD)/inc/osdep.h
+
+$(BUILD)/inc/mpr.h: $(DEPS_6)
+	@echo '      [Copy] $(BUILD)/inc/mpr.h'
+	mkdir -p "$(BUILD)/inc"
+	cp src/mpr/mpr.h $(BUILD)/inc/mpr.h
 
 #
 #   pcre.h
@@ -391,14 +396,14 @@ $(BUILD)/obj/host.o: \
 	$(CC) -c -o $(BUILD)/obj/host.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/host.c
 
 #
-#   http-server.o
+#   hpack.o
 #
-DEPS_23 += $(BUILD)/inc/http.h
+DEPS_23 += src/http.h
 
-$(BUILD)/obj/http-server.o: \
-    test/http-server.c $(DEPS_23)
-	@echo '   [Compile] $(BUILD)/obj/http-server.o'
-	$(CC) -c -o $(BUILD)/obj/http-server.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) test/http-server.c
+$(BUILD)/obj/hpack.o: \
+    src/hpack.c $(DEPS_23)
+	@echo '   [Compile] $(BUILD)/obj/hpack.o'
+	$(CC) -c -o $(BUILD)/obj/hpack.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/hpack.c
 
 #
 #   http.o
@@ -411,48 +416,78 @@ $(BUILD)/obj/http.o: \
 	$(CC) -c -o $(BUILD)/obj/http.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/http.c
 
 #
+#   http1Filter.o
+#
+DEPS_25 += src/http.h
+
+$(BUILD)/obj/http1Filter.o: \
+    src/http1Filter.c $(DEPS_25)
+	@echo '   [Compile] $(BUILD)/obj/http1Filter.o'
+	$(CC) -c -o $(BUILD)/obj/http1Filter.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/http1Filter.c
+
+#
+#   http2Filter.o
+#
+DEPS_26 += src/http.h
+
+$(BUILD)/obj/http2Filter.o: \
+    src/http2Filter.c $(DEPS_26)
+	@echo '   [Compile] $(BUILD)/obj/http2Filter.o'
+	$(CC) -c -o $(BUILD)/obj/http2Filter.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/http2Filter.c
+
+#
+#   huff.o
+#
+DEPS_27 += src/http.h
+
+$(BUILD)/obj/huff.o: \
+    src/huff.c $(DEPS_27)
+	@echo '   [Compile] $(BUILD)/obj/huff.o'
+	$(CC) -c -o $(BUILD)/obj/huff.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/huff.c
+
+#
 #   mbedtls.h
 #
 
-src/mbedtls/mbedtls.h: $(DEPS_25)
+src/mbedtls/mbedtls.h: $(DEPS_28)
 
 #
 #   mbedtls.o
 #
-DEPS_26 += src/mbedtls/mbedtls.h
+DEPS_29 += src/mbedtls/mbedtls.h
 
 $(BUILD)/obj/mbedtls.o: \
-    src/mbedtls/mbedtls.c $(DEPS_26)
+    src/mbedtls/mbedtls.c $(DEPS_29)
 	@echo '   [Compile] $(BUILD)/obj/mbedtls.o'
 	$(CC) -c -o $(BUILD)/obj/mbedtls.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/mbedtls/mbedtls.c
 
 #
 #   monitor.o
 #
-DEPS_27 += src/http.h
+DEPS_30 += src/http.h
 
 $(BUILD)/obj/monitor.o: \
-    src/monitor.c $(DEPS_27)
+    src/monitor.c $(DEPS_30)
 	@echo '   [Compile] $(BUILD)/obj/monitor.o'
 	$(CC) -c -o $(BUILD)/obj/monitor.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/monitor.c
 
 #
 #   mpr-mbedtls.o
 #
-DEPS_28 += $(BUILD)/inc/mpr.h
+DEPS_31 += $(BUILD)/inc/mpr.h
 
 $(BUILD)/obj/mpr-mbedtls.o: \
-    src/mpr-mbedtls/mpr-mbedtls.c $(DEPS_28)
+    src/mpr-mbedtls/mpr-mbedtls.c $(DEPS_31)
 	@echo '   [Compile] $(BUILD)/obj/mpr-mbedtls.o'
 	$(CC) -c -o $(BUILD)/obj/mpr-mbedtls.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/mpr-mbedtls/mpr-mbedtls.c
 
 #
 #   mpr-openssl.o
 #
-DEPS_29 += $(BUILD)/inc/mpr.h
+DEPS_32 += $(BUILD)/inc/mpr.h
 
 $(BUILD)/obj/mpr-openssl.o: \
-    src/mpr-openssl/mpr-openssl.c $(DEPS_29)
+    src/mpr-openssl/mpr-openssl.c $(DEPS_32)
 	@echo '   [Compile] $(BUILD)/obj/mpr-openssl.o'
 	$(CC) -c -o $(BUILD)/obj/mpr-openssl.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" $(IFLAGS) src/mpr-openssl/mpr-openssl.c
 
@@ -460,55 +495,65 @@ $(BUILD)/obj/mpr-openssl.o: \
 #   mpr.h
 #
 
-src/mpr/mpr.h: $(DEPS_30)
+src/mpr/mpr.h: $(DEPS_33)
 
 #
 #   mprLib.o
 #
-DEPS_31 += src/mpr/mpr.h
+DEPS_34 += src/mpr/mpr.h
 
 $(BUILD)/obj/mprLib.o: \
-    src/mpr/mprLib.c $(DEPS_31)
+    src/mpr/mprLib.c $(DEPS_34)
 	@echo '   [Compile] $(BUILD)/obj/mprLib.o'
 	$(CC) -c -o $(BUILD)/obj/mprLib.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/mpr/mprLib.c
 
 #
+#   net.o
+#
+DEPS_35 += src/http.h
+
+$(BUILD)/obj/net.o: \
+    src/net.c $(DEPS_35)
+	@echo '   [Compile] $(BUILD)/obj/net.o'
+	$(CC) -c -o $(BUILD)/obj/net.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/net.c
+
+#
 #   netConnector.o
 #
-DEPS_32 += src/http.h
+DEPS_36 += src/http.h
 
 $(BUILD)/obj/netConnector.o: \
-    src/netConnector.c $(DEPS_32)
+    src/netConnector.c $(DEPS_36)
 	@echo '   [Compile] $(BUILD)/obj/netConnector.o'
 	$(CC) -c -o $(BUILD)/obj/netConnector.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/netConnector.c
 
 #
 #   packet.o
 #
-DEPS_33 += src/http.h
+DEPS_37 += src/http.h
 
 $(BUILD)/obj/packet.o: \
-    src/packet.c $(DEPS_33)
+    src/packet.c $(DEPS_37)
 	@echo '   [Compile] $(BUILD)/obj/packet.o'
 	$(CC) -c -o $(BUILD)/obj/packet.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/packet.c
 
 #
 #   pam.o
 #
-DEPS_34 += src/http.h
+DEPS_38 += src/http.h
 
 $(BUILD)/obj/pam.o: \
-    src/pam.c $(DEPS_34)
+    src/pam.c $(DEPS_38)
 	@echo '   [Compile] $(BUILD)/obj/pam.o'
 	$(CC) -c -o $(BUILD)/obj/pam.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/pam.c
 
 #
 #   passHandler.o
 #
-DEPS_35 += src/http.h
+DEPS_39 += src/http.h
 
 $(BUILD)/obj/passHandler.o: \
-    src/passHandler.c $(DEPS_35)
+    src/passHandler.c $(DEPS_39)
 	@echo '   [Compile] $(BUILD)/obj/passHandler.o'
 	$(CC) -c -o $(BUILD)/obj/passHandler.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/passHandler.c
 
@@ -516,177 +561,197 @@ $(BUILD)/obj/passHandler.o: \
 #   pcre.h
 #
 
-src/pcre/pcre.h: $(DEPS_36)
+src/pcre/pcre.h: $(DEPS_40)
 
 #
 #   pcre.o
 #
-DEPS_37 += $(BUILD)/inc/me.h
-DEPS_37 += src/pcre/pcre.h
+DEPS_41 += $(BUILD)/inc/me.h
+DEPS_41 += src/pcre/pcre.h
 
 $(BUILD)/obj/pcre.o: \
-    src/pcre/pcre.c $(DEPS_37)
+    src/pcre/pcre.c $(DEPS_41)
 	@echo '   [Compile] $(BUILD)/obj/pcre.o'
 	$(CC) -c -o $(BUILD)/obj/pcre.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" $(IFLAGS) src/pcre/pcre.c
 
 #
 #   pipeline.o
 #
-DEPS_38 += src/http.h
+DEPS_42 += src/http.h
 
 $(BUILD)/obj/pipeline.o: \
-    src/pipeline.c $(DEPS_38)
+    src/pipeline.c $(DEPS_42)
 	@echo '   [Compile] $(BUILD)/obj/pipeline.o'
 	$(CC) -c -o $(BUILD)/obj/pipeline.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/pipeline.c
 
 #
+#   process.o
+#
+DEPS_43 += src/http.h
+
+$(BUILD)/obj/process.o: \
+    src/process.c $(DEPS_43)
+	@echo '   [Compile] $(BUILD)/obj/process.o'
+	$(CC) -c -o $(BUILD)/obj/process.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/process.c
+
+#
 #   queue.o
 #
-DEPS_39 += src/http.h
+DEPS_44 += src/http.h
 
 $(BUILD)/obj/queue.o: \
-    src/queue.c $(DEPS_39)
+    src/queue.c $(DEPS_44)
 	@echo '   [Compile] $(BUILD)/obj/queue.o'
 	$(CC) -c -o $(BUILD)/obj/queue.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/queue.c
 
 #
 #   rangeFilter.o
 #
-DEPS_40 += src/http.h
+DEPS_45 += src/http.h
 
 $(BUILD)/obj/rangeFilter.o: \
-    src/rangeFilter.c $(DEPS_40)
+    src/rangeFilter.c $(DEPS_45)
 	@echo '   [Compile] $(BUILD)/obj/rangeFilter.o'
 	$(CC) -c -o $(BUILD)/obj/rangeFilter.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/rangeFilter.c
 
 #
 #   route.o
 #
-DEPS_41 += src/http.h
-DEPS_41 += $(BUILD)/inc/pcre.h
+DEPS_46 += src/http.h
+DEPS_46 += $(BUILD)/inc/pcre.h
 
 $(BUILD)/obj/route.o: \
-    src/route.c $(DEPS_41)
+    src/route.c $(DEPS_46)
 	@echo '   [Compile] $(BUILD)/obj/route.o'
 	$(CC) -c -o $(BUILD)/obj/route.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/route.c
 
 #
 #   rx.o
 #
-DEPS_42 += src/http.h
+DEPS_47 += src/http.h
 
 $(BUILD)/obj/rx.o: \
-    src/rx.c $(DEPS_42)
+    src/rx.c $(DEPS_47)
 	@echo '   [Compile] $(BUILD)/obj/rx.o'
 	$(CC) -c -o $(BUILD)/obj/rx.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/rx.c
 
 #
-#   sendConnector.o
+#   server.o
 #
-DEPS_43 += src/http.h
+DEPS_48 += src/http.h
 
-$(BUILD)/obj/sendConnector.o: \
-    src/sendConnector.c $(DEPS_43)
-	@echo '   [Compile] $(BUILD)/obj/sendConnector.o'
-	$(CC) -c -o $(BUILD)/obj/sendConnector.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/sendConnector.c
+$(BUILD)/obj/server.o: \
+    src/server.c $(DEPS_48)
+	@echo '   [Compile] $(BUILD)/obj/server.o'
+	$(CC) -c -o $(BUILD)/obj/server.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/server.c
 
 #
 #   service.o
 #
-DEPS_44 += src/http.h
+DEPS_49 += src/http.h
 
 $(BUILD)/obj/service.o: \
-    src/service.c $(DEPS_44)
+    src/service.c $(DEPS_49)
 	@echo '   [Compile] $(BUILD)/obj/service.o'
 	$(CC) -c -o $(BUILD)/obj/service.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/service.c
 
 #
 #   session.o
 #
-DEPS_45 += src/http.h
+DEPS_50 += src/http.h
 
 $(BUILD)/obj/session.o: \
-    src/session.c $(DEPS_45)
+    src/session.c $(DEPS_50)
 	@echo '   [Compile] $(BUILD)/obj/session.o'
 	$(CC) -c -o $(BUILD)/obj/session.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/session.c
 
 #
 #   stage.o
 #
-DEPS_46 += src/http.h
+DEPS_51 += src/http.h
 
 $(BUILD)/obj/stage.o: \
-    src/stage.c $(DEPS_46)
+    src/stage.c $(DEPS_51)
 	@echo '   [Compile] $(BUILD)/obj/stage.o'
 	$(CC) -c -o $(BUILD)/obj/stage.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/stage.c
 
 #
+#   tailFilter.o
+#
+DEPS_52 += src/http.h
+
+$(BUILD)/obj/tailFilter.o: \
+    src/tailFilter.c $(DEPS_52)
+	@echo '   [Compile] $(BUILD)/obj/tailFilter.o'
+	$(CC) -c -o $(BUILD)/obj/tailFilter.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/tailFilter.c
+
+#
 #   trace.o
 #
-DEPS_47 += src/http.h
+DEPS_53 += src/http.h
 
 $(BUILD)/obj/trace.o: \
-    src/trace.c $(DEPS_47)
+    src/trace.c $(DEPS_53)
 	@echo '   [Compile] $(BUILD)/obj/trace.o'
 	$(CC) -c -o $(BUILD)/obj/trace.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/trace.c
 
 #
 #   tx.o
 #
-DEPS_48 += src/http.h
+DEPS_54 += src/http.h
 
 $(BUILD)/obj/tx.o: \
-    src/tx.c $(DEPS_48)
+    src/tx.c $(DEPS_54)
 	@echo '   [Compile] $(BUILD)/obj/tx.o'
 	$(CC) -c -o $(BUILD)/obj/tx.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/tx.c
 
 #
 #   uploadFilter.o
 #
-DEPS_49 += src/http.h
+DEPS_55 += src/http.h
 
 $(BUILD)/obj/uploadFilter.o: \
-    src/uploadFilter.c $(DEPS_49)
+    src/uploadFilter.c $(DEPS_55)
 	@echo '   [Compile] $(BUILD)/obj/uploadFilter.o'
 	$(CC) -c -o $(BUILD)/obj/uploadFilter.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/uploadFilter.c
 
 #
 #   uri.o
 #
-DEPS_50 += src/http.h
+DEPS_56 += src/http.h
 
 $(BUILD)/obj/uri.o: \
-    src/uri.c $(DEPS_50)
+    src/uri.c $(DEPS_56)
 	@echo '   [Compile] $(BUILD)/obj/uri.o'
 	$(CC) -c -o $(BUILD)/obj/uri.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/uri.c
 
 #
 #   user.o
 #
-DEPS_51 += src/http.h
+DEPS_57 += src/http.h
 
 $(BUILD)/obj/user.o: \
-    src/user.c $(DEPS_51)
+    src/user.c $(DEPS_57)
 	@echo '   [Compile] $(BUILD)/obj/user.o'
 	$(CC) -c -o $(BUILD)/obj/user.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/user.c
 
 #
 #   var.o
 #
-DEPS_52 += src/http.h
+DEPS_58 += src/http.h
 
 $(BUILD)/obj/var.o: \
-    src/var.c $(DEPS_52)
+    src/var.c $(DEPS_58)
 	@echo '   [Compile] $(BUILD)/obj/var.o'
 	$(CC) -c -o $(BUILD)/obj/var.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/var.c
 
 #
 #   webSockFilter.o
 #
-DEPS_53 += src/http.h
+DEPS_59 += src/http.h
 
 $(BUILD)/obj/webSockFilter.o: \
-    src/webSockFilter.c $(DEPS_53)
+    src/webSockFilter.c $(DEPS_59)
 	@echo '   [Compile] $(BUILD)/obj/webSockFilter.o'
 	$(CC) -c -o $(BUILD)/obj/webSockFilter.o $(CFLAGS) -DME_DEBUG=1 -DVXWORKS -DRW_MULTI_THREAD -DCPU=PENTIUM -DTOOL_FAMILY=gnu -DTOOL=gnu -D_GNU_TOOL -D_WRS_KERNEL_ -D_VSB_CONFIG_FILE=\"/WindRiver/vxworks-7/samples/prebuilt_projects/vsb_vxsim_linux/h/config/vsbConfig.h\" -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/webSockFilter.c
 
@@ -694,12 +759,12 @@ ifeq ($(ME_COM_MBEDTLS),1)
 #
 #   libmbedtls
 #
-DEPS_54 += $(BUILD)/inc/osdep.h
-DEPS_54 += $(BUILD)/inc/embedtls.h
-DEPS_54 += $(BUILD)/inc/mbedtls.h
-DEPS_54 += $(BUILD)/obj/mbedtls.o
+DEPS_60 += $(BUILD)/inc/osdep.h
+DEPS_60 += $(BUILD)/inc/embedtls.h
+DEPS_60 += $(BUILD)/inc/mbedtls.h
+DEPS_60 += $(BUILD)/obj/mbedtls.o
 
-$(BUILD)/bin/libmbedtls.a: $(DEPS_54)
+$(BUILD)/bin/libmbedtls.a: $(DEPS_60)
 	@echo '      [Link] $(BUILD)/bin/libmbedtls.a'
 	arundefined -cr $(BUILD)/bin/libmbedtls.a "$(BUILD)/obj/mbedtls.o"
 endif
@@ -708,10 +773,10 @@ ifeq ($(ME_COM_MBEDTLS),1)
 #
 #   libmpr-mbedtls
 #
-DEPS_55 += $(BUILD)/bin/libmbedtls.a
-DEPS_55 += $(BUILD)/obj/mpr-mbedtls.o
+DEPS_61 += $(BUILD)/bin/libmbedtls.a
+DEPS_61 += $(BUILD)/obj/mpr-mbedtls.o
 
-$(BUILD)/bin/libmpr-mbedtls.a: $(DEPS_55)
+$(BUILD)/bin/libmpr-mbedtls.a: $(DEPS_61)
 	@echo '      [Link] $(BUILD)/bin/libmpr-mbedtls.a'
 	arundefined -cr $(BUILD)/bin/libmpr-mbedtls.a "$(BUILD)/obj/mpr-mbedtls.o"
 endif
@@ -720,9 +785,9 @@ ifeq ($(ME_COM_OPENSSL),1)
 #
 #   libmpr-openssl
 #
-DEPS_56 += $(BUILD)/obj/mpr-openssl.o
+DEPS_62 += $(BUILD)/obj/mpr-openssl.o
 
-$(BUILD)/bin/libmpr-openssl.a: $(DEPS_56)
+$(BUILD)/bin/libmpr-openssl.a: $(DEPS_62)
 	@echo '      [Link] $(BUILD)/bin/libmpr-openssl.a'
 	arundefined -cr $(BUILD)/bin/libmpr-openssl.a "$(BUILD)/obj/mpr-openssl.o"
 endif
@@ -730,20 +795,20 @@ endif
 #
 #   libmpr
 #
-DEPS_57 += $(BUILD)/inc/osdep.h
+DEPS_63 += $(BUILD)/inc/osdep.h
 ifeq ($(ME_COM_MBEDTLS),1)
-    DEPS_57 += $(BUILD)/bin/libmpr-mbedtls.a
+    DEPS_63 += $(BUILD)/bin/libmpr-mbedtls.a
 endif
 ifeq ($(ME_COM_MBEDTLS),1)
-    DEPS_57 += $(BUILD)/bin/libmbedtls.a
+    DEPS_63 += $(BUILD)/bin/libmbedtls.a
 endif
 ifeq ($(ME_COM_OPENSSL),1)
-    DEPS_57 += $(BUILD)/bin/libmpr-openssl.a
+    DEPS_63 += $(BUILD)/bin/libmpr-openssl.a
 endif
-DEPS_57 += $(BUILD)/inc/mpr.h
-DEPS_57 += $(BUILD)/obj/mprLib.o
+DEPS_63 += $(BUILD)/inc/mpr.h
+DEPS_63 += $(BUILD)/obj/mprLib.o
 
-$(BUILD)/bin/libmpr.out: $(DEPS_57)
+$(BUILD)/bin/libmpr.out: $(DEPS_63)
 	@echo '      [Link] $(BUILD)/bin/libmpr.out'
 	$(CC) -r -o $(BUILD)/bin/libmpr.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/mprLib.o" -lmpr-mbedtls -lmbedtls $(LIBS) 
 
@@ -751,10 +816,10 @@ ifeq ($(ME_COM_PCRE),1)
 #
 #   libpcre
 #
-DEPS_58 += $(BUILD)/inc/pcre.h
-DEPS_58 += $(BUILD)/obj/pcre.o
+DEPS_64 += $(BUILD)/inc/pcre.h
+DEPS_64 += $(BUILD)/obj/pcre.o
 
-$(BUILD)/bin/libpcre.out: $(DEPS_58)
+$(BUILD)/bin/libpcre.out: $(DEPS_64)
 	@echo '      [Link] $(BUILD)/bin/libpcre.out'
 	$(CC) -r -o $(BUILD)/bin/libpcre.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/pcre.o" $(LIBS) 
 endif
@@ -762,85 +827,82 @@ endif
 #
 #   libhttp
 #
-DEPS_59 += $(BUILD)/bin/libmpr.out
+DEPS_65 += $(BUILD)/bin/libmpr.out
 ifeq ($(ME_COM_PCRE),1)
-    DEPS_59 += $(BUILD)/bin/libpcre.out
+    DEPS_65 += $(BUILD)/bin/libpcre.out
 endif
-DEPS_59 += $(BUILD)/inc/http.h
-DEPS_59 += $(BUILD)/obj/actionHandler.o
-DEPS_59 += $(BUILD)/obj/auth.o
-DEPS_59 += $(BUILD)/obj/basic.o
-DEPS_59 += $(BUILD)/obj/cache.o
-DEPS_59 += $(BUILD)/obj/chunkFilter.o
-DEPS_59 += $(BUILD)/obj/client.o
-DEPS_59 += $(BUILD)/obj/config.o
-DEPS_59 += $(BUILD)/obj/conn.o
-DEPS_59 += $(BUILD)/obj/digest.o
-DEPS_59 += $(BUILD)/obj/dirHandler.o
-DEPS_59 += $(BUILD)/obj/endpoint.o
-DEPS_59 += $(BUILD)/obj/error.o
-DEPS_59 += $(BUILD)/obj/fileHandler.o
-DEPS_59 += $(BUILD)/obj/host.o
-DEPS_59 += $(BUILD)/obj/monitor.o
-DEPS_59 += $(BUILD)/obj/netConnector.o
-DEPS_59 += $(BUILD)/obj/packet.o
-DEPS_59 += $(BUILD)/obj/pam.o
-DEPS_59 += $(BUILD)/obj/passHandler.o
-DEPS_59 += $(BUILD)/obj/pipeline.o
-DEPS_59 += $(BUILD)/obj/queue.o
-DEPS_59 += $(BUILD)/obj/rangeFilter.o
-DEPS_59 += $(BUILD)/obj/route.o
-DEPS_59 += $(BUILD)/obj/rx.o
-DEPS_59 += $(BUILD)/obj/sendConnector.o
-DEPS_59 += $(BUILD)/obj/service.o
-DEPS_59 += $(BUILD)/obj/session.o
-DEPS_59 += $(BUILD)/obj/stage.o
-DEPS_59 += $(BUILD)/obj/trace.o
-DEPS_59 += $(BUILD)/obj/tx.o
-DEPS_59 += $(BUILD)/obj/uploadFilter.o
-DEPS_59 += $(BUILD)/obj/uri.o
-DEPS_59 += $(BUILD)/obj/user.o
-DEPS_59 += $(BUILD)/obj/var.o
-DEPS_59 += $(BUILD)/obj/webSockFilter.o
+DEPS_65 += $(BUILD)/inc/http.h
+DEPS_65 += $(BUILD)/obj/actionHandler.o
+DEPS_65 += $(BUILD)/obj/auth.o
+DEPS_65 += $(BUILD)/obj/basic.o
+DEPS_65 += $(BUILD)/obj/cache.o
+DEPS_65 += $(BUILD)/obj/chunkFilter.o
+DEPS_65 += $(BUILD)/obj/client.o
+DEPS_65 += $(BUILD)/obj/config.o
+DEPS_65 += $(BUILD)/obj/conn.o
+DEPS_65 += $(BUILD)/obj/digest.o
+DEPS_65 += $(BUILD)/obj/dirHandler.o
+DEPS_65 += $(BUILD)/obj/endpoint.o
+DEPS_65 += $(BUILD)/obj/error.o
+DEPS_65 += $(BUILD)/obj/fileHandler.o
+DEPS_65 += $(BUILD)/obj/host.o
+DEPS_65 += $(BUILD)/obj/hpack.o
+DEPS_65 += $(BUILD)/obj/http1Filter.o
+DEPS_65 += $(BUILD)/obj/http2Filter.o
+DEPS_65 += $(BUILD)/obj/huff.o
+DEPS_65 += $(BUILD)/obj/monitor.o
+DEPS_65 += $(BUILD)/obj/net.o
+DEPS_65 += $(BUILD)/obj/netConnector.o
+DEPS_65 += $(BUILD)/obj/packet.o
+DEPS_65 += $(BUILD)/obj/pam.o
+DEPS_65 += $(BUILD)/obj/passHandler.o
+DEPS_65 += $(BUILD)/obj/pipeline.o
+DEPS_65 += $(BUILD)/obj/process.o
+DEPS_65 += $(BUILD)/obj/queue.o
+DEPS_65 += $(BUILD)/obj/rangeFilter.o
+DEPS_65 += $(BUILD)/obj/route.o
+DEPS_65 += $(BUILD)/obj/rx.o
+DEPS_65 += $(BUILD)/obj/server.o
+DEPS_65 += $(BUILD)/obj/service.o
+DEPS_65 += $(BUILD)/obj/session.o
+DEPS_65 += $(BUILD)/obj/stage.o
+DEPS_65 += $(BUILD)/obj/tailFilter.o
+DEPS_65 += $(BUILD)/obj/trace.o
+DEPS_65 += $(BUILD)/obj/tx.o
+DEPS_65 += $(BUILD)/obj/uploadFilter.o
+DEPS_65 += $(BUILD)/obj/uri.o
+DEPS_65 += $(BUILD)/obj/user.o
+DEPS_65 += $(BUILD)/obj/var.o
+DEPS_65 += $(BUILD)/obj/webSockFilter.o
 
-$(BUILD)/bin/libhttp.out: $(DEPS_59)
+$(BUILD)/bin/libhttp.out: $(DEPS_65)
 	@echo '      [Link] $(BUILD)/bin/libhttp.out'
-	$(CC) -r -o $(BUILD)/bin/libhttp.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/sendConnector.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBS) -lmpr-mbedtls -lmbedtls 
+	$(CC) -r -o $(BUILD)/bin/libhttp.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/hpack.o" "$(BUILD)/obj/http1Filter.o" "$(BUILD)/obj/http2Filter.o" "$(BUILD)/obj/huff.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/net.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/process.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/server.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/tailFilter.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBS) -lmpr-mbedtls -lmbedtls 
 
 #
-#   http-server
+#   http
 #
-DEPS_60 += $(BUILD)/bin/libhttp.out
-DEPS_60 += $(BUILD)/obj/http-server.o
+DEPS_66 += $(BUILD)/bin/libhttp.out
+DEPS_66 += $(BUILD)/obj/http.o
 
-$(BUILD)/bin/http-server.out: $(DEPS_60)
-	@echo '      [Link] $(BUILD)/bin/http-server.out'
-	$(CC) -o $(BUILD)/bin/http-server.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http-server.o" $(LIBS) -lmpr-mbedtls -lmbedtls -Wl,-r 
-
-#
-#   httpcmd
-#
-DEPS_61 += $(BUILD)/bin/libhttp.out
-DEPS_61 += $(BUILD)/obj/http.o
-
-$(BUILD)/bin/http.out: $(DEPS_61)
+$(BUILD)/bin/http.out: $(DEPS_66)
 	@echo '      [Link] $(BUILD)/bin/http.out'
 	$(CC) -o $(BUILD)/bin/http.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/http.o" $(LIBS) -lmpr-mbedtls -lmbedtls -Wl,-r 
 
 #
 #   install-certs
 #
-DEPS_62 += src/certs/samples/ca.crt
-DEPS_62 += src/certs/samples/ca.key
-DEPS_62 += src/certs/samples/ec.crt
-DEPS_62 += src/certs/samples/ec.key
-DEPS_62 += src/certs/samples/roots.crt
-DEPS_62 += src/certs/samples/self.crt
-DEPS_62 += src/certs/samples/self.key
-DEPS_62 += src/certs/samples/test.crt
-DEPS_62 += src/certs/samples/test.key
+DEPS_67 += src/certs/samples/ca.crt
+DEPS_67 += src/certs/samples/ca.key
+DEPS_67 += src/certs/samples/ec.crt
+DEPS_67 += src/certs/samples/ec.key
+DEPS_67 += src/certs/samples/roots.crt
+DEPS_67 += src/certs/samples/self.crt
+DEPS_67 += src/certs/samples/self.key
+DEPS_67 += src/certs/samples/test.crt
+DEPS_67 += src/certs/samples/test.key
 
-$(BUILD)/.install-certs-modified: $(DEPS_62)
+$(BUILD)/.install-certs-modified: $(DEPS_67)
 	@echo '      [Copy] $(BUILD)/bin'
 	mkdir -p "$(BUILD)/bin"
 	cp src/certs/samples/ca.crt $(BUILD)/bin/ca.crt
@@ -855,10 +917,20 @@ $(BUILD)/.install-certs-modified: $(DEPS_62)
 	touch "$(BUILD)/.install-certs-modified"
 
 #
+#   server
+#
+DEPS_68 += $(BUILD)/bin/libhttp.out
+DEPS_68 += $(BUILD)/obj/server.o
+
+$(BUILD)/bin/server.out: $(DEPS_68)
+	@echo '      [Link] $(BUILD)/bin/server.out'
+	$(CC) -o $(BUILD)/bin/server.out $(LDFLAGS) $(LIBPATHS) "$(BUILD)/obj/server.o" $(LIBS) -lmpr-mbedtls -lmbedtls -Wl,-r 
+
+#
 #   installPrep
 #
 
-installPrep: $(DEPS_63)
+installPrep: $(DEPS_69)
 	if [ "`id -u`" != 0 ] ; \
 	then echo "Must run as root. Rerun with sudo." ; \
 	exit 255 ; \
@@ -868,47 +940,47 @@ installPrep: $(DEPS_63)
 #   stop
 #
 
-stop: $(DEPS_64)
+stop: $(DEPS_70)
 
 #
 #   installBinary
 #
 
-installBinary: $(DEPS_65)
+installBinary: $(DEPS_71)
 
 #
 #   start
 #
 
-start: $(DEPS_66)
+start: $(DEPS_72)
 
 #
 #   install
 #
-DEPS_67 += installPrep
-DEPS_67 += stop
-DEPS_67 += installBinary
-DEPS_67 += start
+DEPS_73 += installPrep
+DEPS_73 += stop
+DEPS_73 += installBinary
+DEPS_73 += start
 
-install: $(DEPS_67)
+install: $(DEPS_73)
 
 #
 #   uninstall
 #
-DEPS_68 += stop
+DEPS_74 += stop
 
-uninstall: $(DEPS_68)
+uninstall: $(DEPS_74)
 
 #
 #   uninstallBinary
 #
 
-uninstallBinary: $(DEPS_69)
+uninstallBinary: $(DEPS_75)
 
 #
 #   version
 #
 
-version: $(DEPS_70)
+version: $(DEPS_76)
 	echo $(VERSION)
 

@@ -122,6 +122,7 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
         if ((id = httpGetSessionID(conn)) != 0) {
             if ((data = mprReadCache(conn->http->sessionCache, id, 0, 0)) != 0) {
                 rx->session = allocSessionObj(conn, id, data);
+                rx->traceId = sfmt("%d-%d-%d-%d", conn->net->address->seqno, rx->session->seqno, conn->net->seqno, rx->seqno);
             }
         }
         if (!rx->session && create) {
@@ -141,12 +142,13 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
             unlock(http);
 
             rx->session = allocSessionObj(conn, id, NULL);
+            rx->traceId = sfmt("%d-%d-%d-%d", conn->net->address->seqno, rx->session->seqno, conn->net->seqno, rx->seqno);
             flags = (route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
             cookie = route->cookie ? route->cookie : HTTP_SESSION_COOKIE;
             lifespan = (route->flags & HTTP_ROUTE_PERSIST_COOKIE) ? rx->session->lifespan : 0;
             url = (route->prefix && *route->prefix) ? route->prefix : "/";
             httpSetCookie(conn, cookie, rx->session->id, url, NULL, lifespan, flags);
-            httpTrace(conn, "request.session.create", "context", "cookie:'%s',session:'%s'", cookie, rx->session->id);
+            httpTrace(conn->trace, "session.create", "context", "cookie:'%s', session:'%s'", cookie, rx->session->id);
 
             if ((route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
                 httpSetSessionVar(conn, ME_XSRF_COOKIE, rx->securityToken);
@@ -386,14 +388,14 @@ PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
         if (!requestToken) {
             requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
             if (!requestToken) {
-                httpTrace(conn, "request.xsrf.error", "error", "msg:'Missing security token in request'");
+                httpTrace(conn->trace, "session.xsrf.error", "error", "msg:'Missing security token in request'");
             }
         }
         if (!smatch(sessionToken, requestToken)) {
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.
              */
-            httpTrace(conn, "request.xsrf.error", "error",
+            httpTrace(conn->trace, "session.xsrf.error", "error",
                 "msg:'Security token in request does not match session token',xsrf:'%s',sessionXsrf:'%s'",
                 requestToken, sessionToken);
             httpAddSecurityToken(conn, 1);

@@ -20,7 +20,7 @@ static void initHttp()
     MprSocket   *sp;
     HttpUri     *uri;
 
-    sp = mprCreateSocket(NULL);
+    sp = mprCreateSocket();
     ttrue(sp);
 
     /*
@@ -97,7 +97,7 @@ static void stealSocket()
         ttrue(conn->sock != 0);
         ttrue(conn->sock->fd != INVALID_SOCKET);
         prior = conn->sock;
-        sp = httpStealSocket(conn);
+        sp = httpStealSocket(conn->net);
         ttrue(sp != conn->sock);
         ttrue(prior == conn->sock);
 
@@ -121,7 +121,7 @@ static void stealSocket()
         ttrue(conn->sock != 0);
         ttrue(conn->sock->fd != INVALID_SOCKET);
         priorState = conn->state;
-        fd = httpStealSocketHandle(conn);
+        fd = httpStealSocketHandle(conn->net);
         ttrue(conn->state == priorState);
         ttrue(fd != INVALID_SOCKET);
         ttrue(conn->sock->fd == INVALID_SOCKET);
@@ -152,10 +152,10 @@ int main(int argc, char **argv)
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software. All Rights Reserved.
     Copyright (c) Michael O'Brien. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
     You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
@@ -170,4 +170,3 @@ int main(int argc, char **argv)
 
     @end
  */
-

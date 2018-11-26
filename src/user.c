@@ -54,7 +54,6 @@ PUBLIC HttpRole *httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
     if (mprAddKey(auth->roles, name, role) == 0) {
         return 0;
     }
-    mprDebug("http auth", 5, "Role \"%s\" defined, abilities=\"%s\"", role->name, abilities);
     return role;
 }
 

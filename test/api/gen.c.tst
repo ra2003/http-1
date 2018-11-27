@@ -20,7 +20,7 @@ static void initHttp()
     MprSocket   *sp;
     HttpUri     *uri;
 
-    sp = mprCreateSocket(NULL);
+    sp = mprCreateSocket();
     ttrue(sp);
 
     /*
@@ -152,10 +152,10 @@ int main(int argc, char **argv)
 
 /*
     @copy   default
-    
+
     Copyright (c) Embedthis Software. All Rights Reserved.
     Copyright (c) Michael O'Brien. All Rights Reserved.
-    
+
     This software is distributed under commercial and open source licenses.
     You may use the Embedthis Open Source license or you may acquire a
     commercial license from Embedthis Software. You agree to be fully bound
@@ -170,4 +170,3 @@ int main(int argc, char **argv)
 
     @end
  */
-

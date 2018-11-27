@@ -291,7 +291,7 @@ static void parseAttach(HttpRoute *route, cchar *key, MprJson *prop)
 {
     HttpEndpoint    *endpoint;
     MprJson         *child;
-    char            *ip;
+    cchar           *ip;
     int             ji, port;
 
     if (prop->type & MPR_JSON_VALUE) {
@@ -1326,7 +1326,7 @@ static void parseServerListen(HttpRoute *route, cchar *key, MprJson *prop)
     HttpEndpoint    *endpoint, *dual;
     HttpHost        *host;
     MprJson         *child;
-    char            *ip;
+    cchar           *ip;
     int             ji, port, secure;
 
     if (route->flags & (HTTP_ROUTE_HOSTED | HTTP_ROUTE_OWN_LISTEN)) {

@@ -339,7 +339,7 @@ PUBLIC int httpSecureEndpoint(HttpEndpoint *endpoint, struct MprSsl *ssl)
 PUBLIC int httpSecureEndpointByName(cchar *name, struct MprSsl *ssl)
 {
     HttpEndpoint    *endpoint;
-    char            *ip;
+    cchar           *ip;
     int             port, next, count;
 
     if (mprParseSocketAddress(name, &ip, &port, NULL, -1) < 0) {

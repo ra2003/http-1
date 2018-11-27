@@ -508,7 +508,8 @@ PUBLIC void httpSetCookie(HttpConn *conn, cchar *name, cchar *value, cchar *path
     MprTicks lifespan, int flags)
 {
     HttpRx      *rx;
-    char        *cp, *expiresAtt, *expires, *domainAtt, *domain, *secure, *httponly;
+    cchar       *domain, *domainAtt;
+    char        *cp, *expiresAtt, *expires, *secure, *httponly;
 
     rx = conn->rx;
     if (path == 0) {

@@ -232,6 +232,7 @@ static void commonPrep(HttpConn *conn)
         mprRemoveEvent(conn->timeoutEvent);
         conn->timeoutEvent = 0;
     }
+    conn->started = conn->http->now;
     conn->lastActivity = conn->http->now;
     conn->error = 0;
     conn->errorMsg = 0;

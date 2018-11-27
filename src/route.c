@@ -2141,16 +2141,17 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         return HTTP_ROUTE_OK;
     }
     if (!httpIsAuthenticated(conn)) {
-        httpGetCredentials(conn, &username, &password);
-        if (!httpLogin(conn, username, password)) {
+        if (!httpGetCredentials(conn, &username, &password) || !httpLogin(conn, username, password)) {
             if (!conn->tx->finalized) {
                 if (auth && auth->type) {
                     (auth->type->askLogin)(conn);
                 } else {
                     httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied, login required");
                 }
-                /* Request has been denied and a response generated. So OK to accept this route. */
             }
+            /*
+                Request has been denied and a response generated. So OK to accept this route.
+             */
             return HTTP_ROUTE_OK;
         }
     }
@@ -2161,7 +2162,9 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
             /* Request has been denied and a response generated. So OK to accept this route. */
         }
     }
-    /* OK to accept route. This does not mean the request was authenticated - an error may have been already generated */
+    /*
+        OK to accept route. This does not mean the request was authenticated - an error may have been already generated
+     */
     return HTTP_ROUTE_OK;
 }
 
@@ -2182,8 +2185,7 @@ static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *
     if (httpIsAuthenticated(conn)) {
         return HTTP_ROUTE_REJECT;
     }
-    httpGetCredentials(conn, &username, &password);
-    if (httpLogin(conn, username, password)) {
+    if (httpGetCredentials(conn, &username, &password) && httpLogin(conn, username, password)) {
         return HTTP_ROUTE_REJECT;
     }
     return HTTP_ROUTE_OK;

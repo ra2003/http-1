@@ -322,6 +322,9 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
         /* If using auto-login, replace the username */
         username = auth->username;
         password = 0;
+
+    } else if (!username || !password) {
+        return 0;
     }
     if (!(verifyUser)(conn, username, password)) {
         return 0;
@@ -693,6 +696,12 @@ PUBLIC int formParse(HttpConn *conn, cchar **username, cchar **password)
 {
     *username = httpGetParam(conn, "username", 0);
     *password = httpGetParam(conn, "password", 0);
+    if (username && *username == 0) {
+        return MPR_ERR_BAD_FORMAT;
+    }
+    if (password && *password == 0) {
+        return MPR_ERR_BAD_FORMAT;
+    }
     return 0;
 }
 

@@ -137,8 +137,8 @@ PUBLIC void httpInitConfig(HttpRoute *route)
 
 PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
 {
-    MprJson     *config, *obj, *modeObj;
-    cchar       *data, *errorMsg, *mode;
+    MprJson     *config, *obj, *profiles;
+    cchar       *data, *errorMsg, *profile;
 
     if (!path) {
         return 0;
@@ -160,12 +160,15 @@ PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
         parseInclude(route, config, obj);
     }
     if (!route->mode) {
-        mode = mprGetJson(route->config, "pak.mode");
-        if (!mode) {
-            mode = mprGetJson(config, "pak.mode");
+        if ((profile = mprGetJson(route->config, "profile")) == 0) {
+            if ((profile = mprGetJson(route->config, "pak.mode")) == 0) {
+                if ((profile = mprGetJson(config, "profile")) == 0) {
+                    profile = mprGetJson(config, "pak.mode");
+                }
+            }
         }
-        route->mode = mode;
-        route->debug = smatch(route->mode, "debug");
+        route->mode = profile;
+        route->debug = smatch(route->mode, "debug") || smatch(route->mode, "dev");
     }
     if (route->config) {
         mprBlendJson(route->config, config, MPR_JSON_COMBINE);
@@ -178,12 +181,14 @@ PUBLIC int httpLoadConfig(HttpRoute *route, cchar *path)
         /*
             Http uses top level modes, Pak uses top level pak.modes.
          */
-        if ((modeObj = mprGetJsonObj(config, sfmt("modes.%s", route->mode))) == 0) {
-            modeObj = mprGetJsonObj(config, sfmt("pak.modes.%s", route->mode));
+        if ((profiles = mprGetJsonObj(config, sfmt("profiles.%s", route->mode))) == 0) {
+            if ((profiles = mprGetJsonObj(config, sfmt("modes.%s", route->mode))) == 0) {
+                profiles = mprGetJsonObj(config, sfmt("pak.modes.%s", route->mode));
+            }
         }
-        if (modeObj) {
-            mprBlendJson(route->config, modeObj, MPR_JSON_OVERWRITE);
-            httpParseAll(route, 0, modeObj);
+        if (profiles) {
+            mprBlendJson(route->config, profiles, MPR_JSON_OVERWRITE);
+            httpParseAll(route, 0, profiles);
         }
     }
     httpParseAll(route, 0, config);
@@ -630,6 +635,17 @@ static void parseFormatsResponse(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+/*
+    Alias for pipeline: { handler ... }
+ */
+static void parseHandler(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    if (httpSetRouteHandler(route, prop->value) < 0) {
+        httpParseError(route, "Cannot set handler %s", prop->value);
+    }
+}
+
+
 static void parseHeadersAdd(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -982,9 +998,9 @@ static void parseMethods(HttpRoute *route, cchar *key, MprJson *prop)
 
 
 /*
-    Note: this typically comes from package.json
+    Note: this typically comes from pak.json
  */
-static void parseMode(HttpRoute *route, cchar *key, MprJson *prop)
+static void parseProfile(HttpRoute *route, cchar *key, MprJson *prop)
 {
     route->mode = prop->value;
 }
@@ -1055,6 +1071,11 @@ static void parsePipelineFilters(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+/*
+    pipeline: {
+        handler: 'espHandler',                     //  For all extensions
+    },
+ */
 static void parsePipelineHandler(HttpRoute *route, cchar *key, MprJson *prop)
 {
     if (httpSetRouteHandler(route, prop->value) < 0) {
@@ -1065,7 +1086,6 @@ static void parsePipelineHandler(HttpRoute *route, cchar *key, MprJson *prop)
 
 /*
     pipeline: {
-        handlers: 'espHandler',                     //  For all extensions
         handlers: {
             espHandler: [ '*.esp, '*.xesp' ],
         },
@@ -1138,7 +1158,9 @@ static void parseRedirect(HttpRoute *route, cchar *key, MprJson *prop)
     cchar       *from, *status, *to;
     int         ji;
 
-    if (prop->type & MPR_JSON_STRING) {
+    if (prop->type & MPR_JSON_FALSE) {
+        /* skip */
+    } else if (prop->type & MPR_JSON_STRING) {
         if (smatch(prop->value, "secure") ||smatch(prop->value, "https://")) {
             httpAddRouteCondition(route, "secure", "https://", HTTP_ROUTE_REDIRECT);
         } else {
@@ -1806,6 +1828,12 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseWebSocketsProtocol(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    route->webSocketsProtocol = sclone(prop->value);
+}
+
+
 static void parseXsrf(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpSetRouteXsrf(route, (prop->type & MPR_JSON_TRUE) ? 1 : 0);
@@ -1916,6 +1944,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.errors", parseErrors);
     httpAddConfig("http.formats", httpParseAll);
     httpAddConfig("http.formats.response", parseFormatsResponse);
+    httpAddConfig("http.handler", parseHandler);
     httpAddConfig("http.headers", httpParseAll);
     httpAddConfig("http.headers.add", parseHeadersAdd);
     httpAddConfig("http.headers.remove", parseHeadersRemove);
@@ -1947,7 +1976,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.limits.workers", parseLimitsWorkers);
     httpAddConfig("http.log", parseLog);
     httpAddConfig("http.methods", parseMethods);
-    httpAddConfig("http.mode", parseMode);
+    httpAddConfig("http.mode", parseProfile);
     httpAddConfig("http.name", parseName);
     httpAddConfig("http.params", parseParams);
     httpAddConfig("http.pattern", parsePattern);
@@ -1955,6 +1984,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.pipeline.filters", parsePipelineFilters);
     httpAddConfig("http.pipeline.handler", parsePipelineHandler);
     httpAddConfig("http.pipeline.handlers", parsePipelineHandlers);
+    httpAddConfig("http.profile", parseProfile);
     httpAddConfig("http.prefix", parsePrefix);
     httpAddConfig("http.redirect", parseRedirect);
     httpAddConfig("http.renameUploads", parseRenameUploads);
@@ -1992,6 +2022,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.timeouts.request", parseTimeoutsRequest);
     httpAddConfig("http.timeouts.session", parseTimeoutsSession);
     httpAddConfig("http.trace", parseTrace);
+    httpAddConfig("http.websockets.protocol", parseWebSocketsProtocol);
     httpAddConfig("http.xsrf", parseXsrf);
 
 #if ME_HTTP_HTTP2

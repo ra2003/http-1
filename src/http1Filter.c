@@ -8,7 +8,6 @@
 
 #include    "http.h"
 
-#if !ME_HTTP_HTTP2ONLY
 /********************************** Forwards **********************************/
 
 static HttpConn *findConn(HttpQueue *q);
@@ -358,9 +357,9 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet)
             return 0;
         }
         if (scaselessmatch(key, "set-cookie")) {
-            mprAddDuplicateKey(rx->headers, key, value);
+            mprAddDuplicateKey(rx->headers, key, sclone(value));
         } else {
-            mprAddKey(rx->headers, key, value);
+            mprAddKey(rx->headers, key, sclone(value));
         }
     }
     /*
@@ -440,7 +439,7 @@ PUBLIC void httpCreateHeaders1(HttpQueue *q, HttpPacket *packet)
         conn->keepAliveCount = 0;
         return;
     }
-    httpDefineHeaders(conn);
+    httpPrepareHeaders(conn);
 
     if (httpServerConn(conn)) {
         mprPutStringToBuf(buf, httpGetProtocol(conn->net));
@@ -514,7 +513,6 @@ static HttpConn *findConn(HttpQueue *q)
     return conn;
 }
 
-#endif /* !HTTP2ONLY */
 /*
     Copyright (c) Embedthis Software. All Rights Reserved.
     This software is distributed under commercial and open source licenses.

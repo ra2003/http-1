@@ -323,6 +323,9 @@ PUBLIC char *httpReadString(HttpConn *conn)
     char        *content;
 
     rx = conn->rx;
+    if (rx->length < 0) {
+        return 0;
+    }
     remaining = (ssize) min(MAXSSIZE, rx->length);
 
     if (remaining > 0) {

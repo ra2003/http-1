@@ -659,7 +659,7 @@ PUBLIC HttpPacket *httpCreateHeaders(HttpQueue *q, HttpPacket *packet)
 /*
     Define headers for httpWriteHeaders. This defines standard headers.
  */
-PUBLIC void httpDefineHeaders(HttpConn *conn)
+PUBLIC void httpPrepareHeaders(HttpConn *conn)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -785,6 +785,7 @@ PUBLIC void httpDefineHeaders(HttpConn *conn)
 }
 
 
+#if UNUSED
 PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
 {
     HttpTx      *tx;
@@ -795,6 +796,7 @@ PUBLIC void httpSetEntityLength(HttpConn *conn, int64 len)
         tx->length = len;
     }
 }
+#endif
 
 
 /*

@@ -34,8 +34,14 @@ PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
         *cp++ = '\0';
     }
     conn->encoded = 0;
+    if (decoded && *decoded == '\0') {
+        return MPR_ERR_BAD_FORMAT;
+    }
     if (username) {
         *username = sclone(decoded);
+    }
+    if (cp && *cp == '\0') {
+        return MPR_ERR_BAD_FORMAT;
     }
     if (password) {
         *password = sclone(cp);

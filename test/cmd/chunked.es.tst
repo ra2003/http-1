@@ -6,7 +6,7 @@ require support
 
 //  HTTP/1 only
 
-if (App.env.TE_PROTOCOL == 'http1') {
+if (App.env.TE_PROTOCOL != 'http2') {
 
     //  Chunked get
     data = http("--chunk 256 /big.txt")

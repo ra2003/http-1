@@ -237,6 +237,7 @@ static void manageRoute(HttpRoute *route, int flags)
         mprMark(route->responseFormat);
         mprMark(route->script);
         mprMark(route->scriptPath);
+        mprMark(route->source);
         mprMark(route->sourceName);
         mprMark(route->ssl);
         mprMark(route->startSegment);

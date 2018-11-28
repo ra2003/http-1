@@ -76,9 +76,10 @@ PUBLIC void httpProcess(HttpQueue *q)
 
         default:
             if (conn->error) {
-                httpSetState(conn, HTTP_STATE_COMPLETE);
+                httpSetState(conn, HTTP_STATE_FINALIZED);
+            } else {
+                more = 0;
             }
-            more = 0;
             break;
         }
         httpServiceQueues(conn->net, HTTP_BLOCK);

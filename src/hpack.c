@@ -156,14 +156,27 @@ PUBLIC int httpAddPackedHeader(HttpHeaderTable *headers, cchar *key, cchar *valu
     ssize           len;
     int             index;
 
+    len = slen(key) + slen(value) + HTTP2_HEADER_OVERHEAD;
+    if (len > headers->max) {
+        return MPR_ERR_WONT_FIT;
+    }
     /*
         Make room for the new entry if required. Evict the oldest entries first.
      */
-    len = slen(key) + slen(value) + HTTP2_HEADER_OVERHEAD;
     while ((headers->size + len) >= headers->max) {
+        if (headers->list->length == 0) {
+            break;
+        }
         kp = mprPopItem(headers->list);
         headers->size -= (slen(kp->key) + slen(kp->value) + HTTP2_HEADER_OVERHEAD);
+        if (headers->size < 0) {
+            /* Should never happen */
+            assert(0);
+            return MPR_ERR_BAD_STATE;
+        }
     }
+    assert (headers->size >= 0 && (headers->size + len) < headers->max);
+
     /*
         New entries are inserted at the start of the table and all existing entries shuffle down
      */
@@ -175,25 +188,6 @@ PUBLIC int httpAddPackedHeader(HttpHeaderTable *headers, cchar *key, cchar *valu
     return index;
 }
 
-
-/*
-    Get a header at a specific index.
- */
-PUBLIC MprKeyValue *httpGetPackedHeader(HttpHeaderTable *headers, int index)
-{
-    if (index <= 0 || index > (1 + HTTP2_STATIC_TABLE_ENTRIES + mprGetListLength(headers->list))) {
-        return 0;
-    }
-    if (--index < HTTP2_STATIC_TABLE_ENTRIES) {
-        return mprGetItem(HTTP->staticHeaders, index);
-    }
-    index = index - HTTP2_STATIC_TABLE_ENTRIES;
-    if (index >= mprGetListLength(headers->list)) {
-        assert(index < mprGetListLength(headers->list));
-        return 0;
-    }
-    return mprGetItem(headers->list, index);
-}
 
 
 /*
@@ -212,10 +206,37 @@ PUBLIC int httpSetPackedHeadersMax(HttpHeaderTable *headers, int max)
     }
     headers->max = max;
     while (headers->size >= max) {
+        if (headers->list->length == 0) {
+            break;
+        }
         kp = mprPopItem(headers->list);
         headers->size -= (slen(kp->key) + slen(kp->value) + HTTP2_HEADER_OVERHEAD);
+        if (headers->size < 0) {
+            /* Should never happen */
+            assert(0);
+            return MPR_ERR_BAD_STATE;
+        }
     }
     return 0;
+}
+
+/*
+    Get a header at a specific index.
+ */
+PUBLIC MprKeyValue *httpGetPackedHeader(HttpHeaderTable *headers, int index)
+{
+    if (index <= 0 || index > (1 + HTTP2_STATIC_TABLE_ENTRIES + mprGetListLength(headers->list))) {
+        return 0;
+    }
+    if (--index < HTTP2_STATIC_TABLE_ENTRIES) {
+        return mprGetItem(HTTP->staticHeaders, index);
+    }
+    index = index - HTTP2_STATIC_TABLE_ENTRIES;
+    if (index >= mprGetListLength(headers->list)) {
+        /* Bad index */
+        return 0;
+    }
+    return mprGetItem(headers->list, index);
 }
 #endif /* ME_HTTP_HTTP2 */
 

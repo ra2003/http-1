@@ -369,6 +369,10 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet)
     if (smatch(httpGetHeader(conn, "transfer-encoding"), "chunked")) {
         httpInitChunking(conn);
     } else {
+        if (mprGetBufLength(packet->content) < 2) {
+            httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header format");
+            return 0;
+        }
         mprAdjustBufStart(packet->content, 2);
     }
     httpSetState(conn, HTTP_STATE_PARSED);

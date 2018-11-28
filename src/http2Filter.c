@@ -138,6 +138,7 @@ static void incomingHttp2(HttpQueue *q, HttpPacket *packet)
      */
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if ((frame = parseFrame(q, packet)) != 0) {
+            conn = frame->conn;
             if (net->goaway && conn && (net->lastStream && conn->stream >= net->lastStream)) {
                 /* Network is being closed. Continue to process existing streams but accept no new streams */
                 continue;
@@ -145,7 +146,6 @@ static void incomingHttp2(HttpQueue *q, HttpPacket *packet)
             net->frame = frame;
             frameHandlers[frame->type](q, packet);
             net->frame = 0;
-            conn = frame->conn;
             if (conn && conn->disconnect && !conn->destroyed) {
                 sendReset(q, conn, HTTP2_INTERNAL_ERROR, "Stream request error %s", conn->errorMsg);
             }
@@ -479,6 +479,7 @@ static void parseSettingsFrame(HttpQueue *q, HttpPacket *packet)
 
         switch (field) {
         case HTTP2_HEADER_TABLE_SIZE_SETTING:
+            value = min((int) value, net->limits->hpackMax);
             httpSetPackedHeadersMax(net->txHeaders, value);
             break;
 
@@ -878,7 +879,10 @@ static void parseHeader(HttpQueue *q, HttpConn *conn, HttpPacket *packet)
             return;
         }
         addHeader(conn, name, value);
-        httpAddPackedHeader(net->rxHeaders, name, value);
+        if (httpAddPackedHeader(net->rxHeaders, name, value) < 0) {
+            sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Cannot fit header in hpack table");
+            return;
+        }
 
     } else if ((ch >> 5) == 1) {
         /* Dynamic table max size update */

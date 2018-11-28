@@ -482,6 +482,7 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
         HTTP/2 parameters. Default frameSize must be 16K and windowSize 65535 by spec. Do not change.
      */
     limits->frameSize = HTTP2_DEFAULT_FRAME_SIZE;
+    limits->hpackMax = ME_MAX_HPACK_SIZE;
     limits->streamsMax = ME_MAX_STREAMS;
     limits->windowSize = HTTP2_DEFAULT_WINDOW;
 #endif

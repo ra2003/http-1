@@ -346,7 +346,7 @@ PUBLIC HttpAddress *httpMonitorAddress(HttpNet *net, int counterIndex)
     http = net->http;
     count = mprGetHashLength(http->addresses);
     if (count > net->limits->clientMax) {
-        mprLog("net erro", 0, "Too many concurrent clients, active: %d, max:%d", count, net->limits->clientMax);
+        mprLog("net info", 3, "Too many concurrent clients, active: %d, max:%d", count, net->limits->clientMax);
         return 0;
     }
     if (counterIndex <= 0) {

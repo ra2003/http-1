@@ -623,6 +623,9 @@ static HttpConn *getStream(HttpQueue *q, HttpPacket *packet)
             /* Memory error - centrally reported */
             return 0;
         }
+        frame->conn = conn;
+        conn->stream = frame->stream;
+
         /*
             Servers create a new connection stream. Note: HttpConn is used for HTTP/2 streams (legacy).
          */
@@ -637,8 +640,6 @@ static HttpConn *getStream(HttpQueue *q, HttpPacket *packet)
                 (int) mprGetListLength(net->connections), net->limits->streamsMax);
             return 0;
         }
-        frame->conn = conn;
-        conn->stream = frame->stream;
     }
     if (net->goaway) {
         /* Ignore new streams as the network is going away */

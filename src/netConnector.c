@@ -79,7 +79,7 @@ PUBLIC HttpNet *httpAccept(HttpEndpoint *endpoint, MprEvent *event)
         return 0;
     }
     if ((value = httpMonitorNetEvent(net, HTTP_COUNTER_ACTIVE_CONNECTIONS, 1)) > limits->connectionsMax) {
-        mprLog("net error", 0, "Too many concurrent connections, active: %d, max:%d", (int) value, limits->connectionsMax);
+        mprLog("net info", 3, "Too many concurrent connections, active: %d, max:%d", (int) value - 1, limits->connectionsMax);
         httpDestroyNet(net);
         return 0;
     }

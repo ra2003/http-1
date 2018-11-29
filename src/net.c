@@ -400,7 +400,6 @@ PUBLIC void httpUsePrimary(HttpNet *net)
 }
 
 
-//  TODO - legacy httpBorrowConn?
 PUBLIC void httpBorrowNet(HttpNet *net)
 {
     assert(!net->borrowed);
@@ -411,7 +410,6 @@ PUBLIC void httpBorrowNet(HttpNet *net)
 }
 
 
-//  TODO - legacy httpReturnConn?
 PUBLIC void httpReturnNet(HttpNet *net)
 {
     assert(net->borrowed);

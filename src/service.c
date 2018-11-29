@@ -617,7 +617,6 @@ static void httpTimer(Http *http, MprEvent *event)
     int         next, active, abort, nextConn;
 
     updateCurrentDate();
-
     lock(http->networks);
 
     if (!mprGetDebugMode()) {

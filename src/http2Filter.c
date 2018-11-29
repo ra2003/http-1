@@ -627,13 +627,13 @@ static HttpConn *getStream(HttpQueue *q, HttpPacket *packet)
             Servers create a new connection stream. Note: HttpConn is used for HTTP/2 streams (legacy).
          */
         if (mprGetListLength(net->connections) >= net->limits->requestsPerClientMax) {
-            sendReset(q, conn, HTTP2_REFUSED_STREAM, "Too many streams: %s %d/%d", net->ip,
+            sendReset(q, conn, HTTP2_REFUSED_STREAM, "Too many streams for IP: %s %d/%d", net->ip,
                 (int) mprGetListLength(net->connections), net->limits->requestsPerClientMax);
             return 0;
         }
         ///TODO httpMonitorEvent(conn, HTTP_COUNTER_REQUESTS, 1);
         if (mprGetListLength(net->connections) >= net->limits->streamsMax) {
-            sendReset(q, conn, HTTP2_REFUSED_STREAM, "Too many streams: %s %d/%d", net->ip,
+            sendReset(q, conn, HTTP2_REFUSED_STREAM, "Too many streams for connection: %s %d/%d", net->ip,
                 (int) mprGetListLength(net->connections), net->limits->streamsMax);
             return 0;
         }

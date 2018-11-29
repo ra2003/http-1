@@ -647,9 +647,9 @@ static void processFinalized(HttpQueue *q)
     rx = conn->rx;
     tx = conn->tx;
 
-    assert(tx->finalized);
-    assert(tx->finalizedOutput);
-    assert(tx->finalizedInput);
+    tx->finalized = 1;
+    tx->finalizedOutput = 1;
+    tx->finalizedInput = 1;
 
 #if ME_TRACE_MEM
     mprDebug(1, "Request complete, status %d, error %d, connError %d, %s%s, memsize %.2f MB",

@@ -271,6 +271,8 @@ PUBLIC Mpr *mprCreateMemService(MprManager manager, int flags)
         heap->regions = region;
     }
     heap->gcCond = mprCreateCond();
+
+    //  TODO - could just remove STATIC_VALUES
     heap->roots = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
     mprAddRoot(MPR);
     return MPR;
@@ -461,7 +463,7 @@ static int initQueues()
     for (freeq = heap->freeq, qindex = 0; freeq < &heap->freeq[MPR_ALLOC_NUM_QUEUES]; freeq++, qindex++) {
         /* Size includes MprMem header */
         freeq->minSize = (MprMemSize) qtosize(qindex);
-#if (ME_MPR_ALLOC_STATS && ME_MPR_ALLOC_DEBUG) && KEEP
+#if (ME_MPR_ALLOC_STATS && ME_MPR_ALLOC_DEBUG) && MPR_ALLOC_TRACE
         printf("Queue: %d, usize %u  size %u\n",
             (int) (freeq - heap->freeq), (int) freeq->minSize - (int) sizeof(MprMem), (int) freeq->minSize);
 #endif
@@ -653,7 +655,7 @@ static MprMem *growHeap(size_t required)
      */
     if (heap->stats.bytesAllocated > heap->stats.bytesAllocatedPeak) {
         heap->stats.bytesAllocatedPeak = heap->stats.bytesAllocated;
-#if (ME_MPR_ALLOC_STATS && ME_MPR_ALLOC_DEBUG) && KEEP
+#if (ME_MPR_ALLOC_STATS && ME_MPR_ALLOC_DEBUG) && ME_MPR_ALLOC_TRACE
         printf("MPR: Heap new max %lld request %lu\n", heap->stats.bytesAllocatedPeak, required);
 #endif
     }
@@ -977,7 +979,7 @@ PUBLIC int mprGC(int flags)
     heap->freedBlocks = 0;
     if (!(flags & MPR_GC_NO_BLOCK)) {
         /*
-            Yield here, so the sweeper wont abort because this thread is not yielded
+            Yield here, so the sweeper can operate now
          */
         mprYield(MPR_YIELD_STICKY);
     }
@@ -1270,6 +1272,7 @@ static void markRoots()
     mprMark(heap->roots);
     mprMark(heap->gcCond);
 
+    //  TODO - could just remove STATIC_VALUES and remove this
     for (ITERATE_ITEMS(heap->roots, root, next)) {
         mprMark(root);
     }
@@ -1483,7 +1486,7 @@ static void sweep()
     }
     heap->stats.heapRegions = rcount;
     heap->stats.sweeps++;
-#if (ME_MPR_ALLOC_STATS && ME_MPR_ALLOC_DEBUG) && KEEP
+#if ME_MPR_ALLOC_STATS && ME_MPR_ALLOC_DEBUG && MPR_ALLOC_TRACE
     printf("GC: Marked %lld / %lld, Swept %lld / %lld, freed %lld, bytesFree %lld (prior %lld)\n"
                  "    WeightedCount %d / %d, allocated blocks %lld allocated bytes %lld\n"
                  "    Unpins %lld, Collections %lld\n",
@@ -1507,12 +1510,7 @@ static void sweep()
  */
 void *palloc(size_t size)
 {
-    void    *ptr;
-
-    if ((ptr = mprAllocZeroed(size)) != 0) {
-        mprHold(ptr);
-    }
-    return ptr;
+    return mprAllocMem(size, MPR_ALLOC_HOLD | MPR_ALLOC_ZERO);
 }
 
 
@@ -1524,20 +1522,28 @@ PUBLIC void pfree(void *ptr)
 {
     if (ptr) {
         mprRelease(ptr);
-
+        /* Do not access ptr here - async sweeper() may have already run */
     }
 }
 
 
 PUBLIC void *prealloc(void *ptr, size_t size)
 {
+    void    *mem;
+    size_t  oldSize;
+
+    oldSize = psize(ptr);
+    if (size <= oldSize) {
+        return ptr;
+    }
+    if ((mem = mprAllocMem(size, MPR_ALLOC_HOLD | MPR_ALLOC_ZERO)) == 0) {
+        return 0;
+    }
     if (ptr) {
+        memcpy(mem, ptr, oldSize);
         mprRelease(ptr);
     }
-    if ((ptr =  mprRealloc(ptr, size)) != 0) {
-        mprHold(ptr);
-    }
-    return ptr;
+    return mem;
 }
 
 
@@ -1597,11 +1603,11 @@ PUBLIC void mprHoldBlocks(cvoid *ptr, ...)
 
 PUBLIC void mprReleaseBlocks(cvoid *ptr, ...)
 {
-    va_list args;
+    va_list     args;
 
     if (ptr) {
-        mprRelease(ptr);
         va_start(args, ptr);
+        mprRelease(ptr);
         while ((ptr = va_arg(args, char*)) != 0) {
             mprRelease(ptr);
         }
@@ -11029,18 +11035,28 @@ PUBLIC MprEvent *mprCreateEventQueue()
     Create and queue a new event for service. Period is used as the delay before running the event and as the period
     between events for continuous events.
 
-    WARNING: this routine is unique in that it may be called from a non-MPR thread. This means it may run in
-    parallel with the GC. So memory must be held until safely queued.
+    This routine is foreign thread-safe, i.e. it can be called by non-mpr threads where it runs in parallel with the GC.
  */
 PUBLIC MprEvent *mprCreateEvent(MprDispatcher *dispatcher, cchar *name, MprTicks period, void *proc, void *data, int flags)
 {
     MprEvent    *event;
-    MprThread   *thread;
+    int         aflags;
 
-    /*
-        Create and hold the event object (immune from GC for foreign threads)
-     */
-    if ((event = mprAllocMem(sizeof(MprEvent), MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO | MPR_ALLOC_HOLD)) == 0) {
+    aflags = MPR_ALLOC_MANAGER | MPR_ALLOC_ZERO;
+    if (flags & MPR_EVENT_FOREIGN) {
+        /*
+            Foreign threads cannot safely reference a dispatcher as it may be deleted anytime.
+         */
+        flags &= ~MPR_EVENT_DONT_QUEUE;
+        flags |= MPR_EVENT_QUICK;
+        dispatcher = 0;
+        /*
+            Hold memory for foreign threads to be immune from GC.
+            Supplied data should be static (non mpr) or be held via mprHold.
+         */
+        aflags |= MPR_ALLOC_HOLD | MPR_EVENT_STATIC_DATA;
+    }
+    if ((event = mprAllocMem(sizeof(MprEvent), aflags)) == 0) {
         return 0;
     }
     mprSetManager(event, (MprManager) manageEvent);
@@ -11067,26 +11083,11 @@ PUBLIC MprEvent *mprCreateEvent(MprDispatcher *dispatcher, cchar *name, MprTicks
 
     if (!(flags & MPR_EVENT_DONT_QUEUE)) {
         mprQueueEvent(dispatcher, event);
-    }
-    if (flags & MPR_EVENT_WAIT) {
-        thread = mprGetCurrentThread();
-        if (dispatcher->owner != thread->osThread) {
-            event->cond = mprCreateCond();
-            mprWaitForCond(event->cond, -1);
-        } else {
-            static int once = 0;
-            if (once++ == 0) {
-                mprLog("error", 0, "Calling MPR_EVENT_WAIT when current thread is servicing dispatcher %s. Skip wait.", dispatcher->name);
-            }
+        if (flags & MPR_EVENT_FOREIGN) {
+            mprRelease(event);
+            /* Warning: event may collected by GC here */
+            return 0;
         }
-    }
-
-    /* Unset eternal */
-    if (!(flags & MPR_EVENT_HOLD)) {
-        mprRelease(event);
-        /*
-            Warning: if invoked from a foreign (non-mpr) thread, the event may be collected by GC here
-         */
     }
     return event;
 }
@@ -27418,11 +27419,7 @@ static int getNumOrSym(char **token, int sep, int kind, int *isAlpah)
     char    *cp;
     int     num;
 
-    assert(token && *token);
-    if (!token) {
-        return 0;
-    }
-    if (*token == 0) {
+    if (!token || *token == '\0') {
         return 0;
     }
     if (isalpha((uchar) **token)) {
@@ -28208,11 +28205,8 @@ static MprWaitHandler *initWaitHandler(MprWaitHandler *wp, int fd, int mask, Mpr
         int             index;
 
         for (ITERATE_ITEMS(ws->handlers, op, index)) {
-            assert(op->fd >= 0);
             if (op->fd == fd) {
                 mprLog("error mpr event", 0, "Duplicate fd in wait handlers");
-            } else if (op->fd < 0) {
-                mprLog("error mpr event", 0, "Invalid fd in wait handlers, probably forgot to call mprRemoveWaitHandler");
             }
         }
     }

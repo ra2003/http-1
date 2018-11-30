@@ -282,8 +282,8 @@ PUBLIC int httpGetNetEventMask(HttpNet *net)
             Don't read if writeBlocked to mitigate DOS attack via ping flood
          */
         if (mprSocketHandshaking(sock) || (!net->eof && !net->writeBlocked)) {
-        eventMask |= MPR_READABLE;
-    }
+            eventMask |= MPR_READABLE;
+        }
     }
     return eventMask;
 }
@@ -361,6 +361,27 @@ PUBLIC void httpSetupWaitHandler(HttpNet *net, int eventMask)
 }
 
 
+static void checkLen(HttpQueue *q)
+{
+    HttpNet     *net;
+    HttpPacket  *packet;
+    static int maxCount = 0;
+    int count = 0;
+
+    net = q->net;
+    for (packet = q->first; packet; packet = packet->next) {
+        count++;
+    }
+    if (count > maxCount) {
+        maxCount = count;
+        print("Count %d, blocked %d, goaway %d, received goaway %d, eof %d", count, net->writeBlocked, net->goaway, net->receivedGoaway, net->eof);
+        if (maxCount > 50) {
+            print("TOO BIG");
+        }
+    }
+}
+
+
 static void netOutgoing(HttpQueue *q, HttpPacket *packet)
 {
     assert(q == q->net->socketq);
@@ -368,6 +389,7 @@ static void netOutgoing(HttpQueue *q, HttpPacket *packet)
     if (q->net->socketq) {
         httpPutForService(q->net->socketq, packet, HTTP_SCHEDULE_QUEUE);
     }
+    checkLen(q);
 }
 
 

@@ -1,5 +1,5 @@
 /*
-    me.h -- MakeMe Configure Header for windows-x86-default
+    me.h -- MakeMe Configure Header for windows-x64-default
 
     This header is created by Me during configuration. To change settings, re-run
     configure or define variables in your Makefile to override these default values.
@@ -22,7 +22,7 @@
     #define ME_COMPANY "embedthis"
 #endif
 #ifndef ME_COMPATIBLE
-    #define ME_COMPATIBLE "6.2"
+    #define ME_COMPATIBLE "6.3"
 #endif
 #ifndef ME_COMPILER_HAS_ATOMIC
     #define ME_COMPILER_HAS_ATOMIC 0
@@ -78,6 +78,9 @@
 #ifndef ME_INTEGRATE
     #define ME_INTEGRATE 1
 #endif
+#ifndef ME_MBEDTLS_COMPACT
+    #define ME_MBEDTLS_COMPACT 1
+#endif
 #ifndef ME_NAME
     #define ME_NAME "http"
 #endif
@@ -88,7 +91,7 @@
     #define ME_TITLE "Embedthis Http"
 #endif
 #ifndef ME_VERSION
-    #define ME_VERSION "6.2.3"
+    #define ME_VERSION "6.3.0"
 #endif
 
 /* Prefixes */
@@ -166,7 +169,7 @@
 
 /* Profile */
 #ifndef ME_CONFIG_CMD
-    #define ME_CONFIG_CMD "me -d -q -platform windows-x86-default -configure . -without ssl -gen vs"
+    #define ME_CONFIG_CMD "me -d -q -platform windows-x64-default -configure . -without ssl -gen vs"
 #endif
 #ifndef ME_HTTP_PRODUCT
     #define ME_HTTP_PRODUCT 1
@@ -183,13 +186,13 @@
     #define ME_MAJOR_VERSION 6
 #endif
 #ifndef ME_MINOR_VERSION
-    #define ME_MINOR_VERSION 2
+    #define ME_MINOR_VERSION 3
 #endif
 #ifndef ME_PATCH_VERSION
-    #define ME_PATCH_VERSION 3
+    #define ME_PATCH_VERSION 0
 #endif
 #ifndef ME_VNUM
-    #define ME_VNUM 600020003
+    #define ME_VNUM 600030000
 #endif
 
 /* Components */

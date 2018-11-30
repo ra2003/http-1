@@ -277,8 +277,13 @@ PUBLIC int httpGetNetEventMask(HttpNet *net)
             eventMask |= MPR_WRITABLE;
         }
     }
-    if (!net->eof && (mprSocketHasBufferedRead(sock) || !net->inputq || (net->inputq->count < net->inputq->max))) {
+    if (mprSocketHasBufferedRead(sock) || !net->inputq || (net->inputq->count < net->inputq->max)) {
+        /*
+            Don't read if writeBlocked to mitigate DOS attack via ping flood
+         */
+        if (mprSocketHandshaking(sock) || (!net->eof && !net->writeBlocked)) {
         eventMask |= MPR_READABLE;
+    }
     }
     return eventMask;
 }

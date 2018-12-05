@@ -769,18 +769,6 @@ static void parseLimits(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-static void parseLimitsBuffer(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    int     size;
-
-    size = httpGetInt(prop->value);
-    if (size > ME_SANITY_QBUFFER) {
-        size = ME_SANITY_QBUFFER;
-    }
-    route->limits->bufferSize = size;
-}
-
-
 static void parseLimitsCache(HttpRoute *route, cchar *key, MprJson *prop)
 {
     mprSetCacheLimits(route->host->responseCache, 0, 0, httpGetNumber(prop->value), 0);
@@ -842,20 +830,6 @@ static void parseLimitsFiles(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
-#if ME_HTTP_HTTP2
-static void parseLimitsFrameSize(HttpRoute *route, cchar *key, MprJson *prop)
-{
-    int     size;
-
-    size = httpGetInt(prop->value);
-    if (size < HTTP2_DEFAULT_FRAME_SIZE) {
-        size = HTTP2_DEFAULT_FRAME_SIZE;
-    }
-    route->limits->frameSize = size;
-}
-#endif
-
-
 static void parseLimitsKeepAlive(HttpRoute *route, cchar *key, MprJson *prop)
 {
     route->limits->keepAliveMax = httpGetInt(prop->value);
@@ -868,6 +842,23 @@ static void parseLimitsMemory(HttpRoute *route, cchar *key, MprJson *prop)
 
     maxMem = (ssize) httpGetNumber(prop->value);
     mprSetMemLimits(maxMem / 100 * 85, maxMem, -1);
+}
+
+
+static void parseLimitsPacket(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    int     size;
+
+    size = httpGetInt(prop->value);
+    if (size > ME_SANITY_PACKET) {
+        size = ME_SANITY_PACKET;
+#if ME_HTTP_HTTP2
+//  MOB - packet size probably can be less than the min frame size?
+    } else if (size < HTTP2_DEFAULT_FRAME_SIZE) {
+        size = HTTP2_DEFAULT_FRAME_SIZE;
+#endif
+    }
+    route->limits->packetSize = size;
 }
 
 
@@ -986,7 +977,7 @@ static void parseLimitsWindow(HttpRoute *route, cchar *key, MprJson *prop)
     if (size < HTTP2_DEFAULT_WINDOW) {
         size = HTTP2_DEFAULT_WINDOW;
     }
-    route->limits->windowSize = size;
+    route->limits->window = size;
 }
 #endif
 
@@ -1954,7 +1945,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.indexes", parseIndexes);
     httpAddConfig("http.languages", parseLanguages);
     httpAddConfig("http.limits", parseLimits);
-    httpAddConfig("http.limits.buffer", parseLimitsBuffer);
     httpAddConfig("http.limits.cache", parseLimitsCache);
     httpAddConfig("http.limits.cacheItem", parseLimitsCacheItem);
     httpAddConfig("http.limits.chunk", parseLimitsChunk);
@@ -1967,6 +1957,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.limits.rxBody", parseLimitsRxBody);
     httpAddConfig("http.limits.rxForm", parseLimitsRxForm);
     httpAddConfig("http.limits.rxHeader", parseLimitsRxHeader);
+    httpAddConfig("http.limits.packet", parseLimitsPacket);
     httpAddConfig("http.limits.processes", parseLimitsProcesses);
     httpAddConfig("http.limits.requests", parseLimitsRequests);
     httpAddConfig("http.limits.sessions", parseLimitsSessions);
@@ -2026,7 +2017,6 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.xsrf", parseXsrf);
 
 #if ME_HTTP_HTTP2
-    httpAddConfig("http.limits.frameSize", parseLimitsFrameSize);
     httpAddConfig("http.limits.streams", parseLimitsStreams);
     httpAddConfig("http.limits.window", parseLimitsWindow);
 #endif
@@ -2040,6 +2030,7 @@ PUBLIC int httpInitParser()
 
 #if DEPRECATE || 1
     httpAddConfig("http.server.log", parseLog);
+    httpAddConfig("http.limits.buffer", parseLimitsPacket);
 #endif
     return 0;
 }

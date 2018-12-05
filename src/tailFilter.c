@@ -88,21 +88,59 @@ static void outgoingTail(HttpQueue *q, HttpPacket *packet)
 }
 
 
+static bool streamCanAbsorb(HttpQueue *q, HttpPacket *packet)
+{
+    HttpConn    *conn;
+    HttpQueue   *nextQ;
+    ssize       room, size;
+
+    conn = q->conn;
+    nextQ = conn->net->outputq;
+    size = httpGetPacketLength(packet);
+    
+    /*
+        Get the maximum the output stream can absorb that is less than the downstream queue packet size.
+     */
+    room = min(nextQ->packetSize, conn->outputq->window);
+    if (size <= room) {
+        return 1;
+    }
+    if (room > 0) {
+        /*
+            Resize the packet to fit downstream. This will putback the tail if required.
+         */
+        httpResizePacket(q, packet, room);
+        size = httpGetPacketLength(packet);
+        assert(size <= room);
+        assert(size <= nextQ->packetSize);
+        if (size > 0) {
+            return 1;
+        }
+    }
+    /*
+        The downstream queue cannot accept this packet, so suspend this queue and schedule the next if required.
+     */
+    httpSuspendQueue(q);
+    if (!(nextQ->flags & HTTP_QUEUE_SUSPENDED)) {
+        httpScheduleQueue(nextQ);
+    }
+    return 0;
+}
+
+
 static void outgoingTailService(HttpQueue *q)
 {
     HttpConn    *conn;
-    HttpNet     *net;
     HttpPacket  *packet;
 
     conn = q->conn;
-    net = conn->net;
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
-        if (!httpWillQueueAcceptPacket(q, net->outputq, packet)) {
+        if (!streamCanAbsorb(q, packet)) {
             httpPutBackPacket(q, packet);
             return;
         }
-        httpPutPacket(net->outputq, packet);
+        httpPutPacket(q->net->outputq, packet);
     }
 }
 

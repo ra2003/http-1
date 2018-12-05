@@ -91,8 +91,13 @@ PUBLIC HttpConn *httpCreateConn(HttpNet *net)
     httpOpenQueues(conn);
 
 #if ME_HTTP_HTTP2
-    httpSetQueueLimits(conn->inputq, limits->frameSize, -1, net->inputq->max);
-    httpSetQueueLimits(conn->outputq, limits->frameSize, -1, net->inputq->max);
+    /*
+        The conn->outputq queue window limit is updated on receipt of the peer settings frame and this defines the maximum amount of
+        data we can send without receipt of a window flow control update message.
+        The conn->inputq window is defined by net->limits and will be
+     */
+    httpSetQueueLimits(conn->inputq, limits, -1, -1, -1, -1);
+    httpSetQueueLimits(conn->outputq, limits, -1, -1, -1, -1);
 #endif
     httpSetState(conn, HTTP_STATE_BEGIN);
     httpAddConn(net, conn);

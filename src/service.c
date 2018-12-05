@@ -77,7 +77,7 @@ static void httpTimer(Http *http, MprEvent *event);
 static bool isIdle(bool traceRequests);
 static void manageHttp(Http *http, int flags);
 static void terminateHttp(int state, int how, int status);
-static void updateCurrentDate();
+static void updateCurrentDate(void);
 
 /*********************************** Code *************************************/
 
@@ -451,7 +451,6 @@ PUBLIC HttpHost *httpLookupHost(cchar *name)
 PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
 {
     memset(limits, 0, sizeof(HttpLimits));
-    limits->bufferSize = ME_PACKET_SIZE;
     limits->cacheItemSize = ME_MAX_CACHE_ITEM;
     limits->chunkSize = ME_MAX_CHUNK;
     limits->clientMax = ME_MAX_CLIENTS;
@@ -459,6 +458,7 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
     limits->headerMax = ME_MAX_NUM_HEADERS;
     limits->headerSize = ME_MAX_HEADERS;
     limits->keepAliveMax = ME_MAX_KEEP_ALIVE;
+    limits->packetSize = ME_PACKET_SIZE;
     limits->processMax = ME_MAX_PROCESSES;
     limits->requestsPerClientMax = ME_MAX_REQUESTS_PER_CLIENT;
     limits->sessionMax = ME_MAX_SESSIONS;
@@ -479,12 +479,12 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
 
 #if ME_HTTP_HTTP2
     /*
-        HTTP/2 parameters. Default frameSize must be 16K and windowSize 65535 by spec. Do not change.
+        HTTP/2 parameters. Default and minimum frameSize must be 16K and window size 65535 by spec. Do not change.
      */
-    limits->frameSize = HTTP2_DEFAULT_FRAME_SIZE;
     limits->hpackMax = ME_MAX_HPACK_SIZE;
+    limits->packetSize = HTTP2_DEFAULT_FRAME_SIZE;
     limits->streamsMax = ME_MAX_STREAMS;
-    limits->windowSize = HTTP2_DEFAULT_WINDOW;
+    limits->window = HTTP2_DEFAULT_WINDOW;
 #endif
 
     if (serverSide) {

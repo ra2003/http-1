@@ -39,9 +39,9 @@ static App *app;
 /***************************** Forward Declarations ***************************/
 
 static int createEndpoints(int argc, char **argv);
-static int findConfig();
+static int findConfig(void);
 static void manageApp(App *app, int flags);
-static void usageError();
+static void usageError(void);
 
 /*********************************** Code *************************************/
 
@@ -222,7 +222,7 @@ static int findConfig()
 }
 
 
-static void usageError(Mpr *mpr)
+static void usageError()
 {
     cchar   *name;
 

@@ -15,7 +15,7 @@
 
 static HttpAddress *growAddresses(HttpNet *net, HttpAddress *address, int counterIndex);
 static MprTicks lookupTicks(MprHash *args, cchar *key, MprTicks defaultValue);
-static void stopMonitors();
+static void stopMonitors(void);
 
 /************************************ Code ************************************/
 

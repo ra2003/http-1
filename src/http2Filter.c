@@ -173,11 +173,6 @@ static void outgoingHttp2(HttpQueue *q, HttpPacket *packet)
     conn = packet->conn;
     checkSendSettings(q);
 
-#if UNUSED
-    int         enable;
-    //  TODO - is this needed now?
-    enable = !(q->stage->flags & HTTP_STAGE_HANDLER) || (q->conn->state >= HTTP_STATE_READY) ? 1 : 0;
-#endif
     /*
         Determine the HTTP/2 frame type and add to the service queue
      */
@@ -212,7 +207,7 @@ static void outgoingHttp2Service(HttpQueue *q)
 
     for (packet = httpGetPacket(q); packet && !net->error && !done; packet = httpGetPacket(q)) {
         net->lastActivity = net->http->now;
-        if (net->outputq->max <= 0) {
+        if (net->outputq->window <= 0) {
             /*
                 The output queue has depleted the HTTP/2 transmit window. Flow control and wait for
                 a window update message from the peer.
@@ -220,15 +215,17 @@ static void outgoingHttp2Service(HttpQueue *q)
             httpSuspendQueue(q);
             break;
         }
+        conn = packet->conn;
+
         /*
             Resize data packets to not exceed the remaining HTTP/2 window flow control credits.
          */
         len = httpGetPacketLength(packet);
         if (packet->flags & HTTP_PACKET_DATA) {
-            len = resizePacket(net->outputq, net->outputq->max, packet, &done);
-            net->outputq->max -= len;
+            len = resizePacket(net->outputq, net->outputq->window, packet, &done);
+            net->outputq->window -= len;
+            assert(net->outputq->window >= 0);
         }
-        conn = packet->conn;
         if (conn && !conn->destroyed) {
             if (conn->streamReset) {
                 /* Must not send any more frames on this stream */
@@ -246,12 +243,7 @@ static void outgoingHttp2Service(HttpQueue *q)
             tx = conn->tx;
 
             if (packet->flags & HTTP_PACKET_DATA) {
-#if UNUSED
-                /* Already done above */
-                len = resizePacket(net->outputq, conn->outputq->max, packet, &done);
-#endif
-                conn->outputq->max -= len;
-                if (conn->outputq->max < 0) {
+                if (conn->outputq->window <= 0) {
                     sendReset(q, conn, HTTP2_FLOW_CONTROL_ERROR, "Internal flow control error");
                     return;
                 }
@@ -497,18 +489,20 @@ static void parseSettingsFrame(HttpQueue *q, HttpPacket *packet)
             break;
 
         case HTTP2_MAX_STREAMS_SETTING:
+            //  MOB - validate range
             net->limits->streamsMax = min((int) value, net->limits->streamsMax);
             break;
 
         case HTTP2_INIT_WINDOW_SIZE_SETTING:
-            if (value > HTTP2_MAX_WINDOW) {
+            if (value < HTTP2_DEFAULT_WINDOW || value > HTTP2_MAX_WINDOW) {
                 sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Invalid window size setting %x max %x", value, HTTP2_MAX_WINDOW);
                 return;
             }
-            httpSetQueueLimits(net->outputq, -1, -1, value);
+            net->outputq->window = value;
             break;
 
         case HTTP2_MAX_FRAME_SIZE_SETTING:
+            //  MOB - validate range
             if (value > 0 && value < net->outputq->packetSize) {
                 net->outputq->packetSize = value;
                 #if TODO && TBD
@@ -518,6 +512,7 @@ static void parseSettingsFrame(HttpQueue *q, HttpPacket *packet)
             break;
 
         case HTTP2_MAX_HEADER_SIZE_SETTING:
+            //  MOB - validate range
             if ((int) value < net->limits->headerSize) {
                 net->limits->headerSize = value;
             }
@@ -800,18 +795,18 @@ static void parseWindowFrame(HttpQueue *q, HttpPacket *packet)
     increment = mprGetUint32FromBuf(packet->content);
     if (frame->stream) {
         if ((conn = frame->conn) != 0) {
-            if (increment > (HTTP2_MAX_WINDOW - conn->outputq->max)) {
+            if (increment > (HTTP2_MAX_WINDOW - conn->outputq->window)) {
                 sendReset(q, conn, HTTP2_FLOW_CONTROL_ERROR, "Invalid window update for stream %d", conn->stream);
             } else {
-                conn->outputq->max += increment;
+                conn->outputq->window += increment;
                 httpResumeQueue(conn->outputq);
             }
         }
     } else {
-        if (increment > (HTTP2_MAX_WINDOW + 1 - net->outputq->max)) {
+        if (increment > (HTTP2_MAX_WINDOW + 1 - net->outputq->window)) {
             sendGoAway(q, HTTP2_FLOW_CONTROL_ERROR, "Invalid window update for network");
         } else {
-            net->outputq->max += increment;
+            net->outputq->window += increment;
             httpResumeQueue(net->outputq);
         }
     }
@@ -1100,39 +1095,41 @@ static void parseDataFrame(HttpQueue *q, HttpPacket *packet)
         }
         mprAdjustBufEnd(buf, -padLen);
     }
+    processDataFrame(q, packet);
 
     /*
-        Network flow control
+        Network flow control, do after processing the data frame incase the stream is now complete.
      */
-    if (len > net->inputq->max) {
+    if (len > net->inputq->window) {
         sendGoAway(q, HTTP2_FLOW_CONTROL_ERROR, "Peer exceeded flow control window");
         return;
     }
-    net->inputq->max -= len;
-    if (net->inputq->max <= net->inputq->packetSize) {
+    net->inputq->window -= len;
+    if (net->inputq->window <= net->inputq->packetSize) {
         /*
             Update the remote window size for network flow control
          */
-        sendWindowFrame(q, 0, limits->windowSize - net->inputq->max);
-        httpSetQueueLimits(net->inputq, -1, -1, limits->windowSize);
+        sendWindowFrame(q, 0, limits->window - net->inputq->window);
+        net->inputq->window = limits->window;
     }
 
     /*
         Stream flow control
      */
-    if (len > conn->inputq->max) {
-        sendReset(q, conn, HTTP2_FLOW_CONTROL_ERROR, "Receive data exceeds window for stream");
-        return;
+    if (!conn->destroyed) {
+        if (len > conn->inputq->window) {
+            sendReset(q, conn, HTTP2_FLOW_CONTROL_ERROR, "Receive data exceeds window for stream");
+            return;
+        }
+        conn->inputq->window -= len;
+        if (conn->inputq->window <= net->inputq->packetSize) {
+            /*
+                Update the remote window size for stream flow control
+             */
+            sendWindowFrame(q, conn->stream, limits->window - conn->inputq->window);
+            conn->inputq->window = limits->window;
+        }
     }
-    conn->inputq->max -= len;
-    if (conn->inputq->max <= net->inputq->packetSize) {
-        /*
-            Update the remote window size for stream flow control
-         */
-        sendWindowFrame(q, conn->stream, limits->windowSize - conn->inputq->max);
-        httpSetQueueLimits(conn->inputq, -1, -1, limits->windowSize);
-    }
-    processDataFrame(q, packet);
 }
 
 
@@ -1323,12 +1320,11 @@ static void sendSettings(HttpQueue *q)
     if ((packet = httpCreatePacket(HTTP2_SETTINGS_SIZE * 3)) == 0) {
         return;
     }
-
     mprPutUint16ToBuf(packet->content, HTTP2_MAX_STREAMS_SETTING);
     mprPutUint32ToBuf(packet->content, net->limits->streamsMax);
 
     mprPutUint16ToBuf(packet->content, HTTP2_INIT_WINDOW_SIZE_SETTING);
-    mprPutUint32ToBuf(packet->content, (uint32) net->inputq->max);
+    mprPutUint32ToBuf(packet->content, (uint32) net->inputq->window);
 
     mprPutUint16ToBuf(packet->content, HTTP2_MAX_FRAME_SIZE_SETTING);
     mprPutUint32ToBuf(packet->content, (uint32) net->inputq->packetSize);

@@ -64,10 +64,10 @@ static void initQueue(HttpNet *net, HttpConn *conn, HttpQueue *q, cchar *name, i
     if (conn && conn->tx && conn->tx->chunkSize > 0) {
         q->packetSize = conn->tx->chunkSize;
     } else {
-        q->packetSize = net->limits->bufferSize;
+        q->packetSize = net->limits->packetSize;
     }
-    q->max = q->packetSize * 4;
-    q->low = q->max / 4;
+    q->max = q->packetSize * ME_QUEUE_MAX_FACTOR;
+    q->low = q->packetSize;
 }
 
 
@@ -116,18 +116,24 @@ PUBLIC void httpAssignQueueCallbacks(HttpQueue *q, HttpStage *stage, int dir)
 }
 
 
-PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize packetSize, ssize low, ssize max)
+PUBLIC void httpSetQueueLimits(HttpQueue *q, HttpLimits *limits, ssize packetSize, ssize low, ssize max, ssize window)
 {
-    if (packetSize > 0) {
-        q->packetSize = packetSize;
+    if (packetSize < 0) {
+        packetSize = limits->packetSize;
     }
-    if (max >= 0) {
-        q->max = max;
-        q->low = q->max / 4;
+    if (max < 0) {
+        max = q->packetSize * ME_QUEUE_MAX_FACTOR;
     }
-    if (low >= 0) {
-        q->low = low;
+    if (low < 0) {
+        low = q->packetSize;
     }
+    if (window < 0) {
+        window = limits->window;
+    }
+    q->packetSize = packetSize;
+    q->max = max;
+    q->low = low;
+    q->window = window;
 }
 
 

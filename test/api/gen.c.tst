@@ -41,7 +41,7 @@ static void createHttp()
 
     http = httpCreate(HTTP_SERVER_SIDE);
     ttrue(http != 0);
-    httpDestroy(http);
+    httpDestroy();
 }
 
 
@@ -73,7 +73,7 @@ static void basicHttpGet()
         length = httpGetContentLength(conn);
         ttrue(length != 0);
     }
-    httpDestroy(http);
+    httpDestroy();
 }
 
 
@@ -130,7 +130,7 @@ static void stealSocket()
         ttrue(conn->sock->fd == INVALID_SOCKET);
         closesocket(fd);
     }
-    httpDestroy(http);
+    httpDestroy();
 }
 
 

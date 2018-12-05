@@ -15,7 +15,7 @@ static void netTimeout(HttpNet *net, MprEvent *mprEvent);
 static void secureNet(HttpNet *net, MprSsl *ssl, cchar *peerName);
 
 #if ME_HTTP_HTTP2
-static HttpHeaderTable *createHeaderTable();
+static HttpHeaderTable *createHeaderTable(int maxSize);
 static void manageHeaderTable(HttpHeaderTable *table, int flags);
 #endif
 
@@ -63,14 +63,17 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     net->socketq->name = sclone("socket-tx");
 
 #if ME_HTTP_HTTP2
+{
     /*
         The socket queue will typically send and accept packets of HTTP2_DEFAULT_FRAME_SIZE plus the frame size overhead.
         Set the max to fit four packets. Note that HTTP/2 flow control happens on the http filters and not on the socketq.
         Other queues created in netConnector after the protocol is known.
      */
-    httpSetQueueLimits(net->socketq, HTTP2_DEFAULT_FRAME_SIZE + HTTP2_FRAME_OVERHEAD, -1, HTTP2_DEFAULT_FRAME_SIZE * 4);
+    ssize packetSize = max(HTTP2_DEFAULT_FRAME_SIZE + HTTP2_FRAME_OVERHEAD, net->limits->packetSize);
+    httpSetQueueLimits(net->socketq, net->limits, packetSize, -1, -1, -1);
     net->rxHeaders = createHeaderTable(HTTP2_TABLE_SIZE);
     net->txHeaders = createHeaderTable(HTTP2_TABLE_SIZE);
+}
 #endif
 
     /*
@@ -260,8 +263,14 @@ PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol)
     httpAppendQueue(net->socketq, net->outputq);
 
 #if ME_HTTP_HTTP2
-    httpSetQueueLimits(net->inputq, net->limits->frameSize, -1, net->limits->windowSize);
-    httpSetQueueLimits(net->outputq, HTTP2_DEFAULT_FRAME_SIZE, -1, HTTP2_DEFAULT_WINDOW);
+    /*
+        The input queue window is defined by the network limits value. Default of HTTP2_DEFAULT_WINDOW but revised by config.
+     */
+    httpSetQueueLimits(net->inputq, net->limits, -1, -1, -1, -1);
+    /*
+        The packetSize and window size will always be revised in Http2:parseSettingsFrame
+     */
+    httpSetQueueLimits(net->outputq, net->limits, HTTP2_DEFAULT_FRAME_SIZE, -1, -1, -1);
 #endif
 }
 

@@ -260,7 +260,7 @@ static int openWebSock(HttpQueue *q)
     ws = conn->rx->webSocket;
     assert(ws);
 
-    q->packetSize = min(conn->limits->bufferSize, q->max);
+    q->packetSize = min(conn->limits->packetSize, q->max);
     ws->closeStatus = WS_STATUS_NO_STATUS;
     conn->timeoutCallback = webSockTimeout;
 
@@ -885,8 +885,8 @@ static void outgoingWebSockService(HttpQueue *q)
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (!(packet->flags & (HTTP_PACKET_END | HTTP_PACKET_HEADER))) {
             if (!(packet->flags & HTTP_PACKET_SOLO)) {
-                if (packet->esize > conn->limits->bufferSize) {
-                    if ((tail = httpResizePacket(q, packet, conn->limits->bufferSize)) != 0) {
+                if (packet->esize > conn->limits->packetSize) {
+                    if ((tail = httpResizePacket(q, packet, conn->limits->packetSize)) != 0) {
                         assert(tail->last == packet->last);
                         packet->last = 0;
                     }

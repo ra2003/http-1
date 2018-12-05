@@ -98,19 +98,23 @@ static void tracePacket(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
     cchar       *type;
-
+    ssize       len;
 
     net = q->net;
     type = (packet->type & HTTP_PACKET_HEADER) ? "headers" : "data";
+    len = httpGetPacketLength(packet) + mprGetBufLength(packet->prefix);
+    if (packet->prefix) {
+        print("HERE");
+    }
     if (httpTracing(net) && !net->skipTrace) {
         if (net->bytesWritten >= net->trace->maxContent) {
             httpTrace(net->trace, "http1.tx", "packet", "msg: 'Abbreviating packet trace'");
             net->skipTrace = 1;
         } else {
-            httpTracePacket(net->trace, "http1.tx", "packet", HTTP_TRACE_HEX, packet, "type=%s, length=%zd,", type, httpGetPacketLength(packet));
+            httpTracePacket(net->trace, "http1.tx", "packet", HTTP_TRACE_HEX, packet, "type=%s, length=%zd,", type, len);
         }
     } else {
-        httpTrace(net->trace, "http1.tx", "packet", "type=%s, length=%zd,", type, httpGetPacketLength(packet));
+        httpTrace(net->trace, "http1.tx", "packet", "type=%s, length=%zd,", type, len);
     }
 }
 

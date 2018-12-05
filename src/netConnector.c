@@ -502,7 +502,7 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
     assert(q->count >= 0);
     assert(bytes > 0);
 
-    while ((packet = q->first) != 0) {
+    while ((packet = q->first) != 0 && bytes > 0) {
         if (packet->prefix) {
             len = mprGetBufLength(packet->prefix);
             len = min(len, bytes);

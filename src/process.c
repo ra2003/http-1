@@ -21,6 +21,7 @@ static bool processContent(HttpQueue *q);
 static void processFinalized(HttpQueue *q);
 static void processFirst(HttpQueue *q);
 static void processHeaders(HttpQueue *q);
+static void processHttp(HttpQueue *q);
 static void processParsed(HttpQueue *q);
 static void processReady(HttpQueue *q);
 static bool processRunning(HttpQueue *q);
@@ -29,13 +30,33 @@ static void routeRequest(HttpConn *conn);
 static int sendContinue(HttpQueue *q);
 
 /*********************************** Code *************************************/
+
+PUBLIC bool httpProcessHeaders(HttpQueue *q)
+{
+    if (q->conn->state != HTTP_STATE_PARSED) {
+        return 0;
+    }
+    processFirst(q);
+    processHeaders(q);
+    processParsed(q);
+    return 1;
+}
+
+
+PUBLIC void httpProcess(HttpQueue *q)
+{
+    //  MOB - should have flag if already scheduled?
+    mprCreateEvent(q->conn->dispatcher, "http2", 0, processHttp, q->conn->inputq, 0);
+}
+
+
 /*
     HTTP Protocol state machine for HTTP/1 server requests and client responses.
     Process an incoming request/response and drive the state machine.
     This will process only one request/response.
     All socket I/O is non-blocking, and this routine must not block.
  */
-PUBLIC void httpProcess(HttpQueue *q)
+static void processHttp(HttpQueue *q)
 {
     HttpConn    *conn;
     bool        more;
@@ -49,9 +70,7 @@ PUBLIC void httpProcess(HttpQueue *q)
     for (count = 0, more = 1; more && count < 10; count++) {
         switch (conn->state) {
         case HTTP_STATE_PARSED:
-            processFirst(q);
-            processHeaders(q);
-            processParsed(q);
+            httpProcessHeaders(q);
             break;
 
         case HTTP_STATE_CONTENT:
@@ -597,6 +616,8 @@ static bool processContent(HttpQueue *q)
             }
         }
         httpSetState(conn, HTTP_STATE_READY);
+    }
+    if (rx->eof || !httpServerConn(conn)) {
         if (conn->readq->first) {
             HTTP_NOTIFY(conn, HTTP_EVENT_READABLE, 0);
         }

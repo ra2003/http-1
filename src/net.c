@@ -65,11 +65,11 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
 #if ME_HTTP_HTTP2
 {
     /*
-        The socket queue will typically send and accept packets of HTTP2_DEFAULT_FRAME_SIZE plus the frame size overhead.
+        The socket queue will typically send and accept packets of HTTP2_MIN_FRAME_SIZE plus the frame size overhead.
         Set the max to fit four packets. Note that HTTP/2 flow control happens on the http filters and not on the socketq.
         Other queues created in netConnector after the protocol is known.
      */
-    ssize packetSize = max(HTTP2_DEFAULT_FRAME_SIZE + HTTP2_FRAME_OVERHEAD, net->limits->packetSize);
+    ssize packetSize = max(HTTP2_MIN_FRAME_SIZE + HTTP2_FRAME_OVERHEAD, net->limits->packetSize);
     httpSetQueueLimits(net->socketq, net->limits, packetSize, -1, -1, -1);
     net->rxHeaders = createHeaderTable(HTTP2_TABLE_SIZE);
     net->txHeaders = createHeaderTable(HTTP2_TABLE_SIZE);
@@ -250,7 +250,7 @@ PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol)
         Create queues connected to the appropriate protocol filter. Supply conn for HTTP/1.
         For HTTP/2:
             The Q packetSize defines frame size and the Q max defines the window size.
-            The outputq->max must be set to HTTP2_DEFAULT_WINDOW by spec. The packetSize must be set to 16K minimum.
+            The outputq->max must be set to HTTP2_MIN_WINDOW by spec. The packetSize must be set to 16K minimum.
      */
 #if ME_HTTP_HTTP2
     stage = protocol == 1 ? http->http1Filter : http->http2Filter;
@@ -264,13 +264,13 @@ PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol)
 
 #if ME_HTTP_HTTP2
     /*
-        The input queue window is defined by the network limits value. Default of HTTP2_DEFAULT_WINDOW but revised by config.
+        The input queue window is defined by the network limits value. Default of HTTP2_MIN_WINDOW but revised by config.
      */
     httpSetQueueLimits(net->inputq, net->limits, -1, -1, -1, -1);
     /*
         The packetSize and window size will always be revised in Http2:parseSettingsFrame
      */
-    httpSetQueueLimits(net->outputq, net->limits, HTTP2_DEFAULT_FRAME_SIZE, -1, -1, -1);
+    httpSetQueueLimits(net->outputq, net->limits, HTTP2_MIN_FRAME_SIZE, -1, -1, -1);
 #endif
 }
 

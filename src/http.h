@@ -59,23 +59,22 @@ struct HttpWebSocket;
     #ifndef ME_PACKET_SIZE
         #define ME_PACKET_SIZE      (8 * 1024)      /**< Default packet size for pipeline packets */
     #endif
-    #ifndef ME_CHUNK
-        #define ME_CHUNK            (8 * 1024)      /**< Maximum chunk size for transfer chunk encoding */
+    #ifndef ME_CHUNK_SIZE
+        #define ME_CHUNK_SIZE       (8 * 1024)      /**< Maximum chunk size for transfer chunk encoding */
     #endif
 #elif ME_TUNE_SPEED
     #ifndef ME_PACKET_SIZE
         #define ME_PACKET_SIZE      (32 * 1024)
     #endif
-    #ifndef ME_CHUNK
-        #define ME_CHUNK            (32 * 1024)
+    #ifndef ME_CHUNK_SIZE
+        #define ME_CHUNK_SIZE       (32 * 1024)
     #endif
 #else
     #ifndef ME_PACKET_SIZE
         #define ME_PACKET_SIZE      (16 * 1024)
     #endif
-    //  MOB should be CHUNK_SIZE
-    #ifndef ME_CHUNK
-        #define ME_CHUNK            (16 * 1024)
+    #ifndef ME_CHUNK_SIZE
+        #define ME_CHUNK_SIZE       (16 * 1024)
     #endif
 #endif
 #ifndef ME_SANITY_PACKET
@@ -130,7 +129,7 @@ struct HttpWebSocket;
     #define ME_MAX_HPACK_SIZE       4096                 /**< Maximum size of the hpack table */
 #endif
 #ifndef ME_MAX_STREAMS
-    #define ME_MAX_STREAMS          20                    /**< Maximum concurrent streams per connection */
+    #define ME_MAX_STREAMS          20                    /**< Default maximum concurrent streams per connection */
 #endif
 #ifndef ME_MAX_HEADERS
     #define ME_MAX_HEADERS          8192                 /**< Maximum size of the headers (8K) */
@@ -1407,7 +1406,8 @@ typedef struct HttpLimits {
 #if ME_HTTP_HTTP2 || DOXYGEN
     int      frameSize;                 /**< HTTP/2 maximum frame size */
     int      hpackMax;                  /**< HTTP/2 maximum size of the hpack header table */
-    int      streamsMax;                /**< HTTP/2 maximum number of streams per connection */
+    int      streamsMax;                /**< HTTP/2 maximum number of streams per connection (both peer and self initiated) */
+    int      txStreamsMax;                 /**< HTTP/2 maximum number of streams the peer will permit per connection */
     int      window;                    /**< HTTP/2 Initial rx window size (size willing to receive) */
 #endif
 } HttpLimits;
@@ -2908,8 +2908,8 @@ PUBLIC int httpOpenTailFilter(void);
 /*
     Do not change these defaults. They are defined by the spec.
  */
-#define HTTP2_DEFAULT_WINDOW        65535                   /**< Initial default window size by spec */
-#define HTTP2_DEFAULT_FRAME_SIZE    (16 * 1024)             /**< Default and minimum frame size - modified by config */
+#define HTTP2_MIN_WINDOW            65535                   /**< Initial default window size by spec */
+#define HTTP2_MIN_FRAME_SIZE        (16 * 1024)             /**< Default and minimum frame size - modified by config */
 #define HTTP2_DEFAULT_WEIGHT        16                      /**< Unused */
 
 /*

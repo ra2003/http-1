@@ -239,7 +239,7 @@ static HttpPacket *getPacket(HttpNet *net, ssize *lenp)
     if (net->protocol < 2) {
         size = net->inputq ? net->inputq->packetSize : ME_PACKET_SIZE;
     } else {
-        size = (net->inputq ? net->inputq->packetSize : HTTP2_DEFAULT_FRAME_SIZE) + HTTP2_FRAME_OVERHEAD;
+        size = (net->inputq ? net->inputq->packetSize : HTTP2_MIN_FRAME_SIZE) + HTTP2_FRAME_OVERHEAD;
     }
 #else
     size = net->inputq ? net->inputq->packetSize : ME_PACKET_SIZE;

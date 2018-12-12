@@ -279,9 +279,8 @@ PUBLIC int httpGetNetEventMask(HttpNet *net)
     }
     if (mprSocketHasBufferedRead(sock) || !net->inputq || (net->inputq->count < net->inputq->max)) {
         /*
-            MOB - Can't do this as we must always read window messages.
-            MOB - how to mitigate against a ping flood?
-                Don't read if writeBlocked to mitigate DOS attack via ping flood
+            TODO - how to mitigate against a ping flood?
+            Was testing if !writeBlocked before adding MPR_READABLE, but this is always required for HTTP/2 to read window frames.
          */
         if (mprSocketHandshaking(sock) || !net->eof) {
             eventMask |= MPR_READABLE;

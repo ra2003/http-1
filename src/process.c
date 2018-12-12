@@ -45,7 +45,7 @@ PUBLIC bool httpProcessHeaders(HttpQueue *q)
 
 PUBLIC void httpProcess(HttpQueue *q)
 {
-    //  MOB - should have flag if already scheduled?
+    //  TODO - should have flag if already scheduled?
     mprCreateEvent(q->conn->dispatcher, "http2", 0, processHttp, q->conn->inputq, 0);
 }
 

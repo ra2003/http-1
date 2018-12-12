@@ -10180,7 +10180,6 @@ static void outgoingHttp2Service(HttpQueue *q)
             /*
                 Create and send a HTTP/2 frame
              */
-            // print("XX SEND FRAME flags %x %ld", packet->flags, httpGetPacketLength(packet));
             sendFrame(q, defineFrame(q, packet, packet->type, getFrameFlags(q, packet), conn->stream));
 
             /*
@@ -10742,7 +10741,6 @@ static void parseWindowFrame(HttpQueue *q, HttpPacket *packet)
                 sendReset(q, conn, HTTP2_FLOW_CONTROL_ERROR, "Invalid window update for stream %d", conn->stream);
             } else {
                 conn->outputq->window += increment;
-                // print("XX RESUME stream");
                 httpResumeQueue(conn->outputq);
             }
         }
@@ -10751,7 +10749,6 @@ static void parseWindowFrame(HttpQueue *q, HttpPacket *packet)
             sendGoAway(q, HTTP2_FLOW_CONTROL_ERROR, "Invalid window update for network");
         } else {
             net->outputq->window += increment;
-            // print("XX RESUME net");
             httpResumeQueue(net->outputq);
         }
     }
@@ -11278,7 +11275,6 @@ static void sendSettings(HttpQueue *q)
     mprPutUint32ToBuf(packet->content, (uint32) size);
 
 #if FUTURE
-    //  MOB - max streams
     mprPutUint16ToBuf(packet->content, HTTP2_HEADER_TABLE_SIZE_SETTING);
     mprPutUint32ToBuf(packet->content, HTTP2_TABLE_SIZE);
     mprPutUint16ToBuf(packet->content, HTTP2_MAX_HEADER_SIZE_SETTING);
@@ -14787,15 +14783,13 @@ PUBLIC int httpGetNetEventMask(HttpNet *net)
     }
     if (mprSocketHasBufferedRead(sock) || !net->inputq || (net->inputq->count < net->inputq->max)) {
         /*
-            MOB - Can't do this as we must always read window messages.
-            MOB - how to mitigate against a ping flood?
-                Don't read if writeBlocked to mitigate DOS attack via ping flood
+            TODO - how to mitigate against a ping flood?
+            Was testing if !writeBlocked before adding MPR_READABLE, but this is always required for HTTP/2 to read window frames.
          */
         if (mprSocketHandshaking(sock) || !net->eof) {
             eventMask |= MPR_READABLE;
         }
     }
-    // print("XX Mask %x", eventMask);
     return eventMask;
 }
 
@@ -14915,11 +14909,10 @@ static void netOutgoingService(HttpQueue *q)
 
     while (q->first || q->ioIndex) {
         if (q->ioIndex == 0 && buildNetVec(q) <= 0) {
-            freeNetPackets(q, written);
+            freeNetPackets(q, 0);
             break;
         }
         written = mprWriteSocketVector(net->sock, q->iovec, q->ioIndex);
-        // print("XX Written %ld", written);
         if (written < 0) {
             errCode = mprGetError();
             if (errCode == EAGAIN || errCode == EWOULDBLOCK) {
@@ -14960,14 +14953,6 @@ static MprOff buildNetVec(HttpQueue *q)
         the queue for now, they are removed after the IO is complete for the entire packet.
      */
      for (packet = q->first; packet; packet = packet->next) {
-
-/*
-if (packet->flags & HTTP_PACKET_END) {
-    mprNop(NULL);
-    // print("XX END");
-}
-print("PACKET len %ld, flags %x", httpGetPacketLength(packet), packet->flags);
-*/
         if (q->ioIndex >= (ME_MAX_IOVEC - 2)) {
             break;
         }
@@ -15021,10 +15006,9 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
     ssize       len;
 
     assert(q->count >= 0);
-    assert(bytes > 0);
+    assert(bytes >= 0);
 
     while ((packet = q->first) != 0) {
-        // print("XX BYTES %ld, flags %x length %ld", bytes, packet->flags, httpGetPacketLength(packet));
         if (packet->flags & HTTP_PACKET_END) {
             if ((conn = packet->conn) != 0) {
                 httpFinalizeConnector(conn);
@@ -16380,7 +16364,7 @@ PUBLIC bool httpProcessHeaders(HttpQueue *q)
 
 PUBLIC void httpProcess(HttpQueue *q)
 {
-    //  MOB - should have flag if already scheduled?
+    //  TODO - should have flag if already scheduled?
     mprCreateEvent(q->conn->dispatcher, "http2", 0, processHttp, q->conn->inputq, 0);
 }
 
@@ -17607,7 +17591,9 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
                 httpScheduleQueue(net->socketq);
                 httpServiceQueues(net, flags);
             }
-            //  MOB for HTTP/2 window update messages
+            /*
+                Process HTTP/2 window update messages for flow control
+             */
             mprWaitForEvent(conn->dispatcher, 0, mprGetEventMark(conn->dispatcher));
         }
         if (!(flags & HTTP_BLOCK)) {
@@ -22884,7 +22870,6 @@ static bool streamCanAbsorb(HttpQueue *q, HttpPacket *packet)
     /*
         The downstream queue cannot accept this packet, so suspend this queue and schedule the next if required.
      */
-//   print("XX - suspend stream in outgoingTailService");
     httpSuspendQueue(q);
     if (!(nextQ->flags & HTTP_QUEUE_SUSPENDED)) {
         httpScheduleQueue(nextQ);
@@ -22901,7 +22886,6 @@ static void outgoingTailService(HttpQueue *q)
     conn = q->conn;
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
-        // print("XX tail flags %x, len %ld", packet->flags, httpGetPacketLength(packet));
         if (!streamCanAbsorb(q, packet)) {
             httpPutBackPacket(q, packet);
             return;
@@ -22910,11 +22894,6 @@ static void outgoingTailService(HttpQueue *q)
             httpPutBackPacket(q, packet);
             return;
         }
-        // print("XX - Tail send flags %x, %ld outputq->count %ld", packet->flags, httpGetPacketLength(packet), q->net->outputq->count);
-/*
-        if (packet->flags & HTTP_PACKET_END) {
-            print("TAIL END");
-        } */
         httpPutPacket(q->net->outputq, packet);
     }
 }
@@ -24521,8 +24500,7 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
         if (conn->state >= HTTP_STATE_FINALIZED || conn->net->error) {
             return MPR_ERR_CANT_WRITE;
         }
-        if (q->last && (q->last != q->first) && (q->last->flags & HTTP_PACKET_DATA) &&
-                mprGetBufSpace(q->last->content) > 0) {
+        if (q->last && (q->last != q->first) && (q->last->flags & HTTP_PACKET_DATA) && mprGetBufSpace(q->last->content) > 0) {
             packet = q->last;
         } else {
             packetSize = (tx->chunkSize > 0) ? tx->chunkSize : q->packetSize;

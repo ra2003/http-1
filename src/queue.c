@@ -245,7 +245,9 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
                 httpScheduleQueue(net->socketq);
                 httpServiceQueues(net, flags);
             }
-            //  MOB for HTTP/2 window update messages
+            /*
+                Process HTTP/2 window update messages for flow control
+             */
             mprWaitForEvent(conn->dispatcher, 0, mprGetEventMark(conn->dispatcher));
         }
         if (!(flags & HTTP_BLOCK)) {

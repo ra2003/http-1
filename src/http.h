@@ -3144,8 +3144,8 @@ PUBLIC void httpDestroyNet(HttpNet *net);
 /**
     Respond to a HTTP I/O event
     @description This routine responds to I/O described by the supplied eventMask.
-    If any readable data is present, it allocates a standard sized packet and reads data into this and then invokes
-    the #httpProcess engine.
+    If any readable data is present, it allocates a standard sized packet and reads data into this packet and passes to the input
+    queue pipeline.
     @param net HttpNet object created via #httpCreateNet
     @param event Event structure
     @ingroup HttpNet
@@ -6989,8 +6989,8 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn);
     @description the httpProcess function drives the HTTP request and response state machine. Once a request is received from the peer and the HTTP headers have been parsed into HttpConn and HttpTx, the httpProcess() function should be called to drive the request pipeline to process the request.
     \n\n
     The HTTP state machine drives the HttpConn.state through the states from
-    HTTP_STATE_BEGIN, HTTP_STATE_CONNECTED, HTTP_STATE_FIRST, HTTP_STATE_PARSED, HTTP_STATE_CONTENT, HTTP_STATE_READY, HTTP_STATE_RUNNING, HTTP_STATE_FINALIZED to HTTP_STATE_COMPLETE. For each state, the notifier defined by
-    #httpSetConnNotifier will be invoked.
+    HTTP_STATE_BEGIN, HTTP_STATE_CONNECTED, HTTP_STATE_FIRST, HTTP_STATE_PARSED, HTTP_STATE_CONTENT, HTTP_STATE_READY, HTTP_STATE_RUNNING, HTTP_STATE_FINALIZED to HTTP_STATE_COMPLETE. For each state, the notifier defined by #httpSetConnNotifier will be invoked.
+    The state should be in HTTP_STATE_PARSED via #httpProcessHeaders before calling this routine.
     \n\n
     httpProcess is invoked by the HTTP/1 and HTTP/2 filters after they have decoded input packets and whenever the network socket becomes newly writable and can absorb more output data.
     @param q HttpQueue queue object
@@ -6999,7 +6999,17 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn);
  */
 PUBLIC void httpProcess(HttpQueue *q);
 
-//  MOB DOC
+/**
+    Process Http headers
+    @description the httpProcessHeaders function drives the HTTP request and response state machine. Once a request is received from the peer and the HTTP headers have been parsed into HttpConn and HttpTx, the httpProcessHeaders() function should be called to drive parse the headers fields.
+    \n\n
+    The HTTP state machine should be in the HTTP_STATE_FIRST state. This routine will advance the state to HTTP_STATE_PARSED.
+    \n\n
+    httpProcessHeaders is invoked by the HTTP/1 and HTTP/2 filters after they have decoded input packets and whenever the network socket becomes newly writable and can absorb more output data.
+    @param q HttpQueue queue object
+    @ingroup HttpRx
+    @stability Prototype
+ */
 PUBLIC bool httpProcessHeaders(HttpQueue *q);
 
 

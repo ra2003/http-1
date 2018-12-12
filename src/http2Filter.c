@@ -1349,7 +1349,6 @@ static void sendSettings(HttpQueue *q)
     mprPutUint32ToBuf(packet->content, (uint32) size);
 
 #if FUTURE
-    //  MOB - max streams
     mprPutUint16ToBuf(packet->content, HTTP2_HEADER_TABLE_SIZE_SETTING);
     mprPutUint32ToBuf(packet->content, HTTP2_TABLE_SIZE);
     mprPutUint16ToBuf(packet->content, HTTP2_MAX_HEADER_SIZE_SETTING);

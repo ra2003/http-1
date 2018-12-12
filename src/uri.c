@@ -99,7 +99,7 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
         /*
             Supported forms:
                 scheme://hostname
-                hostname:port
+                hostname:port/
          */
         if ((next = spbrk(tok, ":/")) == 0) {
             next = &tok[slen(tok)];
@@ -114,6 +114,9 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
         up->port = atoi(++tok);
         if ((tok = schr(tok, '/')) == 0) {
             tok = "";
+        }
+        if (up->port == 4443 || up->port == 443) {
+            up->secure = 1;
         }
     }
     assert(tok);
@@ -139,8 +142,10 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
             up->path = sclone("/");
         }
     }
+#if UNUSED
     up->secure = smatch(up->scheme, "https") || smatch(up->scheme, "wss");
     up->webSockets = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
+#endif
 
     if (flags & HTTP_COMPLETE_URI) {
         if (!up->scheme) {

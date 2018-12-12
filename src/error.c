@@ -30,7 +30,7 @@ PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...)
         net->errorMsg = msg = sfmtv(fmt, args);
 #if ME_HTTP_HTTP2
         if (net->protocol >= 2 && !net->eof) {
-            httpSendGoAway(net, HTTP2_INTERNAL_ERROR, "5s", msg);
+            httpSendGoAway(net, HTTP2_INTERNAL_ERROR, "%s", msg);
         }
 #endif
         if (httpIsServer(net)) {

@@ -377,7 +377,9 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, int protoco
     mprStartDispatcher(dispatcher);
 
     net = httpCreateNet(dispatcher, NULL, protocol, 0);
-    conn = httpCreateConn(net);
+    if ((conn = httpCreateConn(net, 0)) == 0) {
+        return 0;
+    }
     mprAddRoot(conn);
 
     if (clientRequest(conn, method, uri, data, protocol, err) < 0) {

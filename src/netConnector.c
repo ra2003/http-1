@@ -279,9 +279,11 @@ PUBLIC int httpGetNetEventMask(HttpNet *net)
     }
     if (mprSocketHasBufferedRead(sock) || !net->inputq || (net->inputq->count < net->inputq->max)) {
         /*
-            Don't read if writeBlocked to mitigate DOS attack via ping flood
+            MOB - Can't do this as we must always read window messages.
+            MOB - how to mitigate against a ping flood?
+                Don't read if writeBlocked to mitigate DOS attack via ping flood
          */
-        if (mprSocketHandshaking(sock) || (!net->eof && !net->writeBlocked)) {
+        if (mprSocketHandshaking(sock) || !net->eof) {
             eventMask |= MPR_READABLE;
         }
     }
@@ -358,6 +360,7 @@ PUBLIC void httpSetupWaitHandler(HttpNet *net, int eventMask)
     } else if (sp->handler) {
         mprWaitOn(sp->handler, eventMask);
     }
+    net->eventMask = eventMask;
 }
 
 
@@ -375,7 +378,7 @@ static void checkLen(HttpQueue *q)
     if (count > maxCount) {
         maxCount = count;
         if (maxCount > 50) {
-            print("Count %d, blocked %d, goaway %d, received goaway %d, eof %d", count, net->writeBlocked, net->goaway, net->receivedGoaway, net->eof);
+            // print("XX Qcount %ld, count %d, blocked %d, goaway %d, received goaway %d, eof %d", q->count, count, net->writeBlocked, net->goaway, net->receivedGoaway, net->eof);
         }
     }
 }
@@ -403,7 +406,7 @@ static void netOutgoingService(HttpQueue *q)
 
     while (q->first || q->ioIndex) {
         if (q->ioIndex == 0 && buildNetVec(q) <= 0) {
-            freeNetPackets(q, written);
+            freeNetPackets(q, 0);
             break;
         }
         written = mprWriteSocketVector(net->sock, q->iovec, q->ioIndex);
@@ -500,35 +503,36 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
     ssize       len;
 
     assert(q->count >= 0);
-    assert(bytes > 0);
+    assert(bytes >= 0);
 
-    while ((packet = q->first) != 0 && bytes > 0) {
-        if (packet->prefix) {
-            len = mprGetBufLength(packet->prefix);
-            len = min(len, bytes);
-            mprAdjustBufStart(packet->prefix, len);
-            bytes -= len;
-            /* Prefixes don't count in the q->count. No need to adjust */
-            if (mprGetBufLength(packet->prefix) == 0) {
-                /* Ensure the prefix is not resent if all the content is not sent */
-                packet->prefix = 0;
-            }
-        }
-        if (packet->content) {
-            len = mprGetBufLength(packet->content);
-            len = min(len, bytes);
-            mprAdjustBufStart(packet->content, len);
-            bytes -= len;
-            q->count -= len;
-            assert(q->count >= 0);
-        }
+    while ((packet = q->first) != 0) {
         if (packet->flags & HTTP_PACKET_END) {
             if ((conn = packet->conn) != 0) {
                 httpFinalizeConnector(conn);
                 mprCreateEvent(q->net->dispatcher, "endRequest", 0, httpProcess, conn->inputq, 0);
             }
+        } else if (bytes > 0) {
+            if (packet->prefix) {
+                len = mprGetBufLength(packet->prefix);
+                len = min(len, bytes);
+                mprAdjustBufStart(packet->prefix, len);
+                bytes -= len;
+                /* Prefixes don't count in the q->count. No need to adjust */
+                if (mprGetBufLength(packet->prefix) == 0) {
+                    /* Ensure the prefix is not resent if all the content is not sent */
+                    packet->prefix = 0;
+                }
+            }
+            if (packet->content) {
+                len = mprGetBufLength(packet->content);
+                len = min(len, bytes);
+                mprAdjustBufStart(packet->content, len);
+                bytes -= len;
+                q->count -= len;
+                assert(q->count >= 0);
+            }
         }
-        if (httpGetPacketLength(packet) == 0) {
+        if (httpGetPacketLength(packet) == 0 && !packet->prefix) {
             /* Done with this packet - consume it. Important for flow control. */
             httpGetPacket(q);
         } else {

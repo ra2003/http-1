@@ -97,7 +97,7 @@ static bool streamCanAbsorb(HttpQueue *q, HttpPacket *packet)
     conn = q->conn;
     nextQ = conn->net->outputq;
     size = httpGetPacketLength(packet);
-    
+
     /*
         Get the maximum the output stream can absorb that is less than the downstream queue packet size.
      */
@@ -137,6 +137,10 @@ static void outgoingTailService(HttpQueue *q)
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (!streamCanAbsorb(q, packet)) {
+            httpPutBackPacket(q, packet);
+            return;
+        }
+        if (!httpWillQueueAcceptPacket(q, q->net->outputq, packet)) {
             httpPutBackPacket(q, packet);
             return;
         }

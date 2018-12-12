@@ -272,7 +272,7 @@ static void testLink()
     cchar           *s;
 
     endpoint = httpCreateEndpoint(NULL, 80, NULL);
-    conn = httpCreateConn(endpoint);
+    conn = httpCreateConn(endpoint, 1);
     conn->rx = httpCreateRx(conn);
     conn->rx->route = httpCreateRoute(NULL);
 
@@ -290,7 +290,7 @@ static void testResolve()
     HttpEndpoint    *endpoint;
 
     endpoint = httpCreateEndpoint(NULL, 80, NULL);
-    conn = httpCreateConn(endpoint);
+    conn = httpCreateConn(endpoint, 1);
     conn->rx = httpCreateRx(conn);
     conn->rx->route = httpCreateRoute(NULL);
 

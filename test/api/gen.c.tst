@@ -59,7 +59,7 @@ static void basicHttpGet()
         httpStartTracing("stdout:5");
     }
     net = httpCreateNet(NULL, NULL, 0, 0);
-    conn = httpCreateConn(net);
+    conn = httpCreateConn(net, 0);
     rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
@@ -93,7 +93,7 @@ static void stealSocket()
         Test httpStealSocket
      */
     net = httpCreateNet(NULL, NULL, 0, 0);
-    conn = httpCreateConn(net);
+    conn = httpCreateConn(net, 0);
     ttrue(conn != 0);
     rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);
@@ -116,7 +116,7 @@ static void stealSocket()
         Test httpStealSocketHandle
      */
     net = httpCreateNet(NULL, NULL, 0, 0);
-    conn = httpCreateConn(net);
+    conn = httpCreateConn(net, 0);
     ttrue(conn != 0);
     rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);

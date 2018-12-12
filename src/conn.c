@@ -19,7 +19,7 @@ static void manageConn(HttpConn *conn, int flags);
     Use httpCreateNet() to create a network object.
  */
 
-PUBLIC HttpConn *httpCreateConn(HttpNet *net)
+PUBLIC HttpConn *httpCreateConn(HttpNet *net, bool peerCreated)
 {
     Http        *http;
     HttpQueue   *q;
@@ -29,7 +29,6 @@ PUBLIC HttpConn *httpCreateConn(HttpNet *net)
     HttpRoute   *route;
 
     assert(net);
-
     http = HTTP;
     if ((conn = mprAllocObj(HttpConn, manageConn)) == 0) {
         return 0;
@@ -45,6 +44,7 @@ PUBLIC HttpConn *httpCreateConn(HttpNet *net)
     conn->port = net->port;
     conn->ip = net->ip;
     conn->secure = net->secure;
+    conn->peerCreated = peerCreated;
     pickStreamNumber(conn);
 
     if (net->endpoint) {
@@ -61,6 +61,13 @@ PUBLIC HttpConn *httpCreateConn(HttpNet *net)
         conn->trace = http->trace;
     }
     limits = conn->limits;
+
+    if (!peerCreated && ((net->ownStreams >= limits->txStreamsMax) || (net->ownStreams >= limits->streamsMax))) {
+        httpNetError(net, "Attempting to create too many streams for network connection: %d/%d/%d", net->ownStreams,
+            limits->txStreamsMax, limits->streamsMax);
+        return 0;
+    }
+
     conn->keepAliveCount = (net->protocol >= 2) ? 0 : conn->limits->keepAliveMax;
     conn->dispatcher = net->dispatcher;
 
@@ -101,6 +108,9 @@ PUBLIC HttpConn *httpCreateConn(HttpNet *net)
 #endif
     httpSetState(conn, HTTP_STATE_BEGIN);
     httpAddConn(net, conn);
+    if (!peerCreated) {
+        net->ownStreams++;
+    }
     return conn;
 }
 
@@ -120,8 +130,11 @@ PUBLIC void httpDestroyConn(HttpConn *conn)
             conn->activeRequest = 0;
         }
         httpDisconnectConn(conn);
-        httpRemoveConn(conn->net, conn);
+        if (!conn->peerCreated) {
+            conn->net->ownStreams--;
+        }
         conn->destroyed = 1;
+        httpRemoveConn(conn->net, conn);
     }
 }
 

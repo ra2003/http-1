@@ -853,9 +853,8 @@ static void parseLimitsPacket(HttpRoute *route, cchar *key, MprJson *prop)
     if (size > ME_SANITY_PACKET) {
         size = ME_SANITY_PACKET;
 #if ME_HTTP_HTTP2
-//  MOB - packet size probably can be less than the min frame size?
-    } else if (size < HTTP2_DEFAULT_FRAME_SIZE) {
-        size = HTTP2_DEFAULT_FRAME_SIZE;
+    } else if (size < HTTP2_MIN_FRAME_SIZE) {
+        size = HTTP2_MIN_FRAME_SIZE;
 #endif
     }
     route->limits->packetSize = size;
@@ -893,6 +892,9 @@ static void parseLimitsRxHeader(HttpRoute *route, cchar *key, MprJson *prop)
 
 
 #if ME_HTTP_HTTP2
+/*
+    Set the total maximum number of streams per network connection
+ */
 static void parseLimitsStreams(HttpRoute *route, cchar *key, MprJson *prop)
 {
     int     size;
@@ -974,8 +976,8 @@ static void parseLimitsWindow(HttpRoute *route, cchar *key, MprJson *prop)
     int     size;
 
     size = httpGetInt(prop->value);
-    if (size < HTTP2_DEFAULT_WINDOW) {
-        size = HTTP2_DEFAULT_WINDOW;
+    if (size < HTTP2_MIN_WINDOW) {
+        size = HTTP2_MIN_WINDOW;
     }
     route->limits->window = size;
 }

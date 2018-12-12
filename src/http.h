@@ -2475,6 +2475,8 @@ PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...) PRINTF_ATTRIBUTE(2,3);
         In non-blocking mode (HTTP_NON_BLOCK), the call may return having written fewer bytes than requested.
         \n\n
         In buffering mode (HTTP_BUFFER), the data is always absorbed without blocking and queue size limits are ignored.
+        In buffering mode, this routine may invoke mprYield if required to consent for the garbage collector to run.
+        Callers must ensure they have retained all required temporary memory before invoking this routine.
         \n\n
         Data written after calling #httpFinalize, #httpFinalizeOutput or #httpError will be discarded.
     @param q Queue reference
@@ -2484,7 +2486,7 @@ PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...) PRINTF_ATTRIBUTE(2,3);
         buffer the data if required and never block. Set to zero will default to HTTP_BUFFER.
     @return The size value if successful or a negative MPR error code.
     @ingroup HttpQueue
-    @stability Stable
+    @stability Evolving
  */
 PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize size, int flags);
 
@@ -3088,6 +3090,7 @@ typedef struct HttpNet {
     int             delay;                  /**< Delay servicing requests due to defense strategy */
     int             nextStream;             /**< Next stream ID */
     int             lastStream;             /**< Last stream ID */
+    int             ownStreams;             /**< Number of peer created streams */
     int             seqno;                  /**< Unique network sequence number */
     int             session;                /**< Currently parsing frame for this session */
     int             timeout;                /**< Connection timeout indication */
@@ -3098,6 +3101,7 @@ typedef struct HttpNet {
     bool            destroyed: 1;           /**< Net object has been destroyed */
     bool            eof: 1;                 /**< Socket has been closed */
     bool            error: 1;               /**< Hard network error - cannot continue */
+    uint            eventMask: 3;           /**< Last IO event mask */
     bool            goaway: 1;              /**< Closing network connection (sent or received a goAway frame) */
     bool            init: 1;                /**< Settings frame has been sent and network is ready to use */
     uint            protocol: 2;            /**< HTTP protocol: 0 for HTTP/1.0, 1 for HTTP/1.1 or 2+ */
@@ -3487,6 +3491,7 @@ typedef struct HttpConn {
     bool            error;                  /**< An error has occurred and the request cannot be completed */
     bool            errorDoc: 1;            /**< Processing an error document */
     bool            followRedirects: 1;     /**< Follow redirects for client requests */
+    bool            peerCreated: 1;         /**< Stream created by peer */
     bool            ownDispatcher: 1;       /**< Own the dispatcher and should destroy when closing connection */
     bool            secure: 1;              /**< Using https */
     bool            seenHeader:1;           /**< Already seen at least one header packet in the output queue */
@@ -3559,7 +3564,7 @@ PUBLIC void httpBorrowConn(HttpConn *conn);
     @ingroup HttpConn
     @stability Internal
 */
-PUBLIC HttpConn *httpCreateConn(HttpNet *net);
+PUBLIC HttpConn *httpCreateConn(HttpNet *net, bool peerCreated);
 
 /**
     Create the receive request pipeline
@@ -6993,6 +6998,10 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn);
     @stability Evolving
  */
 PUBLIC void httpProcess(HttpQueue *q);
+
+//  MOB DOC
+PUBLIC bool httpProcessHeaders(HttpQueue *q);
+
 
 /* Internal */
 PUBLIC void httpCloseRx(struct HttpConn *conn);

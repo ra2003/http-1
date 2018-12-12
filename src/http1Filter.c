@@ -55,7 +55,7 @@ static void incomingHttp1(HttpQueue *q, HttpPacket *packet)
         There will typically be no packets on the queue, so this will be fast
      */
     httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
-
+    
     for (packet = httpGetPacket(q); packet && !conn->error; packet = httpGetPacket(q)) {
         if (httpTracing(q->net)) {
             httpTracePacket(q->net->trace, "http1.rx", "packet", 0, packet, NULL);
@@ -66,14 +66,14 @@ static void incomingHttp1(HttpQueue *q, HttpPacket *packet)
                     httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
                     break;
                 }
+                httpProcessHeaders(conn->inputq);
             }
-            httpProcess(conn->inputq);
         }
         if (packet) {
             httpPutPacket(conn->inputq, packet);
         }
-        httpProcess(conn->inputq);
     }
+    httpProcess(conn->inputq);
 }
 
 
@@ -85,11 +85,20 @@ static void outgoingHttp1(HttpQueue *q, HttpPacket *packet)
 
 static void outgoingHttp1Service(HttpQueue *q)
 {
+    HttpConn    *conn;
     HttpPacket  *packet;
 
+    conn = q->conn;
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
+        if (!httpWillQueueAcceptPacket(q, q->net->socketq, packet)) {
+            httpPutBackPacket(q, packet);
+            return;
+        }
         tracePacket(q, packet);
         httpPutPacket(q->net->socketq, packet);
+        if (conn && q->count <= q->low && (conn->outputq->flags & HTTP_QUEUE_SUSPENDED)) {
+            httpResumeQueue(conn->outputq);
+        }
     }
 }
 
@@ -103,9 +112,6 @@ static void tracePacket(HttpQueue *q, HttpPacket *packet)
     net = q->net;
     type = (packet->type & HTTP_PACKET_HEADER) ? "headers" : "data";
     len = httpGetPacketLength(packet) + mprGetBufLength(packet->prefix);
-    if (packet->prefix) {
-        print("HERE");
-    }
     if (httpTracing(net) && !net->skipTrace) {
         if (net->bytesWritten >= net->trace->maxContent) {
             httpTrace(net->trace, "http1.tx", "packet", "msg: 'Abbreviating packet trace'");
@@ -510,11 +516,12 @@ static HttpConn *findConn(HttpQueue *q)
     HttpConn    *conn;
 
     if (!q->conn) {
-        if ((conn = httpCreateConn(q->net)) == 0) {
+        if ((conn = httpCreateConn(q->net, 1)) == 0) {
             /* Memory error - centrally reported */
             return 0;
         }
         q->conn = conn;
+        q->pair->conn = conn;
     } else {
         conn = q->conn;
     }

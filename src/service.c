@@ -499,23 +499,6 @@ PUBLIC void httpInitLimits(HttpLimits *limits, bool serverSide)
         limits->txBodySize = HTTP_UNLIMITED;
         limits->uploadSize = HTTP_UNLIMITED;
     }
-
-#if KEEP
-    mprSetMaxSocketClients(endpoint, atoi(value));
-
-    if (scaselesscmp(key, "LimitClients") == 0) {
-        mprSetMaxSocketClients(endpoint, atoi(value));
-        return 1;
-    }
-    if (scaselesscmp(key, "LimitMemoryMax") == 0) {
-        mprSetAllocLimits(endpoint, -1, atoi(value));
-        return 1;
-    }
-    if (scaselesscmp(key, "LimitMemoryRedline") == 0) {
-        mprSetAllocLimits(endpoint, atoi(value), -1);
-        return 1;
-    }
-#endif
 }
 
 

@@ -60,8 +60,8 @@
       <type>void</type>
       <name>httpDumpCounters</name>
       <anchorfile>group___http_monitor.html</anchorfile>
-      <anchor>ga311c47ac8f597b1233961cce7b9769e3</anchor>
-      <arglist>()</arglist>
+      <anchor>ga4ce7b2e9592fd30172fe373a346d9df4</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>int64</type>
@@ -135,8 +135,8 @@
       <type>int</type>
       <name>httpGetTraceLevel</name>
       <anchorfile>group___http_trace.html</anchorfile>
-      <anchor>ga0ac3988dc0a5142b4cfb380c05e66c68</anchor>
-      <arglist>()</arglist>
+      <anchor>ga2994b1a1c2aa3a54ecce4aa75abaae7d</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
@@ -266,22 +266,22 @@
       <type>int</type>
       <name>httpApplyChangedGroup</name>
       <anchorfile>group___http.html</anchorfile>
-      <anchor>ga9cb8ca6b7dfbdda9d970e7c5f495b7ab</anchor>
-      <arglist>()</arglist>
+      <anchor>ga53a0b3c2336e66ce457e46c2ce6129d3</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>int</type>
       <name>httpApplyChangedUser</name>
       <anchorfile>group___http.html</anchorfile>
-      <anchor>gaac4f59ea2ef94b5ef62fab395cbfbfc9</anchor>
-      <arglist>()</arglist>
+      <anchor>gaf1c4656f0869ae04ff18bedef5267b6f</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>int</type>
       <name>httpApplyUserGroup</name>
       <anchorfile>group___http.html</anchorfile>
-      <anchor>ga94bfa4610a28a5efc57124dfe7956f09</anchor>
-      <arglist>()</arglist>
+      <anchor>gaa131a1674d96fc4641d76d742bbc17f7</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>bool</type>
@@ -301,15 +301,15 @@
       <type>void</type>
       <name>httpDestroy</name>
       <anchorfile>group___http.html</anchorfile>
-      <anchor>gade9b0703105bdbad7cd4deebbeda2b22</anchor>
-      <arglist>()</arglist>
+      <anchor>ga36ac29e525fd0afc5b5768bd12ac645b</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>void *</type>
       <name>httpGetContext</name>
       <anchorfile>group___http.html</anchorfile>
-      <anchor>ga2e3ae390d5827717880a62a731a7fcf7</anchor>
-      <arglist>()</arglist>
+      <anchor>ga932c2946e5f3f05ca033af2f3af05896</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>char *</type>
@@ -343,15 +343,15 @@
       <type>void</type>
       <name>httpGetUserGroup</name>
       <anchorfile>group___http.html</anchorfile>
-      <anchor>gad2cdbb9ff54bbca9c174a224e048b144</anchor>
-      <arglist>()</arglist>
+      <anchor>ga48a8ac275906d3de56116df019363dfe</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>int</type>
       <name>httpInitParser</name>
       <anchorfile>group___http.html</anchorfile>
-      <anchor>ga958aa81ff7a0333552ec02bffb7f15e5</anchor>
-      <arglist>()</arglist>
+      <anchor>ga09f725cd654f7a4182442afaf020bbbd</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
@@ -704,8 +704,8 @@
       <type>HttpPacket *</type>
       <name>httpCreateEndPacket</name>
       <anchorfile>group___http_packet.html</anchorfile>
-      <anchor>ga5dd04a1c7f834f9acb5aa74488da5aad</anchor>
-      <arglist>()</arglist>
+      <anchor>ga546cccb8bfeb3221fc512bda6111e67a</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>HttpPacket *</type>
@@ -718,8 +718,8 @@
       <type>HttpPacket *</type>
       <name>httpCreateHeaderPacket</name>
       <anchorfile>group___http_packet.html</anchorfile>
-      <anchor>ga24b80ddbcd324b10ac430c4465823190</anchor>
-      <arglist>()</arglist>
+      <anchor>ga7011f712cc4998cef24b396c761feb23</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>HttpPacket *</type>
@@ -784,24 +784,10 @@
     <filename>group___http_queue.html</filename>
     <member kind="function">
       <type>void</type>
-      <name>httpDisableQueue</name>
-      <anchorfile>group___http_queue.html</anchorfile>
-      <anchor>ga9148e04c9f1e0be26f5c05fa069671db</anchor>
-      <arglist>(HttpQueue *q)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
       <name>httpDiscardQueueData</name>
       <anchorfile>group___http_queue.html</anchorfile>
       <anchor>ga344b2dc70ee303361d496d7bc13d0241</anchor>
       <arglist>(HttpQueue *q, bool removePackets)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>httpEnableQueue</name>
-      <anchorfile>group___http_queue.html</anchorfile>
-      <anchor>ga346146f107faba9923caa9e003c4d3a1</anchor>
-      <arglist>(HttpQueue *q)</arglist>
     </member>
     <member kind="function">
       <type>bool</type>
@@ -931,17 +917,10 @@
     </member>
     <member kind="function">
       <type>void</type>
-      <name>httpServiceQueue</name>
-      <anchorfile>group___http_queue.html</anchorfile>
-      <anchor>ga5ed409b0c87172597fa7f928df1e7e77</anchor>
-      <arglist>(HttpQueue *q)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
       <name>httpSetQueueLimits</name>
       <anchorfile>group___http_queue.html</anchorfile>
-      <anchor>gabadeab247a5d74fadd36b35934345a19</anchor>
-      <arglist>(HttpQueue *q, ssize packetSize, ssize low, ssize max)</arglist>
+      <anchor>ga97f4fa489f97b87960a38e58a8e7478a</anchor>
+      <arglist>(HttpQueue *q, HttpLimits *limits, ssize packetSize, ssize low, ssize max, ssize window)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
@@ -1146,6 +1125,165 @@
     </member>
   </compound>
   <compound kind="group">
+    <name>HttpNet</name>
+    <title>HttpNet</title>
+    <filename>group___http_net.html</filename>
+    <member kind="define">
+      <type>#define</type>
+      <name>httpIsClient</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga695cace21ee99fbddade6359b2ed27fa</anchor>
+      <arglist>(net)</arglist>
+    </member>
+    <member kind="define">
+      <type>#define</type>
+      <name>httpIsServer</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga5b93f4a6680f24811db3973988d7f436</anchor>
+      <arglist>(net)</arglist>
+    </member>
+    <member kind="typedef">
+      <type>void(*</type>
+      <name>HttpIOCallback</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga5ac0296bba979518452465e30c7bef48</anchor>
+      <arglist>)(struct HttpNet *net, MprEvent *event)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpBorrowNet</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga4034c029cbd70e893cb70a462a73481b</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>httpConnectNet</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>gab027e3ef30d81227a24ffed98f7c6a96</anchor>
+      <arglist>(HttpNet *net, cchar *ip, int port, MprSsl *ssl)</arglist>
+    </member>
+    <member kind="function">
+      <type>HttpNet *</type>
+      <name>httpCreateNet</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga0d3ddf2e5ae45da02660b15f4a7a864f</anchor>
+      <arglist>(MprDispatcher *dispatcher, struct HttpEndpoint *endpoint, int protocol, int flags)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpDestroyNet</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga220af8aa09631cab5611bb43cefa6326</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpEnableNetEvents</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga63f40de694251842784c73222fb623df</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>httpGetAsync</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga0c02feaf53cf26fc8868e23f62ad008d</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>cchar *</type>
+      <name>httpGetProtocol</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga655a8fc5aca8ceedd674f9872f91e029</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpIOEvent</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>gae3e5ac2c00bb0dee853106e959faac6b</anchor>
+      <arglist>(struct HttpNet *net, MprEvent *event)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpNetError</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga6f1b7da33c91b00ce45a9f2e306918ca</anchor>
+      <arglist>(HttpNet *net, cchar *fmt,...)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpNetTimeout</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga63c6a6f7572ca711b3553c039e554764</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>httpQueuesNeedService</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>gad961c20a113d182df375a7d9fb58ca3c</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpReturnNet</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>gae1272376040bde707ad46e859764f3ed</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>httpServiceQueues</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga0af7e6412cbdce0fdf1b731096162685</anchor>
+      <arglist>(HttpNet *net, int flags)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpSetAsync</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>gabf32c70345191a5d2807a5fbb040a720</anchor>
+      <arglist>(HttpNet *net, bool async)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpSetIOCallback</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga57705d69b2dd9cb1c488503f1cc550c6</anchor>
+      <arglist>(struct HttpNet *net, HttpIOCallback fn)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpSetNetContext</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga456d499b18ce57d176946ec45274d60a</anchor>
+      <arglist>(HttpNet *net, void *context)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpSetNetProtocol</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>gaf4a153324a274ab5fcb5dc3bffa86d28</anchor>
+      <arglist>(HttpNet *net, int protocol)</arglist>
+    </member>
+    <member kind="function">
+      <type>MprSocket *</type>
+      <name>httpStealSocket</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>gab6a62599342ff465c504392840d03d46</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+    <member kind="function">
+      <type>Socket</type>
+      <name>httpStealSocketHandle</name>
+      <anchorfile>group___http_net.html</anchorfile>
+      <anchor>ga1acfae15c98426f081283fbd4a2fa869</anchor>
+      <arglist>(HttpNet *net)</arglist>
+    </member>
+  </compound>
+  <compound kind="group">
     <name>HttpConn</name>
     <title>HttpConn</title>
     <filename>group___http_conn.html</filename>
@@ -1192,18 +1330,11 @@
       <arglist>(HttpConn *conn)</arglist>
     </member>
     <member kind="function">
-      <type>void void</type>
+      <type>void void void</type>
       <name>httpBadRequestError</name>
       <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga0e9096cf4471a400a4b27f93393b1895</anchor>
+      <anchor>ga8968edd59af5c01afe835ffd9df0b17d</anchor>
       <arglist>(HttpConn *conn, int status, cchar *fmt,...) PRINTF_ATTRIBUTE(3</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>httpBorrowConn</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga11e1e52cca2138f7aec8f66b8b8e08ca</anchor>
-      <arglist>(HttpConn *conn)</arglist>
     </member>
     <member kind="function">
       <type>bool</type>
@@ -1230,8 +1361,8 @@
       <type>HttpConn *</type>
       <name>httpCreateConn</name>
       <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>gaf3e3698311b2a1996b63bc04aa0e481f</anchor>
-      <arglist>(HttpNet *net)</arglist>
+      <anchor>ga0e542008aa70e11c5f999d5c6884b572</anchor>
+      <arglist>(HttpNet *net, bool peerCreated)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
@@ -1277,13 +1408,6 @@
     </member>
     <member kind="function">
       <type>void</type>
-      <name>httpEnableNetEvents</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga63f40de694251842784c73222fb623df</anchor>
-      <arglist>(HttpNet *net)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
       <name>httpEnableUpload</name>
       <anchorfile>group___http_conn.html</anchorfile>
       <anchor>gab8bf67adeb5cf8484998dd818f98e9c0</anchor>
@@ -1297,10 +1421,10 @@
       <arglist>(HttpConn *conn, int status, cchar *fmt,...) PRINTF_ATTRIBUTE(3</arglist>
     </member>
     <member kind="function">
-      <type>void void ssize</type>
+      <type>void void void ssize</type>
       <name>httpGetChunkSize</name>
       <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga2f528a465f215a9b8508df0dd2d1b33b</anchor>
+      <anchor>ga928527c4a5b1e99cf2e3afca1e8ac1a8</anchor>
       <arglist>(HttpConn *conn)</arglist>
     </member>
     <member kind="function">
@@ -1353,17 +1477,10 @@
       <arglist>(HttpConn *conn)</arglist>
     </member>
     <member kind="function">
-      <type>void</type>
-      <name>httpIOEvent</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>gae3e5ac2c00bb0dee853106e959faac6b</anchor>
-      <arglist>(struct HttpNet *net, MprEvent *event)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
+      <type>void void</type>
       <name>httpLimitError</name>
       <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga765e9101c729f4069e9937274970aeba</anchor>
+      <anchor>ga50ffd4fc600a673857222841718152de</anchor>
       <arglist>(HttpConn *conn, int status, cchar *fmt,...) PRINTF_ATTRIBUTE(3</arglist>
     </member>
     <member kind="function">
@@ -1389,24 +1506,10 @@
     </member>
     <member kind="function">
       <type>void</type>
-      <name>httpNetTimeout</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga63c6a6f7572ca711b3553c039e554764</anchor>
-      <arglist>(HttpNet *net)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
       <name>httpNotify</name>
       <anchorfile>group___http_conn.html</anchorfile>
       <anchor>ga7b3f62c070bd50c8fe347529d619be99</anchor>
       <arglist>(HttpConn *conn, int event, int arg)</arglist>
-    </member>
-    <member kind="function">
-      <type>bool</type>
-      <name>httpQueuesNeedService</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>gad961c20a113d182df375a7d9fb58ca3c</anchor>
-      <arglist>(HttpNet *net)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
@@ -1438,13 +1541,6 @@
     </member>
     <member kind="function">
       <type>void</type>
-      <name>httpReturnConn</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga1eea2fb67ffdc13f9ae78bde57b01d4d</anchor>
-      <arglist>(HttpConn *conn)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
       <name>httpRouteRequest</name>
       <anchorfile>group___http_conn.html</anchorfile>
       <anchor>ga38b4d85fd8306384270ad7385bdd3fe4</anchor>
@@ -1456,13 +1552,6 @@
       <anchorfile>group___http_conn.html</anchorfile>
       <anchor>ga504fab8d5e964b174bb06868ede0ef0a</anchor>
       <arglist>(HttpConn *conn)</arglist>
-    </member>
-    <member kind="function">
-      <type>bool</type>
-      <name>httpServiceQueues</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga0af7e6412cbdce0fdf1b731096162685</anchor>
-      <arglist>(HttpNet *net, int flags)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
@@ -1570,20 +1659,6 @@
       <arglist>(HttpConn *conn)</arglist>
     </member>
     <member kind="function">
-      <type>MprSocket *</type>
-      <name>httpStealSocket</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>gab6a62599342ff465c504392840d03d46</anchor>
-      <arglist>(HttpNet *net)</arglist>
-    </member>
-    <member kind="function">
-      <type>Socket</type>
-      <name>httpStealSocketHandle</name>
-      <anchorfile>group___http_conn.html</anchorfile>
-      <anchor>ga1acfae15c98426f081283fbd4a2fa869</anchor>
-      <arglist>(HttpNet *net)</arglist>
-    </member>
-    <member kind="function">
       <type>bool</type>
       <name>httpVerifyWebSocketsHandshake</name>
       <anchorfile>group___http_conn.html</anchorfile>
@@ -1673,8 +1748,8 @@
       <type>HttpAuth *</type>
       <name>httpCreateAuth</name>
       <anchorfile>group___http_auth.html</anchorfile>
-      <anchor>ga9b67b82baec4f1a4fd9d17d8a25e0d07</anchor>
-      <arglist>()</arglist>
+      <anchor>ga2cb3b292f640238b407fca4b43bc0fea</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>HttpAuthStore *</type>
@@ -2872,6 +2947,13 @@
       <arglist>(HttpQueue *q)</arglist>
     </member>
     <member kind="function">
+      <type>bool</type>
+      <name>httpProcessHeaders</name>
+      <anchorfile>group___http_rx.html</anchorfile>
+      <anchor>ga217f4e64e21d50fb25791666dd215a21</anchor>
+      <arglist>(HttpQueue *q)</arglist>
+    </member>
+    <member kind="function">
       <type>ssize</type>
       <name>httpRead</name>
       <anchorfile>group___http_rx.html</anchorfile>
@@ -3032,6 +3114,13 @@
     </member>
     <member kind="function">
       <type>void</type>
+      <name>httpFinalizeInput</name>
+      <anchorfile>group___http_tx.html</anchorfile>
+      <anchor>gab8cb40da331b8e8c23cd948ee2cff0b3</anchor>
+      <arglist>(HttpConn *conn)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
       <name>httpFinalizeOutput</name>
       <anchorfile>group___http_tx.html</anchorfile>
       <anchor>ga49edf0602dd2143b518c247f9cee8720</anchor>
@@ -3169,13 +3258,6 @@
       <anchorfile>group___http_tx.html</anchorfile>
       <anchor>ga90ec75fb3e35ce351e132d0e933e0147</anchor>
       <arglist>(HttpConn *conn, cchar *name, cchar *value, cchar *path, cchar *domain, MprTicks lifespan, int flags)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>httpSetEntityLength</name>
-      <anchorfile>group___http_tx.html</anchorfile>
-      <anchor>gaed30459991e9ceb3e3406d88f909eedd</anchor>
-      <arglist>(HttpConn *conn, MprOff len)</arglist>
     </member>
     <member kind="function">
       <type>bool</type>
@@ -3333,8 +3415,8 @@
       <type>int</type>
       <name>httpStartEndpoints</name>
       <anchorfile>group___http_endpoint.html</anchorfile>
-      <anchor>gaa44ca5ccf74181c8438b282471234624</anchor>
-      <arglist>()</arglist>
+      <anchor>gacb427481a4b51e5bbb137c8afff6c013</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
@@ -3347,8 +3429,8 @@
       <type>void</type>
       <name>httpStopEndpoints</name>
       <anchorfile>group___http_endpoint.html</anchorfile>
-      <anchor>ga4cec2f977d31166f320c791c04ddff41</anchor>
-      <arglist>()</arglist>
+      <anchor>ga76e8b03665a2f55f57124582d86fb2fd</anchor>
+      <arglist>(void)</arglist>
     </member>
   </compound>
   <compound kind="group">
@@ -3373,22 +3455,22 @@
       <type>HttpHost *</type>
       <name>httpCreateDefaultHost</name>
       <anchorfile>group___http_host.html</anchorfile>
-      <anchor>gadb6fd2b408b3ac58e44e2324b66ea33b</anchor>
-      <arglist>()</arglist>
+      <anchor>gaccae5b70de076eb89c7bdce847db253d</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>HttpHost *</type>
       <name>httpCreateHost</name>
       <anchorfile>group___http_host.html</anchorfile>
-      <anchor>ga3e6e98147b766aeff4cbfebe8146998b</anchor>
-      <arglist>()</arglist>
+      <anchor>ga2dea066eeb69184e0bb2681a1e240721</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>HttpHost *</type>
       <name>httpGetDefaultHost</name>
       <anchorfile>group___http_host.html</anchorfile>
-      <anchor>gae764c0d5e2a2a6bb13ff3dc86172fa06</anchor>
-      <arglist>()</arglist>
+      <anchor>ga562ab93aaff821e9e9eeddff4a8ce13e</anchor>
+      <arglist>(void)</arglist>
     </member>
     <member kind="function">
       <type>bool</type>

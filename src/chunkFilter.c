@@ -91,7 +91,7 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
         rx->remainingContent -= nbytes;
         if (rx->remainingContent <= 0) {
             httpSetEof(conn);
-#if KEEP
+#if HTTP_PIPELINING
             /* HTTP/1.1 pipelining is not implemented reliably by modern browsers */
             if (nbytes < len && (tail = httpSplitPacket(packet, nbytes)) != 0) {
                 httpPutPacket(conn->inputq, tail);
@@ -188,7 +188,7 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
                 return;
             }
         }
-#if KEEP
+#if HTTP_PIPELINING
         /* HTTP/1.1 pipelining is not implemented reliably by modern browsers */
         if (packet && httpGetPacketLength(packet)) {
             httpPutPacket(conn->inputq, tail);

@@ -482,7 +482,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
                 packet = ws->currentFrame;
                 content = packet->content;
             }
-#if KEEP
+#if FUTURE
             if (packet->type == WS_MSG_TEXT) {
                 /*
                     Validate the frame for fast-fail, provided the last frame does not have a partial codepoint.
@@ -1065,7 +1065,7 @@ static int validUTF8(HttpConn *conn, cchar *str, ssize len)
         c = *cp;
         type = utfTable[c];
         /*
-            KEEP. codepoint = (*state != UTF8_ACCEPT) ? (byte & 0x3fu) | (*codep << 6) : (0xff >> type) & (byte);
+            codepoint = (*state != UTF8_ACCEPT) ? (byte & 0x3fu) | (*codep << 6) : (0xff >> type) & (byte);
          */
         state = utfTable[256 + (state * 16) + type];
         if (state == UTF8_REJECT) {

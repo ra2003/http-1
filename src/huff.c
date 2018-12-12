@@ -18,7 +18,7 @@ static int decodeHuff(uchar *state, uchar *src, int len, uchar *dst, uint last);
 
 /*********************************** Code *************************************/
 
-#if KEEP
+#if FUTURE
 #if ME_64
     #if (ME_ENDIAN == ME_LITTLE_ENDIAN)
         #define encodeBuf(dst, buf) \
@@ -36,7 +36,7 @@ static int decodeHuff(uchar *state, uchar *src, int len, uchar *dst, uint last);
 #else /* 32 bit */
     #define encodeBuf(dst, buf) (*(uint *) (dst) = htonl(buf))
 #endif
-#endif
+#endif /* FUTURE */
 
 #define encodeBuf(dst, buf) (*(uint *) (dst) = htonl(buf))
 

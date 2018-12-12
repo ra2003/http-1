@@ -239,7 +239,7 @@ static int      configOss(MprSsl *ssl, int flags, char **errorMsg);
 static DH       *dhcallback(SSL *ssl, int isExport, int keyLength);
 static void     disconnectOss(MprSocket *sp);
 static ssize    flushOss(MprSocket *sp);
-static DH       *getDhKey(void);
+static DH       *getDhKey();
 static char     *getOssSession(MprSocket *sp);
 static char     *getOssState(MprSocket *sp);
 static char     *getOssError(MprSocket *sp);

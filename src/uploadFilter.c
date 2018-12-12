@@ -564,9 +564,6 @@ static int processUploadData(HttpQueue *q)
                 Normal string form data variables
              */
             data[dataLen] = '\0';
-#if KEEP
-            httpTrace(conn->trace, "upload.variables", "context", "'%s':'%s'", up->name, data);
-#endif
             key = mprUriDecode(up->name);
             data = mprUriDecode(data);
             httpSetParam(conn, key, data);

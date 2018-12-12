@@ -431,7 +431,7 @@ static HttpFrame *parseFrame(HttpQueue *q, HttpPacket *packet)
         mprAdjustBufStart(packet->content, HTTP2_FRAME_OVERHEAD);
     }
     if (frame->stream && !frame->conn) {
-#if KEEP
+#if TODO
         if (frame->stream < net->lastStream) {
             sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Closed stream being reused");
             return 0;
@@ -1691,11 +1691,6 @@ static void sendFrame(HttpQueue *q, HttpPacket *packet)
     HttpNet     *net;
 
     net = q->net;
-#if KEEP
-    if (net->goaway || net->eof || net->error) {
-        print("ABORT");
-    }
-#endif
     if (packet && !net->goaway && !net->eof && !net->error) {
         httpPutPacket(q->net->socketq, packet);
     }

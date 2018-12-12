@@ -81,7 +81,7 @@ struct HttpWebSocket;
     #define ME_SANITY_PACKET        (128 * 1024)
 #endif
 #ifndef ME_HTTP_DEFAULT_METHODS
-    #define ME_HTTP_DEFAULT_METHODS "GET,POST"          /**< Default methods for routes */
+    #define ME_HTTP_DEFAULT_METHODS "GET,POST"           /**< Default methods for routes */
 #endif
 #ifndef ME_HTTP_PORT
     #define ME_HTTP_PORT            80
@@ -577,6 +577,7 @@ PUBLIC HttpAddress *httpMonitorAddress(struct HttpNet *net, int counterIndex);
     @ingroup HttpTrace
  */
 typedef void (*HttpTraceFormatter)(struct HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *data, ssize len, cchar *fmt, va_list args);
+
 /**
     Trace logger callback
     @param trace Trace object
@@ -3040,9 +3041,12 @@ typedef void (*HttpIOCallback)(struct HttpNet *net, MprEvent *event);
 
 #define HTTP_NET_ASYNC  0x1
 
-/*
-    Control object for the network connection. The HttpConn object is for the logical connection
-    which in the case of HTTP/2 is a multiplexed stream.
+/**
+    Control object for the network connection. A network connection may multiplex many HttpConn objects that represent
+    logical streams over the connection.
+    @defgroup HttpNet HttpNet
+    @see HttpNet httpCreateNet httpDestroyNet httpIOEvent httpNetError httpServiceQueues httpSetIOCallback httpSetNetContext httpStealSocket httpStealSocketHandle httpEnableNetEvents httpNetTimeout httpGetProtocol httpGetAsync httpSetAsync httpConnectNet
+    @stability Internal
  */
 typedef struct HttpNet {
     Http            *http;                  /**< Http service object  */
@@ -3067,8 +3071,8 @@ typedef struct HttpNet {
     HttpQueue       *socketq;               /**< Queue of packets to write to the output socket (last queue) */
 
 #if ME_HTTP_HTTP2 || DOXYGEN
-    HttpHeaderTable *rxHeaders;
-    HttpHeaderTable *txHeaders;
+    HttpHeaderTable *rxHeaders;             /**< Cache of HPACK rx headers */
+    HttpHeaderTable *txHeaders;             /**< Cache of HPACK tx headers */
     HttpFrame       *frame;                 /**< Current frame being parsed */
 #endif
 
@@ -3115,6 +3119,18 @@ typedef struct HttpNet {
 } HttpNet;
 
 /**
+    Connect the network to a remote peer.
+    @param net HttpNet Network object created via #httpCreateNet
+    @param ip Remote IP address to connect to
+    @param port TCP/IP port to connect to
+    @param ssl MprSsl object that defines the SSL context
+    @return Zero if successful, otherwise a negative MPR error code.
+    @ingroup HttpNet
+    @stability Prototype
+  */
+PUBLIC int httpConnectNet(HttpNet *net, cchar *ip, int port, MprSsl *ssl);
+
+/**
     Create a network object.
     @description The network object defines the underlying network connection over which HttpConn connection streams will
     be multiplexed.
@@ -3130,11 +3146,11 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, struct HttpEndpoint *en
 
 /**
     Destroy the network object
-    @description This call closes the network socket, destroys the connection dispatcher, disconnects the HttpTx and
-        HttpRx property objects and removes the network from the HttpHost list of networks. All active stream connections
+    @description This call closes the network socket, destroys the connection dispatcher, disconnects the HttpConn
+        objects and removes the network from the HttpHost list of networks. All active stream connections
         (HttpConn) will also be destroyed. Thereafter, the garbage collector can reclaim all memory. It may be called by
         client connections at any time from a top-level event running on the connection's dispatcher. Server-side code
-        should not need to explicitly destroy the connection as it will be done automatically via httpIOEvent.
+        should not explicitly destroy the connection as it will be done automatically via httpIOEvent.
     @param net HttpNet object created via #httpCreateNet
     @ingroup HttpNet
     @stability Internal
@@ -3142,16 +3158,64 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, struct HttpEndpoint *en
 PUBLIC void httpDestroyNet(HttpNet *net);
 
 /**
+    Enable network events
+    @description Network events are automatically disabled upon receipt of an I/O event on a network connection. This
+        permits a network to process the I/O without fear of interruption by another I/O event. At the completion
+        of processing of the I/O request, the network should be re-enabled via httpEnableNetEvents. This call is
+        made for requests in #httpIOEvent. Client-side networks may need to enable network events if they are
+        running in async mode and encounter a blocking condition.
+    @param net HttpNet Network object created via #httpCreateNet
+    @ingroup HttpNet
+    @stability Evolving
+ */
+PUBLIC void httpEnableNetEvents(HttpNet *net);
+
+/**
+    Get the Http protocol variant for this network connection
+    @param net HttpNet Network object created via #httpCreateNet
+    @return HTTP/1.0, HTTP/1.1 or HTTP/2.
+    @ingroup HttpNet
+    @stability Evolving
+ */
+PUBLIC cchar *httpGetProtocol(HttpNet *net);
+
+/**
+    Get the async mode value for the network
+    @param net HttpNet object created via #httpCreateNet
+    @return True if the Network is in async mode
+    @ingroup HttpNet
+    @stability Evolving
+ */
+PUBLIC bool httpGetAsync(HttpNet *net);
+
+/**
     Respond to a HTTP I/O event
-    @description This routine responds to I/O described by the supplied eventMask.
-    If any readable data is present, it allocates a standard sized packet and reads data into this packet and passes to the input
-    queue pipeline.
+    @description This routine responds to I/O events. If any readable data is present, it allocates a standard sized
+        packet and reads data into this packet and passes to the input queue pipeline.
     @param net HttpNet object created via #httpCreateNet
     @param event Event structure
     @ingroup HttpNet
     @stability Internal
  */
 PUBLIC void httpIOEvent(struct HttpNet *net, MprEvent *event);
+
+/**
+    Test if the network is a client-side network
+    @param net HttpNet Network object created via #httpCreateNet
+    @return true if the network is client-side
+    @ingroup HttpNet
+    @stability Prototype
+  */
+#define httpIsClient(net) (net && !net->endpoint)
+
+/**
+    Test if the network is a server-side network
+    @param net HttpNet Network object created via #httpCreateNet
+    @return true if the network is server-side
+    @ingroup HttpNet
+    @stability Prototype
+  */
+#define httpIsServer(net) (net && net->endpoint)
 
 /**
     Error handling for the network.
@@ -3165,6 +3229,17 @@ PUBLIC void httpIOEvent(struct HttpNet *net, MprEvent *event);
     @stability Evolving
  */
 PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...);
+
+/**
+    Schedule a network connection timeout event on a network
+    @description This call schedules a timeout event to run serialized on the network's dispatcher. When run, it will
+        cancel all current requests on the network, disconnect the socket and issue an error to the error log.
+        This call is normally invoked by the httpTimer which runs regularly to check for timed out requests.
+    @param net HttpNet Network object created via #httpCreateNet
+    @ingroup HttpNet
+    @stability Internal
+  */
+PUBLIC void httpNetTimeout(HttpNet *net);
 
 /**
     Service pipeline queues to flow data.
@@ -3199,6 +3274,16 @@ PUBLIC void httpSetIOCallback(struct HttpNet *net, HttpIOCallback fn);
 PUBLIC bool httpQueuesNeedService(HttpNet *net);
 
 /**
+    Set the async mode value for the network
+    @param net HttpNet object created via #httpCreateNet
+    @param async Set to 1 to enable async mode
+    @return True if the network is in async mode
+    @ingroup HttpNet
+    @stability Evolving
+ */
+PUBLIC void httpSetAsync(HttpNet *net, bool async);
+
+/**
     Set the network context object
     @param net HttpNet object created via #httpCreateNet
     @param context New context object. Must be a managed memory reference.
@@ -3206,6 +3291,16 @@ PUBLIC bool httpQueuesNeedService(HttpNet *net);
     @stability Evolving
  */
 PUBLIC void httpSetNetContext(HttpNet *net, void *context);
+
+/**
+    Set the Http protocol variant for this network connection
+    @description Set the Http protocol variant to use.
+    @param net HttpNet Network object created via #httpCreateNet
+    @param protocol  Integer representing the protocol variant. Valid values are: 0 for HTTP/1.0, 1 for HTTP/1.1 and 2 for HTTP/2.
+    @ingroup HttpNet
+    @stability Evolving
+ */
+PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol);
 
 /**
     Steal a socket from a network
@@ -3237,98 +3332,6 @@ PUBLIC MprSocket *httpStealSocket(HttpNet *net);
     @stability Evolving
  */
 PUBLIC Socket httpStealSocketHandle(HttpNet *net);
-
-/**
-    Enable network events
-    @description Network events are automatically disabled upon receipt of an I/O event on a network connection. This
-        permits a network to process the I/O without fear of interruption by another I/O event. At the completion
-        of processing of the I/O request, the network should be re-enabled via httpEnableNetEvents. This call is
-        made for requests in #httpIOEvent. Client-side networks may need to enable network events if they are
-        running in async mode and encounter a blocking condition.
-    @param net HttpNet Network object created via #httpCreateNet
-    @ingroup HttpNet
-    @stability Evolving
- */
-PUBLIC void httpEnableNetEvents(HttpNet *net);
-
-/**
-    Schedule a network connection timeout event on a network
-    @description This call schedules a timeout event to run serialized on the network's dispatcher. When run, it will
-        cancel all current requests on the network, disconnect the socket and issue an error to the error log.
-        This call is normally invoked by the httpTimer which runs regularly to check for timed out requests.
-    @param net HttpNet Network object created via #httpCreateNet
-    @ingroup HttpNet
-    @stability Internal
-  */
-PUBLIC void httpNetTimeout(HttpNet *net);
-
-/**
-    Set the Http protocol variant for this network connection
-    @description Set the Http protocol variant to use.
-    @param net HttpNet Network object created via #httpCreateNet
-    @param protocol  Integer representing the protocol variant. Valid values are: 0 for HTTP/1.0, 1 for HTTP/1.1 and 2 for HTTP/2.
-    @ingroup HttpNet
-    @stability Evolving
- */
-PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol);
-
-/**
-    Get the Http protocol variant for this network connection
-    @param net HttpNet Network object created via #httpCreateNet
-    @return HTTP/1.0, HTTP/1.1 or HTTP/2.
-    @ingroup HttpNet
-    @stability Evolving
- */
-PUBLIC cchar *httpGetProtocol(HttpNet *net);
-
-/**
-    Get the async mode value for the network
-    @param net HttpNet object created via #httpCreateNet
-    @return True if the Network is in async mode
-    @ingroup HttpNet
-    @stability Evolving
- */
-PUBLIC bool httpGetAsync(HttpNet *net);
-
-/**
-    Set the async mode value for the network
-    @param net HttpNet object created via #httpCreateNet
-    @param async Set to 1 to enable async mode
-    @return True if the network is in async mode
-    @ingroup HttpNet
-    @stability Evolving
- */
-PUBLIC void httpSetAsync(HttpNet *net, bool async);
-
-/**
-    Test if the network is a server-side network
-    @param net HttpNet Network object created via #httpCreateNet
-    @return true if the network is server-side
-    @ingroup HttpNet
-    @stability Prototype
-  */
-#define httpIsServer(net) (net && net->endpoint)
-
-/**
-    Test if the network is a client-side network
-    @param net HttpNet Network object created via #httpCreateNet
-    @return true if the network is client-side
-    @ingroup HttpNet
-    @stability Prototype
-  */
-#define httpIsClient(net) (net && !net->endpoint)
-
-/**
-    Connect the network to a remote peer.
-    @param net HttpNet Network object created via #httpCreateNet
-    @param ip Remote IP address to connect to
-    @param port TCP/IP port to connect to
-    @param ssl MprSsl object that defines the SSL context
-    @return Zero if successful, otherwise a negative MPR error code.
-    @ingroup HttpNet
-    @stability Prototype
-  */
-PUBLIC int httpConnectNet(HttpNet *net, cchar *ip, int port, MprSsl *ssl);
 
 /*
     Internal
@@ -3403,10 +3406,11 @@ typedef int (*HttpHeadersCallback)(void *arg);
 PUBLIC void httpSetHeadersCallback(struct HttpConn *conn, HttpHeadersCallback fn, void *arg);
 
 /**
-    Http Connections
-    @description The HttpConn object represents a TCP/IP connection to the client. A connection object is created for
-        each socket connection initiated by the client. One HttpConn object may service many Http requests due to
-        HTTP/1.1 keep-alive.
+    Http request stream connections
+    @description The HttpConn object represents a logical request stream to a peer.
+        A connection object is created for each request transaction. A connection object uses the underlying HttpNet network object. If using HTTP/2 there may be multiple HttpConn objects multiplexed over a single HttpNet object.
+        If using HTTP/1, a single HttpConn object may service many Http requests due to HTTP/1.1 keep-alive.
+        \n\n
         Each connection has a request timeout and inactivity timeout. These can be set via #httpSetTimeout.
         The set of APIs that block and yield to the garbage collector are:
         <ul>
@@ -3420,14 +3424,14 @@ PUBLIC void httpSetHeadersCallback(struct HttpConn *conn, HttpHeadersCallback fn
         </ul>
         When these APIs block and yield, the garbage collector may reclaim allocated memory that does not have a
         managed reference. Read Appweb memory allocation at https://embedthis.com/appweb/doc/ref/memory.html.
-
-        Some of these fields are replicated from the HttpNet object for API compatibility.
+        \n\n
+        Some of the HttpConn fields are replicated from the HttpNet object for API compatibility.
 
     @defgroup HttpConn HttpConn
     @see HttpConn HttpEnvCallback HttpGetPassword HttpListenCallback HttpNotifier HttpQueue HttpRedirectCallback
         HttpRx HttpStage HttpTx HtttpListenCallback httpCallEvent httpFinalizeConnector httpConnTimeout
         httpCreateConn httpCreateRxPipeline httpCreateTxPipeline httpDestroyConn httpClosePipeline httpDiscardData
-        httpDisconnect httpEnableUpload httpError httpIOEvent httpGetChunkSize httpGetConnContext
+        httpDisconnect httpEnableUpload httpError httpGetChunkSize httpGetConnContext
         httpGetConnHost httpGetError httpGetExt httpGetKeepAliveCount httpGetWriteQueueCount httpMatchHost httpMemoryError
         httpAfterEvent httpResetClientConn httpResetCredentials httpRouteRequest httpRunHandlerReady httpService
         httpSetChunkSize httpSetConnContext httpSetConnHost httpSetConnNotifier httpSetCredentials
@@ -3515,6 +3519,48 @@ typedef struct HttpConn {
 } HttpConn;
 
 /**
+    Borrow a network connection
+    @description Borrow the network from Http. This effectively gains an exclusive loan of the network so that it
+    cannot be destroyed while the loan is active. After the loan is complete, you must call return the network
+    by calling #httpReturnNet. Otherwise the network will not be freed and memory will leak.
+    \n\n
+    The httpBorrowNet routine is used to stabilize a network while interacting with some outside service.
+    Without this routine, the network could be destroyed while waiting. Many things can happen while waiting.
+    For example: the client could disconnect or the network connection could timeout. These events will still be
+    serviced while the network is borrowed, but the network object will not be destroyed.
+    \n\n
+    While borrowed, you must not access the network object using foreign / non-MPR threads. If you need to do this,
+    use #mprCreateEvent to schedule an event to run on the networks's event dispatcher.
+    This is essential to serialize access to the network object.
+    \n\n
+    Before returning from the event callback, you must call #httpReturnNet to end the exclusive loan.
+    This restores normal processing of the connection and enables any required I/O events.
+    \n\n
+    @param net HttpNet object created via #httpCreateNet
+    @ingroup HttpNet
+    @stability Prototype
+ */
+PUBLIC void httpBorrowNet(HttpNet *net);
+
+/**
+    Return a borrowed a network connection
+    @description Returns a borrowed network object back to the Http engine. This ends the exclusive loan of the
+        network so that the current request can be completed. It also enables I/O events based on the
+        current state of the network.
+    \n\n
+    While the network is borrowed, you must not access the network using foreign / non-MPR threads.
+    Use #mprCreateEvent to schedule an event to run on the network's event dispatcher. This is
+    essential to serialize access to the network object.
+    \n\n
+    You should only call this routine (once) after calling #httpBorrowNet.
+    \n\n
+    @param net HttpNet object created via #httpCreateNet
+    @ingroup HttpNet
+    @stability Prototype
+ */
+PUBLIC void httpReturnNet(HttpNet *net);
+
+/**
     Destroy the request pipeline.
     @description This is called at the conclusion of a request.
     @param conn HttpConn object created via #httpCreateConn
@@ -3528,38 +3574,13 @@ PUBLIC void httpClosePipeline(HttpConn *conn);
 #define HTTP_PARSE_TIMEOUT          3
 
 /**
-    Borrow a connection
-    @description Borrow the connection from Http. This effectively gains an exclusive loan of the connection so that it
-    cannot be destroyed while the loan is active. After the loan is complete, you must call return the connection
-    by calling #httpReturnConn. Otherwise the connection will not be freed and memory will leak.
-    \n\n
-    The httpBorrowConn routine is used to stabilize a connection while interacting with some outside service.
-    Without this routine, the connection could be destroyed while waiting. Many things can happen while waiting.
-    For example: the client could disconnect or the connection could timeout. These events will still be serviced
-    while the connection is borrowed, but the connection object will not be destroyed.
-    \n\n
-    While borrowed, you must not access the connection using foreign / non-MPR threads. If you need to do this,
-    use #mprCreateEvent to schedule an event to run on the connection's event dispatcher.
-    This is essential to serialize access to the connection object.
-    Inside the event callback, you should first check the connection state via HttpConn.state to ensure the request
-    is still active. If the request has completed, the state will be HTTP_STATE_COMPLETE.
-    \n\n
-    Before returning from the event callback, you must call #httpReturnConn to end the exclusive loan.
-    This restores normal processing of the connection and enables any required I/O events.
-    \n\n
-    @param conn HttpConn object created via #httpCreateConn
-    @ingroup HttpConn
-    @stability Prototype
- */
-PUBLIC void httpBorrowConn(HttpConn *conn);
-
-/**
     Create a connection object.
     @description Most interactions with the Http library are via a connection object. It is used for server-side
         communications when responding to client requests and it is used to initiate outbound client requests.
         In HTTP/2 networks, connections are multiplexed onto HttpNet objects.
     @param net Network object owning the connection. Can be NULL and a HttpNetwork object will be transparently
         created and defined as HttpConn.net.
+    @param peerCreated Set to true if the connection is being created in response to an incoming peer request.
     @returns A new connection object
     @ingroup HttpConn
     @stability Internal
@@ -3793,7 +3814,7 @@ PUBLIC struct HttpHost *httpMatchHost(HttpNet *net, cchar *hostname);
 PUBLIC MprSsl *httpMatchSsl(MprSocket *sp, cchar *hostname);
 
 /**
-    Signal a memory allocation error
+    Signal a memory allocation error in a response to the peer
     @param conn HttpConn connection object created via #httpCreateConn
     @ingroup HttpConn
     @stability Stable
@@ -3876,24 +3897,6 @@ PUBLIC bool httpRequestExpired(HttpConn *conn, MprTicks timeout);
     @stability Stable
  */
 PUBLIC void httpResetCredentials(HttpConn *conn);
-
-/**
-    Return a borrowed a connection
-    @description Returns a borrowed connection back to the Http engine. This ends the exclusive loan of the
-        connection so that the current request can be completed. It also enables I/O events based on the
-        current state of the connection.
-    \n\n
-    While the connection is borrowed, you must not access the connection using foreign / non-MPR threads.
-    Use #mprCreateEvent to schedule an event to run on the connection's event dispatcher. This is
-    essential to serialize access to the connection object.
-    \n\n
-    You should only call this routine (once) after calling #httpBorrowConn.
-    \n\n
-    @param conn HttpConn object created via #httpCreateConn
-    @ingroup HttpConn
-    @stability Prototype
- */
-PUBLIC void httpReturnConn(HttpConn *conn);
 
 /**
     Route the request and select that matching route and handle to process the request.
@@ -8383,7 +8386,7 @@ PUBLIC bool httpWebSocketOrderlyClosed(HttpConn *conn);
  */
 
 typedef struct HttpDir {
-#if KEEP
+#if DIR_DIRECTIVES
     MprList         *dirList;
     cchar           *defaultIcon;
     MprList         *extList;

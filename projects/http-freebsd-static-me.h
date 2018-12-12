@@ -102,6 +102,9 @@
 #ifndef ME_NAME
     #define ME_NAME "http"
 #endif
+#ifndef ME_OPENSSL_VERSION
+    #define ME_OPENSSL_VERSION "1.0"
+#endif
 #ifndef ME_PREFIXES
     #define ME_PREFIXES "install-prefixes"
 #endif

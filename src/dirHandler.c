@@ -526,7 +526,7 @@ static int matchDirPattern(cchar *pattern, cchar *file)
 }
 
 
-#if KEEP
+#if DIR_DIRECTIVES
 static int addIconDirective(MaState *state, cchar *key, cchar *value)
 {
     if (!maTokenize(state, value, "%S %W", &path, &dir->extList)) {
@@ -558,7 +558,7 @@ static int indexIgnoreDirective(MaState *state, cchar *key, cchar *value)
 static void manageDir(HttpDir *dir, int flags)
 {
     if (flags & MPR_MANAGE_MARK) {
-#if KEEP
+#if DIR_DIRECTIVES
         mprMark(dir->dirList);
         mprMark(dir->defaultIcon);
         mprMark(dir->extList);

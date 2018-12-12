@@ -211,39 +211,45 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
 /*
     Flush queue data toward the connector by scheduling the queue and servicing all scheduled queues.
     Return true if there is room for more data. If blocking is requested, the call will block until
-    the queue count falls below the queue max. WARNING: Be very careful when using blocking == true.
-    Should only be used by end applications and not by middleware.
-    NOTE: may return early if the inactivityTimeout expires.
+    the queue count falls below the queue max. NOTE: may return early if the inactivityTimeout expires.
     WARNING: may yield.
  */
 PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 {
     HttpNet     *net;
+    HttpConn    *conn;
+    MprTicks    timeout;
+    int         events;
 
     net = q->net;
+    conn = q->conn;
 
     /*
-        Initiate flushing
+        Initiate flushing. For HTTP/2 we must process incoming window update frames, so run any pending IO events.
      */
     httpScheduleQueue(q);
     httpServiceQueues(net, flags);
+    mprWaitForEvent(conn->dispatcher, 0, mprGetEventMark(conn->dispatcher));
 
-    if (flags & HTTP_BLOCK) {
-        /*
-            Blocking mode: Fully drain the pipeline. This blocks until the connector has written all the data
-            to the O/S socket.
-         */
-        while (net->socketq->count > 0 || net->socketq->ioCount) {
-            if (net->error) {
-                break;
+    if (net->error) {
+        return 1;
+    }
+
+    while (q->count > 0 && !conn->error && !net->error) {
+        timeout = (flags & HTTP_BLOCK) ? conn->limits->inactivityTimeout : 0;
+        if ((events = mprWaitForSingleIO((int) net->sock->fd, MPR_READABLE | MPR_WRITABLE, timeout)) != 0) {
+            conn->lastActivity = net->lastActivity = net->http->now;
+            if (events & MPR_WRITABLE) {
+                net->lastActivity = net->http->now;
+                httpResumeQueue(net->socketq);
+                httpScheduleQueue(net->socketq);
+                httpServiceQueues(net, flags);
             }
-            if (!mprWaitForSingleIO((int) net->sock->fd, MPR_WRITABLE, net->limits->inactivityTimeout)) {
-                break;
-            }
-            net->lastActivity = net->http->now;
-            httpResumeQueue(net->socketq);
-            httpScheduleQueue(net->socketq);
-            httpServiceQueues(net, flags);
+            //  MOB for HTTP/2 window update messages
+            mprWaitForEvent(conn->dispatcher, 0, mprGetEventMark(conn->dispatcher));
+        }
+        if (!(flags & HTTP_BLOCK)) {
+            break;
         }
     }
     return (q->count < q->max) ? 1 : 0;

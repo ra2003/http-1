@@ -17,13 +17,13 @@
 /********************************** Forwards **********************************/
 
 static HttpPacket *selectBytes(HttpQueue *q, HttpPacket *packet);
-static void createRangeBoundary(HttpConn *conn);
-static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range);
-static HttpPacket *createFinalRangePacket(HttpConn *conn);
+static void createRangeBoundary(HttpStream *stream);
+static HttpPacket *createRangePacket(HttpStream *stream, HttpRange *range);
+static HttpPacket *createFinalRangePacket(HttpStream *stream);
 static void manageRange(HttpRange *range, int flags);
 static void outgoingRangeService(HttpQueue *q);
-static bool fixRangeLength(HttpConn *conn, HttpQueue *q);
-static int matchRange(HttpConn *conn, HttpRoute *route, int dir);
+static bool fixRangeLength(HttpStream *stream, HttpQueue *q);
+static int matchRange(HttpStream *stream, HttpRoute *route, int dir);
 static void startRange(HttpQueue *q);
 
 /*********************************** Code *************************************/
@@ -43,7 +43,7 @@ PUBLIC int httpOpenRangeFilter()
 }
 
 
-PUBLIC HttpRange *httpCreateRange(HttpConn *conn, MprOff start, MprOff end)
+PUBLIC HttpRange *httpCreateRange(HttpStream *stream, MprOff start, MprOff end)
 {
     HttpRange     *range;
 
@@ -68,12 +68,12 @@ static void manageRange(HttpRange *range, int flags)
 /*
     This is called twice: once for TX and once for RX
  */
-static int matchRange(HttpConn *conn, HttpRoute *route, int dir)
+static int matchRange(HttpStream *stream, HttpRoute *route, int dir)
 {
-    assert(conn->rx);
+    assert(stream->rx);
 
-    httpSetHeader(conn, "Accept-Ranges", "bytes");
-    if ((dir & HTTP_STAGE_TX) && conn->tx->outputRanges) {
+    httpSetHeader(stream, "Accept-Ranges", "bytes");
+    if ((dir & HTTP_STAGE_TX) && stream->tx->outputRanges) {
         return HTTP_ROUTE_OK;
     }
     return HTTP_ROUTE_OMIT_FILTER;
@@ -82,11 +82,11 @@ static int matchRange(HttpConn *conn, HttpRoute *route, int dir)
 
 static void startRange(HttpQueue *q)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpTx      *tx;
 
-    conn = q->conn;
-    tx = conn->tx;
+    stream = q->stream;
+    tx = stream->tx;
     /*
         The httpContentNotModified routine can set outputRanges to zero if returning not-modified.
      */
@@ -99,7 +99,7 @@ static void startRange(HttpQueue *q)
             More than one range so create a range boundary (like chunking)
          */
         if (tx->outputRanges->next) {
-            createRangeBoundary(conn);
+            createRangeBoundary(stream);
         }
     }
 }
@@ -108,17 +108,17 @@ static void startRange(HttpQueue *q)
 static void outgoingRangeService(HttpQueue *q)
 {
     HttpPacket  *packet;
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpTx      *tx;
 
-    conn = q->conn;
-    tx = conn->tx;
+    stream = q->stream;
+    tx = stream->tx;
 
     if (!(q->flags & HTTP_QUEUE_SERVICED)) {
         /*
             The httpContentNotModified routine can set outputRanges to zero if returning not-modified.
          */
-        if (!fixRangeLength(conn, q)) {
+        if (!fixRangeLength(stream, q)) {
             if (!q->servicing) {
                 httpRemoveQueue(q);
             }
@@ -133,7 +133,7 @@ static void outgoingRangeService(HttpQueue *q)
             }
         } else if (packet->flags & HTTP_PACKET_END) {
             if (tx->rangeBoundary) {
-                httpPutPacketToNext(q, createFinalRangePacket(conn));
+                httpPutPacketToNext(q, createFinalRangePacket(stream));
             }
         }
         if (!httpWillNextQueueAcceptPacket(q, packet)) {
@@ -148,13 +148,13 @@ static void outgoingRangeService(HttpQueue *q)
 static HttpPacket *selectBytes(HttpQueue *q, HttpPacket *packet)
 {
     HttpRange   *range;
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpTx      *tx;
     MprOff      endPacket, length, gap, span;
     ssize       count;
 
-    conn = q->conn;
-    tx = conn->tx;
+    stream = q->stream;
+    tx = stream->tx;
     
     if ((range = tx->currentRange) == 0) {
         return 0;
@@ -198,7 +198,7 @@ static HttpPacket *selectBytes(HttpQueue *q, HttpPacket *packet)
                 httpPutBackPacket(q, httpSplitPacket(packet, count));
             }
             if (tx->rangeBoundary) {
-                httpPutPacketToNext(q, createRangePacket(conn, range));
+                httpPutPacketToNext(q, createRangePacket(stream, range));
             }
             tx->rangePos += count;
             if (tx->rangePos >= range->end) {
@@ -214,13 +214,13 @@ static HttpPacket *selectBytes(HttpQueue *q, HttpPacket *packet)
 /*
     Create a range boundary packet
  */
-static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range)
+static HttpPacket *createRangePacket(HttpStream *stream, HttpRange *range)
 {
     HttpPacket  *packet;
     HttpTx      *tx;
     char        *length;
 
-    tx = conn->tx;
+    tx = stream->tx;
 
     length = (tx->entityLength >= 0) ? itos(tx->entityLength) : "*";
     packet = httpCreatePacket(HTTP_RANGE_BUFSIZE);
@@ -236,12 +236,12 @@ static HttpPacket *createRangePacket(HttpConn *conn, HttpRange *range)
 /*
     Create a final range packet that follows all the data
  */
-static HttpPacket *createFinalRangePacket(HttpConn *conn)
+static HttpPacket *createFinalRangePacket(HttpStream *stream)
 {
     HttpPacket  *packet;
     HttpTx      *tx;
 
-    tx = conn->tx;
+    tx = stream->tx;
 
     packet = httpCreatePacket(HTTP_RANGE_BUFSIZE);
     packet->flags |= HTTP_PACKET_RANGE | HTTP_PACKET_DATA;
@@ -253,29 +253,29 @@ static HttpPacket *createFinalRangePacket(HttpConn *conn)
 /*
     Create a range boundary. This is required if more than one range is requested.
  */
-static void createRangeBoundary(HttpConn *conn)
+static void createRangeBoundary(HttpStream *stream)
 {
     HttpTx      *tx;
     int         when;
 
-    tx = conn->tx;
+    tx = stream->tx;
     assert(tx->rangeBoundary == 0);
-    when = (int) conn->http->now;
-    tx->rangeBoundary = sfmt("%08X%08X", PTOI(tx) + PTOI(conn) * when, when);
+    when = (int) stream->http->now;
+    tx->rangeBoundary = sfmt("%08X%08X", PTOI(tx) + PTOI(stream) * when, when);
 }
 
 
 /*
     Ensure all the range limits are within the entity size limits. Fixup negative ranges.
  */
-static bool fixRangeLength(HttpConn *conn, HttpQueue *q)
+static bool fixRangeLength(HttpStream *stream, HttpQueue *q)
 {
     HttpTx      *tx;
     HttpRange   *range;
     MprOff      length;
     cchar       *value;
 
-    tx = conn->tx;
+    tx = stream->tx;
     length = tx->entityLength ? tx->entityLength : tx->length;
     if (length <= 0) {
         if ((value = mprLookupKey(tx->headers, "Content-Length")) != 0) {

@@ -336,7 +336,7 @@ PUBLIC void httpSimpleTraceFormatter(HttpTrace *trace, cchar *event, cchar *type
  */
 PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, cchar *type, cchar *event, int flags, cchar *data, ssize len, cchar *msg, va_list args)
 {
-    HttpConn    *conn;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpTx      *tx;
     MprBuf      *buf;
@@ -348,15 +348,15 @@ PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, cchar *type, cchar *event
     assert(type && *type);
     assert(event && *event);
 
-    conn = (HttpConn*) data;
-    if (!conn || len != 0) {
+    stream = (HttpStream*) data;
+    if (!stream || len != 0) {
         return;
     }
     if (!smatch(event, "result")) {
         return;
     }
-    rx = conn->rx;
-    tx = conn->tx;
+    rx = stream->rx;
+    tx = stream->tx;
     fmt = trace->format;
     if (fmt == 0 || fmt[0] == '\0') {
         fmt = ME_HTTP_LOG_FORMAT;
@@ -371,11 +371,11 @@ PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, cchar *type, cchar *event
         }
         switch (c) {
         case 'a':                           /* Remote IP */
-            mprPutStringToBuf(buf, conn->ip);
+            mprPutStringToBuf(buf, stream->ip);
             break;
 
         case 'A':                           /* Local IP */
-            mprPutStringToBuf(buf, conn->sock->listenSock->ip);
+            mprPutStringToBuf(buf, stream->sock->listenSock->ip);
             break;
 
         case 'b':
@@ -391,7 +391,7 @@ PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, cchar *type, cchar *event
             break;
 
         case 'h':                           /* Remote host */
-            mprPutStringToBuf(buf, conn->ip);
+            mprPutStringToBuf(buf, stream->ip);
             break;
 
         case 'l':                           /* user identity - unknown */
@@ -407,7 +407,7 @@ PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, cchar *type, cchar *event
             break;
 
         case 'r':                           /* First line of request */
-            mprPutToBuf(buf, "%s %s %s", rx->method, rx->uri, httpGetProtocol(conn->net));
+            mprPutToBuf(buf, "%s %s %s", rx->method, rx->uri, httpGetProtocol(stream->net));
             break;
 
         case 's':                           /* Response code */
@@ -422,7 +422,7 @@ PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, cchar *type, cchar *event
             break;
 
         case 'u':                           /* Remote username */
-            mprPutStringToBuf(buf, conn->username ? conn->username : "-");
+            mprPutStringToBuf(buf, stream->username ? stream->username : "-");
             break;
 
         case '{':                           /* Header line "{header}i" */

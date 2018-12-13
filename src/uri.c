@@ -9,7 +9,7 @@
 
 /********************************** Forwards **********************************/
 
-static cchar *expandRouteName(HttpConn *conn, cchar *routeName);
+static cchar *expandRouteName(HttpStream *stream, cchar *routeName);
 static int getPort(HttpUri *uri);
 static int getDefaultPort(cchar *scheme);
 static void manageUri(HttpUri *uri, int flags);
@@ -672,7 +672,7 @@ PUBLIC char *httpNormalizeUriPath(cchar *pathArg)
 }
 
 
-PUBLIC HttpUri *httpResolveUri(HttpConn *conn, HttpUri *base, HttpUri *other)
+PUBLIC HttpUri *httpResolveUri(HttpStream *stream, HttpUri *base, HttpUri *other)
 {
     HttpHost        *host;
     HttpEndpoint    *endpoint;
@@ -701,7 +701,7 @@ PUBLIC HttpUri *httpResolveUri(HttpConn *conn, HttpUri *base, HttpUri *other)
         if (other->port) {
             current->port = other->port;
         } else {
-            host = conn ? conn->host : httpGetDefaultHost();
+            host = stream ? stream->host : httpGetDefaultHost();
             endpoint = smatch(current->scheme, "https") ? host->secureEndpoint : host->defaultEndpoint;
             if (endpoint) {
                 current->port = endpoint->port;
@@ -732,7 +732,7 @@ PUBLIC HttpUri *httpResolveUri(HttpConn *conn, HttpUri *base, HttpUri *other)
 }
 
 
-PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
+PUBLIC HttpUri *httpLinkUri(HttpStream *stream, cchar *target, MprHash *options)
 {
     HttpRoute       *route, *lroute;
     HttpRx          *rx;
@@ -740,9 +740,9 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
     cchar           *routeName, *action, *controller, *originalAction, *tplate;
     char            *rest;
 
-    assert(conn);
+    assert(stream);
 
-    rx = conn->rx;
+    rx = stream->rx;
     route = rx->route;
     controller = 0;
 
@@ -783,7 +783,7 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
             if (controller) {
                 httpSetOption(options, "controller", controller);
             } else {
-                controller = httpGetParam(conn, "controller", 0);
+                controller = httpGetParam(stream, "controller", 0);
             }
             if (action == 0 || *action == '\0') {
                 action = "list";
@@ -804,16 +804,16 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
          */
         if ((tplate = httpGetOption(options, "template", 0)) == 0) {
             if ((routeName = httpGetOption(options, "route", 0)) != 0) {
-                routeName = expandRouteName(conn, routeName);
-                lroute = httpLookupRoute(conn->host, routeName);
+                routeName = expandRouteName(stream, routeName);
+                lroute = httpLookupRoute(stream->host, routeName);
             } else {
                 lroute = 0;
             }
             if (!lroute) {
-                if ((lroute = httpLookupRoute(conn->host, actionRoute(route, controller, action))) == 0) {
-                    if ((lroute = httpLookupRoute(conn->host, actionRoute(route, "{controller}", action))) == 0) {
-                        if ((lroute = httpLookupRoute(conn->host, actionRoute(route, controller, "default"))) == 0) {
-                            lroute = httpLookupRoute(conn->host, actionRoute(route, "{controller}", "default"));
+                if ((lroute = httpLookupRoute(stream->host, actionRoute(route, controller, action))) == 0) {
+                    if ((lroute = httpLookupRoute(stream->host, actionRoute(route, "{controller}", action))) == 0) {
+                        if ((lroute = httpLookupRoute(stream->host, actionRoute(route, controller, "default"))) == 0) {
+                            lroute = httpLookupRoute(stream->host, actionRoute(route, "{controller}", "default"));
                         }
                     }
                 }
@@ -827,7 +827,7 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
             target = "/";
         }
     }
-    target = httpTemplate(conn, tplate, options);
+    target = httpTemplate(stream, tplate, options);
 
     if ((uri = httpCreateUri(target, 0)) == 0) {
         return 0;
@@ -836,21 +836,21 @@ PUBLIC HttpUri *httpLinkUri(HttpConn *conn, cchar *target, MprHash *options)
 }
 
 
-PUBLIC char *httpLink(HttpConn *conn, cchar *target)
+PUBLIC char *httpLink(HttpStream *stream, cchar *target)
 {
-    return httpLinkEx(conn, target, 0);
+    return httpLinkEx(stream, target, 0);
 }
 
 
-PUBLIC char *httpLinkEx(HttpConn *conn, cchar *target, MprHash *options)
+PUBLIC char *httpLinkEx(HttpStream *stream, cchar *target, MprHash *options)
 {
-    return httpUriToString(httpLinkUri(conn, target, options), 0);
+    return httpUriToString(httpLinkUri(stream, target, options), 0);
 }
 
 
-PUBLIC char *httpLinkAbs(HttpConn *conn, cchar *target)
+PUBLIC char *httpLinkAbs(HttpStream *stream, cchar *target)
 {
-    return httpUriToString(httpResolveUri(conn, conn->rx->parsedUri, httpLinkUri(conn, target, 0)), 0);
+    return httpUriToString(httpResolveUri(stream, stream->rx->parsedUri, httpLinkUri(stream, target, 0)), 0);
 }
 
 
@@ -953,13 +953,13 @@ static void trimPathToDirname(HttpUri *uri)
 /*
     Limited expansion of route names. Support ~ and ${app} at the start of the route name
  */
-static cchar *expandRouteName(HttpConn *conn, cchar *routeName)
+static cchar *expandRouteName(HttpStream *stream, cchar *routeName)
 {
     if (routeName[0] == '~') {
-        return sjoin(httpGetRouteTop(conn), &routeName[1], NULL);
+        return sjoin(httpGetRouteTop(stream), &routeName[1], NULL);
     }
     if (sstarts(routeName, "${app}")) {
-        return sjoin(httpGetRouteTop(conn), &routeName[6], NULL);
+        return sjoin(httpGetRouteTop(stream), &routeName[6], NULL);
     }
     return routeName;
 }

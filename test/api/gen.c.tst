@@ -49,7 +49,7 @@ static void basicHttpGet()
 {
     Http        *http;
     HttpNet     *net;
-    HttpConn    *conn;
+    HttpStream    *stream;
     MprOff      length;
     int         rc, status;
 
@@ -59,18 +59,18 @@ static void basicHttpGet()
         httpStartTracing("stdout:5");
     }
     net = httpCreateNet(NULL, NULL, 0, 0);
-    conn = httpCreateConn(net, 0);
-    rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
+    stream = httpCreateStream(net, 0);
+    rc = httpConnect(stream, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
-        httpWait(conn, HTTP_STATE_COMPLETE, timeout);
-        status = httpGetStatus(conn);
+        httpWait(stream, HTTP_STATE_COMPLETE, timeout);
+        status = httpGetStatus(stream);
         ttrue(status == 200 || status == 302);
         if (status != 200 && status != 302) {
             mprLog("http test", 0, "HTTP response status %d", status);
         }
-        ttrue(httpGetError(conn) != 0);
-        length = httpGetContentLength(conn);
+        ttrue(httpGetError(stream) != 0);
+        length = httpGetContentLength(stream);
         ttrue(length != 0);
     }
     httpDestroy();
@@ -81,7 +81,7 @@ static void stealSocket()
 {
     Http        *http;
     HttpNet     *net;
-    HttpConn    *conn;
+    HttpStream  *stream;
     MprSocket   *sp, *prior;
     Socket      fd;
     int         rc, priorState;
@@ -93,21 +93,21 @@ static void stealSocket()
         Test httpStealSocket
      */
     net = httpCreateNet(NULL, NULL, 0, 0);
-    conn = httpCreateConn(net, 0);
-    ttrue(conn != 0);
-    rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
+    stream = httpCreateStream(net, 0);
+    ttrue(stream != 0);
+    rc = httpConnect(stream, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
-        ttrue(conn->sock != 0);
-        ttrue(conn->sock->fd != INVALID_SOCKET);
-        prior = conn->sock;
-        sp = httpStealSocket(conn->net);
-        ttrue(sp != conn->sock);
-        ttrue(prior == conn->sock);
+        ttrue(stream->sock != 0);
+        ttrue(stream->sock->fd != INVALID_SOCKET);
+        prior = stream->sock;
+        sp = httpStealSocket(stream->net);
+        ttrue(sp != stream->sock);
+        ttrue(prior == stream->sock);
 
-        ttrue(conn->state == HTTP_STATE_CONNECTED);
+        ttrue(stream->state == HTTP_STATE_CONNECTED);
         ttrue(sp->fd != INVALID_SOCKET);
-        ttrue(conn->sock->fd == INVALID_SOCKET);
+        ttrue(stream->sock->fd == INVALID_SOCKET);
         mprCloseSocket(sp, 0);
     }
 
@@ -116,18 +116,18 @@ static void stealSocket()
         Test httpStealSocketHandle
      */
     net = httpCreateNet(NULL, NULL, 0, 0);
-    conn = httpCreateConn(net, 0);
-    ttrue(conn != 0);
-    rc = httpConnect(conn, "GET", tget("TM_HTTP", ":4100"), NULL);
+    stream = httpCreateStream(net, 0);
+    ttrue(stream != 0);
+    rc = httpConnect(stream, "GET", tget("TM_HTTP", ":4100"), NULL);
     ttrue(rc >= 0);
     if (rc >= 0) {
-        ttrue(conn->sock != 0);
-        ttrue(conn->sock->fd != INVALID_SOCKET);
-        priorState = conn->state;
-        fd = httpStealSocketHandle(conn->net);
-        ttrue(conn->state == priorState);
+        ttrue(stream->sock != 0);
+        ttrue(stream->sock->fd != INVALID_SOCKET);
+        priorState = stream->state;
+        fd = httpStealSocketHandle(stream->net);
+        ttrue(stream->state == priorState);
         ttrue(fd != INVALID_SOCKET);
-        ttrue(conn->sock->fd == INVALID_SOCKET);
+        ttrue(stream->sock->fd == INVALID_SOCKET);
         closesocket(fd);
     }
     httpDestroy();

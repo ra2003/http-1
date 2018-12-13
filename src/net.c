@@ -53,7 +53,7 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     } else {
         net->limits = http->clientLimits;
         net->trace = http->trace;
-        net->nextStream = 1;
+        net->nextStreamID = 1;
     }
     net->port = -1;
     net->async = (flags & HTTP_NET_ASYNC) ? 1 : 0;
@@ -89,7 +89,7 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     } else {
         net->dispatcher = mprGetDispatcher();
     }
-    net->connections = mprCreateList(0, 0);
+    net->streams = mprCreateList(0, 0);
 
     if (protocol >= 0) {
         httpSetNetProtocol(net, protocol);
@@ -108,14 +108,14 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
  */
 PUBLIC void httpDestroyNet(HttpNet *net)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     int         next;
 
     if (!net->destroyed && !net->borrowed) {
         if (httpIsServer(net)) {
-            for (ITERATE_ITEMS(net->connections, conn, next)) {
-                mprRemoveItem(net->connections, conn);
-                httpDestroyConn(conn);
+            for (ITERATE_ITEMS(net->streams, stream, next)) {
+                mprRemoveItem(net->streams, stream);
+                httpDestroyStream(stream);
                 next--;
             }
             httpMonitorNetEvent(net, HTTP_COUNTER_ACTIVE_CONNECTIONS, -1);
@@ -140,7 +140,7 @@ static void manageNet(HttpNet *net, int flags)
 
     if (flags & MPR_MANAGE_MARK) {
         mprMark(net->address);
-        mprMark(net->connections);
+        mprMark(net->streams);
         mprMark(net->context);
         mprMark(net->data);
         mprMark(net->dispatcher);
@@ -186,7 +186,7 @@ PUBLIC void httpBindSocket(HttpNet *net, MprSocket *sock)
 
 /*
     Client connect the network to a new peer.
-    Existing connections are closed
+    Existing streams are closed
  */
 PUBLIC int httpConnectNet(HttpNet *net, cchar *ip, int port, MprSsl *ssl)
 {
@@ -277,22 +277,22 @@ PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol)
 
 PUBLIC void httpNetClosed(HttpNet *net)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     int         next;
 
-    for (ITERATE_ITEMS(net->connections, conn, next)) {
-        if (conn->state < HTTP_STATE_PARSED) {
-            if (!conn->errorMsg) {
-                conn->errorMsg = sfmt("Peer closed connection before receiving a response");
+    for (ITERATE_ITEMS(net->streams, stream, next)) {
+        if (stream->state < HTTP_STATE_PARSED) {
+            if (!stream->errorMsg) {
+                stream->errorMsg = sfmt("Peer closed connection before receiving a response");
             }
             if (!net->errorMsg) {
-                net->errorMsg = conn->errorMsg;
+                net->errorMsg = stream->errorMsg;
             }
-            conn->error = 1;
+            stream->error = 1;
         }
-        httpSetEof(conn);
-        httpSetState(conn, HTTP_STATE_COMPLETE);
-        mprCreateEvent(net->dispatcher, "disconnect", 0, httpProcess, conn->inputq, 0);
+        httpSetEof(stream);
+        httpSetState(stream, HTTP_STATE_COMPLETE);
+        mprCreateEvent(net->dispatcher, "disconnect", 0, httpProcess, stream->inputq, 0);
     }
 }
 
@@ -319,16 +319,16 @@ static void manageHeaderTable(HttpHeaderTable *table, int flags)
 #endif
 
 
-PUBLIC void httpAddConn(HttpNet *net, HttpConn *conn)
+PUBLIC void httpAddStream(HttpNet *net, HttpStream *stream)
 {
-    mprAddItem(net->connections, conn);
-    conn->net = net;
+    mprAddItem(net->streams, stream);
+    stream->net = net;
 }
 
 
-PUBLIC void httpRemoveConn(HttpNet *net, HttpConn *conn)
+PUBLIC void httpRemoveStream(HttpNet *net, HttpStream *stream)
 {
-    mprRemoveItem(net->connections, conn);
+    mprRemoveItem(net->streams, stream);
 }
 
 

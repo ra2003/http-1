@@ -10,30 +10,30 @@
 /********************************** Forward ***********************************/
 
 static int loadQueue(HttpQueue *q, ssize chunkSize);
-static bool matchFilter(HttpConn *conn, HttpStage *filter, HttpRoute *route, int dir);
-static void openPipeQueues(HttpConn *conn, HttpQueue *qhead);
+static bool matchFilter(HttpStream *stream, HttpStage *filter, HttpRoute *route, int dir);
+static void openPipeQueues(HttpStream *stream, HttpQueue *qhead);
 static void pairQueues(HttpQueue *head1, HttpQueue *head2);
 
 /*********************************** Code *************************************/
 /*
     Called after routing the request (httpRouteRequest)
  */
-PUBLIC void httpCreatePipeline(HttpConn *conn)
+PUBLIC void httpCreatePipeline(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpRoute   *route;
 
-    rx = conn->rx;
+    rx = stream->rx;
     route = rx->route;
-    if (httpClientConn(conn) && !route) {
-        route = conn->http->clientRoute;
+    if (httpClientStream(stream) && !route) {
+        route = stream->http->clientRoute;
     }
-    httpCreateRxPipeline(conn, route);
-    httpCreateTxPipeline(conn, route);
+    httpCreateRxPipeline(stream, route);
+    httpCreateTxPipeline(stream, route);
 }
 
 
-PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
+PUBLIC void httpCreateRxPipeline(HttpStream *stream, HttpRoute *route)
 {
     Http        *http;
     HttpTx      *tx;
@@ -42,12 +42,12 @@ PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
     HttpStage   *stage, *filter;
     int         next;
 
-    assert(conn);
+    assert(stream);
     assert(route);
 
-    http = conn->http;
-    rx = conn->rx;
-    tx = conn->tx;
+    http = stream->http;
+    rx = stream->rx;
+    tx = stream->tx;
 
     rx->inputPipeline = mprCreateList(-1, MPR_LIST_STABLE);
     if (route) {
@@ -55,30 +55,30 @@ PUBLIC void httpCreateRxPipeline(HttpConn *conn, HttpRoute *route)
             if (filter->flags & HTTP_STAGE_INTERNAL) {
                 continue;
             }
-            if (matchFilter(conn, filter, route, HTTP_STAGE_RX) == HTTP_ROUTE_OK) {
+            if (matchFilter(stream, filter, route, HTTP_STAGE_RX) == HTTP_ROUTE_OK) {
                 mprAddItem(rx->inputPipeline, filter);
             }
         }
     }
-    mprAddItem(rx->inputPipeline, tx->handler ? tx->handler : conn->http->clientHandler);
+    mprAddItem(rx->inputPipeline, tx->handler ? tx->handler : stream->http->clientHandler);
 
-    q = conn->rxHead->prevQ;
+    q = stream->rxHead->prevQ;
     for (next = 0; (stage = mprGetNextItem(rx->inputPipeline, &next)) != 0; ) {
-        q = httpCreateQueue(conn->net, conn, stage, HTTP_QUEUE_RX, q);
+        q = httpCreateQueue(stream->net, stream, stage, HTTP_QUEUE_RX, q);
         q->flags |= HTTP_QUEUE_REQUEST;
     }
-    conn->readq = q;
-    if (httpClientConn(conn)) {
-        pairQueues(conn->rxHead, conn->txHead);
-        httpOpenQueues(conn);
+    stream->readq = q;
+    if (httpClientStream(stream)) {
+        pairQueues(stream->rxHead, stream->txHead);
+        httpOpenQueues(stream);
     }
     if (q->net->protocol < 2) {
-        q->net->inputq->conn = conn;
+        q->net->inputq->stream = stream;
     }
 }
 
 
-PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
+PUBLIC void httpCreateTxPipeline(HttpStream *stream, HttpRoute *route)
 {
     Http        *http;
     HttpNet     *net;
@@ -88,21 +88,21 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     HttpStage   *stage, *filter;
     int         next;
 
-    assert(conn);
+    assert(stream);
     if (!route) {
-        if (httpServerConn(conn)) {
+        if (httpServerStream(stream)) {
             mprLog("error http", 0, "Missing route");
             return;
         }
-        route = conn->http->clientRoute;
+        route = stream->http->clientRoute;
     }
-    http = conn->http;
-    net = conn->net;
-    rx = conn->rx;
-    tx = conn->tx;
+    http = stream->http;
+    net = stream->net;
+    rx = stream->rx;
+    tx = stream->tx;
 
     tx->outputPipeline = mprCreateList(-1, MPR_LIST_STABLE);
-    if (httpServerConn(conn)) {
+    if (httpServerStream(stream)) {
         if (tx->handler == 0 || tx->finalized) {
             tx->handler = http->passHandler;
         }
@@ -113,7 +113,7 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
             if (filter->flags & HTTP_STAGE_INTERNAL) {
                 continue;
             }
-            if (matchFilter(conn, filter, route, HTTP_STAGE_TX) == HTTP_ROUTE_OK) {
+            if (matchFilter(stream, filter, route, HTTP_STAGE_TX) == HTTP_ROUTE_OK) {
                 mprAddItem(tx->outputPipeline, filter);
                 tx->flags |= HTTP_TX_HAS_FILTERS;
             }
@@ -122,15 +122,15 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
     /*
         Create the outgoing queues linked from the tx queue head
      */
-    q = conn->txHead;
+    q = stream->txHead;
     for (ITERATE_ITEMS(tx->outputPipeline, stage, next)) {
-        q = httpCreateQueue(conn->net, conn, stage, HTTP_QUEUE_TX, q);
+        q = httpCreateQueue(stream->net, stream, stage, HTTP_QUEUE_TX, q);
         q->flags |= HTTP_QUEUE_REQUEST;
     }
-    conn->writeq = conn->txHead->nextQ;
-    pairQueues(conn->txHead, conn->rxHead);
-    pairQueues(conn->rxHead, conn->txHead);
-    httpTraceQueues(conn);
+    stream->writeq = stream->txHead->nextQ;
+    pairQueues(stream->txHead, stream->rxHead);
+    pairQueues(stream->rxHead, stream->txHead);
+    httpTraceQueues(stream);
 
     tx->connector = http->netConnector;
 
@@ -138,17 +138,17 @@ PUBLIC void httpCreateTxPipeline(HttpConn *conn, HttpRoute *route)
         Open the pipeline stages. This calls the open entrypoints on all stages.
      */
     tx->flags |= HTTP_TX_PIPELINE;
-    httpOpenQueues(conn);
+    httpOpenQueues(stream);
 
-    if (conn->error && tx->handler != http->passHandler) {
+    if (stream->error && tx->handler != http->passHandler) {
         tx->handler = http->passHandler;
-        httpAssignQueueCallbacks(conn->writeq, tx->handler, HTTP_QUEUE_TX);
+        httpAssignQueueCallbacks(stream->writeq, tx->handler, HTTP_QUEUE_TX);
     }
     if (net->endpoint) {
-        httpTrace(conn->trace, "pipeline", "context",
+        httpTrace(stream->trace, "pipeline", "context",
             "route:'%s', handler:'%s', target:'%s', endpoint:'%s:%d', host:'%s', referrer:'%s', filename:'%s'",
             rx->route->pattern, tx->handler->name, rx->route->targetRule, net->endpoint->ip, net->endpoint->port,
-            conn->host->name ? conn->host->name : "default", rx->referrer ? rx->referrer : "",
+            stream->host->name ? stream->host->name : "default", rx->referrer ? rx->referrer : "",
             tx->filename ? tx->filename : "");
     }
 }
@@ -170,19 +170,19 @@ static void pairQueues(HttpQueue *head1, HttpQueue *head2)
 }
 
 
-PUBLIC void httpOpenQueues(HttpConn *conn)
+PUBLIC void httpOpenQueues(HttpStream *stream)
 {
-    openPipeQueues(conn, conn->rxHead);
-    openPipeQueues(conn, conn->txHead);
+    openPipeQueues(stream, stream->rxHead);
+    openPipeQueues(stream, stream->txHead);
 }
 
 
-static void openPipeQueues(HttpConn *conn, HttpQueue *qhead)
+static void openPipeQueues(HttpStream *stream, HttpQueue *qhead)
 {
     HttpTx      *tx;
     HttpQueue   *q;
 
-    tx = conn->tx;
+    tx = stream->tx;
     for (q = qhead->nextQ; q != qhead; q = q->nextQ) {
         if (q->open && !(q->flags & (HTTP_QUEUE_OPEN_TRIED))) {
             if (q->pair == 0 || !(q->pair->flags & HTTP_QUEUE_OPEN_TRIED)) {
@@ -192,8 +192,8 @@ static void openPipeQueues(HttpConn *conn, HttpQueue *qhead)
                     if (q->stage->open(q) == 0) {
                         q->flags |= HTTP_QUEUE_OPENED;
                     } else {
-                        if (!conn->error) {
-                            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot open stage %s", q->stage->name);
+                        if (!stream->error) {
+                            httpError(stream, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot open stage %s", q->stage->name);
                         }
 
                     }
@@ -207,13 +207,13 @@ static void openPipeQueues(HttpConn *conn, HttpQueue *qhead)
 static int loadQueue(HttpQueue *q, ssize chunkSize)
 {
     Http        *http;
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpStage   *stage;
     MprModule   *module;
 
     stage = q->stage;
-    conn = q->conn;
-    http = q->conn->http;
+    stream = q->stream;
+    http = q->stream->http;
 
     if (chunkSize > 0) {
         q->packetSize = min(q->packetSize, chunkSize);
@@ -222,7 +222,7 @@ static int loadQueue(HttpQueue *q, ssize chunkSize)
         module = stage->module;
         module = mprCreateModule(module->name, module->path, module->entry, http);
         if (mprLoadModule(module) < 0) {
-            httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot load module %s", module->name);
+            httpError(stream, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot load module %s", module->name);
             return MPR_ERR_CANT_READ;
         }
         stage->module = module;
@@ -238,37 +238,37 @@ static int loadQueue(HttpQueue *q, ssize chunkSize)
     Set the fileHandler as the selected handler for the request
     Called by ESP to render a document.
  */
-PUBLIC void httpSetFileHandler(HttpConn *conn, cchar *path)
+PUBLIC void httpSetFileHandler(HttpStream *stream, cchar *path)
 {
     HttpStage   *fp;
 
     HttpTx      *tx;
 
-    tx = conn->tx;
+    tx = stream->tx;
     if (path && path != tx->filename) {
-        httpSetFilename(conn, path, 0);
+        httpSetFilename(stream, path, 0);
     }
     tx->entityLength = tx->fileInfo.size;
     fp = tx->handler = HTTP->fileHandler;
-    fp->open(conn->writeq);
-    fp->start(conn->writeq);
-    conn->writeq->service = fp->outgoingService;
-    conn->readq->put = fp->incoming;
+    fp->open(stream->writeq);
+    fp->start(stream->writeq);
+    stream->writeq->service = fp->outgoingService;
+    stream->readq->put = fp->incoming;
 }
 
 
-PUBLIC void httpClosePipeline(HttpConn *conn)
+PUBLIC void httpClosePipeline(HttpStream *stream)
 {
     HttpQueue   *q, *qhead;
 
-    qhead = conn->txHead;
+    qhead = stream->txHead;
     for (q = qhead->nextQ; q != qhead; q = q->nextQ) {
         if (q->close && q->flags & HTTP_QUEUE_OPENED) {
             q->flags &= ~HTTP_QUEUE_OPENED;
             q->stage->close(q);
         }
     }
-    qhead = conn->rxHead;
+    qhead = stream->rxHead;
     for (q = qhead->nextQ; q != qhead; q = q->nextQ) {
         if (q->close && q->flags & HTTP_QUEUE_OPENED) {
             q->flags &= ~HTTP_QUEUE_OPENED;
@@ -281,17 +281,17 @@ PUBLIC void httpClosePipeline(HttpConn *conn)
 /*
     Start all queues, but do not start the handler
  */
-PUBLIC void httpStartPipeline(HttpConn *conn)
+PUBLIC void httpStartPipeline(HttpStream *stream)
 {
     HttpQueue   *qhead, *q, *prevQ, *nextQ;
     HttpTx      *tx;
     HttpRx      *rx;
 
-    tx = conn->tx;
-    rx = conn->rx;
-    assert(conn->net->endpoint);
+    tx = stream->tx;
+    rx = stream->rx;
+    assert(stream->net->endpoint);
 
-    qhead = conn->txHead;
+    qhead = stream->txHead;
     for (q = qhead->prevQ; q != qhead; q = prevQ) {
         prevQ = q->prevQ;
         if (q->start && !(q->flags & HTTP_QUEUE_STARTED)) {
@@ -303,7 +303,7 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
     }
 
     if (rx->needInputPipeline) {
-        qhead = conn->rxHead;
+        qhead = stream->rxHead;
         for (q = qhead->nextQ; q != qhead; q = nextQ) {
             nextQ = q->nextQ;
             if (q->start && !(q->flags & HTTP_QUEUE_STARTED)) {
@@ -323,11 +323,11 @@ PUBLIC void httpStartPipeline(HttpConn *conn)
 /*
     Called when all input data has been received
  */
-PUBLIC void httpReadyHandler(HttpConn *conn)
+PUBLIC void httpReadyHandler(HttpStream *stream)
 {
     HttpQueue   *q;
 
-    q = conn->writeq;
+    q = stream->writeq;
     if (q->stage && q->stage->ready && !(q->flags & HTTP_QUEUE_READY)) {
         q->flags |= HTTP_QUEUE_READY;
         q->stage->ready(q);
@@ -335,22 +335,22 @@ PUBLIC void httpReadyHandler(HttpConn *conn)
 }
 
 
-PUBLIC void httpStartHandler(HttpConn *conn)
+PUBLIC void httpStartHandler(HttpStream *stream)
 {
     HttpQueue   *q;
     HttpTx      *tx;
 
-    tx = conn->tx;
+    tx = stream->tx;
     if (!tx->started) {
         tx->started = 1;
-        q = conn->writeq;
+        q = stream->writeq;
         if (q->stage->start && !(q->flags & HTTP_QUEUE_STARTED)) {
             q->flags |= HTTP_QUEUE_STARTED;
             q->stage->start(q);
         }
         if (tx->pendingFinalize) {
             tx->finalizedOutput = 0;
-            httpFinalizeOutput(conn);
+            httpFinalizeOutput(stream);
         }
     }
 }
@@ -365,16 +365,16 @@ PUBLIC bool httpQueuesNeedService(HttpNet *net)
 }
 
 
-PUBLIC void httpDiscardData(HttpConn *conn, int dir)
+PUBLIC void httpDiscardData(HttpStream *stream, int dir)
 {
     HttpTx      *tx;
     HttpQueue   *q, *qhead;
 
-    tx = conn->tx;
+    tx = stream->tx;
     if (tx == 0) {
         return;
     }
-    qhead = (dir == HTTP_QUEUE_TX) ? conn->txHead : conn->rxHead;
+    qhead = (dir == HTTP_QUEUE_TX) ? stream->txHead : stream->rxHead;
     httpDiscardQueueData(qhead, 1);
     for (q = qhead->nextQ; q != qhead; q = q->nextQ) {
         httpDiscardQueueData(q, 1);
@@ -382,13 +382,13 @@ PUBLIC void httpDiscardData(HttpConn *conn, int dir)
 }
 
 
-static bool matchFilter(HttpConn *conn, HttpStage *filter, HttpRoute *route, int dir)
+static bool matchFilter(HttpStream *stream, HttpStage *filter, HttpRoute *route, int dir)
 {
     HttpTx      *tx;
 
-    tx = conn->tx;
+    tx = stream->tx;
     if (filter->match) {
-        return filter->match(conn, route, dir);
+        return filter->match(stream, route, dir);
     }
     if (filter->extensions && tx->ext) {
         return mprLookupKey(filter->extensions, tx->ext) != 0;

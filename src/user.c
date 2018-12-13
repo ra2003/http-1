@@ -207,9 +207,9 @@ PUBLIC int httpRemoveUser(HttpAuth *auth, cchar *name)
 }
 
 
-PUBLIC void httpSetConnUser(HttpConn *conn, HttpUser *user)
+PUBLIC void httpSetConnUser(HttpStream *stream, HttpUser *user)
 {
-    conn->user = user;
+    stream->user = user;
 }
 
 #undef  GRADUATE_HASH

@@ -28,14 +28,14 @@
 /********************************** Forwards **********************************/
 
 static void addUniqueItem(MprList *list, HttpRouteOp *op);
-static int checkRoute(HttpConn *conn, HttpRoute *route);
+static int checkRoute(HttpStream *stream, HttpRoute *route);
 static HttpLang *createLangDef(cchar *path, cchar *suffix, int flags);
 static HttpRouteOp *createRouteOp(cchar *name, int flags);
 static void definePathVars(HttpRoute *route);
 static void defineHostVars(HttpRoute *route);
-static char *expandTokens(HttpConn *conn, cchar *path);
+static char *expandTokens(HttpStream *stream, cchar *path);
 static char *expandPatternTokens(cchar *str, cchar *replacement, int *matches, int matchCount);
-static char *expandRequestTokens(HttpConn *conn, char *targetKey);
+static char *expandRequestTokens(HttpStream *stream, char *targetKey);
 static void finalizePattern(HttpRoute *route);
 static char *finalizeReplacement(HttpRoute *route, cchar *str);
 static char *finalizeTemplate(HttpRoute *route);
@@ -43,12 +43,12 @@ static bool opPresent(MprList *list, HttpRouteOp *op);
 static void manageRoute(HttpRoute *route, int flags);
 static void manageLang(HttpLang *lang, int flags);
 static void manageRouteOp(HttpRouteOp *op, int flags);
-static int matchRequestUri(HttpConn *conn, HttpRoute *route);
-static int matchRoute(HttpConn *conn, HttpRoute *route);
-static int selectHandler(HttpConn *conn, HttpRoute *route);
-static int testCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *condition);
+static int matchRequestUri(HttpStream *stream, HttpRoute *route);
+static int matchRoute(HttpStream *stream, HttpRoute *route);
+static int selectHandler(HttpStream *stream, HttpRoute *route);
+static int testCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *condition);
 static char *trimQuotes(char *str);
-static int updateRequest(HttpConn *conn, HttpRoute *route, HttpRouteOp *update);
+static int updateRequest(HttpStream *stream, HttpRoute *route, HttpRouteOp *update);
 
 /************************************ Code ************************************/
 /*
@@ -357,28 +357,28 @@ PUBLIC void httpStopRoute(HttpRoute *route)
     pass errors via the net connector onto the client. This process may rewrite the request
     URI and may redirect the request.
  */
-PUBLIC void httpRouteRequest(HttpConn *conn)
+PUBLIC void httpRouteRequest(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpTx      *tx;
     HttpRoute   *route;
     int         next, rewrites, match;
 
-    rx = conn->rx;
-    tx = conn->tx;
+    rx = stream->rx;
+    tx = stream->tx;
     route = 0;
     rewrites = 0;
 
-    if (conn->error) {
-        tx->handler = conn->http->passHandler;
-        route = rx->route = conn->host->defaultRoute;
+    if (stream->error) {
+        tx->handler = stream->http->passHandler;
+        route = rx->route = stream->host->defaultRoute;
 
     } else {
         for (next = rewrites = 0; rewrites < ME_MAX_REWRITE; ) {
-            if (next >= conn->host->routes->length) {
+            if (next >= stream->host->routes->length) {
                 break;
             }
-            route = conn->host->routes->items[next++];
+            route = stream->host->routes->items[next++];
             if (route->startSegment && strncmp(rx->pathInfo, route->startSegment, route->startSegmentLen) != 0) {
                 /* Failed to match the first URI segment, skip to the next group */
                 if (next < route->nextGroup) {
@@ -389,7 +389,7 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
                 /* Failed to match starting literal segment of the route pattern, advance to test the next route */
                 continue;
 
-            } else if ((match = matchRoute(conn, route)) == HTTP_ROUTE_REROUTE) {
+            } else if ((match = matchRoute(stream, route)) == HTTP_ROUTE_REROUTE) {
                 next = 0;
                 route = 0;
                 rewrites++;
@@ -400,37 +400,37 @@ PUBLIC void httpRouteRequest(HttpConn *conn)
         }
     }
     if (route == 0 || tx->handler == 0) {
-        rx->route = conn->host->defaultRoute;
-        httpError(conn, HTTP_CODE_BAD_METHOD, "Cannot find suitable route for request method");
+        rx->route = stream->host->defaultRoute;
+        httpError(stream, HTTP_CODE_BAD_METHOD, "Cannot find suitable route for request method");
         return;
     }
     rx->route = route;
-    conn->limits = route->limits;
-    conn->trace = route->trace;
+    stream->limits = route->limits;
+    stream->trace = route->trace;
 
     if (rewrites >= ME_MAX_REWRITE) {
-        httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
+        httpError(stream, HTTP_CODE_INTERNAL_SERVER_ERROR, "Too many request rewrites");
     }
     if (tx->finalized) {
         /* Pass handler can transmit the error */
-        tx->handler = conn->http->passHandler;
+        tx->handler = stream->http->passHandler;
     }
     if (tx->handler->module) {
-        tx->handler->module->lastActivity = conn->lastActivity;
+        tx->handler->module->lastActivity = stream->lastActivity;
     }
 }
 
 
-static int matchRoute(HttpConn *conn, HttpRoute *route)
+static int matchRoute(HttpStream *stream, HttpRoute *route)
 {
     HttpRx      *rx;
     cchar       *savePathInfo, *pathInfo;
     int         rc;
 
-    assert(conn);
+    assert(stream);
     assert(route);
 
-    rx = conn->rx;
+    rx = stream->rx;
     savePathInfo = 0;
 
     assert(route->prefix);
@@ -446,8 +446,8 @@ static int matchRoute(HttpConn *conn, HttpRoute *route)
         rx->pathInfo = sclone(pathInfo);
         rx->scriptName = route->prefix;
     }
-    if ((rc = matchRequestUri(conn, route)) == HTTP_ROUTE_OK) {
-        rc = checkRoute(conn, route);
+    if ((rc = matchRequestUri(stream, route)) == HTTP_ROUTE_OK) {
+        rc = checkRoute(stream, route);
     }
     if (rc == HTTP_ROUTE_REJECT && savePathInfo) {
         /* Keep the modified pathInfo if OK or REWRITE */
@@ -458,13 +458,13 @@ static int matchRoute(HttpConn *conn, HttpRoute *route)
 }
 
 
-static int matchRequestUri(HttpConn *conn, HttpRoute *route)
+static int matchRequestUri(HttpStream *stream, HttpRoute *route)
 {
     HttpRx      *rx;
 
-    assert(conn);
+    assert(stream);
     assert(route);
-    rx = conn->rx;
+    rx = stream->rx;
 
     if (route->patternCompiled) {
         rx->matchCount = pcre_exec(route->patternCompiled, NULL, rx->pathInfo, (int) slen(rx->pathInfo), 0, 0,
@@ -496,7 +496,7 @@ static int matchRequestUri(HttpConn *conn, HttpRoute *route)
 }
 
 
-static int checkRoute(HttpConn *conn, HttpRoute *route)
+static int checkRoute(HttpStream *stream, HttpRoute *route)
 {
     HttpRouteOp     *op, *condition, *update;
     HttpRouteProc   *proc;
@@ -505,17 +505,17 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     cchar           *token, *value, *header, *field;
     int             next, rc, matched[ME_MAX_ROUTE_MATCHES * 2], count, result;
 
-    assert(conn);
+    assert(stream);
     assert(route);
-    rx = conn->rx;
-    tx = conn->tx;
+    rx = stream->rx;
+    tx = stream->tx;
     assert(rx->pathInfo[0]);
 
-    rx->target = route->target ? expandTokens(conn, route->target) : sclone(&rx->pathInfo[1]);
+    rx->target = route->target ? expandTokens(stream, route->target) : sclone(&rx->pathInfo[1]);
 
     if (route->requestHeaders) {
         for (next = 0; (op = mprGetNextItem(route->requestHeaders, &next)) != 0; ) {
-            if ((header = httpGetHeader(conn, op->name)) != 0) {
+            if ((header = httpGetHeader(stream, op->name)) != 0) {
                 count = pcre_exec(op->mdata, NULL, header, (int) slen(header), 0, 0, matched, sizeof(matched) / sizeof(int));
                 result = count > 0;
                 if (op->flags & HTTP_ROUTE_NOT) {
@@ -529,7 +529,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     }
     if (route->params) {
         for (next = 0; (op = mprGetNextItem(route->params, &next)) != 0; ) {
-            if ((field = httpGetParam(conn, op->name, "")) != 0) {
+            if ((field = httpGetParam(stream, op->name, "")) != 0) {
                 count = pcre_exec(op->mdata, NULL, field, (int) slen(field), 0, 0, matched, sizeof(matched) / sizeof(int));
                 result = count > 0;
                 if (op->flags & HTTP_ROUTE_NOT) {
@@ -543,7 +543,7 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     }
     if (route->conditions) {
         for (next = 0; (condition = mprGetNextItem(route->conditions, &next)) != 0; ) {
-            rc = testCondition(conn, route, condition);
+            rc = testCondition(stream, route, condition);
             if (rc == HTTP_ROUTE_REROUTE) {
                 return rc;
             }
@@ -557,15 +557,15 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
     }
     if (route->updates) {
         for (next = 0; (update = mprGetNextItem(route->updates, &next)) != 0; ) {
-            if ((rc = updateRequest(conn, route, update)) == HTTP_ROUTE_REROUTE) {
+            if ((rc = updateRequest(stream, route, update)) == HTTP_ROUTE_REROUTE) {
                 return rc;
             }
         }
     }
     if (route->prefix[0]) {
-        httpSetParam(conn, "prefix", route->prefix);
+        httpSetParam(stream, "prefix", route->prefix);
     }
-    if ((rc = selectHandler(conn, route)) != HTTP_ROUTE_OK) {
+    if ((rc = selectHandler(stream, route)) != HTTP_ROUTE_OK) {
         return rc;
     }
     if (route->tokens) {
@@ -573,43 +573,43 @@ static int checkRoute(HttpConn *conn, HttpRoute *route)
             int index = rx->matches[next * 2];
             if (index >= 0) {
                 value = snclone(&rx->pathInfo[index], rx->matches[(next * 2) + 1] - index);
-                httpSetParam(conn, token, value);
+                httpSetParam(stream, token, value);
             }
         }
     }
-    if ((proc = mprLookupKey(conn->http->routeTargets, route->targetRule)) == 0) {
-        httpError(conn, -1, "Cannot find route target rule \"%s\"", route->targetRule);
+    if ((proc = mprLookupKey(stream->http->routeTargets, route->targetRule)) == 0) {
+        httpError(stream, -1, "Cannot find route target rule \"%s\"", route->targetRule);
         return HTTP_ROUTE_REJECT;
     }
-    if ((rc = (*proc)(conn, route, 0)) != HTTP_ROUTE_OK) {
+    if ((rc = (*proc)(stream, route, 0)) != HTTP_ROUTE_OK) {
         return rc;
     }
     if (tx->finalized) {
-        tx->handler = conn->http->passHandler;
+        tx->handler = stream->http->passHandler;
     } else if (tx->handler->rewrite) {
-        rc = tx->handler->rewrite(conn);
+        rc = tx->handler->rewrite(stream);
     }
     return rc;
 }
 
 
-static int selectHandler(HttpConn *conn, HttpRoute *route)
+static int selectHandler(HttpStream *stream, HttpRoute *route)
 {
     HttpRx      *rx;
     HttpTx      *tx;
     int         next, rc;
 
-    assert(conn);
+    assert(stream);
     assert(route);
 
-    rx = conn->rx;
-    tx = conn->tx;
+    rx = stream->rx;
+    tx = stream->tx;
     if (route->handler) {
         tx->handler = route->handler;
         return HTTP_ROUTE_OK;
     }
     for (next = 0; (tx->handler = mprGetNextStableItem(route->handlers, &next)) != 0; ) {
-        rc = tx->handler->match(conn, route, 0);
+        rc = tx->handler->match(stream, route, 0);
         if (rc == HTTP_ROUTE_OK || rc == HTTP_ROUTE_REROUTE) {
             return rc;
         }
@@ -626,22 +626,22 @@ static int selectHandler(HttpConn *conn, HttpRoute *route)
         /*
             Trace method always processed for all requests by the passHandler
          */
-        tx->handler = conn->http->passHandler;
+        tx->handler = stream->http->passHandler;
     }
     if (tx->finalized) {
-        tx->handler = conn->http->passHandler;
+        tx->handler = stream->http->passHandler;
     }
     return tx->handler ? HTTP_ROUTE_OK : HTTP_ROUTE_REJECT;
 }
 
 
-PUBLIC void httpSetHandler(HttpConn *conn, HttpStage *handler)
+PUBLIC void httpSetHandler(HttpStream *stream, HttpStage *handler)
 {
-    conn->tx->handler = handler;
+    stream->tx->handler = handler;
 }
 
 
-PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename)
+PUBLIC cchar *httpMapContent(HttpStream *stream, cchar *filename)
 {
     HttpRoute   *route;
     HttpRx      *rx;
@@ -653,8 +653,8 @@ PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename)
     cchar       *ext, *path;
     int         next;
 
-    tx = conn->tx;
-    rx = conn->rx;
+    tx = stream->tx;
+    rx = stream->rx;
     route = rx->route;
 
     if (route->map && !(tx->flags & HTTP_TX_NO_MAP)) {
@@ -675,10 +675,10 @@ PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename)
                     path = sjoin(filename, ext, NULL);
                 }
                 if (mprGetPathInfo(path, &info) == 0) {
-                    httpTrace(conn->trace, "route.map", "context", "originalFilename:'%s', filename:'%s'", filename, path);
+                    httpTrace(stream->trace, "route.map", "context", "originalFilename:'%s', filename:'%s'", filename, path);
                     filename = path;
                     if (zipped) {
-                        httpSetHeader(conn, "Content-Encoding", "gzip");
+                        httpSetHeader(stream, "Content-Encoding", "gzip");
                     }
                     tx->fileInfo = info;
                     break;
@@ -690,24 +690,24 @@ PUBLIC cchar *httpMapContent(HttpConn *conn, cchar *filename)
 }
 
 
-PUBLIC void httpMapFile(HttpConn *conn)
+PUBLIC void httpMapFile(HttpStream *stream)
 {
     HttpTx      *tx;
     HttpLang    *lang;
     cchar       *filename;
 
-    tx = conn->tx;
+    tx = stream->tx;
     if (tx->filename) {
         return;
     }
-    filename = conn->rx->target;
-    lang = conn->rx->lang;
+    filename = stream->rx->target;
+    lang = stream->rx->lang;
     if (lang && lang->path) {
         filename = mprJoinPath(lang->path, filename);
     }
-    filename = mprJoinPath(conn->rx->route->documents, filename);
-    filename = httpMapContent(conn, filename);
-    httpSetFilename(conn, filename, 0);
+    filename = mprJoinPath(stream->rx->route->documents, filename);
+    filename = httpMapContent(stream, filename);
+    httpSetFilename(stream, filename, 0);
 }
 
 
@@ -1871,13 +1871,13 @@ PUBLIC void httpFinalizeRoute(HttpRoute *route)
 }
 
 
-PUBLIC cchar *httpGetRouteTop(HttpConn *conn)
+PUBLIC cchar *httpGetRouteTop(HttpStream *stream)
 {
     HttpRx  *rx;
     cchar   *pp, *top;
     int     count;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (sstarts(rx->pathInfo, rx->route->prefix)) {
         pp = &rx->pathInfo[rx->route->prefixLen];
     } else {
@@ -1899,7 +1899,7 @@ PUBLIC cchar *httpGetRouteTop(HttpConn *conn)
         ~   For ${PREFIX}
     The options is a hash of token values.
  */
-PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
+PUBLIC char *httpTemplate(HttpStream *stream, cchar *template, MprHash *options)
 {
     MprBuf      *buf;
     HttpRx      *rx;
@@ -1907,7 +1907,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     cchar       *cp, *ep, *value;
     char        key[ME_BUFSIZE];
 
-    rx = conn->rx;
+    rx = stream->rx;
     route = rx->route;
     if (template == 0 || *template == '\0') {
         return MPR->emptyString;
@@ -1915,7 +1915,7 @@ PUBLIC char *httpTemplate(HttpConn *conn, cchar *template, MprHash *options)
     buf = mprCreateBuf(-1, -1);
     for (cp = template; *cp; cp++) {
         if (cp == template && *cp == '~') {
-            mprPutStringToBuf(buf, httpGetRouteTop(conn));
+            mprPutStringToBuf(buf, httpGetRouteTop(stream));
 
         } else if (*cp == '$' && cp[1] == '{' && (cp == template || cp[-1] != '\\')) {
             cp += 2;
@@ -2057,35 +2057,35 @@ PUBLIC void httpSetRouteDefaultLanguage(HttpRoute *route, cchar *language)
 
 /********************************* Conditions *********************************/
 
-static int testCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *condition)
+static int testCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *condition)
 {
     HttpRouteProc   *proc;
 
-    assert(conn);
+    assert(stream);
     assert(route);
     assert(condition);
 
-    if ((proc = mprLookupKey(conn->http->routeConditions, condition->name)) == 0) {
-        httpError(conn, -1, "Cannot find route condition rule %s", condition->name);
+    if ((proc = mprLookupKey(stream->http->routeConditions, condition->name)) == 0) {
+        httpError(stream, -1, "Cannot find route condition rule %s", condition->name);
         return 0;
     }
-    return (*proc)(conn, route, condition);
+    return (*proc)(stream, route, condition);
 }
 
 
 /*
     Allow/Deny authorization based on network IP
  */
-static int allowDenyCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int allowDenyCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     HttpRx      *rx;
     HttpAuth    *auth;
     int         allow, deny;
 
-    assert(conn);
+    assert(stream);
     assert(route);
 
-    rx = conn->rx;
+    rx = stream->rx;
     auth = rx->route->auth;
     if (auth == 0) {
         return HTTP_ROUTE_OK;
@@ -2093,30 +2093,30 @@ static int allowDenyCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     allow = 0;
     deny = 0;
     if (auth->flags & HTTP_ALLOW_DENY) {
-        if (auth->allow && mprLookupKey(auth->allow, conn->ip)) {
+        if (auth->allow && mprLookupKey(auth->allow, stream->ip)) {
             allow++;
         } else {
             allow++;
         }
-        if (auth->deny && mprLookupKey(auth->deny, conn->ip)) {
+        if (auth->deny && mprLookupKey(auth->deny, stream->ip)) {
             deny++;
         }
         if (!allow || deny) {
-            httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied for this server %s", conn->ip);
+            httpError(stream, HTTP_CODE_FORBIDDEN, "Access denied for this server %s", stream->ip);
             return HTTP_ROUTE_OK;
         }
     } else {
-        if (auth->deny && mprLookupKey(auth->deny, conn->ip)) {
+        if (auth->deny && mprLookupKey(auth->deny, stream->ip)) {
             deny++;
         }
-        if (auth->allow && !mprLookupKey(auth->allow, conn->ip)) {
+        if (auth->allow && !mprLookupKey(auth->allow, stream->ip)) {
             deny = 0;
             allow++;
         } else {
             allow++;
         }
         if (deny || !allow) {
-            httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied for this server %s", conn->ip);
+            httpError(stream, HTTP_CODE_FORBIDDEN, "Access denied for this server %s", stream->ip);
             return HTTP_ROUTE_OK;
         }
     }
@@ -2128,12 +2128,12 @@ static int allowDenyCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     This condition is used to implement all user authentication for routes
     It accesses form body parameters for login.
  */
-static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int authCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     HttpAuth    *auth;
     cchar       *username, *password;
 
-    assert(conn);
+    assert(stream);
     assert(route);
 
     auth = route->auth;
@@ -2141,13 +2141,13 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
         /* Authentication not required or not using authCondition */
         return HTTP_ROUTE_OK;
     }
-    if (!httpIsAuthenticated(conn)) {
-        if (!httpGetCredentials(conn, &username, &password) || !httpLogin(conn, username, password)) {
-            if (!conn->tx->finalized) {
+    if (!httpIsAuthenticated(stream)) {
+        if (!httpGetCredentials(stream, &username, &password) || !httpLogin(stream, username, password)) {
+            if (!stream->tx->finalized) {
                 if (auth && auth->type) {
-                    (auth->type->askLogin)(conn);
+                    (auth->type->askLogin)(stream);
                 } else {
-                    httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied, login required");
+                    httpError(stream, HTTP_CODE_UNAUTHORIZED, "Access Denied, login required");
                 }
             }
             /*
@@ -2156,10 +2156,10 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
             return HTTP_ROUTE_OK;
         }
     }
-    if (!httpCanUser(conn, NULL)) {
-        httpTrace(conn->trace, "auth.check", "error", "msg:'Access denied, user is not authorized for access'");
-        if (!conn->tx->finalized) {
-            httpError(conn, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
+    if (!httpCanUser(stream, NULL)) {
+        httpTrace(stream->trace, "auth.check", "error", "msg:'Access denied, user is not authorized for access'");
+        if (!stream->tx->finalized) {
+            httpError(stream, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
             /* Request has been denied and a response generated. So OK to accept this route. */
         }
     }
@@ -2174,7 +2174,7 @@ static int authCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     This condition is used for "Condition unauthorized"
     It accesses form body parameters for login.
  */
-static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int unauthorizedCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     HttpAuth    *auth;
     cchar       *username, *password;
@@ -2183,10 +2183,10 @@ static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *
     if (!auth || !auth->type || !(auth->type->flags & HTTP_AUTH_TYPE_CONDITION)) {
         return HTTP_ROUTE_REJECT;
     }
-    if (httpIsAuthenticated(conn)) {
+    if (httpIsAuthenticated(stream)) {
         return HTTP_ROUTE_REJECT;
     }
-    if (httpGetCredentials(conn, &username, &password) && httpLogin(conn, username, password)) {
+    if (httpGetCredentials(stream, &username, &password) && httpLogin(stream, username, password)) {
         return HTTP_ROUTE_REJECT;
     }
     return HTTP_ROUTE_OK;
@@ -2196,23 +2196,23 @@ static int unauthorizedCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *
 /*
     Test if the condition parameters evaluate to a directory
  */
-static int directoryCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int directoryCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     HttpTx      *tx;
     MprPath     info;
     char        *path;
 
-    assert(conn);
+    assert(stream);
     assert(route);
     assert(op);
-    tx = conn->tx;
+    tx = stream->tx;
 
     /*
         Must have tx->filename set when expanding op->details, so map target now.
         Then reset the filename and extension.
      */
-    httpMapFile(conn);
-    path = mprJoinPath(route->documents, expandTokens(conn, op->details));
+    httpMapFile(stream);
+    path = mprJoinPath(route->documents, expandTokens(stream, op->details));
     tx->ext = tx->filename = 0;
 
     mprGetPathInfo(path, &info);
@@ -2226,21 +2226,21 @@ static int directoryCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 /*
     Test if a file exists
  */
-static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int existsCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     HttpTx  *tx;
     char    *path;
 
-    assert(conn);
+    assert(stream);
     assert(route);
     assert(op);
 
     /*
         Must have tx->filename set when expanding op->details, so map target now
      */
-    tx = conn->tx;
-    httpMapFile(conn);
-    path = mprJoinPath(route->documents, expandTokens(conn, op->details));
+    tx = stream->tx;
+    httpMapFile(stream);
+    path = mprJoinPath(route->documents, expandTokens(stream, op->details));
     tx->ext = tx->filename = 0;
 
     if (mprPathExists(path, R_OK)) {
@@ -2253,16 +2253,16 @@ static int existsCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 /*
     Test if a condition matches by regular expression
  */
-static int matchCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int matchCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     char    *str;
     int     matched[ME_MAX_ROUTE_MATCHES * 2], count;
 
-    assert(conn);
+    assert(stream);
     assert(route);
     assert(op);
 
-    str = expandTokens(conn, op->details);
+    str = expandTokens(stream, op->details);
     count = pcre_exec(op->mdata, NULL, str, (int) slen(str), 0, 0, matched, sizeof(matched) / sizeof(int));
     if (count > 0) {
         return HTTP_ROUTE_OK;
@@ -2276,28 +2276,28 @@ static int matchCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
     Set op->details to a non-zero "age" to emit a Strict-Transport-Security header
     A negative age signifies to "includeSubDomains"
  */
-static int secureCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int secureCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     int64       age;
 
-    assert(conn);
+    assert(stream);
     if (op->flags & HTTP_ROUTE_STRICT_TLS) {
         /* Negative age means subDomains == true */
         age = stoi(op->details);
         if (age < 0) {
-            httpAddHeader(conn, "Strict-Transport-Security", "max-age=%lld; includeSubDomains", -age / TPS);
+            httpAddHeader(stream, "Strict-Transport-Security", "max-age=%lld; includeSubDomains", -age / TPS);
         } else if (age > 0) {
-            httpAddHeader(conn, "Strict-Transport-Security", "max-age=%lld", age / TPS);
+            httpAddHeader(stream, "Strict-Transport-Security", "max-age=%lld", age / TPS);
         }
     }
     if (op->flags & HTTP_ROUTE_REDIRECT) {
-        if (!conn->secure) {
+        if (!stream->secure) {
             assert(op->details && *op->details);
-            httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, expandTokens(conn, op->details));
+            httpRedirect(stream, HTTP_CODE_MOVED_PERMANENTLY, expandTokens(stream, op->details));
         }
         return HTTP_ROUTE_OK;
     }
-    if (!conn->secure) {
+    if (!stream->secure) {
         return HTTP_ROUTE_REJECT;
     }
     return HTTP_ROUTE_OK;
@@ -2305,39 +2305,39 @@ static int secureCondition(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
 /********************************* Updates ******************************/
 
-static int updateRequest(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int updateRequest(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     HttpRouteProc   *proc;
 
-    assert(conn);
+    assert(stream);
     assert(route);
     assert(op);
 
-    if ((proc = mprLookupKey(conn->http->routeUpdates, op->name)) == 0) {
-        httpError(conn, -1, "Cannot find route update rule %s", op->name);
+    if ((proc = mprLookupKey(stream->http->routeUpdates, op->name)) == 0) {
+        httpError(stream, -1, "Cannot find route update rule %s", op->name);
         return HTTP_ROUTE_OK;
     }
-    return (*proc)(conn, route, op);
+    return (*proc)(stream, route, op);
 }
 
 
-static int cmdUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int cmdUpdate(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     MprCmd  *cmd;
     char    *command, *out, *err;
     int     status;
 
-    assert(conn);
+    assert(stream);
     assert(route);
     assert(op);
 
-    command = expandTokens(conn, op->details);
-    cmd = mprCreateCmd(conn->dispatcher);
-    httpTrace(conn->trace, "route.run", "context", "command:'%s'", command);
+    command = expandTokens(stream, op->details);
+    cmd = mprCreateCmd(stream->dispatcher);
+    httpTrace(stream->trace, "route.run", "context", "command:'%s'", command);
     if ((status = mprRunCmd(cmd, command, NULL, NULL, &out, &err, -1, 0)) != 0) {
         /* Don't call httpError, just set errorMsg which can be retrieved via: ${request:error} */
-        conn->errorMsg = sfmt("Command failed: %s\nStatus: %d\n%s\n%s", command, status, out, err);
-        httpTrace(conn->trace, "route.run.error", "error", "command:'%s', error:'%s'", command, conn->errorMsg);
+        stream->errorMsg = sfmt("Command failed: %s\nStatus: %d\n%s\n%s", command, status, out, err);
+        httpTrace(stream->trace, "route.run.error", "error", "command:'%s', error:'%s'", command, stream->errorMsg);
         /* Continue */
     }
     mprDestroyCmd(cmd);
@@ -2345,39 +2345,39 @@ static int cmdUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 }
 
 
-static int paramUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int paramUpdate(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
-    assert(conn);
+    assert(stream);
     assert(route);
     assert(op);
 
-    httpSetParam(conn, op->var, expandTokens(conn, op->value));
+    httpSetParam(stream, op->var, expandTokens(stream, op->value));
     return HTTP_ROUTE_OK;
 }
 
 
-static int langUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int langUpdate(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     HttpUri     *prior;
     HttpRx      *rx;
     HttpLang    *lang;
     char        *ext, *pathInfo, *uri;
 
-    assert(conn);
+    assert(stream);
     assert(route);
 
-    rx = conn->rx;
+    rx = stream->rx;
     prior = rx->parsedUri;
     assert(route->languages);
 
-    if ((lang = httpGetLanguage(conn, route->languages, 0)) != 0) {
+    if ((lang = httpGetLanguage(stream, route->languages, 0)) != 0) {
         rx->lang = lang;
         if (lang->suffix) {
             pathInfo = 0;
             if (lang->flags & HTTP_LANG_AFTER) {
                 pathInfo = sjoin(rx->pathInfo, ".", lang->suffix, NULL);
             } else if (lang->flags & HTTP_LANG_BEFORE) {
-                ext = httpGetExt(conn);
+                ext = httpGetExt(stream);
                 if (ext && *ext) {
                     pathInfo = sjoin(mprJoinPathExt(mprTrimPathExt(rx->pathInfo), lang->suffix), ".", ext, NULL);
                 } else {
@@ -2386,7 +2386,7 @@ static int langUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
             }
             if (pathInfo) {
                 uri = httpFormatUri(prior->scheme, prior->host, prior->port, pathInfo, prior->reference, prior->query, 0);
-                httpSetUri(conn, uri);
+                httpSetUri(stream, uri);
             }
         }
     }
@@ -2396,54 +2396,54 @@ static int langUpdate(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
 
 /*********************************** Targets **********************************/
 
-static int closeTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int closeTarget(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
-    assert(conn);
+    assert(stream);
     assert(route);
 
-    httpError(conn, HTTP_CODE_RESET | HTTP_ABORT, "Route target \"close\" is closing request");
+    httpError(stream, HTTP_CODE_RESET | HTTP_ABORT, "Route target \"close\" is closing request");
     return HTTP_ROUTE_OK;
 }
 
 
-static int redirectTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int redirectTarget(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     cchar       *target;
 
-    assert(conn);
+    assert(stream);
     assert(route);
     assert(route->target);
 
-    target = expandTokens(conn, route->target);
-    httpRedirect(conn, route->responseStatus ? route->responseStatus : HTTP_CODE_MOVED_TEMPORARILY, target);
+    target = expandTokens(stream, route->target);
+    httpRedirect(stream, route->responseStatus ? route->responseStatus : HTTP_CODE_MOVED_TEMPORARILY, target);
     return HTTP_ROUTE_OK;
 }
 
 
-static int runTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int runTarget(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
-    conn->rx->target = route->target ? expandTokens(conn, route->target) : sclone(&conn->rx->pathInfo[1]);
+    stream->rx->target = route->target ? expandTokens(stream, route->target) : sclone(&stream->rx->pathInfo[1]);
     return HTTP_ROUTE_OK;
 }
 
 
-static int writeTarget(HttpConn *conn, HttpRoute *route, HttpRouteOp *op)
+static int writeTarget(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 {
     char    *str;
 
-    assert(conn);
+    assert(stream);
     assert(route);
 
     /*
         Need to re-compute output string as updates may have run to define params which affect the route->target tokens
      */
-    str = route->target ? expandTokens(conn, route->target) : sclone(&conn->rx->pathInfo[1]);
+    str = route->target ? expandTokens(stream, route->target) : sclone(&stream->rx->pathInfo[1]);
     if (!(route->flags & HTTP_ROUTE_RAW)) {
         str = mprEscapeHtml(str);
     }
-    httpSetStatus(conn, route->responseStatus);
-    httpFormatResponse(conn, "%s", str);
-    httpFinalize(conn);
+    httpSetStatus(stream, route->responseStatus);
+    httpFormatResponse(stream, "%s", str);
+    httpFinalize(stream);
     return HTTP_ROUTE_OK;
 }
 
@@ -2684,22 +2684,22 @@ static void defineHostVars(HttpRoute *route)
 }
 
 
-static char *expandTokens(HttpConn *conn, cchar *str)
+static char *expandTokens(HttpStream *stream, cchar *str)
 {
     HttpRx      *rx;
 
-    assert(conn);
+    assert(stream);
     assert(str);
 
-    rx = conn->rx;
-    return expandRequestTokens(conn, expandPatternTokens(rx->pathInfo, str, rx->matches, rx->matchCount));
+    rx = stream->rx;
+    return expandRequestTokens(stream, expandPatternTokens(rx->pathInfo, str, rx->matches, rx->matchCount));
 }
 
 
 /*
     WARNING: str is modified. Result is allocated string.
  */
-static char *expandRequestTokens(HttpConn *conn, char *str)
+static char *expandRequestTokens(HttpStream *stream, char *str)
 {
     HttpRx      *rx;
     HttpTx      *tx;
@@ -2709,12 +2709,12 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
     HttpLang    *lang;
     char        *tok, *cp, *key, *value, *field, *header, *defaultValue, *state, *v, *p;
 
-    assert(conn);
+    assert(stream);
     assert(str);
 
-    rx = conn->rx;
+    rx = stream->rx;
     route = rx->route;
-    tx = conn->tx;
+    tx = stream->tx;
     buf = mprCreateBuf(-1, -1);
     tok = 0;
     uri = rx->parsedUri;
@@ -2734,7 +2734,7 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
         }
         if (smatch(key, "header")) {
             header = stok(value, "=", &defaultValue);
-            if ((value = (char*) httpGetHeader(conn, header)) == 0) {
+            if ((value = (char*) httpGetHeader(stream, header)) == 0) {
                 value = defaultValue ? defaultValue : "";
             }
             mprPutStringToBuf(buf, value);
@@ -2744,7 +2744,7 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
             if (defaultValue == 0) {
                 defaultValue = "";
             }
-            mprPutStringToBuf(buf, httpGetParam(conn, field, defaultValue));
+            mprPutStringToBuf(buf, httpGetParam(stream, field, defaultValue));
 
         } else if (smatch(key, "request")) {
             value = stok(value, "=", &defaultValue);
@@ -2754,13 +2754,13 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
                 mprPutStringToBuf(buf, rx->authenticated ? "true" : "false");
 
             } else if (smatch(value, "clientAddress")) {
-                mprPutStringToBuf(buf, conn->ip);
+                mprPutStringToBuf(buf, stream->ip);
 
             } else if (smatch(value, "clientPort")) {
-                mprPutIntToBuf(buf, conn->port);
+                mprPutIntToBuf(buf, stream->port);
 
             } else if (smatch(value, "error")) {
-                mprPutStringToBuf(buf, conn->errorMsg);
+                mprPutStringToBuf(buf, stream->errorMsg);
 
             } else if (smatch(value, "ext")) {
                 mprPutStringToBuf(buf, uri->ext);
@@ -2775,14 +2775,14 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
                 if (!defaultValue) {
                     defaultValue = route->defaultLanguage;
                 }
-                if ((lang = httpGetLanguage(conn, route->languages, defaultValue)) != 0) {
+                if ((lang = httpGetLanguage(stream, route->languages, defaultValue)) != 0) {
                     mprPutStringToBuf(buf, lang->suffix);
                 } else {
                     mprPutStringToBuf(buf, defaultValue);
                 }
 
             } else if (scaselessmatch(value, "languageDir")) {
-                lang = httpGetLanguage(conn, route->languages, 0);
+                lang = httpGetLanguage(stream, route->languages, 0);
                 if (!defaultValue) {
                     defaultValue = ".";
                 }
@@ -2813,7 +2813,7 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
                 if (uri->scheme) {
                     mprPutStringToBuf(buf, uri->scheme);
                 }  else {
-                    mprPutStringToBuf(buf, (conn->secure) ? "https" : "http");
+                    mprPutStringToBuf(buf, (stream->secure) ? "https" : "http");
                 }
 
             } else if (smatch(value, "scriptName")) {
@@ -2821,10 +2821,10 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
 
             } else if (smatch(value, "serverAddress")) {
                 /* Pure IP address, no port. See "serverPort" */
-                mprPutStringToBuf(buf, conn->sock->acceptIp);
+                mprPutStringToBuf(buf, stream->sock->acceptIp);
 
             } else if (smatch(value, "serverPort")) {
-                mprPutIntToBuf(buf, conn->sock->acceptPort);
+                mprPutIntToBuf(buf, stream->sock->acceptPort);
 
             } else if (smatch(value, "uri")) {
                 mprPutStringToBuf(buf, rx->uri);
@@ -2833,9 +2833,9 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
         } else if (smatch(key, "ssl")) {
             value = stok(value, "=", &defaultValue);
             if (smatch(value, "state")) {
-                mprPutStringToBuf(buf, mprGetSocketState(conn->sock));
+                mprPutStringToBuf(buf, mprGetSocketState(stream->sock));
             } else {
-                state = mprGetSocketState(conn->sock);
+                state = mprGetSocketState(stream->sock);
                 if ((p = scontains(state, value)) != 0) {
                     stok(p, "=", &v);
                     mprPutStringToBuf(buf, stok(v, ", ", NULL));
@@ -2856,9 +2856,9 @@ static char *expandRequestTokens(HttpConn *conn, char *str)
 }
 
 
-PUBLIC char *httpExpandVars(HttpConn *conn, cchar *str)
+PUBLIC char *httpExpandVars(HttpStream *stream, cchar *str)
 {
-    return expandRequestTokens(conn, stemplate(str, conn->rx->route->vars));
+    return expandRequestTokens(stream, stemplate(str, stream->rx->route->vars));
 }
 
 

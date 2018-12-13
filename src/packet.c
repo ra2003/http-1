@@ -40,7 +40,7 @@ static void managePacket(HttpPacket *packet, int flags)
         mprMark(packet->prefix);
         mprMark(packet->content);
         mprMark(packet->data);
-        mprMark(packet->conn);
+        mprMark(packet->stream);
         /* Don't mark next packet, list owner will mark */
     }
 }
@@ -330,8 +330,8 @@ PUBLIC void httpPutPacket(HttpQueue *q, HttpPacket *packet)
     assert(packet);
     assert(q->put);
 
-    if (!packet->conn) {
-        packet->conn = q->conn;
+    if (!packet->stream) {
+        packet->stream = q->stream;
     }
     q->put(q, packet);
 }
@@ -372,8 +372,8 @@ PUBLIC void httpPutBackPacket(HttpQueue *q, HttpPacket *packet)
     assert(packet->next == 0);
     assert(q->count >= 0);
 
-    if (!packet->conn) {
-        packet->conn = q->conn;
+    if (!packet->stream) {
+        packet->stream = q->stream;
     }
     if (packet) {
         packet->next = q->first;
@@ -393,8 +393,8 @@ PUBLIC void httpPutForService(HttpQueue *q, HttpPacket *packet, bool serviceQ)
 {
     assert(packet);
 
-    if (!packet->conn) {
-        packet->conn = q->conn;
+    if (!packet->stream) {
+        packet->stream = q->stream;
     }
     q->count += httpGetPacketLength(packet);
     packet->next = 0;
@@ -506,7 +506,7 @@ PUBLIC HttpPacket *httpSplitPacket(HttpPacket *orig, ssize offset)
             }
         }
     }
-    tail->conn = orig->conn;
+    tail->stream = orig->stream;
     tail->flags = orig->flags;
     tail->type = orig->type;
     tail->last = orig->last;

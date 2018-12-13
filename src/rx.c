@@ -13,7 +13,7 @@ static void manageRx(HttpRx *rx, int flags);
 
 /*********************************** Code *************************************/
 
-PUBLIC HttpRx *httpCreateRx(HttpConn *conn)
+PUBLIC HttpRx *httpCreateRx(HttpStream *stream)
 {
     HttpRx      *rx;
     int         peer;
@@ -21,19 +21,19 @@ PUBLIC HttpRx *httpCreateRx(HttpConn *conn)
     if ((rx = mprAllocObj(HttpRx, manageRx)) == 0) {
         return 0;
     }
-    rx->conn = conn;
+    rx->stream = stream;
     rx->length = -1;
     rx->ifMatch = 1;
     rx->ifModified = 1;
     rx->pathInfo = sclone("/");
     rx->scriptName = mprEmptyString();
-    rx->needInputPipeline = httpClientConn(conn);
+    rx->needInputPipeline = httpClientStream(stream);
     rx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
     rx->chunkState = HTTP_CHUNK_UNCHUNKED;
 
-    rx->seqno = ++conn->net->totalRequests;
-    peer = conn->net->address ? conn->net->address->seqno : 0;
-    rx->traceId = sfmt("%d-0-%d-%d", peer, conn->net->seqno, rx->seqno);
+    rx->seqno = ++stream->net->totalRequests;
+    peer = stream->net->address ? stream->net->address->seqno : 0;
+    rx->traceId = sfmt("%d-0-%d-%d", peer, stream->net->seqno, rx->seqno);
     return rx;
 }
 
@@ -47,7 +47,7 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->acceptLanguage);
         mprMark(rx->authDetails);
         mprMark(rx->authType);
-        mprMark(rx->conn);
+        mprMark(rx->stream);
         mprMark(rx->connection);
         mprMark(rx->contentLength);
         mprMark(rx->cookie);
@@ -92,9 +92,9 @@ static void manageRx(HttpRx *rx, int flags)
 
 PUBLIC void httpDestroyRx(HttpRx *rx)
 {
-    if (rx->conn) {
-        rx->conn->rx = 0;
-        rx->conn = 0;
+    if (rx->stream) {
+        rx->stream->rx = 0;
+        rx->stream = 0;
     }
 }
 
@@ -107,27 +107,27 @@ PUBLIC void httpSetRequestCallback(HttpRequestCallback callback)
 }
 
 
-PUBLIC void httpCloseRx(HttpConn *conn)
+PUBLIC void httpCloseRx(HttpStream *stream)
 {
-    if (conn->rx && !conn->rx->remainingContent) {
+    if (stream->rx && !stream->rx->remainingContent) {
         /* May not have consumed all read data, so cannot be assured the next request will be okay */
-        conn->keepAliveCount = 0;
+        stream->keepAliveCount = 0;
     }
-    if (httpClientConn(conn)) {
-        httpEnableNetEvents(conn->net);
+    if (httpClientStream(stream)) {
+        httpEnableNetEvents(stream->net);
     }
 }
 
 
-PUBLIC bool httpContentNotModified(HttpConn *conn)
+PUBLIC bool httpContentNotModified(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpTx      *tx;
     MprTime     modified;
     bool        same;
 
-    rx = conn->rx;
-    tx = conn->tx;
+    rx = stream->rx;
+    tx = stream->tx;
 
     if (rx->flags & HTTP_IF_MODIFIED) {
         /*
@@ -136,7 +136,7 @@ PUBLIC bool httpContentNotModified(HttpConn *conn)
          */
         assert(tx->fileInfo.valid);
         modified = (MprTime) tx->fileInfo.mtime * TPS;
-        same = httpMatchModified(conn, modified) && httpMatchEtag(conn, tx->etag);
+        same = httpMatchModified(stream, modified) && httpMatchEtag(stream, tx->etag);
         if (tx->outputRanges && !same) {
             tx->outputRanges = 0;
         }
@@ -146,23 +146,23 @@ PUBLIC bool httpContentNotModified(HttpConn *conn)
 }
 
 
-PUBLIC MprOff httpGetContentLength(HttpConn *conn)
+PUBLIC MprOff httpGetContentLength(HttpStream *stream)
 {
-    if (conn->rx == 0) {
-        assert(conn->rx);
+    if (stream->rx == 0) {
+        assert(stream->rx);
         return 0;
     }
-    return conn->rx->length;
+    return stream->rx->length;
 }
 
 
-PUBLIC cchar *httpGetCookies(HttpConn *conn)
+PUBLIC cchar *httpGetCookies(HttpStream *stream)
 {
-    if (conn->rx == 0) {
-        assert(conn->rx);
+    if (stream->rx == 0) {
+        assert(stream->rx);
         return 0;
     }
-    return conn->rx->cookie;
+    return stream->rx->cookie;
 }
 
 
@@ -170,7 +170,7 @@ PUBLIC cchar *httpGetCookies(HttpConn *conn)
     Extract a cookie.
     The rx->cookies contains a list of header cookies. A site may submit multiple cookies separated by ";"
  */
-PUBLIC cchar *httpGetCookie(HttpConn *conn, cchar *name)
+PUBLIC cchar *httpGetCookie(HttpStream *stream, cchar *name)
 {
     HttpRx  *rx;
     cchar   *cookie;
@@ -178,8 +178,8 @@ PUBLIC cchar *httpGetCookie(HttpConn *conn, cchar *name)
     ssize   nlen;
     int     quoted;
 
-    assert(conn);
-    rx = conn->rx;
+    assert(stream);
+    rx = stream->rx;
     assert(rx);
 
     if ((cookie = rx->cookie) == 0 || name == 0 || *name == '\0') {
@@ -221,13 +221,13 @@ PUBLIC cchar *httpGetCookie(HttpConn *conn, cchar *name)
 }
 
 
-PUBLIC cchar *httpGetHeader(HttpConn *conn, cchar *key)
+PUBLIC cchar *httpGetHeader(HttpStream *stream, cchar *key)
 {
-    if (conn->rx == 0) {
-        assert(conn->rx);
+    if (stream->rx == 0) {
+        assert(stream->rx);
         return 0;
     }
-    return mprLookupKey(conn->rx->headers, slower(key));
+    return mprLookupKey(stream->rx->headers, slower(key));
 }
 
 
@@ -257,47 +257,47 @@ PUBLIC char *httpGetHeadersFromHash(MprHash *hash)
 }
 
 
-PUBLIC char *httpGetHeaders(HttpConn *conn)
+PUBLIC char *httpGetHeaders(HttpStream *stream)
 {
-    return httpGetHeadersFromHash(conn->rx->headers);
+    return httpGetHeadersFromHash(stream->rx->headers);
 }
 
 
-PUBLIC MprHash *httpGetHeaderHash(HttpConn *conn)
+PUBLIC MprHash *httpGetHeaderHash(HttpStream *stream)
 {
-    if (conn->rx == 0) {
-        assert(conn->rx);
+    if (stream->rx == 0) {
+        assert(stream->rx);
         return 0;
     }
-    return conn->rx->headers;
+    return stream->rx->headers;
 }
 
 
-PUBLIC cchar *httpGetQueryString(HttpConn *conn)
+PUBLIC cchar *httpGetQueryString(HttpStream *stream)
 {
-    return (conn->rx && conn->rx->parsedUri) ? conn->rx->parsedUri->query : 0;
+    return (stream->rx && stream->rx->parsedUri) ? stream->rx->parsedUri->query : 0;
 }
 
 
-PUBLIC int httpGetStatus(HttpConn *conn)
+PUBLIC int httpGetStatus(HttpStream *stream)
 {
-    return (conn->rx) ? conn->rx->status : 0;
+    return (stream->rx) ? stream->rx->status : 0;
 }
 
 
-PUBLIC cchar *httpGetStatusMessage(HttpConn *conn)
+PUBLIC cchar *httpGetStatusMessage(HttpStream *stream)
 {
-    return (conn->rx) ? conn->rx->statusMessage : 0;
+    return (stream->rx) ? stream->rx->statusMessage : 0;
 }
 
 
-PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
+PUBLIC int httpSetUri(HttpStream *stream, cchar *uri)
 {
     HttpRx      *rx;
     HttpUri     *parsedUri;
     char        *pathInfo;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if ((parsedUri = httpCreateUri(uri, 0)) == 0 || !parsedUri->valid) {
         return MPR_ERR_BAD_ARGS;
     }
@@ -309,7 +309,7 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
     }
     rx->pathInfo = pathInfo;
     rx->uri = parsedUri->path;
-    conn->tx->ext = httpGetExt(conn);
+    stream->tx->ext = httpGetExt(stream);
 
     /*
         Start out with no scriptName and the entire URI in the pathInfo. Stages may rewrite.
@@ -320,22 +320,22 @@ PUBLIC int httpSetUri(HttpConn *conn, cchar *uri)
 }
 
 
-PUBLIC bool httpIsEof(HttpConn *conn)
+PUBLIC bool httpIsEof(HttpStream *stream)
 {
-    return conn->rx == 0 || conn->rx->eof;
+    return stream->rx == 0 || stream->rx->eof;
 }
 
 
 /*
     Match the entity's etag with the client's provided etag.
  */
-PUBLIC bool httpMatchEtag(HttpConn *conn, char *requestedEtag)
+PUBLIC bool httpMatchEtag(HttpStream *stream, char *requestedEtag)
 {
     HttpRx  *rx;
     char    *tag;
     int     next;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (rx->etags == 0) {
         return 1;
     }
@@ -355,11 +355,11 @@ PUBLIC bool httpMatchEtag(HttpConn *conn, char *requestedEtag)
     If an IF-MODIFIED-SINCE was specified, then return true if the resource has not been modified. If using
     IF-UNMODIFIED, then return true if the resource was modified.
  */
-PUBLIC bool httpMatchModified(HttpConn *conn, MprTime time)
+PUBLIC bool httpMatchModified(HttpStream *stream, MprTime time)
 {
     HttpRx   *rx;
 
-    rx = conn->rx;
+    rx = stream->rx;
 
     if (rx->since == 0) {
         /*  If-Modified or UnModified not supplied. */
@@ -375,19 +375,19 @@ PUBLIC bool httpMatchModified(HttpConn *conn, MprTime time)
 }
 
 
-PUBLIC void httpSetEof(HttpConn *conn)
+PUBLIC void httpSetEof(HttpStream *stream)
 {
-    if (conn->net->protocol < 2) {
-        conn->rx->eof = 1;
+    if (stream->net->protocol < 2) {
+        stream->rx->eof = 1;
     }
 }
 
 
-PUBLIC void httpSetStageData(HttpConn *conn, cchar *key, cvoid *data)
+PUBLIC void httpSetStageData(HttpStream *stream, cchar *key, cvoid *data)
 {
     HttpRx      *rx;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (rx->requestData == 0) {
         rx->requestData = mprCreateHash(-1, 0);
     }
@@ -395,11 +395,11 @@ PUBLIC void httpSetStageData(HttpConn *conn, cchar *key, cvoid *data)
 }
 
 
-PUBLIC cvoid *httpGetStageData(HttpConn *conn, cchar *key)
+PUBLIC cvoid *httpGetStageData(HttpStream *stream, cchar *key)
 {
     HttpRx      *rx;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (rx->requestData == 0) {
         return NULL;
     }
@@ -426,15 +426,15 @@ PUBLIC char *httpGetPathExt(cchar *path)
     Get the request extension. Look first at the URI pathInfo. If no extension, look at the filename if defined.
     Return NULL if no extension.
  */
-PUBLIC char *httpGetExt(HttpConn *conn)
+PUBLIC char *httpGetExt(HttpStream *stream)
 {
     HttpRx  *rx;
     char    *ext;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if ((ext = httpGetPathExt(rx->pathInfo)) == 0) {
-        if (conn->tx->filename) {
-            ext = httpGetPathExt(conn->tx->filename);
+        if (stream->tx->filename) {
+            ext = httpGetPathExt(stream->tx->filename);
         }
     }
     return ext;
@@ -448,7 +448,7 @@ static int compareLang(char **s1, char **s2)
 }
 
 
-PUBLIC HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *defaultLang)
+PUBLIC HttpLang *httpGetLanguage(HttpStream *stream, MprHash *spoken, cchar *defaultLang)
 {
     HttpRx      *rx;
     HttpLang    *lang;
@@ -457,7 +457,7 @@ PUBLIC HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *default
     char        *nextTok, *tok, *quality, *language;
     int         next;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (rx->lang) {
         return rx->lang;
     }
@@ -465,7 +465,7 @@ PUBLIC HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *default
         return 0;
     }
     list = mprCreateList(-1, MPR_LIST_STABLE);
-    if ((accept = httpGetHeader(conn, "Accept-Language")) != 0) {
+    if ((accept = httpGetHeader(stream, "Accept-Language")) != 0) {
         for (tok = stok(sclone(accept), ",", &nextTok); tok; tok = stok(nextTok, ",", &nextTok)) {
             language = stok(tok, ";", &quality);
             if (quality == 0) {
@@ -495,13 +495,13 @@ PUBLIC HttpLang *httpGetLanguage(HttpConn *conn, MprHash *spoken, cchar *default
     first path component containing a "." Any path information after that is regarded as extra path.
     WARNING: Extra path is an old, unreliable, CGI specific technique. Do not use directories with embedded periods.
  */
-PUBLIC void httpTrimExtraPath(HttpConn *conn)
+PUBLIC void httpTrimExtraPath(HttpStream *stream)
 {
     HttpRx      *rx;
     char        *cp, *extra;
     ssize       len;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (!(rx->flags & (HTTP_OPTIONS | HTTP_TRACE))) {
         if ((cp = schr(rx->pathInfo, '.')) != 0 && (extra = schr(cp, '/')) != 0) {
             len = extra - rx->pathInfo;
@@ -520,13 +520,13 @@ PUBLIC void httpTrimExtraPath(HttpConn *conn)
 }
 
 
-PUBLIC void httpParseMethod(HttpConn *conn)
+PUBLIC void httpParseMethod(HttpStream *stream)
 {
     HttpRx      *rx;
     cchar       *method;
     int         methodFlags;
 
-    rx = conn->rx;
+    rx = stream->rx;
     method = rx->method;
     methodFlags = 0;
 

@@ -31,8 +31,8 @@ typedef struct HttpDigest {
 
 /********************************** Forwards **********************************/
 
-static char *calcDigest(HttpConn *conn, HttpDigest *dp, cchar *username);
-static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm);
+static char *calcDigest(HttpStream *stream, HttpDigest *dp, cchar *username);
+static char *createDigestNonce(HttpStream *stream, cchar *secret, cchar *realm);
 static void manageDigestData(HttpDigest *dp, int flags);
 static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime *when);
 
@@ -40,7 +40,7 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
 /*
     Parse the 'Authorization' header and the server 'Www-Authenticate' header
  */
-PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
+PUBLIC int httpDigestParse(HttpStream *stream, cchar **username, cchar **password)
 {
     HttpRx      *rx;
     HttpDigest  *dp;
@@ -49,7 +49,7 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
     cchar       *secret, *realm;
     int         seenComma;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (password) {
         *password = NULL;
     }
@@ -59,7 +59,7 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
     if (!rx->authDetails) {
         return 0;
     }
-    dp = conn->authData = mprAllocObj(HttpDigest, manageDigestData);
+    dp = stream->authData = mprAllocObj(HttpDigest, manageDigestData);
     key = sclone(rx->authDetails);
 
     while (*key) {
@@ -160,7 +160,7 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
                 if (password) {
                     *password = sclone(value);
                 }
-                conn->encoded = 1;
+                stream->encoded = 1;
             }
             break;
 
@@ -205,27 +205,27 @@ PUBLIC int httpDigestParse(HttpConn *conn, cchar **username, cchar **password)
     if (dp->qop && (dp->cnonce == 0 || dp->nc == 0)) {
         return MPR_ERR_BAD_FORMAT;
     }
-    if (httpServerConn(conn)) {
+    if (httpServerStream(stream)) {
         realm = secret = 0;
         when = 0;
         parseDigestNonce(dp->nonce, &secret, &realm, &when);
-        if (!smatch(conn->http->secret, secret)) {
-            httpTrace(conn->trace, "auth.digest.error", "error", "msg:'Access denied, Nonce mismatch'");
+        if (!smatch(stream->http->secret, secret)) {
+            httpTrace(stream->trace, "auth.digest.error", "error", "msg:'Access denied, Nonce mismatch'");
             return MPR_ERR_BAD_STATE;
 
         } else if (!smatch(realm, rx->route->auth->realm)) {
-            httpTrace(conn->trace, "auth.digest.error", "error", "msg:'Access denied, Realm mismatch'");
+            httpTrace(stream->trace, "auth.digest.error", "error", "msg:'Access denied, Realm mismatch'");
             return MPR_ERR_BAD_STATE;
 
         } else if (dp->qop && !smatch(dp->qop, "auth")) {
-            httpTrace(conn->trace, "auth.digest.error", "error", "msg:'Access denied, Bad qop'");
+            httpTrace(stream->trace, "auth.digest.error", "error", "msg:'Access denied, Bad qop'");
             return MPR_ERR_BAD_STATE;
 
         } else if ((when + (5 * 60)) < time(0)) {
-            httpTrace(conn->trace, "auth.digest.error", "error", "msg:'Access denied, Nonce is stale'");
+            httpTrace(stream->trace, "auth.digest.error", "error", "msg:'Access denied, Nonce is stale'");
             return MPR_ERR_BAD_STATE;
         }
-        rx->passwordDigest = calcDigest(conn, dp, *username);
+        rx->passwordDigest = calcDigest(stream, dp, *username);
     } else {
         if (dp->domain == 0 || dp->opaque == 0 || dp->algorithm == 0 || dp->stale == 0) {
             return MPR_ERR_BAD_FORMAT;
@@ -256,30 +256,30 @@ static void manageDigestData(HttpDigest *dp, int flags)
     Respond to the request by asking for a login
     Only called if not logged in.
  */
-PUBLIC void httpDigestLogin(HttpConn *conn)
+PUBLIC void httpDigestLogin(HttpStream *stream)
 {
     HttpAuth    *auth;
     char        *nonce, *opaque;
 
-    auth = conn->rx->route->auth;
+    auth = stream->rx->route->auth;
 
-    if (auth->loginPage && !sends(conn->rx->referrer, auth->loginPage)) {
-        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
+    if (auth->loginPage && !sends(stream->rx->referrer, auth->loginPage)) {
+        httpRedirect(stream, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
     } else {
-        nonce = createDigestNonce(conn, conn->http->secret, auth->realm);
+        nonce = createDigestNonce(stream, stream->http->secret, auth->realm);
         /* Opaque is unused, set to anything */
         opaque = "799d5";
 
         if (smatch(auth->qop, "none")) {
-            httpSetHeader(conn, "WWW-Authenticate", "Digest realm=\"%s\", nonce=\"%s\"", auth->realm, nonce);
+            httpSetHeader(stream, "WWW-Authenticate", "Digest realm=\"%s\", nonce=\"%s\"", auth->realm, nonce);
         } else {
             /* qop value of null defaults to "auth" */
-            httpSetHeader(conn, "WWW-Authenticate", "Digest realm=\"%s\", domain=\"%s\", "
+            httpSetHeader(stream, "WWW-Authenticate", "Digest realm=\"%s\", domain=\"%s\", "
                 "qop=\"auth\", nonce=\"%s\", opaque=\"%s\", algorithm=\"MD5\", stale=\"FALSE\"",
                 auth->realm, "/", nonce, opaque);
         }
-        httpSetContentType(conn, "text/plain");
-        httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
+        httpSetContentType(stream, "text/plain");
+        httpError(stream, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
     }
 }
 
@@ -288,16 +288,16 @@ PUBLIC void httpDigestLogin(HttpConn *conn)
     Add the 'Authorization' header for authenticated requests
     Must first get a 401 response to get the authData.
  */
-PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *password)
+PUBLIC bool httpDigestSetHeaders(HttpStream *stream, cchar *username, cchar *password)
 {
     Http        *http;
     HttpTx      *tx;
     HttpDigest  *dp;
     char        *ha1, *ha2, *digest, *cnonce;
 
-    http = conn->http;
-    tx = conn->tx;
-    if ((dp = conn->authData) == 0) {
+    http = stream->http;
+    tx = stream->tx;
+    if ((dp = stream->authData) == 0) {
         /* Need to await a failing auth response */
         return 0;
     }
@@ -306,13 +306,13 @@ PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *passwor
     ha2 = mprGetMD5(sfmt("%s:%s", tx->method, tx->parsedUri->path));
     if (smatch(dp->qop, "auth")) {
         digest = mprGetMD5(sfmt("%s:%s:%s:%s:%s:%s", ha1, dp->nonce, dp->nc, cnonce, dp->qop, ha2));
-        httpAddHeader(conn, "Authorization", "Digest username=\"%s\", realm=\"%s\", domain=\"%s\", "
+        httpAddHeader(stream, "Authorization", "Digest username=\"%s\", realm=\"%s\", domain=\"%s\", "
             "algorithm=\"MD5\", qop=\"%s\", cnonce=\"%s\", nc=\"%s\", nonce=\"%s\", opaque=\"%s\", "
             "stale=\"FALSE\", uri=\"%s\", response=\"%s\"", username, dp->realm, dp->domain, dp->qop,
             cnonce, dp->nc, dp->nonce, dp->opaque, tx->parsedUri->path, digest);
     } else {
         digest = mprGetMD5(sfmt("%s:%s:%s", ha1, dp->nonce, ha2));
-        httpAddHeader(conn, "Authorization", "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", "
+        httpAddHeader(stream, "Authorization", "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", "
             "uri=\"%s\", response=\"%s\"", username, dp->realm, dp->nonce, tx->parsedUri->path, digest);
     }
     return 1;
@@ -322,7 +322,7 @@ PUBLIC bool httpDigestSetHeaders(HttpConn *conn, cchar *username, cchar *passwor
 /*
     Create a nonce value for digest authentication (RFC 2617)
  */
-static char *createDigestNonce(HttpConn *conn, cchar *secret, cchar *realm)
+static char *createDigestNonce(HttpStream *stream, cchar *secret, cchar *realm)
 {
     static int64 next = 0;
 
@@ -349,37 +349,37 @@ static int parseDigestNonce(char *nonce, cchar **secret, cchar **realm, MprTime 
 /*
     Get a password digest using the MD5 algorithm -- See RFC 2617 to understand this code.
  */
-static char *calcDigest(HttpConn *conn, HttpDigest *dp, cchar *username)
+static char *calcDigest(HttpStream *stream, HttpDigest *dp, cchar *username)
 {
     HttpAuth    *auth;
     char        *digestBuf, *ha1, *ha2;
 
-    auth = conn->rx->route->auth;
-    if (!conn->user) {
-        conn->user = mprLookupKey(auth->userCache, username);
+    auth = stream->rx->route->auth;
+    if (!stream->user) {
+        stream->user = mprLookupKey(auth->userCache, username);
     }
-    assert(conn->user && conn->user->password);
-    if (conn->user == 0 || conn->user->password == 0) {
+    assert(stream->user && stream->user->password);
+    if (stream->user == 0 || stream->user->password == 0) {
         return 0;
     }
 
     /*
         Compute HA1. Password is already expected to be in the HA1 format MD5(username:realm:password).
      */
-    ha1 = sclone(conn->user->password);
+    ha1 = sclone(stream->user->password);
 
     /*
         HA2
      */
 #if PROTOTYPE || 1
-    if (conn->rx->route->flags & HTTP_ROUTE_DOTNET_DIGEST_FIX) {
+    if (stream->rx->route->flags & HTTP_ROUTE_DOTNET_DIGEST_FIX) {
         char *uri = stok(sclone(dp->uri), "?", 0);
-        ha2 = mprGetMD5(sfmt("%s:%s", conn->rx->method, uri));
+        ha2 = mprGetMD5(sfmt("%s:%s", stream->rx->method, uri));
     } else {
-        ha2 = mprGetMD5(sfmt("%s:%s", conn->rx->method, dp->uri));
+        ha2 = mprGetMD5(sfmt("%s:%s", stream->rx->method, dp->uri));
     }
 #else
-    ha2 = mprGetMD5(sfmt("%s:%s", conn->rx->method, dp->uri));
+    ha2 = mprGetMD5(sfmt("%s:%s", stream->rx->method, dp->uri));
 #endif
 
     /*

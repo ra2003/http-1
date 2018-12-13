@@ -138,7 +138,7 @@ PUBLIC HttpStage *httpCreateFilter(cchar *name, MprModule *module)
 }
 
 
-PUBLIC HttpStage *httpCreateConnector(cchar *name, MprModule *module)
+PUBLIC HttpStage *httpCreateStreamector(cchar *name, MprModule *module)
 {
     return httpCreateStage(name, HTTP_STAGE_CONNECTOR, module);
 }

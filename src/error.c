@@ -9,15 +9,15 @@
 
 /********************************** Forwards **********************************/
 
-static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args);
-static cchar *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args);
+static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args);
+static cchar *formatErrorv(HttpStream *stream, int status, cchar *fmt, va_list args);
 
 /*********************************** Code *************************************/
 
 PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...)
 {
     va_list     args;
-    HttpConn    *conn;
+    HttpStream    *stream;
     cchar       *msg;
     int         next;
 
@@ -34,8 +34,8 @@ PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...)
         }
 #endif
         if (httpIsServer(net)) {
-            for (ITERATE_ITEMS(net->connections, conn, next)) {
-                httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "%s", msg);
+            for (ITERATE_ITEMS(net->streams, stream, next)) {
+                httpError(stream, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "%s", msg);
             }
             // TODO httpMonitorNetEvent(net, HTTP_COUNTER_BAD_REQUEST_ERRORS, 1);
         }
@@ -44,76 +44,76 @@ PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...)
 }
 
 
-PUBLIC void httpBadRequestError(HttpConn *conn, int flags, cchar *fmt, ...)
+PUBLIC void httpBadRequestError(HttpStream *stream, int flags, cchar *fmt, ...)
 {
     va_list     args;
 
     va_start(args, fmt);
-    if (httpServerConn(conn)) {
-        httpMonitorEvent(conn, HTTP_COUNTER_BAD_REQUEST_ERRORS, 1);
+    if (httpServerStream(stream)) {
+        httpMonitorEvent(stream, HTTP_COUNTER_BAD_REQUEST_ERRORS, 1);
     }
-    errorv(conn, flags, fmt, args);
+    errorv(stream, flags, fmt, args);
     va_end(args);
 }
 
 
-PUBLIC void httpLimitError(HttpConn *conn, int flags, cchar *fmt, ...)
+PUBLIC void httpLimitError(HttpStream *stream, int flags, cchar *fmt, ...)
 {
     va_list     args;
 
     va_start(args, fmt);
-    if (httpServerConn(conn)) {
-        httpMonitorEvent(conn, HTTP_COUNTER_LIMIT_ERRORS, 1);
+    if (httpServerStream(stream)) {
+        httpMonitorEvent(stream, HTTP_COUNTER_LIMIT_ERRORS, 1);
     }
-    errorv(conn, flags, fmt, args);
+    errorv(stream, flags, fmt, args);
     va_end(args);
 }
 
 
-PUBLIC void httpError(HttpConn *conn, int flags, cchar *fmt, ...)
+PUBLIC void httpError(HttpStream *stream, int flags, cchar *fmt, ...)
 {
     va_list     args;
 
     va_start(args, fmt);
-    errorv(conn, flags, fmt, args);
+    errorv(stream, flags, fmt, args);
     va_end(args);
 }
 
 
-static void errorRedirect(HttpConn *conn, cchar *uri)
+static void errorRedirect(HttpStream *stream, cchar *uri)
 {
     HttpTx      *tx;
 
-    tx = conn->tx;
+    tx = stream->tx;
     if (sstarts(uri, "http") || tx->flags & HTTP_TX_HEADERS_CREATED) {
-        httpRedirect(conn, HTTP_CODE_MOVED_PERMANENTLY, uri);
+        httpRedirect(stream, HTTP_CODE_MOVED_PERMANENTLY, uri);
     } else {
         /*
             No response started and it is an internal redirect, so we can rerun the request.
             Set finalized to "cap" any output. processCompletion() in rx.c will rerun the request using the errorDocument.
          */
-        tx->errorDocument = httpLinkAbs(conn, uri);
+        tx->errorDocument = httpLinkAbs(stream, uri);
         tx->finalized = tx->finalizedOutput = tx->finalizedConnector = 1;
     }
 }
 
 
-static void makeAltBody(HttpConn *conn, int status)
+static void makeAltBody(HttpStream *stream, int status)
 {
     HttpRx      *rx;
     HttpTx      *tx;
     cchar       *statusMsg, *msg;
 
-    rx = conn->rx;
-    tx = conn->tx;
+    rx = stream->rx;
+    tx = stream->tx;
     assert(rx && tx);
 
     statusMsg = httpLookupStatus(status);
-    msg = (rx && rx->route && rx->route->flags & HTTP_ROUTE_SHOW_ERRORS) ?  conn->errorMsg : "";
+    msg = (rx && rx->route && rx->route->flags & HTTP_ROUTE_SHOW_ERRORS) ?  stream->errorMsg : "";
     if (rx && scmp(rx->accept, "text/plain") == 0) {
         tx->altBody = sfmt("Access Error: %d -- %s\r\n%s\r\n", status, statusMsg, msg);
     } else {
-        httpSetContentType(conn, "text/html");
+        httpSetContentType(stream, "text/html");
         tx->altBody = sfmt("<!DOCTYPE html>\r\n"
             "<head>\r\n"
             "    <title>%s</title>\r\n"
@@ -131,17 +131,17 @@ static void makeAltBody(HttpConn *conn, int status)
     overrides the normal output with an alternate error message. If the output has alread started (headers sent), then
     the connection MUST be closed so the client can get some indication the request failed.
  */
-static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
+static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
 {
     HttpRx      *rx;
     HttpTx      *tx;
     cchar       *uri;
     int         status;
 
-    rx = conn->rx;
-    tx = conn->tx;
+    rx = stream->rx;
+    tx = stream->tx;
 
-    if (conn == 0 || fmt == 0) {
+    if (stream == 0 || fmt == 0) {
         return;
     }
     status = flags & HTTP_CODE_MASK;
@@ -149,22 +149,22 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         status = HTTP_CODE_INTERNAL_SERVER_ERROR;
     }
     if (flags & (HTTP_ABORT | HTTP_CLOSE)) {
-        conn->keepAliveCount = 0;
+        stream->keepAliveCount = 0;
     }
-    if (!conn->error) {
-        conn->error = 1;
-        httpOmitBody(conn);
-        conn->errorMsg = formatErrorv(conn, status, fmt, args);
-        httpTrace(conn->trace, "error", "error", "msg:'%s'", conn->errorMsg);
-        HTTP_NOTIFY(conn, HTTP_EVENT_ERROR, 0);
-        if (httpServerConn(conn)) {
+    if (!stream->error) {
+        stream->error = 1;
+        httpOmitBody(stream);
+        stream->errorMsg = formatErrorv(stream, status, fmt, args);
+        httpTrace(stream->trace, "error", "error", "msg:'%s'", stream->errorMsg);
+        HTTP_NOTIFY(stream, HTTP_EVENT_ERROR, 0);
+        if (httpServerStream(stream)) {
             if (status == HTTP_CODE_NOT_FOUND) {
-                httpMonitorEvent(conn, HTTP_COUNTER_NOT_FOUND_ERRORS, 1);
+                httpMonitorEvent(stream, HTTP_COUNTER_NOT_FOUND_ERRORS, 1);
             }
-            httpMonitorEvent(conn, HTTP_COUNTER_ERRORS, 1);
+            httpMonitorEvent(stream, HTTP_COUNTER_ERRORS, 1);
         }
-        httpSetHeaderString(conn, "Cache-Control", "no-cache");
-        if (httpServerConn(conn) && tx && rx) {
+        httpSetHeaderString(stream, "Cache-Control", "no-cache");
+        if (httpServerStream(stream) && tx && rx) {
             if (tx->flags & HTTP_TX_HEADERS_CREATED) {
                 /*
                     If the response headers have been sent, must let the other side of the failure ... aborting
@@ -173,61 +173,61 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
                 flags |= HTTP_ABORT;
             } else {
                 if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status)) && !smatch(uri, rx->uri)) {
-                    errorRedirect(conn, uri);
+                    errorRedirect(stream, uri);
                 } else {
-                    makeAltBody(conn, status);
+                    makeAltBody(stream, status);
                 }
             }
         }
         if (flags & HTTP_ABORT) {
-            conn->disconnect = 1;
+            stream->disconnect = 1;
         }
-        httpFinalize(conn);
+        httpFinalize(stream);
     }
-    if (conn->disconnect && conn->net->protocol < 2) {
-        httpDisconnectConn(conn);
+    if (stream->disconnect && stream->net->protocol < 2) {
+        httpDisconnectStream(stream);
     }
 }
 
 
 /*
-    Just format conn->errorMsg and set status - nothing more
+    Just format stream->errorMsg and set status - nothing more
     NOTE: this is an internal API. Users should use httpError()
  */
-static cchar *formatErrorv(HttpConn *conn, int status, cchar *fmt, va_list args)
+static cchar *formatErrorv(HttpStream *stream, int status, cchar *fmt, va_list args)
 {
-    if (conn->errorMsg == 0) {
-        conn->errorMsg = sfmtv(fmt, args);
+    if (stream->errorMsg == 0) {
+        stream->errorMsg = sfmtv(fmt, args);
         if (status) {
             if (status < 0) {
                 status = HTTP_CODE_INTERNAL_SERVER_ERROR;
             }
-            if (httpServerConn(conn) && conn->tx) {
-                conn->tx->status = status;
-            } else if (conn->rx) {
-                conn->rx->status = status;
+            if (httpServerStream(stream) && stream->tx) {
+                stream->tx->status = status;
+            } else if (stream->rx) {
+                stream->rx->status = status;
             }
         }
     }
-    return conn->errorMsg;
+    return stream->errorMsg;
 }
 
 
-PUBLIC cchar *httpGetError(HttpConn *conn)
+PUBLIC cchar *httpGetError(HttpStream *stream)
 {
-    if (conn->errorMsg) {
-        return conn->errorMsg;
-    } else if (conn->state >= HTTP_STATE_FIRST) {
-        return httpLookupStatus(conn->rx->status);
+    if (stream->errorMsg) {
+        return stream->errorMsg;
+    } else if (stream->state >= HTTP_STATE_FIRST) {
+        return httpLookupStatus(stream->rx->status);
     } else {
         return "";
     }
 }
 
 
-PUBLIC void httpMemoryError(HttpConn *conn)
+PUBLIC void httpMemoryError(HttpStream *stream)
 {
-    httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Memory allocation error");
+    httpError(stream, HTTP_CODE_INTERNAL_SERVER_ERROR, "Memory allocation error");
 }
 
 

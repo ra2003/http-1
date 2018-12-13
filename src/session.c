@@ -10,7 +10,7 @@
 
 /********************************** Forwards  *********************************/
 
-static cchar *createSecurityToken(HttpConn *conn);
+static cchar *createSecurityToken(HttpStream *stream);
 static void manageSession(HttpSession *sp, int flags);
 
 /************************************* Code ***********************************/
@@ -18,21 +18,21 @@ static void manageSession(HttpSession *sp, int flags);
     Allocate a http session state object. This keeps a local hash for session state items.
     This is written via httpWriteSession to the backend session state store.
  */
-static HttpSession *allocSessionObj(HttpConn *conn, cchar *id, cchar *data)
+static HttpSession *allocSessionObj(HttpStream *stream, cchar *id, cchar *data)
 {
     HttpSession *sp;
 
-    assert(conn);
+    assert(stream);
     assert(id && *id);
-    assert(conn->http);
-    assert(conn->http->sessionCache);
+    assert(stream->http);
+    assert(stream->http->sessionCache);
 
     if ((sp = mprAllocObj(HttpSession, manageSession)) == 0) {
         return 0;
     }
-    sp->lifespan = conn->limits->sessionTimeout;
+    sp->lifespan = stream->limits->sessionTimeout;
     sp->id = sclone(id);
-    sp->cache = conn->http->sessionCache;
+    sp->cache = stream->http->sessionCache;
     if (data) {
         sp->data = mprDeserialize(data);
     }
@@ -52,10 +52,10 @@ PUBLIC bool httpLookupSessionID(cchar *id)
 /*
     Public API to create or re-create a session. Always returns with a new session store.
  */
-PUBLIC HttpSession *httpCreateSession(HttpConn *conn)
+PUBLIC HttpSession *httpCreateSession(HttpStream *stream)
 {
-    httpDestroySession(conn);
-    return httpGetSession(conn, 1);
+    httpDestroySession(stream);
+    return httpGetSession(stream, 1);
 }
 
 
@@ -65,21 +65,21 @@ PUBLIC void httpSetSessionNotify(MprCacheProc callback)
 }
 
 
-PUBLIC void httpDestroySession(HttpConn *conn)
+PUBLIC void httpDestroySession(HttpStream *stream)
 {
     Http        *http;
     HttpRx      *rx;
     HttpSession *sp;
     cchar       *cookie;
 
-    http = conn->http;
-    rx = conn->rx;
+    http = stream->http;
+    rx = stream->rx;
     assert(http);
 
     lock(http);
-    if ((sp = httpGetSession(conn, 0)) != 0) {
+    if ((sp = httpGetSession(stream, 0)) != 0) {
         cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
-        httpRemoveCookie(conn, cookie);
+        httpRemoveCookie(stream, cookie);
         mprExpireCacheItem(sp->cache, sp->id, 0);
         sp->id = 0;
         rx->session = 0;
@@ -102,7 +102,7 @@ static void manageSession(HttpSession *sp, int flags)
 /*
     Optionally create if "create" is true. Will not re-create.
  */
-PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
+PUBLIC HttpSession *httpGetSession(HttpStream *stream, int create)
 {
     Http        *http;
     HttpRx      *rx;
@@ -112,50 +112,50 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
     static int  seqno = 0;
     int         flags, thisSeqno, activeSessions;
 
-    assert(conn);
-    rx = conn->rx;
+    assert(stream);
+    rx = stream->rx;
     route = rx->route;
-    http = conn->http;
+    http = stream->http;
     assert(rx);
 
     if (!rx->session) {
-        if ((id = httpGetSessionID(conn)) != 0) {
-            if ((data = mprReadCache(conn->http->sessionCache, id, 0, 0)) != 0) {
-                rx->session = allocSessionObj(conn, id, data);
-                rx->traceId = sfmt("%d-%d-%d-%d", conn->net->address->seqno, rx->session->seqno, conn->net->seqno, rx->seqno);
+        if ((id = httpGetSessionID(stream)) != 0) {
+            if ((data = mprReadCache(stream->http->sessionCache, id, 0, 0)) != 0) {
+                rx->session = allocSessionObj(stream, id, data);
+                rx->traceId = sfmt("%d-%d-%d-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
             }
         }
         if (!rx->session && create) {
             lock(http);
             thisSeqno = ++seqno;
-            id = sfmt("%08x%08x%d", PTOI(conn->data) + PTOI(conn), (int) mprGetTicks(), thisSeqno);
+            id = sfmt("%08x%08x%d", PTOI(stream->data) + PTOI(stream), (int) mprGetTicks(), thisSeqno);
             id = mprGetMD5WithPrefix(id, slen(id), "-http.session-");
             id = sfmt("%d%s", thisSeqno, mprGetMD5WithPrefix(id, slen(id), "::http.session::"));
 
             mprGetCacheStats(http->sessionCache, &activeSessions, NULL);
-            if (activeSessions >= conn->limits->sessionMax) {
+            if (activeSessions >= stream->limits->sessionMax) {
                 unlock(http);
-                httpLimitError(conn, HTTP_CODE_SERVICE_UNAVAILABLE,
-                    "Too many sessions %d/%d", activeSessions, conn->limits->sessionMax);
+                httpLimitError(stream, HTTP_CODE_SERVICE_UNAVAILABLE,
+                    "Too many sessions %d/%d", activeSessions, stream->limits->sessionMax);
                 return 0;
             }
             unlock(http);
 
-            rx->session = allocSessionObj(conn, id, NULL);
-            rx->traceId = sfmt("%d-%d-%d-%d", conn->net->address->seqno, rx->session->seqno, conn->net->seqno, rx->seqno);
+            rx->session = allocSessionObj(stream, id, NULL);
+            rx->traceId = sfmt("%d-%d-%d-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
             flags = (route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
-            if (conn->secure) {
+            if (stream->secure) {
                 flags |= HTTP_COOKIE_SECURE;
             }
             flags |= HTTP_COOKIE_SAME_LAX;
             cookie = route->cookie ? route->cookie : HTTP_SESSION_COOKIE;
             lifespan = (route->flags & HTTP_ROUTE_PERSIST_COOKIE) ? rx->session->lifespan : 0;
             url = (route->prefix && *route->prefix) ? route->prefix : "/";
-            httpSetCookie(conn, cookie, rx->session->id, url, NULL, lifespan, flags);
-            httpTrace(conn->trace, "session.create", "context", "cookie:'%s', session:'%s'", cookie, rx->session->id);
+            httpSetCookie(stream, cookie, rx->session->id, url, NULL, lifespan, flags);
+            httpTrace(stream->trace, "session.create", "context", "cookie:'%s', session:'%s'", cookie, rx->session->id);
 
             if ((route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
-                httpSetSessionVar(conn, ME_XSRF_COOKIE, rx->securityToken);
+                httpSetSessionVar(stream, ME_XSRF_COOKIE, rx->securityToken);
             }
         }
     }
@@ -163,15 +163,15 @@ PUBLIC HttpSession *httpGetSession(HttpConn *conn, int create)
 }
 
 
-PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
+PUBLIC MprHash *httpGetSessionObj(HttpStream *stream, cchar *key)
 {
     HttpSession *sp;
     MprKey      *kp;
 
-    assert(conn);
+    assert(stream);
     assert(key && *key);
 
-    if ((sp = httpGetSession(conn, 0)) != 0) {
+    if ((sp = httpGetSession(stream, 0)) != 0) {
         if ((kp = mprLookupKeyEntry(sp->data, key)) != 0) {
             return mprDeserialize(kp->data);
         }
@@ -180,17 +180,17 @@ PUBLIC MprHash *httpGetSessionObj(HttpConn *conn, cchar *key)
 }
 
 
-PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
+PUBLIC cchar *httpGetSessionVar(HttpStream *stream, cchar *key, cchar *defaultValue)
 {
     HttpSession *sp;
     MprKey      *kp;
     cchar       *result;
 
-    assert(conn);
+    assert(stream);
     assert(key && *key);
 
     result = 0;
-    if ((sp = httpGetSession(conn, 0)) != 0) {
+    if ((sp = httpGetSession(stream, 0)) != 0) {
         if ((kp = mprLookupKeyEntry(sp->data, key)) != 0) {
             if (kp->type == MPR_JSON_OBJ) {
                 /* Wrong type */
@@ -205,18 +205,18 @@ PUBLIC cchar *httpGetSessionVar(HttpConn *conn, cchar *key, cchar *defaultValue)
 }
 
 
-PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
+PUBLIC int httpSetSessionObj(HttpStream *stream, cchar *key, MprHash *obj)
 {
     HttpSession *sp;
 
-    assert(conn);
+    assert(stream);
     assert(key && *key);
 
-    if ((sp = httpGetSession(conn, 1)) == 0) {
+    if ((sp = httpGetSession(stream, 1)) == 0) {
         return MPR_ERR_CANT_FIND;
     }
     if (obj == 0) {
-        httpRemoveSessionVar(conn, key);
+        httpRemoveSessionVar(stream, key);
     } else {
         mprAddKey(sp->data, key, mprSerialize(obj, 0));
     }
@@ -231,18 +231,18 @@ PUBLIC int httpSetSessionObj(HttpConn *conn, cchar *key, MprHash *obj)
     into a session that will be lost. Solution is for apps to create the session first.
     Value of null means remove the session.
  */
-PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
+PUBLIC int httpSetSessionVar(HttpStream *stream, cchar *key, cchar *value)
 {
     HttpSession  *sp;
 
-    assert(conn);
+    assert(stream);
     assert(key && *key);
 
-    if ((sp = httpGetSession(conn, 1)) == 0) {
+    if ((sp = httpGetSession(stream, 1)) == 0) {
         return MPR_ERR_CANT_FIND;
     }
     if (value == 0) {
-        httpRemoveSessionVar(conn, key);
+        httpRemoveSessionVar(stream, key);
     } else {
         mprAddKey(sp->data, key, sclone(value));
     }
@@ -251,13 +251,13 @@ PUBLIC int httpSetSessionVar(HttpConn *conn, cchar *key, cchar *value)
 }
 
 
-PUBLIC int httpSetSessionLink(HttpConn *conn, void *link)
+PUBLIC int httpSetSessionLink(HttpStream *stream, void *link)
 {
     HttpSession  *sp;
 
-    assert(conn);
+    assert(stream);
 
-    if ((sp = httpGetSession(conn, 1)) == 0) {
+    if ((sp = httpGetSession(stream, 1)) == 0) {
         return MPR_ERR_CANT_FIND;
     }
     mprSetCacheLink(sp->cache, sp->id, link);
@@ -265,14 +265,14 @@ PUBLIC int httpSetSessionLink(HttpConn *conn, void *link)
 }
 
 
-PUBLIC int httpRemoveSessionVar(HttpConn *conn, cchar *key)
+PUBLIC int httpRemoveSessionVar(HttpStream *stream, cchar *key)
 {
     HttpSession  *sp;
 
-    assert(conn);
+    assert(stream);
     assert(key && *key);
 
-    if ((sp = httpGetSession(conn, 0)) == 0) {
+    if ((sp = httpGetSession(stream, 0)) == 0) {
         return 0;
     }
     sp->dirty = 1;
@@ -280,11 +280,11 @@ PUBLIC int httpRemoveSessionVar(HttpConn *conn, cchar *key)
 }
 
 
-PUBLIC int httpWriteSession(HttpConn *conn)
+PUBLIC int httpWriteSession(HttpStream *stream)
 {
     HttpSession     *sp;
 
-    if ((sp = conn->rx->session) != 0) {
+    if ((sp = stream->rx->session) != 0) {
         if (sp->dirty) {
             if (mprWriteCache(sp->cache, sp->id, mprSerialize(sp->data, 0), 0, sp->lifespan, 0, MPR_CACHE_SET) == 0) {
                 mprLog("error http session", 0, "Cannot persist session cache");
@@ -297,13 +297,13 @@ PUBLIC int httpWriteSession(HttpConn *conn)
 }
 
 
-PUBLIC cchar *httpGetSessionID(HttpConn *conn)
+PUBLIC cchar *httpGetSessionID(HttpStream *stream)
 {
     HttpRx  *rx;
     cchar   *cookie;
 
-    assert(conn);
-    rx = conn->rx;
+    assert(stream);
+    rx = stream->rx;
     assert(rx);
 
     if (rx->session) {
@@ -316,7 +316,7 @@ PUBLIC cchar *httpGetSessionID(HttpConn *conn)
     }
     rx->sessionProbed = 1;
     cookie = rx->route->cookie ? rx->route->cookie : HTTP_SESSION_COOKIE;
-    return httpGetCookie(conn, cookie);
+    return httpGetCookie(stream, cookie);
 }
 
 
@@ -326,11 +326,11 @@ PUBLIC cchar *httpGetSessionID(HttpConn *conn)
 
     Note: the HttpSession API prevents session hijacking by pairing with the client IP
  */
-static cchar *createSecurityToken(HttpConn *conn)
+static cchar *createSecurityToken(HttpStream *stream)
 {
     HttpRx      *rx;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (!rx->securityToken) {
         rx->securityToken = mprGetRandomString(32);
     }
@@ -342,20 +342,20 @@ static cchar *createSecurityToken(HttpConn *conn)
     Get the security token from the session. Create one if one does not exist. Store the token in session store.
     Recreate if required.
  */
-PUBLIC cchar *httpGetSecurityToken(HttpConn *conn, bool recreate)
+PUBLIC cchar *httpGetSecurityToken(HttpStream *stream, bool recreate)
 {
     HttpRx      *rx;
 
-    rx = conn->rx;
+    rx = stream->rx;
 
     if (recreate) {
         rx->securityToken = 0;
     } else {
-        rx->securityToken = (char*) httpGetSessionVar(conn, ME_XSRF_COOKIE, 0);
+        rx->securityToken = (char*) httpGetSessionVar(stream, ME_XSRF_COOKIE, 0);
     }
     if (rx->securityToken == 0) {
-        createSecurityToken(conn);
-        httpSetSessionVar(conn, ME_XSRF_COOKIE, rx->securityToken);
+        createSecurityToken(stream);
+        httpSetSessionVar(stream, ME_XSRF_COOKIE, rx->securityToken);
     }
     return rx->securityToken;
 }
@@ -365,21 +365,21 @@ PUBLIC cchar *httpGetSecurityToken(HttpConn *conn, bool recreate)
     Add the security token to a XSRF cookie and response header
     Set recreate to true to force a recreation of the token.
  */
-PUBLIC int httpAddSecurityToken(HttpConn *conn, bool recreate)
+PUBLIC int httpAddSecurityToken(HttpStream *stream, bool recreate)
 {
     HttpRoute   *route;
     cchar       *securityToken, *url;
     int         flags;
 
-    route = conn->rx->route;
-    securityToken = httpGetSecurityToken(conn, recreate);
+    route = stream->rx->route;
+    securityToken = httpGetSecurityToken(stream, recreate);
     url = (route->prefix && *route->prefix) ? route->prefix : "/";
     flags = (route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
-    if (conn->secure) {
+    if (stream->secure) {
         flags |= HTTP_COOKIE_SECURE;
     }
-    httpSetCookie(conn, ME_XSRF_COOKIE, securityToken, url, NULL,  0, flags);
-    httpSetHeaderString(conn, ME_XSRF_HEADER, securityToken);
+    httpSetCookie(stream, ME_XSRF_COOKIE, securityToken, url, NULL,  0, flags);
+    httpSetHeaderString(stream, ME_XSRF_HEADER, securityToken);
     return 0;
 }
 
@@ -388,26 +388,26 @@ PUBLIC int httpAddSecurityToken(HttpConn *conn, bool recreate)
     Check the security token with the request. This must match the last generated token stored in the session state.
     It is expected the client will set the X-XSRF-TOKEN header with the token.
  */
-PUBLIC bool httpCheckSecurityToken(HttpConn *conn)
+PUBLIC bool httpCheckSecurityToken(HttpStream *stream)
 {
     cchar   *requestToken, *sessionToken;
 
-    if ((sessionToken = httpGetSessionVar(conn, ME_XSRF_COOKIE, 0)) != 0) {
-        requestToken = httpGetHeader(conn, ME_XSRF_HEADER);
+    if ((sessionToken = httpGetSessionVar(stream, ME_XSRF_COOKIE, 0)) != 0) {
+        requestToken = httpGetHeader(stream, ME_XSRF_HEADER);
         if (!requestToken) {
-            requestToken = httpGetParam(conn, ME_XSRF_PARAM, 0);
+            requestToken = httpGetParam(stream, ME_XSRF_PARAM, 0);
             if (!requestToken) {
-                httpTrace(conn->trace, "session.xsrf.error", "error", "msg:'Missing security token in request'");
+                httpTrace(stream->trace, "session.xsrf.error", "error", "msg:'Missing security token in request'");
             }
         }
         if (!smatch(sessionToken, requestToken)) {
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.
              */
-            httpTrace(conn->trace, "session.xsrf.error", "error",
+            httpTrace(stream->trace, "session.xsrf.error", "error",
                 "msg:'Security token in request does not match session token',xsrf:'%s',sessionXsrf:'%s'",
                 requestToken, sessionToken);
-            httpAddSecurityToken(conn, 1);
+            httpAddSecurityToken(stream, 1);
             return 0;
         }
     }

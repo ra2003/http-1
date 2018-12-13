@@ -407,9 +407,9 @@ PUBLIC int64 httpMonitorNetEvent(HttpNet *net, int counterIndex, int64 adj)
 }
 
 
-PUBLIC int64 httpMonitorEvent(HttpConn *conn, int counterIndex, int64 adj)
+PUBLIC int64 httpMonitorEvent(HttpStream *stream, int counterIndex, int64 adj)
 {
-    return httpMonitorNetEvent(conn->net, counterIndex, adj);
+    return httpMonitorNetEvent(stream->net, counterIndex, adj);
 }
 
 
@@ -655,7 +655,7 @@ static void emailRemedy(MprHash *args)
 
 static void httpRemedy(MprHash *args)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     cchar       *uri, *msg, *method;
     char        *err;
     int         status;
@@ -665,11 +665,11 @@ static void httpRemedy(MprHash *args)
         method = "POST";
     }
     msg = smatch(method, "POST") ? mprLookupKey(args, "MESSAGE") : 0;
-    if ((conn = httpRequest(method, uri, msg, HTTP_1_1, &err)) == 0) {
+    if ((stream = httpRequest(method, uri, msg, HTTP_1_1, &err)) == 0) {
         httpTrace(HTTP->trace, "monitor.remedy.http.error", "error", "msg:'%s'", err);
         return;
     }
-    status = httpGetStatus(conn);
+    status = httpGetStatus(stream);
     if (status != HTTP_CODE_OK) {
         httpTrace(HTTP->trace, "monitor.remedy.http.error", "error", "status:%d, uri:'%s'", status, uri);
     }

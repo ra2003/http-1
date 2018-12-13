@@ -14,19 +14,19 @@
 
 static void startAction(HttpQueue *q)
 {
-    HttpConn    *conn;
+    HttpStream  *stream;
     HttpAction  action;
     cchar       *name;
 
-    conn = q->conn;
-    assert(!conn->error);
-    assert(!conn->tx->finalized);
+    stream = q->stream;
+    assert(!stream->error);
+    assert(!stream->tx->finalized);
 
-    name = conn->rx->pathInfo;
-    if ((action = mprLookupKey(conn->tx->handler->stageData, name)) == 0) {
-        httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot find action: %s", name);
+    name = stream->rx->pathInfo;
+    if ((action = mprLookupKey(stream->tx->handler->stageData, name)) == 0) {
+        httpError(stream, HTTP_CODE_NOT_FOUND, "Cannot find action: %s", name);
     } else {
-        (*action)(conn);
+        (*action)(stream);
     }
 }
 

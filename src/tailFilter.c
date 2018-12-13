@@ -34,21 +34,21 @@ PUBLIC int httpOpenTailFilter()
 
 static void incomingTail(HttpQueue *q, HttpPacket *packet)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpRx      *rx;
 
-    conn = q->conn;
-    rx = conn->rx;
+    stream = q->stream;
+    rx = stream->rx;
 
     if (q->net->eof) {
-        httpSetEof(conn);
+        httpSetEof(stream);
     }
     httpPutPacketToNext(q, packet);
     if (rx->eof) {
         httpPutPacketToNext(q, httpCreateEndPacket());
     }
-    if (rx->route && conn->readq->first) {
-        HTTP_NOTIFY(conn, HTTP_EVENT_READABLE, 0);
+    if (rx->route && stream->readq->first) {
+        HTTP_NOTIFY(stream, HTTP_EVENT_READABLE, 0);
     }
 }
 
@@ -56,14 +56,14 @@ static void incomingTail(HttpQueue *q, HttpPacket *packet)
 static void outgoingTail(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpTx      *tx;
     HttpPacket  *headers, *tail;
 
-    conn = q->conn;
-    tx = conn->tx;
+    stream = q->stream;
+    tx = stream->tx;
     net = q->net;
-    conn->lastActivity = conn->http->now;
+    stream->lastActivity = stream->http->now;
 
     if (!(tx->flags & HTTP_TX_HEADERS_CREATED)) {
         headers = httpCreateHeaders(q, NULL);
@@ -79,9 +79,9 @@ static void outgoingTail(HttpQueue *q, HttpPacket *packet)
     }
     if (packet->flags & HTTP_PACKET_DATA) {
         tx->bytesWritten += httpGetPacketLength(packet);
-        if (tx->bytesWritten > conn->limits->txBodySize) {
-            httpLimitError(conn, HTTP_CODE_REQUEST_TOO_LARGE | ((tx->bytesWritten) ? HTTP_ABORT : 0),
-                "Http transmission aborted. Exceeded transmission max body of %lld bytes", conn->limits->txBodySize);
+        if (tx->bytesWritten > stream->limits->txBodySize) {
+            httpLimitError(stream, HTTP_CODE_REQUEST_TOO_LARGE | ((tx->bytesWritten) ? HTTP_ABORT : 0),
+                "Http transmission aborted. Exceeded transmission max body of %lld bytes", stream->limits->txBodySize);
         }
     }
     httpPutForService(q, packet, 1);
@@ -90,18 +90,18 @@ static void outgoingTail(HttpQueue *q, HttpPacket *packet)
 
 static bool streamCanAbsorb(HttpQueue *q, HttpPacket *packet)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpQueue   *nextQ;
     ssize       room, size;
 
-    conn = q->conn;
-    nextQ = conn->net->outputq;
+    stream = q->stream;
+    nextQ = stream->net->outputq;
     size = httpGetPacketLength(packet);
 
     /*
         Get the maximum the output stream can absorb that is less than the downstream queue packet size.
      */
-    room = min(nextQ->packetSize, conn->outputq->window);
+    room = min(nextQ->packetSize, stream->outputq->window);
     if (size <= room) {
         return 1;
     }
@@ -130,10 +130,10 @@ static bool streamCanAbsorb(HttpQueue *q, HttpPacket *packet)
 
 static void outgoingTailService(HttpQueue *q)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpPacket  *packet;
 
-    conn = q->conn;
+    stream = q->stream;
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (!streamCanAbsorb(q, packet)) {
@@ -157,7 +157,7 @@ static HttpPacket *createAltBodyPacket(HttpQueue *q)
     HttpTx      *tx;
     HttpPacket  *packet;
 
-    tx = q->conn->tx;
+    tx = q->stream->tx;
     packet = httpCreateDataPacket(slen(tx->altBody));
     mprPutStringToBuf(packet->content, tx->altBody);
     return packet;

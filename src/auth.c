@@ -22,9 +22,9 @@
     }
 
 static void manageAuth(HttpAuth *auth, int flags);
-static void formLogin(HttpConn *conn);
-PUBLIC int formParse(HttpConn *conn, cchar **username, cchar **password);
-static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password);
+static void formLogin(HttpStream *stream);
+PUBLIC int formParse(HttpStream *stream, cchar **username, cchar **password);
+static bool configVerifyUser(HttpStream *stream, cchar *username, cchar *password);
 
 /*********************************** Code *************************************/
 
@@ -135,32 +135,32 @@ static void manageAuthStore(HttpAuthStore *store, int flags)
     Authenticate a user using the session stored username. This will set HttpRx.authenticated if authentication succeeds.
     Note: this does not call httpLogin except for auto-login cases where a password is not used.
  */
-PUBLIC bool httpAuthenticate(HttpConn *conn)
+PUBLIC bool httpAuthenticate(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpAuth    *auth;
     cchar       *ip, *username;
 
-    rx = conn->rx;
+    rx = stream->rx;
     auth = rx->route->auth;
 
     if (!rx->authenticateProbed) {
         rx->authenticateProbed = 1;
-        ip = httpGetSessionVar(conn, HTTP_SESSION_IP, 0);
-        username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0);
-        if (!smatch(ip, conn->ip) || !username) {
+        ip = httpGetSessionVar(stream, HTTP_SESSION_IP, 0);
+        username = httpGetSessionVar(stream, HTTP_SESSION_USERNAME, 0);
+        if (!smatch(ip, stream->ip) || !username) {
             if (auth->username && *auth->username) {
                 /* Auto-login */
-                httpLogin(conn, auth->username, NULL);
-                username = httpGetSessionVar(conn, HTTP_SESSION_USERNAME, 0);
+                httpLogin(stream, auth->username, NULL);
+                username = httpGetSessionVar(stream, HTTP_SESSION_USERNAME, 0);
             }
             if (!username) {
                 return 0;
             }
         }
-        httpTrace(conn->trace, "auth.login.authenticated", "context",
+        httpTrace(stream->trace, "auth.login.authenticated", "context",
             "msg: 'Using cached authentication data', username:'%s'", username);
-        conn->username = username;
+        stream->username = username;
         rx->authenticated = 1;
     }
     return rx->authenticated;
@@ -171,36 +171,36 @@ PUBLIC bool httpAuthenticate(HttpConn *conn)
     Test if the user has the requisite abilities to perform an action. Abilities may be explicitly defined or if NULL,
     the abilities specified by the route are used.
  */
-PUBLIC bool httpCanUser(HttpConn *conn, cchar *abilities)
+PUBLIC bool httpCanUser(HttpStream *stream, cchar *abilities)
 {
     HttpAuth    *auth;
     char        *ability, *tok;
     MprKey      *kp;
 
-    auth = conn->rx->route->auth;
-    if (auth->permittedUsers && !mprLookupKey(auth->permittedUsers, conn->username)) {
+    auth = stream->rx->route->auth;
+    if (auth->permittedUsers && !mprLookupKey(auth->permittedUsers, stream->username)) {
         return 0;
     }
     if (!auth->abilities && !abilities) {
         /* No abilities are required */
         return 1;
     }
-    if (!conn->username) {
+    if (!stream->username) {
         /* User not authenticated */
         return 0;
     }
-    if (!conn->user && (conn->user = mprLookupKey(auth->userCache, conn->username)) == 0) {
+    if (!stream->user && (stream->user = mprLookupKey(auth->userCache, stream->username)) == 0) {
         return 0;
     }
     if (abilities) {
         for (ability = stok(sclone(abilities), " \t,", &tok); abilities; abilities = stok(NULL, " \t,", &tok)) {
-            if (!mprLookupKey(conn->user->abilities, ability)) {
+            if (!mprLookupKey(stream->user->abilities, ability)) {
                 return 0;
             }
         }
     } else {
         for (ITERATE_KEYS(auth->abilities, kp)) {
-            if (!mprLookupKey(conn->user->abilities, kp->key)) {
+            if (!mprLookupKey(stream->user->abilities, kp->key)) {
                 return 0;
             }
         }
@@ -252,7 +252,7 @@ PUBLIC int httpCreateAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth 
     and the parseAuth callback will be invoked to parse. Otherwise, it is expected that "username" and
     "password" fields are present in the request parameters.
  */
-PUBLIC bool httpGetCredentials(HttpConn *conn, cchar **username, cchar **password)
+PUBLIC bool httpGetCredentials(HttpStream *stream, cchar **username, cchar **password)
 {
     HttpAuth    *auth;
     HttpRx      *rx;
@@ -260,7 +260,7 @@ PUBLIC bool httpGetCredentials(HttpConn *conn, cchar **username, cchar **passwor
     assert(username);
     assert(password);
 
-    rx = conn->rx;
+    rx = stream->rx;
 
     *username = *password = NULL;
 
@@ -272,37 +272,37 @@ PUBLIC bool httpGetCredentials(HttpConn *conn, cchar **username, cchar **passwor
         if (rx->authType && !smatch(rx->authType, auth->type->name)) {
             return 0;
         }
-        if (auth->type->parseAuth && (auth->type->parseAuth)(conn, username, password) < 0) {
+        if (auth->type->parseAuth && (auth->type->parseAuth)(stream, username, password) < 0) {
             return 0;
         }
     } else {
-        *username = httpGetParam(conn, "username", 0);
-        *password = httpGetParam(conn, "password", 0);
+        *username = httpGetParam(stream, "username", 0);
+        *password = httpGetParam(stream, "password", 0);
     }
     return 1;
 }
 
 
-PUBLIC bool httpIsAuthenticated(HttpConn *conn)
+PUBLIC bool httpIsAuthenticated(HttpStream *stream)
 {
-    return httpAuthenticate(conn);
+    return httpAuthenticate(stream);
 }
 
 
 /*
     Login the user and create an authenticated session state store
  */
-PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
+PUBLIC bool httpLogin(HttpStream *stream, cchar *username, cchar *password)
 {
     HttpRx          *rx;
     HttpAuth        *auth;
     HttpSession     *session;
     HttpVerifyUser  verifyUser;
 
-    rx = conn->rx;
+    rx = stream->rx;
     auth = rx->route->auth;
     if (!username || !*username) {
-        httpTrace(conn->trace, "auth.login.error", "error", "msg:'missing username'");
+        httpTrace(stream->trace, "auth.login.error", "error", "msg:'missing username'");
         return 0;
     }
     if (!auth->store) {
@@ -326,38 +326,38 @@ PUBLIC bool httpLogin(HttpConn *conn, cchar *username, cchar *password)
     } else if (!username || !password) {
         return 0;
     }
-    if (!(verifyUser)(conn, username, password)) {
+    if (!(verifyUser)(stream, username, password)) {
         return 0;
     }
     if (!(auth->flags & HTTP_AUTH_NO_SESSION) && !auth->store->noSession) {
-        if ((session = httpCreateSession(conn)) == 0) {
+        if ((session = httpCreateSession(stream)) == 0) {
             /* Too many sessions */
             return 0;
         }
-        httpSetSessionVar(conn, HTTP_SESSION_USERNAME, username);
-        httpSetSessionVar(conn, HTTP_SESSION_IP, conn->ip);
+        httpSetSessionVar(stream, HTTP_SESSION_USERNAME, username);
+        httpSetSessionVar(stream, HTTP_SESSION_IP, stream->ip);
     }
     rx->authenticated = 1;
     rx->authenticateProbed = 1;
-    conn->username = sclone(username);
-    conn->encoded = 0;
+    stream->username = sclone(username);
+    stream->encoded = 0;
     return 1;
 }
 
 
-PUBLIC bool httpIsLoggedIn(HttpConn *conn)
+PUBLIC bool httpIsLoggedIn(HttpStream *stream)
 {
-    return httpAuthenticate(conn);
+    return httpAuthenticate(stream);
 }
 
 
 /*
     Log the user out and remove the authentication username from the session state
  */
-PUBLIC void httpLogout(HttpConn *conn)
+PUBLIC void httpLogout(HttpStream *stream)
 {
-    conn->rx->authenticated = 0;
-    httpDestroySession(conn);
+    stream->rx->authenticated = 0;
+    httpDestroySession(stream);
 }
 
 
@@ -390,15 +390,15 @@ PUBLIC void httpSetAuthLogin(HttpAuth *auth, cchar *value)
     Web form login service routine. Called in response to a form-based login request when defined via httpSetAuthLogin.
     It is expected that "authCondition" has already authenticated the request.
  */
-static void loginServiceProc(HttpConn *conn)
+static void loginServiceProc(HttpStream *stream)
 {
     HttpAuth    *auth;
 
-    auth = conn->rx->route->auth;
-    if (httpIsAuthenticated(conn)) {
-        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loggedInPage ? auth->loggedInPage : "~");
+    auth = stream->rx->route->auth;
+    if (httpIsAuthenticated(stream)) {
+        httpRedirect(stream, HTTP_CODE_MOVED_TEMPORARILY, auth->loggedInPage ? auth->loggedInPage : "~");
     } else {
-        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
+        httpRedirect(stream, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
     }
 }
 
@@ -406,22 +406,22 @@ static void loginServiceProc(HttpConn *conn)
 /*
     Logout service for use with httpSetAuthFormDetails.
  */
-static void logoutServiceProc(HttpConn *conn)
+static void logoutServiceProc(HttpStream *stream)
 {
     HttpRoute       *route;
     HttpAuth        *auth;
     cchar           *loggedOut;
 
-    route = conn->rx->route;
+    route = stream->rx->route;
     auth = route->auth;
 
-    httpLogout(conn);
+    httpLogout(stream);
 
     loggedOut = (auth->loggedOutPage) ? auth->loggedOutPage : auth->loginPage;
     if (!loggedOut) {
         loggedOut = "/";
     }
-    httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, loggedOut);
+    httpRedirect(stream, HTTP_CODE_MOVED_TEMPORARILY, loggedOut);
 }
 
 
@@ -637,40 +637,40 @@ PUBLIC HttpAuthType *httpLookupAuthType(cchar *type)
     Verify the user password for the "config" store based on the users defined via configuration directives.
     Password may be NULL only if using auto-login.
  */
-static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
+static bool configVerifyUser(HttpStream *stream, cchar *username, cchar *password)
 {
     HttpRx      *rx;
     HttpAuth    *auth;
     bool        success;
     cchar       *requiredPassword;
 
-    rx = conn->rx;
+    rx = stream->rx;
     auth = rx->route->auth;
-    if (!conn->user && (conn->user = mprLookupKey(auth->userCache, username)) == 0) {
-        httpTrace(conn->trace, "auth.login.error", "error", "msg: 'Unknown user', username:'%s'", username);
+    if (!stream->user && (stream->user = mprLookupKey(auth->userCache, username)) == 0) {
+        httpTrace(stream->trace, "auth.login.error", "error", "msg: 'Unknown user', username:'%s'", username);
         return 0;
     }
     if (password) {
         if (auth->realm == 0 || *auth->realm == '\0') {
             mprLog("error http auth", 0, "No AuthRealm defined");
         }
-        requiredPassword = (rx->passwordDigest) ? rx->passwordDigest : conn->user->password;
+        requiredPassword = (rx->passwordDigest) ? rx->passwordDigest : stream->user->password;
         if (sncmp(requiredPassword, "BF", 2) == 0 && slen(requiredPassword) > 4 && isdigit(requiredPassword[2]) &&
                 requiredPassword[3] == ':') {
             /* Blowifsh */
-            success = mprCheckPassword(sfmt("%s:%s:%s", username, auth->realm, password), conn->user->password);
+            success = mprCheckPassword(sfmt("%s:%s:%s", username, auth->realm, password), stream->user->password);
 
         } else {
-            if (!conn->encoded) {
+            if (!stream->encoded) {
                 password = mprGetMD5(sfmt("%s:%s:%s", username, auth->realm, password));
-                conn->encoded = 1;
+                stream->encoded = 1;
             }
             success = smatch(password, requiredPassword);
         }
         if (success) {
-            httpTrace(conn->trace, "auth.login.authenticated", "context", "msg:'User authenticated', username:'%s'", username);
+            httpTrace(stream->trace, "auth.login.authenticated", "context", "msg:'User authenticated', username:'%s'", username);
         } else {
-            httpTrace(conn->trace, "auth.login.error", "error", "msg:'Password failed to authenticate', username:'%s'", username);
+            httpTrace(stream->trace, "auth.login.error", "error", "msg:'Password failed to authenticate', username:'%s'", username);
         }
         return success;
     }
@@ -682,20 +682,20 @@ static bool configVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     Web form-based authentication callback for the "form" auth protocol.
     Asks the user to login via a web page.
  */
-static void formLogin(HttpConn *conn)
+static void formLogin(HttpStream *stream)
 {
-    if (conn->rx->route->auth && conn->rx->route->auth->loginPage) {
-        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, conn->rx->route->auth->loginPage);
+    if (stream->rx->route->auth && stream->rx->route->auth->loginPage) {
+        httpRedirect(stream, HTTP_CODE_MOVED_TEMPORARILY, stream->rx->route->auth->loginPage);
     } else {
-        httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
+        httpError(stream, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
     }
 }
 
 
-PUBLIC int formParse(HttpConn *conn, cchar **username, cchar **password)
+PUBLIC int formParse(HttpStream *stream, cchar **username, cchar **password)
 {
-    *username = httpGetParam(conn, "username", 0);
-    *password = httpGetParam(conn, "password", 0);
+    *username = httpGetParam(stream, "username", 0);
+    *password = httpGetParam(stream, "password", 0);
     if (username && *username == 0) {
         return MPR_ERR_BAD_FORMAT;
     }

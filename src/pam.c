@@ -32,7 +32,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
 /*
     Use PAM to verify a user.  The password may be NULL if using auto-login.
  */
-PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
+PUBLIC bool httpPamVerifyUser(HttpStream *stream, cchar *username, cchar *password)
 {
     MprBuf              *abilities;
     pam_handle_t        *pamh;
@@ -42,7 +42,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     int                 res, i;
 
     assert(username);
-    assert(!conn->encoded);
+    assert(!stream->encoded);
 
     info.name = (char*) username;
 
@@ -61,10 +61,10 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
     }
     mprDebug("http pam", 5, "httpPamVerifyUser verified %s", username);
 
-    if (!conn->user) {
-        conn->user = mprLookupKey(conn->rx->route->auth->userCache, username);
+    if (!stream->user) {
+        stream->user = mprLookupKey(stream->rx->route->auth->userCache, username);
     }
-    if (!conn->user) {
+    if (!stream->user) {
         /*
             Create a temporary user with a abilities set to the groups
          */
@@ -85,7 +85,7 @@ PUBLIC bool httpPamVerifyUser(HttpConn *conn, cchar *username, cchar *password)
             /*
                 Create a user and map groups to roles and expand to abilities
              */
-            conn->user = httpAddUser(conn->rx->route->auth, username, 0, mprGetBufStart(abilities));
+            stream->user = httpAddUser(stream->rx->route->auth, username, 0, mprGetBufStart(abilities));
         }
     }
     return 1;

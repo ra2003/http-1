@@ -9,7 +9,7 @@
 
 /********************************** Forwards **********************************/
 
-static void initQueue(HttpNet *net, HttpConn *conn, HttpQueue *q, cchar *name, int dir);
+static void initQueue(HttpNet *net, HttpStream *stream, HttpQueue *q, cchar *name, int dir);
 static void manageQueue(HttpQueue *q, int flags);
 static void serviceQueue(HttpQueue *q);
 
@@ -17,7 +17,7 @@ static void serviceQueue(HttpQueue *q);
 /*
     Create a queue head that has no processing callbacks
  */
-PUBLIC HttpQueue *httpCreateQueueHead(HttpNet *net, HttpConn *conn, cchar *name, int dir)
+PUBLIC HttpQueue *httpCreateQueueHead(HttpNet *net, HttpStream *stream, cchar *name, int dir)
 {
     HttpQueue   *q;
 
@@ -26,7 +26,7 @@ PUBLIC HttpQueue *httpCreateQueueHead(HttpNet *net, HttpConn *conn, cchar *name,
     if ((q = mprAllocObj(HttpQueue, manageQueue)) == 0) {
         return 0;
     }
-    initQueue(net, conn, q, name, dir);
+    initQueue(net, stream, q, name, dir);
     httpInitSchedulerQueue(q);
     return q;
 }
@@ -36,14 +36,14 @@ PUBLIC HttpQueue *httpCreateQueueHead(HttpNet *net, HttpConn *conn, cchar *name,
     Create a queue associated with a connection.
     Prev may be set to the previous queue in a pipeline. If so, then the Conn.readq and writeq are updated.
  */
-PUBLIC HttpQueue *httpCreateQueue(HttpNet *net, HttpConn *conn, HttpStage *stage, int dir, HttpQueue *prev)
+PUBLIC HttpQueue *httpCreateQueue(HttpNet *net, HttpStream *stream, HttpStage *stage, int dir, HttpQueue *prev)
 {
     HttpQueue   *q;
 
     if ((q = mprAllocObj(HttpQueue, manageQueue)) == 0) {
         return 0;
     }
-    initQueue(net, conn, q, stage->name, dir);
+    initQueue(net, stream, q, stage->name, dir);
     httpInitSchedulerQueue(q);
     httpAssignQueueCallbacks(q, stage, dir);
     if (prev) {
@@ -53,16 +53,16 @@ PUBLIC HttpQueue *httpCreateQueue(HttpNet *net, HttpConn *conn, HttpStage *stage
 }
 
 
-static void initQueue(HttpNet *net, HttpConn *conn, HttpQueue *q, cchar *name, int dir)
+static void initQueue(HttpNet *net, HttpStream *stream, HttpQueue *q, cchar *name, int dir)
 {
     q->net = net;
-    q->conn = conn;
+    q->stream = stream;
     q->flags = dir == HTTP_QUEUE_TX ? HTTP_QUEUE_OUTGOING : 0;
     q->nextQ = q;
     q->prevQ = q;
     q->name = sfmt("%s-%s", name, dir == HTTP_QUEUE_TX ? "tx" : "rx");
-    if (conn && conn->tx && conn->tx->chunkSize > 0) {
-        q->packetSize = conn->tx->chunkSize;
+    if (stream && stream->tx && stream->tx->chunkSize > 0) {
+        q->packetSize = stream->tx->chunkSize;
     } else {
         q->packetSize = net->limits->packetSize;
     }
@@ -81,7 +81,7 @@ static void manageQueue(HttpQueue *q, int flags)
         for (packet = q->first; packet; packet = packet->next) {
             mprMark(packet);
         }
-        mprMark(q->conn);
+        mprMark(q->stream);
         mprMark(q->last);
         mprMark(q->prevQ);
         mprMark(q->stage);
@@ -191,10 +191,10 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
                 continue;
             } else {
                 len = httpGetPacketLength(packet);
-                //  TODO - should do this in caller or have higher level routine that does this with "conn" as arg
+                //  TODO - should do this in caller or have higher level routine that does this with "stream" as arg
                 //  TODO - or should we just set tx->length to zero?
-                if (q->conn && q->conn->tx && q->conn->tx->length > 0) {
-                    q->conn->tx->length -= len;
+                if (q->stream && q->stream->tx && q->stream->tx->length > 0) {
+                    q->stream->tx->length -= len;
                 }
                 q->count -= len;
                 assert(q->count >= 0);
@@ -217,28 +217,28 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
 PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 {
     HttpNet     *net;
-    HttpConn    *conn;
+    HttpStream    *stream;
     MprTicks    timeout;
     int         events;
 
     net = q->net;
-    conn = q->conn;
+    stream = q->stream;
 
     /*
         Initiate flushing. For HTTP/2 we must process incoming window update frames, so run any pending IO events.
      */
     httpScheduleQueue(q);
     httpServiceQueues(net, flags);
-    mprWaitForEvent(conn->dispatcher, 0, mprGetEventMark(conn->dispatcher));
+    mprWaitForEvent(stream->dispatcher, 0, mprGetEventMark(stream->dispatcher));
 
     if (net->error) {
         return 1;
     }
 
-    while (q->count > 0 && !conn->error && !net->error) {
-        timeout = (flags & HTTP_BLOCK) ? conn->limits->inactivityTimeout : 0;
+    while (q->count > 0 && !stream->error && !net->error) {
+        timeout = (flags & HTTP_BLOCK) ? stream->limits->inactivityTimeout : 0;
         if ((events = mprWaitForSingleIO((int) net->sock->fd, MPR_READABLE | MPR_WRITABLE, timeout)) != 0) {
-            conn->lastActivity = net->lastActivity = net->http->now;
+            stream->lastActivity = net->lastActivity = net->http->now;
             if (events & MPR_WRITABLE) {
                 net->lastActivity = net->http->now;
                 httpResumeQueue(net->socketq);
@@ -248,7 +248,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
             /*
                 Process HTTP/2 window update messages for flow control
              */
-            mprWaitForEvent(conn->dispatcher, 0, mprGetEventMark(conn->dispatcher));
+            mprWaitForEvent(stream->dispatcher, 0, mprGetEventMark(stream->dispatcher));
         }
         if (!(flags & HTTP_BLOCK)) {
             break;
@@ -258,18 +258,18 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 }
 
 
-PUBLIC void httpFlush(HttpConn *conn)
+PUBLIC void httpFlush(HttpStream *stream)
 {
-    httpFlushQueue(conn->writeq, HTTP_NON_BLOCK);
+    httpFlushQueue(stream->writeq, HTTP_NON_BLOCK);
 }
 
 
 /*
     Flush the write queue. In sync mode, this call may yield.
  */
-PUBLIC void httpFlushAll(HttpConn *conn)
+PUBLIC void httpFlushAll(HttpStream *stream)
 {
-    httpFlushQueue(conn->writeq, conn->net->async ? HTTP_NON_BLOCK : HTTP_BLOCK);
+    httpFlushQueue(stream->writeq, stream->net->async ? HTTP_NON_BLOCK : HTTP_BLOCK);
 }
 
 

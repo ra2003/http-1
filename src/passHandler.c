@@ -14,7 +14,7 @@
 
 /********************************** Forwards **********************************/
 
-static void handleTraceMethod(HttpConn *conn);
+static void handleTraceMethod(HttpStream *stream);
 static void readyError(HttpQueue *q);
 static void readyPass(HttpQueue *q);
 static void startPass(HttpQueue *q);
@@ -46,48 +46,48 @@ PUBLIC int httpOpenPassHandler()
 
 static void startPass(HttpQueue *q)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
 
-    conn = q->conn;
+    stream = q->stream;
 
-    if (conn->rx->flags & HTTP_TRACE && !conn->error) {
-        handleTraceMethod(conn);
+    if (stream->rx->flags & HTTP_TRACE && !stream->error) {
+        handleTraceMethod(stream);
     }
 }
 
 
 static void readyPass(HttpQueue *q)
 {
-    httpFinalize(q->conn);
+    httpFinalize(q->stream);
     httpScheduleQueue(q);
 }
 
 
 static void readyError(HttpQueue *q)
 {
-    if (!q->conn->error) {
-        httpError(q->conn, HTTP_CODE_NOT_FOUND, "The requested resource is not available");
+    if (!q->stream->error) {
+        httpError(q->stream, HTTP_CODE_NOT_FOUND, "The requested resource is not available");
     }
-    httpFinalize(q->conn);
+    httpFinalize(q->stream);
     httpScheduleQueue(q);
 }
 
 
-PUBLIC void httpHandleOptions(HttpConn *conn)
+PUBLIC void httpHandleOptions(HttpStream *stream)
 {
-    httpSetHeaderString(conn, "Allow", httpGetRouteMethods(conn->rx->route));
-    httpFinalize(conn);
+    httpSetHeaderString(stream, "Allow", httpGetRouteMethods(stream->rx->route));
+    httpFinalize(stream);
 }
 
 
-static void handleTraceMethod(HttpConn *conn)
+static void handleTraceMethod(HttpStream *stream)
 {
     HttpTx      *tx;
     HttpQueue   *q;
     HttpPacket  *traceData;
 
-    tx = conn->tx;
-    q = conn->writeq;
+    tx = stream->tx;
+    q = stream->writeq;
 
 
     /*
@@ -95,14 +95,14 @@ static void handleTraceMethod(HttpConn *conn)
         the headers in the normal fashion. Need to be careful not to have a content length in the headers in the body.
      */
     tx->flags |= HTTP_TX_NO_LENGTH;
-    httpDiscardData(conn, HTTP_QUEUE_TX);
+    httpDiscardData(stream, HTTP_QUEUE_TX);
     traceData = httpCreateDataPacket(q->packetSize);
     httpCreateHeaders1(q, traceData);
     tx->flags &= ~(HTTP_TX_NO_LENGTH | HTTP_TX_HEADERS_CREATED);
 
-    httpSetContentType(conn, "message/http");
+    httpSetContentType(stream, "message/http");
     httpPutPacketToNext(q, traceData);
-    httpFinalize(conn);
+    httpFinalize(stream);
 }
 
 /*

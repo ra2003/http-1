@@ -38,11 +38,11 @@ PUBLIC int httpOpenChunkFilter()
 }
 
 
-PUBLIC void httpInitChunking(HttpConn *conn)
+PUBLIC void httpInitChunking(HttpStream *stream)
 {
     HttpRx      *rx;
 
-    rx = conn->rx;
+    rx = stream->rx;
 
     /*
         remainingContent will be revised by the chunk filter as chunks are processed and will
@@ -73,7 +73,7 @@ PUBLIC void httpInitChunking(HttpConn *conn)
 static void incomingChunk(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpPacket  *tail;
     HttpRx      *rx;
     MprBuf      *buf;
@@ -81,20 +81,20 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
     char        *start, *cp;
     int         bad;
 
-    conn = q->conn;
+    stream = q->stream;
     net = q->net;
-    rx = conn->rx;
+    rx = stream->rx;
 
     if (rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
         len = httpGetPacketLength(packet);
         nbytes = min(rx->remainingContent, httpGetPacketLength(packet));
         rx->remainingContent -= nbytes;
         if (rx->remainingContent <= 0) {
-            httpSetEof(conn);
+            httpSetEof(stream);
 #if HTTP_PIPELINING
             /* HTTP/1.1 pipelining is not implemented reliably by modern browsers */
             if (nbytes < len && (tail = httpSplitPacket(packet, nbytes)) != 0) {
-                httpPutPacket(conn->inputq, tail);
+                httpPutPacket(stream->inputq, tail);
             }
 #endif
         }
@@ -102,11 +102,11 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
         return;
     }
     httpJoinPacketForService(q, packet, HTTP_DELAY_SERVICE);
-    for (packet = httpGetPacket(q); packet && !conn->error && !rx->eof; packet = httpGetPacket(q)) {
-        while (packet && !conn->error && !rx->eof) {
+    for (packet = httpGetPacket(q); packet && !stream->error && !rx->eof; packet = httpGetPacket(q)) {
+        while (packet && !stream->error && !rx->eof) {
             switch (rx->chunkState) {
             case HTTP_CHUNK_UNCHUNKED:
-                httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk state");
+                httpError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk state");
                 return;
 
             case HTTP_CHUNK_DATA:
@@ -148,12 +148,12 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
                 }
                 bad += (cp[-1] != '\r' || cp[0] != '\n');
                 if (bad) {
-                    httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
+                    httpError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
                     return;
                 }
                 chunkSize = (int) stoiradix(&start[2], 16, NULL);
                 if (!isxdigit((uchar) start[2]) || chunkSize < 0) {
-                    httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
+                    httpError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk specification");
                     return;
                 }
                 if (chunkSize == 0) {
@@ -166,7 +166,7 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
                     cp += 2;
                     bad += (cp[-1] != '\r' || cp[0] != '\n');
                     if (bad) {
-                        httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad final chunk specification");
+                        httpError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad final chunk specification");
                         return;
                     }
                 }
@@ -175,7 +175,7 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
                 rx->remainingContent = chunkSize;
                 if (chunkSize == 0) {
                     rx->chunkState = HTTP_CHUNK_EOF;
-                    httpSetEof(conn);
+                    httpSetEof(stream);
                 } else if (rx->eof) {
                     rx->chunkState = HTTP_CHUNK_EOF;
                 } else {
@@ -184,14 +184,14 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
                 break;
 
             default:
-                httpError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk state %d", rx->chunkState);
+                httpError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad chunk state %d", rx->chunkState);
                 return;
             }
         }
 #if HTTP_PIPELINING
         /* HTTP/1.1 pipelining is not implemented reliably by modern browsers */
         if (packet && httpGetPacketLength(packet)) {
-            httpPutPacket(conn->inputq, tail);
+            httpPutPacket(stream->inputq, tail);
         }
 #endif
     }
@@ -204,12 +204,12 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
 
 static void outgoingChunkService(HttpQueue *q)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpPacket  *packet, *finalChunk;
     HttpTx      *tx;
 
-    conn = q->conn;
-    tx = conn->tx;
+    stream = q->stream;
+    tx = stream->tx;
 
     if (!(q->flags & HTTP_QUEUE_SERVICED)) {
         tx->needChunking = needChunking(q);
@@ -247,14 +247,14 @@ static void outgoingChunkService(HttpQueue *q)
 
 static bool needChunking(HttpQueue *q)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpTx      *tx;
     cchar       *value;
 
-    conn = q->conn;
-    tx = conn->tx;
+    stream = q->stream;
+    tx = stream->tx;
 
-    if (conn->net->protocol >= 2 || conn->upgraded) {
+    if (stream->net->protocol >= 2 || stream->upgraded) {
         return 0;
     }
     /*
@@ -270,10 +270,10 @@ static bool needChunking(HttpQueue *q)
                 tx->length = q->count;
             }
         } else {
-            tx->chunkSize = min(conn->limits->chunkSize, q->max);
+            tx->chunkSize = min(stream->limits->chunkSize, q->max);
         }
     }
-    if (tx->flags & HTTP_TX_USE_OWN_HEADERS || conn->net->protocol != 1) {
+    if (tx->flags & HTTP_TX_USE_OWN_HEADERS || stream->net->protocol != 1) {
         tx->chunkSize = -1;
     }
     return tx->chunkSize > 0;

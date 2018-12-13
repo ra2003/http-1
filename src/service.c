@@ -345,7 +345,7 @@ static bool isIdle(bool traceRequests)
 {
     Http            *http;
     HttpNet         *net;
-    HttpConn        *conn;
+    HttpStream        *stream;
     MprTicks        now;
     static MprTicks lastTrace = 0;
     int             next, nextConn;
@@ -354,12 +354,12 @@ static bool isIdle(bool traceRequests)
         now = http->now;
         lock(http->networks);
         for (ITERATE_ITEMS(http->networks, net, next)) {
-            for (ITERATE_ITEMS(net->connections, conn, nextConn)) {
-                if (conn->state != HTTP_STATE_BEGIN && conn->state != HTTP_STATE_COMPLETE) {
+            for (ITERATE_ITEMS(net->streams, stream, nextConn)) {
+                if (stream->state != HTTP_STATE_BEGIN && stream->state != HTTP_STATE_COMPLETE) {
                     if (traceRequests && lastTrace < now) {
-                        if (conn->rx) {
+                        if (stream->rx) {
                             mprLog("info http", 2, "Request for \"%s\" is still active",
-                                conn->rx->uri ? conn->rx->uri : conn->rx->pathInfo);
+                                stream->rx->uri ? stream->rx->uri : stream->rx->pathInfo);
                         }
                         lastTrace = now;
                     }
@@ -589,12 +589,12 @@ PUBLIC void httpSetListenCallback(HttpListenCallback fn)
 /*
     The http timer does maintenance activities and will fire per second while there are active requests.
     This routine will also be called by httpTerminate with event == 0 to signify a shutdown.
-    NOTE: Because we lock the http here, connections cannot be deleted while we are modifying the list.
+    NOTE: Because we lock the http here, streams cannot be deleted while we are modifying the list.
  */
 static void httpTimer(Http *http, MprEvent *event)
 {
     HttpNet     *net;
-    HttpConn    *conn;
+    HttpStream    *stream;
     HttpStage   *stage;
     HttpLimits  *limits;
     MprModule   *module;
@@ -606,26 +606,26 @@ static void httpTimer(Http *http, MprEvent *event)
     if (!mprGetDebugMode()) {
         for (next = 0; (net = mprGetNextItem(http->networks, &next)) != 0; active++) {
             /*
-               Check for any inactive connections or expired requests (inactivityTimeout and requestTimeout)
+               Check for any inactive streams or expired requests (inactivityTimeout and requestTimeout)
              */
-            for (active = 0, nextConn = 0; (conn = mprGetNextItem(net->connections, &nextConn)) != 0; active++) {
-                limits = conn->limits;
+            for (active = 0, nextConn = 0; (stream = mprGetNextItem(net->streams, &nextConn)) != 0; active++) {
+                limits = stream->limits;
                 abort = mprIsStopping();
-                if (httpServerConn(conn) && (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED) &&
-                        (http->now - conn->started) > limits->requestParseTimeout) {
-                    conn->timeout = HTTP_PARSE_TIMEOUT;
+                if (httpServerStream(stream) && (HTTP_STATE_CONNECTED < stream->state && stream->state < HTTP_STATE_PARSED) &&
+                        (http->now - stream->started) > limits->requestParseTimeout) {
+                    stream->timeout = HTTP_PARSE_TIMEOUT;
                     abort = 1;
-                } else if ((http->now - conn->lastActivity) > limits->inactivityTimeout) {
-                    conn->timeout = HTTP_INACTIVITY_TIMEOUT;
+                } else if ((http->now - stream->lastActivity) > limits->inactivityTimeout) {
+                    stream->timeout = HTTP_INACTIVITY_TIMEOUT;
                     abort = 1;
-                } else if ((http->now - conn->started) > limits->requestTimeout) {
-                    conn->timeout = HTTP_REQUEST_TIMEOUT;
+                } else if ((http->now - stream->started) > limits->requestTimeout) {
+                    stream->timeout = HTTP_REQUEST_TIMEOUT;
                     abort = 1;
                 } else if (!event) {
-                    /* Called directly from httpStop to stop connections */
+                    /* Called directly from httpStop to stop streams */
                     if (MPR->exitTimeout > 0) {
-                        if (conn->state == HTTP_STATE_COMPLETE ||
-                            (HTTP_STATE_CONNECTED < conn->state && conn->state < HTTP_STATE_PARSED)) {
+                        if (stream->state == HTTP_STATE_COMPLETE ||
+                            (HTTP_STATE_CONNECTED < stream->state && stream->state < HTTP_STATE_PARSED)) {
                             abort = 1;
                         }
                     } else {
@@ -633,7 +633,7 @@ static void httpTimer(Http *http, MprEvent *event)
                     }
                 }
                 if (abort) {
-                    httpConnTimeout(conn);
+                    httpStreamTimeout(stream);
                 }
             }
             if ((http->now - net->lastActivity) > net->limits->inactivityTimeout) {

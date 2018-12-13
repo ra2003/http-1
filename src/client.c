@@ -10,8 +10,8 @@
 
 /********************************* Forwards ***********************************/
 
-static void setDefaultHeaders(HttpConn *conn);
-static int clientRequest(HttpConn *conn, cchar *method, cchar *uri, cchar *data, int protocol, char **err);
+static void setDefaultHeaders(HttpStream *stream);
+static int clientRequest(HttpStream *stream, cchar *method, cchar *uri, cchar *data, int protocol, char **err);
 
 /*********************************** Code *************************************/
 /*
@@ -39,7 +39,7 @@ PUBLIC void httpGetUriAddress(HttpUri *uri, cchar **ip, int *port)
 /*
     Determine if the current network connection can handle the current URI without redirection
  */
-static bool canUse(HttpNet *net, HttpConn *conn, HttpUri *uri, MprSsl *ssl, cchar *ip, int port)
+static bool canUse(HttpNet *net, HttpStream *stream, HttpUri *uri, MprSsl *ssl, cchar *ip, int port)
 {
     MprSocket   *sock;
 
@@ -51,14 +51,14 @@ static bool canUse(HttpNet *net, HttpConn *conn, HttpUri *uri, MprSsl *ssl, ccha
     if (port != net->port || !smatch(ip, net->ip) || uri->secure != (sock->ssl != 0) || sock->ssl != ssl) {
         return 0;
     }
-    if (net->protocol < 2 && conn->keepAliveCount <= 1) {
+    if (net->protocol < 2 && stream->keepAliveCount <= 1) {
         return 0;
     }
     return 1;
 }
 
 
-PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *url, MprSsl *ssl)
+PUBLIC int httpConnect(HttpStream *stream, cchar *method, cchar *url, MprSsl *ssl)
 {
     HttpNet     *net;
     HttpTx      *tx;
@@ -66,12 +66,12 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *url, MprSsl *ssl)
     cchar       *ip, *protocol;
     int         port;
 
-    assert(conn);
+    assert(stream);
     assert(method && *method);
     assert(url && *url);
 
-    net = conn->net;
-    if (httpServerConn(conn)) {
+    net = stream->net;
+    if (httpServerStream(stream)) {
         mprLog("client error", 0, "Cannot call httpConnect() in a server");
         return MPR_ERR_BAD_STATE;
     }
@@ -79,13 +79,13 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *url, MprSsl *ssl)
         mprLog("client error", 0, "HTTP protocol to use has not been defined");
         return MPR_ERR_BAD_STATE;
     }
-    if (conn->tx == 0 || conn->state != HTTP_STATE_BEGIN) {
-        httpResetClientConn(conn, 0);
+    if (stream->tx == 0 || stream->state != HTTP_STATE_BEGIN) {
+        httpResetClientStream(stream, 0);
     }
-    tx = conn->tx;
+    tx = stream->tx;
     tx->method = supper(method);
-    conn->authRequested = 0;
-    conn->startMark = mprGetHiResTicks();
+    stream->authRequested = 0;
+    stream->startMark = mprGetHiResTicks();
 
     if ((uri = tx->parsedUri = httpCreateUri(url, HTTP_COMPLETE_URI_PATH)) == 0) {
         return MPR_ERR_BAD_ARGS;
@@ -98,13 +98,13 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *url, MprSsl *ssl)
             mprCloseSocket(net->sock, 0);
             net->sock = 0;
 
-        } else if (canUse(net, conn, uri, ssl, ip, port)) {
-            httpTrace(net->trace, "client.connection.reuse", "context", "reuse:%d", conn->keepAliveCount);
+        } else if (canUse(net, stream, uri, ssl, ip, port)) {
+            httpTrace(net->trace, "client.connection.reuse", "context", "reuse:%d", stream->keepAliveCount);
 
         } else {
             if (net->protocol >= 2) {
-                if (mprGetListLength(net->connections) > 1) {
-                    httpError(conn, HTTP_CODE_COMMS_ERROR, "Cannot use network for %s due to other existing requests", ip);
+                if (mprGetListLength(net->streams) > 1) {
+                    httpError(stream, HTTP_CODE_COMMS_ERROR, "Cannot use network for %s due to other existing requests", ip);
                     return MPR_ERR_CANT_FIND;
                 }
             } else {
@@ -117,98 +117,98 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *url, MprSsl *ssl)
         if (httpConnectNet(net, ip, port, ssl) < 0) {
             return MPR_ERR_CANT_CONNECT;
         }
-        conn->net = net;
-        conn->sock = net->sock;
-        conn->ip = net->ip;
-        conn->port = net->port;
-        conn->keepAliveCount = (net->protocol >= 2) ? 0 : conn->limits->keepAliveMax;
+        stream->net = net;
+        stream->sock = net->sock;
+        stream->ip = net->ip;
+        stream->port = net->port;
+        stream->keepAliveCount = (net->protocol >= 2) ? 0 : stream->limits->keepAliveMax;
 
 #if ME_HTTP_WEB_SOCKETS
-        if (net->protocol == 1 && uri->webSockets && httpUpgradeWebSocket(conn) < 0) {
-            conn->errorMsg = net->errorMsg = net->sock->errorMsg;
+        if (net->protocol == 1 && uri->webSockets && httpUpgradeWebSocket(stream) < 0) {
+            stream->errorMsg = net->errorMsg = net->sock->errorMsg;
             return 0;
         }
 #endif
     }
-    httpCreatePipeline(conn);
-    setDefaultHeaders(conn);
-    httpSetState(conn, HTTP_STATE_CONNECTED);
+    httpCreatePipeline(stream);
+    setDefaultHeaders(stream);
+    httpSetState(stream, HTTP_STATE_CONNECTED);
     protocol = net->protocol < 2 ? "HTTP/1.1" : "HTTP/2";
     httpTrace(net->trace, "client.request", "request", "method='%s', url='%s', protocol='%s'", tx->method, url, protocol);
     return 0;
 }
 
 
-static void setDefaultHeaders(HttpConn *conn)
+static void setDefaultHeaders(HttpStream *stream)
 {
     HttpAuthType    *ap;
 
-    assert(conn);
+    assert(stream);
 
-    if (conn->username && conn->authType && ((ap = httpLookupAuthType(conn->authType)) != 0)) {
-        if ((ap->setAuth)(conn, conn->username, conn->password)) {
-            conn->authRequested = 1;
+    if (stream->username && stream->authType && ((ap = httpLookupAuthType(stream->authType)) != 0)) {
+        if ((ap->setAuth)(stream, stream->username, stream->password)) {
+            stream->authRequested = 1;
         }
     }
-    if (conn->net->protocol < 2) {
-        if (conn->port != 80 && conn->port != 443) {
-            if (schr(conn->ip, ':')) {
-                httpAddHeader(conn, "Host", "[%s]:%d", conn->ip, conn->port);
+    if (stream->net->protocol < 2) {
+        if (stream->port != 80 && stream->port != 443) {
+            if (schr(stream->ip, ':')) {
+                httpAddHeader(stream, "Host", "[%s]:%d", stream->ip, stream->port);
             } else {
-                httpAddHeader(conn, "Host", "%s:%d", conn->ip, conn->port);
+                httpAddHeader(stream, "Host", "%s:%d", stream->ip, stream->port);
             }
         } else {
-            httpAddHeaderString(conn, "Host", conn->ip);
+            httpAddHeaderString(stream, "Host", stream->ip);
         }
-        if (conn->keepAliveCount > 0) {
-            httpSetHeaderString(conn, "Connection", "Keep-Alive");
+        if (stream->keepAliveCount > 0) {
+            httpSetHeaderString(stream, "Connection", "Keep-Alive");
         } else {
-            httpSetHeaderString(conn, "Connection", "close");
+            httpSetHeaderString(stream, "Connection", "close");
         }
     }
-    httpAddHeaderString(conn, "Accept", "*/*");
+    httpAddHeaderString(stream, "Accept", "*/*");
 }
 
 
 /*
     Check the response for authentication failures and redirections. Return true if a retry is requried.
  */
-PUBLIC bool httpNeedRetry(HttpConn *conn, cchar **url)
+PUBLIC bool httpNeedRetry(HttpStream *stream, cchar **url)
 {
     HttpRx          *rx;
     HttpTx          *tx;
     HttpAuthType    *authType;
 
-    assert(conn->rx);
+    assert(stream->rx);
 
     *url = 0;
-    rx = conn->rx;
-    tx = conn->tx;
+    rx = stream->rx;
+    tx = stream->tx;
 
-    if (conn->error || conn->state < HTTP_STATE_FIRST) {
+    if (stream->error || stream->state < HTTP_STATE_FIRST) {
         return 0;
     }
     if (rx->status == HTTP_CODE_UNAUTHORIZED) {
-        if (conn->username == 0 || conn->authType == 0) {
-            httpError(conn, rx->status, "Authentication required");
+        if (stream->username == 0 || stream->authType == 0) {
+            httpError(stream, rx->status, "Authentication required");
 
-        } else if (conn->authRequested && smatch(conn->authType, rx->authType)) {
-            httpError(conn, rx->status, "Authentication failed, wrong authentication type");
+        } else if (stream->authRequested && smatch(stream->authType, rx->authType)) {
+            httpError(stream, rx->status, "Authentication failed, wrong authentication type");
 
         } else {
-            assert(httpClientConn(conn));
-            if (conn->authType && (authType = httpLookupAuthType(conn->authType)) != 0) {
-                (authType->parseAuth)(conn, NULL, NULL);
+            assert(httpClientStream(stream));
+            if (stream->authType && (authType = httpLookupAuthType(stream->authType)) != 0) {
+                (authType->parseAuth)(stream, NULL, NULL);
             }
             return 1;
         }
 
-    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && conn->followRedirects) {
+    } else if (HTTP_CODE_MOVED_PERMANENTLY <= rx->status && rx->status <= HTTP_CODE_MOVED_TEMPORARILY && stream->followRedirects) {
         if (rx->redirect) {
             *url = rx->redirect;
             return 1;
         }
-        httpError(conn, rx->status, "Missing location header");
+        httpError(stream, rx->status, "Missing location header");
         return 0;
     }
     return 0;
@@ -218,10 +218,10 @@ PUBLIC bool httpNeedRetry(HttpConn *conn, cchar **url)
 /*
     Set the request as being a multipart mime upload. This defines the content type and defines a multipart mime boundary
  */
-PUBLIC void httpEnableUpload(HttpConn *conn)
+PUBLIC void httpEnableUpload(HttpStream *stream)
 {
-    conn->boundary = sfmt("--BOUNDARY--%lld", conn->http->now);
-    httpSetHeader(conn, "Content-Type", "multipart/form-data; boundary=%s", &conn->boundary[2]);
+    stream->boundary = sfmt("--BOUNDARY--%lld", stream->http->now);
+    httpSetHeader(stream, "Content-Type", "multipart/form-data; boundary=%s", &stream->boundary[2]);
 }
 
 
@@ -230,9 +230,9 @@ PUBLIC void httpEnableUpload(HttpConn *conn)
     Read data. If sync mode, this will block. If async, will never block.
     Will return what data is available up to the requested size.
     Timeout in milliseconds to wait. Set to -1 to use the default inactivity timeout. Set to zero to wait forever.
-    Returns a count of bytes read. Returns zero if no data. EOF if returns zero and conn->state is > HTTP_STATE_CONTENT.
+    Returns a count of bytes read. Returns zero if no data. EOF if returns zero and stream->state is > HTTP_STATE_CONTENT.
  */
-PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeout, int flags)
+PUBLIC ssize httpReadBlock(HttpStream *stream, char *buf, ssize size, MprTicks timeout, int flags)
 {
     HttpPacket  *packet;
     HttpQueue   *q;
@@ -242,13 +242,13 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
     ssize       nbytes, len;
     int64       dispatcherMark;
 
-    q = conn->readq;
+    q = stream->readq;
     assert(q->count >= 0);
     assert(size >= 0);
-    limits = conn->limits;
+    limits = stream->limits;
 
     if (flags == 0) {
-        flags = conn->net->async ? HTTP_NON_BLOCK : HTTP_BLOCK;
+        flags = stream->net->async ? HTTP_NON_BLOCK : HTTP_BLOCK;
     }
     if (timeout < 0) {
         timeout = limits->inactivityTimeout;
@@ -256,20 +256,20 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
         timeout = MPR_MAX_TIMEOUT;
     }
     if (flags & HTTP_BLOCK) {
-        start = conn->http->now;
-        dispatcherMark = mprGetEventMark(conn->dispatcher);
-        while (q->count <= 0 && !conn->error && (conn->state <= HTTP_STATE_CONTENT)) {
-            if (httpRequestExpired(conn, -1)) {
+        start = stream->http->now;
+        dispatcherMark = mprGetEventMark(stream->dispatcher);
+        while (q->count <= 0 && !stream->error && (stream->state <= HTTP_STATE_CONTENT)) {
+            if (httpRequestExpired(stream, -1)) {
                 break;
             }
             delay = min(limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
             //  TODO - review
-            httpEnableNetEvents(conn->net);
-            mprWaitForEvent(conn->dispatcher, delay, dispatcherMark);
+            httpEnableNetEvents(stream->net);
+            mprWaitForEvent(stream->dispatcher, delay, dispatcherMark);
             if (mprGetRemainingTicks(start, timeout) <= 0) {
                 break;
             }
-            dispatcherMark = mprGetEventMark(conn->dispatcher);
+            dispatcherMark = mprGetEventMark(stream->dispatcher);
         }
     }
     for (nbytes = 0; size > 0 && q->count > 0; ) {
@@ -300,7 +300,7 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
     if (nbytes < size) {
         buf[nbytes] = '\0';
     }
-    if (nbytes == 0 && httpRequestExpired(conn, -1)) {
+    if (nbytes == 0 && httpRequestExpired(stream, -1)) {
         return MPR_ERR_TIMEOUT;
     }
     return nbytes;
@@ -310,19 +310,19 @@ PUBLIC ssize httpReadBlock(HttpConn *conn, char *buf, ssize size, MprTicks timeo
 /*
     Read with standard connection timeouts and in blocking mode for clients, non-blocking for server-side
  */
-PUBLIC ssize httpRead(HttpConn *conn, char *buf, ssize size)
+PUBLIC ssize httpRead(HttpStream *stream, char *buf, ssize size)
 {
-    return httpReadBlock(conn, buf, size, -1, 0);
+    return httpReadBlock(stream, buf, size, -1, 0);
 }
 
 
-PUBLIC char *httpReadString(HttpConn *conn)
+PUBLIC char *httpReadString(HttpStream *stream)
 {
     HttpRx      *rx;
     ssize       sofar, nbytes, remaining;
     char        *content;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (rx->length < 0) {
         return 0;
     }
@@ -334,7 +334,7 @@ PUBLIC char *httpReadString(HttpConn *conn)
         }
         sofar = 0;
         while (remaining > 0) {
-            nbytes = httpRead(conn, &content[sofar], remaining);
+            nbytes = httpRead(stream, &content[sofar], remaining);
             if (nbytes < 0) {
                 return 0;
             }
@@ -348,7 +348,7 @@ PUBLIC char *httpReadString(HttpConn *conn)
             if ((content = mprRealloc(content, sofar + ME_BUFSIZE)) == 0) {
                 return 0;
             }
-            nbytes = httpRead(conn, &content[sofar], ME_BUFSIZE);
+            nbytes = httpRead(stream, &content[sofar], ME_BUFSIZE);
             if (nbytes < 0) {
                 return 0;
             } else if (nbytes == 0) {
@@ -366,10 +366,10 @@ PUBLIC char *httpReadString(HttpConn *conn)
     Convenience method to issue a client http request.
     Assumes the Mpr and Http services are created and initialized.
  */
-PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, int protocol, char **err)
+PUBLIC HttpStream *httpRequest(cchar *method, cchar *uri, cchar *data, int protocol, char **err)
 {
     HttpNet         *net;
-    HttpConn        *conn;
+    HttpStream        *stream;
     MprDispatcher   *dispatcher;
 
     assert(err);
@@ -377,22 +377,22 @@ PUBLIC HttpConn *httpRequest(cchar *method, cchar *uri, cchar *data, int protoco
     mprStartDispatcher(dispatcher);
 
     net = httpCreateNet(dispatcher, NULL, protocol, 0);
-    if ((conn = httpCreateConn(net, 0)) == 0) {
+    if ((stream = httpCreateStream(net, 0)) == 0) {
         return 0;
     }
-    mprAddRoot(conn);
+    mprAddRoot(stream);
 
-    if (clientRequest(conn, method, uri, data, protocol, err) < 0) {
-        mprRemoveRoot(conn);
+    if (clientRequest(stream, method, uri, data, protocol, err) < 0) {
+        mprRemoveRoot(stream);
         httpDestroyNet(net);
         return 0;
     }
-    mprRemoveRoot(conn);
-    return conn;
+    mprRemoveRoot(stream);
+    return stream;
 }
 
 
-static int clientRequest(HttpConn *conn, cchar *method, cchar *uri, cchar *data, int protocol, char **err)
+static int clientRequest(HttpStream *stream, cchar *method, cchar *uri, cchar *data, int protocol, char **err)
 {
     ssize   len;
 
@@ -400,19 +400,19 @@ static int clientRequest(HttpConn *conn, cchar *method, cchar *uri, cchar *data,
        Open a connection to issue the request. Then finalize the request output - this forces the request out.
      */
     *err = 0;
-    if (httpConnect(conn, method, uri, NULL) < 0) {
+    if (httpConnect(stream, method, uri, NULL) < 0) {
         *err = sfmt("Cannot connect to %s", uri);
         return MPR_ERR_CANT_CONNECT;
     }
     if (data) {
         len = slen(data);
-        if (httpWriteBlock(conn->writeq, data, len, HTTP_BLOCK) != len) {
+        if (httpWriteBlock(stream->writeq, data, len, HTTP_BLOCK) != len) {
             *err = sclone("Cannot write request body data");
             return MPR_ERR_CANT_WRITE;
         }
     }
-    httpFinalizeOutput(conn);
-    if (httpWait(conn, HTTP_STATE_CONTENT, MPR_MAX_TIMEOUT) < 0) {
+    httpFinalizeOutput(stream);
+    if (httpWait(stream, HTTP_STATE_CONTENT, MPR_MAX_TIMEOUT) < 0) {
         *err = sclone("No response");
         return MPR_ERR_BAD_STATE;
     }
@@ -420,7 +420,7 @@ static int clientRequest(HttpConn *conn, cchar *method, cchar *uri, cchar *data,
 }
 
 
-static int blockingFileCopy(HttpConn *conn, cchar *path)
+static int blockingFileCopy(HttpStream *stream, cchar *path)
 {
     MprFile     *file;
     char        buf[ME_BUFSIZE];
@@ -435,7 +435,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
     while ((bytes = mprReadFile(file, buf, sizeof(buf))) > 0) {
         offset = 0;
         while (bytes > 0) {
-            if ((nbytes = httpWriteBlock(conn->writeq, &buf[offset], bytes, HTTP_BLOCK)) < 0) {
+            if ((nbytes = httpWriteBlock(stream->writeq, &buf[offset], bytes, HTTP_BLOCK)) < 0) {
                 mprCloseFile(file);
                 mprRemoveRoot(file);
                 return MPR_ERR_CANT_WRITE;
@@ -445,7 +445,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
             assert(bytes >= 0);
         }
     }
-    httpFlushQueue(conn->writeq, HTTP_BLOCK);
+    httpFlushQueue(stream->writeq, HTTP_BLOCK);
     mprCloseFile(file);
     mprRemoveRoot(file);
     return 0;
@@ -456,7 +456,7 @@ static int blockingFileCopy(HttpConn *conn, cchar *path)
     Write upload data. This routine blocks. If you need non-blocking ... cut and paste.
     TODO - what about non-blocking upload
  */
-PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *formData)
+PUBLIC ssize httpWriteUploadData(HttpStream *stream, MprList *fileData, MprList *formData)
 {
     char    *path, *pair, *key, *value, *name;
     cchar   *type;
@@ -467,30 +467,30 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
     if (formData) {
         for (rc = next = 0; rc >= 0 && (pair = mprGetNextItem(formData, &next)) != 0; ) {
             key = ssplit(sclone(pair), "=", &value);
-            rc += httpWrite(conn->writeq, "%s\r\nContent-Disposition: form-data; name=\"%s\";\r\n", conn->boundary, key);
-            rc += httpWrite(conn->writeq, "Content-Type: application/x-www-form-urlencoded\r\n\r\n%s\r\n", value);
+            rc += httpWrite(stream->writeq, "%s\r\nContent-Disposition: form-data; name=\"%s\";\r\n", stream->boundary, key);
+            rc += httpWrite(stream->writeq, "Content-Type: application/x-www-form-urlencoded\r\n\r\n%s\r\n", value);
         }
     }
     if (fileData) {
         for (rc = next = 0; rc >= 0 && (path = mprGetNextItem(fileData, &next)) != 0; ) {
             if (!mprPathExists(path, R_OK)) {
-                httpError(conn, HTTP_CODE_NOT_FOUND, "Cannot open %s", path);
+                httpError(stream, HTTP_CODE_NOT_FOUND, "Cannot open %s", path);
                 return MPR_ERR_CANT_OPEN;
             }
             name = mprGetPathBase(path);
-            rc += httpWrite(conn->writeq, "%s\r\nContent-Disposition: form-data; name=\"file%d\"; filename=\"%s\"\r\n",
-                conn->boundary, next - 1, name);
+            rc += httpWrite(stream->writeq, "%s\r\nContent-Disposition: form-data; name=\"file%d\"; filename=\"%s\"\r\n",
+                stream->boundary, next - 1, name);
             if ((type = mprLookupMime(MPR->mimeTypes, path)) != 0) {
-                rc += httpWrite(conn->writeq, "Content-Type: %s\r\n", mprLookupMime(MPR->mimeTypes, path));
+                rc += httpWrite(stream->writeq, "Content-Type: %s\r\n", mprLookupMime(MPR->mimeTypes, path));
             }
-            httpWrite(conn->writeq, "\r\n");
-            if (blockingFileCopy(conn, path) < 0) {
+            httpWrite(stream->writeq, "\r\n");
+            if (blockingFileCopy(stream, path) < 0) {
                 return MPR_ERR_CANT_WRITE;
             }
-            rc += httpWrite(conn->writeq, "\r\n");
+            rc += httpWrite(stream->writeq, "\r\n");
         }
     }
-    rc += httpWrite(conn->writeq, "%s--\r\n--", conn->boundary);
+    rc += httpWrite(stream->writeq, "%s--\r\n--", stream->boundary);
     return rc;
 }
 
@@ -502,18 +502,18 @@ PUBLIC ssize httpWriteUploadData(HttpConn *conn, MprList *fileData, MprList *for
     @param timeout Timeout in msec. If timeout is zero, wait forever. If timeout is < 0, use default inactivity
         and duration timeouts.
  */
-PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
+PUBLIC int httpWait(HttpStream *stream, int state, MprTicks timeout)
 {
     HttpLimits  *limits;
     MprTicks    delay, start;
     int64       dispatcherMark;
     int         justOne;
 
-    limits = conn->limits;
-    if (httpServerConn(conn)) {
+    limits = stream->limits;
+    if (httpServerStream(stream)) {
         return MPR_ERR_BAD_STATE;
     }
-    if (conn->state <= HTTP_STATE_BEGIN) {
+    if (stream->state <= HTTP_STATE_BEGIN) {
         return MPR_ERR_BAD_STATE;
     }
     if (state == 0) {
@@ -523,8 +523,8 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
     } else {
         justOne = 0;
     }
-    if (conn->error) {
-        if (conn->state >= state) {
+    if (stream->error) {
+        if (stream->state >= state) {
             return 0;
         }
         return MPR_ERR_BAD_STATE;
@@ -535,30 +535,30 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
         timeout = MPR_MAX_TIMEOUT;
     }
     if (state > HTTP_STATE_CONTENT) {
-        httpFinalizeOutput(conn);
+        httpFinalizeOutput(stream);
     }
-    start = conn->http->now;
-    dispatcherMark = mprGetEventMark(conn->dispatcher);
+    start = stream->http->now;
+    dispatcherMark = mprGetEventMark(stream->dispatcher);
 
     //  TODO - how does this work with http2?
-    while (conn->state < state && !conn->error && !mprIsSocketEof(conn->sock)) {
-        if (httpRequestExpired(conn, -1)) {
+    while (stream->state < state && !stream->error && !mprIsSocketEof(stream->sock)) {
+        if (httpRequestExpired(stream, -1)) {
             return MPR_ERR_TIMEOUT;
         }
         //  TODO - review
-        httpEnableNetEvents(conn->net);
+        httpEnableNetEvents(stream->net);
         delay = min(limits->inactivityTimeout, mprGetRemainingTicks(start, timeout));
         delay = max(delay, 0);
-        mprWaitForEvent(conn->dispatcher, delay, dispatcherMark);
+        mprWaitForEvent(stream->dispatcher, delay, dispatcherMark);
         if (justOne || (mprGetRemainingTicks(start, timeout) <= 0)) {
             break;
         }
-        dispatcherMark = mprGetEventMark(conn->dispatcher);
+        dispatcherMark = mprGetEventMark(stream->dispatcher);
     }
-    if (conn->error) {
+    if (stream->error) {
         return MPR_ERR_NOT_READY;
     }
-    if (conn->state < state) {
+    if (stream->state < state) {
         if (mprGetRemainingTicks(start, timeout) <= 0) {
             return MPR_ERR_TIMEOUT;
         }
@@ -566,7 +566,7 @@ PUBLIC int httpWait(HttpConn *conn, int state, MprTicks timeout)
             return MPR_ERR_CANT_READ;
         }
     }
-    conn->lastActivity = conn->http->now;
+    stream->lastActivity = stream->http->now;
     return 0;
 }
 

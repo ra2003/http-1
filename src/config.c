@@ -795,7 +795,7 @@ static void parseLimitsClients(HttpRoute *route, cchar *key, MprJson *prop)
 
 static void parseLimitsConnections(HttpRoute *route, cchar *key, MprJson *prop)
 {
-    route->limits->connectionsMax = httpGetInt(prop->value);
+    route->limits->streamsMax = httpGetInt(prop->value);
 }
 
 

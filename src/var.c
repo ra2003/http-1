@@ -15,7 +15,7 @@
 /*
     Define standard CGI variables
  */
-PUBLIC void httpCreateCGIParams(HttpConn *conn)
+PUBLIC void httpCreateCGIParams(HttpStream *stream)
 {
     HttpRx          *rx;
     HttpTx          *tx;
@@ -26,40 +26,40 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     MprJson         *params;
     int             index;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if ((svars = rx->svars) != 0) {
         /* Do only once */
         return;
     }
     svars = rx->svars = mprCreateHash(HTTP_VAR_HASH_SIZE, MPR_HASH_STABLE);
-    tx = conn->tx;
-    host = conn->host;
-    sock = conn->sock;
+    tx = stream->tx;
+    host = stream->host;
+    sock = stream->sock;
 
     mprAddKey(svars, "ROUTE_HOME", rx->route->home);
 
-    mprAddKey(svars, "AUTH_TYPE", conn->authType);
-    mprAddKey(svars, "AUTH_USER", conn->username);
+    mprAddKey(svars, "AUTH_TYPE", stream->authType);
+    mprAddKey(svars, "AUTH_USER", stream->username);
     mprAddKey(svars, "AUTH_ACL", MPR->emptyString);
     mprAddKey(svars, "CONTENT_LENGTH", rx->contentLength);
     mprAddKey(svars, "CONTENT_TYPE", rx->mimeType);
     mprAddKey(svars, "DOCUMENTS", rx->route->documents);
     mprAddKey(svars, "GATEWAY_INTERFACE", sclone("CGI/1.1"));
     mprAddKey(svars, "QUERY_STRING", rx->parsedUri->query);
-    mprAddKey(svars, "REMOTE_ADDR", conn->ip);
-    mprAddKeyFmt(svars, "REMOTE_PORT", "%d", conn->port);
+    mprAddKey(svars, "REMOTE_ADDR", stream->ip);
+    mprAddKeyFmt(svars, "REMOTE_PORT", "%d", stream->port);
 
     /*
         Set to the same as AUTH_USER
      */
-    mprAddKey(svars, "REMOTE_USER", conn->username);
+    mprAddKey(svars, "REMOTE_USER", stream->username);
     mprAddKey(svars, "REQUEST_METHOD", rx->method);
-    mprAddKey(svars, "REQUEST_TRANSPORT", sclone((char*) ((conn->secure) ? "https" : "http")));
+    mprAddKey(svars, "REQUEST_TRANSPORT", sclone((char*) ((stream->secure) ? "https" : "http")));
     mprAddKey(svars, "SERVER_ADDR", sock->acceptIp);
     mprAddKey(svars, "SERVER_NAME", host->name);
     mprAddKeyFmt(svars, "SERVER_PORT", "%d", sock->acceptPort);
-    mprAddKey(svars, "SERVER_PROTOCOL", sclone(httpGetProtocol(conn->net)));
-    mprAddKey(svars, "SERVER_SOFTWARE", conn->http->software);
+    mprAddKey(svars, "SERVER_PROTOCOL", sclone(httpGetProtocol(stream->net)));
+    mprAddKey(svars, "SERVER_SOFTWARE", stream->http->software);
 
     /*
         For PHP, REQUEST_URI must be the original URI. The SCRIPT_NAME will refer to the new pathInfo
@@ -82,7 +82,7 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
         mprAddKey(svars, "PATH_TRANSLATED", mprNormalizePath(sfmt("%s%s", rx->route->documents, rx->extraPath)));
     }
     if (rx->files) {
-        params = httpGetParams(conn);
+        params = httpGetParams(stream);
         assert(params);
         for (ITERATE_ITEMS(rx->files, file, index)) {
             mprWriteJson(params, sfmt("FILE_%d_FILENAME", index), file->filename, MPR_JSON_STRING);
@@ -92,8 +92,8 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
             mprWriteJson(params, sfmt("FILE_%d_SIZE", index), sfmt("%zd", file->size), MPR_JSON_NUMBER);
         }
     }
-    if (conn->http->envCallback) {
-        conn->http->envCallback(conn);
+    if (stream->http->envCallback) {
+        stream->http->envCallback(stream);
     }
 }
 
@@ -103,13 +103,13 @@ PUBLIC void httpCreateCGIParams(HttpConn *conn)
     Make variables for each keyword in a query string. The buffer must be url encoded
     (ie. key=value&key2=value2..., spaces converted to '+' and all else should be %HEX encoded).
  */
-static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
+static void addParamsFromBuf(HttpStream *stream, cchar *buf, ssize len)
 {
     MprJson     *params, *prior;
     char        *newValue, *decoded, *keyword, *value, *tok;
 
-    assert(conn);
-    params = httpGetParams(conn);
+    assert(stream);
+    params = httpGetParams(stream);
     decoded = mprAlloc(len + 1);
     decoded[len] = '\0';
     memcpy(decoded, buf, len);
@@ -156,26 +156,26 @@ static void addParamsFromBuf(HttpConn *conn, cchar *buf, ssize len)
 }
 
 
-PUBLIC void httpAddQueryParams(HttpConn *conn)
+PUBLIC void httpAddQueryParams(HttpStream *stream)
 {
     HttpRx      *rx;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (rx->parsedUri->query && !(rx->flags & HTTP_ADDED_QUERY_PARAMS)) {
-        addParamsFromBuf(conn, rx->parsedUri->query, slen(rx->parsedUri->query));
+        addParamsFromBuf(stream, rx->parsedUri->query, slen(rx->parsedUri->query));
         rx->flags |= HTTP_ADDED_QUERY_PARAMS;
     }
 }
 
 
-PUBLIC int httpAddBodyParams(HttpConn *conn)
+PUBLIC int httpAddBodyParams(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpQueue   *q;
     MprBuf      *content;
 
-    rx = conn->rx;
-    q = conn->readq;
+    rx = stream->rx;
+    q = stream->readq;
 
     if (rx->eof && (rx->form || rx->upload || rx->json) && !(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
         httpJoinPackets(q, -1);
@@ -183,11 +183,11 @@ PUBLIC int httpAddBodyParams(HttpConn *conn)
             content = q->first->content;
             mprAddNullToBuf(content);
             if (rx->json) {
-                if (mprParseJsonInto(httpGetBodyInput(conn), httpGetParams(conn)) == 0) {
+                if (mprParseJsonInto(httpGetBodyInput(stream), httpGetParams(stream)) == 0) {
                     return MPR_ERR_BAD_FORMAT;
                 }
             } else {
-                addParamsFromBuf(conn, mprGetBufStart(content), mprGetBufLength(content));
+                addParamsFromBuf(stream, mprGetBufStart(content), mprGetBufLength(content));
             }
         }
         rx->flags |= HTTP_ADDED_BODY_PARAMS;
@@ -196,49 +196,49 @@ PUBLIC int httpAddBodyParams(HttpConn *conn)
 }
 
 
-PUBLIC void httpAddJsonParams(HttpConn *conn)
+PUBLIC void httpAddJsonParams(HttpStream *stream)
 {
     HttpRx      *rx;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (rx->eof && sstarts(rx->mimeType, "application/json")) {
         if (!(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
-            mprParseJsonInto(httpGetBodyInput(conn), httpGetParams(conn));
+            mprParseJsonInto(httpGetBodyInput(stream), httpGetParams(stream));
             rx->flags |= HTTP_ADDED_BODY_PARAMS;
         }
     }
 }
 
 
-PUBLIC MprJson *httpGetParams(HttpConn *conn)
+PUBLIC MprJson *httpGetParams(HttpStream *stream)
 {
-    if (conn->rx->params == 0) {
-        conn->rx->params = mprCreateJson(MPR_JSON_OBJ);
+    if (stream->rx->params == 0) {
+        stream->rx->params = mprCreateJson(MPR_JSON_OBJ);
     }
-    return conn->rx->params;
+    return stream->rx->params;
 }
 
 
-PUBLIC int httpTestParam(HttpConn *conn, cchar *var)
+PUBLIC int httpTestParam(HttpStream *stream, cchar *var)
 {
-    return mprReadJsonObj(httpGetParams(conn), var) != 0;
+    return mprReadJsonObj(httpGetParams(stream), var) != 0;
 }
 
 
-PUBLIC cchar *httpGetParam(HttpConn *conn, cchar *var, cchar *defaultValue)
+PUBLIC cchar *httpGetParam(HttpStream *stream, cchar *var, cchar *defaultValue)
 {
     cchar       *value;
 
-    value = mprReadJson(httpGetParams(conn), var);
+    value = mprReadJson(httpGetParams(stream), var);
     return (value) ? value : defaultValue;
 }
 
 
-PUBLIC int httpGetIntParam(HttpConn *conn, cchar *var, int defaultValue)
+PUBLIC int httpGetIntParam(HttpStream *stream, cchar *var, int defaultValue)
 {
     cchar       *value;
 
-    value = mprReadJson(httpGetParams(conn), var);
+    value = mprReadJson(httpGetParams(stream), var);
     return (value) ? (int) stoi(value) : defaultValue;
 }
 
@@ -253,7 +253,7 @@ static int sortParam(MprJson **j1, MprJson **j2)
     Return the request parameters as a string.
     This will return the exact same string regardless of the order of form parameters.
  */
-PUBLIC cchar *httpGetParamsString(HttpConn *conn)
+PUBLIC cchar *httpGetParamsString(HttpStream *stream)
 {
     HttpRx      *rx;
     MprJson     *jp, *params;
@@ -262,11 +262,11 @@ PUBLIC cchar *httpGetParamsString(HttpConn *conn)
     ssize       len;
     int         ji, next;
 
-    assert(conn);
-    rx = conn->rx;
+    assert(stream);
+    rx = stream->rx;
 
     if (rx->paramString == 0) {
-        if ((params = conn->rx->params) != 0) {
+        if ((params = stream->rx->params) != 0) {
             if ((list = mprCreateList(params->length, 0)) != 0) {
                 len = 0;
                 for (ITERATE_JSON(params, jp, ji)) {
@@ -294,27 +294,27 @@ PUBLIC cchar *httpGetParamsString(HttpConn *conn)
 }
 
 
-PUBLIC void httpRemoveParam(HttpConn *conn, cchar *var)
+PUBLIC void httpRemoveParam(HttpStream *stream, cchar *var)
 {
-    mprRemoveJson(httpGetParams(conn), var);
+    mprRemoveJson(httpGetParams(stream), var);
 }
 
 
-PUBLIC void httpSetParam(HttpConn *conn, cchar *var, cchar *value)
+PUBLIC void httpSetParam(HttpStream *stream, cchar *var, cchar *value)
 {
-    mprWriteJson(httpGetParams(conn), var, value, 0);
+    mprWriteJson(httpGetParams(stream), var, value, 0);
 }
 
 
-PUBLIC void httpSetIntParam(HttpConn *conn, cchar *var, int value)
+PUBLIC void httpSetIntParam(HttpStream *stream, cchar *var, int value)
 {
-    mprWriteJson(httpGetParams(conn), var, sfmt("%d", value), MPR_JSON_NUMBER);
+    mprWriteJson(httpGetParams(stream), var, sfmt("%d", value), MPR_JSON_NUMBER);
 }
 
 
-PUBLIC bool httpMatchParam(HttpConn *conn, cchar *var, cchar *value)
+PUBLIC bool httpMatchParam(HttpStream *stream, cchar *var, cchar *value)
 {
-    return smatch(value, httpGetParam(conn, var, " __UNDEF__ "));
+    return smatch(value, httpGetParam(stream, var, " __UNDEF__ "));
 }
 
 

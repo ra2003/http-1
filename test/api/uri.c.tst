@@ -267,17 +267,17 @@ static void testFormatUri()
 static void testLink()
 {
 #if FUTURE
-    HttpConn        *conn;
+    HttpStream        *stream;
     HttpEndpoint    *endpoint;
     cchar           *s;
 
     endpoint = httpCreateEndpoint(NULL, 80, NULL);
-    conn = httpCreateConn(endpoint, 1);
-    conn->rx = httpCreateRx(conn);
-    conn->rx->route = httpCreateRoute(NULL);
+    stream = httpCreateStream(endpoint, 1);
+    stream->rx = httpCreateRx(stream);
+    stream->rx->route = httpCreateRoute(NULL);
 
-    conn->rx->parsedUri = httpCreateUri("/", 0);
-    s = httpLink(conn, "~");
+    stream->rx->parsedUri = httpCreateUri("/", 0);
+    s = httpLink(stream, "~");
     ttrue(smatch(s, ""));
 #endif
 }
@@ -286,19 +286,19 @@ static void testLink()
 static void testResolve()
 {
 #if FUTURE
-    HttpConn        *conn;
+    HttpStream        *stream;
     HttpEndpoint    *endpoint;
 
     endpoint = httpCreateEndpoint(NULL, 80, NULL);
-    conn = httpCreateConn(endpoint, 1);
-    conn->rx = httpCreateRx(conn);
-    conn->rx->route = httpCreateRoute(NULL);
+    stream = httpCreateStream(endpoint, 1);
+    stream->rx = httpCreateRx(stream);
+    stream->rx->route = httpCreateRoute(NULL);
 
-    conn->rx->parsedUri = httpCreateUri("/admin/index.html", 0);
+    stream->rx->parsedUri = httpCreateUri("/admin/index.html", 0);
 
     cchar           *s;
-    s = httpLink(conn, "~");
-    s = httpResolveUri(conn, NULL, httpCreateUri("index.html", 0));
+    s = httpLink(stream, "~");
+    s = httpResolveUri(stream, NULL, httpCreateUri("index.html", 0));
     ttrue(smatch(s, ""));
 
     //  Test redirects

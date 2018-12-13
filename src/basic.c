@@ -12,12 +12,12 @@
 /*
     Parse the 'Authorization' header and the server 'Www-Authenticate' header
  */
-PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
+PUBLIC int httpBasicParse(HttpStream *stream, cchar **username, cchar **password)
 {
     HttpRx  *rx;
     char    *decoded, *cp;
 
-    rx = conn->rx;
+    rx = stream->rx;
     if (password) {
         *password = NULL;
     }
@@ -33,7 +33,7 @@ PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
     if ((cp = strchr(decoded, ':')) != 0) {
         *cp++ = '\0';
     }
-    conn->encoded = 0;
+    stream->encoded = 0;
     if (decoded && *decoded == '\0') {
         return MPR_ERR_BAD_FORMAT;
     }
@@ -54,17 +54,17 @@ PUBLIC int httpBasicParse(HttpConn *conn, cchar **username, cchar **password)
     Respond to the request by asking for a login
     Only called if not logged in
  */
-PUBLIC void httpBasicLogin(HttpConn *conn)
+PUBLIC void httpBasicLogin(HttpStream *stream)
 {
     HttpAuth    *auth;
 
-    auth = conn->rx->route->auth;
-    if (auth->loginPage && !sends(conn->rx->referrer, auth->loginPage)) {
-        httpRedirect(conn, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
+    auth = stream->rx->route->auth;
+    if (auth->loginPage && !sends(stream->rx->referrer, auth->loginPage)) {
+        httpRedirect(stream, HTTP_CODE_MOVED_TEMPORARILY, auth->loginPage);
     } else {
-        httpSetHeader(conn, "WWW-Authenticate", "Basic realm=\"%s\"", auth->realm);
-        httpError(conn, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
-        httpTrace(conn->trace, "auth.basic.error", "error", "msg:'Access denied, Login required'");
+        httpSetHeader(stream, "WWW-Authenticate", "Basic realm=\"%s\"", auth->realm);
+        httpError(stream, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
+        httpTrace(stream->trace, "auth.basic.error", "error", "msg:'Access denied, Login required'");
     }
 }
 
@@ -73,9 +73,9 @@ PUBLIC void httpBasicLogin(HttpConn *conn)
     Add the 'Authorization' header for authenticated requests
     NOTE: Can do this without first getting a 401 response
  */
-PUBLIC bool httpBasicSetHeaders(HttpConn *conn, cchar *username, cchar *password)
+PUBLIC bool httpBasicSetHeaders(HttpStream *stream, cchar *username, cchar *password)
 {
-    httpAddHeader(conn, "Authorization", "basic %s", mprEncode64(sfmt("%s:%s", username, password)));
+    httpAddHeader(stream, "Authorization", "basic %s", mprEncode64(sfmt("%s:%s", username, password)));
     return 1;
 }
 

@@ -19,14 +19,14 @@
 
 /****************************** Forward Declarations **************************/
 
-static void filterDirList(HttpConn *conn, MprList *list);
+static void filterDirList(HttpStream *stream, MprList *list);
 static void manageDir(HttpDir *dir, int flags);
 static int  matchDirPattern(cchar *pattern, cchar *file);
 static void outputFooter(HttpQueue *q);
 static void outputHeader(HttpQueue *q, cchar *dir, int nameSize);
 static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *dir, int nameSize);
-static void parseQuery(HttpConn *conn);
-static void sortList(HttpConn *conn, MprList *list);
+static void parseQuery(HttpStream *stream);
+static void sortList(HttpStream *stream, MprList *list);
 static void startDir(HttpQueue *q);
 
 /************************************* Code ***********************************/
@@ -55,14 +55,14 @@ PUBLIC int httpOpenDirHandler()
     Test if this request is for a directory listing. This routine is called directly by the
     fileHandler. Directory listings are enabled in a route via "Options Indexes".
  */
-PUBLIC bool httpShouldRenderDirListing(HttpConn *conn)
+PUBLIC bool httpShouldRenderDirListing(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpTx      *tx;
     HttpDir     *dir;
 
-    tx = conn->tx;
-    rx = conn->rx;
+    tx = stream->tx;
+    rx = stream->rx;
     assert(tx->filename);
     assert(tx->fileInfo.checked);
 
@@ -70,7 +70,7 @@ PUBLIC bool httpShouldRenderDirListing(HttpConn *conn)
         return 0;
     }
     if (dir->enabled && tx->fileInfo.isDir && sends(rx->pathInfo, "/")) {
-        conn->reqData = dir;
+        stream->reqData = dir;
         return 1;
     }
     return 0;
@@ -82,7 +82,7 @@ PUBLIC bool httpShouldRenderDirListing(HttpConn *conn)
  */
 static void startDir(HttpQueue *q)
 {
-    HttpConn        *conn;
+    HttpStream        *stream;
     HttpTx          *tx;
     HttpRx          *rx;
     MprList         *list;
@@ -92,23 +92,23 @@ static void startDir(HttpQueue *q)
     uint            nameSize;
     int             next;
 
-    conn = q->conn;
-    rx = conn->rx;
-    tx = conn->tx;
-    if ((dir = conn->reqData) == 0) {
-        httpError(conn, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot get directory listing");
+    stream = q->stream;
+    rx = stream->rx;
+    tx = stream->tx;
+    if ((dir = stream->reqData) == 0) {
+        httpError(stream, HTTP_CODE_INTERNAL_SERVER_ERROR, "Cannot get directory listing");
         return;
     }
     assert(tx->filename);
 
     if (!(rx->flags & (HTTP_GET | HTTP_HEAD))) {
-        httpError(conn, HTTP_CODE_BAD_METHOD, "Bad method");
+        httpError(stream, HTTP_CODE_BAD_METHOD, "Bad method");
         return;
     }
-    httpSetContentType(conn, "text/html");
-    httpSetHeaderString(conn, "Cache-Control", "no-cache");
-    httpSetHeaderString(conn, "Last-Modified", conn->http->currentDate);
-    parseQuery(conn);
+    httpSetContentType(stream, "text/html");
+    httpSetHeaderString(stream, "Cache-Control", "no-cache");
+    httpSetHeaderString(stream, "Last-Modified", stream->http->currentDate);
+    parseQuery(stream);
 
     if ((list = mprGetPathFiles(tx->filename, MPR_PATH_RELATIVE)) == 0) {
         httpWrite(q, "<h2>Cannot get file list</h2>\r\n");
@@ -116,9 +116,9 @@ static void startDir(HttpQueue *q)
         return;
     }
     if (dir->pattern) {
-        filterDirList(conn, list);
+        filterDirList(stream, list);
     }
-    sortList(conn, list);
+    sortList(stream, list);
     /*
         Get max filename size
      */
@@ -134,18 +134,18 @@ static void startDir(HttpQueue *q)
         outputLine(q, dp, tx->filename, nameSize);
     }
     outputFooter(q);
-    httpFinalize(conn);
+    httpFinalize(stream);
 }
 
 
-static void parseQuery(HttpConn *conn)
+static void parseQuery(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpDir     *dir;
     char        *value, *query, *next, *tok, *field;
 
-    rx = conn->rx;
-    dir = conn->reqData;
+    rx = stream->rx;
+    dir = stream->reqData;
 
     query = sclone(rx->parsedUri->query);
     if (query == 0) {
@@ -193,13 +193,13 @@ static void parseQuery(HttpConn *conn)
 }
 
 
-static void sortList(HttpConn *conn, MprList *list)
+static void sortList(HttpStream *stream, MprList *list)
 {
     MprDirEntry *tmp, **items;
     HttpDir     *dir;
     int         count, i, j, rc;
 
-    dir = conn->reqData;
+    dir = stream->reqData;
 
     if (dir->sortField == 0) {
         return;
@@ -275,7 +275,7 @@ static void outputHeader(HttpQueue *q, cchar *path, int nameSize)
     char    *parent, *parentSuffix;
     int     reverseOrder, fancy, isRootDir;
 
-    dir = q->conn->reqData;
+    dir = q->stream->reqData;
     fancy = 1;
     path = mprEscapeHtml(path);
 
@@ -376,7 +376,7 @@ static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *path, int nameSize)
     char        *months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
     path = mprEscapeHtml(path);
-    dir = q->conn->reqData;
+    dir = q->stream->reqData;
     if (ep->size >= (1024 * 1024 * 1024)) {
         fmtNum(sizeBuf, sizeof(sizeBuf), (int) ep->size, 1024 * 1024 * 1024, "G");
 
@@ -403,7 +403,7 @@ static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *path, int nameSize)
         dirSuffix = "/";
     } else {
         ext = mprGetPathExt(ep->name);
-        if (ext && (mimeType = mprLookupMime(q->conn->rx->route->mimeTypes, ext)) != 0) {
+        if (ext && (mimeType = mprLookupMime(q->stream->rx->route->mimeTypes, ext)) != 0) {
             if (strcmp(ext, "es") == 0 || strcmp(ext, "ejs") == 0 || strcmp(ext, "php") == 0) {
                 icon = "text";
             } else if (strstr(mimeType, "text") != 0) {
@@ -441,12 +441,12 @@ static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *path, int nameSize)
 
 static void outputFooter(HttpQueue *q)
 {
-    HttpConn    *conn;
+    HttpStream    *stream;
     MprSocket   *sock;
     HttpDir     *dir;
 
-    conn = q->conn;
-    dir = conn->reqData;
+    stream = q->stream;
+    dir = stream->reqData;
 
     if (dir->fancyIndexing == 2) {
         httpWrite(q, "<tr><th colspan=\"5\"><hr /></th></tr>\r\n</table>\r\n");
@@ -456,19 +456,19 @@ static void outputFooter(HttpQueue *q)
     } else {
         httpWrite(q, "</ul>\r\n");
     }
-    sock = conn->sock->listenSock;
+    sock = stream->sock->listenSock;
     httpWrite(q, "<address>%s %s at %s Port %d</address>\r\n", ME_TITLE, ME_VERSION, sock->ip, sock->port);
     httpWrite(q, "</body></html>\r\n");
 }
 
 
-static void filterDirList(HttpConn *conn, MprList *list)
+static void filterDirList(HttpStream *stream, MprList *list)
 {
     HttpDir         *dir;
     MprDirEntry     *dp;
     int             next;
 
-    dir = conn->reqData;
+    dir = stream->reqData;
 
     /*
         Do pattern matching. Entries that don't match, free the name to mark

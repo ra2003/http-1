@@ -36,7 +36,7 @@ PUBLIC int httpOpenNetConnector()
 {
     HttpStage     *stage;
 
-    if ((stage = httpCreateConnector("netConnector", NULL)) == 0) {
+    if ((stage = httpCreateStreamector("netConnector", NULL)) == 0) {
         return MPR_ERR_CANT_CREATE;
     }
     stage->outgoing = netOutgoing;
@@ -498,7 +498,7 @@ static void addToNetVector(HttpQueue *q, char *ptr, ssize bytes)
 static void freeNetPackets(HttpQueue *q, ssize bytes)
 {
     HttpPacket  *packet;
-    HttpConn    *conn;
+    HttpStream    *stream;
     ssize       len;
 
     assert(q->count >= 0);
@@ -506,9 +506,9 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
 
     while ((packet = q->first) != 0) {
         if (packet->flags & HTTP_PACKET_END) {
-            if ((conn = packet->conn) != 0) {
-                httpFinalizeConnector(conn);
-                mprCreateEvent(q->net->dispatcher, "endRequest", 0, httpProcess, conn->inputq, 0);
+            if ((stream = packet->stream) != 0) {
+                httpFinalizeConnector(stream);
+                mprCreateEvent(q->net->dispatcher, "endRequest", 0, httpProcess, stream->inputq, 0);
             }
         } else if (bytes > 0) {
             if (packet->prefix) {

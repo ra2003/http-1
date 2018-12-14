@@ -72,8 +72,7 @@ PUBLIC void httpInitChunking(HttpStream *stream)
 
 static void incomingChunk(HttpQueue *q, HttpPacket *packet)
 {
-    HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpPacket  *tail;
     HttpRx      *rx;
     MprBuf      *buf;
@@ -82,7 +81,6 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
     int         bad;
 
     stream = q->stream;
-    net = q->net;
     rx = stream->rx;
 
     if (rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
@@ -204,7 +202,7 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
 
 static void outgoingChunkService(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpPacket  *packet, *finalChunk;
     HttpTx      *tx;
 
@@ -247,7 +245,7 @@ static void outgoingChunkService(HttpQueue *q)
 
 static bool needChunking(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     cchar       *value;
 

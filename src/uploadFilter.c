@@ -312,15 +312,13 @@ static int processUploadBoundary(HttpQueue *q, char *line)
  */
 static int processUploadHeader(HttpQueue *q, char *line)
 {
-    HttpStream        *stream;
-    HttpRx          *rx;
+    HttpStream      *stream;
     HttpUploadFile  *file;
     Upload          *up;
     cchar           *uploadDir;
     char            *key, *headerTok, *rest, *nextPair, *value;
 
     stream = q->stream;
-    rx = stream->rx;
     up = q->queueData;
 
     if (line[0] == '\0') {

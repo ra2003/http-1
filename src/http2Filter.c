@@ -166,10 +166,8 @@ static void incomingHttp2(HttpQueue *q, HttpPacket *packet)
  */
 static void outgoingHttp2(HttpQueue *q, HttpPacket *packet)
 {
-    HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
 
-    net = q->net;
     stream = packet->stream;
     checkSendSettings(q);
 
@@ -559,7 +557,7 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
     MprBuf      *buf;
     bool        padded, priority;
     ssize       size, frameLen;
-    int         depend, dword, excl, weight, padLen;
+    int         padLen; 
 
     net = q->net;
     buf = packet->content;
@@ -588,9 +586,8 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
         }
         mprAdjustBufEnd(buf, -padLen);
     }
-    /*
-        Dependencies, weights and priorities are parsed, but ignored
-     */
+#if FUTURE
+    int depend, dword, excl;
     depend = 0;
     weight = HTTP2_DEFAULT_WEIGHT;
     if (priority) {
@@ -599,6 +596,7 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
         excl = dword >> 31;
         weight = mprGetCharFromBuf(buf) + 1;
     }
+#endif
     if ((frame->streamID % 2) != 1 || (net->lastStreamID && frame->streamID <= net->lastStreamID)) {
         sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Bad sesssion");
         return;
@@ -701,6 +699,7 @@ static HttpStream *getStream(HttpQueue *q, HttpPacket *packet)
  */
 static void parsePriorityFrame(HttpQueue *q, HttpPacket *packet)
 {
+#if FUTURE
     MprBuf  *buf;
     int     dep, exclusive, weight;
 
@@ -709,6 +708,7 @@ static void parsePriorityFrame(HttpQueue *q, HttpPacket *packet)
     exclusive = dep & (1 << 31);
     dep &= (1U << 31) - 1;
     weight = mprGetCharFromBuf(buf);
+#endif
 }
 
 
@@ -955,14 +955,10 @@ static bool parseHeader(HttpQueue *q, HttpStream *stream, HttpPacket *packet)
  */
 static cchar *parseHeaderField(HttpQueue *q, HttpStream *stream, HttpPacket *packet)
 {
-    HttpNet     *net;
-    HttpFrame   *frame;
     MprBuf      *buf;
     cchar       *value;
     int         huff, len;
 
-    net = stream->net;
-    frame = packet->data;
     buf = packet->content;
 
     huff = ((uchar) mprLookAtNextCharInBuf(buf)) >> 7;
@@ -1084,7 +1080,7 @@ static void parseDataFrame(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
     HttpFrame   *frame;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpLimits  *limits;
     MprBuf      *buf;
     ssize       len, padLen, frameLen;
@@ -1308,10 +1304,8 @@ static void checkSendSettings(HttpQueue *q)
  */
 static void sendPreface(HttpQueue *q)
 {
-    HttpNet     *net;
     HttpPacket  *packet;
 
-    net = q->net;
     if ((packet = httpCreatePacket(HTTP2_PREFACE_SIZE)) == 0) {
         return;
     }

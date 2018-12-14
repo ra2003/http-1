@@ -365,12 +365,10 @@ PUBLIC void httpSetupWaitHandler(HttpNet *net, int eventMask)
 
 static void checkLen(HttpQueue *q)
 {
-    HttpNet     *net;
     HttpPacket  *packet;
-    static int maxCount = 0;
-    int count = 0;
+    static int  maxCount = 0;
+    int         count = 0;
 
-    net = q->net;
     for (packet = q->first; packet; packet = packet->next) {
         count++;
     }

@@ -130,10 +130,7 @@ static bool streamCanAbsorb(HttpQueue *q, HttpPacket *packet)
 
 static void outgoingTailService(HttpQueue *q)
 {
-    HttpStream    *stream;
     HttpPacket  *packet;
-
-    stream = q->stream;
 
     for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
         if (!streamCanAbsorb(q, packet)) {

@@ -127,17 +127,13 @@ static void tracePacket(HttpQueue *q, HttpPacket *packet)
 
 static HttpPacket *parseHeaders(HttpQueue *q, HttpPacket *packet)
 {
-    HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
-    HttpLimits  *limits;
 
     stream = q->stream;
-    net = stream->net;
     assert(stream->rx);
     assert(stream->tx);
     rx = stream->rx;
-    limits = stream->limits;
 
     if (!monitorActiveRequests(stream)) {
         return 0;
@@ -232,16 +228,12 @@ static void parseRequestLine(HttpQueue *q, HttpPacket *packet)
     HttpStream    *stream;
     HttpRx      *rx;
     HttpLimits  *limits;
-    MprBuf      *content;
-    char        *method, *uri, *protocol, *start;
+    char        *method, *uri, *protocol;
     ssize       len;
 
     stream = q->stream;
     rx = stream->rx;
     limits = stream->limits;
-
-    content = packet->content;
-    start = content->start;
 
     method = getToken(packet, NULL);
     rx->originalMethod = rx->method = supper(method);
@@ -335,19 +327,16 @@ static void parseResponseLine(HttpQueue *q, HttpPacket *packet)
  */
 static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
-    HttpTx      *tx;
     HttpLimits  *limits;
     char        *key, *value;
-    int         count, keepAliveHeader;
+    int         count;
 
     stream = q->stream;
     rx = stream->rx;
-    tx = stream->tx;
 
     limits = stream->limits;
-    keepAliveHeader = 0;
 
     for (count = 0; packet->content->start[0] != '\r' && !stream->error; count++) {
         if (count >= limits->headerMax) {
@@ -431,7 +420,7 @@ static char *getToken(HttpPacket *packet, cchar *delim)
 PUBLIC void httpCreateHeaders1(HttpQueue *q, HttpPacket *packet)
 {
     Http        *http;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     HttpUri     *parsedUri;
     MprKey      *kp;

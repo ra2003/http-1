@@ -35,7 +35,6 @@ PUBLIC void httpCreatePipeline(HttpStream *stream)
 
 PUBLIC void httpCreateRxPipeline(HttpStream *stream, HttpRoute *route)
 {
-    Http        *http;
     HttpTx      *tx;
     HttpRx      *rx;
     HttpQueue   *q;
@@ -45,7 +44,6 @@ PUBLIC void httpCreateRxPipeline(HttpStream *stream, HttpRoute *route)
     assert(stream);
     assert(route);
 
-    http = stream->http;
     rx = stream->rx;
     tx = stream->tx;
 
@@ -284,10 +282,8 @@ PUBLIC void httpClosePipeline(HttpStream *stream)
 PUBLIC void httpStartPipeline(HttpStream *stream)
 {
     HttpQueue   *qhead, *q, *prevQ, *nextQ;
-    HttpTx      *tx;
     HttpRx      *rx;
 
-    tx = stream->tx;
     rx = stream->rx;
     assert(stream->net->endpoint);
 

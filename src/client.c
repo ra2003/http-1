@@ -176,14 +176,12 @@ static void setDefaultHeaders(HttpStream *stream)
 PUBLIC bool httpNeedRetry(HttpStream *stream, cchar **url)
 {
     HttpRx          *rx;
-    HttpTx          *tx;
     HttpAuthType    *authType;
 
     assert(stream->rx);
 
     *url = 0;
     rx = stream->rx;
-    tx = stream->tx;
 
     if (stream->error || stream->state < HTTP_STATE_FIRST) {
         return 0;

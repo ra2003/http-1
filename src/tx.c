@@ -15,8 +15,6 @@ static void manageTx(HttpTx *tx, int flags);
 
 PUBLIC HttpTx *httpCreateTx(HttpStream *stream, MprHash *headers)
 {
-    Http        *http;
-    HttpNet     *net;
     HttpTx      *tx;
 
     assert(stream);
@@ -25,8 +23,6 @@ PUBLIC HttpTx *httpCreateTx(HttpStream *stream, MprHash *headers)
     if ((tx = mprAllocObj(HttpTx, manageTx)) == 0) {
         return 0;
     }
-    http = stream->http;
-    net = stream->net;
     stream->tx = tx;
     tx->stream = stream;
     tx->status = HTTP_CODE_OK;
@@ -635,10 +631,6 @@ static void setCorsHeaders(HttpStream *stream)
 
 PUBLIC HttpPacket *httpCreateHeaders(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
-
-    stream = q->stream;
-
     if (!packet) {
         packet = httpCreateHeaderPacket();
         packet->stream = q->stream;

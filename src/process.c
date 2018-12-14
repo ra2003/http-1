@@ -158,10 +158,9 @@ static void processFirst(HttpQueue *q)
 static void processHeaders(HttpQueue *q)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpTx      *tx;
-    HttpLimits  *limits;
     MprKey      *kp;
     char        *cp, *key, *value, *tok;
     int         keepAliveHeader;
@@ -170,7 +169,6 @@ static void processHeaders(HttpQueue *q)
     stream = q->stream;
     rx = stream->rx;
     tx = stream->tx;
-    limits = stream->limits;
     keepAliveHeader = 0;
 
     for (ITERATE_KEYS(rx->headers, kp)) {
@@ -481,15 +479,13 @@ static void processHeaders(HttpQueue *q)
 static void processParsed(HttpQueue *q)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
-    HttpTx      *tx;
     cchar       *hostname;
 
     net = q->net;
     stream = q->stream;
     rx = stream->rx;
-    tx = stream->tx;
 
     if (httpServerStream(stream)) {
         hostname = rx->hostHeader;
@@ -557,9 +553,6 @@ static void processParsed(HttpQueue *q)
 
 static void routeRequest(HttpStream *stream)
 {
-    HttpRx      *rx;
-
-    rx = stream->rx;
     httpRouteRequest(stream);
     httpCreatePipeline(stream);
     httpStartPipeline(stream);
@@ -819,10 +812,8 @@ PUBLIC ssize httpGetReadCount(HttpStream *stream)
 PUBLIC cchar *httpGetBodyInput(HttpStream *stream)
 {
     HttpQueue   *q;
-    HttpRx      *rx;
     MprBuf      *content;
 
-    rx = stream->rx;
     if (!stream->rx->eof) {
         return 0;
     }
@@ -1004,9 +995,9 @@ PUBLIC cchar *httpTraceHeaders(HttpQueue *q, MprHash *headers)
     buf = mprCreateBuf(0, 0);
     for (ITERATE_KEYS(headers, kp)) {
         if (*kp->key == '=') {
-            mprPutToBuf(buf, ":%s: %s\n", &kp->key[1], kp->data);
+            mprPutToBuf(buf, ":%s: %s\n", &kp->key[1], (char*) kp->data);
         } else {
-            mprPutToBuf(buf, "%s: %s\n", kp->key, kp->data);
+            mprPutToBuf(buf, "%s: %s\n", kp->key, (char*) kp->data);
         }
     }
     mprAddNullToBuf(buf);

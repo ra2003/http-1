@@ -367,7 +367,7 @@ PUBLIC char *httpReadString(HttpStream *stream)
 PUBLIC HttpStream *httpRequest(cchar *method, cchar *uri, cchar *data, int protocol, char **err)
 {
     HttpNet         *net;
-    HttpStream        *stream;
+    HttpStream      *stream;
     MprDispatcher   *dispatcher;
 
     assert(err);

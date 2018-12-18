@@ -267,7 +267,7 @@ static void testFormatUri()
 static void testLink()
 {
 #if FUTURE
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpEndpoint    *endpoint;
     cchar           *s;
 
@@ -286,7 +286,7 @@ static void testLink()
 static void testResolve()
 {
 #if FUTURE
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpEndpoint    *endpoint;
 
     endpoint = httpCreateEndpoint(NULL, 80, NULL);

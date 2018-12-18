@@ -58,7 +58,7 @@ PUBLIC void httpProcess(HttpQueue *q)
  */
 static void processHttp(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     bool        more;
     int         count;
 
@@ -101,7 +101,7 @@ static void processHttp(HttpQueue *q)
             }
             break;
         }
-        httpServiceQueues(stream->net, HTTP_BLOCK);
+        httpServiceNetQueues(stream->net, HTTP_BLOCK);
     }
     if (stream->complete && httpServerStream(stream)) {
         if (stream->keepAliveCount <= 0 || stream->net->protocol >= 2) {
@@ -116,7 +116,7 @@ static void processHttp(HttpQueue *q)
 static void processFirst(HttpQueue *q)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
 
     net = q->net;
@@ -562,7 +562,7 @@ static void routeRequest(HttpStream *stream)
 
 static bool pumpOutput(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     HttpQueue   *wq;
     ssize       count;
@@ -587,7 +587,7 @@ static bool pumpOutput(HttpQueue *q)
 
 static bool processContent(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpPacket  *packet;
 
@@ -624,7 +624,7 @@ static bool processContent(HttpQueue *q)
  */
 static void processReady(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
 
     stream = q->stream;
     httpReadyHandler(stream);
@@ -637,7 +637,7 @@ static void processReady(HttpQueue *q)
 
 static bool processRunning(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
 
     stream = q->stream;
@@ -653,7 +653,7 @@ static bool processRunning(HttpQueue *q)
 
 static void processFinalized(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpTx      *tx;
 
@@ -700,7 +700,7 @@ static void processFinalized(HttpQueue *q)
 
 static bool processCompletion(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
 
     stream = q->stream;
     if (stream->http->requestCallback) {
@@ -712,7 +712,7 @@ static bool processCompletion(HttpQueue *q)
 
 static void measureRequest(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpTx      *tx;
     MprTicks    elapsed;
@@ -741,7 +741,7 @@ static void measureRequest(HttpQueue *q)
 
 static void prepErrorDoc(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpTx      *tx;
 
@@ -969,7 +969,7 @@ static void parseUri(HttpStream *stream)
  */
 static int sendContinue(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     cchar       *response;
     int         mode;
 

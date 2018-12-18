@@ -205,7 +205,7 @@ static void openPipeQueues(HttpStream *stream, HttpQueue *qhead)
 static int loadQueue(HttpQueue *q, ssize chunkSize)
 {
     Http        *http;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpStage   *stage;
     MprModule   *module;
 

@@ -92,7 +92,7 @@ static int openFileHandler(HttpQueue *q)
 {
     HttpRx      *rx;
     HttpTx      *tx;
-    HttpStream    *stream;
+    HttpStream  *stream;
     MprPath     *info;
     char        *date, dbuf[16];
     MprHash     *dateCache;
@@ -194,7 +194,7 @@ static void closeFileHandler(HttpQueue *q)
  */
 static void startFileHandler(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     HttpPacket  *packet;
 
@@ -247,7 +247,7 @@ static void readyFileHandler(HttpQueue *q)
  */
 static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize size)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     ssize       nbytes;
 
@@ -284,7 +284,7 @@ static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize si
  */
 static void outgoingFileService(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpPacket  *data, *packet;
     ssize       size, nbytes;
 
@@ -382,7 +382,7 @@ static void outgoingFileService(HttpQueue *q)
  */
 static void incomingFile(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     HttpRx      *rx;
     HttpRange   *range;
@@ -432,7 +432,7 @@ static void incomingFile(HttpQueue *q, HttpPacket *packet)
  */
 static void handlePutRequest(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     MprFile     *file;
     cchar       *path;
@@ -476,7 +476,7 @@ static void handlePutRequest(HttpQueue *q)
 
 static void handleDeleteRequest(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
 
     stream = q->stream;

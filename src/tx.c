@@ -425,7 +425,7 @@ PUBLIC void *httpGetQueueData(HttpStream *stream)
     HttpQueue     *q;
 
     q = stream->writeq;
-    return q->nextQ->queueData;
+    return q->queueData;
 }
 
 
@@ -881,7 +881,7 @@ PUBLIC bool httpFileExists(HttpStream *stream)
 PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
 {
     HttpPacket  *packet;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     ssize       totalWritten, packetSize, thisWrite;
 

@@ -49,7 +49,7 @@ static void basicHttpGet()
 {
     Http        *http;
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     MprOff      length;
     int         rc, status;
 

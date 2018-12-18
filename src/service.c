@@ -345,7 +345,7 @@ static bool isIdle(bool traceRequests)
 {
     Http            *http;
     HttpNet         *net;
-    HttpStream        *stream;
+    HttpStream      *stream;
     MprTicks        now;
     static MprTicks lastTrace = 0;
     int             next, nextConn;
@@ -594,11 +594,13 @@ PUBLIC void httpSetListenCallback(HttpListenCallback fn)
 static void httpTimer(Http *http, MprEvent *event)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpStage   *stage;
     HttpLimits  *limits;
     MprModule   *module;
     int         next, active, abort, nextConn;
+
+    active = 0;
 
     updateCurrentDate();
     lock(http->networks);

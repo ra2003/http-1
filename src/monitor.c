@@ -655,7 +655,7 @@ static void emailRemedy(MprHash *args)
 
 static void httpRemedy(MprHash *args)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     cchar       *uri, *msg, *method;
     char        *err;
     int         status;

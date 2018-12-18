@@ -79,7 +79,7 @@ PUBLIC int httpOpenUploadFilter()
  */
 static Upload *allocUpload(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     Upload      *up;
     cchar       *uploadDir;
@@ -175,7 +175,7 @@ static void startUpload(HttpQueue *q)
  */
 static void incomingUpload(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     MprBuf      *content;
     Upload      *up;
@@ -283,7 +283,7 @@ static void incomingUpload(HttpQueue *q, HttpPacket *packet)
  */
 static int processUploadBoundary(HttpQueue *q, char *line)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     Upload      *up;
 
     stream = q->stream;
@@ -430,7 +430,7 @@ static void manageHttpUploadFile(HttpUploadFile *file, int flags)
 
 static void defineFileFields(HttpQueue *q, Upload *up)
 {
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpUploadFile  *file;
     char            *key;
 
@@ -458,7 +458,7 @@ static void defineFileFields(HttpQueue *q, Upload *up)
 
 static int writeToFile(HttpQueue *q, char *data, ssize len)
 {
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpUploadFile  *file;
     HttpLimits      *limits;
     Upload          *up;
@@ -502,7 +502,7 @@ static int writeToFile(HttpQueue *q, char *data, ssize len)
  */
 static int processUploadData(HttpQueue *q)
 {
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpPacket      *packet;
     MprBuf          *content;
     Upload          *up;

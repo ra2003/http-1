@@ -46,7 +46,7 @@ PUBLIC int httpOpenPassHandler()
 
 static void startPass(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
 
     stream = q->stream;
 

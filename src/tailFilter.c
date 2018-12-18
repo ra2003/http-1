@@ -34,7 +34,7 @@ PUBLIC int httpOpenTailFilter()
 
 static void incomingTail(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
 
     stream = q->stream;
@@ -56,7 +56,7 @@ static void incomingTail(HttpQueue *q, HttpPacket *packet)
 static void outgoingTail(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     HttpPacket  *headers, *tail;
 
@@ -90,7 +90,7 @@ static void outgoingTail(HttpQueue *q, HttpPacket *packet)
 
 static bool streamCanAbsorb(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpQueue   *nextQ;
     ssize       room, size;
 

@@ -124,7 +124,7 @@ static int matchCacheHandler(HttpStream *stream, HttpRoute *route, int dir)
 
 static void readyCacheHandler(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     cchar       *data;
 
@@ -157,7 +157,7 @@ static int matchCacheFilter(HttpStream *stream, HttpRoute *route, int dir)
 static void outgoingCacheFilterService(HttpQueue *q)
 {
     HttpPacket  *packet, *data;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     MprKey      *kp;
     cchar       *cachedData;
@@ -193,7 +193,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
                     Using X-SendCache. Discard the packet.
                  */
                 continue;
-                
+
             } else if (tx->cacheBuffer) {
                 /*
                     Save the response packet to the cache buffer. Will write below in saveCachedResponse.

@@ -47,7 +47,7 @@ PUBLIC int httpOpenHttp1Filter()
  */
 static void incomingHttp1(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
 
     stream = findStream(q);
 
@@ -85,7 +85,7 @@ static void outgoingHttp1(HttpQueue *q, HttpPacket *packet)
 
 static void outgoingHttp1Service(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpPacket  *packet;
 
     stream = q->stream;
@@ -194,7 +194,7 @@ static cchar *eatBlankLines(HttpPacket *packet)
 
 static bool gotHeaders(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpLimits  *limits;
     cchar       *end, *start;
     ssize       len;
@@ -225,7 +225,7 @@ static bool gotHeaders(HttpQueue *q, HttpPacket *packet)
  */
 static void parseRequestLine(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpLimits  *limits;
     char        *method, *uri, *protocol;
@@ -278,7 +278,7 @@ static void parseRequestLine(HttpQueue *q, HttpPacket *packet)
 static void parseResponseLine(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpTx      *tx;
     char        *protocol, *status;
@@ -502,7 +502,7 @@ PUBLIC void httpCreateHeaders1(HttpQueue *q, HttpPacket *packet)
 
 static HttpStream *findStream(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
 
     if (!q->stream) {
         if ((stream = httpCreateStream(q->net, 1)) == 0) {

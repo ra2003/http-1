@@ -217,7 +217,7 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
 PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     MprTicks    timeout;
     int         events;
 
@@ -228,7 +228,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
         Initiate flushing. For HTTP/2 we must process incoming window update frames, so run any pending IO events.
      */
     httpScheduleQueue(q);
-    httpServiceQueues(net, flags);
+    httpServiceNetQueues(net, flags);
     mprWaitForEvent(stream->dispatcher, 0, mprGetEventMark(stream->dispatcher));
 
     if (net->error) {
@@ -243,7 +243,7 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
                 net->lastActivity = net->http->now;
                 httpResumeQueue(net->socketq);
                 httpScheduleQueue(net->socketq);
-                httpServiceQueues(net, flags);
+                httpServiceNetQueues(net, flags);
             }
             /*
                 Process HTTP/2 window update messages for flow control
@@ -407,11 +407,17 @@ static void serviceQueue(HttpQueue *q)
 }
 
 
+PUBLIC bool httpServiceQueues(HttpStream *stream, int flags)
+{
+    return httpServiceNetQueues(stream->net, flags);
+}
+
+
 /*
     Run the queue service routines until there is no more work to be done.
     If flags & HTTP_BLOCK, this routine may block while yielding.  Return true if actual work was done.
  */
-PUBLIC bool httpServiceQueues(HttpNet *net, int flags)
+PUBLIC bool httpServiceNetQueues(HttpNet *net, int flags)
 {
     HttpQueue   *q;
     bool        workDone;

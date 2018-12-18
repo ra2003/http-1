@@ -252,7 +252,7 @@ static int matchWebSock(HttpStream *stream, HttpRoute *route, int dir)
  */
 static int openWebSock(HttpQueue *q)
 {
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpWebSocket   *ws;
 
     assert(q);
@@ -316,7 +316,7 @@ static void readyWebSock(HttpQueue *q)
 
 static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpWebSocket   *ws;
     HttpPacket      *tail;
     HttpLimits      *limits;
@@ -540,7 +540,7 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
 
 static int processFrame(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpRx          *rx;
     HttpWebSocket   *ws;
     HttpLimits      *limits;
@@ -873,7 +873,7 @@ PUBLIC ssize httpSendClose(HttpStream *stream, int status, cchar *reason)
  */
 static void outgoingWebSockService(HttpQueue *q)
 {
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpPacket      *packet, *tail;
     HttpWebSocket   *ws;
     char            *ep, *fp, *prefix, dataMask[4];

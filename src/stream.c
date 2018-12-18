@@ -26,7 +26,7 @@ PUBLIC HttpStream *httpCreateStream(HttpNet *net, bool peerCreated)
 {
     Http        *http;
     HttpQueue   *q;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpLimits  *limits;
     HttpHost    *host;
     HttpRoute   *route;

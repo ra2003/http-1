@@ -17,7 +17,7 @@ static cchar *formatErrorv(HttpStream *stream, int status, cchar *fmt, va_list a
 PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...)
 {
     va_list     args;
-    HttpStream    *stream;
+    HttpStream  *stream;
     cchar       *msg;
     int         next;
 

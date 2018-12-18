@@ -82,7 +82,7 @@ static int matchRange(HttpStream *stream, HttpRoute *route, int dir)
 
 static void startRange(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
 
     stream = q->stream;
@@ -108,7 +108,7 @@ static void startRange(HttpQueue *q)
 static void outgoingRangeService(HttpQueue *q)
 {
     HttpPacket  *packet;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
 
     stream = q->stream;
@@ -148,14 +148,14 @@ static void outgoingRangeService(HttpQueue *q)
 static HttpPacket *selectBytes(HttpQueue *q, HttpPacket *packet)
 {
     HttpRange   *range;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     MprOff      endPacket, length, gap, span;
     ssize       count;
 
     stream = q->stream;
     tx = stream->tx;
-    
+
     if ((range = tx->currentRange) == 0) {
         return 0;
     }

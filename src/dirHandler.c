@@ -82,7 +82,7 @@ PUBLIC bool httpShouldRenderDirListing(HttpStream *stream)
  */
 static void startDir(HttpQueue *q)
 {
-    HttpStream        *stream;
+    HttpStream      *stream;
     HttpTx          *tx;
     HttpRx          *rx;
     MprList         *list;
@@ -441,7 +441,7 @@ static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *path, int nameSize)
 
 static void outputFooter(HttpQueue *q)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     MprSocket   *sock;
     HttpDir     *dir;
 

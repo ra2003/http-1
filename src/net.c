@@ -108,7 +108,7 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
  */
 PUBLIC void httpDestroyNet(HttpNet *net)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     int         next;
 
     if (!net->destroyed && !net->borrowed) {
@@ -277,7 +277,7 @@ PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol)
 
 PUBLIC void httpNetClosed(HttpNet *net)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     int         next;
 
     for (ITERATE_ITEMS(net->streams, stream, next)) {
@@ -379,8 +379,6 @@ static void netTimeout(HttpNet *net, MprEvent *mprEvent)
 }
 
 
-
-//  TODO - review all these
 /*
     Used by ejs
  */
@@ -396,7 +394,6 @@ PUBLIC void httpUseWorker(HttpNet *net, MprDispatcher *dispatcher, MprEvent *eve
 }
 
 
-//  TODO comment?
 PUBLIC void httpUsePrimary(HttpNet *net)
 {
     lock(net->http);
@@ -439,12 +436,18 @@ PUBLIC void httpReturnNet(HttpNet *net)
 PUBLIC MprSocket *httpStealSocket(HttpNet *net)
 {
     MprSocket   *sock;
+    HttpStream  *stream;
+    int         next;
 
     assert(net->sock);
     assert(!net->destroyed);
 
     if (!net->destroyed && !net->borrowed) {
         lock(net->http);
+        for (ITERATE_ITEMS(net->streams, stream, next)) {
+            httpDestroyStream(stream);
+            next--;
+        }
         sock = mprCloneSocket(net->sock);
         (void) mprStealSocketHandle(net->sock);
         mprRemoveSocketHandler(net->sock);

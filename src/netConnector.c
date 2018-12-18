@@ -146,7 +146,7 @@ PUBLIC void httpIOEvent(HttpNet *net, MprEvent *event)
             httpPutPacket(net->inputq, packet);
         }
     }
-    httpServiceQueues(net, 0);
+    httpServiceNetQueues(net, 0);
 
     if (httpIsServer(net) && (net->error || net->eof)) {
         httpDestroyNet(net);
@@ -496,7 +496,7 @@ static void addToNetVector(HttpQueue *q, char *ptr, ssize bytes)
 static void freeNetPackets(HttpQueue *q, ssize bytes)
 {
     HttpPacket  *packet;
-    HttpStream    *stream;
+    HttpStream  *stream;
     ssize       len;
 
     assert(q->count >= 0);

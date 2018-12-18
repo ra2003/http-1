@@ -121,7 +121,7 @@ PUBLIC int httpOpenHttp2Filter()
 static void incomingHttp2(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpFrame   *frame;
 
     net = q->net;
@@ -155,7 +155,7 @@ static void incomingHttp2(HttpQueue *q, HttpPacket *packet)
         /*
             Try to push out any pending responses here. This keeps the socketq packet count down.
          */
-        httpServiceQueues(net, 0);
+        httpServiceNetQueues(net, 0);
     }
     closeNetworkWhenDone(q);
 }
@@ -194,7 +194,7 @@ static void outgoingHttp2(HttpQueue *q, HttpPacket *packet)
 static void outgoingHttp2Service(HttpQueue *q)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpPacket  *packet;
     HttpTx      *tx;
     ssize       len;
@@ -276,7 +276,7 @@ static void outgoingHttp2Service(HttpQueue *q)
 static int getFrameFlags(HttpQueue *q, HttpPacket *packet)
 {
     HttpPacket  *first;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     int         flags;
 
@@ -552,12 +552,12 @@ static void parseSettingsFrame(HttpQueue *q, HttpPacket *packet)
 static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpFrame   *frame;
     MprBuf      *buf;
     bool        padded, priority;
     ssize       size, frameLen;
-    int         padLen; 
+    int         padLen;
 
     net = q->net;
     buf = packet->content;
@@ -621,7 +621,7 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
 static HttpStream *getStream(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpRx      *rx;
     HttpFrame   *frame;
 
@@ -771,7 +771,7 @@ static void parseResetFrame(HttpQueue *q, HttpPacket *packet)
 static void parseGoAwayFrame(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     MprBuf      *buf;
     cchar       *msg;
     ssize       len;
@@ -802,7 +802,7 @@ static void parseGoAwayFrame(HttpQueue *q, HttpPacket *packet)
 static void parseWindowFrame(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpFrame   *frame;
     int         increment;
 
@@ -1152,7 +1152,7 @@ static void parseDataFrame(HttpQueue *q, HttpPacket *packet)
 static void processDataFrame(HttpQueue *q, HttpPacket *packet)
 {
     HttpFrame   *frame;
-    HttpStream    *stream;
+    HttpStream  *stream;
 
     frame = packet->data;
     stream = frame->stream;
@@ -1175,7 +1175,7 @@ static void sendGoAway(HttpQueue *q, int status, cchar *fmt, ...)
 {
     HttpNet     *net;
     HttpPacket  *packet;
-    HttpStream    *stream;
+    HttpStream  *stream;
     MprBuf      *buf;
     va_list     ap;
     cchar       *msg;
@@ -1374,7 +1374,7 @@ static void sendWindowFrame(HttpQueue *q, int stream, ssize inc)
  */
 PUBLIC void httpCreateHeaders2(HttpQueue *q, HttpPacket *packet)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     HttpTx      *tx;
     MprKey      *kp;
 
@@ -1696,7 +1696,7 @@ static void sendFrame(HttpQueue *q, HttpPacket *packet)
  */
 static HttpStream *findStreamObj(HttpNet *net, int streamID)
 {
-    HttpStream    *stream;
+    HttpStream  *stream;
     int         next;
 
     for (ITERATE_ITEMS(net->streams, stream, next)) {

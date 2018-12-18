@@ -147,7 +147,11 @@ PUBLIC HttpSession *httpGetSession(HttpStream *stream, int create)
             if (stream->secure) {
                 flags |= HTTP_COOKIE_SECURE;
             }
-            flags |= HTTP_COOKIE_SAME_LAX;
+            if (route->flags & HTTP_ROUTE_LAX_COOKIE) {
+                flags |= HTTP_COOKIE_SAME_LAX;
+            } else if (route->flags & HTTP_ROUTE_STRICT_COOKIE) {
+                flags |= HTTP_COOKIE_SAME_STRICT;
+            }
             cookie = route->cookie ? route->cookie : HTTP_SESSION_COOKIE;
             lifespan = (route->flags & HTTP_ROUTE_PERSIST_COOKIE) ? rx->session->lifespan : 0;
             url = (route->prefix && *route->prefix) ? route->prefix : "/";

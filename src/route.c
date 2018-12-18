@@ -1374,6 +1374,17 @@ PUBLIC void httpSetRouteCookiePersist(HttpRoute *route, int enable)
 }
 
 
+PUBLIC void httpSetRouteCookieSame(HttpRoute *route, cchar *value)
+{
+    route->flags &= ~(HTTP_ROUTE_LAX_COOKIE | HTTP_ROUTE_STRICT_COOKIE);
+    if (smatch(value, "lax")) {
+        route->flags |= HTTP_ROUTE_LAX_COOKIE;
+    } else if (smatch(value, "strict")) {
+        route->flags |= HTTP_ROUTE_STRICT_COOKIE;
+    }
+}
+
+
 PUBLIC void httpSetRoutePattern(HttpRoute *route, cchar *pattern, int flags)
 {
     assert(route);

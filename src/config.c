@@ -434,6 +434,12 @@ static void parseAuthSessionCookiePersist(HttpRoute *route, cchar *key, MprJson 
 }
 
 
+static void parseAuthSessionCookieSame(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpSetRouteCookieSame(route, prop->value);
+}
+
+
 static void parseAuthSessionEnable(HttpRoute *route, cchar *key, MprJson *prop)
 {
     httpSetAuthSession(route->auth, 0);
@@ -1918,6 +1924,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.auth.session", httpParseAll);
     httpAddConfig("http.auth.session.cookie", parseAuthSessionCookie);
     httpAddConfig("http.auth.session.persist", parseAuthSessionCookiePersist);
+    httpAddConfig("http.auth.session.same", parseAuthSessionCookieSame);
     httpAddConfig("http.auth.session.enable", parseAuthSessionEnable);
     httpAddConfig("http.auth.session.visible", parseAuthSessionVisible);
     httpAddConfig("http.auth.store", parseAuthStore);

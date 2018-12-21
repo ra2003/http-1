@@ -65,11 +65,13 @@ PUBLIC HttpStream *httpCreateStream(HttpNet *net, bool peerCreated)
     }
     limits = stream->limits;
 
+#if ME_HTTP_HTTP2
     if (!peerCreated && ((net->ownStreams >= limits->txStreamsMax) || (net->ownStreams >= limits->streamsMax))) {
         httpNetError(net, "Attempting to create too many streams for network connection: %d/%d/%d", net->ownStreams,
             limits->txStreamsMax, limits->streamsMax);
         return 0;
     }
+#endif
 
     stream->keepAliveCount = (net->protocol >= 2) ? 0 : stream->limits->keepAliveMax;
     stream->dispatcher = net->dispatcher;

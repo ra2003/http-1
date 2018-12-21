@@ -101,7 +101,11 @@ static bool streamCanAbsorb(HttpQueue *q, HttpPacket *packet)
     /*
         Get the maximum the output stream can absorb that is less than the downstream queue packet size.
      */
+#if ME_HTTP_HTTP2
     room = min(nextQ->packetSize, stream->outputq->window);
+#else
+    room = min(nextQ->packetSize, stream->outputq->max);
+#endif
     if (size <= room) {
         return 1;
     }

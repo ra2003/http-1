@@ -23,10 +23,7 @@ static void netOutgoing(HttpQueue *q, HttpPacket *packet);
 static void netOutgoingService(HttpQueue *q);
 static HttpPacket *readPacket(HttpNet *net);
 static void resumeEvents(HttpNet *net, MprEvent *event);
-
-#if ME_HTTP_HTTP2
 static int sleuthProtocol(HttpNet *net, HttpPacket *packet);
-#endif
 
 /*********************************** Code *************************************/
 /*
@@ -136,12 +133,10 @@ PUBLIC void httpIOEvent(HttpNet *net, MprEvent *event)
         packet = readPacket(net);
     }
     if (packet) {
-#if ME_HTTP_HTTP2
         if (!net->protocol) {
             int protocol = sleuthProtocol(net, packet);
             httpSetNetProtocol(net, protocol);
         }
-#endif
         if (net->protocol) {
             httpPutPacket(net->inputq, packet);
         }
@@ -158,9 +153,9 @@ PUBLIC void httpIOEvent(HttpNet *net, MprEvent *event)
 }
 
 
-#if ME_HTTP_HTTP2
 static int sleuthProtocol(HttpNet *net, HttpPacket *packet)
 {
+#if ME_HTTP_HTTP2
     MprBuf      *buf;
     ssize       len;
     int         protocol;
@@ -179,8 +174,10 @@ static int sleuthProtocol(HttpNet *net, HttpPacket *packet)
         httpTrace(net->trace, "net.rx", "context", "msg:'Detected HTTP/2 preface'");
     }
     return protocol;
-}
+#else
+    return 1;
 #endif
+}
 
 
 /*

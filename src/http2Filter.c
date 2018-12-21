@@ -557,7 +557,7 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
     MprBuf      *buf;
     bool        padded, priority;
     ssize       size, frameLen;
-    int         padLen;
+    int         padLen, depend, dword, excl, weight;
 
     net = q->net;
     buf = packet->content;
@@ -586,8 +586,6 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
         }
         mprAdjustBufEnd(buf, -padLen);
     }
-#if FUTURE
-    int depend, dword, excl;
     depend = 0;
     weight = HTTP2_DEFAULT_WEIGHT;
     if (priority) {
@@ -596,7 +594,6 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
         excl = dword >> 31;
         weight = mprGetCharFromBuf(buf) + 1;
     }
-#endif
     if ((frame->streamID % 2) != 1 || (net->lastStreamID && frame->streamID <= net->lastStreamID)) {
         sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Bad sesssion");
         return;
@@ -629,7 +626,6 @@ static HttpStream *getStream(HttpQueue *q, HttpPacket *packet)
     frame = packet->data;
     stream = frame->stream;
     frame = packet->data;
-    assert(frame->stream);
 
     if (!stream && httpIsServer(net)) {
         if (net->goaway) {

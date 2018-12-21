@@ -146,10 +146,10 @@ static void processFirst(HttpQueue *q)
     }
 
     if (httpTracing(net) && httpIsServer(net)) {
-        httpTrace(stream->trace, "http.rx.headers", "request", "method:'%s', uri:'%s', protocol:'%d'",
+        httpLog(stream->trace, "http.rx.headers", "request", "method:'%s', uri:'%s', protocol:'%d'",
             rx->method, rx->uri, stream->net->protocol);
         if (net->protocol >= 2) {
-            httpTrace(stream->trace, "http.rx.headers", "context", "\n%s", httpTraceHeaders(q, stream->rx->headers));
+            httpLog(stream->trace, "http.rx.headers", "context", "\n%s", httpTraceHeaders(q, stream->rx->headers));
         }
     }
 }
@@ -687,7 +687,7 @@ static void processFinalized(HttpQueue *q)
         if (!stream->errorMsg) {
             stream->errorMsg = stream->sock->errorMsg ? stream->sock->errorMsg : sclone("Server close");
         }
-        httpTrace(stream->trace, "http.connection.close", "network", "msg:'%s'", stream->errorMsg);
+        httpLog(stream->trace, "http.connection.close", "network", "msg:'%s'", stream->errorMsg);
     }
     if (tx->errorDocument && !smatch(tx->errorDocument, rx->uri)) {
         prepErrorDoc(q);
@@ -728,11 +728,11 @@ static void measureRequest(HttpQueue *q)
         status = httpServerStream(stream) ? tx->status : rx->status;
         received = httpGetPacketLength(rx->headerPacket) + rx->bytesRead;
 #if MPR_HIGH_RES_TIMER
-        httpTraceData(stream->trace,
+        httpLogData(stream->trace,
             "http.completion", "result", 0, (void*) stream, 0, "status:%d, error:%d, elapsed:%llu, ticks:%llu, received:%lld, sent:%lld",
             status, stream->error, elapsed, mprGetHiResTicks() - stream->startMark, received, tx->bytesWritten);
 #else
-        httpTraceData(stream->trace, "http.completion", "result", 0, (void*) stream, 0, "status:%d, error:%d, elapsed:%llu, received:%lld, sent:%lld",
+        httpLogData(stream->trace, "http.completion", "result", 0, (void*) stream, 0, "status:%d, error:%d, elapsed:%llu, received:%lld, sent:%lld",
             status, stream->error, elapsed, received, tx->bytesWritten);
 #endif
     }
@@ -751,7 +751,7 @@ static void prepErrorDoc(HttpQueue *q)
     if (!rx->headerPacket || stream->errorDoc) {
         return;
     }
-    httpTrace(stream->trace, "http.errordoc", "context", "location:'%s', status:%d", tx->errorDocument, tx->status);
+    httpLog(stream->trace, "http.errordoc", "context", "location:'%s', status:%d", tx->errorDocument, tx->status);
 
     httpClosePipeline(stream);
     httpDiscardData(stream, HTTP_QUEUE_RX);
@@ -794,7 +794,7 @@ static bool mapMethod(HttpStream *stream)
     rx = stream->rx;
     if (rx->flags & HTTP_POST && (method = httpGetParam(stream, "-http-method-", 0)) != 0) {
         if (!scaselessmatch(method, rx->method)) {
-            httpTrace(stream->trace, "http.mapMethod", "context", "originalMethod:'%s', method:'%s'", rx->method, method);
+            httpLog(stream->trace, "http.mapMethod", "context", "originalMethod:'%s', method:'%s'", rx->method, method);
             httpSetMethod(stream, method);
             return 1;
         }

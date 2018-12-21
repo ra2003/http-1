@@ -171,7 +171,7 @@ static int sleuthProtocol(HttpNet *net, HttpPacket *packet)
     } else {
         mprAdjustBufStart(buf, strlen(HTTP2_PREFACE));
         protocol = 2;
-        httpTrace(net->trace, "net.rx", "context", "msg:'Detected HTTP/2 preface'");
+        httpLog(net->trace, "net.rx", "context", "msg:'Detected HTTP/2 preface'");
     }
     return protocol;
 #else
@@ -199,11 +199,11 @@ static HttpPacket *readPacket(HttpNet *net)
             net->secure = 1;
             sock = net->sock;
             if (sock->peerCert) {
-                httpTrace(net->trace, "net.ssl", "context",
+                httpLog(net->trace, "net.ssl", "context",
                     "msg:'Connection secured', cipher:'%s', peerName:'%s', subject:'%s', issuer:'%s', session:'%s'",
                     sock->cipher, sock->peerName, sock->peerCert, sock->peerCertIssuer, sock->session);
             } else {
-                httpTrace(net->trace, "net.ssl", "context", "msg:'Connection secured', cipher:'%s', session:'%s'", sock->cipher, sock->session);
+                httpLog(net->trace, "net.ssl", "context", "msg:'Connection secured', cipher:'%s', session:'%s'", sock->cipher, sock->session);
             }
             if (mprGetLogLevel() >= 5) {
                 mprLog("info http ssl", 6, "SSL State: %s", mprGetSocketState(sock));
@@ -297,11 +297,11 @@ static bool netBanned(HttpNet *net)
                 Defensive counter measure - go slow
              */
             mprCreateEvent(net->dispatcher, "delayConn", net->delay, resumeEvents, net, 0);
-            httpTrace(net->trace, "monitor.delay.stop", "context", "msg:'Suspend I/O',client:'%s'", net->ip);
+            httpLog(net->trace, "monitor.delay.stop", "context", "msg:'Suspend I/O',client:'%s'", net->ip);
             return 1;
         } else {
             address->delay = 0;
-            httpTrace(net->trace, "monitor.delay.stop", "context", "msg:'Resume I/O',client:'%s'", net->ip);
+            httpLog(net->trace, "monitor.delay.stop", "context", "msg:'Resume I/O',client:'%s'", net->ip);
         }
     }
     return 0;

@@ -487,7 +487,7 @@ PUBLIC void httpRedirect(HttpStream *stream, int status, cchar *targetUri)
             "<html><head><title>%s</title></head>\r\n"
             "<body><h1>%s</h1>\r\n<p>The document has moved <a href=\"%s\">here</a>.</p></body></html>\r\n",
             msg, msg, targetUri);
-        httpTrace(stream->trace, "http.redirect", "context", "status:%d,location:'%s'", status, targetUri);
+        httpLog(stream->trace, "http.redirect", "context", "status:%d,location:'%s'", status, targetUri);
     } else {
         httpFormatResponse(stream,
             "<!DOCTYPE html>\r\n"
@@ -835,7 +835,7 @@ PUBLIC bool httpSetFilename(HttpStream *stream, cchar *filename, int flags)
 
     if (tx->flags & HTTP_TX_PIPELINE) {
         /* Filename being revised after pipeline created */
-        httpTrace(stream->trace, "http.document", "context", "filename:'%s'", tx->filename);
+        httpLog(stream->trace, "http.document", "context", "filename:'%s'", tx->filename);
     }
     return info->valid;
 }

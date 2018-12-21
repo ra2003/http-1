@@ -61,7 +61,7 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
          */
         trace->size = HTTP_TRACE_MAX_SIZE;
         trace->maxContent = MAXINT;
-        trace->formatter = httpDetailTraceFormatter;
+        trace->formatter = httpDetailFormatter;
         trace->logger = httpWriteTraceLogFile;
         trace->mutex = mprCreateLock();
     }
@@ -113,7 +113,7 @@ PUBLIC void httpSetTraceFormatterName(HttpTrace *trace, cchar *name)
             return;
         }
         mprAddKey(trace->events, "result", ITOP(0));
-        formatter = httpCommonTraceFormatter;
+        formatter = httpCommonFormatter;
 
 #if FUTURE
     } else if (smatch(name, "simple")) {
@@ -121,7 +121,7 @@ PUBLIC void httpSetTraceFormatterName(HttpTrace *trace, cchar *name)
 #endif
 
     } else {
-       formatter = httpDetailTraceFormatter;
+       formatter = httpDetailFormatter;
     }
     httpSetTraceFormatter(trace, formatter);
 }
@@ -145,7 +145,7 @@ PUBLIC void httpSetTraceLogger(HttpTrace *trace, HttpTraceLogger callback)
 
 
 /*
-    Inner routine for httpTrace()
+    Inner routine for httpLog()
  */
 PUBLIC bool httpLogProc(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *fmt, ...)
 {
@@ -161,7 +161,7 @@ PUBLIC bool httpLogProc(HttpTrace *trace, cchar *event, cchar *type, int flags, 
 }
 
 
-PUBLIC bool httpTracePacket(HttpTrace *trace, cchar *event, cchar *type, int flags, HttpPacket *packet, cchar *fmt, ...)
+PUBLIC bool httpLogPacket(HttpTrace *trace, cchar *event, cchar *type, int flags, HttpPacket *packet, cchar *fmt, ...)
 {
     va_list     args;
     int         level;
@@ -181,11 +181,10 @@ PUBLIC bool httpTracePacket(HttpTrace *trace, cchar *event, cchar *type, int fla
     return 1;
 }
 
-
 /*
     Trace request body data
  */
-PUBLIC bool httpTraceData(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *buf, ssize len, cchar *fmt, ...)
+PUBLIC bool httpLogData(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *buf, ssize len, cchar *fmt, ...)
 {
     Http        *http;
     va_list     args;
@@ -204,6 +203,21 @@ PUBLIC bool httpTraceData(HttpTrace *trace, cchar *event, cchar *type, int flags
     }
     va_start(args, fmt);
     httpFormatTrace(trace, event, type, flags, buf, len, fmt, args);
+    va_end(args);
+    return 1;
+}
+
+
+//  LEGACY
+PUBLIC bool httpTrace(HttpStream *stream, cchar *event, cchar *type, cchar *fmt, ...)
+{
+    va_list     args;
+
+    assert(event && *event);
+    assert(type && *type);
+
+    va_start(args, fmt);
+    httpFormatTrace(stream->trace, event, type, 0, NULL, 0, fmt, args);
     va_end(args);
     return 1;
 }
@@ -230,7 +244,7 @@ PUBLIC void httpWriteTrace(HttpTrace *trace, cchar *buf, ssize len)
 /*
     Format a detailed request message
  */
-PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *data, ssize len, cchar *fmt, va_list args)
+PUBLIC void httpDetailFormatter(HttpTrace *trace, cchar *event, cchar *type, int flags, cchar *data, ssize len, cchar *fmt, va_list args)
 {
     HttpPacket  *packet;
     MprBuf      *buf;
@@ -334,7 +348,7 @@ PUBLIC void httpSimpleTraceFormatter(HttpTrace *trace, cchar *event, cchar *type
     Common Log Formatter (NCSA)
     This formatter only emits messages only for connections at their complete event.
  */
-PUBLIC void httpCommonTraceFormatter(HttpTrace *trace, cchar *type, cchar *event, int flags, cchar *data, ssize len, cchar *msg, va_list args)
+PUBLIC void httpCommonFormatter(HttpTrace *trace, cchar *type, cchar *event, int flags, cchar *data, ssize len, cchar *msg, va_list args)
 {
     HttpStream  *stream;
     HttpRx      *rx;

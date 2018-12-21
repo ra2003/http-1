@@ -367,7 +367,7 @@ static void connTimeout(HttpStream *stream, MprEvent *mprEvent)
     }
     if (stream->state < HTTP_STATE_FIRST) {
         if (msg) {
-            httpTrace(stream->trace, event, "error", "msg:'%s'", msg);
+            httpLog(stream->trace, event, "error", "msg:'%s'", msg);
             stream->errorMsg = msg;
         }
         httpDisconnectStream(stream);
@@ -589,14 +589,14 @@ PUBLIC bool httpRequestExpired(HttpStream *stream, MprTicks timeout)
 
     if (mprGetRemainingTicks(stream->started, requestTimeout) < 0) {
         if (requestTimeout != timeout) {
-            httpTrace(stream->trace, "timeout.duration", "error",
+            httpLog(stream->trace, "timeout.duration", "error",
                 "msg:'Request cancelled exceeded max duration',timeout:%lld", requestTimeout / 1000);
         }
         return 1;
     }
     if (mprGetRemainingTicks(stream->lastActivity, inactivityTimeout) < 0) {
         if (inactivityTimeout != timeout) {
-            httpTrace(stream->trace, "timeout.inactivity", "error",
+            httpLog(stream->trace, "timeout.inactivity", "error",
                 "msg:'Request cancelled due to inactivity',timeout:%lld", inactivityTimeout / 1000);
         }
         return 1;

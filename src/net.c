@@ -214,7 +214,7 @@ PUBLIC int httpConnectNet(HttpNet *net, cchar *ip, int port, MprSsl *ssl)
     if (ssl) {
         secureNet(net, ssl, ip);
     }
-    httpTrace(net->trace, "net.peer", "context", "peer:'%s:%d'", net->ip, net->port);
+    httpLog(net->trace, "net.peer", "context", "peer:'%s:%d'", net->ip, net->port);
     return 0;
 }
 
@@ -229,7 +229,7 @@ static void secureNet(HttpNet *net, MprSsl *ssl, cchar *peerName)
         httpNetError(net, "Cannot perform SSL upgrade. %s", sock->errorMsg);
 
     } else if (sock->peerCert) {
-        httpTrace(net->trace, "net.ssl", "context",
+        httpLog(net->trace, "net.ssl", "context",
             "msg:'Connection secured with peer certificate', " \
             "secure:true,cipher:'%s',peerName:'%s',subject:'%s',issuer:'%s'",
             sock->cipher, sock->peerName, sock->peerCert, sock->peerCertIssuer);

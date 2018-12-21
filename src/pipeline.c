@@ -143,7 +143,7 @@ PUBLIC void httpCreateTxPipeline(HttpStream *stream, HttpRoute *route)
         httpAssignQueueCallbacks(stream->writeq, tx->handler, HTTP_QUEUE_TX);
     }
     if (net->endpoint) {
-        httpTrace(stream->trace, "pipeline", "context",
+        httpLog(stream->trace, "pipeline", "context",
             "route:'%s', handler:'%s', target:'%s', endpoint:'%s:%d', host:'%s', referrer:'%s', filename:'%s'",
             rx->route->pattern, tx->handler->name, rx->route->targetRule, net->endpoint->ip, net->endpoint->port,
             stream->host->name ? stream->host->name : "default", rx->referrer ? rx->referrer : "",

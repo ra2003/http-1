@@ -158,7 +158,7 @@ PUBLIC bool httpAuthenticate(HttpStream *stream)
                 return 0;
             }
         }
-        httpTrace(stream->trace, "auth.login.authenticated", "context",
+        httpLog(stream->trace, "auth.login.authenticated", "context",
             "msg: 'Using cached authentication data', username:'%s'", username);
         stream->username = username;
         rx->authenticated = 1;
@@ -302,7 +302,7 @@ PUBLIC bool httpLogin(HttpStream *stream, cchar *username, cchar *password)
     rx = stream->rx;
     auth = rx->route->auth;
     if (!username || !*username) {
-        httpTrace(stream->trace, "auth.login.error", "error", "msg:'missing username'");
+        httpLog(stream->trace, "auth.login.error", "error", "msg:'missing username'");
         return 0;
     }
     if (!auth->store) {
@@ -647,7 +647,7 @@ static bool configVerifyUser(HttpStream *stream, cchar *username, cchar *passwor
     rx = stream->rx;
     auth = rx->route->auth;
     if (!stream->user && (stream->user = mprLookupKey(auth->userCache, username)) == 0) {
-        httpTrace(stream->trace, "auth.login.error", "error", "msg: 'Unknown user', username:'%s'", username);
+        httpLog(stream->trace, "auth.login.error", "error", "msg: 'Unknown user', username:'%s'", username);
         return 0;
     }
     if (password) {
@@ -668,9 +668,9 @@ static bool configVerifyUser(HttpStream *stream, cchar *username, cchar *passwor
             success = smatch(password, requiredPassword);
         }
         if (success) {
-            httpTrace(stream->trace, "auth.login.authenticated", "context", "msg:'User authenticated', username:'%s'", username);
+            httpLog(stream->trace, "auth.login.authenticated", "context", "msg:'User authenticated', username:'%s'", username);
         } else {
-            httpTrace(stream->trace, "auth.login.error", "error", "msg:'Password failed to authenticate', username:'%s'", username);
+            httpLog(stream->trace, "auth.login.error", "error", "msg:'Password failed to authenticate', username:'%s'", username);
         }
         return success;
     }

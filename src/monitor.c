@@ -88,7 +88,7 @@ static void invokeDefenses(HttpMonitor *monitor, MprHash *args)
                 sd->suppressUntil = http->now + defense->suppressPeriod;
             }
         }
-        httpTrace(http->trace, "monitor.defense.invoke", "context", "defense:'%s', remedy:'%s'", defense->name, defense->remedy);
+        httpLog(http->trace, "monitor.defense.invoke", "context", "defense:'%s', remedy:'%s'", defense->name, defense->remedy);
 
         /*  WARNING: yields */
         remedyProc(args);
@@ -124,7 +124,7 @@ static void checkCounter(HttpMonitor *monitor, HttpCounter *counter, cchar *ip)
         period = monitor->period / 1000;
         address = ip ? sfmt(" %s", ip) : "";
         msg = sfmt(fmt, address, monitor->counterName, counter->value, period, monitor->limit);
-        httpTrace(HTTP->trace, "monitor.check", "context", "msg:'%s'", msg);
+        httpLog(HTTP->trace, "monitor.check", "context", "msg:'%s'", msg);
 
         subject = sfmt("Monitor %s Alert", monitor->counterName);
         args = mprDeserialize(
@@ -153,7 +153,7 @@ PUBLIC void httpPruneMonitors()
     lock(http->addresses);
     for (ITERATE_KEY_DATA(http->addresses, kp, address)) {
         if (address->banUntil && address->banUntil < http->now) {
-            httpTrace(http->trace, "monitor.ban.stop", "context", "client:'%s'", kp->key);
+            httpLog(http->trace, "monitor.ban.stop", "context", "client:'%s'", kp->key);
             address->banUntil = 0;
         }
         if ((address->updated + period) < http->now && address->banUntil == 0) {
@@ -535,7 +535,7 @@ PUBLIC int httpBanClient(cchar *ip, MprTicks period, int status, cchar *msg)
         return MPR_ERR_CANT_FIND;
     }
     if (address->banUntil < http->now) {
-        httpTrace(http->trace, "monitor.ban.start", "error", "client:'%s', duration:%lld", ip, period / 1000);
+        httpLog(http->trace, "monitor.ban.start", "error", "client:'%s', duration:%lld", ip, period / 1000);
     }
     banUntil = http->now + period;
     address->banUntil = max(banUntil, address->banUntil);
@@ -597,14 +597,14 @@ static void cmdRemedy(MprHash *args)
     cmd->stdoutBuf = mprCreateBuf(ME_BUFSIZE, -1);
     cmd->stderrBuf = mprCreateBuf(ME_BUFSIZE, -1);
 
-    httpTrace(HTTP->trace, "monitor.remedy.cmd", "context", "remedy:'%s'", command);
+    httpLog(HTTP->trace, "monitor.remedy.cmd", "context", "remedy:'%s'", command);
     if (mprStartCmd(cmd, argc, argv, NULL, MPR_CMD_DETACH | MPR_CMD_IN) < 0) {
-        httpTrace(HTTP->trace, "monitor.rememdy.cmd.error", "error", "msg:'Cannot start command. %s'", command);
+        httpLog(HTTP->trace, "monitor.rememdy.cmd.error", "error", "msg:'Cannot start command. %s'", command);
         return;
     }
     if (data) {
         if (mprWriteCmdBlock(cmd, MPR_CMD_STDIN, data, -1) < 0) {
-            httpTrace(HTTP->trace, "monitor.remedy.cmd.error", "error", "msg:'Cannot write to command. %s'", command);
+            httpLog(HTTP->trace, "monitor.remedy.cmd.error", "error", "msg:'Cannot write to command. %s'", command);
             return;
         }
     }
@@ -613,7 +613,7 @@ static void cmdRemedy(MprHash *args)
         rc = mprWaitForCmd(cmd, ME_HTTP_REMEDY_TIMEOUT);
         status = mprGetCmdExitStatus(cmd);
         if (rc < 0 || status != 0) {
-            httpTrace(HTTP->trace, "monitor.remedy.cmd.error", "error", "msg:'Remedy failed. %s. %s', command: '%s'",
+            httpLog(HTTP->trace, "monitor.remedy.cmd.error", "error", "msg:'Remedy failed. %s. %s', command: '%s'",
                 mprGetBufStart(cmd->stderrBuf), mprGetBufStart(cmd->stdoutBuf), command);
             return;
         }
@@ -637,7 +637,7 @@ static void delayRemedy(MprHash *args)
             address->delayUntil = max(delayUntil, address->delayUntil);
             delay = (int) lookupTicks(args, "DELAY", ME_HTTP_DELAY);
             address->delay = max(delay, address->delay);
-            httpTrace(http->trace, "monitor.delay.start", "context", "client:'%s', delay:%d", ip, address->delay);
+            httpLog(http->trace, "monitor.delay.start", "context", "client:'%s', delay:%d", ip, address->delay);
         }
     }
 }
@@ -666,12 +666,12 @@ static void httpRemedy(MprHash *args)
     }
     msg = smatch(method, "POST") ? mprLookupKey(args, "MESSAGE") : 0;
     if ((stream = httpRequest(method, uri, msg, HTTP_1_1, &err)) == 0) {
-        httpTrace(HTTP->trace, "monitor.remedy.http.error", "error", "msg:'%s'", err);
+        httpLog(HTTP->trace, "monitor.remedy.http.error", "error", "msg:'%s'", err);
         return;
     }
     status = httpGetStatus(stream);
     if (status != HTTP_CODE_OK) {
-        httpTrace(HTTP->trace, "monitor.remedy.http.error", "error", "status:%d, uri:'%s'", status, uri);
+        httpLog(HTTP->trace, "monitor.remedy.http.error", "error", "status:%d, uri:'%s'", status, uri);
     }
 }
 

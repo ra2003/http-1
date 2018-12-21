@@ -388,7 +388,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
                         "Cannot create upload temp file %s. Check upload temp dir %s", up->tmpPath, uploadDir);
                     return MPR_ERR_CANT_OPEN;
                 }
-                httpTrace(stream->trace, "upload.file", "context", "clientFilename:'%s', filename:'%s'",
+                httpLog(stream->trace, "upload.file", "context", "clientFilename:'%s', filename:'%s'",
                     up->clientFilename, up->tmpPath);
 
                 up->file = mprOpenFile(up->tmpPath, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);

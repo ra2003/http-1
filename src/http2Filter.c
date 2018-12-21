@@ -424,7 +424,7 @@ static HttpFrame *parseFrame(HttpQueue *q, HttpPacket *packet)
     if (httpTracing(q->net)) {
         typeStr = (type < HTTP2_MAX_FRAME) ? packetTypes[type] : "unknown";
         mprAdjustBufStart(packet->content, -HTTP2_FRAME_OVERHEAD);
-        httpTracePacket(q->net->trace, "http2.rx", "packet", HTTP_TRACE_HEX, packet,
+        httpLogPacket(q->net->trace, "http2.rx", "packet", HTTP_TRACE_HEX, packet,
             "frame=%s flags=%x stream=%d length=%zd", typeStr, frame->flags, frame->streamID, httpGetPacketLength(packet));
         mprAdjustBufStart(packet->content, HTTP2_FRAME_OVERHEAD);
     }
@@ -779,7 +779,7 @@ static void parseGoAwayFrame(HttpQueue *q, HttpPacket *packet)
     error = mprGetUint32FromBuf(buf);
     len = mprGetBufLength(buf);
     msg = len ? snclone(buf->start, len) : "";
-    httpTrace(net->trace, "http2.rx", "context", "msg='Receive GoAway. %s' error=%d lastStream=%d", msg, error, lastStreamID);
+    httpLog(net->trace, "http2.rx", "context", "msg='Receive GoAway. %s' error=%d lastStream=%d", msg, error, lastStreamID);
 
     for (ITERATE_ITEMS(net->streams, stream, next)) {
         if (stream->streamID > lastStreamID) {
@@ -1186,7 +1186,7 @@ static void sendGoAway(HttpQueue *q, int status, cchar *fmt, ...)
     }
     va_start(ap, fmt);
     net->errorMsg = msg = sfmtv(fmt, ap);
-    httpTrace(net->trace, "http2.tx", "error", "Send network goAway, lastStream=%d, status=%d, msg='%s'", net->lastStreamID, status, msg);
+    httpLog(net->trace, "http2.tx", "error", "Send network goAway, lastStream=%d, status=%d, msg='%s'", net->lastStreamID, status, msg);
     va_end(ap);
 
     buf = packet->content;
@@ -1254,7 +1254,7 @@ static void sendReset(HttpQueue *q, HttpStream *stream, int status, cchar *fmt, 
     }
     va_start(ap, fmt);
     msg = sfmtv(fmt, ap);
-    httpTrace(stream->trace, "http2.tx", "context", "Send stream reset, stream=%d, status=%d, msg='%s'", stream->streamID, status, msg);
+    httpLog(stream->trace, "http2.tx", "context", "Send stream reset, stream=%d, status=%d, msg='%s'", stream->streamID, status, msg);
     va_end(ap);
 
     mprPutUint32ToBuf(packet->content, status);
@@ -1271,7 +1271,7 @@ static void sendReset(HttpQueue *q, HttpStream *stream, int status, cchar *fmt, 
  */
 static void resetStream(HttpStream *stream, cchar *msg, int error)
 {
-    httpTrace(stream->trace, "http2.rx", "context", "msg='Receive GoAway. %s' error=%d", msg, error);
+    httpLog(stream->trace, "http2.rx", "context", "msg='Receive GoAway. %s' error=%d", msg, error);
     if (error) {
         httpError(stream, HTTP_CODE_COMMS_ERROR, "%s", msg);
     }
@@ -1386,7 +1386,7 @@ PUBLIC void httpCreateHeaders2(HttpQueue *q, HttpPacket *packet)
     httpPrepareHeaders(stream);
     definePseudoHeaders(stream, packet);
     if (httpTracing(q->net)) {
-        httpTrace(stream->trace, "http2.tx", "headers", "\n%s", httpTraceHeaders(q, stream->tx->headers));
+        httpLog(stream->trace, "http2.tx", "headers", "\n%s", httpTraceHeaders(q, stream->tx->headers));
     }
 
     /*
@@ -1660,14 +1660,14 @@ static HttpPacket *defineFrame(HttpQueue *q, HttpPacket *packet, int type, uchar
     typeStr = (type < HTTP2_MAX_FRAME) ? packetTypes[type] : "unknown";
     if (httpTracing(net) && !net->skipTrace) {
         if (net->bytesWritten >= net->trace->maxContent) {
-            httpTrace(net->trace, "http2.tx", "packet", "msg: 'Abbreviating packet trace'");
+            httpLog(net->trace, "http2.tx", "packet", "msg: 'Abbreviating packet trace'");
             net->skipTrace = 1;
         } else {
-            httpTracePacket(net->trace, "http2.tx", "packet", HTTP_TRACE_HEX, packet,
+            httpLogPacket(net->trace, "http2.tx", "packet", HTTP_TRACE_HEX, packet,
                 "frame=%s, flags=%x, stream=%d, length=%zd,", typeStr, flags, stream, length);
         }
     } else {
-        httpTrace(net->trace, "http2.tx", "packet", "frame=%s, flags=%x, stream=%d, length=%zd,", typeStr, flags, stream, length);
+        httpLog(net->trace, "http2.tx", "packet", "frame=%s, flags=%x, stream=%d, length=%zd,", typeStr, flags, stream, length);
     }
     return packet;
 }

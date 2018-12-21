@@ -177,7 +177,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
      */
     if (mprLookupKey(stream->tx->headers, "X-SendCache") != 0) {
         if (fetchCachedResponse(stream)) {
-            httpTrace(stream->trace, "cache.sendcache", "context", "msg:'Using cached content'");
+            httpLog(stream->trace, "cache.sendcache", "context", "msg:'Using cached content'");
             cachedData = setHeadersFromCache(stream, tx->cachedContent);
             tx->length = slen(cachedData);
         }
@@ -214,7 +214,7 @@ static void outgoingCacheFilterService(HttpQueue *q)
                     tx->cacheBufferLength += size;
                 } else {
                     tx->cacheBuffer = 0;
-                    httpTrace(stream->trace, "cache.big", "context", "msg:'Item too big to cache',size:%zu,limit:%u",
+                    httpLog(stream->trace, "cache.big", "context", "msg:'Item too big to cache',size:%zu,limit:%u",
                         tx->cacheBufferLength + size, stream->limits->cacheItemSize);
                 }
             }
@@ -288,7 +288,7 @@ static bool fetchCachedResponse(HttpStream *stream)
     key = makeCacheKey(stream);
     if ((value = httpGetHeader(stream, "Cache-Control")) != 0 &&
             (scontains(value, "max-age=0") == 0 || scontains(value, "no-cache") == 0)) {
-        httpTrace(stream->trace, "cache.reload", "context", "msg:'Client reload'");
+        httpLog(stream->trace, "cache.reload", "context", "msg:'Client reload'");
 
     } else if ((tx->cachedContent = mprReadCache(stream->host->responseCache, key, &modified, 0)) != 0) {
         /*
@@ -315,14 +315,14 @@ static bool fetchCachedResponse(HttpStream *stream)
             }
         }
         status = (canUseClientCache && cacheOk) ? HTTP_CODE_NOT_MODIFIED : HTTP_CODE_OK;
-        httpTrace(stream->trace, "cache.cached", "context", "msg:'Use cached content',key:'%s',status:%d", key, status);
+        httpLog(stream->trace, "cache.cached", "context", "msg:'Use cached content',key:'%s',status:%d", key, status);
         httpSetStatus(stream, status);
         httpSetHeaderString(stream, "Etag", mprGetMD5(key));
         httpSetHeaderString(stream, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));
         httpRemoveHeader(stream, "Content-Encoding");
         return 1;
     }
-    httpTrace(stream->trace, "cache.none", "context", "msg:'No cached content',key:'%s'", key);
+    httpLog(stream->trace, "cache.none", "context", "msg:'No cached content',key:'%s'", key);
     return 0;
 }
 
@@ -357,10 +357,10 @@ PUBLIC ssize httpWriteCached(HttpStream *stream)
     }
     cacheKey = makeCacheKey(stream);
     if ((content = mprReadCache(stream->host->responseCache, cacheKey, &modified, 0)) == 0) {
-        httpTrace(stream->trace, "cache.none", "context", "msg:'No response data in cache', key:'%s'", cacheKey);
+        httpLog(stream->trace, "cache.none", "context", "msg:'No response data in cache', key:'%s'", cacheKey);
         return 0;
     }
-    httpTrace(stream->trace, "cache.cached", "context", "msg:'Used cached response', key:'%s'", cacheKey);
+    httpLog(stream->trace, "cache.cached", "context", "msg:'Used cached response', key:'%s'", cacheKey);
     data = setHeadersFromCache(stream, content);
     httpSetHeaderString(stream, "Etag", mprGetMD5(cacheKey));
     httpSetHeaderString(stream, "Last-Modified", mprFormatUniversalTime(MPR_HTTP_DATE, modified));

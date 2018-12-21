@@ -64,7 +64,7 @@ PUBLIC void httpBasicLogin(HttpStream *stream)
     } else {
         httpSetHeader(stream, "WWW-Authenticate", "Basic realm=\"%s\"", auth->realm);
         httpError(stream, HTTP_CODE_UNAUTHORIZED, "Access Denied. Login required");
-        httpTrace(stream->trace, "auth.basic.error", "error", "msg:'Access denied, Login required'");
+        httpLog(stream->trace, "auth.basic.error", "error", "msg:'Access denied, Login required'");
     }
 }
 

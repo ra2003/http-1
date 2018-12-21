@@ -155,7 +155,7 @@ static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
         stream->error = 1;
         httpOmitBody(stream);
         stream->errorMsg = formatErrorv(stream, status, fmt, args);
-        httpTrace(stream->trace, "error", "error", "msg:'%s'", stream->errorMsg);
+        httpLog(stream->trace, "error", "error", "msg:'%s'", stream->errorMsg);
         HTTP_NOTIFY(stream, HTTP_EVENT_ERROR, 0);
         if (httpServerStream(stream)) {
             if (status == HTTP_CODE_NOT_FOUND) {

@@ -675,7 +675,7 @@ PUBLIC cchar *httpMapContent(HttpStream *stream, cchar *filename)
                     path = sjoin(filename, ext, NULL);
                 }
                 if (mprGetPathInfo(path, &info) == 0) {
-                    httpTrace(stream->trace, "route.map", "context", "originalFilename:'%s', filename:'%s'", filename, path);
+                    httpLog(stream->trace, "route.map", "context", "originalFilename:'%s', filename:'%s'", filename, path);
                     filename = path;
                     if (zipped) {
                         httpSetHeader(stream, "Content-Encoding", "gzip");
@@ -2168,7 +2168,7 @@ static int authCondition(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
         }
     }
     if (!httpCanUser(stream, NULL)) {
-        httpTrace(stream->trace, "auth.check", "error", "msg:'Access denied, user is not authorized for access'");
+        httpLog(stream->trace, "auth.check", "error", "msg:'Access denied, user is not authorized for access'");
         if (!stream->tx->finalized) {
             httpError(stream, HTTP_CODE_FORBIDDEN, "Access denied. User is not authorized for access.");
             /* Request has been denied and a response generated. So OK to accept this route. */
@@ -2344,11 +2344,11 @@ static int cmdUpdate(HttpStream *stream, HttpRoute *route, HttpRouteOp *op)
 
     command = expandTokens(stream, op->details);
     cmd = mprCreateCmd(stream->dispatcher);
-    httpTrace(stream->trace, "route.run", "context", "command:'%s'", command);
+    httpLog(stream->trace, "route.run", "context", "command:'%s'", command);
     if ((status = mprRunCmd(cmd, command, NULL, NULL, &out, &err, -1, 0)) != 0) {
         /* Don't call httpError, just set errorMsg which can be retrieved via: ${request:error} */
         stream->errorMsg = sfmt("Command failed: %s\nStatus: %d\n%s\n%s", command, status, out, err);
-        httpTrace(stream->trace, "route.run.error", "error", "command:'%s', error:'%s'", command, stream->errorMsg);
+        httpLog(stream->trace, "route.run.error", "error", "command:'%s', error:'%s'", command, stream->errorMsg);
         /* Continue */
     }
     mprDestroyCmd(cmd);

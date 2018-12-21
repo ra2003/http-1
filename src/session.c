@@ -156,7 +156,7 @@ PUBLIC HttpSession *httpGetSession(HttpStream *stream, int create)
             lifespan = (route->flags & HTTP_ROUTE_PERSIST_COOKIE) ? rx->session->lifespan : 0;
             url = (route->prefix && *route->prefix) ? route->prefix : "/";
             httpSetCookie(stream, cookie, rx->session->id, url, NULL, lifespan, flags);
-            httpTrace(stream->trace, "session.create", "context", "cookie:'%s', session:'%s'", cookie, rx->session->id);
+            httpLog(stream->trace, "session.create", "context", "cookie:'%s', session:'%s'", cookie, rx->session->id);
 
             if ((route->flags & HTTP_ROUTE_XSRF) && rx->securityToken) {
                 httpSetSessionVar(stream, ME_XSRF_COOKIE, rx->securityToken);
@@ -401,14 +401,14 @@ PUBLIC bool httpCheckSecurityToken(HttpStream *stream)
         if (!requestToken) {
             requestToken = httpGetParam(stream, ME_XSRF_PARAM, 0);
             if (!requestToken) {
-                httpTrace(stream->trace, "session.xsrf.error", "error", "msg:'Missing security token in request'");
+                httpLog(stream->trace, "session.xsrf.error", "error", "msg:'Missing security token in request'");
             }
         }
         if (!smatch(sessionToken, requestToken)) {
             /*
                 Potential CSRF attack. Deny request. Re-create a new security token so legitimate clients can retry.
              */
-            httpTrace(stream->trace, "session.xsrf.error", "error",
+            httpLog(stream->trace, "session.xsrf.error", "error",
                 "msg:'Security token in request does not match session token',xsrf:'%s',sessionXsrf:'%s'",
                 requestToken, sessionToken);
             httpAddSecurityToken(stream, 1);

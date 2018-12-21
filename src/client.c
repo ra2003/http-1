@@ -99,7 +99,7 @@ PUBLIC int httpConnect(HttpStream *stream, cchar *method, cchar *url, MprSsl *ss
             net->sock = 0;
 
         } else if (canUse(net, stream, uri, ssl, ip, port)) {
-            httpTrace(net->trace, "client.connection.reuse", "context", "reuse:%d", stream->keepAliveCount);
+            httpLog(net->trace, "client.connection.reuse", "context", "reuse:%d", stream->keepAliveCount);
 
         } else {
             if (net->protocol >= 2) {
@@ -134,7 +134,7 @@ PUBLIC int httpConnect(HttpStream *stream, cchar *method, cchar *url, MprSsl *ss
     setDefaultHeaders(stream);
     httpSetState(stream, HTTP_STATE_CONNECTED);
     protocol = net->protocol < 2 ? "HTTP/1.1" : "HTTP/2";
-    httpTrace(net->trace, "client.request", "request", "method='%s', url='%s', protocol='%s'", tx->method, url, protocol);
+    httpLog(net->trace, "client.request", "request", "method='%s', url='%s', protocol='%s'", tx->method, url, protocol);
     return 0;
 }
 

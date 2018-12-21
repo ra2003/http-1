@@ -131,7 +131,7 @@ static int openFileHandler(HttpQueue *q)
             httpOmitBody(stream);
         }
         if (!tx->fileInfo.isReg && !tx->fileInfo.isLink) {
-            httpTrace(stream->trace, "fileHandler.error", "error", "msg:'Document is not a regular file',filename:'%s'",
+            httpLog(stream->trace, "fileHandler.error", "error", "msg:'Document is not a regular file',filename:'%s'",
                 tx->filename);
             httpError(stream, HTTP_CODE_NOT_FOUND, "Cannot serve document");
 
@@ -149,10 +149,10 @@ static int openFileHandler(HttpQueue *q)
                 tx->file = mprOpenFile(tx->filename, O_RDONLY | O_BINARY, 0);
                 if (tx->file == 0) {
                     if (rx->referrer && *rx->referrer) {
-                        httpTrace(stream->trace, "fileHandler.error", "error", "msg:'Cannot open document',filename:'%s',referrer:'%s'",
+                        httpLog(stream->trace, "fileHandler.error", "error", "msg:'Cannot open document',filename:'%s',referrer:'%s'",
                             tx->filename, rx->referrer);
                     } else {
-                        httpTrace(stream->trace, "fileHandler.error", "error", "msg:'Cannot open document',filename:'%s'", tx->filename);
+                        httpLog(stream->trace, "fileHandler.error", "error", "msg:'Cannot open document',filename:'%s'", tx->filename);
                     }
                     httpError(stream, HTTP_CODE_NOT_FOUND, "Cannot open document");
                 }

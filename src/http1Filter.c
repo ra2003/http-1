@@ -21,7 +21,7 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet);
 static HttpPacket *parseHeaders(HttpQueue *q, HttpPacket *packet);
 static void parseRequestLine(HttpQueue *q, HttpPacket *packet);
 static void parseResponseLine(HttpQueue *q, HttpPacket *packet);
-static void tracePacket(HttpQueue *q, HttpPacket *packet);
+static void LogPacket(HttpQueue *q, HttpPacket *packet);
 
 /*********************************** Code *************************************/
 /*
@@ -58,7 +58,7 @@ static void incomingHttp1(HttpQueue *q, HttpPacket *packet)
 
     for (packet = httpGetPacket(q); packet && !stream->error; packet = httpGetPacket(q)) {
         if (httpTracing(q->net)) {
-            httpTracePacket(q->net->trace, "http1.rx", "packet", 0, packet, NULL);
+            httpLogPacket(q->net->trace, "http1.rx", "packet", 0, packet, NULL);
         }
         if (stream->state < HTTP_STATE_PARSED) {
             if ((packet = parseHeaders(q, packet)) != 0) {
@@ -94,7 +94,7 @@ static void outgoingHttp1Service(HttpQueue *q)
             httpPutBackPacket(q, packet);
             return;
         }
-        tracePacket(q, packet);
+        LogPacket(q, packet);
         httpPutPacket(q->net->socketq, packet);
         if (stream && q->count <= q->low && (stream->outputq->flags & HTTP_QUEUE_SUSPENDED)) {
             httpResumeQueue(stream->outputq);
@@ -103,7 +103,7 @@ static void outgoingHttp1Service(HttpQueue *q)
 }
 
 
-static void tracePacket(HttpQueue *q, HttpPacket *packet)
+static void LogPacket(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
     cchar       *type;
@@ -114,13 +114,13 @@ static void tracePacket(HttpQueue *q, HttpPacket *packet)
     len = httpGetPacketLength(packet) + mprGetBufLength(packet->prefix);
     if (httpTracing(net) && !net->skipTrace) {
         if (net->bytesWritten >= net->trace->maxContent) {
-            httpTrace(net->trace, "http1.tx", "packet", "msg: 'Abbreviating packet trace'");
+            httpLog(net->trace, "http1.tx", "packet", "msg: 'Abbreviating packet trace'");
             net->skipTrace = 1;
         } else {
-            httpTracePacket(net->trace, "http1.tx", "packet", HTTP_TRACE_HEX, packet, "type=%s, length=%zd,", type, len);
+            httpLogPacket(net->trace, "http1.tx", "packet", HTTP_TRACE_HEX, packet, "type=%s, length=%zd,", type, len);
         }
     } else {
-        httpTrace(net->trace, "http1.tx", "packet", "type=%s, length=%zd,", type, len);
+        httpLog(net->trace, "http1.tx", "packet", "type=%s, length=%zd,", type, len);
     }
 }
 

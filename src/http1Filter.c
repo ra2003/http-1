@@ -21,7 +21,7 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet);
 static HttpPacket *parseHeaders(HttpQueue *q, HttpPacket *packet);
 static void parseRequestLine(HttpQueue *q, HttpPacket *packet);
 static void parseResponseLine(HttpQueue *q, HttpPacket *packet);
-static void LogPacket(HttpQueue *q, HttpPacket *packet);
+static void logPacket(HttpQueue *q, HttpPacket *packet);
 
 /*********************************** Code *************************************/
 /*
@@ -94,7 +94,7 @@ static void outgoingHttp1Service(HttpQueue *q)
             httpPutBackPacket(q, packet);
             return;
         }
-        LogPacket(q, packet);
+        logPacket(q, packet);
         httpPutPacket(q->net->socketq, packet);
         if (stream && q->count <= q->low && (stream->outputq->flags & HTTP_QUEUE_SUSPENDED)) {
             httpResumeQueue(stream->outputq);
@@ -103,7 +103,7 @@ static void outgoingHttp1Service(HttpQueue *q)
 }
 
 
-static void LogPacket(HttpQueue *q, HttpPacket *packet)
+static void logPacket(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
     cchar       *type;

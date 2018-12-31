@@ -356,7 +356,7 @@ static void connTimeout(HttpStream *stream, MprEvent *mprEvent)
         event = "timeout.parse";
 
     } else if (stream->timeout == HTTP_INACTIVITY_TIMEOUT) {
-        if (httpClientStream(stream)) {
+        if (httpClientStream(stream) || (stream->rx && stream->rx->uri)) {
             msg = sfmt("%s exceeded inactivity timeout of %lld sec", prefix, limits->inactivityTimeout / 1000);
             event = "timeout.inactivity";
         }
@@ -373,7 +373,7 @@ static void connTimeout(HttpStream *stream, MprEvent *mprEvent)
         httpDisconnectStream(stream);
 
     } else {
-        httpError(stream, HTTP_CODE_REQUEST_TIMEOUT, "%s", msg);
+        httpError(stream, HTTP_CODE_REQUEST_TIMEOUT, "%s", msg ? msg : "Timeout");
     }
 }
 

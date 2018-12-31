@@ -257,36 +257,6 @@ static HttpPacket *getPacket(HttpNet *net, ssize *lenp)
 }
 
 
-PUBLIC int httpGetNetEventMask(HttpNet *net)
-{
-    MprSocket   *sock;
-    int         eventMask;
-
-    if ((sock = net->sock) == 0) {
-        return 0;
-    }
-    eventMask = 0;
-
-    if (httpQueuesNeedService(net) || mprSocketHasBufferedWrite(sock) ||
-            (net->socketq && (net->socketq->count > 0 || net->socketq->ioCount > 0))) {
-        if (!mprSocketHandshaking(sock)) {
-            /* Must wait to write until handshaking is complete */
-            eventMask |= MPR_WRITABLE;
-        }
-    }
-    if (mprSocketHasBufferedRead(sock) || !net->inputq || (net->inputq->count < net->inputq->max)) {
-        /*
-            TODO - how to mitigate against a ping flood?
-            Was testing if !writeBlocked before adding MPR_READABLE, but this is always required for HTTP/2 to read window frames.
-         */
-        if (mprSocketHandshaking(sock) || !net->eof) {
-            eventMask |= MPR_READABLE;
-        }
-    }
-    return eventMask;
-}
-
-
 static bool netBanned(HttpNet *net)
 {
     HttpAddress     *address;
@@ -315,6 +285,36 @@ static void resumeEvents(HttpNet *net, MprEvent *event)
 {
     net->delay = 0;
     mprCreateEvent(net->dispatcher, "resumeConn", 0, httpEnableNetEvents, net, 0);
+}
+
+
+PUBLIC int httpGetNetEventMask(HttpNet *net)
+{
+    MprSocket   *sock;
+    int         eventMask;
+
+    if ((sock = net->sock) == 0) {
+        return 0;
+    }
+    eventMask = 0;
+
+    if (httpQueuesNeedService(net) || mprSocketHasBufferedWrite(sock) ||
+            (net->socketq && (net->socketq->count > 0 || net->socketq->ioCount > 0))) {
+        if (!mprSocketHandshaking(sock)) {
+            /* Must wait to write until handshaking is complete */
+            eventMask |= MPR_WRITABLE;
+        }
+    }
+    if (mprSocketHasBufferedRead(sock) || !net->inputq || (net->inputq->count < net->inputq->max)) {
+        /*
+            TODO - how to mitigate against a ping flood?
+            Was testing if !writeBlocked before adding MPR_READABLE, but this is always required for HTTP/2 to read window frames.
+         */
+        if (mprSocketHandshaking(sock) || !net->eof) {
+            eventMask |= MPR_READABLE;
+        }
+    }
+    return eventMask;
 }
 
 
@@ -428,6 +428,9 @@ static void netOutgoingService(HttpQueue *q)
             /* Socket full or SSL negotiate */
             break;
         }
+    }
+    if ((q->first || q->ioIndex) && net->writeBlocked && !(net->eventMask & MPR_WRITABLE)) {
+        httpEnableNetEvents(net);
     }
 }
 

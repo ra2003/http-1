@@ -557,7 +557,7 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
     MprBuf      *buf;
     bool        padded, priority;
     ssize       size, frameLen;
-    int         padLen, depend, dword, excl, weight;
+    int         padLen, weight;
 
     net = q->net;
     buf = packet->content;
@@ -586,13 +586,15 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
         }
         mprAdjustBufEnd(buf, -padLen);
     }
-    depend = 0;
     weight = HTTP2_DEFAULT_WEIGHT;
     if (priority) {
-        dword = mprGetUint32FromBuf(buf);
-        depend = dword & 0x7fffffff;
-        excl = dword >> 31;
-        weight = mprGetCharFromBuf(buf) + 1;
+        /* Priorities and weights are not yet implemented */
+        // dword = mprGetUint32FromBuf(buf);
+        // depend = dword & 0x7fffffff;
+        // excl = dword >> 31;
+        // weight = mprGetCharFromBuf(buf) + 1;
+        mprGetUint32FromBuf(buf);
+        mprGetCharFromBuf(buf);
     }
     if ((frame->streamID % 2) != 1 || (net->lastStreamID && frame->streamID <= net->lastStreamID)) {
         sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Bad sesssion");

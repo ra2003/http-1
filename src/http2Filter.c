@@ -557,7 +557,7 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
     MprBuf      *buf;
     bool        padded, priority;
     ssize       size, frameLen;
-    int         padLen, weight;
+    int         padLen;
 
     net = q->net;
     buf = packet->content;
@@ -586,7 +586,9 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
         }
         mprAdjustBufEnd(buf, -padLen);
     }
-    weight = HTTP2_DEFAULT_WEIGHT;
+#if FUTURE
+    int weight = HTTP2_DEFAULT_WEIGHT;
+#endif
     if (priority) {
         /* Priorities and weights are not yet implemented */
         // dword = mprGetUint32FromBuf(buf);

@@ -13358,7 +13358,7 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     }
     net->http = http;
     net->endpoint = endpoint;
-    net->lastActivity = http->now;
+    net->lastActivity = http->now = mprGetTicks();
     net->ioCallback = httpIOEvent;
 
     if (endpoint) {
@@ -16777,7 +16777,7 @@ PUBLIC void httpSetQueueLimits(HttpQueue *q, HttpLimits *limits, ssize packetSiz
     q->packetSize = packetSize;
     q->max = max;
     q->low = low;
-    
+
 #if ME_HTTP_HTTP2
     if (window < 0) {
         window = limits->window;

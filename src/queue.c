@@ -130,7 +130,7 @@ PUBLIC void httpSetQueueLimits(HttpQueue *q, HttpLimits *limits, ssize packetSiz
     q->packetSize = packetSize;
     q->max = max;
     q->low = low;
-    
+
 #if ME_HTTP_HTTP2
     if (window < 0) {
         window = limits->window;

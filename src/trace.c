@@ -4,8 +4,8 @@
 
     Event types and trace levels:
     0: debug
-    1: request
-    2: error, result
+    1: request, result, error
+    2: headers
     3: context
     4: packet
     5: detail
@@ -50,8 +50,9 @@ PUBLIC HttpTrace *httpCreateTrace(HttpTrace *parent)
         }
         mprAddKey(trace->events, "debug", ITOP(0));
         mprAddKey(trace->events, "request", ITOP(1));
-        mprAddKey(trace->events, "error", ITOP(2));
-        mprAddKey(trace->events, "result", ITOP(2));
+        mprAddKey(trace->events, "error", ITOP(1));
+        mprAddKey(trace->events, "result", ITOP(1));
+        mprAddKey(trace->events, "headers", ITOP(2));
         mprAddKey(trace->events, "context", ITOP(3));
         mprAddKey(trace->events, "packet", ITOP(4));
         mprAddKey(trace->events, "detail", ITOP(5));

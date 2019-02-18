@@ -35,7 +35,7 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     }
     net->http = http;
     net->endpoint = endpoint;
-    net->lastActivity = http->now;
+    net->lastActivity = http->now = mprGetTicks();
     net->ioCallback = httpIOEvent;
 
     if (endpoint) {

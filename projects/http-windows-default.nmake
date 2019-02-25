@@ -3,7 +3,7 @@
 #
 
 NAME                  = http
-VERSION               = 8.0.0
+VERSION               = 8.0.1
 
 OS                    = windows
 PA                    = $(PROCESSOR_ARCHITECTURE)
@@ -64,7 +64,7 @@ ME_COM_PCRE           = 1
 ME_COM_RC             = 1
 !ENDIF
 !IF "$(ME_COM_SSL)" == ""
-ME_COM_SSL            = 0
+ME_COM_SSL            = 1
 !ENDIF
 !IF "$(ME_COM_VXWORKS)" == ""
 ME_COM_VXWORKS        = 0
@@ -101,7 +101,7 @@ RC                    = rc
 CFLAGS                = -nologo -GR- -W3 -Zi -Od -MDd
 DFLAGS                = -DME_DEBUG=1 -DME_COM_COMPILER=$(ME_COM_COMPILER) -DME_COM_LIB=$(ME_COM_LIB) -DME_COM_LINK=$(ME_COM_LINK) -DME_COM_MATRIXSSL=$(ME_COM_MATRIXSSL) -DME_COM_MBEDTLS=$(ME_COM_MBEDTLS) -DME_COM_MPR=$(ME_COM_MPR) -DME_COM_NANOSSL=$(ME_COM_NANOSSL) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_RC=$(ME_COM_RC) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_VXWORKS=$(ME_COM_VXWORKS) 
 IFLAGS                = -Ibuild\$(CONFIG)\inc
-LDFLAGS               = -nologo -incremental:no -debug -machine:x64
+LDFLAGS               = -nologo -incremental:no -dynamicbase -highentropyva -nxcompat -debug -machine:x64
 LIBPATHS              = "-libpath:$(BUILD)\bin"
 LIBS                  = ws2_32.lib advapi32.lib user32.lib kernel32.lib oldnames.lib shell32.lib
 
@@ -164,7 +164,6 @@ clean:
 	if exist "build\$(CONFIG)\obj\chunkFilter.obj" del /Q "build\$(CONFIG)\obj\chunkFilter.obj"
 	if exist "build\$(CONFIG)\obj\client.obj" del /Q "build\$(CONFIG)\obj\client.obj"
 	if exist "build\$(CONFIG)\obj\config.obj" del /Q "build\$(CONFIG)\obj\config.obj"
-	if exist "build\$(CONFIG)\obj\conn.obj" del /Q "build\$(CONFIG)\obj\conn.obj"
 	if exist "build\$(CONFIG)\obj\digest.obj" del /Q "build\$(CONFIG)\obj\digest.obj"
 	if exist "build\$(CONFIG)\obj\dirHandler.obj" del /Q "build\$(CONFIG)\obj\dirHandler.obj"
 	if exist "build\$(CONFIG)\obj\endpoint.obj" del /Q "build\$(CONFIG)\obj\endpoint.obj"
@@ -197,6 +196,7 @@ clean:
 	if exist "build\$(CONFIG)\obj\service.obj" del /Q "build\$(CONFIG)\obj\service.obj"
 	if exist "build\$(CONFIG)\obj\session.obj" del /Q "build\$(CONFIG)\obj\session.obj"
 	if exist "build\$(CONFIG)\obj\stage.obj" del /Q "build\$(CONFIG)\obj\stage.obj"
+	if exist "build\$(CONFIG)\obj\stream.obj" del /Q "build\$(CONFIG)\obj\stream.obj"
 	if exist "build\$(CONFIG)\obj\tailFilter.obj" del /Q "build\$(CONFIG)\obj\tailFilter.obj"
 	if exist "build\$(CONFIG)\obj\trace.obj" del /Q "build\$(CONFIG)\obj\trace.obj"
 	if exist "build\$(CONFIG)\obj\tx.obj" del /Q "build\$(CONFIG)\obj\tx.obj"
@@ -375,124 +375,114 @@ build\$(CONFIG)\obj\config.obj: \
 	"$(CC)" -c -Fo$(BUILD)\obj\config.obj -Fd$(BUILD)\obj\config.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\config.c $(LOG)
 
 #
-#   conn.obj
+#   digest.obj
 #
 DEPS_16 = $(DEPS_16) src\http.h
 
-build\$(CONFIG)\obj\conn.obj: \
-    src\conn.c $(DEPS_16)
-	@echo .. [Compile] build\$(CONFIG)\obj\conn.obj
-	"$(CC)" -c -Fo$(BUILD)\obj\conn.obj -Fd$(BUILD)\obj\conn.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\conn.c $(LOG)
-
-#
-#   digest.obj
-#
-DEPS_17 = $(DEPS_17) src\http.h
-
 build\$(CONFIG)\obj\digest.obj: \
-    src\digest.c $(DEPS_17)
+    src\digest.c $(DEPS_16)
 	@echo .. [Compile] build\$(CONFIG)\obj\digest.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\digest.obj -Fd$(BUILD)\obj\digest.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\digest.c $(LOG)
 
 #
 #   dirHandler.obj
 #
-DEPS_18 = $(DEPS_18) src\http.h
+DEPS_17 = $(DEPS_17) src\http.h
 
 build\$(CONFIG)\obj\dirHandler.obj: \
-    src\dirHandler.c $(DEPS_18)
+    src\dirHandler.c $(DEPS_17)
 	@echo .. [Compile] build\$(CONFIG)\obj\dirHandler.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\dirHandler.obj -Fd$(BUILD)\obj\dirHandler.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\dirHandler.c $(LOG)
 
 #
 #   endpoint.obj
 #
-DEPS_19 = $(DEPS_19) src\http.h
-DEPS_19 = $(DEPS_19) build\$(CONFIG)\inc\pcre.h
+DEPS_18 = $(DEPS_18) src\http.h
+DEPS_18 = $(DEPS_18) build\$(CONFIG)\inc\pcre.h
 
 build\$(CONFIG)\obj\endpoint.obj: \
-    src\endpoint.c $(DEPS_19)
+    src\endpoint.c $(DEPS_18)
 	@echo .. [Compile] build\$(CONFIG)\obj\endpoint.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\endpoint.obj -Fd$(BUILD)\obj\endpoint.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\endpoint.c $(LOG)
 
 #
 #   error.obj
 #
-DEPS_20 = $(DEPS_20) src\http.h
+DEPS_19 = $(DEPS_19) src\http.h
 
 build\$(CONFIG)\obj\error.obj: \
-    src\error.c $(DEPS_20)
+    src\error.c $(DEPS_19)
 	@echo .. [Compile] build\$(CONFIG)\obj\error.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\error.obj -Fd$(BUILD)\obj\error.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\error.c $(LOG)
 
 #
 #   fileHandler.obj
 #
-DEPS_21 = $(DEPS_21) src\http.h
+DEPS_20 = $(DEPS_20) src\http.h
 
 build\$(CONFIG)\obj\fileHandler.obj: \
-    src\fileHandler.c $(DEPS_21)
+    src\fileHandler.c $(DEPS_20)
 	@echo .. [Compile] build\$(CONFIG)\obj\fileHandler.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\fileHandler.obj -Fd$(BUILD)\obj\fileHandler.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\fileHandler.c $(LOG)
 
 #
 #   host.obj
 #
-DEPS_22 = $(DEPS_22) src\http.h
-DEPS_22 = $(DEPS_22) build\$(CONFIG)\inc\pcre.h
+DEPS_21 = $(DEPS_21) src\http.h
+DEPS_21 = $(DEPS_21) build\$(CONFIG)\inc\pcre.h
 
 build\$(CONFIG)\obj\host.obj: \
-    src\host.c $(DEPS_22)
+    src\host.c $(DEPS_21)
 	@echo .. [Compile] build\$(CONFIG)\obj\host.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\host.obj -Fd$(BUILD)\obj\host.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\host.c $(LOG)
 
 #
 #   hpack.obj
 #
-DEPS_23 = $(DEPS_23) src\http.h
+DEPS_22 = $(DEPS_22) src\http.h
 
 build\$(CONFIG)\obj\hpack.obj: \
-    src\hpack.c $(DEPS_23)
+    src\hpack.c $(DEPS_22)
 	@echo .. [Compile] build\$(CONFIG)\obj\hpack.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\hpack.obj -Fd$(BUILD)\obj\hpack.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\hpack.c $(LOG)
 
 #
 #   http.obj
 #
-DEPS_24 = $(DEPS_24) src\http.h
+DEPS_23 = $(DEPS_23) src\http.h
 
 build\$(CONFIG)\obj\http.obj: \
-    src\http.c $(DEPS_24)
+    src\http.c $(DEPS_23)
 	@echo .. [Compile] build\$(CONFIG)\obj\http.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\http.obj -Fd$(BUILD)\obj\http.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\http.c $(LOG)
 
 #
 #   http1Filter.obj
 #
-DEPS_25 = $(DEPS_25) src\http.h
+DEPS_24 = $(DEPS_24) src\http.h
 
 build\$(CONFIG)\obj\http1Filter.obj: \
-    src\http1Filter.c $(DEPS_25)
+    src\http1Filter.c $(DEPS_24)
 	@echo .. [Compile] build\$(CONFIG)\obj\http1Filter.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\http1Filter.obj -Fd$(BUILD)\obj\http1Filter.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\http1Filter.c $(LOG)
 
 #
 #   http2Filter.obj
 #
-DEPS_26 = $(DEPS_26) src\http.h
+DEPS_25 = $(DEPS_25) src\http.h
 
 build\$(CONFIG)\obj\http2Filter.obj: \
-    src\http2Filter.c $(DEPS_26)
+    src\http2Filter.c $(DEPS_25)
 	@echo .. [Compile] build\$(CONFIG)\obj\http2Filter.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\http2Filter.obj -Fd$(BUILD)\obj\http2Filter.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\http2Filter.c $(LOG)
 
 #
 #   huff.obj
 #
-DEPS_27 = $(DEPS_27) src\http.h
+DEPS_26 = $(DEPS_26) src\http.h
 
 build\$(CONFIG)\obj\huff.obj: \
-    src\huff.c $(DEPS_27)
+    src\huff.c $(DEPS_26)
 	@echo .. [Compile] build\$(CONFIG)\obj\huff.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\huff.obj -Fd$(BUILD)\obj\huff.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\huff.c $(LOG)
 
@@ -500,45 +490,45 @@ build\$(CONFIG)\obj\huff.obj: \
 #   mbedtls.h
 #
 
-src\mbedtls\mbedtls.h: $(DEPS_28)
+src\mbedtls\mbedtls.h: $(DEPS_27)
 
 #
 #   mbedtls.obj
 #
-DEPS_29 = $(DEPS_29) src\mbedtls\mbedtls.h
+DEPS_28 = $(DEPS_28) src\mbedtls\mbedtls.h
 
 build\$(CONFIG)\obj\mbedtls.obj: \
-    src\mbedtls\mbedtls.c $(DEPS_29)
+    src\mbedtls\mbedtls.c $(DEPS_28)
 	@echo .. [Compile] build\$(CONFIG)\obj\mbedtls.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\mbedtls.obj -Fd$(BUILD)\obj\mbedtls.pdb -nologo -GR- -Zi -Od -MDd $(DFLAGS) -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src\mbedtls\mbedtls.c $(LOG)
 
 #
 #   monitor.obj
 #
-DEPS_30 = $(DEPS_30) src\http.h
+DEPS_29 = $(DEPS_29) src\http.h
 
 build\$(CONFIG)\obj\monitor.obj: \
-    src\monitor.c $(DEPS_30)
+    src\monitor.c $(DEPS_29)
 	@echo .. [Compile] build\$(CONFIG)\obj\monitor.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\monitor.obj -Fd$(BUILD)\obj\monitor.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\monitor.c $(LOG)
 
 #
 #   mpr-mbedtls.obj
 #
-DEPS_31 = $(DEPS_31) build\$(CONFIG)\inc\mpr.h
+DEPS_30 = $(DEPS_30) build\$(CONFIG)\inc\mpr.h
 
 build\$(CONFIG)\obj\mpr-mbedtls.obj: \
-    src\mpr-mbedtls\mpr-mbedtls.c $(DEPS_31)
+    src\mpr-mbedtls\mpr-mbedtls.c $(DEPS_30)
 	@echo .. [Compile] build\$(CONFIG)\obj\mpr-mbedtls.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\mpr-mbedtls.obj -Fd$(BUILD)\obj\mpr-mbedtls.pdb -nologo -GR- -Zi -Od -MDd $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src\mpr-mbedtls\mpr-mbedtls.c $(LOG)
 
 #
 #   mpr-openssl.obj
 #
-DEPS_32 = $(DEPS_32) build\$(CONFIG)\inc\mpr.h
+DEPS_31 = $(DEPS_31) build\$(CONFIG)\inc\mpr.h
 
 build\$(CONFIG)\obj\mpr-openssl.obj: \
-    src\mpr-openssl\mpr-openssl.c $(DEPS_32)
+    src\mpr-openssl\mpr-openssl.c $(DEPS_31)
 	@echo .. [Compile] build\$(CONFIG)\obj\mpr-openssl.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\mpr-openssl.obj -Fd$(BUILD)\obj\mpr-openssl.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) "-I$(BUILD)\inc" "-I$(ME_COM_OPENSSL_PATH)\inc32" src\mpr-openssl\mpr-openssl.c $(LOG)
 
@@ -546,65 +536,65 @@ build\$(CONFIG)\obj\mpr-openssl.obj: \
 #   mpr.h
 #
 
-src\mpr\mpr.h: $(DEPS_33)
+src\mpr\mpr.h: $(DEPS_32)
 
 #
 #   mprLib.obj
 #
-DEPS_34 = $(DEPS_34) src\mpr\mpr.h
+DEPS_33 = $(DEPS_33) src\mpr\mpr.h
 
 build\$(CONFIG)\obj\mprLib.obj: \
-    src\mpr\mprLib.c $(DEPS_34)
+    src\mpr\mprLib.c $(DEPS_33)
 	@echo .. [Compile] build\$(CONFIG)\obj\mprLib.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\mprLib.obj -Fd$(BUILD)\obj\mprLib.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\mpr\mprLib.c $(LOG)
 
 #
 #   net.obj
 #
-DEPS_35 = $(DEPS_35) src\http.h
+DEPS_34 = $(DEPS_34) src\http.h
 
 build\$(CONFIG)\obj\net.obj: \
-    src\net.c $(DEPS_35)
+    src\net.c $(DEPS_34)
 	@echo .. [Compile] build\$(CONFIG)\obj\net.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\net.obj -Fd$(BUILD)\obj\net.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\net.c $(LOG)
 
 #
 #   netConnector.obj
 #
-DEPS_36 = $(DEPS_36) src\http.h
+DEPS_35 = $(DEPS_35) src\http.h
 
 build\$(CONFIG)\obj\netConnector.obj: \
-    src\netConnector.c $(DEPS_36)
+    src\netConnector.c $(DEPS_35)
 	@echo .. [Compile] build\$(CONFIG)\obj\netConnector.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\netConnector.obj -Fd$(BUILD)\obj\netConnector.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\netConnector.c $(LOG)
 
 #
 #   packet.obj
 #
-DEPS_37 = $(DEPS_37) src\http.h
+DEPS_36 = $(DEPS_36) src\http.h
 
 build\$(CONFIG)\obj\packet.obj: \
-    src\packet.c $(DEPS_37)
+    src\packet.c $(DEPS_36)
 	@echo .. [Compile] build\$(CONFIG)\obj\packet.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\packet.obj -Fd$(BUILD)\obj\packet.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\packet.c $(LOG)
 
 #
 #   pam.obj
 #
-DEPS_38 = $(DEPS_38) src\http.h
+DEPS_37 = $(DEPS_37) src\http.h
 
 build\$(CONFIG)\obj\pam.obj: \
-    src\pam.c $(DEPS_38)
+    src\pam.c $(DEPS_37)
 	@echo .. [Compile] build\$(CONFIG)\obj\pam.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\pam.obj -Fd$(BUILD)\obj\pam.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\pam.c $(LOG)
 
 #
 #   passHandler.obj
 #
-DEPS_39 = $(DEPS_39) src\http.h
+DEPS_38 = $(DEPS_38) src\http.h
 
 build\$(CONFIG)\obj\passHandler.obj: \
-    src\passHandler.c $(DEPS_39)
+    src\passHandler.c $(DEPS_38)
 	@echo .. [Compile] build\$(CONFIG)\obj\passHandler.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\passHandler.obj -Fd$(BUILD)\obj\passHandler.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\passHandler.c $(LOG)
 
@@ -612,119 +602,129 @@ build\$(CONFIG)\obj\passHandler.obj: \
 #   pcre.h
 #
 
-src\pcre\pcre.h: $(DEPS_40)
+src\pcre\pcre.h: $(DEPS_39)
 
 #
 #   pcre.obj
 #
-DEPS_41 = $(DEPS_41) build\$(CONFIG)\inc\me.h
-DEPS_41 = $(DEPS_41) src\pcre\pcre.h
+DEPS_40 = $(DEPS_40) build\$(CONFIG)\inc\me.h
+DEPS_40 = $(DEPS_40) src\pcre\pcre.h
 
 build\$(CONFIG)\obj\pcre.obj: \
-    src\pcre\pcre.c $(DEPS_41)
+    src\pcre\pcre.c $(DEPS_40)
 	@echo .. [Compile] build\$(CONFIG)\obj\pcre.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\pcre.obj -Fd$(BUILD)\obj\pcre.pdb $(CFLAGS) $(DFLAGS) $(IFLAGS) src\pcre\pcre.c $(LOG)
 
 #
 #   pipeline.obj
 #
-DEPS_42 = $(DEPS_42) src\http.h
+DEPS_41 = $(DEPS_41) src\http.h
 
 build\$(CONFIG)\obj\pipeline.obj: \
-    src\pipeline.c $(DEPS_42)
+    src\pipeline.c $(DEPS_41)
 	@echo .. [Compile] build\$(CONFIG)\obj\pipeline.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\pipeline.obj -Fd$(BUILD)\obj\pipeline.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\pipeline.c $(LOG)
 
 #
 #   process.obj
 #
-DEPS_43 = $(DEPS_43) src\http.h
+DEPS_42 = $(DEPS_42) src\http.h
 
 build\$(CONFIG)\obj\process.obj: \
-    src\process.c $(DEPS_43)
+    src\process.c $(DEPS_42)
 	@echo .. [Compile] build\$(CONFIG)\obj\process.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\process.obj -Fd$(BUILD)\obj\process.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\process.c $(LOG)
 
 #
 #   queue.obj
 #
-DEPS_44 = $(DEPS_44) src\http.h
+DEPS_43 = $(DEPS_43) src\http.h
 
 build\$(CONFIG)\obj\queue.obj: \
-    src\queue.c $(DEPS_44)
+    src\queue.c $(DEPS_43)
 	@echo .. [Compile] build\$(CONFIG)\obj\queue.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\queue.obj -Fd$(BUILD)\obj\queue.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\queue.c $(LOG)
 
 #
 #   rangeFilter.obj
 #
-DEPS_45 = $(DEPS_45) src\http.h
+DEPS_44 = $(DEPS_44) src\http.h
 
 build\$(CONFIG)\obj\rangeFilter.obj: \
-    src\rangeFilter.c $(DEPS_45)
+    src\rangeFilter.c $(DEPS_44)
 	@echo .. [Compile] build\$(CONFIG)\obj\rangeFilter.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\rangeFilter.obj -Fd$(BUILD)\obj\rangeFilter.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\rangeFilter.c $(LOG)
 
 #
 #   route.obj
 #
-DEPS_46 = $(DEPS_46) src\http.h
-DEPS_46 = $(DEPS_46) build\$(CONFIG)\inc\pcre.h
+DEPS_45 = $(DEPS_45) src\http.h
+DEPS_45 = $(DEPS_45) build\$(CONFIG)\inc\pcre.h
 
 build\$(CONFIG)\obj\route.obj: \
-    src\route.c $(DEPS_46)
+    src\route.c $(DEPS_45)
 	@echo .. [Compile] build\$(CONFIG)\obj\route.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\route.obj -Fd$(BUILD)\obj\route.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\route.c $(LOG)
 
 #
 #   rx.obj
 #
-DEPS_47 = $(DEPS_47) src\http.h
+DEPS_46 = $(DEPS_46) src\http.h
 
 build\$(CONFIG)\obj\rx.obj: \
-    src\rx.c $(DEPS_47)
+    src\rx.c $(DEPS_46)
 	@echo .. [Compile] build\$(CONFIG)\obj\rx.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\rx.obj -Fd$(BUILD)\obj\rx.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\rx.c $(LOG)
 
 #
 #   server.obj
 #
-DEPS_48 = $(DEPS_48) src\http.h
+DEPS_47 = $(DEPS_47) src\http.h
 
 build\$(CONFIG)\obj\server.obj: \
-    src\server.c $(DEPS_48)
+    src\server.c $(DEPS_47)
 	@echo .. [Compile] build\$(CONFIG)\obj\server.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\server.obj -Fd$(BUILD)\obj\server.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\server.c $(LOG)
 
 #
 #   service.obj
 #
-DEPS_49 = $(DEPS_49) src\http.h
+DEPS_48 = $(DEPS_48) src\http.h
 
 build\$(CONFIG)\obj\service.obj: \
-    src\service.c $(DEPS_49)
+    src\service.c $(DEPS_48)
 	@echo .. [Compile] build\$(CONFIG)\obj\service.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\service.obj -Fd$(BUILD)\obj\service.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\service.c $(LOG)
 
 #
 #   session.obj
 #
-DEPS_50 = $(DEPS_50) src\http.h
+DEPS_49 = $(DEPS_49) src\http.h
 
 build\$(CONFIG)\obj\session.obj: \
-    src\session.c $(DEPS_50)
+    src\session.c $(DEPS_49)
 	@echo .. [Compile] build\$(CONFIG)\obj\session.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\session.obj -Fd$(BUILD)\obj\session.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\session.c $(LOG)
 
 #
 #   stage.obj
 #
-DEPS_51 = $(DEPS_51) src\http.h
+DEPS_50 = $(DEPS_50) src\http.h
 
 build\$(CONFIG)\obj\stage.obj: \
-    src\stage.c $(DEPS_51)
+    src\stage.c $(DEPS_50)
 	@echo .. [Compile] build\$(CONFIG)\obj\stage.obj
 	"$(CC)" -c -Fo$(BUILD)\obj\stage.obj -Fd$(BUILD)\obj\stage.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\stage.c $(LOG)
+
+#
+#   stream.obj
+#
+DEPS_51 = $(DEPS_51) src\http.h
+
+build\$(CONFIG)\obj\stream.obj: \
+    src\stream.c $(DEPS_51)
+	@echo .. [Compile] build\$(CONFIG)\obj\stream.obj
+	"$(CC)" -c -Fo$(BUILD)\obj\stream.obj -Fd$(BUILD)\obj\stream.pdb $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)\inc32" src\stream.c $(LOG)
 
 #
 #   tailFilter.obj
@@ -817,7 +817,7 @@ DEPS_60 = $(DEPS_60) build\$(CONFIG)\obj\mbedtls.obj
 
 build\$(CONFIG)\bin\libmbedtls.lib: $(DEPS_60)
 	@echo ..... [Link] build\$(CONFIG)\bin\libmbedtls.lib
-	"lib.exe" -nologo -out:$(BUILD)\bin\libmbedtls.lib "$(BUILD)\obj\mbedtls.obj" $(LOG)
+	"$(AR)" -nologo -out:$(BUILD)\bin\libmbedtls.lib "$(BUILD)\obj\mbedtls.obj" $(LOG)
 !ENDIF
 
 !IF "$(ME_COM_MBEDTLS)" == "1"
@@ -829,7 +829,7 @@ DEPS_61 = $(DEPS_61) build\$(CONFIG)\obj\mpr-mbedtls.obj
 
 build\$(CONFIG)\bin\libmpr-mbedtls.lib: $(DEPS_61)
 	@echo ..... [Link] build\$(CONFIG)\bin\libmpr-mbedtls.lib
-	"lib.exe" -nologo -out:$(BUILD)\bin\libmpr-mbedtls.lib "$(BUILD)\obj\mpr-mbedtls.obj" $(LOG)
+	"$(AR)" -nologo -out:$(BUILD)\bin\libmpr-mbedtls.lib "$(BUILD)\obj\mpr-mbedtls.obj" $(LOG)
 !ENDIF
 
 !IF "$(ME_COM_OPENSSL)" == "1"
@@ -840,7 +840,7 @@ DEPS_62 = $(DEPS_62) build\$(CONFIG)\obj\mpr-openssl.obj
 
 build\$(CONFIG)\bin\libmpr-openssl.lib: $(DEPS_62)
 	@echo ..... [Link] build\$(CONFIG)\bin\libmpr-openssl.lib
-	"lib.exe" -nologo -out:$(BUILD)\bin\libmpr-openssl.lib "$(BUILD)\obj\mpr-openssl.obj" $(LOG)
+	"$(AR)" -nologo -out:$(BUILD)\bin\libmpr-openssl.lib "$(BUILD)\obj\mpr-openssl.obj" $(LOG)
 !ENDIF
 
 #
@@ -921,7 +921,6 @@ DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\cache.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\chunkFilter.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\client.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\config.obj
-DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\conn.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\digest.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\dirHandler.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\endpoint.obj
@@ -948,6 +947,7 @@ DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\server.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\service.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\session.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\stage.obj
+DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\stream.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\tailFilter.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\trace.obj
 DEPS_65 = $(DEPS_65) build\$(CONFIG)\obj\tx.obj
@@ -998,7 +998,7 @@ LIBS_65 = $(LIBS_65) libmpr.lib
 
 build\$(CONFIG)\bin\libhttp.dll: $(DEPS_65)
 	@echo ..... [Link] build\$(CONFIG)\bin\libhttp.dll
-	"$(LD)" -dll -out:$(BUILD)\bin\libhttp.dll -entry:_DllMainCRTStartup $(LDFLAGS) $(LIBPATHS)  "$(BUILD)\obj\actionHandler.obj" "$(BUILD)\obj\auth.obj" "$(BUILD)\obj\basic.obj" "$(BUILD)\obj\cache.obj" "$(BUILD)\obj\chunkFilter.obj" "$(BUILD)\obj\client.obj" "$(BUILD)\obj\config.obj" "$(BUILD)\obj\conn.obj" "$(BUILD)\obj\digest.obj" "$(BUILD)\obj\dirHandler.obj" "$(BUILD)\obj\endpoint.obj" "$(BUILD)\obj\error.obj" "$(BUILD)\obj\fileHandler.obj" "$(BUILD)\obj\host.obj" "$(BUILD)\obj\hpack.obj" "$(BUILD)\obj\http1Filter.obj" "$(BUILD)\obj\http2Filter.obj" "$(BUILD)\obj\huff.obj" "$(BUILD)\obj\monitor.obj" "$(BUILD)\obj\net.obj" "$(BUILD)\obj\netConnector.obj" "$(BUILD)\obj\packet.obj" "$(BUILD)\obj\pam.obj" "$(BUILD)\obj\passHandler.obj" "$(BUILD)\obj\pipeline.obj" "$(BUILD)\obj\process.obj" "$(BUILD)\obj\queue.obj" "$(BUILD)\obj\rangeFilter.obj" "$(BUILD)\obj\route.obj" "$(BUILD)\obj\rx.obj" "$(BUILD)\obj\server.obj" "$(BUILD)\obj\service.obj" "$(BUILD)\obj\session.obj" "$(BUILD)\obj\stage.obj" "$(BUILD)\obj\tailFilter.obj" "$(BUILD)\obj\trace.obj" "$(BUILD)\obj\tx.obj" "$(BUILD)\obj\uploadFilter.obj" "$(BUILD)\obj\uri.obj" "$(BUILD)\obj\user.obj" "$(BUILD)\obj\var.obj" "$(BUILD)\obj\webSockFilter.obj" $(LIBPATHS_65) $(LIBS_65) $(LIBS)  $(LOG)
+	"$(LD)" -dll -out:$(BUILD)\bin\libhttp.dll -entry:_DllMainCRTStartup $(LDFLAGS) $(LIBPATHS)  "$(BUILD)\obj\actionHandler.obj" "$(BUILD)\obj\auth.obj" "$(BUILD)\obj\basic.obj" "$(BUILD)\obj\cache.obj" "$(BUILD)\obj\chunkFilter.obj" "$(BUILD)\obj\client.obj" "$(BUILD)\obj\config.obj" "$(BUILD)\obj\digest.obj" "$(BUILD)\obj\dirHandler.obj" "$(BUILD)\obj\endpoint.obj" "$(BUILD)\obj\error.obj" "$(BUILD)\obj\fileHandler.obj" "$(BUILD)\obj\host.obj" "$(BUILD)\obj\hpack.obj" "$(BUILD)\obj\http1Filter.obj" "$(BUILD)\obj\http2Filter.obj" "$(BUILD)\obj\huff.obj" "$(BUILD)\obj\monitor.obj" "$(BUILD)\obj\net.obj" "$(BUILD)\obj\netConnector.obj" "$(BUILD)\obj\packet.obj" "$(BUILD)\obj\pam.obj" "$(BUILD)\obj\passHandler.obj" "$(BUILD)\obj\pipeline.obj" "$(BUILD)\obj\process.obj" "$(BUILD)\obj\queue.obj" "$(BUILD)\obj\rangeFilter.obj" "$(BUILD)\obj\route.obj" "$(BUILD)\obj\rx.obj" "$(BUILD)\obj\server.obj" "$(BUILD)\obj\service.obj" "$(BUILD)\obj\session.obj" "$(BUILD)\obj\stage.obj" "$(BUILD)\obj\stream.obj" "$(BUILD)\obj\tailFilter.obj" "$(BUILD)\obj\trace.obj" "$(BUILD)\obj\tx.obj" "$(BUILD)\obj\uploadFilter.obj" "$(BUILD)\obj\uri.obj" "$(BUILD)\obj\user.obj" "$(BUILD)\obj\var.obj" "$(BUILD)\obj\webSockFilter.obj" $(LIBPATHS_65) $(LIBS_65) $(LIBS)  $(LOG)
 
 #
 #   http

@@ -112,7 +112,6 @@
     <ClCompile Include="..\..\src\chunkFilter.c" />
     <ClCompile Include="..\..\src\client.c" />
     <ClCompile Include="..\..\src\config.c" />
-    <ClCompile Include="..\..\src\conn.c" />
     <ClCompile Include="..\..\src\digest.c" />
     <ClCompile Include="..\..\src\dirHandler.c" />
     <ClCompile Include="..\..\src\endpoint.c" />
@@ -139,6 +138,7 @@
     <ClCompile Include="..\..\src\service.c" />
     <ClCompile Include="..\..\src\session.c" />
     <ClCompile Include="..\..\src\stage.c" />
+    <ClCompile Include="..\..\src\stream.c" />
     <ClCompile Include="..\..\src\tailFilter.c" />
     <ClCompile Include="..\..\src\trace.c" />
     <ClCompile Include="..\..\src\tx.c" />

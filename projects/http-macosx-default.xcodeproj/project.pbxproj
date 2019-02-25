@@ -62,33 +62,33 @@
 		3267F1BF32680DC400000022 /* chunkFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000023 /* chunkFilter.c */; };
 		3267F1BF32680DC400000024 /* client.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000025 /* client.c */; };
 		3267F1BF32680DC400000026 /* config.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000027 /* config.c */; };
-		3267F1BF32680DC400000028 /* conn.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000029 /* conn.c */; };
-		3267F1BF32680DC40000002A /* digest.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000002B /* digest.c */; };
-		3267F1BF32680DC40000002C /* dirHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000002D /* dirHandler.c */; };
-		3267F1BF32680DC40000002E /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000002F /* endpoint.c */; };
-		3267F1BF32680DC400000030 /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000031 /* error.c */; };
-		3267F1BF32680DC400000032 /* fileHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000033 /* fileHandler.c */; };
-		3267F1BF32680DC400000034 /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000035 /* host.c */; };
-		3267F1BF32680DC400000036 /* hpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000037 /* hpack.c */; };
-		3267F1BF32680DC400000038 /* http1Filter.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000039 /* http1Filter.c */; };
-		3267F1BF32680DC40000003A /* http2Filter.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000003B /* http2Filter.c */; };
-		3267F1BF32680DC40000003C /* huff.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000003D /* huff.c */; };
-		3267F1BF32680DC40000003E /* monitor.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000003F /* monitor.c */; };
-		3267F1BF32680DC400000040 /* net.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000041 /* net.c */; };
-		3267F1BF32680DC400000042 /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000043 /* netConnector.c */; };
-		3267F1BF32680DC400000044 /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000045 /* packet.c */; };
-		3267F1BF32680DC400000046 /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000047 /* pam.c */; };
-		3267F1BF32680DC400000048 /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000049 /* passHandler.c */; };
-		3267F1BF32680DC40000004A /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000004B /* pipeline.c */; };
-		3267F1BF32680DC40000004C /* process.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000004D /* process.c */; };
-		3267F1BF32680DC40000004E /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000004F /* queue.c */; };
-		3267F1BF32680DC400000050 /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000051 /* rangeFilter.c */; };
-		3267F1BF32680DC400000052 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000053 /* route.c */; };
-		3267F1BF32680DC400000054 /* rx.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000055 /* rx.c */; };
-		3267F1BF32680DC400000056 /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000057 /* server.c */; };
-		3267F1BF32680DC400000058 /* service.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000059 /* service.c */; };
-		3267F1BF32680DC40000005A /* session.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000005B /* session.c */; };
-		3267F1BF32680DC40000005C /* stage.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000005D /* stage.c */; };
+		3267F1BF32680DC400000028 /* digest.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000029 /* digest.c */; };
+		3267F1BF32680DC40000002A /* dirHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000002B /* dirHandler.c */; };
+		3267F1BF32680DC40000002C /* endpoint.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000002D /* endpoint.c */; };
+		3267F1BF32680DC40000002E /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000002F /* error.c */; };
+		3267F1BF32680DC400000030 /* fileHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000031 /* fileHandler.c */; };
+		3267F1BF32680DC400000032 /* host.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000033 /* host.c */; };
+		3267F1BF32680DC400000034 /* hpack.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000035 /* hpack.c */; };
+		3267F1BF32680DC400000036 /* http1Filter.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000037 /* http1Filter.c */; };
+		3267F1BF32680DC400000038 /* http2Filter.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000039 /* http2Filter.c */; };
+		3267F1BF32680DC40000003A /* huff.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000003B /* huff.c */; };
+		3267F1BF32680DC40000003C /* monitor.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000003D /* monitor.c */; };
+		3267F1BF32680DC40000003E /* net.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000003F /* net.c */; };
+		3267F1BF32680DC400000040 /* netConnector.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000041 /* netConnector.c */; };
+		3267F1BF32680DC400000042 /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000043 /* packet.c */; };
+		3267F1BF32680DC400000044 /* pam.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000045 /* pam.c */; };
+		3267F1BF32680DC400000046 /* passHandler.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000047 /* passHandler.c */; };
+		3267F1BF32680DC400000048 /* pipeline.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000049 /* pipeline.c */; };
+		3267F1BF32680DC40000004A /* process.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000004B /* process.c */; };
+		3267F1BF32680DC40000004C /* queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000004D /* queue.c */; };
+		3267F1BF32680DC40000004E /* rangeFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000004F /* rangeFilter.c */; };
+		3267F1BF32680DC400000050 /* route.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000051 /* route.c */; };
+		3267F1BF32680DC400000052 /* rx.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000053 /* rx.c */; };
+		3267F1BF32680DC400000054 /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000055 /* server.c */; };
+		3267F1BF32680DC400000056 /* service.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000057 /* service.c */; };
+		3267F1BF32680DC400000058 /* session.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000059 /* session.c */; };
+		3267F1BF32680DC40000005A /* stage.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000005B /* stage.c */; };
+		3267F1BF32680DC40000005C /* stream.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000005D /* stream.c */; };
 		3267F1BF32680DC40000005E /* tailFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000005F /* tailFilter.c */; };
 		3267F1BF32680DC400000060 /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000061 /* trace.c */; };
 		3267F1BF32680DC400000062 /* tx.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000063 /* tx.c */; };
@@ -101,7 +101,7 @@
 		3267F1BF32680DC400000070 /* mprLib.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000071 /* mprLib.c */; };
 		3267F1BF32680DC400000072 /* mpr-mbedtls.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000073 /* mpr-mbedtls.c */; };
 		3267F1BF32680DC400000074 /* pcre.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000075 /* pcre.c */; };
-		3267F1BF32680DC400000056 /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000057 /* server.c */; };
+		3267F1BF32680DC400000054 /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000055 /* server.c */; };
 		3267F1BF32680DC400000076 /* libhttp.dylib for http */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000077; };
 		3267F1BF32680DC400000078 /* libpcre.dylib for http */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC400000079; };
 		3267F1BF32680DC40000007A /* libmpr.dylib for http */ = {isa = PBXBuildFile; fileRef = 3267F1BF32680DC40000007B; };
@@ -373,34 +373,34 @@
 		3267F1BF32680DC400000023 /* chunkFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chunkFilter.c; path = src/chunkFilter.c; sourceTree = "<group>"; };
 		3267F1BF32680DC400000025 /* client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = client.c; path = src/client.c; sourceTree = "<group>"; };
 		3267F1BF32680DC400000027 /* config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = config.c; path = src/config.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000029 /* conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = conn.c; path = src/conn.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000002B /* digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = digest.c; path = src/digest.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000002D /* dirHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dirHandler.c; path = src/dirHandler.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000002F /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000029 /* digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = digest.c; path = src/digest.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000002B /* dirHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dirHandler.c; path = src/dirHandler.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000002D /* endpoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = endpoint.c; path = src/endpoint.c; sourceTree = "<group>"; };
 		3267F1BF32680DC4000000B7 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = build/macosx-x64-default/inc/pcre.h; sourceTree = "<group>"; };
-		3267F1BF32680DC400000031 /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000033 /* fileHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fileHandler.c; path = src/fileHandler.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000035 /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000037 /* hpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hpack.c; path = src/hpack.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000039 /* http1Filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http1Filter.c; path = src/http1Filter.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000003B /* http2Filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http2Filter.c; path = src/http2Filter.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000003D /* huff.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = huff.c; path = src/huff.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000003F /* monitor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = monitor.c; path = src/monitor.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000041 /* net.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = net.c; path = src/net.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000043 /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000045 /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000047 /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000049 /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000004B /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000004D /* process.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = process.c; path = src/process.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000004F /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000051 /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000053 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000055 /* rx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rx.c; path = src/rx.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000057 /* server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = server.c; path = src/server.c; sourceTree = "<group>"; };
-		3267F1BF32680DC400000059 /* service.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = service.c; path = src/service.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000005B /* session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = session.c; path = src/session.c; sourceTree = "<group>"; };
-		3267F1BF32680DC40000005D /* stage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stage.c; path = src/stage.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000002F /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = src/error.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000031 /* fileHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fileHandler.c; path = src/fileHandler.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000033 /* host.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = host.c; path = src/host.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000035 /* hpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hpack.c; path = src/hpack.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000037 /* http1Filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http1Filter.c; path = src/http1Filter.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000039 /* http2Filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http2Filter.c; path = src/http2Filter.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000003B /* huff.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = huff.c; path = src/huff.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000003D /* monitor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = monitor.c; path = src/monitor.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000003F /* net.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = net.c; path = src/net.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000041 /* netConnector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = netConnector.c; path = src/netConnector.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000043 /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = packet.c; path = src/packet.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000045 /* pam.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pam.c; path = src/pam.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000047 /* passHandler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = passHandler.c; path = src/passHandler.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000049 /* pipeline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipeline.c; path = src/pipeline.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000004B /* process.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = process.c; path = src/process.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000004D /* queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = queue.c; path = src/queue.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000004F /* rangeFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rangeFilter.c; path = src/rangeFilter.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000051 /* route.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = route.c; path = src/route.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000053 /* rx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rx.c; path = src/rx.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000055 /* server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = server.c; path = src/server.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000057 /* service.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = service.c; path = src/service.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000059 /* session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = session.c; path = src/session.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000005B /* stage.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stage.c; path = src/stage.c; sourceTree = "<group>"; };
+		3267F1BF32680DC40000005D /* stream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stream.c; path = src/stream.c; sourceTree = "<group>"; };
 		3267F1BF32680DC40000005F /* tailFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tailFilter.c; path = src/tailFilter.c; sourceTree = "<group>"; };
 		3267F1BF32680DC400000061 /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };
 		3267F1BF32680DC400000063 /* tx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tx.c; path = src/tx.c; sourceTree = "<group>"; };
@@ -423,7 +423,7 @@
 		3267F1BF32680DC4000000BB /* me.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = me.h; path = build/macosx-x64-default/inc/me.h; sourceTree = "<group>"; };
 		3267F1BF32680DC4000000BC /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = src/pcre/pcre.h; sourceTree = "<group>"; };
 		3267F1BF32680DC400000079 /* libpcre */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libpcre.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		3267F1BF32680DC400000057 /* server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = server.c; path = src/server.c; sourceTree = "<group>"; };
+		3267F1BF32680DC400000055 /* server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = server.c; path = src/server.c; sourceTree = "<group>"; };
 		3267F1BF32680DC4000000BD /* server */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = server; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -533,33 +533,33 @@
 				3267F1BF32680DC400000023 /* chunkFilter.c */,
 				3267F1BF32680DC400000025 /* client.c */,
 				3267F1BF32680DC400000027 /* config.c */,
-				3267F1BF32680DC400000029 /* conn.c */,
-				3267F1BF32680DC40000002B /* digest.c */,
-				3267F1BF32680DC40000002D /* dirHandler.c */,
-				3267F1BF32680DC40000002F /* endpoint.c */,
-				3267F1BF32680DC400000031 /* error.c */,
-				3267F1BF32680DC400000033 /* fileHandler.c */,
-				3267F1BF32680DC400000035 /* host.c */,
-				3267F1BF32680DC400000037 /* hpack.c */,
-				3267F1BF32680DC400000039 /* http1Filter.c */,
-				3267F1BF32680DC40000003B /* http2Filter.c */,
-				3267F1BF32680DC40000003D /* huff.c */,
-				3267F1BF32680DC40000003F /* monitor.c */,
-				3267F1BF32680DC400000041 /* net.c */,
-				3267F1BF32680DC400000043 /* netConnector.c */,
-				3267F1BF32680DC400000045 /* packet.c */,
-				3267F1BF32680DC400000047 /* pam.c */,
-				3267F1BF32680DC400000049 /* passHandler.c */,
-				3267F1BF32680DC40000004B /* pipeline.c */,
-				3267F1BF32680DC40000004D /* process.c */,
-				3267F1BF32680DC40000004F /* queue.c */,
-				3267F1BF32680DC400000051 /* rangeFilter.c */,
-				3267F1BF32680DC400000053 /* route.c */,
-				3267F1BF32680DC400000055 /* rx.c */,
-				3267F1BF32680DC400000057 /* server.c */,
-				3267F1BF32680DC400000059 /* service.c */,
-				3267F1BF32680DC40000005B /* session.c */,
-				3267F1BF32680DC40000005D /* stage.c */,
+				3267F1BF32680DC400000029 /* digest.c */,
+				3267F1BF32680DC40000002B /* dirHandler.c */,
+				3267F1BF32680DC40000002D /* endpoint.c */,
+				3267F1BF32680DC40000002F /* error.c */,
+				3267F1BF32680DC400000031 /* fileHandler.c */,
+				3267F1BF32680DC400000033 /* host.c */,
+				3267F1BF32680DC400000035 /* hpack.c */,
+				3267F1BF32680DC400000037 /* http1Filter.c */,
+				3267F1BF32680DC400000039 /* http2Filter.c */,
+				3267F1BF32680DC40000003B /* huff.c */,
+				3267F1BF32680DC40000003D /* monitor.c */,
+				3267F1BF32680DC40000003F /* net.c */,
+				3267F1BF32680DC400000041 /* netConnector.c */,
+				3267F1BF32680DC400000043 /* packet.c */,
+				3267F1BF32680DC400000045 /* pam.c */,
+				3267F1BF32680DC400000047 /* passHandler.c */,
+				3267F1BF32680DC400000049 /* pipeline.c */,
+				3267F1BF32680DC40000004B /* process.c */,
+				3267F1BF32680DC40000004D /* queue.c */,
+				3267F1BF32680DC40000004F /* rangeFilter.c */,
+				3267F1BF32680DC400000051 /* route.c */,
+				3267F1BF32680DC400000053 /* rx.c */,
+				3267F1BF32680DC400000055 /* server.c */,
+				3267F1BF32680DC400000057 /* service.c */,
+				3267F1BF32680DC400000059 /* session.c */,
+				3267F1BF32680DC40000005B /* stage.c */,
+				3267F1BF32680DC40000005D /* stream.c */,
 				3267F1BF32680DC40000005F /* tailFilter.c */,
 				3267F1BF32680DC400000061 /* trace.c */,
 				3267F1BF32680DC400000063 /* tx.c */,
@@ -615,7 +615,7 @@
 		3267F1BF32680DC4000000CC /* server */ = {
                 isa = PBXGroup;
                 children = (
-				3267F1BF32680DC400000057 /* server.c */,
+				3267F1BF32680DC400000055 /* server.c */,
 			);
                 name = "server";
                 path = ..;
@@ -931,33 +931,33 @@ fi";
 				3267F1BF32680DC400000022 /* chunkFilter.c in Sources */,
 				3267F1BF32680DC400000024 /* client.c in Sources */,
 				3267F1BF32680DC400000026 /* config.c in Sources */,
-				3267F1BF32680DC400000028 /* conn.c in Sources */,
-				3267F1BF32680DC40000002A /* digest.c in Sources */,
-				3267F1BF32680DC40000002C /* dirHandler.c in Sources */,
-				3267F1BF32680DC40000002E /* endpoint.c in Sources */,
-				3267F1BF32680DC400000030 /* error.c in Sources */,
-				3267F1BF32680DC400000032 /* fileHandler.c in Sources */,
-				3267F1BF32680DC400000034 /* host.c in Sources */,
-				3267F1BF32680DC400000036 /* hpack.c in Sources */,
-				3267F1BF32680DC400000038 /* http1Filter.c in Sources */,
-				3267F1BF32680DC40000003A /* http2Filter.c in Sources */,
-				3267F1BF32680DC40000003C /* huff.c in Sources */,
-				3267F1BF32680DC40000003E /* monitor.c in Sources */,
-				3267F1BF32680DC400000040 /* net.c in Sources */,
-				3267F1BF32680DC400000042 /* netConnector.c in Sources */,
-				3267F1BF32680DC400000044 /* packet.c in Sources */,
-				3267F1BF32680DC400000046 /* pam.c in Sources */,
-				3267F1BF32680DC400000048 /* passHandler.c in Sources */,
-				3267F1BF32680DC40000004A /* pipeline.c in Sources */,
-				3267F1BF32680DC40000004C /* process.c in Sources */,
-				3267F1BF32680DC40000004E /* queue.c in Sources */,
-				3267F1BF32680DC400000050 /* rangeFilter.c in Sources */,
-				3267F1BF32680DC400000052 /* route.c in Sources */,
-				3267F1BF32680DC400000054 /* rx.c in Sources */,
-				3267F1BF32680DC400000056 /* server.c in Sources */,
-				3267F1BF32680DC400000058 /* service.c in Sources */,
-				3267F1BF32680DC40000005A /* session.c in Sources */,
-				3267F1BF32680DC40000005C /* stage.c in Sources */,
+				3267F1BF32680DC400000028 /* digest.c in Sources */,
+				3267F1BF32680DC40000002A /* dirHandler.c in Sources */,
+				3267F1BF32680DC40000002C /* endpoint.c in Sources */,
+				3267F1BF32680DC40000002E /* error.c in Sources */,
+				3267F1BF32680DC400000030 /* fileHandler.c in Sources */,
+				3267F1BF32680DC400000032 /* host.c in Sources */,
+				3267F1BF32680DC400000034 /* hpack.c in Sources */,
+				3267F1BF32680DC400000036 /* http1Filter.c in Sources */,
+				3267F1BF32680DC400000038 /* http2Filter.c in Sources */,
+				3267F1BF32680DC40000003A /* huff.c in Sources */,
+				3267F1BF32680DC40000003C /* monitor.c in Sources */,
+				3267F1BF32680DC40000003E /* net.c in Sources */,
+				3267F1BF32680DC400000040 /* netConnector.c in Sources */,
+				3267F1BF32680DC400000042 /* packet.c in Sources */,
+				3267F1BF32680DC400000044 /* pam.c in Sources */,
+				3267F1BF32680DC400000046 /* passHandler.c in Sources */,
+				3267F1BF32680DC400000048 /* pipeline.c in Sources */,
+				3267F1BF32680DC40000004A /* process.c in Sources */,
+				3267F1BF32680DC40000004C /* queue.c in Sources */,
+				3267F1BF32680DC40000004E /* rangeFilter.c in Sources */,
+				3267F1BF32680DC400000050 /* route.c in Sources */,
+				3267F1BF32680DC400000052 /* rx.c in Sources */,
+				3267F1BF32680DC400000054 /* server.c in Sources */,
+				3267F1BF32680DC400000056 /* service.c in Sources */,
+				3267F1BF32680DC400000058 /* session.c in Sources */,
+				3267F1BF32680DC40000005A /* stage.c in Sources */,
+				3267F1BF32680DC40000005C /* stream.c in Sources */,
 				3267F1BF32680DC40000005E /* tailFilter.c in Sources */,
 				3267F1BF32680DC400000060 /* trace.c in Sources */,
 				3267F1BF32680DC400000062 /* tx.c in Sources */,
@@ -1005,7 +1005,7 @@ fi";
     			isa = PBXSourcesBuildPhase;
     			buildActionMask = 2147483647;
     			files = (
-    				3267F1BF32680DC400000056 /* server.c in Sources */,
+    				3267F1BF32680DC400000054 /* server.c in Sources */,
     			);
     			runOnlyForDeploymentPostprocessing = 0;
     		};
@@ -1251,6 +1251,8 @@ ENABLE_TESTABILITY = YES;
 					"$(inherited)"
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_REENTRANT",
+					"PIC",
 					"ME_DEBUG=1",
 					"$(inherited)"
 				);
@@ -1337,6 +1339,8 @@ ENABLE_TESTABILITY = YES;
 					"$(inherited)"
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_REENTRANT",
+					"PIC",
 					"ME_DEBUG=0",
 					"$(inherited)"
 				);

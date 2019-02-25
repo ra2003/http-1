@@ -3,12 +3,13 @@
 #
 
 NAME                  := http
-VERSION               := 8.0.0
+VERSION               := 8.0.1
 PROFILE               ?= default
 ARCH                  ?= $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
 CC_ARCH               ?= $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
 OS                    ?= macosx
 CC                    ?= clang
+AR                    ?= ar
 CONFIG                ?= $(OS)-$(ARCH)-$(PROFILE)
 BUILD                 ?= build/$(CONFIG)
 LBIN                  ?= $(BUILD)/bin
@@ -38,8 +39,8 @@ ifeq ($(ME_COM_OPENSSL),1)
     ME_COM_SSL := 1
 endif
 
-CFLAGS                += -g -w
-DFLAGS                += -DME_DEBUG=1 $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_COM_COMPILER=$(ME_COM_COMPILER) -DME_COM_LIB=$(ME_COM_LIB) -DME_COM_MATRIXSSL=$(ME_COM_MATRIXSSL) -DME_COM_MBEDTLS=$(ME_COM_MBEDTLS) -DME_COM_MPR=$(ME_COM_MPR) -DME_COM_NANOSSL=$(ME_COM_NANOSSL) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_VXWORKS=$(ME_COM_VXWORKS) 
+CFLAGS                += -fPIC -w
+DFLAGS                += -DME_DEBUG=1 -D_REENTRANT -DPIC $(patsubst %,-D%,$(filter ME_%,$(MAKEFLAGS))) -DME_COM_COMPILER=$(ME_COM_COMPILER) -DME_COM_LIB=$(ME_COM_LIB) -DME_COM_MATRIXSSL=$(ME_COM_MATRIXSSL) -DME_COM_MBEDTLS=$(ME_COM_MBEDTLS) -DME_COM_MPR=$(ME_COM_MPR) -DME_COM_NANOSSL=$(ME_COM_NANOSSL) -DME_COM_OPENSSL=$(ME_COM_OPENSSL) -DME_COM_OSDEP=$(ME_COM_OSDEP) -DME_COM_PCRE=$(ME_COM_PCRE) -DME_COM_SSL=$(ME_COM_SSL) -DME_COM_VXWORKS=$(ME_COM_VXWORKS) 
 IFLAGS                += "-I$(BUILD)/inc"
 LDFLAGS               += '-Wl,-rpath,@executable_path/' '-Wl,-rpath,@loader_path/'
 LIBPATHS              += -L$(BUILD)/bin
@@ -116,7 +117,6 @@ clean:
 	rm -f "$(BUILD)/obj/chunkFilter.o"
 	rm -f "$(BUILD)/obj/client.o"
 	rm -f "$(BUILD)/obj/config.o"
-	rm -f "$(BUILD)/obj/conn.o"
 	rm -f "$(BUILD)/obj/digest.o"
 	rm -f "$(BUILD)/obj/dirHandler.o"
 	rm -f "$(BUILD)/obj/endpoint.o"
@@ -149,6 +149,7 @@ clean:
 	rm -f "$(BUILD)/obj/service.o"
 	rm -f "$(BUILD)/obj/session.o"
 	rm -f "$(BUILD)/obj/stage.o"
+	rm -f "$(BUILD)/obj/stream.o"
 	rm -f "$(BUILD)/obj/tailFilter.o"
 	rm -f "$(BUILD)/obj/trace.o"
 	rm -f "$(BUILD)/obj/tx.o"
@@ -315,124 +316,114 @@ $(BUILD)/obj/config.o: \
 	$(CC) -c -o $(BUILD)/obj/config.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/config.c
 
 #
-#   conn.o
+#   digest.o
 #
 DEPS_16 += src/http.h
 
-$(BUILD)/obj/conn.o: \
-    src/conn.c $(DEPS_16)
-	@echo '   [Compile] $(BUILD)/obj/conn.o'
-	$(CC) -c -o $(BUILD)/obj/conn.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/conn.c
-
-#
-#   digest.o
-#
-DEPS_17 += src/http.h
-
 $(BUILD)/obj/digest.o: \
-    src/digest.c $(DEPS_17)
+    src/digest.c $(DEPS_16)
 	@echo '   [Compile] $(BUILD)/obj/digest.o'
 	$(CC) -c -o $(BUILD)/obj/digest.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/digest.c
 
 #
 #   dirHandler.o
 #
-DEPS_18 += src/http.h
+DEPS_17 += src/http.h
 
 $(BUILD)/obj/dirHandler.o: \
-    src/dirHandler.c $(DEPS_18)
+    src/dirHandler.c $(DEPS_17)
 	@echo '   [Compile] $(BUILD)/obj/dirHandler.o'
 	$(CC) -c -o $(BUILD)/obj/dirHandler.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/dirHandler.c
 
 #
 #   endpoint.o
 #
-DEPS_19 += src/http.h
-DEPS_19 += $(BUILD)/inc/pcre.h
+DEPS_18 += src/http.h
+DEPS_18 += $(BUILD)/inc/pcre.h
 
 $(BUILD)/obj/endpoint.o: \
-    src/endpoint.c $(DEPS_19)
+    src/endpoint.c $(DEPS_18)
 	@echo '   [Compile] $(BUILD)/obj/endpoint.o'
 	$(CC) -c -o $(BUILD)/obj/endpoint.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/endpoint.c
 
 #
 #   error.o
 #
-DEPS_20 += src/http.h
+DEPS_19 += src/http.h
 
 $(BUILD)/obj/error.o: \
-    src/error.c $(DEPS_20)
+    src/error.c $(DEPS_19)
 	@echo '   [Compile] $(BUILD)/obj/error.o'
 	$(CC) -c -o $(BUILD)/obj/error.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/error.c
 
 #
 #   fileHandler.o
 #
-DEPS_21 += src/http.h
+DEPS_20 += src/http.h
 
 $(BUILD)/obj/fileHandler.o: \
-    src/fileHandler.c $(DEPS_21)
+    src/fileHandler.c $(DEPS_20)
 	@echo '   [Compile] $(BUILD)/obj/fileHandler.o'
 	$(CC) -c -o $(BUILD)/obj/fileHandler.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/fileHandler.c
 
 #
 #   host.o
 #
-DEPS_22 += src/http.h
-DEPS_22 += $(BUILD)/inc/pcre.h
+DEPS_21 += src/http.h
+DEPS_21 += $(BUILD)/inc/pcre.h
 
 $(BUILD)/obj/host.o: \
-    src/host.c $(DEPS_22)
+    src/host.c $(DEPS_21)
 	@echo '   [Compile] $(BUILD)/obj/host.o'
 	$(CC) -c -o $(BUILD)/obj/host.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/host.c
 
 #
 #   hpack.o
 #
-DEPS_23 += src/http.h
+DEPS_22 += src/http.h
 
 $(BUILD)/obj/hpack.o: \
-    src/hpack.c $(DEPS_23)
+    src/hpack.c $(DEPS_22)
 	@echo '   [Compile] $(BUILD)/obj/hpack.o'
 	$(CC) -c -o $(BUILD)/obj/hpack.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/hpack.c
 
 #
 #   http.o
 #
-DEPS_24 += src/http.h
+DEPS_23 += src/http.h
 
 $(BUILD)/obj/http.o: \
-    src/http.c $(DEPS_24)
+    src/http.c $(DEPS_23)
 	@echo '   [Compile] $(BUILD)/obj/http.o'
 	$(CC) -c -o $(BUILD)/obj/http.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/http.c
 
 #
 #   http1Filter.o
 #
-DEPS_25 += src/http.h
+DEPS_24 += src/http.h
 
 $(BUILD)/obj/http1Filter.o: \
-    src/http1Filter.c $(DEPS_25)
+    src/http1Filter.c $(DEPS_24)
 	@echo '   [Compile] $(BUILD)/obj/http1Filter.o'
 	$(CC) -c -o $(BUILD)/obj/http1Filter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/http1Filter.c
 
 #
 #   http2Filter.o
 #
-DEPS_26 += src/http.h
+DEPS_25 += src/http.h
 
 $(BUILD)/obj/http2Filter.o: \
-    src/http2Filter.c $(DEPS_26)
+    src/http2Filter.c $(DEPS_25)
 	@echo '   [Compile] $(BUILD)/obj/http2Filter.o'
 	$(CC) -c -o $(BUILD)/obj/http2Filter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/http2Filter.c
 
 #
 #   huff.o
 #
-DEPS_27 += src/http.h
+DEPS_26 += src/http.h
 
 $(BUILD)/obj/huff.o: \
-    src/huff.c $(DEPS_27)
+    src/huff.c $(DEPS_26)
 	@echo '   [Compile] $(BUILD)/obj/huff.o'
 	$(CC) -c -o $(BUILD)/obj/huff.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/huff.c
 
@@ -440,45 +431,45 @@ $(BUILD)/obj/huff.o: \
 #   mbedtls.h
 #
 
-src/mbedtls/mbedtls.h: $(DEPS_28)
+src/mbedtls/mbedtls.h: $(DEPS_27)
 
 #
 #   mbedtls.o
 #
-DEPS_29 += src/mbedtls/mbedtls.h
+DEPS_28 += src/mbedtls/mbedtls.h
 
 $(BUILD)/obj/mbedtls.o: \
-    src/mbedtls/mbedtls.c $(DEPS_29)
+    src/mbedtls/mbedtls.c $(DEPS_28)
 	@echo '   [Compile] $(BUILD)/obj/mbedtls.o'
 	$(CC) -c -o $(BUILD)/obj/mbedtls.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/mbedtls/mbedtls.c
 
 #
 #   monitor.o
 #
-DEPS_30 += src/http.h
+DEPS_29 += src/http.h
 
 $(BUILD)/obj/monitor.o: \
-    src/monitor.c $(DEPS_30)
+    src/monitor.c $(DEPS_29)
 	@echo '   [Compile] $(BUILD)/obj/monitor.o'
 	$(CC) -c -o $(BUILD)/obj/monitor.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/monitor.c
 
 #
 #   mpr-mbedtls.o
 #
-DEPS_31 += $(BUILD)/inc/mpr.h
+DEPS_30 += $(BUILD)/inc/mpr.h
 
 $(BUILD)/obj/mpr-mbedtls.o: \
-    src/mpr-mbedtls/mpr-mbedtls.c $(DEPS_31)
+    src/mpr-mbedtls/mpr-mbedtls.c $(DEPS_30)
 	@echo '   [Compile] $(BUILD)/obj/mpr-mbedtls.o'
 	$(CC) -c -o $(BUILD)/obj/mpr-mbedtls.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" $(IFLAGS) src/mpr-mbedtls/mpr-mbedtls.c
 
 #
 #   mpr-openssl.o
 #
-DEPS_32 += $(BUILD)/inc/mpr.h
+DEPS_31 += $(BUILD)/inc/mpr.h
 
 $(BUILD)/obj/mpr-openssl.o: \
-    src/mpr-openssl/mpr-openssl.c $(DEPS_32)
+    src/mpr-openssl/mpr-openssl.c $(DEPS_31)
 	@echo '   [Compile] $(BUILD)/obj/mpr-openssl.o'
 	$(CC) -c -o $(BUILD)/obj/mpr-openssl.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) "-I$(BUILD)/inc" "-I$(ME_COM_OPENSSL_PATH)/include" src/mpr-openssl/mpr-openssl.c
 
@@ -486,65 +477,65 @@ $(BUILD)/obj/mpr-openssl.o: \
 #   mpr.h
 #
 
-src/mpr/mpr.h: $(DEPS_33)
+src/mpr/mpr.h: $(DEPS_32)
 
 #
 #   mprLib.o
 #
-DEPS_34 += src/mpr/mpr.h
+DEPS_33 += src/mpr/mpr.h
 
 $(BUILD)/obj/mprLib.o: \
-    src/mpr/mprLib.c $(DEPS_34)
+    src/mpr/mprLib.c $(DEPS_33)
 	@echo '   [Compile] $(BUILD)/obj/mprLib.o'
 	$(CC) -c -o $(BUILD)/obj/mprLib.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/mpr/mprLib.c
 
 #
 #   net.o
 #
-DEPS_35 += src/http.h
+DEPS_34 += src/http.h
 
 $(BUILD)/obj/net.o: \
-    src/net.c $(DEPS_35)
+    src/net.c $(DEPS_34)
 	@echo '   [Compile] $(BUILD)/obj/net.o'
 	$(CC) -c -o $(BUILD)/obj/net.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/net.c
 
 #
 #   netConnector.o
 #
-DEPS_36 += src/http.h
+DEPS_35 += src/http.h
 
 $(BUILD)/obj/netConnector.o: \
-    src/netConnector.c $(DEPS_36)
+    src/netConnector.c $(DEPS_35)
 	@echo '   [Compile] $(BUILD)/obj/netConnector.o'
 	$(CC) -c -o $(BUILD)/obj/netConnector.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/netConnector.c
 
 #
 #   packet.o
 #
-DEPS_37 += src/http.h
+DEPS_36 += src/http.h
 
 $(BUILD)/obj/packet.o: \
-    src/packet.c $(DEPS_37)
+    src/packet.c $(DEPS_36)
 	@echo '   [Compile] $(BUILD)/obj/packet.o'
 	$(CC) -c -o $(BUILD)/obj/packet.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/packet.c
 
 #
 #   pam.o
 #
-DEPS_38 += src/http.h
+DEPS_37 += src/http.h
 
 $(BUILD)/obj/pam.o: \
-    src/pam.c $(DEPS_38)
+    src/pam.c $(DEPS_37)
 	@echo '   [Compile] $(BUILD)/obj/pam.o'
 	$(CC) -c -o $(BUILD)/obj/pam.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/pam.c
 
 #
 #   passHandler.o
 #
-DEPS_39 += src/http.h
+DEPS_38 += src/http.h
 
 $(BUILD)/obj/passHandler.o: \
-    src/passHandler.c $(DEPS_39)
+    src/passHandler.c $(DEPS_38)
 	@echo '   [Compile] $(BUILD)/obj/passHandler.o'
 	$(CC) -c -o $(BUILD)/obj/passHandler.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/passHandler.c
 
@@ -552,119 +543,129 @@ $(BUILD)/obj/passHandler.o: \
 #   pcre.h
 #
 
-src/pcre/pcre.h: $(DEPS_40)
+src/pcre/pcre.h: $(DEPS_39)
 
 #
 #   pcre.o
 #
-DEPS_41 += $(BUILD)/inc/me.h
-DEPS_41 += src/pcre/pcre.h
+DEPS_40 += $(BUILD)/inc/me.h
+DEPS_40 += src/pcre/pcre.h
 
 $(BUILD)/obj/pcre.o: \
-    src/pcre/pcre.c $(DEPS_41)
+    src/pcre/pcre.c $(DEPS_40)
 	@echo '   [Compile] $(BUILD)/obj/pcre.o'
 	$(CC) -c -o $(BUILD)/obj/pcre.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) $(IFLAGS) src/pcre/pcre.c
 
 #
 #   pipeline.o
 #
-DEPS_42 += src/http.h
+DEPS_41 += src/http.h
 
 $(BUILD)/obj/pipeline.o: \
-    src/pipeline.c $(DEPS_42)
+    src/pipeline.c $(DEPS_41)
 	@echo '   [Compile] $(BUILD)/obj/pipeline.o'
 	$(CC) -c -o $(BUILD)/obj/pipeline.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/pipeline.c
 
 #
 #   process.o
 #
-DEPS_43 += src/http.h
+DEPS_42 += src/http.h
 
 $(BUILD)/obj/process.o: \
-    src/process.c $(DEPS_43)
+    src/process.c $(DEPS_42)
 	@echo '   [Compile] $(BUILD)/obj/process.o'
 	$(CC) -c -o $(BUILD)/obj/process.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/process.c
 
 #
 #   queue.o
 #
-DEPS_44 += src/http.h
+DEPS_43 += src/http.h
 
 $(BUILD)/obj/queue.o: \
-    src/queue.c $(DEPS_44)
+    src/queue.c $(DEPS_43)
 	@echo '   [Compile] $(BUILD)/obj/queue.o'
 	$(CC) -c -o $(BUILD)/obj/queue.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/queue.c
 
 #
 #   rangeFilter.o
 #
-DEPS_45 += src/http.h
+DEPS_44 += src/http.h
 
 $(BUILD)/obj/rangeFilter.o: \
-    src/rangeFilter.c $(DEPS_45)
+    src/rangeFilter.c $(DEPS_44)
 	@echo '   [Compile] $(BUILD)/obj/rangeFilter.o'
 	$(CC) -c -o $(BUILD)/obj/rangeFilter.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/rangeFilter.c
 
 #
 #   route.o
 #
-DEPS_46 += src/http.h
-DEPS_46 += $(BUILD)/inc/pcre.h
+DEPS_45 += src/http.h
+DEPS_45 += $(BUILD)/inc/pcre.h
 
 $(BUILD)/obj/route.o: \
-    src/route.c $(DEPS_46)
+    src/route.c $(DEPS_45)
 	@echo '   [Compile] $(BUILD)/obj/route.o'
 	$(CC) -c -o $(BUILD)/obj/route.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/route.c
 
 #
 #   rx.o
 #
-DEPS_47 += src/http.h
+DEPS_46 += src/http.h
 
 $(BUILD)/obj/rx.o: \
-    src/rx.c $(DEPS_47)
+    src/rx.c $(DEPS_46)
 	@echo '   [Compile] $(BUILD)/obj/rx.o'
 	$(CC) -c -o $(BUILD)/obj/rx.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/rx.c
 
 #
 #   server.o
 #
-DEPS_48 += src/http.h
+DEPS_47 += src/http.h
 
 $(BUILD)/obj/server.o: \
-    src/server.c $(DEPS_48)
+    src/server.c $(DEPS_47)
 	@echo '   [Compile] $(BUILD)/obj/server.o'
 	$(CC) -c -o $(BUILD)/obj/server.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/server.c
 
 #
 #   service.o
 #
-DEPS_49 += src/http.h
+DEPS_48 += src/http.h
 
 $(BUILD)/obj/service.o: \
-    src/service.c $(DEPS_49)
+    src/service.c $(DEPS_48)
 	@echo '   [Compile] $(BUILD)/obj/service.o'
 	$(CC) -c -o $(BUILD)/obj/service.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/service.c
 
 #
 #   session.o
 #
-DEPS_50 += src/http.h
+DEPS_49 += src/http.h
 
 $(BUILD)/obj/session.o: \
-    src/session.c $(DEPS_50)
+    src/session.c $(DEPS_49)
 	@echo '   [Compile] $(BUILD)/obj/session.o'
 	$(CC) -c -o $(BUILD)/obj/session.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/session.c
 
 #
 #   stage.o
 #
-DEPS_51 += src/http.h
+DEPS_50 += src/http.h
 
 $(BUILD)/obj/stage.o: \
-    src/stage.c $(DEPS_51)
+    src/stage.c $(DEPS_50)
 	@echo '   [Compile] $(BUILD)/obj/stage.o'
 	$(CC) -c -o $(BUILD)/obj/stage.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/stage.c
+
+#
+#   stream.o
+#
+DEPS_51 += src/http.h
+
+$(BUILD)/obj/stream.o: \
+    src/stream.c $(DEPS_51)
+	@echo '   [Compile] $(BUILD)/obj/stream.o'
+	$(CC) -c -o $(BUILD)/obj/stream.o -arch $(CC_ARCH) $(CFLAGS) $(DFLAGS) -D_FILE_OFFSET_BITS=64 -DMBEDTLS_USER_CONFIG_FILE=\"embedtls.h\" -DME_COM_OPENSSL_PATH=$(ME_COM_OPENSSL_PATH) $(IFLAGS) "-I$(ME_COM_OPENSSL_PATH)/include" src/stream.c
 
 #
 #   tailFilter.o
@@ -757,7 +758,7 @@ DEPS_60 += $(BUILD)/obj/mbedtls.o
 
 $(BUILD)/bin/libmbedtls.a: $(DEPS_60)
 	@echo '      [Link] $(BUILD)/bin/libmbedtls.a'
-	ar -cr $(BUILD)/bin/libmbedtls.a "$(BUILD)/obj/mbedtls.o"
+	$(AR) -cr $(BUILD)/bin/libmbedtls.a "$(BUILD)/obj/mbedtls.o"
 endif
 
 ifeq ($(ME_COM_MBEDTLS),1)
@@ -769,7 +770,7 @@ DEPS_61 += $(BUILD)/obj/mpr-mbedtls.o
 
 $(BUILD)/bin/libmpr-mbedtls.a: $(DEPS_61)
 	@echo '      [Link] $(BUILD)/bin/libmpr-mbedtls.a'
-	ar -cr $(BUILD)/bin/libmpr-mbedtls.a "$(BUILD)/obj/mpr-mbedtls.o"
+	$(AR) -cr $(BUILD)/bin/libmpr-mbedtls.a "$(BUILD)/obj/mpr-mbedtls.o"
 endif
 
 ifeq ($(ME_COM_OPENSSL),1)
@@ -780,7 +781,7 @@ DEPS_62 += $(BUILD)/obj/mpr-openssl.o
 
 $(BUILD)/bin/libmpr-openssl.a: $(DEPS_62)
 	@echo '      [Link] $(BUILD)/bin/libmpr-openssl.a'
-	ar -cr $(BUILD)/bin/libmpr-openssl.a "$(BUILD)/obj/mpr-openssl.o"
+	$(AR) -cr $(BUILD)/bin/libmpr-openssl.a "$(BUILD)/obj/mpr-openssl.o"
 endif
 
 #
@@ -859,7 +860,6 @@ DEPS_65 += $(BUILD)/obj/cache.o
 DEPS_65 += $(BUILD)/obj/chunkFilter.o
 DEPS_65 += $(BUILD)/obj/client.o
 DEPS_65 += $(BUILD)/obj/config.o
-DEPS_65 += $(BUILD)/obj/conn.o
 DEPS_65 += $(BUILD)/obj/digest.o
 DEPS_65 += $(BUILD)/obj/dirHandler.o
 DEPS_65 += $(BUILD)/obj/endpoint.o
@@ -886,6 +886,7 @@ DEPS_65 += $(BUILD)/obj/server.o
 DEPS_65 += $(BUILD)/obj/service.o
 DEPS_65 += $(BUILD)/obj/session.o
 DEPS_65 += $(BUILD)/obj/stage.o
+DEPS_65 += $(BUILD)/obj/stream.o
 DEPS_65 += $(BUILD)/obj/tailFilter.o
 DEPS_65 += $(BUILD)/obj/trace.o
 DEPS_65 += $(BUILD)/obj/tx.o
@@ -934,7 +935,7 @@ LIBS_65 += -lmpr
 
 $(BUILD)/bin/libhttp.dylib: $(DEPS_65)
 	@echo '      [Link] $(BUILD)/bin/libhttp.dylib'
-	$(CC) -dynamiclib -o $(BUILD)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)  -install_name @rpath/libhttp.dylib -compatibility_version 8.0 -current_version 8.0 "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/conn.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/hpack.o" "$(BUILD)/obj/http1Filter.o" "$(BUILD)/obj/http2Filter.o" "$(BUILD)/obj/huff.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/net.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/process.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/server.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/tailFilter.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBPATHS_65) $(LIBS_65) $(LIBS_65) $(LIBS) -lpam 
+	$(CC) -dynamiclib -o $(BUILD)/bin/libhttp.dylib -arch $(CC_ARCH) $(LDFLAGS) $(LIBPATHS)  -install_name @rpath/libhttp.dylib -compatibility_version 8.0 -current_version 8.0 "$(BUILD)/obj/actionHandler.o" "$(BUILD)/obj/auth.o" "$(BUILD)/obj/basic.o" "$(BUILD)/obj/cache.o" "$(BUILD)/obj/chunkFilter.o" "$(BUILD)/obj/client.o" "$(BUILD)/obj/config.o" "$(BUILD)/obj/digest.o" "$(BUILD)/obj/dirHandler.o" "$(BUILD)/obj/endpoint.o" "$(BUILD)/obj/error.o" "$(BUILD)/obj/fileHandler.o" "$(BUILD)/obj/host.o" "$(BUILD)/obj/hpack.o" "$(BUILD)/obj/http1Filter.o" "$(BUILD)/obj/http2Filter.o" "$(BUILD)/obj/huff.o" "$(BUILD)/obj/monitor.o" "$(BUILD)/obj/net.o" "$(BUILD)/obj/netConnector.o" "$(BUILD)/obj/packet.o" "$(BUILD)/obj/pam.o" "$(BUILD)/obj/passHandler.o" "$(BUILD)/obj/pipeline.o" "$(BUILD)/obj/process.o" "$(BUILD)/obj/queue.o" "$(BUILD)/obj/rangeFilter.o" "$(BUILD)/obj/route.o" "$(BUILD)/obj/rx.o" "$(BUILD)/obj/server.o" "$(BUILD)/obj/service.o" "$(BUILD)/obj/session.o" "$(BUILD)/obj/stage.o" "$(BUILD)/obj/stream.o" "$(BUILD)/obj/tailFilter.o" "$(BUILD)/obj/trace.o" "$(BUILD)/obj/tx.o" "$(BUILD)/obj/uploadFilter.o" "$(BUILD)/obj/uri.o" "$(BUILD)/obj/user.o" "$(BUILD)/obj/var.o" "$(BUILD)/obj/webSockFilter.o" $(LIBPATHS_65) $(LIBS_65) $(LIBS_65) $(LIBS) -lpam 
 
 #
 #   http

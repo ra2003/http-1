@@ -272,8 +272,7 @@ PUBLIC Mpr *mprCreateMemService(MprManager manager, int flags)
     }
     heap->gcCond = mprCreateCond();
 
-    //  TODO - could just remove STATIC_VALUES
-    heap->roots = mprCreateList(-1, MPR_LIST_STATIC_VALUES);
+    heap->roots = mprCreateList(-1, 0/* UNUSED MPR_LIST_STATIC_VALUES */);
     mprAddRoot(MPR);
     return MPR;
 }
@@ -1223,7 +1222,7 @@ static void sweeperThread(void *unused, MprThread *tp)
 static void markAndSweep()
 {
     if (!pauseThreads()) {
-#if KEEP
+#if ME_MPR_ALLOC_STATS && ME_MPR_ALLOC_DEBUG && MPR_ALLOC_TRACE
         static int warnOnce = 0;
         if (warnOnce == 0 && !mprGetDebugMode() && !mprIsStopping()) {
             warnOnce = 1;
@@ -1262,9 +1261,6 @@ static void markAndSweep()
 
 static void markRoots()
 {
-    void    *root;
-    int     next;
-
 #if ME_MPR_ALLOC_STATS
     heap->stats.markVisited = 0;
     heap->stats.marked = 0;
@@ -1272,10 +1268,14 @@ static void markRoots()
     mprMark(heap->roots);
     mprMark(heap->gcCond);
 
-    //  TODO - could just remove STATIC_VALUES and remove this
+#if UNUSED
+    void    *root;
+    int     next;
+
     for (ITERATE_ITEMS(heap->roots, root, next)) {
         mprMark(root);
     }
+#endif
 }
 
 
@@ -1307,7 +1307,7 @@ static void invokeDestructors()
 
 static void invokeAllDestructors()
 {
-#if KEEP
+#if FUTURE
     MprRegion   *region;
     MprMem      *mp;
     MprManager  mgr;
@@ -1494,9 +1494,7 @@ static void sweep()
         heap->stats.freed, heap->stats.bytesFree, heap->priorFree, heap->priorWorkDone, heap->workQuota,
         heap->stats.sweepVisited - heap->stats.swept, heap->stats.bytesAllocated, heap->stats.unpins,
         heap->stats.collections);
-#endif
-#if KEEP
-    printf("SWEPT blocks %lld bytes %lld, workDone %d\n", heap->stats.swept, heap->stats.sweptBytes, heap->priorWorkDone);
+    printf("Swept blocks %lld bytes %lld, workDone %d\n", heap->stats.swept, heap->stats.sweptBytes, heap->priorWorkDone);
 #endif
     if (heap->printStats) {
         printMemReport();
@@ -1555,6 +1553,7 @@ PUBLIC size_t psize(void *ptr)
 
 /*
     WARNING: this does not mark component members. If that is required, use mprAddRoot.
+    WARNING: this should only ever be used by MPR threads that are not yielded when this API is called.
  */
 PUBLIC void mprHold(cvoid *ptr)
 {
@@ -3940,7 +3939,7 @@ PUBLIC void mprAtomicBarrier()
     #elif __GNUC__ && (ME_CPU_ARCH == ME_CPU_PPC) && !VXWORKS
         asm volatile ("sync" : : : "memory");
 
-    #elif __GNUC__ && (ME_CPU_ARCH == ME_CPU_ARM) && KEEP
+    #elif __GNUC__ && (ME_CPU_ARCH == ME_CPU_ARM) && FUTURE
         asm volatile ("isync" : : : "memory");
 
     #else
@@ -3985,7 +3984,7 @@ PUBLIC int mprAtomicCas(void * volatile *addr, void *expected, cvoid *value)
               "0" (expected));
             return expected == prev;
 
-    #elif __GNUC__ && (ME_CPU_ARCH == ME_CPU_ARM) && KEEP
+    #elif __GNUC__ && (ME_CPU_ARCH == ME_CPU_ARM) && FUTURE
 
     #else
         mprSpinLock(atomicSpin);
@@ -4066,7 +4065,7 @@ PUBLIC void mprAtomicAdd64(volatile int64 *ptr, int64 value)
 }
 
 
-#if KEEP
+#if FUTURE
 PUBLIC void *mprAtomicExchange(void *volatile *addr, cvoid *value)
 {
     #if ME_WIN_LIKE
@@ -4754,7 +4753,7 @@ PUBLIC uint mprPeekUint32FromBuf(MprBuf *buf)
 }
 
 
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && ME_UNICODE
 PUBLIC void mprAddNullToWideBuf(MprBuf *bp)
 {
     ssize      space;
@@ -8546,7 +8545,7 @@ static void bencrypt(MprBlowfish *bp, uint *xl, uint *xr)
 }
 
 
-#if KEEP
+#if FUTURE
 static void bdecrypt(MprBlowfish *bp, uint *xl, uint *xr)
 {
     uint    Xl, Xr, temp;
@@ -8863,7 +8862,7 @@ static void manageDiskFile(MprFile *file, int flags)
 
 static bool disk_accessPath(MprDiskFileSystem *fs, cchar *path, int omode)
 {
-#if ME_WIN && KEEP
+#if ME_WIN && CYGWIN_PATHS
     if (access(path, omode) < 0) {
         if (*path == '/') {
             path = sjoin(fs->cygwin, path, NULL);
@@ -9024,7 +9023,7 @@ static MprList *disk_listDir(MprDiskFileSystem *fs, cchar *path)
         dp->isDir = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 1 : 0;
         dp->isLink = 0;
 
-#if KEEP_64_BIT
+#if ENABLE_WIN_64_BIT
         if (findData.nFileSizeLow < 0) {
             dp->size = (((uint64) findData.nFileSizeHigh) * INT64(4294967296)) + (4294967296L -
                 (uint64) findData.nFileSizeLow);
@@ -9159,7 +9158,7 @@ static int disk_getPathInfo(MprDiskFileSystem *fs, cchar *path, MprPath *info)
         path = strim(path, "\\", MPR_TRIM_END);
     }
     if (_stat64(path, &s) < 0) {
-#if ME_WIN && KEEP
+#if ME_WIN && CYGWIN_PATHS
         /*
             Try under /cygwin
          */
@@ -9341,7 +9340,7 @@ static MprOff disk_seekFile(MprFile *file, int seekType, MprOff distance)
 static int disk_truncateFile(MprDiskFileSystem *fs, cchar *path, MprOff size)
 {
     if (!mprPathExists(path, F_OK)) {
-#if ME_WIN_LIKE && KEEP
+#if ME_WIN_LIKE && CYGWIN_PATHS
         /*
             Try under /cygwin
          */
@@ -9366,7 +9365,7 @@ static int disk_truncateFile(MprDiskFileSystem *fs, cchar *path, MprOff size)
 }
 #elif VXWORKS
 {
-#if KEEP
+#if FUTURE
     int     fd;
 
     fd = open(path, O_WRONLY, 0664);
@@ -9440,7 +9439,7 @@ PUBLIC MprDiskFileSystem *mprCreateDiskFileSystem(cchar *path)
 }
 
 
-#if KEEP
+#if CYGWIN_PATHS
 /*
     Open a file with support for cygwin paths. Tries windows path first then under /cygwin.
  */
@@ -9543,7 +9542,7 @@ static void manageEventService(MprEventService *es, int flags)
         mprMark(es->mutex);
 
         /*
-            Special case: must lock because mprCreateEventOutside may queue events while marking
+            Special case: must lock because mprCreateEvent may queue events while marking
          */
         lock(es);
         for (dp = es->runQ->next; dp != es->runQ; dp = dp->next) {
@@ -9761,7 +9760,7 @@ PUBLIC int mprServiceEvents(MprTicks timeout, int flags)
         if (flags & MPR_SERVICE_NO_BLOCK) {
             break;
         }
-        if (mprIsStopping() && (mprIsStopped() || mprIsIdle(0))) {
+        if (mprIsStopping()) {
             break;
         }
     }
@@ -9805,9 +9804,12 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout, int64 ma
     if (dispatcher == NULL) {
         dispatcher = MPR->dispatcher;
     }
+    if (dispatcher->flags & MPR_DISPATCHER_DESTROYED) {
+        return 0;
+    }
     if ((runEvents = (dispatcher->owner == mprGetCurrentOsThread())) != 0) {
         /* Called from an event on a running dispatcher */
-        assert(isRunning(dispatcher));
+        assert(isRunning(dispatcher) || (dispatcher->flags & MPR_DISPATCHER_DESTROYED));
         if (dispatchEvents(dispatcher)) {
             return 0;
         }
@@ -9840,7 +9842,7 @@ PUBLIC int mprWaitForEvent(MprDispatcher *dispatcher, MprTicks timeout, int64 ma
 
     if (runEvents) {
         dispatchEvents(dispatcher);
-        assert(isRunning(dispatcher));
+        assert(isRunning(dispatcher) || (dispatcher->flags & MPR_DISPATCHER_DESTROYED));
     }
     return 0;
 }
@@ -10632,8 +10634,8 @@ PUBLIC char *mprEscapeSQL(cchar *cmd)
     return result;
 }
 
-#if KEEP
-static void charGen() 
+#if GENERATE_TABLES
+static void charGen()
 {
     uchar    flags;
     uint     c;
@@ -12177,7 +12179,7 @@ PUBLIC MprHash *mprCreateHash(int hashSize, int flags)
     } else {
         hash->mutex = 0;
     }
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
     if (hash->flags & MPR_HASH_UNICODE) {
         if (hash->flags & MPR_HASH_CASELESS) {
             hash->fn = (MprHashProc) whashlower;
@@ -12480,7 +12482,7 @@ static MprKey *lookupHash(int *bucketIndex, MprKey **prevSp, MprHash *hash, cvoi
     prev = 0;
 
     while (sp) {
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
         if (hash->flags & MPR_HASH_UNICODE) {
             wchar *u1, *u2;
             u1 = (wchar*) sp->key;
@@ -12566,7 +12568,7 @@ PUBLIC MprKey *mprGetNextKey(MprHash *hash, MprKey *last)
 
 static void *dupKey(MprHash *hash, cvoid *key)
 {
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
     if (hash->flags & MPR_HASH_UNICODE) {
         return wclone((wchar*) key);
     } else
@@ -12859,7 +12861,10 @@ static MprJson *jsonParse(MprJsonParser *parser, MprJson *obj)
                 if (name && parser->callback.checkBlock(parser, name, 0) < 0) {
                     return 0;
                 }
-                child = jsonParse(parser, parser->callback.createObj(parser, MPR_JSON_OBJ));
+                child = parser->callback.createObj(parser, MPR_JSON_OBJ);
+                if (peektok(parser) != JTOK_RBRACE) {
+                    child = jsonParse(parser, child);
+                }
                 if (gettok(parser) != JTOK_RBRACE) {
                     mprSetJsonError(parser, "Missing closing brace");
                     return 0;
@@ -12938,9 +12943,7 @@ static MprJson *jsonParse(MprJsonParser *parser, MprJson *obj)
                         return obj;
                     }
                 }
-                if (obj->type & MPR_JSON_OBJ) {
-                    parser->state = MPR_JSON_STATE_NAME;
-                }
+                parser->state = (obj->type & MPR_JSON_OBJ) ? MPR_JSON_STATE_NAME : MPR_JSON_STATE_VALUE;
             } else if (tokid == JTOK_RBRACE || parser->tokid == JTOK_RBRACKET || tokid == JTOK_EOF) {
                 return obj;
             } else {
@@ -13662,7 +13665,7 @@ PUBLIC char *getNextTerm(MprJson *obj, char *str, char **rest, int *termType)
     ssize   i;
 
     assert(rest);
-    
+
     if (!obj || !rest) {
         return 0;
     }
@@ -13675,7 +13678,7 @@ PUBLIC char *getNextTerm(MprJson *obj, char *str, char **rest, int *termType)
     }
     *termType = 0;
     seps = ".[]";
-    
+
     while (isspace((int) *start)) start++;
     if (termType && *start == '.') {
         *termType |= JSON_PROP_ELIPSIS;
@@ -16169,20 +16172,20 @@ static void backupLog()
  */
 PUBLIC void mprDefaultLogHandler(cchar *tags, int level, cchar *msg)
 {
-    MprFile     *file;
-    char        tbuf[128];
-    static int  check = 0;
+    MprFile         *file;
+    char            tbuf[128];
+    static ssize    length = 0;
 
     if ((file = MPR->logFile) == 0 || msg == 0 || *msg == '\0') {
         return;
     }
-    if (MPR->logBackup && MPR->logSize && (check++ % 1000) == 0) {
+    if (MPR->logBackup && MPR->logSize && length >= MPR->logSize) {
         backupLog();
     }
     if (tags && *tags) {
         if (MPR->flags & MPR_LOG_DETAILED) {
             fmt(tbuf, sizeof(tbuf), "%s %d %s, ", mprGetDate(MPR_LOG_DATE), level, tags);
-            mprWriteFileString(file, tbuf);
+            length += mprWriteFileString(file, tbuf);
         } else if (MPR->flags & MPR_LOG_TAGGED) {
             if (schr(tags, ' ')) {
                 tags = ssplit(sclone(tags), " ", NULL);
@@ -16190,12 +16193,12 @@ PUBLIC void mprDefaultLogHandler(cchar *tags, int level, cchar *msg)
             if (!isupper((uchar) *tags)) {
                 tags = stitle(tags);
             }
-            mprWriteFileFmt(file, "%12s ", sfmt("[%s]", tags));
+            length += mprWriteFileFmt(file, "%12s ", sfmt("[%s]", tags));
         }
     }
-    mprWriteFileString(file, msg);
+    length += mprWriteFileString(file, msg);
     if (*msg && msg[slen(msg) - 1] != '\n') {
-        mprWriteFileString(file, "\n");
+        length += mprWriteFileString(file, "\n");
     }
 #if ME_MPR_OSLOG
     if (level == 0) {
@@ -16738,7 +16741,7 @@ PUBLIC cchar *mprLookupMime(MprHash *table, cchar *ext)
 
 
 
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
 /********************************** Forwards **********************************/
 
 PUBLIC int mcaselesscmp(wchar *str1, cchar *str2)
@@ -17415,11 +17418,10 @@ PUBLIC int mprUnloadModule(MprModule *mp)
         return MPR_ERR_NOT_READY;
     }
 #if ME_COMPILER_HAS_DYN_LOAD
-    if (mp->handle) {
+    if (mp->flags & MPR_MODULE_LOADED) {
         if (mprUnloadNativeModule(mp) != 0) {
             mprLog("error mpr", 0, "Cannot unload module %s", mp->name);
         }
-        mp->handle = 0;
     }
 #endif
     mprRemoveItem(MPR->moduleService->modules, mp);
@@ -19066,7 +19068,7 @@ PUBLIC char *mprNormalizePath(cchar *pathArg)
             }
             segments[i++] = mark;
             len += (sp - mark);
-#if KEEP
+#if DISABLE
             if (i == 1 && segmentCount == 1 && fs->hasDriveSpecs && strchr(mark, ':') != 0) {
                 /*
                     Normally we truncate a trailing "/", but this is an absolute path with a drive spec (c:/).
@@ -19678,6 +19680,7 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
             return MPR_ERR_CANT_OPEN;
         }
         mp->handle = handle;
+        mp->flags |= MPR_MODULE_LOADED;
 #endif /* !ME_STATIC */
 
     } else if (mp->entry) {
@@ -19687,12 +19690,12 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
         if ((fn = (MprModuleEntry) dlsym(handle, mp->entry)) != 0) {
             if ((fn)(mp->moduleData, mp) < 0) {
                 mprLog("error mpr", 0, "Initialization for module %s failed", mp->name);
-                dlclose(handle);
+                mprUnloadNativeModule(mp);
                 return MPR_ERR_CANT_INITIALIZE;
             }
         } else {
             mprLog("error mpr", 0, "Cannot load module %s, reason: cannot find function \"%s\"", mp->path, mp->entry);
-            dlclose(handle);
+            mprUnloadNativeModule(mp);
             return MPR_ERR_CANT_READ;
         }
     }
@@ -19702,7 +19705,11 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
 
 PUBLIC int mprUnloadNativeModule(MprModule *mp)
 {
-    return dlclose(mp->handle);
+    if (mp->flags & MPR_MODULE_LOADED) {
+        mp->flags &= ~MPR_MODULE_LOADED;
+        return dlclose(mp->handle);
+    }
+    return MPR_ERR_BAD_STATE;
 }
 #endif
 
@@ -19756,22 +19763,15 @@ PUBLIC void mprWriteToOsLog(cchar *message, int level)
 PUBLIC void mprSetFilesLimit(int limit)
 {
     struct rlimit r;
-    int           i;
 
     if (limit == 0 || limit == MAXINT) {
         /*
             We need to determine a reasonable maximum possible limit value.
-            There is no #define we can use for this, so we test to determine it empirically
+            There is no #define we can use for this, so we test to determine it empirically.
          */
         for (limit = 0x40000000; limit > 0; limit >>= 1) {
             r.rlim_cur = r.rlim_max = limit;
             if (setrlimit(RLIMIT_NOFILE, &r) == 0) {
-                for (i = (limit >> 4) * 15; i > 0; i--) {
-                    r.rlim_max = r.rlim_cur = limit + i;
-                    if (setrlimit(RLIMIT_NOFILE, &r) == 0) {
-                        break;
-                    }
-                }
                 break;
             }
         }
@@ -19967,7 +19967,7 @@ static int  growBuf(Format *fmt);
 PUBLIC char *mprPrintfCore(char *buf, ssize maxsize, cchar *fmt, va_list arg);
 static void outNum(Format *fmt, cchar *prefix, uint64 val);
 static void outString(Format *fmt, cchar *str, ssize len);
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
 static void outWideString(Format *fmt, wchar *str, ssize len);
 #endif
 #if ME_FLOAT
@@ -20035,44 +20035,6 @@ PUBLIC ssize mprFprintf(MprFile *file, cchar *fmt, ...)
     }
     return len;
 }
-
-
-#if KEEP
-/*
-    Printf with a static buffer. Used internally only. WILL NOT MALLOC.
- */
-PUBLIC int mprStaticPrintf(cchar *fmt, ...)
-{
-    MprFileSystem   *fs;
-    va_list         ap;
-    char            buf[ME_BUFSIZE];
-
-    va_start(ap, fmt);
-    mprPrintfCore(buf, ME_BUFSIZE, fmt, ap);
-    va_end(ap);
-
-    fs = mprLookupFileSystem(NULL, "/");
-    return mprWriteFile(fs->stdOutput, buf, slen(buf));
-}
-
-
-/*
-    Printf with a static buffer. Used internally only. WILL NOT MALLOC.
- */
-PUBLIC int mprStaticPrintfError(cchar *fmt, ...)
-{
-    MprFileSystem   *fs;
-    va_list         ap;
-    char            buf[ME_BUFSIZE];
-
-
-    va_start(ap, fmt);
-    mprPrintfCore(buf, ME_BUFSIZE, fmt, ap);
-    va_end(ap);
-    fs = mprLookupFileSystem(NULL, "/");
-    return mprWriteFile(fs->stdError, buf, slen(buf));
-}
-#endif
 
 
 PUBLIC char *fmt(char *buf, ssize bufsize, cchar *fmt, ...)
@@ -20273,7 +20235,7 @@ PUBLIC char *mprPrintfCore(char *buf, ssize maxsize, cchar *spec, va_list args)
                 /* Name */
                 qname = va_arg(args, MprEjsName);
                 if (qname.name) {
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
                     outWideString(&fmt, (wchar*) qname.space->value, qname.space->length);
                     BPUT(&fmt, ':');
                     BPUT(&fmt, ':');
@@ -20291,7 +20253,7 @@ PUBLIC char *mprPrintfCore(char *buf, ssize maxsize, cchar *spec, va_list args)
 
             case 'S':
                 /* Safe string */
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
                 if (fmt.flags & SPRINTF_LONG) {
                     //  UNICODE - not right wchar
                     safe = mprEscapeHtml(va_arg(args, wchar*));
@@ -20308,7 +20270,7 @@ PUBLIC char *mprPrintfCore(char *buf, ssize maxsize, cchar *spec, va_list args)
                 /* MprEjsString */
                 es = va_arg(args, MprEjsString*);
                 if (es) {
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
                     outWideString(&fmt, es->value, es->length);
 #else
                     outString(&fmt, (char*) es->value, es->length);
@@ -20320,7 +20282,7 @@ PUBLIC char *mprPrintfCore(char *buf, ssize maxsize, cchar *spec, va_list args)
 
             case 'w':
                 /* Wide string of wchar characters (Same as %ls"). Null terminated. */
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
                 outWideString(&fmt, va_arg(args, wchar*), -1);
                 break;
 #else
@@ -20329,7 +20291,7 @@ PUBLIC char *mprPrintfCore(char *buf, ssize maxsize, cchar *spec, va_list args)
 
             case 's':
                 /* Standard string */
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
                 if (fmt.flags & SPRINTF_LONG) {
                     outWideString(&fmt, va_arg(args, wchar*), -1);
                 } else
@@ -20479,7 +20441,7 @@ static void outString(Format *fmt, cchar *str, ssize len)
 }
 
 
-#if ME_CHAR_LEN > 1 && KEEP
+#if ME_CHAR_LEN > 1 && FUTURE
 static void outWideString(Format *fmt, wchar *str, ssize len)
 {
     wchar     *cp;
@@ -21743,7 +21705,7 @@ PUBLIC void mprAddStandardSignals()
 #if SIGXFSZ
     mprAddItem(ssp->standard, mprAddSignalHandler(SIGXFSZ, standardSignalHandler, 0, 0, MPR_SIGNAL_AFTER));
 #endif
-#if MACOSX && ME_DEBUG && KEEP
+#if MACOSX && ME_DEBUG && HANDLE_SEGV
     mprAddItem(ssp->standard, mprAddSignalHandler(SIGBUS, standardSignalHandler, 0, 0, MPR_SIGNAL_AFTER));
     mprAddItem(ssp->standard, mprAddSignalHandler(SIGSEGV, standardSignalHandler, 0, 0, MPR_SIGNAL_AFTER));
 #endif
@@ -21770,9 +21732,9 @@ static void standardSignalHandler(void *ignored, MprSignal *sp)
     } else if (sp->signo == SIGPIPE || sp->signo == SIGXFSZ) {
         /* Ignore */
 
-#if KEEP
+#if MANUAL_DEBUG
     } else if (sp->signo == SIGSEGV || sp->signo == SIGBUS) {
-#if EMBEDTHIS && KEEP
+#if EMBEDTHIS && DEBUG_PAUSE
         printf("PAUSED for watson to debug\n");
         sleep(120);
 #else
@@ -22121,7 +22083,7 @@ PUBLIC Socket mprListenOnSocket(MprSocket *sp, cchar *ip, int port, int flags)
         if (setsockopt(sp->fd, SOL_SOCKET, SO_REUSEADDR, (char*) &enable, sizeof(enable)) != 0) {
             mprLog("error mpr socket", 3, "Cannot set reuseaddr, errno %d", errno);
         }
-#if defined(SO_REUSEPORT) && KEEP
+#if defined(SO_REUSEPORT) && MULTIPLE_SERVERS
         /*
             This permits multiple servers listening on the same endpoint
          */
@@ -22846,6 +22808,8 @@ PUBLIC MprOff mprSendFileToSocket(MprSocket *sock, MprFile *file, MprOff offset,
     int             done;
 
     rc = 0;
+    written = 0;
+    done = 0;
 
 #if MACOSX && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
     def.hdr_cnt = (int) beforeCount;
@@ -22868,8 +22832,6 @@ PUBLIC MprOff mprSendFileToSocket(MprSocket *sock, MprFile *file, MprOff offset,
 #endif
     {
         /* Either !MACOSX or no file */
-        done = 0;
-        written = 0;
         for (i = toWriteBefore = 0; i < beforeCount; i++) {
             toWriteBefore += beforeVec[i].len;
         }
@@ -23548,7 +23510,7 @@ PUBLIC MprSsl *mprCreateSsl(int server)
     if ((ssl = mprAllocObj(MprSsl, manageSsl)) == 0) {
         return 0;
     }
-    ssl->protocols = MPR_PROTO_TLSV1_1 | MPR_PROTO_TLSV1_2;
+    ssl->protocols = MPR_PROTO_TLSV1_1 | MPR_PROTO_TLSV1_2 | MPR_PROTO_TLSV1_3;
 
     /*
         The default for servers is not to verify client certificates.
@@ -23654,7 +23616,7 @@ PUBLIC int mprUpgradeSocket(MprSocket *sp, MprSsl *ssl, cchar *peerName)
         }
     }
     sp->provider = ss->sslProvider;
-#if KEEP
+#if USE_NDELAY
     /* session resumption can cause problems with Nagle. However, appweb opens sockets with nodelay by default */
     sp->flags |= MPR_SOCKET_NODELAY;
     mprSetSocketNoDelay(sp, 1);
@@ -24548,30 +24510,10 @@ PUBLIC char *ssplit(char *str, cchar *delim, char **last)
 
 PUBLIC ssize sspn(cchar *str, cchar *set)
 {
-#if KEEP
-    cchar       *sp;
-    int         count;
-
-    if (str == 0 || set == 0) {
-        return 0;
-    }
-    for (count = 0; *str; count++, str++) {
-        for (sp = set; *sp; sp++) {
-            if (*str == *sp) {
-                break;
-            }
-        }
-        if (*str != *sp) {
-            break;
-        }
-    }
-    return count;
-#else
     if (str == 0 || set == 0) {
         return 0;
     }
     return strspn(str, set);
-#endif
 }
 
 
@@ -25700,7 +25642,7 @@ PUBLIC int mprAvailableWorkers()
         return 0;
     }
     result = wstats.idle + min(spareThreads, spareCores);
-#if KEEP
+#if DEBUG_TRACE
     printf("Avail %d, busy %d, yielded %d, idle %d, spare-threads %d, spare-cores %d, mustYield %d\n", result, wstats.busy,
         wstats.yielded, wstats.idle, spareThreads, spareCores, MPR->heap->mustYield);
 #endif
@@ -27714,14 +27656,6 @@ static void validateTime(struct tm *tp, struct tm *defaults)
         tp->tm_sec = -1;
     }
 
-#if KEEP
-    /* Not required */
-    if (tp->tm_year != -MAXINT && tp->tm_mon >= 0 && tp->tm_mday >= 0 && tp->tm_hour >= 0) {
-        /*  Everything defined */
-        return;
-    }
-#endif
-
     /*
         Use empty time if defaults missing
      */
@@ -27989,6 +27923,7 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
         }
         close(fd);
         mp->handle = handle;
+        mp->flags |= MPR_MODULE_LOADED;
 
     } else if (mp->entry) {
         mprLog("info mpr", 2, "Activating module %s", mp->name);
@@ -27996,10 +27931,12 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
     if (mp->entry) {
         if (mprFindVxSym(sysSymTbl, entry, (char**) (void*) &fn) == -1) {
             mprLog("error mpr", 0, "Cannot find symbol %s when loading %s", entry, mp->path);
+            mprUnloadNativeModule(mp);
             return MPR_ERR_CANT_READ;
         }
         if ((fn)(mp->moduleData, mp) < 0) {
             mprLog("error mpr", 0, "Initialization for %s failed.", mp->path);
+            mprUnloadNativeModule(mp);
             return MPR_ERR_CANT_INITIALIZE;
         }
     }
@@ -28009,8 +27946,12 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
 
 PUBLIC int mprUnloadNativeModule(MprModule *mp)
 {
-    unldByModuleId((MODULE_ID) mp->handle, 0);
-    return 0;
+    if (mp->flags & MPR_MODULE_LOADED) {
+        mp->flags &= ~MPR_MODULE_LOADED;
+        unldByModuleId((MODULE_ID) mp->handle, 0);
+        return 0;
+    }
+    return MPR_ERR_BAD_STATE;
 }
 
 
@@ -28445,7 +28386,7 @@ PUBLIC void mprDoWaitRecall(MprWaitService *ws)
 
 
 #if ME_CHAR_LEN > 1
-#if KEEP
+#if FUTURE
 /************************************ Code ************************************/
 /*
     Format a number as a string. Support radix 10 and 16.
@@ -29168,7 +29109,7 @@ PUBLIC char *wupper(wchar *str)
     }
     return str;
 }
-#endif /* KEEP */
+#endif /* FUTURE */
 
 /*********************************** Conversions *******************************/
 /*
@@ -29270,7 +29211,7 @@ PUBLIC wchar *amtow(cchar *src, ssize *lenp)
 }
 
 
-//  KEEP UNICODE - need a version that can supply a length
+//  UNICODE - need a version that can supply a length
 
 PUBLIC char *awtom(wchar *src, ssize *lenp)
 {
@@ -29291,15 +29232,13 @@ PUBLIC char *awtom(wchar *src, ssize *lenp)
 }
 
 
-#if KEEP
-
+#if FUTURE
 #define BOM_MSB_FIRST       0xFEFF
 #define BOM_LSB_FIRST       0xFFFE
 
 /*
     Surrogate area  (0xD800 <= x && x <= 0xDFFF) => mapped into 0x10000 ... 0x10FFFF
  */
-
 static int utf8Length(int c)
 {
     if (c & 0x80) {
@@ -29507,9 +29446,7 @@ PUBLIC ssize xwtom(char *dest, ssize destMax, wchar *src, ssize len)
     }
     return count;
 }
-
-
-#endif /* KEEP */
+#endif /* FUTURE */
 
 #else /* ME_CHAR_LEN == 1 */
 
@@ -29649,6 +29586,8 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
             return MPR_ERR_CANT_READ;
         }
         mp->handle = handle;
+        mp->flags |= MPR_MODULE_LOADED;
+
 #endif /* !ME_STATIC */
 
     } else if (mp->entry) {
@@ -29657,12 +29596,12 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
     if (mp->entry) {
         if ((fn = (MprModuleEntry) GetProcAddress((HINSTANCE) handle, mp->entry)) == 0) {
             mprLog("error mpr", 0, "Cannot load module %s, cannot find function \"%s\"", mp->name, mp->entry);
-            FreeLibrary((HINSTANCE) handle);
+            mprUnloadNativeModule(mp);
             return MPR_ERR_CANT_ACCESS;
         }
         if ((fn)(mp->moduleData, mp) < 0) {
             mprLog("error mpr", 0, "Initialization for module %s failed", mp->name);
-            FreeLibrary((HINSTANCE) handle);
+            mprUnloadNativeModule(mp);
             return MPR_ERR_CANT_INITIALIZE;
         }
     }
@@ -29672,12 +29611,14 @@ PUBLIC int mprLoadNativeModule(MprModule *mp)
 
 PUBLIC int mprUnloadNativeModule(MprModule *mp)
 {
-    assert(mp->handle);
-
-    if (FreeLibrary((HINSTANCE) mp->handle) == 0) {
-        return MPR_ERR_ABORTED;
+    if (mp->flags & MPR_MODULE_LOADED) {
+        mp->flags &= ~MPR_MODULE_LOADED;
+        if (FreeLibrary((HINSTANCE) mp->handle) == 0) {
+            return MPR_ERR_ABORTED;
+        }
+        return 0;
     }
-    return 0;
+    return MPR_ERR_BAD_STATE;
 }
 
 

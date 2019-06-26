@@ -498,6 +498,10 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
         Process one or more complete requests in the packet
      */
     do {
+        if (conn->state == HTTP_STATE_BEGIN && conn->error) {
+            /* Detect a disconnect with no outstanding request */
+            break;
+        }
         /* This is and must be the only place httpProtocol is ever called */
         httpProtocol(conn);
     } while (conn->endpoint && conn->state == HTTP_STATE_COMPLETE && prepForNext(conn));

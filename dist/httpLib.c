@@ -8278,9 +8278,6 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
         }
         httpFinalize(conn);
     }
-    /*
-        Abort should disconnect after responding and not before. So don't disconnect here.
-     */
     if (flags & HTTP_ABORT) {
         httpDisconnect(conn);
     }

@@ -7,10 +7,12 @@
 
 #include    "http.h"
 
-/***************************** Forward Declarations ***************************/
+/*********************************** Locals ***********************************/
 
-#define HEADER_KEY 0x1
-#define HEADER_VALUE 0x2
+#define HEADER_KEY      0x1         /* Validate token as a header key */
+#define HEADER_VALUE    0x2         /* Validate token as a header value */
+
+/***************************** Forward Declarations ***************************/
 
 static void addMatchEtag(HttpConn *conn, char *etag);
 static void delayAwake(HttpConn *conn, MprEvent *event);
@@ -254,7 +256,7 @@ static bool parseIncoming(HttpConn *conn)
         return 0;
     }
     if (!parseHeaders(conn, packet)) {
-        /* Continue to process errors and valid requests */
+        return 0;
     }
     if (httpServerConn(conn)) {
         hostname = rx->hostHeader;
@@ -1142,7 +1144,7 @@ PUBLIC bool httpPumpOutput(HttpConn *conn)
         count = q->count;
         if (!tx->finalizedOutput) {
             HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
-            if (tx->handler->writable) {
+            if (tx->handler && tx->handler->writable) {
                 tx->handler->writable(q);
             }
         }

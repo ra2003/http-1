@@ -30,7 +30,7 @@ static void readyPass(HttpQueue *q)
 }
 
 
-static void readyError(HttpQueue *q)
+static void errorPass(HttpQueue *q)
 {
     if (!q->conn->error) {
         httpError(q->conn, HTTP_CODE_NOT_FOUND, "The requested resource is not available");
@@ -74,7 +74,7 @@ static void handleTrace(HttpConn *conn)
 }
 
 
-static void incomingReady(HttpQueue *q, HttpPacket *packet)
+static void incomingPass(HttpQueue *q, HttpPacket *packet)
 {
     /* Simply discard incoming data */
 }
@@ -98,8 +98,8 @@ PUBLIC int httpOpenPassHandler()
         return MPR_ERR_CANT_CREATE;
     }
     stage->start = startPass;
-    stage->ready = readyError;
-    stage->incoming = incomingReady;
+    stage->ready = errorPass;
+    stage->incoming = incomingPass;
     return 0;
 }
 

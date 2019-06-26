@@ -16940,7 +16940,7 @@ PUBLIC bool httpPumpOutput(HttpConn *conn)
         count = q->count;
         if (!tx->finalizedOutput) {
             HTTP_NOTIFY(conn, HTTP_EVENT_WRITABLE, 0);
-            if (tx->handler->writable) {
+            if (tx->handler && tx->handler->writable) {
                 tx->handler->writable(q);
             }
         }

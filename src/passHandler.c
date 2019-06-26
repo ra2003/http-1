@@ -74,6 +74,12 @@ static void handleTrace(HttpConn *conn)
 }
 
 
+static void incomingReady(HttpQueue *q, HttpPacket *packet)
+{
+    /* Simply discard incoming data */
+}
+
+
 PUBLIC int httpOpenPassHandler()
 {
     HttpStage     *stage;
@@ -93,6 +99,7 @@ PUBLIC int httpOpenPassHandler()
     }
     stage->start = startPass;
     stage->ready = readyError;
+    stage->incoming = incomingReady;
     return 0;
 }
 

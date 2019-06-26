@@ -171,6 +171,7 @@ PUBLIC int httpConnect(HttpConn *conn, cchar *method, cchar *uri, struct MprSsl 
      */
     httpCreateTxPipeline(conn, conn->http->clientRoute);
     httpSetState(conn, HTTP_STATE_CONNECTED);
+    httpPumpOutput(conn);
     setDefaultHeaders(conn);
     return 0;
 }

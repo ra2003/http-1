@@ -1410,6 +1410,13 @@
     </member>
     <member kind="function">
       <type>bool</type>
+      <name>httpPumpOutput</name>
+      <anchorfile>group___http_conn.html</anchorfile>
+      <anchor>ga4fc4c6ad8dbddb5b543a267e4e7a2193</anchor>
+      <arglist>(HttpConn *conn)</arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
       <name>httpQueuesNeedService</name>
       <anchorfile>group___http_conn.html</anchorfile>
       <anchor>ga0f23b0bbbf907b0023a18d0d81dc501f</anchor>
@@ -3929,7 +3936,7 @@
   </compound>
   <compound kind="dir">
     <name>src</name>
-    <path>/Users/mob/dev/http/src/</path>
+    <path>/Users/mob/dev/http-7/src/</path>
     <filename>dir_68267d1309a1af8e8297ef4c3efbcdba.html</filename>
     <file>http.h</file>
   </compound>

@@ -1,5 +1,5 @@
 /*
-    me.h -- MakeMe Configure Header for windows-x86-static
+    me.h -- MakeMe Configure Header for windows-x64-static
 
     This header is created by Me during configuration. To change settings, re-run
     configure or define variables in your Makefile to override these default values.
@@ -22,7 +22,7 @@
     #define ME_COMPANY "embedthis"
 #endif
 #ifndef ME_COMPATIBLE
-    #define ME_COMPATIBLE "7.0"
+    #define ME_COMPATIBLE "7.2"
 #endif
 #ifndef ME_COMPILER_HAS_ATOMIC
     #define ME_COMPILER_HAS_ATOMIC 0
@@ -84,8 +84,14 @@
 #ifndef ME_NAME
     #define ME_NAME "http"
 #endif
+#ifndef ME_PARTS
+    #define ME_PARTS "undefined"
+#endif
 #ifndef ME_PREFIXES
     #define ME_PREFIXES "install-prefixes"
+#endif
+#ifndef ME_PROFILE
+    #define ME_PROFILE "undefined"
 #endif
 #ifndef ME_STATIC
     #define ME_STATIC 1
@@ -94,7 +100,7 @@
     #define ME_TITLE "Embedthis Http"
 #endif
 #ifndef ME_VERSION
-    #define ME_VERSION "7.0.4"
+    #define ME_VERSION "7.2.0"
 #endif
 
 /* Prefixes */
@@ -172,7 +178,7 @@
 
 /* Profile */
 #ifndef ME_CONFIG_CMD
-    #define ME_CONFIG_CMD "me -d -q -platform windows-x86-static -static -configure . -without ssl -gen vs"
+    #define ME_CONFIG_CMD "me -d -q -platform windows-x64-static -static -configure . -gen vs"
 #endif
 #ifndef ME_HTTP_PRODUCT
     #define ME_HTTP_PRODUCT 1
@@ -189,13 +195,13 @@
     #define ME_MAJOR_VERSION 7
 #endif
 #ifndef ME_MINOR_VERSION
-    #define ME_MINOR_VERSION 0
+    #define ME_MINOR_VERSION 2
 #endif
 #ifndef ME_PATCH_VERSION
-    #define ME_PATCH_VERSION 4
+    #define ME_PATCH_VERSION 0
 #endif
 #ifndef ME_VNUM
-    #define ME_VNUM 700000004
+    #define ME_VNUM 700020000
 #endif
 
 /* Components */
@@ -208,11 +214,20 @@
 #ifndef ME_COM_LINK
     #define ME_COM_LINK 1
 #endif
+#ifndef ME_COM_MATRIXSSL
+    #define ME_COM_MATRIXSSL 0
+#endif
 #ifndef ME_COM_MBEDTLS
-    #define ME_COM_MBEDTLS 0
+    #define ME_COM_MBEDTLS 1
 #endif
 #ifndef ME_COM_MPR
     #define ME_COM_MPR 1
+#endif
+#ifndef ME_COM_NANOSSL
+    #define ME_COM_NANOSSL 0
+#endif
+#ifndef ME_COM_OPENSSL
+    #define ME_COM_OPENSSL 0
 #endif
 #ifndef ME_COM_OSDEP
     #define ME_COM_OSDEP 1
@@ -224,7 +239,7 @@
     #define ME_COM_RC 1
 #endif
 #ifndef ME_COM_SSL
-    #define ME_COM_SSL 0
+    #define ME_COM_SSL 1
 #endif
 #ifndef ME_COM_VXWORKS
     #define ME_COM_VXWORKS 0

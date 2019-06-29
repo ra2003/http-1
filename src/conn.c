@@ -7,6 +7,14 @@
 
 #include    "http.h"
 
+/********************************** Locals ************************************/
+
+typedef struct HttpInvoke {
+    HttpInvokeProc  callback;
+    void            *data;         //  User data - caller must free if required in callback
+    HttpConn        *conn;         //  Relevant conn
+} HttpInvoke;
+
 /***************************** Forward Declarations ***************************/
 
 static HttpPacket *getPacket(HttpConn *conn, ssize *bytesToRead);
@@ -982,6 +990,27 @@ PUBLIC void httpSetConnData(HttpConn *conn, void *data)
 PUBLIC void httpSetConnReqData(HttpConn *conn, void *data)
 {
     conn->reqData = data;
+}
+
+
+static void invokeWrapper(HttpInvoke *invoke)
+{
+    invoke->callback(invoke->conn, invoke->data);
+    pfree(invoke);
+}
+
+
+PUBLIC void httpInvoke(HttpConn *conn, HttpInvokeProc callback, void *data)
+{
+    HttpInvoke  *invoke;
+
+    if ((invoke = palloc(sizeof(HttpInvoke))) != NULL) {
+        invoke->callback = callback;
+        invoke->data = data;
+        invoke->conn = conn;
+        mprCreateEvent(conn->dispatcher, "httpInvoke", 0, (MprEventProc) invokeWrapper, invoke, 
+            MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
+    }
 }
 
 /*

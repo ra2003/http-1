@@ -11,7 +11,7 @@
 /********************************* Forwards ***********************************/
 
 static void setDefaultHeaders(HttpStream *stream);
-static int clientRequest(HttpStream *stream, cchar *method, cchar *uri, cchar *data, int protocol, char **err);
+static int clientRequest(HttpStream *stream, cchar *method, cchar *uri, cchar *data, char **err);
 
 /*********************************** Code *************************************/
 /*
@@ -130,9 +130,17 @@ PUBLIC int httpConnect(HttpStream *stream, cchar *method, cchar *url, MprSsl *ss
         }
 #endif
     }
+
     httpCreatePipeline(stream);
     setDefaultHeaders(stream);
+    tx->started = 1;
+
     httpSetState(stream, HTTP_STATE_CONNECTED);
+    httpPumpOutput(stream->writeq);
+
+    httpServiceNetQueues(net, 0);
+    httpEnableNetEvents(net);
+
     protocol = net->protocol < 2 ? "HTTP/1.1" : "HTTP/2";
     httpLog(net->trace, "client.request", "request", "method='%s', url='%s', protocol='%s'", tx->method, url, protocol);
     return 0;
@@ -380,7 +388,7 @@ PUBLIC HttpStream *httpRequest(cchar *method, cchar *uri, cchar *data, int proto
     }
     mprAddRoot(stream);
 
-    if (clientRequest(stream, method, uri, data, protocol, err) < 0) {
+    if (clientRequest(stream, method, uri, data, err) < 0) {
         mprRemoveRoot(stream);
         httpDestroyNet(net);
         return 0;
@@ -390,7 +398,7 @@ PUBLIC HttpStream *httpRequest(cchar *method, cchar *uri, cchar *data, int proto
 }
 
 
-static int clientRequest(HttpStream *stream, cchar *method, cchar *uri, cchar *data, int protocol, char **err)
+static int clientRequest(HttpStream *stream, cchar *method, cchar *uri, cchar *data, char **err)
 {
     ssize   len;
 

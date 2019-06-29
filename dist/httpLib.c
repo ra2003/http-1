@@ -5663,6 +5663,14 @@ PUBLIC int httpInitParser()
 
 
 
+/********************************** Locals ************************************/
+
+typedef struct HttpInvoke {
+    HttpInvokeProc  callback;
+    void            *data;         //  User data - caller must free if required in callback
+    HttpConn        *conn;         //  Relevant conn
+} HttpInvoke;
+
 /***************************** Forward Declarations ***************************/
 
 static HttpPacket *getPacket(HttpConn *conn, ssize *bytesToRead);
@@ -6638,6 +6646,27 @@ PUBLIC void httpSetConnData(HttpConn *conn, void *data)
 PUBLIC void httpSetConnReqData(HttpConn *conn, void *data)
 {
     conn->reqData = data;
+}
+
+
+static void invokeWrapper(HttpInvoke *invoke)
+{
+    invoke->callback(invoke->conn, invoke->data);
+    pfree(invoke);
+}
+
+
+PUBLIC void httpInvoke(HttpConn *conn, HttpInvokeProc callback, void *data)
+{
+    HttpInvoke  *invoke;
+
+    if ((invoke = palloc(sizeof(HttpInvoke))) != NULL) {
+        invoke->callback = callback;
+        invoke->data = data;
+        invoke->conn = conn;
+        mprCreateEvent(conn->dispatcher, "httpInvoke", 0, (MprEventProc) invokeWrapper, invoke, 
+            MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
+    }
 }
 
 /*
@@ -11032,7 +11061,7 @@ static void readyPass(HttpQueue *q)
 }
 
 
-static void readyError(HttpQueue *q)
+static void errorPass(HttpQueue *q)
 {
     if (!q->conn->error) {
         httpError(q->conn, HTTP_CODE_NOT_FOUND, "The requested resource is not available");
@@ -11076,7 +11105,7 @@ static void handleTrace(HttpConn *conn)
 }
 
 
-static void incomingReady(HttpQueue *q, HttpPacket *packet)
+static void incomingPass(HttpQueue *q, HttpPacket *packet)
 {
     /* Simply discard incoming data */
 }
@@ -11100,8 +11129,8 @@ PUBLIC int httpOpenPassHandler()
         return MPR_ERR_CANT_CREATE;
     }
     stage->start = startPass;
-    stage->ready = readyError;
-    stage->incoming = incomingReady;
+    stage->ready = errorPass;
+    stage->incoming = incomingPass;
     return 0;
 }
 
@@ -15805,10 +15834,12 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
 
 
 
-/***************************** Forward Declarations ***************************/
+/*********************************** Locals ***********************************/
 
-#define HEADER_KEY 0x1
-#define HEADER_VALUE 0x2
+#define HEADER_KEY      0x1         /* Validate token as a header key */
+#define HEADER_VALUE    0x2         /* Validate token as a header value */
+
+/***************************** Forward Declarations ***************************/
 
 static void addMatchEtag(HttpConn *conn, char *etag);
 static void delayAwake(HttpConn *conn, MprEvent *event);
@@ -16052,7 +16083,7 @@ static bool parseIncoming(HttpConn *conn)
         return 0;
     }
     if (!parseHeaders(conn, packet)) {
-        /* Continue to process errors and valid requests */
+        return 0;
     }
     if (httpServerConn(conn)) {
         hostname = rx->hostHeader;

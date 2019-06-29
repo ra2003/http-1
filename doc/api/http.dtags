@@ -1158,6 +1158,13 @@
     </member>
     <member kind="typedef">
       <type>void(*</type>
+      <name>HttpInvokeProc</name>
+      <anchorfile>group___http_conn.html</anchorfile>
+      <anchor>gab961689c08b521886ab8ae33cef278ea</anchor>
+      <arglist>)(HttpConn *conn, void *data)</arglist>
+    </member>
+    <member kind="typedef">
+      <type>void(*</type>
       <name>HttpIOCallback</name>
       <anchorfile>group___http_conn.html</anchorfile>
       <anchor>ga90233a1163fa6772c60c86588b01e803</anchor>
@@ -1351,6 +1358,13 @@
       <anchorfile>group___http_conn.html</anchorfile>
       <anchor>ga00caa53532192c9e3f7bedb51ab77aca</anchor>
       <arglist>(HttpConn *conn)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpInvoke</name>
+      <anchorfile>group___http_conn.html</anchorfile>
+      <anchor>ga680c6d113a32965c2498c407fdf1b69e</anchor>
+      <arglist>(HttpConn *conn, HttpInvokeProc callback, void *data)</arglist>
     </member>
     <member kind="function">
       <type>void void void void</type>

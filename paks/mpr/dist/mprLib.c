@@ -25634,7 +25634,7 @@ PUBLIC void mprGetWorkerStats(MprWorkerStats *stats)
 PUBLIC int mprAvailableWorkers()
 {
     MprWorkerStats  wstats;
-    int             activeWorkers, spareThreads, spareCores, result;
+    int             spareThreads, result;
 
     memset(&wstats, 0, sizeof(wstats));
     mprGetWorkerStats(&wstats);
@@ -25646,12 +25646,16 @@ PUBLIC int mprAvailableWorkers()
      */
     result = spareThreads = wstats.max - wstats.busy - wstats.idle;
 #if ME_MPR_THREAD_LIMIT_BY_CORES
+{
+    int     activeWorkers, spareCores;
+
     activeWorkers = wstats.busy - wstats.yielded;
     spareCores = MPR->heap->stats.cpuCores - activeWorkers;
     if (spareCores <= 0) {
         return 0;
     }
     result = wstats.idle + min(spareThreads, spareCores);
+}
 #endif
 #if DEBUG_TRACE
     printf("Avail %d, busy %d, yielded %d, idle %d, spare-threads %d, spare-cores %d, mustYield %d\n", result, wstats.busy,

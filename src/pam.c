@@ -30,7 +30,7 @@ static int pamChat(int msgCount, const struct pam_message **msg, struct pam_resp
 
 /*********************************** Code *************************************/
 /*
-    Use PAM to verify a user.  The password may be NULL if using auto-login.
+    Use PAM to verify a user. The password may be NULL if using auto-login.
  */
 PUBLIC bool httpPamVerifyUser(HttpStream *stream, cchar *username, cchar *password)
 {

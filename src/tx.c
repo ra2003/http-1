@@ -885,8 +885,11 @@ PUBLIC ssize httpWriteBlock(HttpQueue *q, cchar *buf, ssize len, int flags)
     HttpTx      *tx;
     ssize       totalWritten, packetSize, thisWrite;
 
-    assert(q == q->stream->writeq);
     stream = q->stream;
+    if (!stream) {
+        return 0;
+    }
+    assert(q == q->stream->writeq);
     tx = stream->tx;
 
     if (tx == 0 || tx->finalizedOutput) {

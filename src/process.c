@@ -25,7 +25,6 @@ static void processHttp(HttpQueue *q);
 static void processParsed(HttpQueue *q);
 static void processReady(HttpQueue *q);
 static bool processRunning(HttpQueue *q);
-static bool pumpOutput(HttpQueue *q);
 static void routeRequest(HttpStream *stream);
 static int sendContinue(HttpQueue *q);
 
@@ -45,8 +44,7 @@ PUBLIC bool httpProcessHeaders(HttpQueue *q)
 
 PUBLIC void httpProcess(HttpQueue *q)
 {
-    //  TODO - should have flag if already scheduled?
-    mprCreateEvent(q->stream->dispatcher, "http2", 0, processHttp, q->stream->inputq, 0);
+    mprCreateEvent(q->stream->dispatcher, "http", 0, processHttp, q->stream->inputq, 0);
 }
 
 
@@ -520,7 +518,7 @@ static void processParsed(HttpQueue *q)
     if (httpIsServer(stream->net)) {
         //  TODO is rx->length getting set for HTTP/2?
         if (!rx->upload && rx->length >= stream->limits->rxBodySize && stream->limits->rxBodySize != HTTP_UNLIMITED) {
-            httpLimitError(stream, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
+            httpLimitError(stream, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Request content length %lld bytes is too big. Limit %lld", rx->length, stream->limits->rxBodySize);
             return;
         }
@@ -558,7 +556,7 @@ static void routeRequest(HttpStream *stream)
 }
 
 
-static bool pumpOutput(HttpQueue *q)
+PUBLIC bool httpPumpOutput(HttpQueue *q)
 {
     HttpStream  *stream;
     HttpTx      *tx;
@@ -573,7 +571,7 @@ static bool pumpOutput(HttpQueue *q)
         count = wq->count;
         if (!tx->finalizedOutput) {
             HTTP_NOTIFY(stream, HTTP_EVENT_WRITABLE, 0);
-            if (tx->handler->writable) {
+            if (tx->handler && tx->handler->writable) {
                 tx->handler->writable(wq);
             }
         }
@@ -613,7 +611,7 @@ static bool processContent(HttpQueue *q)
             HTTP_NOTIFY(stream, HTTP_EVENT_READABLE, 0);
         }
     }
-    return pumpOutput(q) || rx->eof;
+    return httpPumpOutput(q) || rx->eof;
 }
 
 
@@ -645,7 +643,7 @@ static bool processRunning(HttpQueue *q)
         httpSetState(stream, HTTP_STATE_FINALIZED);
         return 1;
     }
-    return pumpOutput(q);
+    return httpPumpOutput(q);
 }
 
 

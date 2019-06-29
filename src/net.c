@@ -282,13 +282,7 @@ PUBLIC void httpNetClosed(HttpNet *net)
 
     for (ITERATE_ITEMS(net->streams, stream, next)) {
         if (stream->state < HTTP_STATE_PARSED) {
-            if (!stream->errorMsg) {
-                stream->errorMsg = sfmt("Peer closed connection before receiving a response");
-            }
-            if (!net->errorMsg) {
-                net->errorMsg = stream->errorMsg;
-            }
-            stream->error = 1;
+            httpError(stream, 0, "Peer closed connection before receiving a response");
         }
         httpSetEof(stream);
         httpSetState(stream, HTTP_STATE_COMPLETE);

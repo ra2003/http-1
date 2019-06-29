@@ -14,8 +14,9 @@
 
 /********************************** Forwards **********************************/
 
+static void incomingPass(HttpQueue *q, HttpPacket *packet);
 static void handleTraceMethod(HttpStream *stream);
-static void readyError(HttpQueue *q);
+static void errorPass(HttpQueue *q);
 static void readyPass(HttpQueue *q);
 static void startPass(HttpQueue *q);
 
@@ -39,7 +40,8 @@ PUBLIC int httpOpenPassHandler()
         return MPR_ERR_CANT_CREATE;
     }
     stage->start = startPass;
-    stage->ready = readyError;
+    stage->ready = errorPass;
+    stage->incoming = incomingPass;
     return 0;
 }
 
@@ -63,7 +65,7 @@ static void readyPass(HttpQueue *q)
 }
 
 
-static void readyError(HttpQueue *q)
+static void errorPass(HttpQueue *q)
 {
     if (!q->stream->error) {
         httpError(q->stream, HTTP_CODE_NOT_FOUND, "The requested resource is not available");
@@ -103,6 +105,12 @@ static void handleTraceMethod(HttpStream *stream)
     httpSetContentType(stream, "message/http");
     httpPutPacketToNext(q, traceData);
     httpFinalize(stream);
+}
+
+
+static void incomingPass(HttpQueue *q, HttpPacket *packet)
+{
+    /* Simply discard incoming data */
 }
 
 /*

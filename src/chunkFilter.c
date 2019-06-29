@@ -69,7 +69,6 @@ PUBLIC void httpInitChunking(HttpStream *stream)
     Return number of bytes available to read.
     NOTE: may set rx->eof and return 0 bytes on EOF.
  */
-
 static void incomingChunk(HttpQueue *q, HttpPacket *packet)
 {
     HttpStream  *stream;
@@ -263,7 +262,7 @@ static bool needChunking(HttpQueue *q)
         tx->length = stoi(value);
     }
     if (tx->length < 0 && tx->chunkSize < 0) {
-        if (q->last->flags & HTTP_PACKET_END) {
+        if (q->last && q->last->flags & HTTP_PACKET_END) {
             if (q->count > 0) {
                 tx->length = q->count;
             }

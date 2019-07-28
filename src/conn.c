@@ -438,6 +438,7 @@ static void readPeerData(HttpConn *conn)
         conn->lastRead = mprReadSocket(conn->sock, mprGetBufEnd(packet->content), size);
         if (conn->lastRead > 0) {
             mprAdjustBufEnd(packet->content, conn->lastRead);
+            mprAddNullToBuf(packet->content);
         } else if (conn->lastRead < 0 && mprIsSocketEof(conn->sock)) {
             if (conn->state < HTTP_STATE_PARSED) {
                 conn->error = 1;

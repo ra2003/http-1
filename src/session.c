@@ -122,7 +122,7 @@ PUBLIC HttpSession *httpGetSession(HttpStream *stream, int create)
         if ((id = httpGetSessionID(stream)) != 0) {
             if ((data = mprReadCache(stream->http->sessionCache, id, 0, 0)) != 0) {
                 rx->session = allocSessionObj(stream, id, data);
-                rx->traceId = sfmt("%d-%d-%d-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
+                rx->traceId = sfmt("%d-%d-%llu-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
             }
         }
         if (!rx->session && create) {
@@ -142,7 +142,7 @@ PUBLIC HttpSession *httpGetSession(HttpStream *stream, int create)
             unlock(http);
 
             rx->session = allocSessionObj(stream, id, NULL);
-            rx->traceId = sfmt("%d-%d-%d-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
+            rx->traceId = sfmt("%d-%d-%llu-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
             flags = (route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
             if (stream->secure) {
                 flags |= HTTP_COOKIE_SECURE;

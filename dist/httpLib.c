@@ -13495,7 +13495,7 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     }
 
     lock(http);
-    net->seqno = (int) ++http->totalConnections;
+    net->seqno = ++http->totalConnections;
     unlock(http);
     httpAddNet(net);
     return net;
@@ -21004,7 +21004,7 @@ PUBLIC HttpRx *httpCreateRx(HttpStream *stream)
 
     rx->seqno = ++stream->net->totalRequests;
     peer = stream->net->address ? stream->net->address->seqno : 0;
-    rx->traceId = sfmt("%d-0-%d-%d", peer, stream->net->seqno, rx->seqno);
+    rx->traceId = sfmt("%d-0-%lld-%d", peer, stream->net->seqno, rx->seqno);
     return rx;
 }
 
@@ -21682,7 +21682,7 @@ PUBLIC HttpSession *httpGetSession(HttpStream *stream, int create)
         if ((id = httpGetSessionID(stream)) != 0) {
             if ((data = mprReadCache(stream->http->sessionCache, id, 0, 0)) != 0) {
                 rx->session = allocSessionObj(stream, id, data);
-                rx->traceId = sfmt("%d-%d-%d-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
+                rx->traceId = sfmt("%d-%d-%llu-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
             }
         }
         if (!rx->session && create) {
@@ -21702,7 +21702,7 @@ PUBLIC HttpSession *httpGetSession(HttpStream *stream, int create)
             unlock(http);
 
             rx->session = allocSessionObj(stream, id, NULL);
-            rx->traceId = sfmt("%d-%d-%d-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
+            rx->traceId = sfmt("%d-%d-%llu-%d", stream->net->address->seqno, rx->session->seqno, stream->net->seqno, rx->seqno);
             flags = (route->flags & HTTP_ROUTE_VISIBLE_SESSION) ? 0 : HTTP_COOKIE_HTTP;
             if (stream->secure) {
                 flags |= HTTP_COOKIE_SECURE;
@@ -22161,11 +22161,13 @@ PUBLIC HttpStage *httpCreateStreamector(cchar *name, MprModule *module)
 
 
 /********************************** Locals ************************************/
-
+/*
+    Invocation structure for httpCreateEvent
+ */
 typedef struct HttpInvoke {
     HttpInvokeProc  callback;
-    void            *data;         //  User data - caller must free if required in callback
-    HttpStream      *stream;       //  Relevant stream
+    void            *data;          //  User data - caller must free if required in callback
+    uint64          seqno;          //  Stream seqno
 } HttpInvoke;
 
 /***************************** Forward Declarations ***************************/
@@ -22271,6 +22273,11 @@ PUBLIC HttpStream *httpCreateStream(HttpNet *net, bool peerCreated)
     httpSetQueueLimits(stream->outputq, limits, -1, -1, -1, -1);
 #endif
     httpSetState(stream, HTTP_STATE_BEGIN);
+
+    lock(http);
+    stream->seqno = ++http->totalStreams;
+    unlock(http);
+
     httpAddStream(net, stream);
     if (!peerCreated) {
         net->ownStreams++;
@@ -22805,25 +22812,64 @@ PUBLIC void httpTraceQueues(HttpStream *stream)
 }
 
 
+static HttpStream *findStream(uint64 seqno) 
+{
+    HttpNet     *net;
+    HttpStream  *stream;
+    int         nextNet, nextStream;
+
+    for (ITERATE_ITEMS(HTTP->networks, net, nextNet)) {
+        for (ITERATE_ITEMS(net->streams, stream, nextStream)) {
+            if (stream->seqno == seqno) {
+                if (!stream->destroyed && HTTP_STATE_BEGIN < stream->state && stream->state < HTTP_STATE_COMPLETE) {
+                    return stream;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+
 static void invokeWrapper(HttpInvoke *invoke)
 {
-    invoke->callback(invoke->conn, invoke->data);
-    pfree(invoke);
-}
+    HttpStream  *stream;
 
-
-PUBLIC void httpInvoke(HttpStream *stream, HttpInvokeProc callback, void *data)
-{
-    HttpInvoke  *invoke;
-
-    if ((invoke = palloc(sizeof(HttpInvoke))) != NULL) {
-        invoke->callback = callback;
-        invoke->data = data;
-        invoke->stream = stream;
-        mprCreateEvent(stream->dispatcher, "httpInvoke", 0, (MprEventProc) invokeWrapper, invoke,
-            MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
+    if ((stream = findStream(invoke->seqno)) != NULL) {
+        invoke->callback(stream, invoke->data);
+        pfree(invoke);
     }
 }
+
+
+PUBLIC void httpCreateEvent(uint64 seqno, HttpInvokeProc callback, void *data)
+{
+    HttpNet     *net;
+    HttpStream  *stream;
+    HttpInvoke  *invoke;
+    int         nextNet, nextStream;
+
+    lock(HTTP);
+    for (ITERATE_ITEMS(HTTP->networks, net, nextNet)) {
+        for (ITERATE_ITEMS(net->streams, stream, nextStream)) {
+            if (stream->seqno == seqno) {
+                if (!stream->destroyed && HTTP_STATE_BEGIN < stream->state && stream->state < HTTP_STATE_COMPLETE) {
+                    if ((invoke = palloc(sizeof(HttpInvoke))) != NULL) {
+                        invoke->callback = callback;
+                        invoke->data = data;
+                        invoke->seqno = seqno;
+                        mprCreateEvent(stream->dispatcher, "httpCreateEvent", 0, (MprEventProc) invokeWrapper,
+                            invoke, MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    unlock(HTTP);
+}
+
+
 /*
     Copyright (c) Embedthis Software. All Rights Reserved.
     This software is distributed under commercial and open source licenses.

@@ -96,7 +96,7 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     }
 
     lock(http);
-    net->seqno = (int) ++http->totalConnections;
+    net->seqno = ++http->totalConnections;
     unlock(http);
     httpAddNet(net);
     return net;

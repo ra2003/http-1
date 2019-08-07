@@ -414,7 +414,7 @@ typedef struct HttpAddress {
     int         banStatus;                      /**< Ban response status */
     int         delay;                          /**< Delay per request */
     int         ncounters;                      /**< Number of counters in ncounters */
-    int         seqno;                          /**< Uniqueu client sequence number */
+    int         seqno;                          /**< Unique client sequence number */
     HttpCounter counters[1];                    /**< Counters allocated here */
 } HttpAddress;
 
@@ -1012,6 +1012,7 @@ typedef struct Http {
     int             activeProcesses;        /**< Count of active external processes */
     uint64          totalConnections;       /**< Total connections accepted */
     uint64          totalRequests;          /**< Total requests served */
+    uint64          totalStreams;           /**< Total streams created */
 
     int             flags;                  /**< Open flags */
     void            *context;               /**< Embedding context */
@@ -3092,6 +3093,7 @@ typedef struct HttpNet {
 
     void            *context;               /**< Embedding context (EjsRequest) */
     void            *data;                  /**< Custom data */
+    uint64          seqno;                  /**< Unique network sequence number */
 
 #if UNUSED || 1
     void            *ejs;                   /**< Embedding VM */
@@ -3102,7 +3104,6 @@ typedef struct HttpNet {
     int             nextStreamID;           /**< Next stream ID */
     int             lastStreamID;           /**< Last stream ID */
     int             ownStreams;             /**< Number of peer created streams */
-    int             seqno;                  /**< Unique network sequence number */
     int             session;                /**< Currently parsing frame for this session */
     int             timeout;                /**< Network timeout indication */
     int             totalRequests;          /**< Total number of requests serviced */
@@ -3514,6 +3515,7 @@ typedef struct HttpStream {
     MprEvent        *timeoutEvent;          /**< Connection or request timeout event */
     HttpTrace       *trace;                 /**< Tracing configuration */
     uint64          startMark;              /**< High resolution tick time of request */
+    uint64          seqno;                  /**< Unique monotonically increasing sequence number */
 
     char            *boundary;              /**< File upload boundary */
     void            *context;               /**< Embedding context (EjsRequest) */
@@ -8422,24 +8424,23 @@ typedef struct HttpDir {
 PUBLIC HttpDir *httpGetDirObj(HttpRoute *route);
 
 /************************************ Invoke ***************************************/
-
 /**
-    Event callback function for httpInvoke
+    Event callback function for httpCreateEvent
     @ingroup HttpStream
     @stability Prototype
  */
 typedef void (*HttpInvokeProc)(HttpStream *stream, void *data);
 
 /**
-    Invoke a callback on an Appweb thread from a non-appweb thread.
-    @description Used to safely call back into Apppweb. This API provides a wrapper over mprCreateEvent.
-    @param stream HttpStream object created via #httpCreateStream
+    Invoke a callback on an Appweb thread from a non-appweb thread using a stream sequence number.
+    @description Used to safely call back into Apppweb.
+    @param streamSeqno HttpStream->seqno identifier
     @param callback Callback function to invoke
     @param data Data to pass to the callback. Caller is responsible to free in the callback if required.
     @ingroup HttpStream
     @stability Prototype
  */
-PUBLIC void httpInvoke(HttpStream *stream, HttpInvokeProc callback, void *data);
+PUBLIC void httpCreateEvent(uint64 streamSeqno, HttpInvokeProc callback, void *data);
 
 /************************************ Misc *****************************************/
 /**

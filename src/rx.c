@@ -33,7 +33,7 @@ PUBLIC HttpRx *httpCreateRx(HttpStream *stream)
 
     rx->seqno = ++stream->net->totalRequests;
     peer = stream->net->address ? stream->net->address->seqno : 0;
-    rx->traceId = sfmt("%d-0-%d-%d", peer, stream->net->seqno, rx->seqno);
+    rx->traceId = sfmt("%d-0-%lld-%d", peer, stream->net->seqno, rx->seqno);
     return rx;
 }
 

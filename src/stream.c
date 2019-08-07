@@ -661,7 +661,7 @@ PUBLIC void httpTraceQueues(HttpStream *stream)
 }
 
 
-static HttpStream *findStream(uint64 seqno) 
+static HttpStream *getStreamBySeqno(uint64 seqno) 
 {
     HttpNet     *net;
     HttpStream  *stream;
@@ -684,7 +684,7 @@ static void invokeWrapper(HttpInvoke *invoke)
 {
     HttpStream  *stream;
 
-    if ((stream = findStream(invoke->seqno)) != NULL) {
+    if ((stream = getStreamBySeqno(invoke->seqno)) != NULL) {
         invoke->callback(stream, invoke->data);
         pfree(invoke);
     }

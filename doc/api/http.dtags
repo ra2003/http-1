@@ -1352,6 +1352,13 @@
     </member>
     <member kind="function">
       <type>void</type>
+      <name>httpCreateEvent</name>
+      <anchorfile>group___http_stream.html</anchorfile>
+      <anchor>gaa25db674808e704c11c5352bec1db7bd</anchor>
+      <arglist>(uint64 streamSeqno, HttpInvokeProc callback, void *data)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
       <name>httpCreatePipeline</name>
       <anchorfile>group___http_stream.html</anchorfile>
       <anchor>gafd1f6b503bbc33ae324945b571bbea10</anchor>
@@ -1468,13 +1475,6 @@
       <anchorfile>group___http_stream.html</anchorfile>
       <anchor>gad711fe733965aae505eaf6e2ed021834</anchor>
       <arglist>(HttpStream *stream)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>httpInvoke</name>
-      <anchorfile>group___http_stream.html</anchorfile>
-      <anchor>ga11bfbd86db3b498d0b0867f62ea6c931</anchor>
-      <arglist>(HttpStream *stream, HttpInvokeProc callback, void *data)</arglist>
     </member>
     <member kind="function">
       <type>void void</type>

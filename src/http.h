@@ -8435,13 +8435,13 @@ typedef struct HttpDir {
  */
 PUBLIC HttpDir *httpGetDirObj(HttpRoute *route);
 
-/************************************ Invoke ***************************************/
+/************************************ CreateEvent ***********************************/
 /**
     Event callback function for httpCreateEvent
     @ingroup HttpStream
     @stability Prototype
  */
-typedef void (*HttpInvokeProc)(HttpStream *stream, void *data);
+typedef void (*HttpEventProc)(HttpStream *stream, void *data);
 
 /**
     Invoke a callback on an Appweb thread from a non-appweb thread using a stream sequence number.
@@ -8452,7 +8452,7 @@ typedef void (*HttpInvokeProc)(HttpStream *stream, void *data);
     @ingroup HttpStream
     @stability Prototype
  */
-PUBLIC void httpCreateEvent(uint64 streamSeqno, HttpInvokeProc callback, void *data);
+PUBLIC void httpCreateEvent(uint64 streamSeqno, HttpEventProc callback, void *data);
 
 /************************************ Misc *****************************************/
 /**

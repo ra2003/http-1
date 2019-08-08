@@ -10,14 +10,19 @@
 
 /*********************************** Locals ***********************************/
 
-#define HEADER_KEY      0x1         /* Validate token as a header key */
-#define HEADER_VALUE    0x2         /* Validate token as a header value */
+#define TOKEN_HEADER_KEY        0x1     /* Validate token as a header key */
+#define TOKEN_HEADER_VALUE      0x2     /* Validate token as a header value */
+#define TOKEN_URI               0x4     /* Validate token as a URI value */
+#define TOKEN_NUMBER            0x8     /* Validate token as a number */
+#define TOKEN_WORD              0x10    /* Validate token as single word with no spaces */
+#define TOKEN_LINE              0x20    /* Validate token as line with no newlines */
 
 /********************************** Forwards **********************************/
 
 static HttpStream *findStream(HttpQueue *q);
 static char *getToken(HttpPacket *packet, cchar *delim, int validation);
 static bool gotHeaders(HttpQueue *q, HttpPacket *packet);
+static void logPacket(HttpQueue *q, HttpPacket *packet);
 static void incomingHttp1(HttpQueue *q, HttpPacket *packet);
 static bool monitorActiveRequests(HttpStream *stream);
 static void outgoingHttp1(HttpQueue *q, HttpPacket *packet);
@@ -26,7 +31,7 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet);
 static HttpPacket *parseHeaders(HttpQueue *q, HttpPacket *packet);
 static void parseRequestLine(HttpQueue *q, HttpPacket *packet);
 static void parseResponseLine(HttpQueue *q, HttpPacket *packet);
-static void logPacket(HttpQueue *q, HttpPacket *packet);
+static char *validateToken(char *token, char *endToken, int validation);
 
 /*********************************** Code *************************************/
 /*
@@ -241,7 +246,7 @@ static void parseRequestLine(HttpQueue *q, HttpPacket *packet)
     rx = stream->rx;
     limits = stream->limits;
 
-    method = getToken(packet, NULL, 0);
+    method = getToken(packet, NULL, TOKEN_WORD);
     if (method == NULL || *method == '\0') {
         httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty method");
         return;
@@ -249,7 +254,7 @@ static void parseRequestLine(HttpQueue *q, HttpPacket *packet)
     rx->originalMethod = rx->method = supper(method);
     httpParseMethod(stream);
 
-    uri = getToken(packet, NULL, 0);
+    uri = getToken(packet, NULL, TOKEN_URI);
     if (uri == NULL || *uri == '\0') {
         httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty URI");
         return;
@@ -264,7 +269,7 @@ static void parseRequestLine(HttpQueue *q, HttpPacket *packet)
     if (!rx->originalUri) {
         rx->originalUri = rx->uri;
     }
-    protocol = getToken(packet, "\r\n", 0);
+    protocol = getToken(packet, "\r\n", TOKEN_WORD);
     if (protocol == NULL || *protocol == '\0') {
         httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty protocol");
         return;
@@ -304,7 +309,7 @@ static void parseResponseLine(HttpQueue *q, HttpPacket *packet)
     rx = stream->rx;
     tx = stream->tx;
 
-    protocol = getToken(packet, NULL, 0);
+    protocol = getToken(packet, NULL, TOKEN_WORD);
     if (protocol == NULL || *protocol == '\0') {
         httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Bad response protocol");
         return;
@@ -319,14 +324,14 @@ static void parseResponseLine(HttpQueue *q, HttpPacket *packet)
         httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
         return;
     }
-    status = getToken(packet, NULL, 0);
+    status = getToken(packet, NULL, TOKEN_NUMBER);
     if (status == NULL || *status == '\0') {
         httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Bad response status code");
         return;
     }
     rx->status = atoi(status);
 
-    message = getToken(packet, "\r\n", 0);
+    message = getToken(packet, "\r\n", TOKEN_LINE);
     if (message == NULL || *message == '\0') {
         httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Bad response status message");
         return;
@@ -369,12 +374,12 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet)
             httpLimitError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Too many headers");
             return 0;
         }
-        key = getToken(packet, ":", HEADER_KEY);
+        key = getToken(packet, ":", TOKEN_HEADER_KEY);
         if (key == NULL || *key == '\0' || mprGetBufLength(packet->content) == 0) {
             httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header format");
             return 0;
         }
-        value = getToken(packet, "\r\n", HEADER_VALUE);
+        value = getToken(packet, "\r\n", TOKEN_HEADER_VALUE);
         if (value == NULL || mprGetBufLength(packet->content) == 0 || packet->content->start[0] == '\0') {
             httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad header value");
             return 0;
@@ -406,6 +411,104 @@ static HttpPacket *parseFields(HttpQueue *q, HttpPacket *packet)
 }
 
 
+/*
+    Get the next input token. The content buffer is advanced to the next token.
+    The delimiter is a string to match and not a set of characters.
+    If the delimeter null, it means use white space (space or tab) as a delimiter.
+ */
+static char *getToken(HttpPacket *packet, cchar *delim, int validation)
+{
+    MprBuf  *buf;
+    char    *token, *endToken;
+
+    buf = packet->content;
+    /* Already null terminated but for safety */
+    mprAddNullToBuf(buf);
+    token = mprGetBufStart(buf);
+    endToken = mprGetBufEnd(buf);
+
+    /*
+        Eat white space before token
+     */
+    for (; token < endToken && (*token == ' ' || *token == '\t'); token++) {}
+
+    if (delim) {
+        if ((endToken = sncontains(token, delim, endToken - token)) == NULL) {
+            return NULL;
+        }
+        /* Only eat one occurence of the delimiter */
+        buf->start = endToken + strlen(delim);
+        *endToken = '\0';
+
+    } else {
+        delim = " \t";
+        if ((endToken = strpbrk(token, delim)) == NULL) {
+            return NULL;
+        }
+        buf->start = endToken + strspn(endToken, delim);
+        *endToken = '\0';
+    }
+    token = validateToken(token, endToken, validation);
+    return token;
+}
+
+
+static char *validateToken(char *token, char *endToken, int validation)
+{
+    char   *t;
+
+    if (validation == TOKEN_HEADER_KEY) {
+        if (*token == '\0') {
+            return NULL;
+        }
+        if (strpbrk(token, "\"\\/ \t\r\n(),:;<=>?@[]{}")) {
+            return NULL;
+        }
+        for (t = token; t < endToken && *t; t++) {
+            if (!isprint(*t)) {
+                return NULL;
+            }
+        }
+    } else if (validation == TOKEN_HEADER_VALUE) {
+        if (token < endToken) {
+            /* Trim white space */
+            for (t = endToken - 1; t >= token; t--) {
+                if (isspace((uchar) *t)) {
+                    *t = '\0';
+                } else {
+                    break;
+                }
+            }
+        }
+        while (isspace((uchar) *token)) {
+            token++;
+        }
+        for (t = token; *t; t++) {
+            if (!isprint(*t)) {
+                return NULL;
+            }
+        }
+    } else if (validation == TOKEN_URI) {
+        if (!httpValidUriChars(token)) {
+            return NULL;
+        }
+    } else if (validation == TOKEN_NUMBER) {
+        if (!snumber(token)) {
+            return NULL;
+        }
+    } else if (validation == TOKEN_WORD) {
+        if (strpbrk(token, " \t\r\n") != NULL) {
+            return NULL;
+        }
+    } else {
+        if (strpbrk(token, "\r\n") != NULL) {
+            return NULL;
+        }
+    }
+    return token;
+}
+
+#if 0
 /*
     Get the next input token. The content buffer is advanced to the next token.
     The delimiter is a string to match and not a set of characters.
@@ -480,6 +583,7 @@ static char *getToken(HttpPacket *packet, cchar *delim, int validation)
     buf->start = nextToken;
     return token;
 }
+#endif
 
 
 PUBLIC void httpCreateHeaders1(HttpQueue *q, HttpPacket *packet)

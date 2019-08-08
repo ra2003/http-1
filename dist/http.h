@@ -3055,7 +3055,7 @@ PUBLIC void httpClosePipeline(HttpConn *conn);
     \n\n
     @param conn HttpConn object created via #httpCreateConn
     @ingroup HttpConn
-    @stability Prototype
+    @stability Deprecated
  */
 PUBLIC void httpBorrowConn(HttpConn *conn);
 #endif
@@ -3452,7 +3452,7 @@ PUBLIC void httpResetCredentials(HttpConn *conn);
     \n\n
     @param conn HttpConn object created via #httpCreateConn
     @ingroup HttpConn
-    @stability Prototype
+    @stability Deprecated
  */
 PUBLIC void httpReturnConn(HttpConn *conn);
 #endif

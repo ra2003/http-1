@@ -2348,17 +2348,6 @@ PUBLIC void httpResumeQueue(HttpQueue *q);
  */
 PUBLIC void httpScheduleQueue(HttpQueue *q);
 
-#if UNUSED
-/**
-    Service a queue
-    @description Service a queue by invoking its service() routine.
-    @param q Queue reference
-    @ingroup HttpQueue
-    @stability Stable
- */
-PUBLIC void httpServiceQueue(HttpQueue *q);
-#endif
-
 /**
     Set a queue's max packetSize and flow control low, max and window thresholds
     @description If size parameters are set to -1, default values from the limits are used.
@@ -3104,7 +3093,7 @@ typedef struct HttpNet {
     void            *data;                  /**< Custom data */
     uint64          seqno;                  /**< Unique network sequence number */
 
-#if UNUSED || 1
+#if KEEP || 1
     void            *ejs;                   /**< Embedding VM */
     void            *pool;                  /**< Pool of VMs */
 #endif
@@ -3138,6 +3127,7 @@ typedef struct HttpNet {
     bool            writeBlocked: 1;        /**< Transmission writing is blocked */
 } HttpNet;
 
+#if DEPRECATED || 1
 /**
     Borrow a network connection
     @description Borrow the network from Http. This effectively gains an exclusive loan of the network so that it
@@ -3158,9 +3148,10 @@ typedef struct HttpNet {
     \n\n
     @param net HttpNet object created via #httpCreateNet
     @ingroup HttpNet
-    @stability Internal
+    @stability Deprecated
  */
 PUBLIC void httpBorrowNet(HttpNet *net);
+#endif
 
 /**
     Connect the network to a remote peer.
@@ -3285,6 +3276,7 @@ PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...);
   */
 PUBLIC void httpNetTimeout(HttpNet *net);
 
+#if DEPRECATED || 1
 /**
     Return a borrowed a network connection
     @description Returns a borrowed network object back to the Http engine. This ends the exclusive loan of the
@@ -3299,9 +3291,10 @@ PUBLIC void httpNetTimeout(HttpNet *net);
     \n\n
     @param net HttpNet object created via #httpCreateNet
     @ingroup HttpNet
-    @stability Internal
+    @stability Deprecated
  */
 PUBLIC void httpReturnNet(HttpNet *net);
+#endif
 
 /**
     Service pipeline queues to flow data.

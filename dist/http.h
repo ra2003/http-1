@@ -1037,6 +1037,7 @@ typedef struct Http {
     int             staticLink;             /**< Target platform is using a static linking */
     int             traceLevel;             /**< Current request trace level */
     int             startLevel;             /**< Start endpoint trace level */
+    int             http2;                  /**< Enable http 2 */
 
     /*
         Callbacks
@@ -1136,6 +1137,14 @@ PUBLIC Http *httpCreate(int flags);
     @stability Internal
  */
 PUBLIC void httpDestroy(void);
+
+/*
+    Enable or disable HTTP/2 for the server at runtime.
+    @param enable Boolean. Set to 1 to enable and zero to disable.
+    @ingroup Http
+    @stability Prototype
+ */
+PUBLIC void httpEnableHttp2(int enable);
 
 /**
     Get the http context object
@@ -2339,17 +2348,6 @@ PUBLIC void httpResumeQueue(HttpQueue *q);
  */
 PUBLIC void httpScheduleQueue(HttpQueue *q);
 
-#if UNUSED
-/**
-    Service a queue
-    @description Service a queue by invoking its service() routine.
-    @param q Queue reference
-    @ingroup HttpQueue
-    @stability Stable
- */
-PUBLIC void httpServiceQueue(HttpQueue *q);
-#endif
-
 /**
     Set a queue's max packetSize and flow control low, max and window thresholds
     @description If size parameters are set to -1, default values from the limits are used.
@@ -3095,7 +3093,7 @@ typedef struct HttpNet {
     void            *data;                  /**< Custom data */
     uint64          seqno;                  /**< Unique network sequence number */
 
-#if UNUSED || 1
+#if KEEP || 1
     void            *ejs;                   /**< Embedding VM */
     void            *pool;                  /**< Pool of VMs */
 #endif
@@ -3109,12 +3107,15 @@ typedef struct HttpNet {
     int             totalRequests;          /**< Total number of requests serviced */
 
     bool            async: 1;               /**< Network is in async mode (non-blocking) */
+#if DEPRECATED || 1
     bool            borrowed: 1;            /**< Socket has been borrowed */
+#endif
     bool            destroyed: 1;           /**< Net object has been destroyed */
     bool            eof: 1;                 /**< Socket has been closed */
     bool            error: 1;               /**< Hard network error - cannot continue */
     uint            eventMask: 3;           /**< Last IO event mask */
     bool            goaway: 1;              /**< Closing network connection (sent or received a goAway frame) */
+    bool            http2: 1;               /**< Enable http 2 */
     bool            init: 1;                /**< Settings frame has been sent and network is ready to use */
     uint            protocol: 2;            /**< HTTP protocol: 0 for HTTP/1.0, 1 for HTTP/1.1 or 2+ */
     bool            receivedGoaway: 1;      /**< Received goaway frame */
@@ -3126,6 +3127,7 @@ typedef struct HttpNet {
     bool            writeBlocked: 1;        /**< Transmission writing is blocked */
 } HttpNet;
 
+#if DEPRECATED || 1
 /**
     Borrow a network connection
     @description Borrow the network from Http. This effectively gains an exclusive loan of the network so that it
@@ -3149,6 +3151,7 @@ typedef struct HttpNet {
     @stability Internal
  */
 PUBLIC void httpBorrowNet(HttpNet *net);
+#endif
 
 /**
     Connect the network to a remote peer.
@@ -3231,6 +3234,9 @@ PUBLIC bool httpGetAsync(HttpNet *net);
  */
 PUBLIC void httpIOEvent(struct HttpNet *net, MprEvent *event);
 
+//  MOB DOC
+PUBLIC bool httpReadIO(HttpNet *net);
+
 /**
     Test if the network is a client-side network
     @param net HttpNet Network object created via #httpCreateNet
@@ -3273,6 +3279,7 @@ PUBLIC void httpNetError(HttpNet *net, cchar *fmt, ...);
   */
 PUBLIC void httpNetTimeout(HttpNet *net);
 
+#if DEPRECATED || 1
 /**
     Return a borrowed a network connection
     @description Returns a borrowed network object back to the Http engine. This ends the exclusive loan of the
@@ -3290,6 +3297,7 @@ PUBLIC void httpNetTimeout(HttpNet *net);
     @stability Internal
  */
 PUBLIC void httpReturnNet(HttpNet *net);
+#endif
 
 /**
     Service pipeline queues to flow data.
@@ -8423,13 +8431,13 @@ typedef struct HttpDir {
  */
 PUBLIC HttpDir *httpGetDirObj(HttpRoute *route);
 
-/************************************ Invoke ***************************************/
+/************************************ CreateEvent ***********************************/
 /**
     Event callback function for httpCreateEvent
     @ingroup HttpStream
     @stability Prototype
  */
-typedef void (*HttpInvokeProc)(HttpStream *stream, void *data);
+typedef void (*HttpEventProc)(HttpStream *stream, void *data);
 
 /**
     Invoke a callback on an Appweb thread from a non-appweb thread using a stream sequence number.
@@ -8440,7 +8448,7 @@ typedef void (*HttpInvokeProc)(HttpStream *stream, void *data);
     @ingroup HttpStream
     @stability Prototype
  */
-PUBLIC void httpCreateEvent(uint64 streamSeqno, HttpInvokeProc callback, void *data);
+PUBLIC void httpCreateEvent(uint64 streamSeqno, HttpEventProc callback, void *data);
 
 /************************************ Misc *****************************************/
 /**
@@ -8568,6 +8576,8 @@ PUBLIC bool httpPumpOutput(HttpQueue *q);
 #define httpClientConn(stream) httpClientStream(stream)
 #define httpServerConn(stream) httpServerStream(stream)
 #define httpDisconnect(stream) httpDisconnectStream(stream)
+
+PUBLIC void httpProtocol(HttpStream *stream);
 
 #endif
 

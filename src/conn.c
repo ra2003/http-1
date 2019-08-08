@@ -9,11 +9,11 @@
 
 /********************************** Locals ************************************/
 
-typedef struct HttpInvoke {
-    HttpInvokeProc  callback;
+typedef struct HttpEvent {
+    HttpEventProc   callback;
     void            *data;         //  User data - caller must free if required in callback
-    HttpConn        *conn;         //  Relevant conn
-} HttpInvoke;
+    uint64          seqno;         //  Conn seqno
+} HttpEvent;
 
 /***************************** Forward Declarations ***************************/
 
@@ -264,9 +264,11 @@ static bool prepForNext(HttpConn *conn)
     assert(conn->endpoint);
     assert(conn->state == HTTP_STATE_COMPLETE);
 
+#if DEPRECATED || 1
     if (conn->borrowed) {
         return 0;
     }
+#endif
     if (conn->keepAliveCount <= 0) {
         conn->state = HTTP_STATE_BEGIN;
         return 0;
@@ -625,6 +627,7 @@ PUBLIC void httpUsePrimary(HttpConn *conn)
 }
 
 
+#if DEPRECATED || 1
 PUBLIC void httpBorrowConn(HttpConn *conn)
 {
     assert(!conn->borrowed);
@@ -644,6 +647,7 @@ PUBLIC void httpReturnConn(HttpConn *conn)
         httpEnableConnEvents(conn);
     }
 }
+#endif
 
 
 /*
@@ -994,24 +998,49 @@ PUBLIC void httpSetConnReqData(HttpConn *conn, void *data)
 }
 
 
-static void invokeWrapper(HttpInvoke *invoke)
+static HttpConn *getConnBySeqno(uint64 seqno)
 {
-    invoke->callback(invoke->conn, invoke->data);
-    pfree(invoke);
+    HttpConn    *conn;
+    int         next;
+
+    for (ITERATE_ITEMS(HTTP->connections, conn, next)) {
+        if (conn->seqno == seqno && !conn->destroyed) {
+            return conn;
+        }
+    }
+    return 0;
 }
 
 
-PUBLIC void httpInvoke(HttpConn *conn, HttpInvokeProc callback, void *data)
+static void invokeWrapper(HttpEvent *invoke)
 {
-    HttpInvoke  *invoke;
+    HttpConn  *conn;
 
-    if ((invoke = palloc(sizeof(HttpInvoke))) != NULL) {
-        invoke->callback = callback;
-        invoke->data = data;
-        invoke->conn = conn;
-        mprCreateEvent(conn->dispatcher, "httpInvoke", 0, (MprEventProc) invokeWrapper, invoke, 
-            MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
+    if ((conn = getConnBySeqno(invoke->seqno)) != NULL) {
+        invoke->callback(conn, invoke->data);
+        pfree(invoke);
     }
+}
+
+
+PUBLIC void httpCreateEvent(uint64 seqno, HttpEventProc callback, void *data)
+{
+    HttpConn    *conn;
+    HttpEvent   *invoke;
+
+    lock(HTTP);
+    if ((conn = getConnBySeqno(seqno)) != NULL) {
+        if (HTTP_STATE_BEGIN < conn->state && conn->state < HTTP_STATE_COMPLETE) {
+            if ((invoke = palloc(sizeof(HttpEvent))) != NULL) {
+                invoke->callback = callback;
+                invoke->data = data;
+                invoke->seqno = seqno;
+                mprCreateEvent(conn->dispatcher, "httpCreateEvent", 0, (MprEventProc) invokeWrapper,
+                    invoke, MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
+            }
+        }
+    }
+    unlock(HTTP);
 }
 
 /*

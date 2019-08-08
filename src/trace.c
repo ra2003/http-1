@@ -394,7 +394,7 @@ PUBLIC void httpDetailTraceFormatter(HttpTrace *trace, HttpConn *conn, cchar *ev
         }
         client = conn->address ? conn->address->seqno : 0;
         sessionSeqno = conn->rx->session ? (int) stoi(conn->rx->session->id) : 0;
-        mprPutToBuf(buf, "%s %d-%d-%d-%d %s", trace->lastTime, client, sessionSeqno, conn->seqno, conn->rx->seqno, event);
+        mprPutToBuf(buf, "%s %d-%d-%llu-%d %s", trace->lastTime, client, sessionSeqno, conn->seqno, conn->rx->seqno, event);
     } else {
         mprPutToBuf(buf, "%s: %s", trace->lastTime, event);
     }

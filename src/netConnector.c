@@ -109,6 +109,24 @@ PUBLIC HttpNet *httpAccept(HttpEndpoint *endpoint, MprEvent *event)
 }
 
 
+PUBLIC bool httpReadIO(HttpNet *net)
+{
+    HttpPacket  *packet;
+
+    if ((packet = readPacket(net)) != NULL) {
+        if (!net->protocol) {
+            int protocol = sleuthProtocol(net, packet);
+            httpSetNetProtocol(net, protocol);
+        }
+        if (net->protocol) {
+            httpPutPacket(net->inputq, packet);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 /*
     Handle IO on the network. Initially the dispatcher will be set to the server->dispatcher and the first
     I/O event will be handled on the server thread (or main thread). A request handler may create a new
@@ -116,8 +134,6 @@ PUBLIC HttpNet *httpAccept(HttpEndpoint *endpoint, MprEvent *event)
  */
 PUBLIC void httpIOEvent(HttpNet *net, MprEvent *event)
 {
-    HttpPacket  *packet;
-
     if (net->destroyed) {
         /* Network connection has been destroyed */
         return;
@@ -127,19 +143,8 @@ PUBLIC void httpIOEvent(HttpNet *net, MprEvent *event)
         httpResumeQueue(net->socketq);
         httpScheduleQueue(net->socketq);
     }
-    packet = 0;
-
     if (event->mask & MPR_READABLE) {
-        packet = readPacket(net);
-    }
-    if (packet) {
-        if (!net->protocol) {
-            int protocol = sleuthProtocol(net, packet);
-            httpSetNetProtocol(net, protocol);
-        }
-        if (net->protocol) {
-            httpPutPacket(net->inputq, packet);
-        }
+        httpReadIO(net);
     }
     httpServiceNetQueues(net, 0);
 

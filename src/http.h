@@ -3235,6 +3235,17 @@ PUBLIC bool httpGetAsync(HttpNet *net);
 PUBLIC void httpIOEvent(struct HttpNet *net, MprEvent *event);
 
 /**
+    Read input from a HTTP connected socket
+    @description This routine reads I/O events. It allocates a standard sized
+        packet and reads data into this packet and passes to the input queue pipeline.
+    @param net HttpNet object created via #httpCreateNet
+    @ingroup HttpNet
+    @stability Internal
+ */
+
+PUBLIC bool httpReadIO(HttpNet *net);
+
+/**
     Test if the network is a client-side network
     @param net HttpNet Network object created via #httpCreateNet
     @return true if the network is client-side
@@ -8573,6 +8584,8 @@ PUBLIC bool httpPumpOutput(HttpQueue *q);
 #define httpClientConn(stream) httpClientStream(stream)
 #define httpServerConn(stream) httpServerStream(stream)
 #define httpDisconnect(stream) httpDisconnectStream(stream)
+
+PUBLIC void httpProtocol(HttpStream *stream);
 
 #endif
 

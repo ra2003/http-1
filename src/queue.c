@@ -242,6 +242,9 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
         timeout = (flags & HTTP_BLOCK) ? stream->limits->inactivityTimeout : 0;
         if ((events = mprWaitForSingleIO((int) net->sock->fd, MPR_READABLE | MPR_WRITABLE, timeout)) != 0) {
             stream->lastActivity = net->lastActivity = net->http->now;
+            if (events & MPR_READABLE) {
+                httpReadIO(net);
+            }
             if (events & MPR_WRITABLE) {
                 net->lastActivity = net->http->now;
                 httpResumeQueue(net->socketq);

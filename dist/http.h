@@ -3148,7 +3148,7 @@ typedef struct HttpNet {
     \n\n
     @param net HttpNet object created via #httpCreateNet
     @ingroup HttpNet
-    @stability Internal
+    @stability Deprecated
  */
 PUBLIC void httpBorrowNet(HttpNet *net);
 #endif
@@ -3234,7 +3234,15 @@ PUBLIC bool httpGetAsync(HttpNet *net);
  */
 PUBLIC void httpIOEvent(struct HttpNet *net, MprEvent *event);
 
-//  MOB DOC
+/**
+    Read input from a HTTP connected socket
+    @description This routine reads I/O events. It allocates a standard sized
+        packet and reads data into this packet and passes to the input queue pipeline.
+    @param net HttpNet object created via #httpCreateNet
+    @ingroup HttpNet
+    @stability Internal
+ */
+
 PUBLIC bool httpReadIO(HttpNet *net);
 
 /**
@@ -3294,7 +3302,7 @@ PUBLIC void httpNetTimeout(HttpNet *net);
     \n\n
     @param net HttpNet object created via #httpCreateNet
     @ingroup HttpNet
-    @stability Internal
+    @stability Deprecated
  */
 PUBLIC void httpReturnNet(HttpNet *net);
 #endif

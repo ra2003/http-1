@@ -14121,7 +14121,6 @@ PUBLIC HttpNet *httpAccept(HttpEndpoint *endpoint, MprEvent *event)
 }
 
 
-//  MOB - move somewhere
 PUBLIC bool httpReadIO(HttpNet *net)
 {
     HttpPacket  *packet;
@@ -14153,7 +14152,6 @@ PUBLIC void httpIOEvent(HttpNet *net, MprEvent *event)
     }
     net->lastActivity = net->http->now;
     if (event->mask & MPR_WRITABLE) {
-        //  MOB - why here?
         httpResumeQueue(net->socketq);
         httpScheduleQueue(net->socketq);
     }

@@ -13,11 +13,11 @@
 /*
     Invocation structure for httpCreateEvent
  */
-typedef struct HttpInvoke {
-    HttpInvokeProc  callback;
+typedef struct HttpEvent {
+    HttpEventProc   callback;
     void            *data;          //  User data - caller must free if required in callback
     uint64          seqno;          //  Stream seqno
-} HttpInvoke;
+} HttpEvent;
 
 /***************************** Forward Declarations ***************************/
 
@@ -669,10 +669,8 @@ static HttpStream *getStreamBySeqno(uint64 seqno)
 
     for (ITERATE_ITEMS(HTTP->networks, net, nextNet)) {
         for (ITERATE_ITEMS(net->streams, stream, nextStream)) {
-            if (stream->seqno == seqno) {
-                if (!stream->destroyed && HTTP_STATE_BEGIN < stream->state && stream->state < HTTP_STATE_COMPLETE) {
-                    return stream;
-                }
+            if (stream->seqno == seqno && !stream->destroyed) {
+                return stream;
             }
         }
     }
@@ -680,7 +678,7 @@ static HttpStream *getStreamBySeqno(uint64 seqno)
 }
 
 
-static void invokeWrapper(HttpInvoke *invoke)
+static void invokeWrapper(HttpEvent *invoke)
 {
     HttpStream  *stream;
 
@@ -691,27 +689,20 @@ static void invokeWrapper(HttpInvoke *invoke)
 }
 
 
-PUBLIC void httpCreateEvent(uint64 seqno, HttpInvokeProc callback, void *data)
+PUBLIC void httpCreateEvent(uint64 seqno, HttpEventProc callback, void *data)
 {
-    HttpNet     *net;
     HttpStream  *stream;
-    HttpInvoke  *invoke;
-    int         nextNet, nextStream;
+    HttpEvent   *invoke;
 
     lock(HTTP);
-    for (ITERATE_ITEMS(HTTP->networks, net, nextNet)) {
-        for (ITERATE_ITEMS(net->streams, stream, nextStream)) {
-            if (stream->seqno == seqno) {
-                if (!stream->destroyed && HTTP_STATE_BEGIN < stream->state && stream->state < HTTP_STATE_COMPLETE) {
-                    if ((invoke = palloc(sizeof(HttpInvoke))) != NULL) {
-                        invoke->callback = callback;
-                        invoke->data = data;
-                        invoke->seqno = seqno;
-                        mprCreateEvent(stream->dispatcher, "httpCreateEvent", 0, (MprEventProc) invokeWrapper,
-                            invoke, MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
-                    }
-                    break;
-                }
+    if ((stream = getStreamBySeqno(seqno)) != NULL) {
+        if (HTTP_STATE_BEGIN < stream->state && stream->state < HTTP_STATE_COMPLETE) {
+            if ((invoke = palloc(sizeof(HttpEvent))) != NULL) {
+                invoke->callback = callback;
+                invoke->data = data;
+                invoke->seqno = seqno;
+                mprCreateEvent(stream->dispatcher, "httpCreateEvent", 0, (MprEventProc) invokeWrapper,
+                    invoke, MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
             }
         }
     }

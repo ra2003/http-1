@@ -58,7 +58,6 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     net->port = -1;
     net->async = (flags & HTTP_NET_ASYNC) ? 1 : 0;
 
-
     net->socketq = httpCreateQueue(net, NULL, http->netConnector, HTTP_QUEUE_TX, NULL);
     net->socketq->name = sclone("socket-tx");
 
@@ -73,6 +72,7 @@ PUBLIC HttpNet *httpCreateNet(MprDispatcher *dispatcher, HttpEndpoint *endpoint,
     httpSetQueueLimits(net->socketq, net->limits, packetSize, -1, -1, -1);
     net->rxHeaders = createHeaderTable(HTTP2_TABLE_SIZE);
     net->txHeaders = createHeaderTable(HTTP2_TABLE_SIZE);
+    net->http2 = HTTP->http2;
 }
 #endif
 
@@ -400,6 +400,7 @@ PUBLIC void httpUsePrimary(HttpNet *net)
 }
 
 
+#if DEPRECATED || 1
 PUBLIC void httpBorrowNet(HttpNet *net)
 {
     assert(!net->borrowed);
@@ -419,6 +420,7 @@ PUBLIC void httpReturnNet(HttpNet *net)
         httpEnableNetEvents(net);
     }
 }
+#endif
 
 
 /*

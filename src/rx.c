@@ -99,6 +99,9 @@ PUBLIC void httpDestroyRx(HttpRx *rx)
 }
 
 
+/*
+    Set the global request callback
+ */
 PUBLIC void httpSetRequestCallback(HttpRequestCallback callback)
 {
     if (HTTP) {

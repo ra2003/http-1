@@ -142,10 +142,8 @@ PUBLIC HttpUri *httpCreateUri(cchar *uri, int flags)
             up->path = sclone("/");
         }
     }
-#if UNUSED
     up->secure = smatch(up->scheme, "https") || smatch(up->scheme, "wss");
-    up->webSockets = (smatch(up->scheme, "ws") || smatch(up->scheme, "wss"));
-#endif
+    up->webSockets = smatch(up->scheme, "ws") || smatch(up->scheme, "wss");
 
     if (flags & HTTP_COMPLETE_URI) {
         if (!up->scheme) {

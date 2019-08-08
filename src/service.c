@@ -123,6 +123,7 @@ PUBLIC Http *httpCreate(int flags)
     httpInitParser();
     httpInitAuth();
 #if ME_HTTP_HTTP2
+    http->http2 = 1;
     httpOpenHttp2Filter();
 #endif
     httpOpenHttp1Filter();
@@ -1281,6 +1282,12 @@ PUBLIC int httpSetPlatformDir(cchar *path)
         http->platformDir = mprGetPathDir(mprGetPathDir(mprGetAppPath()));
     }
     return 0;
+}
+
+
+PUBLIC void httpEnableHttp2(int enable)
+{
+    HTTP->http2 = enable;
 }
 
 

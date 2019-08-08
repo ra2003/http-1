@@ -1037,6 +1037,7 @@ typedef struct Http {
     int             staticLink;             /**< Target platform is using a static linking */
     int             traceLevel;             /**< Current request trace level */
     int             startLevel;             /**< Start endpoint trace level */
+    int             http2;                  /**< Enable http 2 */
 
     /*
         Callbacks
@@ -1136,6 +1137,14 @@ PUBLIC Http *httpCreate(int flags);
     @stability Internal
  */
 PUBLIC void httpDestroy(void);
+
+/*
+    Enable or disable HTTP/2 for the server at runtime.
+    @param enable Boolean. Set to 1 to enable and zero to disable.
+    @ingroup Http
+    @stability Prototype
+ */
+PUBLIC void httpEnableHttp2(int enable);
 
 /**
     Get the http context object
@@ -3109,12 +3118,15 @@ typedef struct HttpNet {
     int             totalRequests;          /**< Total number of requests serviced */
 
     bool            async: 1;               /**< Network is in async mode (non-blocking) */
+#if DEPRECATED || 1
     bool            borrowed: 1;            /**< Socket has been borrowed */
+#endif
     bool            destroyed: 1;           /**< Net object has been destroyed */
     bool            eof: 1;                 /**< Socket has been closed */
     bool            error: 1;               /**< Hard network error - cannot continue */
     uint            eventMask: 3;           /**< Last IO event mask */
     bool            goaway: 1;              /**< Closing network connection (sent or received a goAway frame) */
+    bool            http2: 1;               /**< Enable http 2 */
     bool            init: 1;                /**< Settings frame has been sent and network is ready to use */
     uint            protocol: 2;            /**< HTTP protocol: 0 for HTTP/1.0, 1 for HTTP/1.1 or 2+ */
     bool            receivedGoaway: 1;      /**< Received goaway frame */

@@ -733,6 +733,12 @@ static void parseHosts(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseHttp2(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpEnableHttp2(smatch(prop->value, "true"));
+}
+
+
 static void parseIndexes(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -1955,6 +1961,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.headers.set", parseHeadersSet);
     httpAddConfig("http.home", parseHome);
     httpAddConfig("http.hosts", parseHosts);
+    httpAddConfig("http.http2", parseHttp2);
     httpAddConfig("http.indexes", parseIndexes);
     httpAddConfig("http.languages", parseLanguages);
     httpAddConfig("http.limits", parseLimits);

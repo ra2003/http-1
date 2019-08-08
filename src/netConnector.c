@@ -163,15 +163,20 @@ static int sleuthProtocol(HttpNet *net, HttpPacket *packet)
     buf = packet->content;
     protocol = 0;
 
-    if ((len = mprGetBufLength(buf)) < (sizeof(HTTP2_PREFACE) - 1)) {
-        return 0;
-    }
-    if (memcmp(buf->start, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
+    if (!net->http2) {
         protocol = 1;
     } else {
-        mprAdjustBufStart(buf, strlen(HTTP2_PREFACE));
-        protocol = 2;
-        httpLog(net->trace, "net.rx", "context", "msg:'Detected HTTP/2 preface'");
+        if ((len = mprGetBufLength(buf)) < (sizeof(HTTP2_PREFACE) - 1)) {
+            /* Insufficient data */
+            return 0;
+        }
+        if (memcmp(buf->start, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
+            protocol = 1;
+        } else {
+            mprAdjustBufStart(buf, strlen(HTTP2_PREFACE));
+            protocol = 2;
+            httpLog(net->trace, "net.rx", "context", "msg:'Detected HTTP/2 preface'");
+        }
     }
     return protocol;
 #else

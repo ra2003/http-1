@@ -8459,15 +8459,17 @@ PUBLIC HttpDir *httpGetDirObj(HttpRoute *route);
 typedef void (*HttpEventProc)(HttpStream *stream, void *data);
 
 /**
-    Invoke a callback on an Appweb thread from a non-appweb thread using a stream sequence number.
-    @description Used to safely call back into Apppweb.
-    @param streamSeqno HttpStream->seqno identifier
+    Invoke a callback on a stream using a stream sequence number.
+    @description This routine invokes a callback on a stream's event dispatcher in a thread-safe manner. This API
+        is the only way to invoke APIs on a stream from foreign threads.
+    @param streamSeqno HttpStream->seqno identifier extracted when running in an MPR (Appweb) thread.
     @param callback Callback function to invoke
     @param data Data to pass to the callback. Caller is responsible to free in the callback if required.
+    @return "Zero" if the stream can be found and the event is scheduled, Otherwise returns MPR_ERR_CANT_FIND.
     @ingroup HttpStream
     @stability Prototype
  */
-PUBLIC void httpCreateEvent(uint64 streamSeqno, HttpEventProc callback, void *data);
+PUBLIC int httpCreateEvent(uint64 streamSeqno, HttpEventProc callback, void *data);
 
 /************************************ Misc *****************************************/
 /**

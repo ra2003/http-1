@@ -13,17 +13,18 @@
 /*
     Invocation structure for httpCreateEvent
  */
-typedef struct HttpEvent {
+typedef struct HttpInvoke {
+    HttpStream      *stream;
     HttpEventProc   callback;
     void            *data;          //  User data - caller must free if required in callback
-    uint64          seqno;          //  Stream seqno
-} HttpEvent;
+} HttpInvoke;
 
 /***************************** Forward Declarations ***************************/
 
-static void pickStreamNumber(HttpStream *stream);
 static void commonPrep(HttpStream *stream);
+static void manageInvoke(HttpInvoke *event, int flags);
 static void manageStream(HttpStream *stream, int flags);
+static void pickStreamNumber(HttpStream *stream);
 
 /*********************************** Code *************************************/
 /*
@@ -153,8 +154,10 @@ PUBLIC void httpDestroyStream(HttpStream *stream)
         if (!stream->peerCreated) {
             stream->net->ownStreams--;
         }
-        stream->destroyed = 1;
         httpRemoveStream(stream->net, stream);
+        stream->state = HTTP_STATE_BEGIN;
+        stream->net = 0;
+        stream->destroyed = 1;
     }
 }
 
@@ -661,54 +664,84 @@ PUBLIC void httpTraceQueues(HttpStream *stream)
 }
 
 
-static HttpStream *getStreamBySeqno(uint64 seqno) 
+/*
+    Invoke the callback. This routine is run on the streams dispatcher.
+ */
+static void invokeWrapper(HttpInvoke *invoke, MprEvent *event)
+{
+    HttpStream  *stream;
+
+    /*
+        Stream is safe from GC due to references from invoke.
+     */
+    stream = invoke->stream;
+    assert(stream);
+
+    if (HTTP_STATE_BEGIN < stream->state && stream->state < HTTP_STATE_COMPLETE) {
+        invoke->callback(invoke->stream, invoke->data);
+    }
+    /* invoke will be collected when the event is collected */
+}
+
+
+/*
+    Create an event on a stream identified by its sequence number.
+    This routine is foreign thread-safe.
+ */
+PUBLIC int httpCreateEvent(uint64 seqno, HttpEventProc callback, void *data)
 {
     HttpNet     *net;
     HttpStream  *stream;
-    int         nextNet, nextStream;
+    HttpInvoke  *invoke;
+    int         nextNet, nextStream, status;
 
+    status = MPR_ERR_CANT_FIND;
+    stream = 0;
+
+    /*
+        The global lock stops GC
+     */
+    mprGlobalLock();
+    lock(HTTP->networks);
     for (ITERATE_ITEMS(HTTP->networks, net, nextNet)) {
+        lock(net->streams);
         for (ITERATE_ITEMS(net->streams, stream, nextStream)) {
-            if (stream->seqno == seqno && !stream->destroyed) {
-                return stream;
+            if (stream->seqno == seqno && HTTP_STATE_BEGIN < stream->state && stream->state < HTTP_STATE_COMPLETE) {
+                /*
+                    Must allocate and Hold memory to be immune from GC. The hold is released below after mprCreateEvent
+                    takes ownership of the data. A manager is used to make sure the stream is retained after unlocking below.
+                 */
+                if ((invoke = mprAllocMem(sizeof(HttpInvoke), MPR_ALLOC_MANAGER | MPR_ALLOC_HOLD)) != 0) {
+                    /*
+                        At this point, the invoke memory is held and the stream is preserved via the lock above.
+                     */
+                    invoke->callback = callback;
+                    invoke->data = data;
+                    invoke->stream = stream;
+                    mprSetManager(invoke, (MprManager) manageInvoke);
+                    mprCreateEvent(stream->dispatcher, "httpEvent", 0, (MprEventProc) invokeWrapper, invoke, 0);
+                    mprRelease(invoke);
+                }
+                unlock(net->streams);
+                status = MPR_ERR_OK;
+                nextNet = HTTP->networks->length;
+                break;
             }
         }
+        unlock(net->streams);
     }
-    return 0;
+    unlock(HTTP->networks);
+    mprGlobalUnlock();
+    return status;
 }
 
 
-static void invokeWrapper(HttpEvent *invoke)
+static void manageInvoke(HttpInvoke *invoke, int flags)
 {
-    HttpStream  *stream;
-
-    if ((stream = getStreamBySeqno(invoke->seqno)) != NULL) {
-        invoke->callback(stream, invoke->data);
-        pfree(invoke);
+    if (flags & MPR_MANAGE_MARK) {
+        mprMark(invoke->stream);
     }
 }
-
-
-PUBLIC void httpCreateEvent(uint64 seqno, HttpEventProc callback, void *data)
-{
-    HttpStream  *stream;
-    HttpEvent   *invoke;
-
-    lock(HTTP);
-    if ((stream = getStreamBySeqno(seqno)) != NULL) {
-        if (HTTP_STATE_BEGIN < stream->state && stream->state < HTTP_STATE_COMPLETE) {
-            if ((invoke = palloc(sizeof(HttpEvent))) != NULL) {
-                invoke->callback = callback;
-                invoke->data = data;
-                invoke->seqno = seqno;
-                mprCreateEvent(stream->dispatcher, "httpCreateEvent", 0, (MprEventProc) invokeWrapper,
-                    invoke, MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
-            }
-        }
-    }
-    unlock(HTTP);
-}
-
 
 /*
     Copyright (c) Embedthis Software. All Rights Reserved.

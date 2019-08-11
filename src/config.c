@@ -503,6 +503,12 @@ static void parseAuthUsers(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseAutoFinalize(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpSetRouteAutoFinalize(route, (smatch(prop->value, "true")));
+}
+
+
 static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -630,6 +636,7 @@ static void parseErrors(HttpRoute *route, cchar *key, MprJson *prop)
         httpAddRouteErrorDocument(route, (int) stoi(child->name), child->value);
     }
 }
+
 
 
 static void parseFormatsResponse(HttpRoute *route, cchar *key, MprJson *prop)
@@ -1940,6 +1947,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.auth.store", parseAuthStore);
     httpAddConfig("http.auth.type", parseAuthType);
     httpAddConfig("http.auth.users", parseAuthUsers);
+    httpAddConfig("http.autoFinalize", parseAutoFinalize);
     httpAddConfig("http.cache", parseCache);
     httpAddConfig("http.canonical", parseCanonicalName);
     httpAddConfig("http.cgi", httpParseAll);

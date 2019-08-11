@@ -75,6 +75,7 @@ PUBLIC HttpRoute *httpCreateRoute(HttpHost *host)
     route->pattern = MPR->emptyString;
     route->targetRule = sclone("run");
     route->autoDelete = 1;
+    route->autoFinalize = 1;
     route->workers = -1;
     route->prefix = MPR->emptyString;
     route->trace = http->trace;
@@ -128,6 +129,7 @@ PUBLIC HttpRoute *httpCreateInheritedRoute(HttpRoute *parent)
     }
     route->auth = httpCreateInheritedAuth(parent->auth);
     route->autoDelete = parent->autoDelete;
+    route->autoFinalize = parent->autoFinalize;
     route->caching = parent->caching;
     route->clientConfig = parent->clientConfig;
     route->conditions = parent->conditions;
@@ -1181,6 +1183,13 @@ PUBLIC void httpSetRouteAutoDelete(HttpRoute *route, bool enable)
 {
     assert(route);
     route->autoDelete = enable;
+}
+
+
+PUBLIC void httpSetRouteAutoFinalize(HttpRoute *route, bool enable)
+{
+    assert(route);
+    route->autoFinalize = enable;
 }
 
 

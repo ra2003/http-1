@@ -4907,6 +4907,8 @@ typedef struct HttpRoute {
     cchar           *responseFormat;        /**< Client response format */
     cchar           *clientConfig;          /**< Configuration to send to the client */
 
+    bool            autoDelete: 1;          /**< Automatically delete uploaded files */
+    bool            autoFinalize: 1;        /**< Auto finalize the request (ESP) */
     bool            debug: 1;               /**< Application running in debug mode */
     bool            error: 1;               /**< Parse or runtime error */
     bool            ignoreEncodingErrors: 1;/**< Ignore UTF8 encoding errors */
@@ -4932,7 +4934,6 @@ typedef struct HttpRoute {
     MprHash         *errorDocuments;        /**< Set of error documents to use on errors */
     void            *context;               /**< Hosting context (Appweb == EjsPool) */
     void            *eroute;                /**< Extended route information for handler (only) */
-    int             autoDelete;             /**< Automatically delete uploaded files */
     int             renameUploads;          /**< Rename uploaded files */
 
     HttpLimits      *limits;                /**< Host resource limits */
@@ -5757,6 +5758,16 @@ PUBLIC void httpSetRouteAuth(HttpRoute *route, HttpAuth *auth);
     @stability Stable
  */
 PUBLIC void httpSetRouteAutoDelete(HttpRoute *route, bool on);
+
+/**
+    Control auto finalize for a route
+    @description This controls whether a request is auto-finalized after the handler runs to service a request.
+    @param route Route to modify
+    @param on Set to true to enable auto-finalize. Auto-finalize is enabled by default for frameworks that use it.
+    @ingroup HttpRoute
+    @stability Prototype
+ */
+PUBLIC void httpSetRouteAutoFinalize(HttpRoute *route, bool on);
 
 /**
     Define whether updating a request may compile from source

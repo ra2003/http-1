@@ -128,7 +128,7 @@ PUBLIC HttpSession *httpGetSession(HttpStream *stream, int create)
         if (!rx->session && create) {
             lock(http);
             thisSeqno = ++seqno;
-            id = sfmt("%08x%08x%d", PTOI(stream->data) + PTOI(stream), (int) mprGetTicks(), thisSeqno);
+            id = sfmt("%08x%08x%d", PTOI(stream->seqno) + PTOI(stream), (int) mprGetTicks(), thisSeqno);
             id = mprGetMD5WithPrefix(id, slen(id), "-http.session-");
             id = sfmt("%d%s", thisSeqno, mprGetMD5WithPrefix(id, slen(id), "::http.session::"));
 

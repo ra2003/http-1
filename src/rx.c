@@ -487,7 +487,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
         return 0;
     }
-    conn->protocol = supper(protocol);
+    protocol = conn->protocol = supper(protocol);
     if (strcmp(protocol, "HTTP/1.0") == 0) {
         conn->http10 = 1;
         if (!scaselessmatch(tx->method, "HEAD")) {

@@ -105,7 +105,7 @@ static void stealSocket()
         ttrue(sp != stream->sock);
         ttrue(prior == stream->sock);
 
-        ttrue(stream->state == HTTP_STATE_CONNECTED);
+        ttrue(stream->state == HTTP_STATE_COMPLETE);
         ttrue(sp->fd != INVALID_SOCKET);
         ttrue(stream->sock->fd == INVALID_SOCKET);
         mprCloseSocket(sp, 0);

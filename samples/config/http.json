@@ -70,6 +70,11 @@
         attach: ":443",
 
         /*
+            Auto finalize requests after running handler (ESP). Default to true.
+         */
+        autoFinalize: true,
+
+        /*
             Authentication configuration
          */
         auth: {
@@ -200,7 +205,7 @@
             urls: [ "/" ],
 
             /*
-                Request methods eligible for caching. If omitted, defaults to all methods.
+                Request methods eligible for caching. If omitted, defaults to "GET, POST".
              */
             methods: [ "*" ],
 

@@ -506,6 +506,12 @@ static void parseAuthUsers(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseAutoFinalize(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    httpSetRouteAutoFinalize(route, (smatch(prop->value, "true")));
+}
+
+
 static void parseCache(HttpRoute *route, cchar *key, MprJson *prop)
 {
     MprJson     *child;
@@ -1935,6 +1941,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.auth.session.visible", parseAuthSessionVisible);
     httpAddConfig("http.auth.store", parseAuthStore);
     httpAddConfig("http.auth.type", parseAuthType);
+    httpAddConfig("http.autoFinalize", parseAutoFinalize);
     httpAddConfig("http.auth.users", parseAuthUsers);
     httpAddConfig("http.cache", parseCache);
     httpAddConfig("http.canonical", parseCanonicalName);

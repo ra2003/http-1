@@ -5396,6 +5396,16 @@ PUBLIC void httpSetRouteAuth(HttpRoute *route, HttpAuth *auth);
 PUBLIC void httpSetRouteAutoDelete(HttpRoute *route, bool on);
 
 /**
+    Control auto finalize for a route
+    @description This controls whether a request is auto-finalized after the handler runs to service a request.
+    @param route Route to modify
+    @param on Set to true to enable auto-finalize. Auto-finalize is enabled by default for frameworks that use it.
+    @ingroup HttpRoute
+    @stability Prototype
+ */
+PUBLIC void httpSetRouteAutoFinalize(HttpRoute *route, bool on);
+
+/**
     Define whether updating a request may compile from source
     @param route Route to modify
     @param on Set to true to enable

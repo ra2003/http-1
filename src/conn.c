@@ -9,16 +9,23 @@
 
 /********************************** Locals ************************************/
 
-typedef struct HttpEvent {
+/********************************** Locals ************************************/
+/*
+    Invocation structure for httpCreateEvent
+ */
+typedef struct HttpInvoke {
     HttpEventProc   callback;
-    void            *data;         //  User data - caller must free if required in callback
-    uint64          seqno;         //  Conn seqno
-} HttpEvent;
+    uint64          seqno;          // Connection sequence number
+    void            *data;          //  User data - caller must free if required in callback
+    int             hasRun;
+} HttpInvoke;
 
 /***************************** Forward Declarations ***************************/
 
+static void createEvent(HttpConn *conn, void *data);
 static HttpPacket *getPacket(HttpConn *conn, ssize *bytesToRead);
 static void manageConn(HttpConn *conn, int flags);
+static void manageInvoke(HttpInvoke *event, int flags);
 static bool prepForNext(HttpConn *conn);
 
 /*********************************** Code *************************************/
@@ -998,6 +1005,7 @@ PUBLIC void httpSetConnReqData(HttpConn *conn, void *data)
 }
 
 
+#if 0
 static HttpConn *getConnBySeqno(uint64 seqno)
 {
     HttpConn    *conn;
@@ -1041,6 +1049,103 @@ PUBLIC void httpCreateEvent(uint64 seqno, HttpEventProc callback, void *data)
         }
     }
     unlock(HTTP);
+}
+#endif
+/*
+    Invoke the callback. This routine is run on the streams dispatcher.
+    If the stream is destroyed, the event will be NULL.
+ */
+static void invokeWrapper(HttpInvoke *invoke, MprEvent *event)
+{
+    HttpConn    *conn;
+
+    if (event && (conn = httpFindConn(invoke->seqno, NULL, NULL)) != NULL) {
+        invoke->callback(conn, invoke->data);
+    } else {
+        invoke->callback(NULL, invoke->data);
+    }
+    invoke->hasRun = 1;
+    mprRelease(invoke);
+}
+
+
+/*
+    Create an event on a conn identified by its sequence number.
+    This routine is foreign thread-safe.
+ */
+PUBLIC int httpCreateEvent(uint64 seqno, HttpEventProc callback, void *data)
+{
+    HttpInvoke  *invoke;
+
+    /*
+        Must allocate memory immune from GC. The hold is released in the invokeWrapper
+        callback which is always invoked eventually.
+     */
+    if ((invoke = mprAllocMem(sizeof(HttpInvoke), MPR_ALLOC_ZERO | MPR_ALLOC_MANAGER | MPR_ALLOC_HOLD)) != 0) {
+        mprSetManager(invoke, (MprManager) manageInvoke);
+        invoke->seqno = seqno;
+        invoke->callback = callback;
+        invoke->data = data;
+    }
+    if (httpFindConn(seqno, createEvent, invoke)) {
+        return 0;
+    }
+    mprRelease(invoke);
+    return MPR_ERR_CANT_FIND;
+}
+
+
+/*
+    Destructor for Invoke to make sure the callback is always called.
+ */
+static void manageInvoke(HttpInvoke *invoke, int flags)
+{
+    if (flags & MPR_MANAGE_FREE) {
+        if (!invoke->hasRun) {
+            invokeWrapper(invoke, NULL);
+        }
+    }
+}
+
+
+static void createEvent(HttpConn *conn, void *data)
+{
+    mprCreateEvent(conn->dispatcher, "httpEvent", 0, (MprEventProc) invokeWrapper, data, MPR_EVENT_ALWAYS);
+}
+
+
+/*
+    If invoking on a foreign thread, provide a callback proc and data so the conn can be safely accessed while locked.
+    Do not use the returned value except to test for NULL in a foreign thread.
+ */
+PUBLIC HttpConn *httpFindConn(uint64 seqno, HttpEventProc proc, void *data)
+{
+    HttpConn    *conn;
+    int         next;
+
+    if (!proc && !mprGetCurrentThread()) {
+        assert(proc || mprGetCurrentThread());
+        return NULL;
+    }
+    /*
+        WARNING: GC can be running here in a foreign thread. The locks will ensure that connections
+        are not destroyed while locked. Event service lock is needed for the manageDispatcher
+        which then marks connections.
+     */
+    conn = 0;
+    lock(MPR->eventService);
+    lock(HTTP->connections);
+    for (ITERATE_ITEMS(HTTP->connections, conn, next)) {
+        if (conn->seqno == seqno && !conn->destroyed) {
+            if (proc) {
+                (proc)(conn, data);
+            }
+            break;
+        }
+    }
+    unlock(HTTP->connections);
+    unlock(MPR->eventService);
+    return conn;
 }
 
 /*

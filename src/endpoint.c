@@ -206,7 +206,6 @@ PUBLIC void httpStopEndpoint(HttpEndpoint *endpoint)
 static void acceptConn(HttpEndpoint *endpoint)
 {
     MprDispatcher   *dispatcher;
-    MprEvent        *event;
     MprSocket       *sock;
     MprWaitHandler  *wp;
 
@@ -221,16 +220,13 @@ static void acceptConn(HttpEndpoint *endpoint)
     } else {
         dispatcher = mprGetDispatcher();
     }
-    event = mprCreateEvent(dispatcher, "AcceptConn", 0, httpAcceptConn, endpoint, MPR_EVENT_DONT_QUEUE);
-    event->mask = wp->presentMask;
-    event->sock = sock;
-    event->handler = wp;
     /*
         Optimization to wake the event service in this amount of time. This ensures that when the HttpTimer is scheduled,
         it won't need to awaken the notifier.
      */
     mprSetEventServiceSleep(HTTP_TIMER_PERIOD);
-    mprQueueEvent(dispatcher, event);
+
+    mprCreateIOEvent(dispatcher, httpAcceptConn, endpoint, wp, sock);
 }
 
 

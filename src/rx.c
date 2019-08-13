@@ -71,6 +71,7 @@ static void manageRx(HttpRx *rx, int flags)
         mprMark(rx->passwordDigest);
         mprMark(rx->pathInfo);
         mprMark(rx->pragma);
+        mprMark(rx->protocol);
         mprMark(rx->redirect);
         mprMark(rx->referrer);
         mprMark(rx->requestData);

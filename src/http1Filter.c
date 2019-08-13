@@ -274,7 +274,7 @@ static void parseRequestLine(HttpQueue *q, HttpPacket *packet)
         httpBadRequestError(stream, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty protocol");
         return;
     }
-    protocol = supper(protocol);
+    rx->protocol = protocol = supper(protocol);
     if (smatch(protocol, "HTTP/1.0") || *protocol == 0) {
         if (rx->flags & (HTTP_POST|HTTP_PUT)) {
             rx->remainingContent = HTTP_UNLIMITED;
@@ -646,7 +646,8 @@ PUBLIC void httpCreateHeaders1(HttpQueue *q, HttpPacket *packet)
     mprPutStringToBuf(buf, "\r\n");
 
     if (httpTracing(q->net)) {
-        httpLog(stream->trace, "http.tx.headers", "headers", "\n%s", httpTraceHeaders(q, stream->tx->headers));
+        httpLog(stream->trace, "http.tx.headers", "headers", "\n%s %d %s\n%s",
+            httpGetProtocol(stream->net), tx->status, httpLookupStatus(tx->status), httpTraceHeaders(q, tx->headers));
     }
     /*
         Output headers

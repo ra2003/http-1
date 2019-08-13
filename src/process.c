@@ -152,7 +152,8 @@ static void processFirst(HttpQueue *q)
     if (httpTracing(net) && httpIsServer(net)) {
         httpLog(stream->trace, "http.rx.request", "request", "method:'%s', uri:'%s', protocol:'%d'",
             rx->method, rx->uri, stream->net->protocol);
-        httpLog(stream->trace, "http.rx.headers", "headers", "\n%s", httpTraceHeaders(q, stream->rx->headers));
+        httpLog(stream->trace, "http.rx.headers", "headers", "\n%s %s %s\n%s", 
+            rx->originalMethod, rx->uri, rx->protocol, httpTraceHeaders(q, stream->rx->headers));
     }
 }
 
@@ -617,7 +618,7 @@ static bool processContent(HttpQueue *q)
             HTTP_NOTIFY(stream, HTTP_EVENT_READABLE, 0);
         }
     }
-    return httpPumpOutput(q) || rx->eof;
+    return httpPumpOutput(q) || rx->eof || stream->error;
 }
 
 

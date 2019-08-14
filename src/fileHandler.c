@@ -290,7 +290,7 @@ static void outgoingFileService(HttpQueue *q)
 
     stream = q->stream;
 
-#if 0
+#if UNUSED
     /*
         There will be only one entity data packet. PrepPacket will read data into the packet and then
         put the remaining entity packet on the queue where it will be examined again until the down stream queue is full.

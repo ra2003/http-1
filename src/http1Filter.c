@@ -508,7 +508,7 @@ static char *validateToken(char *token, char *endToken, int validation)
     return token;
 }
 
-#if 0
+#if UNUSED
 /*
     Get the next input token. The content buffer is advanced to the next token.
     The delimiter is a string to match and not a set of characters.

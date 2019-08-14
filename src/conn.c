@@ -1005,52 +1005,6 @@ PUBLIC void httpSetConnReqData(HttpConn *conn, void *data)
 }
 
 
-#if 0
-static HttpConn *getConnBySeqno(uint64 seqno)
-{
-    HttpConn    *conn;
-    int         next;
-
-    for (ITERATE_ITEMS(HTTP->connections, conn, next)) {
-        if (conn->seqno == seqno && !conn->destroyed) {
-            return conn;
-        }
-    }
-    return 0;
-}
-
-
-static void invokeWrapper(HttpEvent *invoke)
-{
-    HttpConn  *conn;
-
-    if ((conn = getConnBySeqno(invoke->seqno)) != NULL) {
-        invoke->callback(conn, invoke->data);
-        pfree(invoke);
-    }
-}
-
-
-PUBLIC void httpCreateEvent(uint64 seqno, HttpEventProc callback, void *data)
-{
-    HttpConn    *conn;
-    HttpEvent   *invoke;
-
-    lock(HTTP);
-    if ((conn = getConnBySeqno(seqno)) != NULL) {
-        if (HTTP_STATE_BEGIN < conn->state && conn->state < HTTP_STATE_COMPLETE) {
-            if ((invoke = palloc(sizeof(HttpEvent))) != NULL) {
-                invoke->callback = callback;
-                invoke->data = data;
-                invoke->seqno = seqno;
-                mprCreateEvent(conn->dispatcher, "httpCreateEvent", 0, (MprEventProc) invokeWrapper,
-                    invoke, MPR_EVENT_FOREIGN | MPR_EVENT_STATIC_DATA);
-            }
-        }
-    }
-    unlock(HTTP);
-}
-#endif
 /*
     Invoke the callback. This routine is run on the streams dispatcher.
     If the stream is destroyed, the event will be NULL.

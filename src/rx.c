@@ -234,6 +234,7 @@ static bool parseIncoming(HttpConn *conn)
     if ((len = httpGetPacketLength(packet)) == 0) {
         return 0;
     }
+
     /*
         Don't start processing until all the headers have been received (delimited by two blank lines)
      */
@@ -430,6 +431,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
             "Bad request. URI too long. Length %zd vs limit %zd", len, limits->uriSize);
         return 0;
     }
+
     protocol = getToken(conn, "\r\n", TOKEN_WORD);
     if (protocol == NULL || *protocol == '\0') {
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_BAD_REQUEST, "Bad HTTP request. Empty protocol");
@@ -448,6 +450,7 @@ static bool parseRequestLine(HttpConn *conn, HttpPacket *packet)
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
         return 0;
     }
+
     rx->uri = sclone(uri);
     if (!rx->originalUri) {
         rx->originalUri = rx->uri;
@@ -495,6 +498,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Unsupported HTTP protocol");
         return 0;
     }
+
     status = getToken(conn, NULL, TOKEN_NUMBER);
     if (status == NULL || *status == '\0') {
         httpBadRequestError(conn, HTTP_ABORT | HTTP_CODE_NOT_ACCEPTABLE, "Bad response status code");
@@ -515,6 +519,7 @@ static bool parseResponseLine(HttpConn *conn, HttpPacket *packet)
             "Bad response. Status message too long. Length %zd vs limit %zd", len, conn->limits->uriSize);
         return 0;
     }
+
     if (httpTracing(conn)) {
         httpTrace(conn, "rx.first.client", "request", "status:%d,protocol:'%s'", rx->status, protocol);
         content = packet->content;

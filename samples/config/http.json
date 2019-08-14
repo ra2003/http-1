@@ -334,6 +334,11 @@
         ],
 
         /*
+            Enable or disable HTTP/2 support
+         */
+        http2: enable,
+
+        /*
             List of index documents to serve for directory level requests
          */
         indexes: [

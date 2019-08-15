@@ -927,6 +927,8 @@ static bool processParsed(HttpConn *conn)
         rx->streaming = httpGetStreaming(conn->host, rx->mimeType, rx->uri);
         if (rx->streaming) {
             httpRouteRequest(conn);
+        } else {
+            httpSetQueueLimits(conn->readq, -1, conn->limits->rxFormSize);
         }
         /*
             Delay testing rxBodySize till after routing for streaming requests. This way, recieveBodySize

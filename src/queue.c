@@ -116,8 +116,12 @@ PUBLIC void httpInitQueue(HttpConn *conn, HttpQueue *q, cchar *name)
 
 PUBLIC void httpSetQueueLimits(HttpQueue *q, ssize low, ssize max)
 {
-    q->low = low;
-    q->max = max;
+    if (low > 0) {
+        q->low = low;
+    }
+    if (max > 0) {
+        q->max = max;
+    }
 }
 
 

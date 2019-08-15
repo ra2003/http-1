@@ -449,7 +449,7 @@ PUBLIC bool httpServiceNetQueues(HttpNet *net, int flags)
     /*
         Always do a yield if requested even if there are no queues to service
      */
-    if (mprNeedYield()) {
+    if (mprNeedYield() && (flags & HTTP_BLOCK)) {
         mprYield(0);
     }
     return workDone;

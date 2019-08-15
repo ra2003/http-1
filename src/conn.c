@@ -451,7 +451,7 @@ static void readPeerData(HttpConn *conn)
         } else if (conn->lastRead < 0 && mprIsSocketEof(conn->sock)) {
             if (conn->state < HTTP_STATE_PARSED) {
                 conn->error = 1;
-                conn->rx->eof = 1;
+                httpSetEof(conn);
             }
             conn->errorMsg = conn->sock->errorMsg ? conn->sock->errorMsg : sclone("Connection reset");
             conn->keepAliveCount = 0;
@@ -537,9 +537,6 @@ PUBLIC void httpIO(HttpConn *conn, int eventMask)
     } else if (!mprIsSocketEof(conn->sock) && conn->async && !conn->delay) {
         httpEnableConnEvents(conn);
     }
-#if DEPRECATE
-    conn->io = 0;
-#endif
 }
 
 
@@ -568,10 +565,9 @@ PUBLIC int httpGetConnEventMask(HttpConn *conn)
     eventMask = 0;
     if (rx) {
         if (conn->connError || (tx->writeBlocked) ||
-           (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) ||
-           (httpQueuesNeedService(conn)) ||
-           (mprSocketHasBufferedWrite(sp)) ||
-           (rx->eof && tx->finalized && conn->state < HTTP_STATE_FINALIZED)) {
+                (conn->connectorq && (conn->connectorq->count > 0 || conn->connectorq->ioCount > 0)) ||
+                httpQueuesNeedService(conn) || mprSocketHasBufferedWrite(sp) ||
+                (rx->eof && tx->finalized && conn->state < HTTP_STATE_FINALIZED)) {
             if (!mprSocketHandshaking(sp)) {
                 /* Must not pollute the data stream if the SSL stack is still doing manual handshaking */
                 eventMask |= MPR_WRITABLE;

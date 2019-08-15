@@ -79,7 +79,7 @@ static int openChunk(HttpQueue *q)
     Achive this by parseHeaders reversing the input start by 2.
 
     Return number of bytes available to read.
-    NOTE: may set rx->eof and return 0 bytes on EOF.
+    NOTE: may set eof and return 0 bytes on EOF.
  */
 PUBLIC ssize httpFilterChunkData(HttpQueue *q, HttpPacket *packet)
 {

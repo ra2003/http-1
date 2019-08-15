@@ -1101,12 +1101,12 @@ static bool processContent(HttpConn *conn)
                     }
                     httpRouteRequest(conn);
                     httpCreatePipeline(conn);
-                    /*
-                        Transfer buffered input body data into the pipeline
-                     */
-                    while ((packet = httpGetPacket(q)) != 0) {
-                        httpPutPacketToNext(q, packet);
-                    }
+                }
+                /*
+                    Transfer buffered input body data into the pipeline
+                 */
+                while ((packet = httpGetPacket(q)) != 0) {
+                    httpPutPacketToNext(q, packet);
                 }
                 httpPutPacketToNext(q, httpCreateEndPacket());
                 if (!tx->started) {

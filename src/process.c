@@ -152,7 +152,7 @@ static void processFirst(HttpQueue *q)
     if (httpTracing(net) && httpIsServer(net)) {
         httpLog(stream->trace, "http.rx.request", "request", "method:'%s', uri:'%s', protocol:'%d'",
             rx->method, rx->uri, stream->net->protocol);
-        httpLog(stream->trace, "http.rx.headers", "headers", "\n%s %s %s\n%s", 
+        httpLog(stream->trace, "http.rx.headers", "headers", "\n%s %s %s\n%s",
             rx->originalMethod, rx->uri, rx->protocol, httpTraceHeaders(q, stream->rx->headers));
     }
 }
@@ -478,6 +478,7 @@ static void processHeaders(HttpQueue *q)
 
 /*
     Called once the HTTP request/response headers have been parsed
+    Queue is the inputq.
  */
 static void processParsed(HttpQueue *q)
 {
@@ -498,6 +499,7 @@ static void processParsed(HttpQueue *q)
         if ((stream->host = httpMatchHost(net, hostname)) == 0) {
             stream->host = mprGetFirstItem(net->endpoint->hosts);
             httpError(stream, HTTP_CODE_NOT_FOUND, "No listening endpoint for request for %s", rx->hostHeader);
+            /* continue */
         }
         if (!rx->originalUri) {
             rx->originalUri = rx->uri;
@@ -508,6 +510,7 @@ static void processParsed(HttpQueue *q)
     if (rx->form && rx->length >= stream->limits->rxFormSize && stream->limits->rxFormSize != HTTP_UNLIMITED) {
         httpLimitError(stream, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
             "Request form of %lld bytes is too big. Limit %lld", rx->length, stream->limits->rxFormSize);
+        /* continue */
     }
     if (stream->error) {
         /* Cannot reliably continue with keep-alive as the headers have not been correctly parsed */
@@ -524,20 +527,23 @@ static void processParsed(HttpQueue *q)
 
     if (httpIsServer(stream->net)) {
         //  TODO is rx->length getting set for HTTP/2?
+        //  TODO - should this test be earlier?
         if (!rx->upload && rx->length >= stream->limits->rxBodySize && stream->limits->rxBodySize != HTTP_UNLIMITED) {
             httpLimitError(stream, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Request content length %lld bytes is too big. Limit %lld", rx->length, stream->limits->rxBodySize);
             return;
         }
         httpAddQueryParams(stream);
+
         rx->streaming = httpGetStreaming(stream->host, rx->mimeType, rx->uri);
-        if (rx->streaming && httpServerStream(stream)) {
-            /*
-                Disable upload if streaming, used by PHP to stream input and process file upload in PHP.
-             */
+        if (rx->streaming) {
+            /* Disable upload if streaming, used by PHP to stream input and process file upload in PHP. */
             rx->upload = 0;
             routeRequest(stream);
+        } else {
+            stream->readq->max = stream->limits->rxFormSize;
         }
+
     } else {
 #if ME_HTTP_WEB_SOCKETS
         if (stream->upgraded && !httpVerifyWebSocketsHandshake(stream)) {

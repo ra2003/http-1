@@ -30,6 +30,7 @@ PUBLIC HttpRx *httpCreateRx(HttpStream *stream)
     rx->needInputPipeline = httpClientStream(stream);
     rx->headers = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_CASELESS | MPR_HASH_STABLE);
     rx->chunkState = HTTP_CHUNK_UNCHUNKED;
+    rx->remainingContent = 0;
 
     rx->seqno = ++stream->net->totalRequests;
     peer = stream->net->address ? stream->net->address->seqno : 0;

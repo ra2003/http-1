@@ -69,7 +69,7 @@ PUBLIC void httpCreateRxPipeline(HttpStream *stream, HttpRoute *route)
     if (httpClientStream(stream)) {
         pairQueues(stream->rxHead, stream->txHead);
         httpOpenQueues(stream);
-        
+
     } else if (!rx->streaming) {
         q->max = stream->limits->rxFormSize;
     }

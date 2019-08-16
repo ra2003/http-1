@@ -266,7 +266,7 @@ PUBLIC void httpSetNetProtocol(HttpNet *net, int protocol)
     /*
         The input queue window is defined by the network limits value. Default of HTTP2_MIN_WINDOW but revised by config.
      */
-    httpSetQueueLimits(net->inputq, net->limits, -1, -1, -1, -1);
+    httpSetQueueLimits(net->inputq, net->limits, HTTP2_MIN_FRAME_SIZE, -1, -1, -1);
     /*
         The packetSize and window size will always be revised in Http2:parseSettingsFrame
      */

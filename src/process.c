@@ -498,44 +498,32 @@ static void processParsed(HttpQueue *q)
         }
         if ((stream->host = httpMatchHost(net, hostname)) == 0) {
             stream->host = mprGetFirstItem(net->endpoint->hosts);
-            httpError(stream, HTTP_CODE_NOT_FOUND, "No listening endpoint for request for %s", rx->hostHeader);
+            httpError(stream, HTTP_CLOSE | HTTP_CODE_NOT_FOUND, "No listening endpoint for request for %s", rx->hostHeader);
             /* continue */
         }
-        if (!rx->originalUri) {
-            rx->originalUri = rx->uri;
-        }
-        parseUri(stream);
-    }
-
-    if (rx->form && rx->length >= stream->limits->rxFormSize && stream->limits->rxFormSize != HTTP_UNLIMITED) {
-        httpLimitError(stream, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
-            "Request form of %lld bytes is too big. Limit %lld", rx->length, stream->limits->rxFormSize);
-        /* continue */
-    }
-    if (stream->error) {
-        /* Cannot reliably continue with keep-alive as the headers have not been correctly parsed */
-        stream->keepAliveCount = 0;
-    }
-    if (httpClientStream(stream) && stream->keepAliveCount <= 0 && rx->length < 0 && rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
-        /*
-            Google does responses with a body and without a Content-Length like this:
-                Connection: close
-                Location: URI
-         */
-        rx->remainingContent = rx->redirect ? 0 : HTTP_UNLIMITED;
-    }
-
-    if (httpIsServer(stream->net)) {
         //  TODO is rx->length getting set for HTTP/2?
-        //  TODO - should this test be earlier?
         if (!rx->upload && rx->length >= stream->limits->rxBodySize && stream->limits->rxBodySize != HTTP_UNLIMITED) {
             httpLimitError(stream, HTTP_ABORT | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Request content length %lld bytes is too big. Limit %lld", rx->length, stream->limits->rxBodySize);
             return;
         }
+        rx->streaming = httpGetStreaming(stream->host, rx->mimeType, rx->uri);
+        if (!rx->streaming && rx->length >= stream->limits->rxFormSize && stream->limits->rxFormSize != HTTP_UNLIMITED) {
+            httpLimitError(stream, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
+                "Request form of %lld bytes is too big. Limit %lld", rx->length, stream->limits->rxFormSize);
+            /* continue */
+        }
+
+        if (!rx->originalUri) {
+            rx->originalUri = rx->uri;
+        }
+        parseUri(stream);
         httpAddQueryParams(stream);
 
-        rx->streaming = httpGetStreaming(stream->host, rx->mimeType, rx->uri);
+        if (stream->error) {
+            /* Cannot reliably continue with keep-alive as the headers have not been correctly parsed */
+            stream->keepAliveCount = 0;
+        }
         if (rx->streaming) {
             /* Disable upload if streaming, used by PHP to stream input and process file upload in PHP. */
             rx->upload = 0;
@@ -589,7 +577,7 @@ static void routeRequest(HttpStream *stream)
         httpStartHandler(stream);
     }
     if (rx->eof) {
-        httpTransferPackets(stream->rxHead, stream->readq);
+        httpTransferPackets(stream);
     }
 }
 

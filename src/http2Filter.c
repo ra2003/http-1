@@ -644,6 +644,10 @@ static HttpStream *getStream(HttpQueue *q, HttpPacket *packet)
             /* Memory error - centrally reported */
             return 0;
         }
+        /*
+            HTTP/2 does not use Content-Length or chunking. End of stream is detected by a frame with HTTP2_END_STREAM_FLAG
+         */
+        stream->rx->remainingContent = HTTP_UNLIMITED;
         stream->streamID = frame->streamID;
         frame->stream = stream;
 

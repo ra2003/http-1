@@ -545,16 +545,28 @@ static void processParsed(HttpQueue *q)
         }
 
     } else {
-#if ME_HTTP_WEB_SOCKETS
-        if (stream->upgraded && !httpVerifyWebSocketsHandshake(stream)) {
-            httpSetState(stream, HTTP_STATE_FINALIZED);
-            return;
+        /*
+            Google does responses with a body and without a Content-Length like this:
+                Connection: close
+                Location: URI
+         */
+        if (stream->keepAliveCount <= 0 && rx->length < 0 && rx->chunkState == HTTP_CHUNK_UNCHUNKED) {
+            rx->remainingContent = rx->redirect ? 0 : HTTP_UNLIMITED;
         }
-#endif
     }
+
+#if ME_HTTP_WEB_SOCKETS
+    if (httpIsClient(stream->net) && stream->upgraded && !httpVerifyWebSocketsHandshake(stream)) {
+        httpSetState(stream, HTTP_STATE_FINALIZED);
+        return;
+    }
+#endif
+
     httpSetState(stream, HTTP_STATE_CONTENT);
     if (rx->remainingContent == 0) {
-        httpSetEof(stream);
+        if (!rx->eof) {
+            httpSetEof(stream);
+        }
         httpFinalizeInput(stream);
     }
 }

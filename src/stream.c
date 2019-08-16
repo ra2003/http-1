@@ -331,9 +331,12 @@ static void pickStreamNumber(HttpStream *stream)
 
 PUBLIC void httpDisconnectStream(HttpStream *stream)
 {
+    HttpRx      *rx;
     HttpTx      *tx;
 
+    rx = stream->rx;
     tx = stream->tx;
+
     stream->error++;
     if (tx) {
         tx->responded = 1;
@@ -769,6 +772,23 @@ PUBLIC HttpStream *httpFindStream(uint64 seqno, HttpEventProc proc, void *data)
     unlock(HTTP->networks);
     unlock(MPR->eventService);
     return stream;
+}
+
+
+PUBLIC void httpTransferPackets(HttpStream *stream)
+{
+    HttpPacket  *packet;
+    HttpRx      *rx;
+
+    rx = stream->rx;
+
+    while ((packet = httpGetPacket(stream->rxHead)) != 0) {
+        httpPutPacket(stream->readq, packet);
+    }
+    if (!rx->inputEnded) {
+        rx->inputEnded = 1;
+        httpPutPacketToNext(stream->readq, httpCreateEndPacket());
+    }
 }
 
 /*

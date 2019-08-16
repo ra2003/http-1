@@ -399,8 +399,8 @@ static void incomingFile(HttpQueue *q, HttpPacket *packet)
         /* End of input */
         if (file) {
             mprCloseFile(file);
+            q->queueData = 0;
         }
-        q->queueData = 0;
         if (!tx->etag) {
             /* Set the etag for caching in the client */
             mprGetPathInfo(tx->filename, &tx->fileInfo);

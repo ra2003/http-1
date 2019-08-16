@@ -988,7 +988,7 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
     limits = conn->limits;
     *more = 0;
 
-    if (mprIsSocketEof(conn->sock) || conn->connError) {
+    if (mprIsSocketEof(conn->sock) || conn->error) {
         httpSetEof(conn);
     }
     if (rx->chunkState) {
@@ -1022,10 +1022,12 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
         if (size >= limits->rxBodySize) {
             httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Receive body of %lld bytes (sofar) is too big. Limit %lld", size, limits->rxBodySize);
+            return 0;
 
-        } else if (rx->form && size >= limits->rxFormSize) {
+        } else if (!rx->streaming && size >= limits->rxFormSize) {
             httpLimitError(conn, HTTP_CLOSE | HTTP_CODE_REQUEST_TOO_LARGE,
                 "Receive form of %lld bytes (sofar) is too big. Limit %lld", size, limits->rxFormSize);
+            return 0;
         }
     }
     if (packet && httpTracing(conn)) {
@@ -1042,7 +1044,6 @@ static ssize filterPacket(HttpConn *conn, HttpPacket *packet, int *more)
 #endif
         if ((rx->remainingContent > 0 && (rx->length > 0 || !conn->mustClose)) ||
             (rx->chunkState && rx->chunkState != HTTP_CHUNK_EOF)) {
-            /* Closing is the only way for HTTP/1.0 to signify the end of data */
             httpError(conn, HTTP_ABORT | HTTP_CODE_COMMS_ERROR, "Connection lost");
             return 0;
         }

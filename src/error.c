@@ -120,6 +120,7 @@ static void errorv(HttpConn *conn, int flags, cchar *fmt, va_list args)
     }
     if (flags & (HTTP_ABORT | HTTP_CLOSE)) {
         conn->keepAliveCount = 0;
+        httpSetEof(conn);
     }
     if (flags & HTTP_ABORT) {
         conn->connError++;

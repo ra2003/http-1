@@ -677,6 +677,7 @@ static HttpStream *getStream(HttpQueue *q, HttpPacket *packet)
     rx = stream->rx;
     if (frame->flags & HTTP2_END_STREAM_FLAG) {
         rx->eof = 1;
+        // httpSetEof(stream);
     }
     if (rx->headerPacket) {
         httpJoinPacket(rx->headerPacket, packet);
@@ -1159,6 +1160,7 @@ static void processDataFrame(HttpQueue *q, HttpPacket *packet)
 
     if (frame->flags & HTTP2_END_STREAM_FLAG) {
         stream->rx->eof = 1;
+        // httpSetEof(stream);
     }
     if (httpGetPacketLength(packet) > 0) {
         httpPutPacket(stream->inputq, packet);

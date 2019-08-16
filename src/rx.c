@@ -382,8 +382,14 @@ PUBLIC bool httpMatchModified(HttpStream *stream, MprTime time)
 
 PUBLIC void httpSetEof(HttpStream *stream)
 {
-    if (stream->net->protocol < 2) {
+    if (stream) {
+#if UNUSED
+        if (stream->net->protocol < 2) {
+            stream->rx->eof = 1;
+        }
+#else
         stream->rx->eof = 1;
+#endif
     }
 }
 

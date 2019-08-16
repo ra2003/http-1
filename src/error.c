@@ -150,6 +150,9 @@ static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
     }
     if (flags & (HTTP_ABORT | HTTP_CLOSE)) {
         stream->keepAliveCount = 0;
+        if (!rx->eof) {
+            httpSetEof(stream);
+        }
     }
     if (!stream->error) {
         stream->error = 1;

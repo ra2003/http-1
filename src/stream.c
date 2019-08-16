@@ -341,7 +341,7 @@ PUBLIC void httpDisconnectStream(HttpStream *stream)
         tx->finalizedOutput = 1;
         tx->finalizedConnector = 1;
     }
-    if (stream->rx) {
+    if (rx && !rx->eof) {
         httpSetEof(stream);
     }
     if (stream->net->protocol < 2) {

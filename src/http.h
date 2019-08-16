@@ -6574,6 +6574,7 @@ typedef struct HttpRx {
     bool            form: 1;                /**< Using mime-type application/x-www-form-urlencoded */
     bool            ifModified: 1;          /**< If-Modified processing requested */
     bool            ifMatch: 1;             /**< If-Match processing requested */
+    bool            inputEnded: 1;          /**< End packet appended to input stream */
     bool            json: 1;                /**< Using a JSON body */
     bool            needInputPipeline: 1;   /**< Input pipeline required to process received data */
     bool            ownParams: 1;           /**< Do own parameter handling */

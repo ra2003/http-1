@@ -87,7 +87,9 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
         nbytes = min(rx->remainingContent, httpGetPacketLength(packet));
         rx->remainingContent -= nbytes;
         if (rx->remainingContent <= 0) {
-            httpSetEof(stream);
+            if (!rx->eof) {
+                httpSetEof(stream);
+            }
 #if HTTP_PIPELINING
             /* HTTP/1.1 pipelining is not implemented reliably by all browsers */
             if (nbytes < len && (tail = httpSplitPacket(packet, nbytes)) != 0) {
@@ -172,7 +174,9 @@ static void incomingChunk(HttpQueue *q, HttpPacket *packet)
                 rx->remainingContent = chunkSize;
                 if (chunkSize == 0) {
                     rx->chunkState = HTTP_CHUNK_EOF;
-                    httpSetEof(stream);
+                    if (!rx->eof) {
+                        httpSetEof(stream);
+                    }
                 } else if (rx->eof) {
                     rx->chunkState = HTTP_CHUNK_EOF;
                 } else {

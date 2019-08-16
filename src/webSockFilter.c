@@ -530,7 +530,9 @@ static void incomingWebSockData(HttpQueue *q, HttpPacket *packet)
             ws->frameState = WS_CLOSED;
             ws->state = WS_STATE_CLOSED;
             httpFinalize(stream);
-            httpSetEof(stream);
+            if (!stream->rx->eof) {
+                httpSetEof(stream);
+            }
             httpSetState(stream, HTTP_STATE_FINALIZED);
             return;
         }
@@ -674,7 +676,9 @@ static int processFrame(HttpQueue *q, HttpPacket *packet)
         } else {
             /* Acknowledge the close. Echo the received status */
             httpSendClose(stream, WS_STATUS_OK, "OK");
-            httpSetEof(stream);
+            if (!stream->rx->eof) {
+                httpSetEof(stream);
+            }
             rx->remainingContent = 0;
             stream->keepAliveCount = 0;
         }

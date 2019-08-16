@@ -675,9 +675,8 @@ static HttpStream *getStream(HttpQueue *q, HttpPacket *packet)
         }
     }
     rx = stream->rx;
-    if (frame->flags & HTTP2_END_STREAM_FLAG) {
-        rx->eof = 1;
-        // httpSetEof(stream);
+    if (frame->flags & HTTP2_END_STREAM_FLAG && !rx->eof) {
+        httpSetEof(stream);
     }
     if (rx->headerPacket) {
         httpJoinPacket(rx->headerPacket, packet);
@@ -831,7 +830,7 @@ static void parseWindowFrame(HttpQueue *q, HttpPacket *packet)
 
 
 /*
-    Once the hader and all continuation frames are received, they are joined into a single rx->headerPacket.
+    Once the header frame and all continuation frames are received, they are joined into a single rx->headerPacket.
  */
 static void parseHeaderFrames(HttpQueue *q, HttpStream *stream)
 {
@@ -1158,9 +1157,8 @@ static void processDataFrame(HttpQueue *q, HttpPacket *packet)
     frame = packet->data;
     stream = frame->stream;
 
-    if (frame->flags & HTTP2_END_STREAM_FLAG) {
-        stream->rx->eof = 1;
-        // httpSetEof(stream);
+    if (frame->flags & HTTP2_END_STREAM_FLAG && !stream->rx->eof) {
+        httpSetEof(stream);
     }
     if (httpGetPacketLength(packet) > 0) {
         httpPutPacket(stream->inputq, packet);

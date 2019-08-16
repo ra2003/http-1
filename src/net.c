@@ -284,7 +284,9 @@ PUBLIC void httpNetClosed(HttpNet *net)
         if (stream->state < HTTP_STATE_PARSED) {
             httpError(stream, 0, "Peer closed connection before receiving a response");
         }
-        httpSetEof(stream);
+        if (stream->rx && !stream->rx->eof) {
+            httpSetEof(stream);
+        }
         httpSetState(stream, HTTP_STATE_COMPLETE);
         mprCreateEvent(net->dispatcher, "disconnect", 0, httpProcess, stream->inputq, 0);
     }

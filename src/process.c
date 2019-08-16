@@ -562,26 +562,22 @@ static void processParsed(HttpQueue *q)
 
 static void routeRequest(HttpStream *stream)
 {
-    HttpPacket  *packet;
     HttpRx      *rx;
+    HttpTx      *tx;
 
     rx = stream->rx;
+    tx = stream->tx;
 
     if (!rx->route) {
         httpRouteRequest(stream);
         httpCreatePipeline(stream);
         httpStartPipeline(stream);
     }
-
-    if (rx->eof) {
-        while ((packet = httpGetPacket(stream->rxHead)) != 0) {
-            httpPutPacket(stream->readq, packet);
-        }
-        httpPutPacketToNext(stream->readq, httpCreateEndPacket());
-    }
-
-    if (!stream->tx->started) {
+    if (!tx->started) {
         httpStartHandler(stream);
+    }
+    if (rx->eof) {
+        httpTransferPackets(stream->rxHead, stream->readq);
     }
 }
 

@@ -518,6 +518,22 @@ PUBLIC bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
 }
 
 
+PUBLIC void httpTransferPackets(HttpQueue *inq, HttpQueue *outq)
+{
+    HttpPacket  *packet;
+    bool        ended;
+
+    ended = 0;
+    while ((packet = httpGetPacket(inq)) != 0) {
+        httpPutPacket(outq, packet);
+        ended = ended || (packet->flags & HTTP_PACKET_END);
+    }
+    if (!ended) {
+        //  MOB - is this required -- or will incomingTail do this for us?
+        httpPutPacketToNext(outq, httpCreateEndPacket());
+    }
+}
+
 #if ME_DEBUG
 PUBLIC bool httpVerifyQueue(HttpQueue *q)
 {

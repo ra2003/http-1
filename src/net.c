@@ -477,7 +477,7 @@ PUBLIC cchar *httpGetProtocol(HttpNet *net)
     if (net->protocol == 0) {
         return "HTTP/1.0";
     } else if (net->protocol >= 2) {
-        return "HTTP/2";
+        return "HTTP/2.0";
     } else {
         return "HTTP/1.1";
     }

@@ -141,7 +141,7 @@ PUBLIC int httpConnect(HttpStream *stream, cchar *method, cchar *url, MprSsl *ss
     httpServiceNetQueues(net, 0);
     httpEnableNetEvents(net);
 
-    protocol = net->protocol < 2 ? "HTTP/1.1" : "HTTP/2";
+    protocol = net->protocol < 2 ? "HTTP/1.1" : "HTTP/2.0";
     httpLog(net->trace, "client.request", "request", "method='%s', url='%s', protocol='%s'", tx->method, url, protocol);
     return 0;
 }

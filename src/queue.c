@@ -518,6 +518,16 @@ PUBLIC bool httpWillNextQueueAcceptSize(HttpQueue *q, ssize size)
 }
 
 
+PUBLIC void httpTransferPackets(HttpQueue *inq, HttpQueue *outq)
+{
+    HttpPacket  *packet;
+
+    while ((packet = httpGetPacket(inq)) != 0) {
+        httpPutPacket(outq, packet);
+    }
+}
+
+
 #if ME_DEBUG
 PUBLIC bool httpVerifyQueue(HttpQueue *q)
 {

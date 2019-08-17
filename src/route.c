@@ -3155,7 +3155,8 @@ PUBLIC bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list arg
 
 PUBLIC bool httpGetBoolToken(cchar *tok)
 {
-    return scaselessmatch(tok, "on") || scaselessmatch(tok, "true") || scaselessmatch(tok, "yes") || smatch(tok, "1");
+    return scaselessmatch(tok, "on") || scaselessmatch(tok, "true") || scaselessmatch(tok, "enable") ||
+        scaselessmatch(tok, "yes") || smatch(tok, "1");
 }
 
 

@@ -775,16 +775,11 @@ PUBLIC HttpStream *httpFindStream(uint64 seqno, HttpEventProc proc, void *data)
 }
 
 
-PUBLIC void httpTransferPackets(HttpStream *stream)
+PUBLIC void httpAddEndInputPacket(HttpStream *stream)
 {
-    HttpPacket  *packet;
-    HttpRx      *rx;
+    HttpRx  *rx;
 
     rx = stream->rx;
-
-    while ((packet = httpGetPacket(stream->rxHead)) != 0) {
-        httpPutPacket(stream->readq, packet);
-    }
     if (!rx->inputEnded) {
         rx->inputEnded = 1;
         httpPutPacketToNext(stream->readq, httpCreateEndPacket());

@@ -1,5 +1,5 @@
 /*
-    chunkFilter.c - Transfer chunk endociding filter.
+    chunkFilter.c - Transfer chunk encoding filter.
 
     This is an output only filter to chunk encode output before writing to the client.
     Input chunking is handled in httpProcess()/processContent(). In the future, it would

@@ -3592,6 +3592,14 @@ typedef struct HttpStream {
 } HttpStream;
 
 /**
+    Add an END packet to the input queue
+    @param stream HttpStream stream object created via #httpCreateStream
+    @ingroup HttpStream
+    @stability Prototype
+ */
+PUBLIC void httpAddEndInputPacket(HttpStream *stream);
+
+/**
     Emit an error message for a badly formatted request
     @param stream HttpStream stream object created via #httpCreateStream
     @param status Http status code. The status code can be ored with the flags HTTP_ABORT to immediately abort

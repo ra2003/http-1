@@ -161,7 +161,7 @@ PUBLIC void httpAddQueryParams(HttpStream *stream)
     HttpRx      *rx;
 
     rx = stream->rx;
-    if (rx->parsedUri->query && !(rx->flags & HTTP_ADDED_QUERY_PARAMS)) {
+    if (rx->parsedUri->query && !(rx->flags & HTTP_ADDED_QUERY_PARAMS) && !stream->error) {
         addParamsFromBuf(stream, rx->parsedUri->query, slen(rx->parsedUri->query));
         rx->flags |= HTTP_ADDED_QUERY_PARAMS;
     }
@@ -177,7 +177,7 @@ PUBLIC int httpAddBodyParams(HttpStream *stream)
     rx = stream->rx;
     q = stream->readq;
 
-    if (rx->eof && (rx->form || rx->upload || rx->json) && !(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
+    if (rx->eof && (rx->form || rx->upload || rx->json) && !(rx->flags & HTTP_ADDED_BODY_PARAMS) && !rx->route && !stream->error) {
         httpJoinPackets(q, -1);
         if (q->first && q->first->content) {
             content = q->first->content;
@@ -201,7 +201,7 @@ PUBLIC void httpAddJsonParams(HttpStream *stream)
     HttpRx      *rx;
 
     rx = stream->rx;
-    if (rx->eof && sstarts(rx->mimeType, "application/json")) {
+    if (rx->eof && sstarts(rx->mimeType, "application/json") && !stream->error) {
         if (!(rx->flags & HTTP_ADDED_BODY_PARAMS)) {
             mprParseJsonInto(httpGetBodyInput(stream), httpGetParams(stream));
             rx->flags |= HTTP_ADDED_BODY_PARAMS;

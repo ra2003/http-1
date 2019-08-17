@@ -3072,7 +3072,7 @@ PUBLIC bool httpTokenizev(HttpRoute *route, cchar *line, cchar *fmt, va_list arg
                 }
                 break;
             case 'B':
-                *va_arg(args, bool*) = httpGetBoolToken(tok);;
+                *va_arg(args, bool*) = httpGetBoolToken(tok);
                 break;
             case 'N':
                 *va_arg(args, int*) = (int) stoi(tok);

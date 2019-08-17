@@ -52,7 +52,7 @@ static void incomingTail(HttpQueue *q, HttpPacket *packet)
         httpPutPacketToNext(q, packet);
     }
     if (rx->eof) {
-        httpAddEndInputPacket(stream);
+        httpAddEndInputPacket(stream, q);
     }
     if (rx->route && stream->readq->first) {
         HTTP_NOTIFY(stream, HTTP_EVENT_READABLE, 0);

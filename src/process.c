@@ -573,6 +573,7 @@ static void routeRequest(HttpStream *stream)
         httpRouteRequest(stream);
         httpCreatePipeline(stream);
         httpStartPipeline(stream);
+        httpTransferPackets(stream->rxHead, stream->readq);
     }
 }
 

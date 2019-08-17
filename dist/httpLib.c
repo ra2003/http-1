@@ -15520,7 +15520,6 @@ PUBLIC void httpCreateRxPipeline(HttpStream *stream, HttpRoute *route)
         q = httpCreateQueue(stream->net, stream, stage, HTTP_QUEUE_RX, q);
         q->flags |= HTTP_QUEUE_REQUEST;
     }
-    httpTransferPackets(stream->readq, q);
     stream->readq = q;
 
     if (httpClientStream(stream)) {
@@ -16440,6 +16439,7 @@ static void routeRequest(HttpStream *stream)
         httpRouteRequest(stream);
         httpCreatePipeline(stream);
         httpStartPipeline(stream);
+        httpTransferPackets(stream->rxHead, stream->readq);
     }
 }
 
@@ -23128,14 +23128,14 @@ PUBLIC HttpStream *httpFindStream(uint64 seqno, HttpEventProc proc, void *data)
 }
 
 
-PUBLIC void httpAddEndInputPacket(HttpStream *stream)
+PUBLIC void httpAddEndInputPacket(HttpStream *stream, HttpQueue *q)
 {
     HttpRx  *rx;
 
     rx = stream->rx;
     if (!rx->inputEnded) {
         rx->inputEnded = 1;
-        httpPutPacketToNext(stream->readq, httpCreateEndPacket());
+        httpPutPacketToNext(q, httpCreateEndPacket());
     }
 }
 
@@ -23205,7 +23205,7 @@ static void incomingTail(HttpQueue *q, HttpPacket *packet)
         httpPutPacketToNext(q, packet);
     }
     if (rx->eof) {
-        httpAddEndInputPacket(stream);
+        httpAddEndInputPacket(stream, q);
     }
     if (rx->route && stream->readq->first) {
         HTTP_NOTIFY(stream, HTTP_EVENT_READABLE, 0);

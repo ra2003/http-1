@@ -528,6 +528,7 @@ static void processParsed(HttpQueue *q)
             /* Disable upload if streaming, used by PHP to stream input and process file upload in PHP. */
             rx->upload = 0;
             routeRequest(stream);
+            httpStartHandler(stream);
         } else {
             stream->readq->max = stream->limits->rxFormSize;
         }
@@ -573,12 +574,6 @@ static void routeRequest(HttpStream *stream)
         httpCreatePipeline(stream);
         httpStartPipeline(stream);
     }
-    if (!tx->started) {
-        httpStartHandler(stream);
-    }
-    if (rx->eof) {
-        httpTransferPackets(stream);
-    }
 }
 
 
@@ -623,6 +618,7 @@ static bool processContent(HttpQueue *q)
             }
             mapMethod(stream);
             routeRequest(stream);
+            httpStartHandler(stream);
         }
         httpSetState(stream, HTTP_STATE_READY);
     }
@@ -792,6 +788,7 @@ static void prepErrorDoc(HttpQueue *q)
 
     parseUri(stream);
     routeRequest(stream);
+    httpStartHandler(stream);
 }
 
 
@@ -808,7 +805,7 @@ static bool mapMethod(HttpStream *stream)
     cchar       *method;
 
     rx = stream->rx;
-    if (rx->flags & HTTP_POST && (method = httpGetParam(stream, "-http-method-", 0)) != 0) {
+    if (rx->flags & HTTP_POST && (method = httpGetParam(stream, "-http-method-", 0)) != 0 && !rx->route) {
         if (!scaselessmatch(method, rx->method)) {
             httpLog(stream->trace, "http.mapMethod", "context", "originalMethod:'%s', method:'%s'", rx->method, method);
             httpSetMethod(stream, method);

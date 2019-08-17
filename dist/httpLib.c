@@ -14881,10 +14881,11 @@ PUBLIC void httpJoinPacketForService(HttpQueue *q, HttpPacket *packet, bool serv
             Find the last data packet and join with that
          */
         for (p = q->first, last = 0; p && !(p->flags & HTTP_PACKET_END); last = p, p = p->next);
-        assert(last);
         if (last) {
             httpJoinPacket(last, packet);
             q->count += httpGetPacketLength(packet);
+        } else {
+            httpPutBackPacket(q, packet);
         }
     }
     if (serviceQ && !(q->flags & HTTP_QUEUE_SUSPENDED))  {
@@ -16043,9 +16044,6 @@ static void processHeaders(HttpQueue *q)
     for (ITERATE_KEYS(rx->headers, kp)) {
         key = kp->key;
         value = (char*) kp->data;
-#if UNUSED
-        httpRawLog(stream->trace, "headers", "%s: %s", key, value);
-#endif
         switch (tolower((uchar) key[0])) {
         case 'a':
             if (strcasecmp(key, "authorization") == 0) {
@@ -21553,13 +21551,7 @@ PUBLIC bool httpMatchModified(HttpStream *stream, MprTime time)
 PUBLIC void httpSetEof(HttpStream *stream)
 {
     if (stream) {
-#if UNUSED
-        if (stream->net->protocol < 2) {
-            stream->rx->eof = 1;
-        }
-#else
         stream->rx->eof = 1;
-#endif
     }
 }
 

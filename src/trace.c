@@ -152,7 +152,6 @@ PUBLIC bool httpLogProc(HttpTrace *trace, cchar *event, cchar *type, int flags, 
 {
     va_list     args;
 
-    assert(event && *event);
     assert(type && *type);
 
     va_start(args, fmt);
@@ -276,9 +275,11 @@ PUBLIC void httpDetailFormatter(HttpTrace *trace, cchar *event, cchar *type, int
         } else {
             mprPutToBuf(buf, "%s RECV event=%s type=%s", trace->lastTime, event, type);
         }
+        if (fmt) {
+            mprPutCharToBuf(buf, ' ');
+        }
     }
     if (fmt) {
-        mprPutCharToBuf(buf, ' ');
         msg = sfmtv(fmt, args);
         mprPutStringToBuf(buf, msg);
     }

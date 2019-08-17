@@ -1395,7 +1395,9 @@ PUBLIC void httpCreateHeaders2(HttpQueue *q, HttpPacket *packet)
     httpPrepareHeaders(stream);
     definePseudoHeaders(stream, packet);
     if (httpTracing(q->net)) {
-        httpLog(stream->trace, "http2.tx.headers", "headers", "\n%s", httpTraceHeaders(q, stream->tx->headers));
+        httpLog(stream->trace, "http2.tx.headers", "headers", "\n\n%s %d %s\n%s",
+            httpGetProtocol(stream->net), tx->status, httpLookupStatus(tx->status),
+            httpTraceHeaders(q, stream->tx->headers));
     }
 
     /*

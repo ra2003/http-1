@@ -288,7 +288,7 @@ PUBLIC void httpNetClosed(HttpNet *net)
             httpSetEof(stream);
         }
         httpSetState(stream, HTTP_STATE_COMPLETE);
-        mprCreateEvent(net->dispatcher, "disconnect", 0, httpProcess, stream->inputq, 0);
+        httpProcess(stream->inputq);
     }
 }
 

@@ -44,15 +44,19 @@ PUBLIC bool httpProcessHeaders(HttpQueue *q)
 
 PUBLIC void httpProcess(HttpQueue *q)
 {
+    /*
+        Create an event to limit recursion when invoked by pipeline stages
+     */
     mprCreateEvent(q->stream->dispatcher, "http", 0, processHttp, q->stream->inputq, 0);
 }
 
 
+#if UNUSED
 PUBLIC void httpProtocol(HttpStream *stream)
 {
     processHttp(stream->inputq);
 }
-
+#endif
 
 /*
     HTTP Protocol state machine for HTTP/1 server requests and client responses.

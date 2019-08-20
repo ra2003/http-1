@@ -212,7 +212,7 @@ PUBLIC void httpDiscardQueueData(HttpQueue *q, bool removePackets)
 
 
 /*
-    Flush queue data toward the connector by scheduling the queue and servicing all scheduled queues.
+Flush queue data toward the connector by scheduling the queue and servicing all scheduled queues.
     Return true if there is room for more data. If blocking is requested, the call will block until
     the queue count falls below the queue max. NOTE: may return early if the inactivityTimeout expires.
     WARNING: may yield.
@@ -228,11 +228,17 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
     stream = q->stream;
 
     /*
-        Initiate flushing. For HTTP/2 we must process incoming window update frames, so run any pending IO events.
+        Initiate flushing.
      */
     httpScheduleQueue(q);
     httpServiceNetQueues(net, flags);
-    mprWaitForEvent(stream->dispatcher, 0, mprGetEventMark(stream->dispatcher));
+
+    /*
+        For HTTP/2 we must process incoming window update frames, so run any pending IO events.
+     */
+    if (net->protocol == HTTP_2) {
+        mprWaitForEvent(stream->dispatcher, 0, mprGetEventMark(stream->dispatcher));
+    }
 
     if (net->error) {
         return 1;
@@ -251,10 +257,12 @@ PUBLIC bool httpFlushQueue(HttpQueue *q, int flags)
                 httpScheduleQueue(net->socketq);
                 httpServiceNetQueues(net, flags);
             }
-            /*
-                Process HTTP/2 window update messages for flow control
-             */
-            mprWaitForEvent(stream->dispatcher, 0, mprGetEventMark(stream->dispatcher));
+            if (net->protocol == HTTP_2) {
+                /*
+                    Process HTTP/2 window update messages for flow control
+                 */
+                mprWaitForEvent(stream->dispatcher, 0, mprGetEventMark(stream->dispatcher));
+            }
         }
         if (!(flags & HTTP_BLOCK)) {
             break;

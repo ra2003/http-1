@@ -517,7 +517,7 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
         if (packet->flags & HTTP_PACKET_END) {
             if ((stream = packet->stream) != 0) {
                 httpFinalizeConnector(stream);
-                mprCreateEvent(q->net->dispatcher, "endRequest", 0, httpProcess, stream->inputq, 0);
+                httpProcess(stream->inputq);
             }
         } else if (bytes > 0) {
             if (packet->prefix) {

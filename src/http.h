@@ -8698,7 +8698,9 @@ PUBLIC bool httpPumpOutput(HttpQueue *q);
 #define httpServerConn(stream) httpServerStream(stream)
 #define httpDisconnect(stream) httpDisconnectStream(stream)
 
+#if UNUSED
 PUBLIC void httpProtocol(HttpStream *stream);
+#endif
 
 #endif
 

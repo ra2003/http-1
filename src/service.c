@@ -111,6 +111,7 @@ PUBLIC Http *httpCreate(int flags)
     http->trace = httpCreateTrace(0);
     http->startLevel = 2;
     http->localPlatform = slower(sfmt("%s-%s-%s", ME_OS, ME_CPU, ME_PROFILE));
+    http->upload = 1;
     httpSetPlatform(http->localPlatform);
     httpSetPlatformDir(NULL);
 
@@ -195,6 +196,7 @@ static void manageHttp(Http *http, int flags)
         mprMark(http->forkData);
         mprMark(http->group);
         mprMark(http->hosts);
+        mprMark(http->jail);
         mprMark(http->localPlatform);
         mprMark(http->monitors);
         mprMark(http->mutex);
@@ -1290,6 +1292,23 @@ PUBLIC void httpEnableHttp2(int enable)
     HTTP->http2 = enable;
 }
 
+
+PUBLIC void httpSetJail(cchar *path)
+{
+    HTTP->jail = sclone(path);
+}
+
+
+PUBLIC void httpSetEnvCallback(HttpEnvCallback envCallback)
+{
+    HTTP->envCallback = envCallback;
+}
+
+
+PUBLIC void httpSetRedirectCallback(HttpRedirectCallback redirectCallback)
+{
+    HTTP->redirectCallback = redirectCallback;
+}
 
 /*
     Copyright (c) Embedthis Software. All Rights Reserved.

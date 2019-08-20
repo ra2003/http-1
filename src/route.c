@@ -777,6 +777,7 @@ PUBLIC int httpAddRouteFilter(HttpRoute *route, cchar *name, cchar *extensions, 
     assert(route);
 
     if (smatch(name, "uploadFilter") || smatch(name, "chunkFilter")) {
+        /* Already pre-loaded */
         return 0;
     }
     for (ITERATE_ITEMS(route->outputStages, stage, next)) {
@@ -3345,6 +3346,12 @@ PUBLIC HttpLimits *httpGraduateLimits(HttpRoute *route, HttpLimits *limits)
         route->limits = mprMemdup(limits, sizeof(HttpLimits));
     }
     return route->limits;
+}
+
+
+PUBLIC void httpSetRouteCallback(HttpRoute *route, HttpRouteCallback callback)
+{
+    route->callback = callback;
 }
 
 

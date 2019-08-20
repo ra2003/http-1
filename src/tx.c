@@ -321,6 +321,9 @@ PUBLIC void httpFinalizeOutput(HttpStream *stream)
         httpFinalize(stream);
     }
     httpPutPacket(stream->writeq, httpCreateEndPacket());
+    //  TODO -- new
+    httpScheduleQueue(stream->writeq);
+    httpServiceNetQueues(stream->net, 0);
 }
 
 
@@ -459,6 +462,9 @@ PUBLIC void httpRedirect(HttpStream *stream, int status, cchar *targetUri)
     if (tx->flags & HTTP_TX_HEADERS_CREATED) {
         mprLog("error", 0, "Headers already created, so redirect ignored: %s", targetUri);
         return;
+    }
+    if (HTTP->redirectCallback) {
+        targetUri = (HTTP->redirectCallback)(stream, &status, targetUri);
     }
     tx->status = status;
     msg = httpLookupStatus(status);
@@ -966,7 +972,6 @@ PUBLIC ssize httpWrite(HttpQueue *q, cchar *fmt, ...)
     va_end(vargs);
     return httpWriteString(q, buf);
 }
-
 
 /*
     Copyright (c) Embedthis Software. All Rights Reserved.

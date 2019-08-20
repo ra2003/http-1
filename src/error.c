@@ -136,7 +136,7 @@ static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
     HttpRx      *rx;
     HttpTx      *tx;
     cchar       *uri;
-    int         status;
+    int         redirected, status;
 
     rx = stream->rx;
     tx = stream->tx;
@@ -175,9 +175,18 @@ static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
                  */
                 flags |= HTTP_ABORT;
             } else {
-                if (rx->route && (uri = httpLookupRouteErrorDocument(rx->route, tx->status)) && !smatch(uri, rx->uri)) {
-                    errorRedirect(stream, uri);
-                } else {
+                redirected = 0;
+                if (rx->route) {
+                    uri = httpLookupRouteErrorDocument(rx->route, tx->status);
+                    if (rx->route->callback) {
+                        rx->route->callback(stream, HTTP_ROUTE_HOOK_ERROR, &uri);
+                    }
+                    if (uri && !smatch(uri, rx->uri)) {
+                        errorRedirect(stream, uri);
+                        redirected = 1;
+                    }
+                }
+                if (!redirected) {
                     makeAltBody(stream, status);
                 }
             }

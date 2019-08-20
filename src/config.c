@@ -1844,6 +1844,12 @@ static void parseTrace(HttpRoute *route, cchar *key, MprJson *prop)
 }
 
 
+static void parseUpload(HttpRoute *route, cchar *key, MprJson *prop)
+{
+    HTTP->upload = httpGetBoolToken(prop->value);
+}
+
+
 static void parseWebSocketsProtocol(HttpRoute *route, cchar *key, MprJson *prop)
 {
     route->webSocketsProtocol = sclone(prop->value);
@@ -2041,6 +2047,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.timeouts.request", parseTimeoutsRequest);
     httpAddConfig("http.timeouts.session", parseTimeoutsSession);
     httpAddConfig("http.trace", parseTrace);
+    httpAddConfig("http.upload", parseUpload);
     httpAddConfig("http.websockets.protocol", parseWebSocketsProtocol);
     httpAddConfig("http.xsrf", parseXsrf);
 

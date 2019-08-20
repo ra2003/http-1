@@ -36,7 +36,7 @@ PUBLIC HttpHost *httpCreateHost()
 
     host->routes = mprCreateList(-1, MPR_LIST_STABLE);
     host->flags = HTTP_HOST_NO_TRACE;
-    host->streams = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
+    host->streaming = mprCreateHash(HTTP_SMALL_HASH_SIZE, MPR_HASH_STABLE);
     httpSetStreaming(host, "application/x-www-form-urlencoded", NULL, 0);
     httpSetStreaming(host, "application/json", NULL, 0);
     httpSetStreaming(host, "application/csp-report", NULL, 0);
@@ -59,7 +59,7 @@ PUBLIC HttpHost *httpCloneHost(HttpHost *parent)
      */
     host->parent = parent;
     host->flags = parent->flags & HTTP_HOST_NO_TRACE;
-    host->streams = parent->streams;
+    host->streaming = parent->streaming;
     host->routes = mprCreateList(-1, MPR_LIST_STABLE);
     return host;
 }
@@ -77,7 +77,7 @@ static void manageHost(HttpHost *host, int flags)
         mprMark(host->defaultRoute);
         mprMark(host->defaultEndpoint);
         mprMark(host->secureEndpoint);
-        mprMark(host->streams);
+        mprMark(host->streaming);
 
     } else if (flags & MPR_MANAGE_FREE) {
         if (host->nameCompiled) {
@@ -415,12 +415,12 @@ PUBLIC bool httpGetStreaming(HttpHost *host, cchar *mime, cchar *uri)
     MprKey      *kp;
 
     assert(host);
-    assert(host->streams);
+    assert(host->streaming);
 
     if (schr(mime, ';')) {
         mime = ssplit(sclone(mime), ";", 0);
     }
-    if ((kp = mprLookupKeyEntry(host->streams, mime)) != 0) {
+    if ((kp = mprLookupKeyEntry(host->streaming, mime)) != 0) {
         if (kp->data == NULL || sstarts(uri, kp->data)) {
             /* Type is set to the enable value */
             return kp->type;
@@ -430,12 +430,15 @@ PUBLIC bool httpGetStreaming(HttpHost *host, cchar *mime, cchar *uri)
 }
 
 
+/*
+    Define streaming to be enabled for a given mime type that starts with the given URI for this host
+ */
 PUBLIC void httpSetStreaming(HttpHost *host, cchar *mime, cchar *uri, bool enable)
 {
     MprKey  *kp;
 
     assert(host);
-    if ((kp = mprAddKey(host->streams, mime, uri)) != 0) {
+    if ((kp = mprAddKey(host->streaming, mime, uri)) != 0) {
         /*
             We store the enable value in the key type to save an allocation
          */

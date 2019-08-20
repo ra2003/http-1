@@ -23,7 +23,7 @@ typedef struct HttpInvoke {
 /***************************** Forward Declarations ***************************/
 
 static void commonPrep(HttpStream *stream);
-static void createEvent(HttpStream *stream, void *data);
+static void createInvokeEvent(HttpStream *stream, void *data);
 static void manageInvoke(HttpInvoke *event, int flags);
 static void manageStream(HttpStream *stream, int flags);
 static void pickStreamNumber(HttpStream *stream);
@@ -704,7 +704,7 @@ PUBLIC int httpCreateEvent(uint64 seqno, HttpEventProc callback, void *data)
         invoke->callback = callback;
         invoke->data = data;
     }
-    if (httpFindStream(seqno, createEvent, invoke)) {
+    if (httpFindStream(seqno, createInvokeEvent, invoke)) {
         return 0;
     }
     mprRelease(invoke);
@@ -725,7 +725,7 @@ static void manageInvoke(HttpInvoke *invoke, int flags)
 }
 
 
-static void createEvent(HttpStream *stream, void *data)
+static void createInvokeEvent(HttpStream *stream, void *data)
 {
     mprCreateEvent(stream->dispatcher, "httpEvent", 0, (MprEventProc) invokeWrapper, data, MPR_EVENT_ALWAYS);
 }

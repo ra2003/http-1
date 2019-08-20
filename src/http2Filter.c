@@ -23,7 +23,7 @@ typedef void (*FrameHandler)(HttpQueue *q, HttpPacket *packet);
 
 /************************************ Forwards ********************************/
 
-static void addHeader(HttpStream *stream, cchar *key, cchar *value);
+static void addHeaderToSet(HttpStream *stream, cchar *key, cchar *value);
 static void checkSendSettings(HttpQueue *q);
 static void closeNetworkWhenDone(HttpQueue *q);
 static int decodeInt(HttpPacket *packet, uint prefix);
@@ -34,7 +34,7 @@ static void encodeInt(HttpPacket *packet, uint prefix, uint bits, uint value);
 static void encodeString(HttpPacket *packet, cchar *src, uint lower);
 static HttpStream *findStreamObj(HttpNet *net, int stream);
 static int getFrameFlags(HttpQueue *q, HttpPacket *packet);
-static HttpStream *getStream(HttpQueue *q, HttpPacket *packet);
+static HttpStream *getStreamObj(HttpQueue *q, HttpPacket *packet);
 static void incomingHttp2(HttpQueue *q, HttpPacket *packet);
 static void outgoingHttp2(HttpQueue *q, HttpPacket *packet);
 static void outgoingHttp2Service(HttpQueue *q);
@@ -602,7 +602,7 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
         sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Bad sesssion");
         return;
     }
-    if ((stream = getStream(q, packet)) != 0) {
+    if ((stream = getStreamObj(q, packet)) != 0) {
          if (frame->flags & HTTP2_END_HEADERS_FLAG) {
             parseHeaderFrames(q, stream);
         }
@@ -619,7 +619,7 @@ static void parseHeaderFrame(HttpQueue *q, HttpPacket *packet)
 /*
     Get or create a stream connection
  */
-static HttpStream *getStream(HttpQueue *q, HttpPacket *packet)
+static HttpStream *getStreamObj(HttpQueue *q, HttpPacket *packet)
 {
     HttpNet     *net;
     HttpStream  *stream;
@@ -893,7 +893,7 @@ static bool parseHeader(HttpQueue *q, HttpStream *stream, HttpPacket *packet)
             sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Bad header prefix");
             return 0;
         }
-        addHeader(stream, kp->key, kp->value);
+        addHeaderToSet(stream, kp->key, kp->value);
 
     } else if ((ch >> 6) == 1) {
         /*
@@ -916,7 +916,7 @@ static bool parseHeader(HttpQueue *q, HttpStream *stream, HttpPacket *packet)
             sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Invalid header name/value");
             return 0;
         }
-        addHeader(stream, name, value);
+        addHeaderToSet(stream, name, value);
         if (httpAddPackedHeader(net->rxHeaders, name, value) < 0) {
             sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Cannot fit header in hpack table");
             return 0;
@@ -949,7 +949,7 @@ static bool parseHeader(HttpQueue *q, HttpStream *stream, HttpPacket *packet)
             sendGoAway(q, HTTP2_PROTOCOL_ERROR, "Invalid header name/value");
             return 0;
         }
-        addHeader(stream, name, value);
+        addHeaderToSet(stream, name, value);
     }
     return 1;
 }
@@ -992,7 +992,7 @@ static cchar *parseHeaderField(HttpQueue *q, HttpStream *stream, HttpPacket *pac
 /*
     Add a header key/value pair to the set of headers for the stream (stream)
  */
-static void addHeader(HttpStream *stream, cchar *key, cchar *value)
+static void addHeaderToSet(HttpStream *stream, cchar *key, cchar *value)
 {
     HttpRx      *rx;
     HttpLimits  *limits;

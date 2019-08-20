@@ -74,7 +74,7 @@ PUBLIC HttpStatusCode HttpStatusCodes[] = {
 /****************************** Forward Declarations **************************/
 
 static void httpTimer(Http *http, MprEvent *event);
-static bool isIdle(bool traceRequests);
+static bool isHttpServiceIdle(bool traceRequests);
 static void manageHttp(Http *http, int flags);
 static void terminateHttp(int state, int how, int status);
 static void updateCurrentDate(void);
@@ -134,7 +134,7 @@ PUBLIC Http *httpCreate(int flags)
 #if ME_HTTP_WEB_SOCKETS
     httpOpenWebSockFilter();
 #endif
-    mprSetIdleCallback(isIdle);
+    mprSetIdleCallback(isHttpServiceIdle);
     mprAddTerminator(terminateHttp);
 
     if (flags & HTTP_SERVER_SIDE) {
@@ -342,7 +342,7 @@ static void terminateHttp(int state, int how, int status)
 /*
     Test if the http service (including MPR) is idle with no running requests
  */
-static bool isIdle(bool traceRequests)
+static bool isHttpServiceIdle(bool traceRequests)
 {
     Http            *http;
     HttpNet         *net;

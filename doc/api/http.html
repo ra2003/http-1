@@ -449,6 +449,7 @@
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_host_1ga0c90d5255c39ee470811df672867a6db" class="nameRef">httpSetHostSecureEndpoint</a>(<a href="#group___http_host" class="ref">HttpHost</a> *host, <a href="#group___http_endpoint" class="ref">HttpEndpoint</a> *endpoint)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Set the default secure endpoint for a host.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_net_1ga57705d69b2dd9cb1c488503f1cc550c6" class="nameRef">httpSetIOCallback</a>(struct HttpNet *net, <a href="#group___http_net_1ga5ac0296bba979518452465e30c7bef48" class="ref">HttpIOCallback</a> fn)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Define an I/O callback for network connections.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_rx_1ga9bdbbe3920eb0580cf20d44658eb0b13" class="nameRef">httpSetIntParam</a>(<a href="#group___http_stream" class="ref">HttpStream</a> *stream, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *var, int value)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Set an integer request param value.</td></tr>
+<tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_1gac98ec18038f3269de000711a8afe0d5b" class="nameRef">httpSetJail</a>(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *path)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Remember the Chroot jail path.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_stream_1ga35be125d7acd88257711166fddbcb635" class="nameRef">httpSetKeepAliveCount</a>(<a href="#group___http_stream" class="ref">HttpStream</a> *stream, int count)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Control Http Keep-Alive for the connection.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_rx_1gae6efb6104132dc81947b3ac0c2ffe899" class="nameRef">httpSetMethod</a>(<a href="#group___http_stream" class="ref">HttpStream</a> *stream, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *method)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Set a new HTTP method for processing.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_net_1ga456d499b18ce57d176946ec45274d60a" class="nameRef">httpSetNetContext</a>(<a href="#group___http_net" class="ref">HttpNet</a> *net, void *context)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Set the network context object.</td></tr>
@@ -507,7 +508,7 @@
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_stream_1ga0ab052b8d594618346df8c5649c4a7cc" class="nameRef">httpSetStreamHost</a>(<a href="#group___http_stream" class="ref">HttpStream</a> *stream, void *host)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Set the connection host object.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_stream_1ga290522ca2d841ac3e258e9922da6f3d8" class="nameRef">httpSetStreamNotifier</a>(<a href="#group___http_stream" class="ref">HttpStream</a> *stream, <a href="#group___http_stream_1ga3a170dfdf3403f675d70fd3159260305" class="ref">HttpNotifier</a> notifier)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Define a notifier callback for this connection.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_stream_1ga35927bc3be5219578eec648529545a50" class="nameRef">httpSetStreamUser</a>(<a href="#group___http_stream" class="ref">HttpStream</a> *stream, struct HttpUser *user)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Set the logged in user associated with the connection.</td></tr>
-<tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_host_1gaca8368bbeb0057c4d5119374f464a0ed" class="nameRef">httpSetStreaming</a>(struct HttpHost *host, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *mime, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri, <a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a> streaming)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Control if input body content should be streamed or buffered for requests with content of a given mime type.</td></tr>
+<tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_host_1gaca8368bbeb0057c4d5119374f464a0ed" class="nameRef">httpSetStreaming</a>(struct HttpHost *host, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *mime, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri, <a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a> streaming)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Control if input body content should be streamed or buffered for requests with content of a given mime type and a URI path that starts with the specified URI prefix.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_stream_1ga99922c1f07023f4ed5bcf39d37a86791" class="nameRef">httpSetTimeout</a>(<a href="#group___http_stream" class="ref">HttpStream</a> *stream, <a href="mpr.html#mpr_8h_1adbceeccda24c35e7b4c6090db7065319" class="ref">MprTicks</a> requestTimeout, <a href="mpr.html#mpr_8h_1adbceeccda24c35e7b4c6090db7065319" class="ref">MprTicks</a> inactivityTimeout)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Set the Http inactivity timeout.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_stream_1gaac1789f20731bd9cbb129153f8ee7a07" class="nameRef">httpSetTimestamp</a>(<a href="mpr.html#mpr_8h_1adbceeccda24c35e7b4c6090db7065319" class="ref">MprTicks</a> period)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Define a timestamp in the MPR log file.</td></tr>
 <tr class="apiDef"><td class="apiType">void</td><td><a href="#group___http_trace_1ga71f8a68f4dbc193564ab35d8380b90c0" class="nameRef">httpSetTraceContentSize</a>(<a href="#group___http_trace" class="ref">HttpTrace</a> *trace, <a href="osdep.html#osdep_8h_1a7d08ccc1e981eb4d5a238641ac4ccfc1" class="ref">ssize</a> size)</td></tr><tr class="apiBrief"><td>&nbsp;</td><td>Set the maximum content size to trace.</td></tr>
@@ -1872,6 +1873,9 @@ Http/2 filter.
     <tr><td class="param">struct HttpStage *</td><td><td>httpFilter</td><td>
 Http filter.
 </td>
+    <tr><td class="param">cchar *</td><td><td>jail</td><td>
+Chroot jail path.
+</td>
     <tr><td class="param"><a class="ref" href="#group___http_stream_1ga4d060d366219e2deac858ac50ee5f7f3">HttpListenCallback</a></td><td><td>listenCallback</td><td>
 Invoked when creating listeners.
 </td>
@@ -1997,6 +2001,9 @@ Current request trace level.
 </td>
     <tr><td class="param">int</td><td><td>uid</td><td>
 User Id.
+</td>
+    <tr><td class="param">int</td><td><td>upload</td><td>
+Enable upload filter globally.
 </td>
     <tr><td class="param">struct HttpStage *</td><td><td>uploadFilter</td><td>
 Upload filter.
@@ -2477,6 +2484,25 @@ This waits until there are no open connections and then invokes the configuratio
     </table></dd></dl>
     <dl><dt>Returns:</dt><dd>Zero if successful, otherwise a negative Mpr error code.</dd></dl>
     <dl><dt><b>API</b> Stability:</dt><dd>Evolving.</dd></dl>
+    <dl><dt>See Also:</dt><dd>
+    <a href="#group___http" class="ref">Http</a>, <a href="#group___http_endpoint" class="ref">HttpEndpoint</a>, <a href="#group___http_stream" class="ref">HttpStream</a>, <a href="#group___http_1gad2de58bfa89501db8cc1d6b850ff7729" class="ref">httpConfigure</a>, <a href="#group___http_1ga26dea264af06335774c8abc9fbe7c44f" class="ref">httpCreate</a>, <a href="#group___http_1ga932c2946e5f3f05ca033af2f3af05896" class="ref">httpGetContext</a>, <a href="#group___http_1ga27b90151605da08a154b87961e2a9e60" class="ref">httpGetDateString</a>, <a href="#group___http_1ga168813fff5e0f2b5d67fd54a3577d177" class="ref">httpLookupEndpoint</a>, <a href="#group___http_1gac59dbc1125116fc484e2b66d1f4bbcea" class="ref">httpLookupStatus</a>, <a href="#group___http_1ga295e4431c5e0cdf8bdc072f916083742" class="ref">httpSetContext</a>, <a href="#group___http_1ga8167df1b974212d4f6cd72574639e020" class="ref">httpSetDefaultClientHost</a>, <a href="#group___http_1ga669bfbc2dd7db037e4ccb5928261eea4" class="ref">httpSetDefaultClientPort</a>, <a href="#group___http_stream_1gabd351f0b1e511d12218ad20e38ea77c4" class="ref">httpSetForkCallback</a>, <a href="#group___http_1gab4c777b9a266d023f0b27fb57e1b4d90" class="ref">httpSetProxy</a>, <a href="#group___http_1gaa5a635bd813b7f179e44736be7d5b826" class="ref">httpSetSoftware</a></dd></dl>
+  </div>
+</div>
+<a name="group___http_1gac98ec18038f3269de000711a8afe0d5b"></a>
+<div class="api">
+  <div class="prototype">
+    void
+    httpSetJail
+(<a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *path)
+  </div>
+  <div class="apiDetail">
+<p>Remember the Chroot jail path.</p>
+    <dl><dt><b>Description</b>:</dt><dd>Store the jail path in HTTP-&gt;jail.</dd></dl>
+    <dl><dt>Parameters:</dt><dd>
+    <table class="parameters" title="Parameters">
+    <tr><td class="param">path</td><td>Pathname to remember.</td>
+    </table></dd></dl>
+    <dl><dt><b>API</b> Stability:</dt><dd>Internal.</dd></dl>
     <dl><dt>See Also:</dt><dd>
     <a href="#group___http" class="ref">Http</a>, <a href="#group___http_endpoint" class="ref">HttpEndpoint</a>, <a href="#group___http_stream" class="ref">HttpStream</a>, <a href="#group___http_1gad2de58bfa89501db8cc1d6b850ff7729" class="ref">httpConfigure</a>, <a href="#group___http_1ga26dea264af06335774c8abc9fbe7c44f" class="ref">httpCreate</a>, <a href="#group___http_1ga932c2946e5f3f05ca033af2f3af05896" class="ref">httpGetContext</a>, <a href="#group___http_1ga27b90151605da08a154b87961e2a9e60" class="ref">httpGetDateString</a>, <a href="#group___http_1ga168813fff5e0f2b5d67fd54a3577d177" class="ref">httpLookupEndpoint</a>, <a href="#group___http_1gac59dbc1125116fc484e2b66d1f4bbcea" class="ref">httpLookupStatus</a>, <a href="#group___http_1ga295e4431c5e0cdf8bdc072f916083742" class="ref">httpSetContext</a>, <a href="#group___http_1ga8167df1b974212d4f6cd72574639e020" class="ref">httpSetDefaultClientHost</a>, <a href="#group___http_1ga669bfbc2dd7db037e4ccb5928261eea4" class="ref">httpSetDefaultClientPort</a>, <a href="#group___http_stream_1gabd351f0b1e511d12218ad20e38ea77c4" class="ref">httpSetForkCallback</a>, <a href="#group___http_1gab4c777b9a266d023f0b27fb57e1b4d90" class="ref">httpSetProxy</a>, <a href="#group___http_1gaa5a635bd813b7f179e44736be7d5b826" class="ref">httpSetSoftware</a></dd></dl>
   </div>
@@ -3904,8 +3930,8 @@ List of Route defintions.
     <tr><td class="param">HttpEndpoint *</td><td><td>secureEndpoint</td><td>
 Secure endpoint for host.
 </td>
-    <tr><td class="param"><a class="ref" href="#struct_mpr_hash" external="mpr.dtags">MprHash</a> *</td><td><td>streams</td><td>
-Hash of mime-types to stream record.
+    <tr><td class="param"><a class="ref" href="#struct_mpr_hash" external="mpr.dtags">MprHash</a> *</td><td><td>streaming</td><td>
+Hash of mime-types use streaming instead of buffering.
 </td>
     </table></dd></dl>
   </div>
@@ -4206,7 +4232,7 @@ Hash of mime-types to stream record.
 (struct HttpHost *host, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *mime, <a href="osdep.html#osdep_8h_1a0f128c3e0c83721af0220c00554e9c4e" class="ref">cchar</a> *uri, <a href="osdep.html#osdep_8h_1ad5c9d4ba3dc37783a528b0925dc981a0" class="ref">bool</a> streaming)
   </div>
   <div class="apiDetail">
-<p>Control if input body content should be streamed or buffered for requests with content of a given mime type.</p>
+<p>Control if input body content should be streamed or buffered for requests with content of a given mime type and a URI path that starts with the specified URI prefix.</p>
     <dl><dt>Parameters:</dt><dd>
     <table class="parameters" title="Parameters">
     <tr><td class="param">host</td><td>Host to modify.</td>
@@ -6361,6 +6387,9 @@ Response header values.
 </td>
     <tr><td class="param">cchar *</td><td><td>home</td><td>
 Home directory for configuration files.
+</td>
+    <tr><td class="param">HttpRouteHook</td><td><td>hook</td><td>
+Route stage hook.
 </td>
     <tr><td class="param">struct HttpHost *</td><td><td>host</td><td>
 Owning host.

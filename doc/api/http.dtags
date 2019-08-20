@@ -432,6 +432,13 @@
     </member>
     <member kind="function">
       <type>void</type>
+      <name>httpSetJail</name>
+      <anchorfile>group___http.html</anchorfile>
+      <anchor>gac98ec18038f3269de000711a8afe0d5b</anchor>
+      <arglist>(cchar *path)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
       <name>httpSetOption</name>
       <anchorfile>group___http.html</anchorfile>
       <anchor>ga1b68c24657b6564346e47d0e7521790a</anchor>

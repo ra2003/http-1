@@ -35,6 +35,9 @@ static void manageRole(HttpRole *role, int flags)
 }
 
 
+/*
+    Define a role with a given name with specified abilities
+ */
 PUBLIC HttpRole *httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
 {
     HttpRole    *role;
@@ -59,8 +62,9 @@ PUBLIC HttpRole *httpAddRole(HttpAuth *auth, cchar *name, cchar *abilities)
 
 
 /*
-    Compute a set of abilities for a role. Role strings can be either roles or abilities.
-    The abilities hash is updated.
+    Compute a set of abilities given a role defined on an auth route. A role can be a role or an ability.
+    The role as defined in the auth route specifies the abilities for the role. These are added to the
+    given abilities hash.
  */
 PUBLIC void httpComputeRoleAbilities(HttpAuth *auth, MprHash *abilities, cchar *role)
 {
@@ -87,11 +91,11 @@ PUBLIC void httpComputeRoleAbilities(HttpAuth *auth, MprHash *abilities, cchar *
  */
 PUBLIC void httpComputeUserAbilities(HttpAuth *auth, HttpUser *user)
 {
-    char        *ability, *tok;
+    MprKey      *rp;
 
     user->abilities = mprCreateHash(0, 0);
-    for (ability = stok(sclone(user->roles), " \t,", &tok); ability; ability = stok(NULL, " \t,", &tok)) {
-        httpComputeRoleAbilities(auth, user->abilities, ability);
+    for (ITERATE_KEYS(user->roles, rp)) {
+        httpComputeRoleAbilities(auth, user->abilities, rp->key);
     }
 }
 
@@ -169,6 +173,7 @@ static void manageUser(HttpUser *user, int flags)
 PUBLIC HttpUser *httpAddUser(HttpAuth *auth, cchar *name, cchar *password, cchar *roles)
 {
     HttpUser    *user;
+    char        *role, *tok;
 
     if (!auth->userCache) {
         auth->userCache = mprCreateHash(0, 0);
@@ -181,7 +186,10 @@ PUBLIC HttpUser *httpAddUser(HttpAuth *auth, cchar *name, cchar *password, cchar
     }
     user->password = sclone(password);
     if (roles) {
-        user->roles = sclone(roles);
+        user->roles = mprCreateHash(0, 0);
+        for (role = stok(sclone(roles), " \t,", &tok); role; role = stok(NULL, " \t,", &tok)) {
+            mprAddKey(user->roles, role, MPR->oneString);
+        }
         httpComputeUserAbilities(auth, user);
     }
     if (mprAddKey(auth->userCache, name, user) == 0) {

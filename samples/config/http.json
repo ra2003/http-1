@@ -113,7 +113,7 @@
              */
             require: {
                 /*
-                    List of roles a user must posess before authorized for access to documents in this route
+                    List of abilities or roles a user must possess before authorized for access to documents in this route
                  */
                 roles: [],
 

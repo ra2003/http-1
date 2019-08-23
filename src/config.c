@@ -1941,6 +1941,7 @@ PUBLIC int httpInitParser()
     httpAddConfig("http.auth.login", parseAuthLogin);
     httpAddConfig("http.auth.realm", parseAuthRealm);
     httpAddConfig("http.auth.require", httpParseAll);
+    httpAddConfig("http.auth.require.abilities", parseAuthRequireRoles);
     httpAddConfig("http.auth.require.roles", parseAuthRequireRoles);
     httpAddConfig("http.auth.require.users", parseAuthRequireUsers);
     httpAddConfig("http.auth.roles", parseAuthRoles);

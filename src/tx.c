@@ -442,6 +442,7 @@ PUBLIC void httpOmitBody(HttpStream *stream)
         tx->length = -1;
         httpDiscardData(stream, HTTP_QUEUE_TX);
     }
+    httpFinalizeOutput(stream);
 }
 
 

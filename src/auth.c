@@ -146,8 +146,10 @@ PUBLIC bool httpAuthenticate(HttpStream *stream)
 
     if (!rx->authenticateProbed) {
         rx->authenticateProbed = 1;
+
         ip = httpGetSessionVar(stream, HTTP_SESSION_IP, 0);
         username = httpGetSessionVar(stream, HTTP_SESSION_USERNAME, 0);
+
         if (!smatch(ip, stream->ip) || !username) {
             if (auth->username && *auth->username) {
                 /* Auto-login */
@@ -158,10 +160,13 @@ PUBLIC bool httpAuthenticate(HttpStream *stream)
                 return 0;
             }
         }
-        httpLog(stream->trace, "auth.login.authenticated", "context",
-            "msg: 'Using cached authentication data', username:'%s'", username);
+        if (!stream->user && (stream->user = mprLookupKey(auth->userCache, username)) == 0) {
+            return 0;
+        }
         stream->username = username;
         rx->authenticated = 1;
+        httpLog(stream->trace, "auth.login.authenticated", "context",
+            "msg: 'Using cached authentication data', username:'%s'", username);
     }
     return rx->authenticated;
 }
@@ -194,14 +199,18 @@ PUBLIC bool httpCanUser(HttpStream *stream, cchar *abilities)
     }
     if (abilities) {
         for (ability = stok(sclone(abilities), " \t,", &tok); abilities; abilities = stok(NULL, " \t,", &tok)) {
-            if (!mprLookupKey(stream->user->abilities, ability)) {
-                return 0;
+            if (!mprLookupKey(stream->user->roles, ability)) {
+                if (!mprLookupKey(stream->user->abilities, ability)) {
+                    return 0;
+                }
             }
         }
     } else {
         for (ITERATE_KEYS(auth->abilities, kp)) {
-            if (!mprLookupKey(stream->user->abilities, kp->key)) {
-                return 0;
+            if (!mprLookupKey(stream->user->roles, kp->key)) {
+                if (!mprLookupKey(stream->user->abilities, kp->key)) {
+                    return 0;
+                }
             }
         }
     }
@@ -243,6 +252,12 @@ PUBLIC int httpCreateAuthType(cchar *name, HttpAskLogin askLogin, HttpParseAuth 
         return MPR_ERR_CANT_CREATE;
     }
     return 0;
+}
+
+
+PUBLIC HttpAuthStore *httpGetAuthStore(cchar *name)
+{
+    return mprLookupKey(HTTP->authStores, name);
 }
 
 
@@ -563,7 +578,15 @@ PUBLIC void httpSetAuthStoreSessions(HttpAuthStore *store, bool noSession)
 
 PUBLIC void httpSetAuthStoreVerify(HttpAuthStore *store, HttpVerifyUser verifyUser)
 {
-    store->verifyUser = verifyUser;
+    if (store) {
+        store->verifyUser = verifyUser;
+    }
+}
+
+
+PUBLIC void httpSetAuthStoreVerifyByName(cchar *name, HttpVerifyUser verifyUser)
+{
+    httpSetAuthStoreVerify(httpGetAuthStore(name), verifyUser);
 }
 
 

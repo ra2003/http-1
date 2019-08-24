@@ -129,6 +129,7 @@ static int openFileHandler(HttpQueue *q)
             httpSetStatus(stream, HTTP_CODE_NOT_MODIFIED);
             httpRemoveHeader(stream, "Content-Encoding");
             httpOmitBody(stream);
+            httpFinalizeOutput(stream);
         }
         if (!tx->fileInfo.isReg && !tx->fileInfo.isLink) {
             httpLog(stream->trace, "fileHandler.error", "error", "msg:'Document is not a regular file',filename:'%s'",

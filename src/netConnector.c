@@ -540,8 +540,8 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
                 assert(q->count >= 0);
             }
         }
-        if (httpGetPacketLength(packet) == 0 && !packet->prefix) {
-            /* Done with this packet - consume it. Important for flow control. */
+        if ((packet->flags & HTTP_PACKET_END) || (httpGetPacketLength(packet) == 0 && !packet->prefix)) {
+            /* Done with this packet - consume it */
             httpGetPacket(q);
         } else {
             /* Packet still has data to be written */

@@ -177,7 +177,9 @@ static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
             } else {
                 redirected = 0;
                 if (rx->route) {
-                    uri = httpLookupRouteErrorDocument(rx->route, tx->status);
+                    if ((uri = httpLookupRouteErrorDocument(rx->route, tx->status)) != 0) {
+                        uri = httpExpandVars(stream, uri);
+                    }
                     if (rx->route->callback) {
                         rx->route->callback(stream, HTTP_ROUTE_HOOK_ERROR, &uri);
                     }

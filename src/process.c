@@ -779,6 +779,7 @@ static void prepErrorDoc(HttpQueue *q)
 
     stream->rx->headers = rx->headers;
     stream->rx->method = rx->method;
+    stream->rx->originalMethod = rx->originalMethod;
     stream->rx->originalUri = rx->uri;
     stream->rx->uri = (char*) tx->errorDocument;
     stream->tx->status = tx->status;

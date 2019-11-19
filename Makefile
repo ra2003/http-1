@@ -36,8 +36,8 @@ else
 	EXT     := mk
 endif
 
-BIN 	:= $(OS)-$(ARCH)-$(PROFILE)/bin
-PATH	:= $(BIN):$(PATH)
+BIN		:= $(OS)-$(ARCH)-$(PROFILE)/bin
+PATH	:= $(PWD)/build/$(BIN):$(PATH)
 
 .EXPORT_ALL_VARIABLES:
 

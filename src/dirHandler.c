@@ -25,7 +25,7 @@ static int  matchDirPattern(cchar *pattern, cchar *file);
 static void outputFooter(HttpQueue *q);
 static void outputHeader(HttpQueue *q, cchar *dir, int nameSize);
 static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *dir, int nameSize);
-static void parseQuery(HttpStream *stream);
+static void parseDirQuery(HttpStream *stream);
 static void sortList(HttpStream *stream, MprList *list);
 static void startDir(HttpQueue *q);
 
@@ -108,7 +108,7 @@ static void startDir(HttpQueue *q)
     httpSetContentType(stream, "text/html");
     httpSetHeaderString(stream, "Cache-Control", "no-cache");
     httpSetHeaderString(stream, "Last-Modified", stream->http->currentDate);
-    parseQuery(stream);
+    parseDirQuery(stream);
 
     if ((list = mprGetPathFiles(tx->filename, MPR_PATH_RELATIVE)) == 0) {
         httpWrite(q, "<h2>Cannot get file list</h2>\r\n");
@@ -138,7 +138,7 @@ static void startDir(HttpQueue *q)
 }
 
 
-static void parseQuery(HttpStream *stream)
+static void parseDirQuery(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpDir     *dir;

@@ -107,14 +107,28 @@ static void addParamsFromBuf(HttpStream *stream, cchar *buf, ssize len)
 {
     MprJson     *params, *prior;
     char        *newValue, *decoded, *keyword, *value, *tok;
+    bool        json;
 
     assert(stream);
     params = httpGetParams(stream);
+
+    /*
+        Json encoded parameters tunneled via the query string. This is used to
+        provide additional parameters on GET requests.
+     */
+    json = scontains(buf, "_encoded_json_") ? 1 : 0;
+    if (json) {
+        value = mprUriDecode(buf);
+        mprParseJsonInto(value, params);
+        return;
+    }
+
     decoded = mprAlloc(len + 1);
     decoded[len] = '\0';
     memcpy(decoded, buf, len);
 
     keyword = stok(decoded, "&", &tok);
+
     while (keyword != 0) {
         if ((value = strchr(keyword, '=')) != 0) {
             *value++ = '\0';
@@ -127,14 +141,12 @@ static void addParamsFromBuf(HttpStream *stream, cchar *buf, ssize len)
             /*
                 Append to existing keywords
              */
-            prior = mprReadJsonObj(params, keyword);
+            prior = mprGetJsonObj(params, keyword);
 #if (ME_EJS_PRODUCT || ME_EJSCRIPT_PRODUCT) && (DEPRECATED || 1)
-            /*
-                We allow embedded ".[]" in the keys
-             */
             if (prior && prior->type == MPR_JSON_VALUE) {
                 if (*value) {
                     newValue = sjoin(prior->value, " ", value, NULL);
+                    //  Uses SetJson instead of WriteJson which permits embedded . and []
                     mprSetJson(params, keyword, newValue, MPR_JSON_STRING);
                 }
             } else {
@@ -221,16 +233,13 @@ PUBLIC MprJson *httpGetParams(HttpStream *stream)
 
 PUBLIC int httpTestParam(HttpStream *stream, cchar *var)
 {
-    return mprReadJsonObj(httpGetParams(stream), var) != 0;
+    return mprGetJsonObj(httpGetParams(stream), var) != 0;
 }
 
 
-PUBLIC cchar *httpGetParam(HttpStream *stream, cchar *var, cchar *defaultValue)
+PUBLIC MprJson *httpGetParamObj(HttpStream *stream, cchar *var)
 {
-    cchar       *value;
-
-    value = mprReadJson(httpGetParams(stream), var);
-    return (value) ? value : defaultValue;
+    return mprGetJsonObj(httpGetParams(stream), var);
 }
 
 
@@ -238,8 +247,17 @@ PUBLIC int httpGetIntParam(HttpStream *stream, cchar *var, int defaultValue)
 {
     cchar       *value;
 
-    value = mprReadJson(httpGetParams(stream), var);
+    value = mprGetJson(httpGetParams(stream), var);
     return (value) ? (int) stoi(value) : defaultValue;
+}
+
+
+PUBLIC cchar *httpGetParam(HttpStream *stream, cchar *var, cchar *defaultValue)
+{
+    cchar       *value;
+
+    value = mprGetJson(httpGetParams(stream), var);
+    return (value) ? value : defaultValue;
 }
 
 
@@ -302,13 +320,13 @@ PUBLIC void httpRemoveParam(HttpStream *stream, cchar *var)
 
 PUBLIC void httpSetParam(HttpStream *stream, cchar *var, cchar *value)
 {
-    mprWriteJson(httpGetParams(stream), var, value, 0);
+    mprSetJson(httpGetParams(stream), var, value, 0);
 }
 
 
 PUBLIC void httpSetIntParam(HttpStream *stream, cchar *var, int value)
 {
-    mprWriteJson(httpGetParams(stream), var, sfmt("%d", value), MPR_JSON_NUMBER);
+    mprSetJson(httpGetParams(stream), var, sfmt("%d", value), MPR_JSON_NUMBER);
 }
 
 

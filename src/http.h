@@ -132,7 +132,7 @@ struct HttpWebSocket;
     #define ME_MAX_STREAMS          20                    /**< Default maximum concurrent streams per network */
 #endif
 #ifndef ME_MAX_HEADERS
-    #define ME_MAX_HEADERS          8192                 /**< Maximum size of the headers (8K) */
+    #define ME_MAX_HEADERS          (512 * 1024)         /**< Maximum size of the headers (Chrome HTTP/2 needs this) */
 #endif
 #ifndef ME_MAX_KEEP_ALIVE
     #define ME_MAX_KEEP_ALIVE       400                  /**< Maximum requests per network */

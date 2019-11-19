@@ -63,6 +63,9 @@
 #ifndef ME_DEBUG
     #define ME_DEBUG 1
 #endif
+#ifndef ME_DEPRECATE_WARNINGS
+    #define ME_DEPRECATE_WARNINGS 0
+#endif
 #ifndef ME_DEPTH
     #define ME_DEPTH 1
 #endif
@@ -106,7 +109,7 @@
     #define ME_TITLE "Embedthis Http"
 #endif
 #ifndef ME_VERSION
-    #define ME_VERSION "8.0.2"
+    #define ME_VERSION "8.0.3"
 #endif
 
 /* Prefixes */
@@ -204,10 +207,10 @@
     #define ME_MINOR_VERSION 0
 #endif
 #ifndef ME_PATCH_VERSION
-    #define ME_PATCH_VERSION 2
+    #define ME_PATCH_VERSION 3
 #endif
 #ifndef ME_VNUM
-    #define ME_VNUM 800000002
+    #define ME_VNUM 800000003
 #endif
 
 /* Components */

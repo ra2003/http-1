@@ -2072,6 +2072,13 @@
     </member>
     <member kind="function">
       <type>void</type>
+      <name>httpAddPostGroup</name>
+      <anchorfile>group___http_route.html</anchorfile>
+      <anchor>ga052cc4858d87fe0f38cad18a2574de23</anchor>
+      <arglist>(HttpRoute *parent, cchar *resource)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
       <name>httpAddResource</name>
       <anchorfile>group___http_route.html</anchorfile>
       <anchor>ga07a96592710d8f7edc06546ab105856f</anchor>
@@ -2188,6 +2195,13 @@
       <anchorfile>group___http_route.html</anchorfile>
       <anchor>ga54ef65d762f36ceb395b1a53defed1a5</anchor>
       <arglist>(HttpRoute *route, cchar *name, cchar *details, int flags)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>httpAddSpaGroup</name>
+      <anchorfile>group___http_route.html</anchorfile>
+      <anchor>ga610545383668b49f0cc8033be89292ea</anchor>
+      <arglist>(HttpRoute *parent, cchar *resource)</arglist>
     </member>
     <member kind="function">
       <type>HttpRoute *</type>
@@ -2966,6 +2980,13 @@
       <anchorfile>group___http_rx.html</anchorfile>
       <anchor>gaa0de01c353e82888a11afc1614df23c7</anchor>
       <arglist>(HttpStream *stream, cchar *var, cchar *defaultValue)</arglist>
+    </member>
+    <member kind="function">
+      <type>MprJson *</type>
+      <name>httpGetParamObj</name>
+      <anchorfile>group___http_rx.html</anchorfile>
+      <anchor>ga2b268719a42d8d302bd11799361b968f</anchor>
+      <arglist>(HttpStream *stream, cchar *var)</arglist>
     </member>
     <member kind="function">
       <type>MprJson *</type>

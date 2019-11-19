@@ -6216,7 +6216,7 @@ static int  matchDirPattern(cchar *pattern, cchar *file);
 static void outputFooter(HttpQueue *q);
 static void outputHeader(HttpQueue *q, cchar *dir, int nameSize);
 static void outputLine(HttpQueue *q, MprDirEntry *ep, cchar *dir, int nameSize);
-static void parseQuery(HttpStream *stream);
+static void parseDirQuery(HttpStream *stream);
 static void sortList(HttpStream *stream, MprList *list);
 static void startDir(HttpQueue *q);
 
@@ -6299,7 +6299,7 @@ static void startDir(HttpQueue *q)
     httpSetContentType(stream, "text/html");
     httpSetHeaderString(stream, "Cache-Control", "no-cache");
     httpSetHeaderString(stream, "Last-Modified", stream->http->currentDate);
-    parseQuery(stream);
+    parseDirQuery(stream);
 
     if ((list = mprGetPathFiles(tx->filename, MPR_PATH_RELATIVE)) == 0) {
         httpWrite(q, "<h2>Cannot get file list</h2>\r\n");
@@ -6329,7 +6329,7 @@ static void startDir(HttpQueue *q)
 }
 
 
-static void parseQuery(HttpStream *stream)
+static void parseDirQuery(HttpStream *stream)
 {
     HttpRx      *rx;
     HttpDir     *dir;
@@ -7438,7 +7438,9 @@ static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
             } else {
                 redirected = 0;
                 if (rx->route) {
-                    uri = httpLookupRouteErrorDocument(rx->route, tx->status);
+                    if ((uri = httpLookupRouteErrorDocument(rx->route, tx->status)) != 0) {
+                        uri = httpExpandVars(stream, uri);
+                    }
                     if (rx->route->callback) {
                         rx->route->callback(stream, HTTP_ROUTE_HOOK_ERROR, &uri);
                     }
@@ -14636,8 +14638,8 @@ static void freeNetPackets(HttpQueue *q, ssize bytes)
                 assert(q->count >= 0);
             }
         }
-        if (httpGetPacketLength(packet) == 0 && !packet->prefix) {
-            /* Done with this packet - consume it. Important for flow control. */
+        if ((packet->flags & HTTP_PACKET_END) || (httpGetPacketLength(packet) == 0 && !packet->prefix)) {
+            /* Done with this packet - consume it */
             httpGetPacket(q);
         } else {
             /* Packet still has data to be written */
@@ -16708,6 +16710,7 @@ static void prepErrorDoc(HttpQueue *q)
 
     stream->rx->headers = rx->headers;
     stream->rx->method = rx->method;
+    stream->rx->originalMethod = rx->originalMethod;
     stream->rx->originalUri = rx->uri;
     stream->rx->uri = (char*) tx->errorDocument;
     stream->tx->status = tx->status;
@@ -20392,16 +20395,60 @@ PUBLIC HttpRoute *httpAddRestfulRoute(HttpRoute *parent, cchar *methods, cchar *
 }
 
 
-PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *resource)
+/*
+    Most routes are POST and params are in body.
+ */
+PUBLIC void httpAddPostGroup(HttpRoute *parent, cchar *resource)
 {
-    /* Delete is a POST method alternative to remove */
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "$",                 "",          resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/create*$",         "create",    resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/edit$",            "edit",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/get$",             "get",       resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/find$",            "find",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/init$",            "init",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/remove$",          "remove",    resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/update$",          "update",    resource);
+
+    httpAddWebSocketsRoute(parent, "stream");
+    httpAddRestfulRoute(parent, "OPTIONS,POST",     "/{action}(/)*$",   "${action}", resource);
+}
+
+
+/*
+    The different with ResourceGroup is that "list" is a POST and listg is a GET.
+    Also provides a POST getp.
+ */
+PUBLIC void httpAddSpaGroup(HttpRoute *parent, cchar *resource)
+{
     httpAddRestfulRoute(parent, "OPTIONS,GET",     "$",                           "",          resource);
-    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/{id=[0-9]+}/delete$",        "delete",    resource);
-    httpAddRestfulRoute(parent, "OPTIONS,POST",    "(/)*$",                       "create",    resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/list$",                      "listg",     resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/init$",                      "init",      resource);
     httpAddRestfulRoute(parent, "OPTIONS,GET",     "/{id=[0-9]+}/edit$",          "edit",      resource);
     httpAddRestfulRoute(parent, "OPTIONS,GET",     "/{id=[0-9]+}$",               "get",       resource);
-    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/init$",                      "init",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/{id=[0-9]+}/get$",           "getp",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/list$",                      "list",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/{id=[0-9]+}/delete$",        "delete",    resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "(/)*$",                       "create",    resource);
+
+    httpAddWebSocketsRoute(parent, "stream");
+    httpAddRestfulRoute(parent, "OPTIONS,DELETE",  "/{id=[0-9]+}$",               "remove",    resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/{id=[0-9]+}$",               "update",    resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET,POST","/{id=[0-9]+}/{action}(/)*$",  "${action}", resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET,POST","/{action}(/)*$",              "${action}", resource);
+}
+
+
+PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *resource)
+{
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "$",                           "",          resource);
     httpAddRestfulRoute(parent, "OPTIONS,GET",     "/list$",                      "list",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/init$",                      "init",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/{id=[0-9]+}/edit$",          "edit",      resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/{id=[0-9]+}$",               "get",       resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/list$",                      "listp",     resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/{id=[0-9]+}/delete$",        "delete",    resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "(/)*$",                       "create",    resource);
+
     httpAddWebSocketsRoute(parent, "stream");
     httpAddRestfulRoute(parent, "OPTIONS,DELETE",  "/{id=[0-9]+}$",               "remove",    resource);
     httpAddRestfulRoute(parent, "OPTIONS,POST",    "/{id=[0-9]+}$",               "update",    resource);
@@ -20415,16 +20462,16 @@ PUBLIC void httpAddResourceGroup(HttpRoute *parent, cchar *resource)
  */
 PUBLIC void httpAddResource(HttpRoute *parent, cchar *resource)
 {
-    /* Delete is a POST method alternative to remove */
     httpAddRestfulRoute(parent, "OPTIONS,GET",     "$",              "",           resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/edit$",         "edit",       resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/init$",         "init",       resource);
+    httpAddRestfulRoute(parent, "OPTIONS,GET",     "(/)*$",          "get",        resource);
     httpAddRestfulRoute(parent, "OPTIONS,POST",    "/delete$",       "delete",     resource);
     httpAddRestfulRoute(parent, "OPTIONS,POST",    "(/)*$",          "create",     resource);
-    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/edit$",         "edit",       resource);
-    httpAddRestfulRoute(parent, "OPTIONS,GET",     "(/)*$",          "get",        resource);
-    httpAddRestfulRoute(parent, "OPTIONS,GET",     "/init$",         "init",       resource);
     httpAddRestfulRoute(parent, "OPTIONS,POST",    "(/)*$",          "update",     resource);
-    httpAddRestfulRoute(parent, "OPTIONS,DELETE",  "(/)*$",          "remove",     resource);
+
     httpAddWebSocketsRoute(parent, "stream");
+    httpAddRestfulRoute(parent, "OPTIONS,DELETE",  "(/)*$",          "remove",     resource);
     httpAddRestfulRoute(parent, "OPTIONS,GET,POST","/{action}(/)*$", "${action}",  resource);
 }
 
@@ -20435,6 +20482,7 @@ PUBLIC void httpAddResource(HttpRoute *parent, cchar *resource)
 PUBLIC void httpAddPermResource(HttpRoute *parent, cchar *resource)
 {
     httpAddRestfulRoute(parent, "OPTIONS,GET",     "$",              "",           resource);
+    httpAddRestfulRoute(parent, "OPTIONS,POST",    "/get$",          "getp",        resource);
     httpAddRestfulRoute(parent, "OPTIONS,GET",     "(/)*$",          "get",        resource);
     httpAddRestfulRoute(parent, "OPTIONS,POST",    "(/)*$",          "update",     resource);
     httpAddWebSocketsRoute(parent, "stream");
@@ -25140,7 +25188,8 @@ static int  processUploadBoundary(HttpQueue *q, char *line);
 static int  processUploadHeader(HttpQueue *q, char *line);
 static int  processUploadData(HttpQueue *q);
 static void renameUploadedFiles(HttpStream *stream);
-static void  startUpload(HttpQueue *q);
+static void startUpload(HttpQueue *q);
+static bool validUploadChars(cchar *uri);
 
 /************************************* Code ***********************************/
 
@@ -25456,12 +25505,12 @@ static int processUploadHeader(HttpQueue *q, char *line)
                     We are deliberately restrictive here to assist users that may use the clientFilename in shell scripts.
                     They MUST still sanitize for their environment, but some extra caution is worthwhile.
                  */
-                value = mprNormalizePath(value);
-                if (*value == '.' || !httpValidUriChars(value) || strpbrk(value, "\\/:*?<>|~\"'%`^\n\r\t\f")) {
+                if (*value == '.' || !validUploadChars(value)) {
                     httpError(stream, HTTP_CODE_BAD_REQUEST, "Bad upload client filename.");
                     return MPR_ERR_BAD_STATE;
                 }
-                up->clientFilename = sclone(value);
+                up->clientFilename = mprNormalizePath(value);
+
                 /*
                     Create the file to hold the uploaded data
                  */
@@ -25785,6 +25834,21 @@ static cchar *getUploadDir(HttpStream *stream)
 #endif
     }
     return uploadDir;
+}
+
+
+static bool validUploadChars(cchar *uri)
+{
+    ssize   pos;
+
+    if (uri == 0) {
+        return 1;
+    }
+    pos = strspn(uri, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=% ");
+    if (pos < slen(uri)) {
+        return 0;
+    }
+    return 1;
 }
 
 /*
@@ -27140,14 +27204,28 @@ static void addParamsFromBuf(HttpStream *stream, cchar *buf, ssize len)
 {
     MprJson     *params, *prior;
     char        *newValue, *decoded, *keyword, *value, *tok;
+    bool        json;
 
     assert(stream);
     params = httpGetParams(stream);
+
+    /*
+        Json encoded parameters tunneled via the query string. This is used to
+        provide additional parameters on GET requests.
+     */
+    json = scontains(buf, "_encoded_json_") ? 1 : 0;
+    if (json) {
+        value = mprUriDecode(buf);
+        mprParseJsonInto(value, params);
+        return;
+    }
+
     decoded = mprAlloc(len + 1);
     decoded[len] = '\0';
     memcpy(decoded, buf, len);
 
     keyword = stok(decoded, "&", &tok);
+
     while (keyword != 0) {
         if ((value = strchr(keyword, '=')) != 0) {
             *value++ = '\0';
@@ -27160,14 +27238,12 @@ static void addParamsFromBuf(HttpStream *stream, cchar *buf, ssize len)
             /*
                 Append to existing keywords
              */
-            prior = mprReadJsonObj(params, keyword);
+            prior = mprGetJsonObj(params, keyword);
 #if (ME_EJS_PRODUCT || ME_EJSCRIPT_PRODUCT) && (DEPRECATED || 1)
-            /*
-                We allow embedded ".[]" in the keys
-             */
             if (prior && prior->type == MPR_JSON_VALUE) {
                 if (*value) {
                     newValue = sjoin(prior->value, " ", value, NULL);
+                    //  Uses SetJson instead of WriteJson which permits embedded . and []
                     mprSetJson(params, keyword, newValue, MPR_JSON_STRING);
                 }
             } else {
@@ -27254,16 +27330,13 @@ PUBLIC MprJson *httpGetParams(HttpStream *stream)
 
 PUBLIC int httpTestParam(HttpStream *stream, cchar *var)
 {
-    return mprReadJsonObj(httpGetParams(stream), var) != 0;
+    return mprGetJsonObj(httpGetParams(stream), var) != 0;
 }
 
 
-PUBLIC cchar *httpGetParam(HttpStream *stream, cchar *var, cchar *defaultValue)
+PUBLIC MprJson *httpGetParamObj(HttpStream *stream, cchar *var)
 {
-    cchar       *value;
-
-    value = mprReadJson(httpGetParams(stream), var);
-    return (value) ? value : defaultValue;
+    return mprGetJsonObj(httpGetParams(stream), var);
 }
 
 
@@ -27271,8 +27344,17 @@ PUBLIC int httpGetIntParam(HttpStream *stream, cchar *var, int defaultValue)
 {
     cchar       *value;
 
-    value = mprReadJson(httpGetParams(stream), var);
+    value = mprGetJson(httpGetParams(stream), var);
     return (value) ? (int) stoi(value) : defaultValue;
+}
+
+
+PUBLIC cchar *httpGetParam(HttpStream *stream, cchar *var, cchar *defaultValue)
+{
+    cchar       *value;
+
+    value = mprGetJson(httpGetParams(stream), var);
+    return (value) ? value : defaultValue;
 }
 
 
@@ -27335,13 +27417,13 @@ PUBLIC void httpRemoveParam(HttpStream *stream, cchar *var)
 
 PUBLIC void httpSetParam(HttpStream *stream, cchar *var, cchar *value)
 {
-    mprWriteJson(httpGetParams(stream), var, value, 0);
+    mprSetJson(httpGetParams(stream), var, value, 0);
 }
 
 
 PUBLIC void httpSetIntParam(HttpStream *stream, cchar *var, int value)
 {
-    mprWriteJson(httpGetParams(stream), var, sfmt("%d", value), MPR_JSON_NUMBER);
+    mprSetJson(httpGetParams(stream), var, sfmt("%d", value), MPR_JSON_NUMBER);
 }
 
 

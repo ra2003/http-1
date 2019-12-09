@@ -437,7 +437,7 @@ static void defineFileFields(HttpQueue *q, Upload *up)
 
     stream = q->stream;
 #if DEPRECATED || 1
-    if (stream->tx->handler == stream->http->ejsHandler) {
+    if (stream->tx->handler && stream->tx->handler == stream->http->ejsHandler) {
         return;
     }
 #endif

@@ -67,7 +67,9 @@ static void processHttp(HttpQueue *q)
         return;
     }
     stream = q->stream;
-
+    if (stream->destroyed) {
+        return;
+    }
     for (count = 0, more = 1; more && count < 10; count++) {
         switch (stream->state) {
         case HTTP_STATE_PARSED:

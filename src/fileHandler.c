@@ -239,7 +239,9 @@ static void startFileHandler(HttpQueue *q)
  */
 static void readyFileHandler(HttpQueue *q)
 {
-    httpScheduleQueue(q);
+    if (!q->stream->tx->finalized) {
+        httpScheduleQueue(q);
+    }
 }
 
 
@@ -332,11 +334,13 @@ static void outgoingFileService(HttpQueue *q)
             packet = httpGetPacket(q);
             httpPutPacketToNext(q, packet);
         }
-        if (!stream->tx->finalizedOutput && !q->first) {
+        if (!tx->finalizedOutput && !q->first) {
             httpFinalizeOutput(stream);
         }
     }
-#endif
+    if (!tx->finalized && tx->finalizedOutput && (tx->finalizedInput || !(rx->flags & HTTP_PUT))) {
+        tx->finalized = 1;
+    }
 }
 
 

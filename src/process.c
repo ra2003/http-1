@@ -51,13 +51,6 @@ PUBLIC void httpProcess(HttpQueue *q)
 }
 
 
-#if UNUSED
-PUBLIC void httpProtocol(HttpStream *stream)
-{
-    processHttp(stream->inputq);
-}
-#endif
-
 /*
     HTTP Protocol state machine for HTTP/1 server requests and client responses.
     Process an incoming request/response and drive the state machine.

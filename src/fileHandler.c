@@ -286,53 +286,15 @@ static ssize readFileData(HttpQueue *q, HttpPacket *packet, MprOff pos, ssize si
 static void outgoingFileService(HttpQueue *q)
 {
     HttpStream  *stream;
+    HttpRx      *rx;
+    HttpTx      *tx;
     HttpPacket  *data, *packet;
     ssize       size, nbytes;
 
     stream = q->stream;
+    rx = stream->rx;
+    tx = stream->tx;
 
-#if UNUSED
-    /*
-        There will be only one entity data packet. PrepPacket will read data into the packet and then
-        put the remaining entity packet on the queue where it will be examined again until the down stream queue is full.
-     */
-    for (packet = httpGetPacket(q); packet; packet = httpGetPacket(q)) {
-        if (packet->fill) {
-            size = min(packet->esize, q->packetSize);
-            size = min(size, q->nextQ->packetSize);
-            if (size > 0) {
-                data = httpCreateDataPacket(size);
-                if ((nbytes = readFileData(q, data, q->ioPos, size)) < 0) {
-                    httpError(stream, HTTP_CODE_NOT_FOUND, "Cannot read document");
-                    return;
-                }
-                q->ioPos += nbytes;
-                packet->epos += nbytes;
-                packet->esize -= nbytes;
-                if (packet->esize > 0) {
-                    httpPutBackPacket(q, packet);
-                }
-                /*
-                    This may split the packet and put back the tail portion ahead of the just putback entity packet.
-                 */
-                if (!httpWillNextQueueAcceptPacket(q, data)) {
-                    httpPutBackPacket(q, data);
-                    if (packet->esize == 0) {
-                        httpFinalizeOutput(stream);
-                    }
-                    break;
-                }
-                httpPutPacketToNext(q, data);
-            }
-            if (packet->esize == 0) {
-                httpFinalizeOutput(stream);
-            }
-        } else {
-            /* Don't flow control as the packet is already consuming memory */
-            httpPutPacketToNext(q, packet);
-        }
-    }
-#else
     /*
         The queue will contain an entity packet which holds the position from which to read in the file.
         If the downstream queue is full, the data packet will be put onto the queue ahead of the entity packet.

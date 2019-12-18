@@ -783,20 +783,6 @@ PUBLIC void httpPrepareHeaders(HttpStream *stream)
 }
 
 
-#if UNUSED
-PUBLIC void httpSetEntityLength(HttpStream *stream, int64 len)
-{
-    HttpTx      *tx;
-
-    tx = stream->tx;
-    tx->entityLength = len;
-    if (tx->outputRanges == 0) {
-        tx->length = len;
-    }
-}
-#endif
-
-
 /*
     Low level routine to set the filename to serve. The filename may be outside the route documents, so caller
     must take care if the HTTP_TX_NO_CHECK flag is used.  This will update HttpTx.ext and HttpTx.fileInfo.

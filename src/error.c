@@ -160,6 +160,7 @@ static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
         stream->errorMsg = formatErrorv(stream, status, fmt, args);
         httpLog(stream->trace, "error", "error", "msg:'%s'", stream->errorMsg);
         HTTP_NOTIFY(stream, HTTP_EVENT_ERROR, 0);
+
         if (httpServerStream(stream)) {
             if (status == HTTP_CODE_NOT_FOUND) {
                 httpMonitorEvent(stream, HTTP_COUNTER_NOT_FOUND_ERRORS, 1);
@@ -167,6 +168,7 @@ static void errorv(HttpStream *stream, int flags, cchar *fmt, va_list args)
             httpMonitorEvent(stream, HTTP_COUNTER_ERRORS, 1);
         }
         httpSetHeaderString(stream, "Cache-Control", "no-cache");
+
         if (httpServerStream(stream) && tx && rx) {
             if (tx->flags & HTTP_TX_HEADERS_CREATED) {
                 /*

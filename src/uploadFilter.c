@@ -398,7 +398,7 @@ static int processUploadHeader(HttpQueue *q, char *line)
                     return MPR_ERR_BAD_STATE;
                 }
                 /*
-                    Create the files[id]
+                    Create the file
                  */
                 file = up->currentFile = mprAllocObj(HttpUploadFile, manageHttpUploadFile);
                 file->clientFilename = up->clientFilename;

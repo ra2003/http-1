@@ -224,7 +224,7 @@ static void connTimeout(HttpConn *conn, MprEvent *mprEvent)
                 httpTrace(conn, event, "error", "msg:'%s'", msg);
             }
         } else {
-            httpError(conn, HTTP_CODE_REQUEST_TIMEOUT, "%s", msg);
+            httpError(conn, HTTP_CODE_REQUEST_TIMEOUT | HTTP_CLOSE, "%s", msg);
         }
     }
     if (httpClientConn(conn)) {

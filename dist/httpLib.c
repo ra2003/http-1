@@ -22745,6 +22745,7 @@ static void connTimeout(HttpStream *stream, MprEvent *mprEvent)
 {
     HttpLimits  *limits;
     cchar       *event, *msg, *prefix;
+    int         status;
 
     if (stream->destroyed) {
         return;
@@ -22776,14 +22777,21 @@ static void connTimeout(HttpStream *stream, MprEvent *mprEvent)
         event = "timeout.duration";
     }
     if (stream->state < HTTP_STATE_FIRST) {
+        /*
+            Connection is idle
+         */
         if (msg) {
             httpLog(stream->trace, event, "error", "msg:'%s'", msg);
             stream->errorMsg = msg;
         }
         httpDisconnectStream(stream);
-
     } else {
-        httpError(stream, HTTP_CODE_REQUEST_TIMEOUT, "%s", msg ? msg : "Timeout");
+        /*
+            For HTTP/2, we error and complete the steam and keep the connection open
+            For HTTP/1, we close the connection as the request is partially complete
+         */
+        status = HTTP_CODE_REQUEST_TIMEOUT | (stream->net->protocol < 2 ? HTTP_CLOSE : 0);
+        httpError(stream, status, "%s", msg ? msg : "Timeout");
     }
 }
 

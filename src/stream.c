@@ -353,10 +353,11 @@ PUBLIC void httpDisconnectStream(HttpStream *stream)
 }
 
 
-static void connTimeout(HttpStream *stream, MprEvent *mprEvent)
+static void streamTimeout(HttpStream *stream, MprEvent *mprEvent)
 {
     HttpLimits  *limits;
     cchar       *event, *msg, *prefix;
+    int         status;
 
     if (stream->destroyed) {
         return;
@@ -378,24 +379,34 @@ static void connTimeout(HttpStream *stream, MprEvent *mprEvent)
         event = "timeout.parse";
 
     } else if (stream->timeout == HTTP_INACTIVITY_TIMEOUT) {
+#if KEEP
+        //  Too noisy
         if (httpClientStream(stream) || (stream->rx && stream->rx->uri)) {
             msg = sfmt("%s exceeded inactivity timeout of %lld sec", prefix, limits->inactivityTimeout / 1000);
             event = "timeout.inactivity";
         }
+#endif
 
     } else if (stream->timeout == HTTP_REQUEST_TIMEOUT) {
         msg = sfmt("%s exceeded timeout %lld sec", prefix, limits->requestTimeout / 1000);
         event = "timeout.duration";
     }
     if (stream->state < HTTP_STATE_FIRST) {
-        if (msg) {
+        /*
+            Connection is idle
+         */
+        if (msg && event) {
             httpLog(stream->trace, event, "error", "msg:'%s'", msg);
             stream->errorMsg = msg;
         }
         httpDisconnectStream(stream);
-
     } else {
-        httpError(stream, HTTP_CODE_REQUEST_TIMEOUT, "%s", msg ? msg : "Timeout");
+        /*
+            For HTTP/2, we error and complete the steam and keep the connection open
+            For HTTP/1, we close the connection as the request is partially complete
+         */
+        status = HTTP_CODE_REQUEST_TIMEOUT | (stream->net->protocol < 2 ? HTTP_CLOSE : 0);
+        httpError(stream, status, "%s", msg ? msg : "Timeout");
     }
 }
 
@@ -406,7 +417,7 @@ PUBLIC void httpStreamTimeout(HttpStream *stream)
         /*
             Will run on the HttpStream dispatcher unless shutting down and it is destroyed already
          */
-        stream->timeoutEvent = mprCreateEvent(stream->dispatcher, "connTimeout", 0, connTimeout, stream, 0);
+        stream->timeoutEvent = mprCreateEvent(stream->dispatcher, "streamTimeout", 0, streamTimeout, stream, 0);
     }
 }
 

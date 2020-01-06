@@ -2867,6 +2867,9 @@ static char *expandRequestTokens(HttpStream *stream, char *str)
             } else if (smatch(value, "method")) {
                 mprPutStringToBuf(buf, rx->method);
 
+            } else if (smatch(value, "origin")) {
+                mprPutStringToBuf(buf, rx->origin);
+
             } else if (smatch(value, "originalUri")) {
                 mprPutStringToBuf(buf, rx->originalUri);
 

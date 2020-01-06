@@ -309,6 +309,9 @@ PUBLIC int httpSetUri(HttpStream *stream, cchar *uri)
     if (parsedUri->host && !rx->hostHeader) {
         rx->hostHeader = parsedUri->host;
     }
+    /*
+        Decode and validate the URI path
+     */
     if ((pathInfo = httpValidateUriPath(parsedUri->path)) == 0) {
         return MPR_ERR_BAD_ARGS;
     }

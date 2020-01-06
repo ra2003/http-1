@@ -20634,6 +20634,9 @@ static char *expandRequestTokens(HttpStream *stream, char *str)
             } else if (smatch(value, "method")) {
                 mprPutStringToBuf(buf, rx->method);
 
+            } else if (smatch(value, "origin")) {
+                mprPutStringToBuf(buf, rx->origin);
+
             } else if (smatch(value, "originalUri")) {
                 mprPutStringToBuf(buf, rx->originalUri);
 
@@ -21500,6 +21503,9 @@ PUBLIC int httpSetUri(HttpStream *stream, cchar *uri)
     if (parsedUri->host && !rx->hostHeader) {
         rx->hostHeader = parsedUri->host;
     }
+    /*
+        Decode and validate the URI path
+     */
     if ((pathInfo = httpValidateUriPath(parsedUri->path)) == 0) {
         return MPR_ERR_BAD_ARGS;
     }
@@ -24707,6 +24713,7 @@ PUBLIC void httpPrepareHeaders(HttpStream *stream)
     MprKeyValue *item;
     MprKey      *kp;
     MprOff      length;
+    cchar       *value;
     int         next;
 
     rx = stream->rx;
@@ -24811,13 +24818,19 @@ PUBLIC void httpPrepareHeaders(HttpStream *stream)
          */
         for (ITERATE_ITEMS(route->headers, item, next)) {
             if (item->flags == HTTP_ROUTE_ADD_HEADER) {
-                httpAddHeaderString(stream, item->key, item->value);
+                value = httpExpandVars(stream, item->value);
+                httpAddHeaderString(stream, item->key, value);
+
             } else if (item->flags == HTTP_ROUTE_APPEND_HEADER) {
-                httpAppendHeaderString(stream, item->key, item->value);
+                value = httpExpandVars(stream, item->value);
+                httpAppendHeaderString(stream, item->key, value);
+
             } else if (item->flags == HTTP_ROUTE_REMOVE_HEADER) {
                 httpRemoveHeader(stream, item->key);
+
             } else if (item->flags == HTTP_ROUTE_SET_HEADER) {
-                httpSetHeaderString(stream, item->key, item->value);
+                value = httpExpandVars(stream, item->value);
+                httpSetHeaderString(stream, item->key, value);
             }
         }
     }

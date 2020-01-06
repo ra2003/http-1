@@ -2459,6 +2459,9 @@ PUBLIC int mprIsValid(cvoid *ptr)
 {
     MprMem      *mp;
 
+    if (ptr == NULL) {
+        return 0;
+    }
     mp = GET_MEM(ptr);
     if (mp->free) {
         return 0;
@@ -5812,6 +5815,9 @@ PUBLIC int mprRunCmdV(MprCmd *cmd, int argc, cchar **argv, cchar **envp, cchar *
     }
     if (rc < 0) {
         if (err) {
+            if (!cmd->program && argv && argc) {
+                cmd->program = argv[0];
+            }
             if (rc == MPR_ERR_CANT_ACCESS) {
                 *err = sfmt("Cannot access command %s", cmd->program);
             } else if (rc == MPR_ERR_CANT_OPEN) {
@@ -13487,6 +13493,26 @@ static void setValue(MprJson *obj, cchar *value, int type)
 }
 
 
+PUBLIC MprList *mprJsonToEnv(MprJson *json, cchar *prefix, MprList *list)
+{
+    MprJson     *jp;
+    int         ji;
+
+    if (!list) {
+        list = mprCreateList(0, 0);
+    }
+    for (ITERATE_JSON(json, jp, ji)) {
+        if (jp->type & MPR_JSON_VALUE) {
+            mprAddItem(list, sfmt("%s_%s=%s", prefix, jp->name, jp->value));
+        } else if (jp->type & (MPR_JSON_OBJ | MPR_JSON_ARRAY)) {
+            list = mprJsonToEnv(jp, sfmt("%s_%s", prefix, jp->name), list);
+        }
+    }
+    mprAddNullItem(list);
+    return list;
+}
+
+
 PUBLIC void mprFormatJsonName(MprBuf *buf, cchar *name, int flags)
 {
     cchar   *cp;
@@ -16347,11 +16373,10 @@ static void backupLog()
  */
 PUBLIC void mprDefaultLogHandler(cchar *tags, int level, cchar *msg)
 {
-    MprFile         *file;
     char            tbuf[128];
     static ssize    length = 0;
 
-    if ((file = MPR->logFile) == 0 || msg == 0 || *msg == '\0') {
+    if (MPR->logFile == 0 || msg == 0 || *msg == '\0') {
         return;
     }
     if (MPR->logBackup && MPR->logSize && length >= MPR->logSize) {
@@ -16360,7 +16385,7 @@ PUBLIC void mprDefaultLogHandler(cchar *tags, int level, cchar *msg)
     if (tags && *tags) {
         if (MPR->flags & MPR_LOG_DETAILED) {
             fmt(tbuf, sizeof(tbuf), "%s %d %s, ", mprGetDate(MPR_LOG_DATE), level, tags);
-            length += mprWriteFileString(file, tbuf);
+            length += mprWriteFileString(MPR->logFile, tbuf);
         } else if (MPR->flags & MPR_LOG_TAGGED) {
             if (schr(tags, ' ')) {
                 tags = ssplit(sclone(tags), " ", NULL);
@@ -16368,12 +16393,12 @@ PUBLIC void mprDefaultLogHandler(cchar *tags, int level, cchar *msg)
             if (!isupper((uchar) *tags)) {
                 tags = stitle(tags);
             }
-            length += mprWriteFileFmt(file, "%12s ", sfmt("[%s]", tags));
+            length += mprWriteFileFmt(MPR->logFile, "%12s ", sfmt("[%s]", tags));
         }
     }
-    length += mprWriteFileString(file, msg);
+    length += mprWriteFileString(MPR->logFile, msg);
     if (*msg && msg[slen(msg) - 1] != '\n') {
-        length += mprWriteFileString(file, "\n");
+        length += mprWriteFileString(MPR->logFile, "\n");
     }
 #if ME_MPR_OSLOG
     if (level == 0) {
@@ -17941,8 +17966,8 @@ PUBLIC char *mprGetAbsPath(cchar *path)
             Get the full path with a drive spec
          */
         wchar buf[ME_MAX_PATH];
-        GetFullPathName(wide(path), sizeof(buf) - 1, buf, NULL);
-        buf[sizeof(buf) - 1] = '\0';
+        GetFullPathName(wide(path), (sizeof(buf) / sizeof(wchar)) - 1, buf, NULL);
+        buf[((sizeof(buf) / sizeof(wchar)) - 1] = '\0';
         result = mprNormalizePath(multi(buf));
 #elif VXWORKS
         if (hasDrive(fs, path)) {
